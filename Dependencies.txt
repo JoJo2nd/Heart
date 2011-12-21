@@ -1,5 +1,13 @@
-Most deps are included by in the repo.
+Most deps are included by in the repo. But the following will need to be downloaded
 
-1) Currently, the major external dep is wxWidgets-2.9.1 which can be downloaded from sourceforge (http://www.wxwidgets.org/downloads/),
-it should be extracted to {repo}/wxWidgets-2.9.1
-2) DXSDK is also needed
+
+
+1) wxWidgets-2.9.2 from http://www.wxwidgets.org. Get version wxWidget-2.9.2.zip not the installer. extract the source to external/wxWidgets-2.9.2
+
+2) boost from http://www.boost.org. Get version 1_48 again as an zip not an installer. extract the source to external/boost
+
+3) run the build build_all_external_libs.bat to compile these libs
+
+4) DXSDK is also needed
+
+5) CgToolKit 3.0 is also needed
