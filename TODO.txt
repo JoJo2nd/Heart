@@ -1,0 +1,13 @@
+1) Remove Squirrel - DONE
+2) Add Lua
+	*) Replace require & package load system (to read from zip & TCP/IP connection)
+	*) Allow require to yield waiting on file read
+	*) Allow .lua files to be built into .pak file
+3) Implement Lua in in-game console - DONE
+4) Change MeshBuilder to Import data into scene better
+5) Implement Save in MeshBuilder
+6) Implement Load in MeshBuilder
+7) Create coroutine handling system for Lua
+8) Add socket Layer
+9) Create remote debugger for Lua
+10) Build LuaBind on top of Lunar

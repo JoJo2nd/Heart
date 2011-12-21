@@ -1,0 +1,105 @@
+/********************************************************************
+	created:	2009/11/02
+	created:	2:11:2009   21:00
+	filename: 	hrSceneGraphNodeMesh.cpp	
+	author:		James
+	
+	purpose:	
+*********************************************************************/
+
+#include "Common.h"
+#include "hSceneNodeMesh.h"
+#include "hRenderer.h"
+#include "hSceneGraphVisitorBase.h"
+#include "Heart.h"
+
+namespace Heart
+{
+	
+	ENGINE_ACCEPT_VISITOR( hSceneNodeMesh, hSceneGraphVisitorEngine );
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	hSceneNodeMesh::hSceneNodeMesh() :
+		hSceneNodeBase( SCENENODETYPE_MESH )
+		,nMeshes_( 0 )
+		,arrayReserve_( 0 )
+		,meshes_( NULL )
+	{
+		ResetAABB();
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	hSceneNodeMesh::~hSceneNodeMesh()
+	{
+		hcAssert( meshes_ == NULL );//Unload not been called?
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	void hSceneNodeMesh::AppendMesh( const MeshRes& mesh )
+	{
+		if ( (nMeshes_+1) >= arrayReserve_ )
+		{
+			if ( arrayReserve_ == 0 )
+				arrayReserve_ = 4;
+			else
+				arrayReserve_ *= 2;
+			MeshRes* pnew = hNEW ( hSceneGraphHeap ) MeshRes[arrayReserve_];
+			if ( nMeshes_ > 0 )
+			{
+				memcpy( pnew, meshes_, sizeof(MeshRes)*(nMeshes_-1) );
+			}
+			delete meshes_;
+			meshes_ = pnew;
+		}
+
+		mesh.Acquire();
+		meshes_[nMeshes_] = mesh;
+		++nMeshes_;
+
+		Heart::hVec3::set( 0.0f, 0.0f, 0.0f, orginAABB_.c );
+		orginAABB_.r[0] = 0.0f;
+		orginAABB_.r[1] = 0.0f;
+		orginAABB_.r[2] = 0.0f;
+
+		for ( hUint32 i = 0; i < nMeshes_; ++i )
+		{
+			Heart::hAABB::ExpandBy( orginAABB_, *meshes_[i]->GetAABB() );
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	// 19:21:29 ////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////
+
+	void hSceneNodeMesh::RemoveMesh( hUint32 idx )
+	{
+		(void)idx;
+		hcBreak;//TODO
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void hSceneNodeMesh::UnloadCallback()
+	{
+		for ( hUint32 i = 0; i < nMeshes_; ++i )
+		{
+			meshes_[i].Release();
+		}
+		delete meshes_;
+		meshes_ = NULL;
+		nMeshes_ = 0;
+		arrayReserve_ = 0;
+	}
+
+}

@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="HLSL Build Rule"
+	Version="8.00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="X360 HLSL Compiler"
+			DisplayName="HLSL X360 Compliler"
+			CommandLine="&quot;%XEDK%\bin\win32\fxc.exe&quot; [inputs] [XHLSLMacroDefines] [XHLSLIncludePath] [XHLSLDebugInfo] /T fxl_3_0 /Fh $(InputDir)$(InputName).h /Vn $(InputName)_data_start /nologo"
+			Outputs="$(InputDir)$(InputName).h"
+			FileExtensions="*.xfx"
+			ExecutionDescription="Compiling HLSL Shader &quot;$(InputName)&quot;"
+			>
+			<Properties>
+				<StringProperty
+					Name="XHLSLMacroDefines"
+					DisplayName="Macro Defines"
+					Category="Compiler Options"
+					Description="A list of defines for the shader delimited by ;"
+					Switch="/D [value]"
+					Delimited="true"
+					Delimiters=";"
+				/>
+				<StringProperty
+					Name="XHLSLIncludePath"
+					DisplayName="Include Paths"
+					Category="Compiler Options"
+					Description="A list of include directories, delimited by ;"
+					Switch="/I [value]"
+					Delimited="true"
+					Delimiters=";"
+				/>
+				<BooleanProperty
+					Name="XHLSLDebugInfo"
+					DisplayName="Use Debug Info"
+					Category="Compiler Options"
+					Description="Include debug information"
+					Switch="/XZi"
+				/>
+			</Properties>
+		</CustomBuildRule>
+		<CustomBuildRule
+			Name="DX9 HLSL Compiler"
+			DisplayName="DX9 HLSL Compiler"
+			CommandLine="&quot;%DXSDK_DIR%\Utilities\bin\x86\fxc.exe&quot; [inputs] [DXHLSLMacroDefines] [DXHLSLIncludePath] [DXHLSLDebugInfo] [DXHLSLWarnErr] /T fx_2_0 /Fh &quot;$(InputDir)$(InputName).h&quot; /Vn $(InputName)_data_start /nologo"
+			Outputs="$(InputDir)$(InputName).h"
+			FileExtensions="*.fx"
+			ExecutionDescription="Compiling DX9 HLSL Shader &quot;$(InputName)&quot;"
+			>
+			<Properties>
+				<StringProperty
+					Name="DXHLSLMacroDefines"
+					DisplayName="Macro Defines"
+					Category="Compiler Options"
+					Description="A list of defines for the shader delimited by ;"
+					Switch="/D [value]"
+					Delimited="true"
+					Delimiters=";"
+				/>
+				<StringProperty
+					Name="DXHLSLIncludePath"
+					DisplayName="Include Paths"
+					Category="Compiler Options"
+					Description="A list of include directories, delimited by ;"
+					Switch="/I [value]"
+					Delimited="true"
+					Delimiters=";"
+				/>
+				<BooleanProperty
+					Name="DXHLSLDebugInfo"
+					DisplayName="Use Debug Info"
+					Category="Compiler Options"
+					Description="Include Debug Information"
+					Switch="/Zi"
+				/>
+				<BooleanProperty
+					Name="DXHLSLWarnErr"
+					DisplayName="Warnings As Errors"
+					Switch="/WX"
+					DefaultValue="true"
+				/>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

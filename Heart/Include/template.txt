@@ -1,0 +1,171 @@
+
+template<class T,$class >
+SQInteger _sqbind_sqmethod_$count(HSQUIRRELVM v) {
+
+	T* self = &SqBind<T>::get(v, 1 );
+	typedef void (T::*M)($paramnames);	
+	M*methodptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&methodptr,NULL);
+	M method = *methodptr;
+	$params
+	(self->*method)($arguments);		
+	
+	return 0;
+}
+
+template<class T,$class >
+SQInteger _sqbind_sqmethod_$countc(HSQUIRRELVM v) {
+
+	T* self = &SqBind<T>::get(v, 1 );
+	typedef void (T::*M)($paramnames) const;	
+	M*methodptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&methodptr,NULL);
+	M method = *methodptr;
+	$params
+	(self->*method)($arguments);		
+	
+	return 0;
+}
+
+template<class T,$class, class R>
+SQInteger _sqbind_sqmethod_$countr(HSQUIRRELVM v) {
+
+	T* self = &SqBind<T>::get(v, 1 );		
+	typedef R (T::*M)($paramnames);
+	M*methodptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&methodptr,NULL);
+	M method = *methodptr;
+	$params	
+	R r = (self->*method)($arguments);		
+	_SQBC( R )::push(v, r );
+	return 1;
+}
+
+template<class T,$class, class R>
+SQInteger _sqbind_sqmethod_$countrc(HSQUIRRELVM v) {
+
+	const T* self = &SqBind<T>::get(v, 1 );		
+	typedef R (T::*M)($paramnames) const;
+	M*methodptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&methodptr,NULL);
+	M method = *methodptr;
+	$params	
+	R r = (self->*method)($arguments);		
+	_SQBC( R )::push(v, r );
+	return 1;
+}
+
+template<class T,$class>
+void sqbind_method( HSQUIRRELVM v, const SQChar *p_name,  void (T::*method)($paramnames) ) {
+
+	sq_pushobject(v,SqBind<T>::get_id()); // push class
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,method);
+	sq_newclosure(v,_sqbind_sqmethod_$count<T,$paramnames>,1);
+	sq_newslot(v,-3,false);
+	sq_pop(v,1); // pop class
+
+}
+
+template<class T,$class>
+void sqbind_method( HSQUIRRELVM v, const SQChar *p_name,  void (T::*method)($paramnames) const ) {
+
+	sq_pushobject(v,SqBind<T>::get_id()); // push class
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,method);
+	sq_newclosure(v,_sqbind_sqmethod_$countc<T,$paramnames>,1);
+	sq_newslot(v,-3,false);
+	sq_pop(v,1); // pop class
+
+}
+
+template<class T,$class ,class R>
+void sqbind_method( HSQUIRRELVM v, const SQChar *p_name,  R (T::*method)($paramnames) ) {
+
+	sq_pushobject(v,SqBind<T>::get_id()); // push class
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,method);
+	sq_newclosure(v,_sqbind_sqmethod_$countr<T,$paramnames,R>,1);
+	sq_newslot(v,-3,false);
+	sq_pop(v,1); // pop class
+
+}
+
+template<class T,$class,class R>
+void sqbind_method( HSQUIRRELVM v, const SQChar *p_name,  R (T::*method)($paramnames) const ) {
+
+	sq_pushobject(v,SqBind<T>::get_id()); // push class
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,method);
+	sq_newclosure(v,_sqbind_sqmethod_$countrc<T,$paramnames,R>,1);
+	sq_newslot(v,-3,false);
+	sq_pop(v,1); // pop class
+
+}
+
+// STATIC METHODS / FUNCTIONS
+
+// using vm as template parameter.... 
+// otherwise overload won't work
+
+template<class VM,$class>
+SQInteger _sqbind_sqfunction_$count(VM v) {
+
+	typedef void (*F)($paramnames);	
+	F*functionptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&functionptr,NULL);
+	F function = *functionptr;
+	$params
+	(function)($arguments);		
+	
+	return 0;
+}
+
+
+
+template<class VM,$class, class R>
+SQInteger _sqbind_sqfunction_$countr(VM v) {
+
+	typedef R (*F)($paramnames);
+	F*functionptr;	
+	sq_getuserdata(v,-1,(SQUserPointer*)&functionptr,NULL);
+	F function = *functionptr;
+	$params	
+	R r = (function)($arguments);		
+	_SQBC( R )::push(v, r );
+	return 1;
+}
+
+//call for functions
+template<class VM,$class>
+void sqbind_function( VM v, const SQChar *p_name,  void (*function)($paramnames), const HSQOBJECT *p_class_id=NULL ) {
+
+	if (p_class_id)
+		sq_pushobject(v,*p_class_id); // push class
+	else
+		sq_pushroottable(v);
+		
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,function);
+	sq_newclosure(v,_sqbind_sqfunction_$count<VM,$paramnames>,1);
+	sq_newslot(v,-3,p_class_id!=NULL);
+	sq_pop(v,1); // pop class
+
+}
+
+
+template<class VM, $class,class R>
+void sqbind_function( VM v, const SQChar *p_name,  R (*function)($paramnames), const HSQOBJECT *p_class_id=NULL ) {
+
+	if (p_class_id)
+		sq_pushobject(v,*p_class_id); // push class
+	else
+		sq_pushroottable(v);
+	sq_pushstring(v,p_name,-1);
+	sqbind_push_method_userdata(v,function);
+	sq_newclosure(v,_sqbind_sqfunction_$countr<VM,$paramnames,R>,1);
+	sq_newslot(v,-3,p_class_id!=NULL);
+	sq_pop(v,1); // pop class
+
+}
+

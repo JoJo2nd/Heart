@@ -1,0 +1,74 @@
+/********************************************************************
+	created:	2008/06/07
+	created:	7:6:2008   2:13
+	filename: 	hDebugMacros.cpp
+	author:		James Moran
+	
+	purpose:	
+*********************************************************************/
+
+#include "Common.h"
+#include "Heart.h"
+#include "hSystemConsole.h"
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+extern "C" void hcOutputStringVA( const hChar* msg, bool newline, va_list vargs );
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+extern "C"
+void hcOutputString( const hChar* msg, ... )
+{
+	va_list marker;
+	va_start( marker, msg );
+
+	hcOutputStringVA( msg, true, marker );
+
+	va_end( marker );
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+extern "C"
+void hcOutputStringRaw( const hChar* msg, ... )
+{
+	va_list marker;
+	va_start( marker, msg );
+
+	hcOutputStringVA( msg, false, marker );
+
+	va_end( marker );
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+extern "C" 
+void hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
+{
+    static const hUint32 ks = 10;
+	static hChar buffer[ ks*1024 ];
+	buffer[ (ks*1024)-1 ] = 0;
+	hUint32 len = vsprintf_s( buffer, ks*1024, msg, vargs );
+
+	if ( newline && buffer[ len - 1 ] != '\n' )
+	{
+		buffer[ len ] = '\n';
+		buffer[ len+1 ] =  0;
+	}
+
+#ifdef HEART_DEBUG
+	OutputDebugString( buffer );
+#endif // HEART_DEBUG
+#ifdef HEART_STDIO_OUTPUT
+	printf( buffer );
+#else
+	Heart::hSystemConsole::PrintConsoleMessage( buffer );
+#endif
+}

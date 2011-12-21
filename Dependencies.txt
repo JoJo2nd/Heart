@@ -1,0 +1,5 @@
+Most deps are included by in the repo.
+
+1) Currently, the major external dep is wxWidgets-2.9.1 which can be downloaded from sourceforge (http://www.wxwidgets.org/downloads/),
+it should be extracted to {repo}/wxWidgets-2.9.1
+2) DXSDK is also needed
