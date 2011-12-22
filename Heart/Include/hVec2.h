@@ -11,399 +11,162 @@
 
 #include <math.h>
 #include "hTypes.h"
+#include <xnamath.h>
 
 namespace Heart
 {
+    typedef XMVECTOR hVec2;
+    typedef XMFLOAT2 hCPUVec2;
 
-	//-----------------------------------------------------------------------
-	///
-	/// @class Vec2
-	/// @brief 
-	/// @author James Moran
-	/// @date [13/7/2008]
-	/// @version 1.0
-	///
-	//-----------------------------------------------------------------------
-	class hVec2
-	{
-	public:
+    namespace hVec2Func
+    {
+        //functions
+        hFORCEINLINE hFloat length( const hVec2& v )
+        {
+            return XMVector2Length( v ); 
+        }
 
-		hFloat    x;
-		hFloat    y;
+        hFORCEINLINE hFloat lengthFast( const hVec2& v )
+        {
+            return XMVector2LengthEst( v );
+        }
 
-		/**
-		* 
-		*
-		* @return   	
-		*/
-		hVec2();
+        hFORCEINLINE hFloat lengthSquare( const hVec2& v ) const
+        {
+            return XMVector2Length( v ); 
+        }
 
-		/**
-		* 
-		*
-		* @param 		x
-		* @param 		y
-		* @return   	
-		*/
-		hVec2( hFloat x, hFloat y );
+        hFORCEINLINE hVec2& normalise( const hVec2& v )
+        {
+            return XMVector2Normalize( v );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	Vec2
-		*/
-		hVec2					operator + ( const hVec2& a ) const;
+        hFORCEINLINE hVec2& normaliseFast( const hVec2& v )
+        {
+            return XMVector2NormalizeEst( v );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	Vec2&
-		*/
-		hVec2&					operator += ( const hVec2& a );
+        hFORCEINLINE hVec2& add( const hVec2& a, const hVec2& b )
+        {
+            return XMVectorAdd( a, b );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	Vec2
-		*/
-		hVec2					operator - ( const hVec2& a ) const;
+        hFORCEINLINE hVec2& sub( const hVec2& a, const hVec2& b, hVec2& out )
+        {
+            return XMVectorSubtract( a, b );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	Vec2&
-		*/
-		hVec2&					operator -= ( const hVec2& a );
+        hFORCEINLINE hVec2& scale( const hVec2& a, const hFloat s )
+        {
+            return XMVectorScale( a, s );
+        }
 
-		/**
-		* 
-		*
-		* @param 		s
-		* @return   	Vec2
-		*/
-		hVec2					operator * ( const hFloat s ) const;
+        hFORCEINLINE hVec2& div( const hVec2& a, const hFloat d )
+        {
+            return XMVectorDivide( a, d );
+        }
 
-		/**
-		* 
-		*
-		* @param 		s
-		* @return   	Vec2&
-		*/
-		hVec2&					operator *= ( const hFloat s );
+        hFORCEINLINE hFloat dot( const hVec2& a, const hVec2& b )
+        {
+            return XMVector2Dot( a, b );
+        }
 
-		/**
-		* 
-		*
-		* @param 		s
-		* @return   	Vec2
-		*/
-		hVec2					operator / ( const hFloat s ) const;
+        hFORCEINLINE hVec2& neg( const hVec2& a )
+        {
+            return XMVectorNegate( a );
+        }
 
-		/**
-		* 
-		*
-		* @param 		s
-		* @return   	Vec2&
-		*/
-		hVec2&					operator /= ( const hFloat s );
+        hFORCEINLINE hVec2& cross( const hVec2& a, const hVec2& b )
+        {
+            return XMVector2Cross( a, b );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	bool
-		*/
-		bool					operator == ( const hVec2& a ) const;
+        hFORCEINLINE hVec2& set( hFloat x, hFloat y, hFloat z )
+        {
+            return XMVectorSet( x, y, z, 1.f );
+        }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	bool
-		*/
-		bool					operator != ( const hVec2& a ) const;
+        hFORCEINLINE hBool compare( const hVec2& a, const hVec2& b )
+        {
+            return XMVector2Equal( a, b );
+        }
 
-		/**
-		* Vector dot product
-		*
-		* @param 		a
-		* @return   	hFloat
-		*/
-		hFloat					operator * ( const hVec2& a ) const;
+        hFORCEINLINE void store( const hVec2& a, hCPUVec2* b )
+        {
+            XMStoreFloat2( b, a );
+        }
 
-		/**
-		* 
-		*
-		* @return   	hFloat
-		*/
-		hFloat					mag() const;
+        hFORCEINLINE void load( const hVec2& a, hCPUVec2* b )
+        {
+            a = XMLoadFloat2( b );
+        }
 
-		/**
-		* 
-		*
-		* @return   	hFloat
-		*/
-		hFloat					magSqr() const;
+    }
 
-		/**
-		* 
-		*
-		* @return   	void
-		*/
-		void					normalise();
+    hFORCEINLINE hVec2& operator + ( const hVec2& a, const hVec2& b )
+    {
+        return hVec2Func::add( a, b );
+    }
 
-		//////////////////////////////////////////////////////////////////////////
-		// C style functions
+    hFORCEINLINE hVec2& operator += ( const hVec2& a, const hVec2& b )
+    {
+        return hVec2Func::add( a, b );
+    }
 
-		/**
-		* 
-		*
-		* @param 		a
-		* @param 		b
-		* @param 		dst
-		* @return   	void
-		*/
-		static void					add( const hVec2* a, const hVec2* b, hVec2* dst );
-		/**
-		* 
-		*
-		* @param 		a
-		* @param 		b
-		* @param 		dst
-		* @return   	void
-		*/
-		static void					sub( const hVec2* a, const hVec2* b, hVec2* dst );
-		/**
-		* 
-		*
-		* @param 		a
-		* @param 		norm
-		* @return   	void
-		*/
-		static void					normalise( const hVec2* a, hVec2* norm );
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	hFloat
-		*/
-		static hFloat				mag( const hVec2* a );
-		/**
-		* 
-		*
-		* @param 		a
-		* @return   	hFloat
-		*/
-		static hFloat				magSqr( const hVec2* a );
+    hFORCEINLINE hVec2& operator - ( const hVec2& a, const hVec2& b )
+    {
+        return hVec2Func::sub( a, b );
+    }
 
-		/**
-		* Dot 
-		*
-		* @param 	const Vec2 & a
-		* @param 	const Vec2 & b
-		* @return   hFloat
-		*/
-		static hFloat				Dot( const hVec2& a, const hVec2& b )
-		{
-			return a.x*b.x + a.y*b.y;
-		}
+    hFORCEINLINE hVec2& operator -= ( const hVec2& a, const hVec2& b )
+    {
+        return hVec2Func::sub( a, b );
+    }
 
-		static hFloat				Cross( const hVec2& a, const hVec2& b )
-		{
-			return a.x*b.y - a.y*b.x;
-		}
+    hFORCEINLINE hVec2& operator * ( const hVec2& v, const hFloat s )
+    {
+        return hVec2Func::scale( v, s );
+    }
 
-		static void					Set( hFloat x, hFloat y, hVec2& out )
-		{
-			out.x = x;
-			out.y = y;
-		}
-	};
+    hFORCEINLINE hVec2& operator *= ( const hVec2& v, const hFloat s )
+    {
+        return hVec2Func::scale( v, s );
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2::hVec2() 
-	{
+    hFORCEINLINE hVec2& operator / ( const hVec2& v, const hFloat s ) 
+    {
+        return hVec2Func::div( v, s );
+    }
 
-	}
+    hFORCEINLINE hVec2& operator /= ( const hVec2& v, const hFloat s )
+    {
+        return hVec2Func::div( v, s );
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2::hVec2( hFloat x, hFloat y ) :
-		x( x ),
-		y( y )
-	{
+    hFORCEINLINE hBool operator == ( const hVec2& a, const hVec2& b )
+    {
+        return hVec2Func::compare( a, b );
+    }
 
-	}
+    hFORCEINLINE hBool operator != (  const hVec2& a, const hVec2& b )
+    {
+        return !(a == b);
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 hVec2::operator + ( const hVec2& a ) const
-	{
-		return hVec2( x + a.x, y + a.y );
-	}
+    hFORCEINLINE hVec2& operator - ( const hVec2& a )
+    {
+        return hVec2Func::neg( a );
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2& hVec2::operator += ( const hVec2& a )
-	{
-		x += a.x;
-		y += a.y;
+    hFORCEINLINE hCPUVec2& operator = ( const hCPUVec2& a, const hVec2& b )
+    {
+        hVec2Func::store( b, &a );
+    }
 
-		return *this;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 hVec2::operator - ( const hVec2& a ) const 
-	{
-		return hVec2( x - a.x, y - a.y );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2& hVec2::operator -= ( const hVec2& a )
-	{
-		x -= a.x;
-		y -= a.y;
-
-		return *this;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 hVec2::operator * ( const hFloat s ) const 
-	{
-		return hVec2( x * s, y * s );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2& hVec2::operator *= ( const hFloat s )
-	{
-		x *= s;
-		y *= s;
-
-		return *this;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 hVec2::operator / ( const hFloat s ) const 
-	{
-		return hVec2( x / s, y / s );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2& hVec2::operator /= ( const hFloat s )
-	{
-		x /= s;
-		y /= s;
-
-		return *this;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline bool hVec2::operator == ( const hVec2& a ) const
-	{
-		return x == a.x && y == a.y;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline bool hVec2::operator != ( const hVec2& a ) const
-	{
-		return !(*this == a);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hFloat hVec2::operator * ( const hVec2& a ) const
-	{
-		return ( x * a.x ) + ( y * a.y );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hFloat hVec2::mag() const
-	{
-		return sqrt( magSqr() ); 
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hFloat hVec2::magSqr() const
-	{
-		return ( x * x ) + ( y * y );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline void hVec2::normalise()
-	{
-		hFloat k = mag();
-		x /= k;
-		y /= k;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline void hVec2::add( const hVec2* a, const hVec2* b, hVec2* dst )
-	{
-		dst->x = a->x + b->x;
-		dst->y = a->y + b->y;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline void hVec2::sub( const hVec2* a, const hVec2* b, hVec2* dst )
-	{
-		dst->x = a->x - b->x;
-		dst->y = a->y - b->y;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline void hVec2::normalise( const hVec2* a, hVec2* norm )
-	{
-		hFloat k = hVec2::mag( a );
-		norm->x = a->x / k;
-		norm->y = a->y / k;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hFloat hVec2::mag( const hVec2* a )
-	{
-		return sqrt( ( a->x * a->x ) + ( a->y * a->y ) );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hFloat hVec2::magSqr( const hVec2* a )
-	{
-		return ( a->x * a->x ) + ( a->y * a->y );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 operator * ( const hFloat s, const hVec2& v )
-	{
-		return hVec2( v.x * s, v.y * s );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-	inline hVec2 operator - ( const hVec2& a )
-	{
-		return hVec2( -a.x, -a.y );
-	}
+    hFORCEINLINE hVec2& operator = ( const hVec2& a, const hCPUVec2& b )
+    {
+        hVec2Func::load( a, &b );
+    }
 
 }
 
