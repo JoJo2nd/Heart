@@ -311,7 +311,7 @@ namespace Heart
 		maxV.z = -FLT_MAX;
 
 		// build a matrix looking in the lights direction
-		hMatrix::lookAt( &ldirm, ZeroVector3, tat, tup );
+		hMatrix::LookAt( &ldirm, ZeroVector3, tat, tup );
 
 		//find the min & max Z for the othro projection matrix
 		//find the bounds for the clip & projection matrix

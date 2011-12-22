@@ -99,7 +99,7 @@ namespace Heart
 				DirtyLookAt_ = FocusPoint_;
 				DirtyUp_ = Up_;
 
-				Heart::hMatrix::lookAt( &ViewMatrix_, DirtyEye_, DirtyLookAt_, DirtyUp_ );
+				Heart::hMatrix::LookAt( &ViewMatrix_, DirtyEye_, DirtyLookAt_, DirtyUp_ );
 
 				Frustum_.UpdateFromCamera( DirtyEye_, DirtyLookAt_, DirtyUp_, FOV_, Aspect_, Near_, Far_, isOrtho_ );
 
