@@ -370,13 +370,13 @@ namespace Heart
     { \
      \
         template< typename _ArrayQType, typename _MetaName > \
-        static void DoSerialise( hSerialiser* ser, ty data ) \
+        static void DoSerialise( hSerialiser* ser, const ty & data ) \
         { \
             typedef _MetaName NameInfo; \
             ser->Write( data, 1, NameInfo::GetCRCID(), 0 ); \
         } \
         template< typename _ArrayQType, typename _MetaName > \
-        static void DoSerialise( hSerialiser* ser, const ty data[_ArrayQType::ElementCount] ) \
+        static void DoSerialise( hSerialiser* ser, const ty (&data)[_ArrayQType::ElementCount] ) \
         { \
             typedef _MetaName NameInfo; \
             static const hUint32 arraycount = _ArrayQType::ElementCount; \

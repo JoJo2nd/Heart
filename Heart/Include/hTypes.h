@@ -1,6 +1,7 @@
 #ifndef hcTypes_h__
 #define hcTypes_h__
 
+
 typedef	char				hChar;
 typedef unsigned char		hByte;
 typedef unsigned short		hUint16;

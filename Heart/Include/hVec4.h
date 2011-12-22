@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include "hTypes.h"
+#include "hVector.h"
 #include <xnamath.h>
 
 namespace Heart
@@ -22,6 +23,11 @@ namespace Heart
 
 namespace hVec4Func
 {
+    hFORCEINLINE hVec4& zeroVector()
+    {
+        return XMVectorZero();
+    }
+
     //functions
     hFORCEINLINE hFloat length( const hVec4& v )
     {
@@ -98,7 +104,7 @@ namespace hVec4Func
         XMStoreFloat4( b, a );
     }
 
-    hFORCEINLINE void load( const hVec4& a, hCPUVec4* b )
+    hFORCEINLINE void load( hVec4& a, const hCPUVec4* b )
     {
         a = XMLoadFloat4( b );
     }
@@ -170,6 +176,7 @@ namespace hVec4Func
         hVec4Func::load( a, &b );
     }
 
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hVec3, hSerialisedElementHeader::Type_User );
 }
 
 #endif //__HMVEC4_H__

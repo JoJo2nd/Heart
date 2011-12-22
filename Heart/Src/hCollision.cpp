@@ -8,8 +8,10 @@
 *********************************************************************/
 
 #include "Common.h"
-#include "hAABB.h"
-#include "hPlane.h"
+//#include "hAABB.h"
+//#include "hPlane.h"
+#include "hVec2.h"
+#include "hVec3.h"
 
 // Test if sphere with radius r moving from a to b intersects with plane p
 // int TestMovingSpherePlane(Point a, Point b, float r, Plane p)
@@ -27,7 +29,7 @@
 
 namespace Heart
 {
-
+/*
 	hBool hPlane::intersectMovingAABB( const hAABB& a, const hVec3& d, const hPlane& p )
 	{
 		// Get radius of aabb along plane normal
@@ -64,5 +66,5 @@ namespace Heart
 		// Return infront
 		return adist;
 	}
-
+*/
 }

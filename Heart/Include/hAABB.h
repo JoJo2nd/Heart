@@ -54,7 +54,7 @@ namespace Heart
 		d = hMax( d, a.r[1] );
 		d = hMax( d, a.r[2] );
 
-		if ( hVec3::mag( a.c - point ) < d  )
+		if ( hVec3::length( a.c - point ) < d  )
 			return true;
 		return false;
 	}
