@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="freetype248_D.lib"
+				AdditionalDependencies="freetype248MT_D.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib;..\..\freetype-2.4.8\objs\win32\vc2008\"
 				GenerateDebugInformation="true"
