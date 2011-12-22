@@ -17,82 +17,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="DebugWin32D3D9|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
-			ConfigurationType="4"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="true"
-				AdditionalOptions="/MP"
-				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32D3D9/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_D3D9;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				StructMemberAlignment="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Common.h"
-				AssemblerOutput="0"
-				WarningLevel="3"
-				DebugInformationFormat="4"
-				CallingConvention="0"
-				DisableSpecificWarnings="4584"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				UseUnicodeResponseFiles="true"
-				AdditionalDependencies="d3d9.lib d3dx9.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32D3D9D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
-				OutputFile="$(OutDir)\$(ProjectName)DW32D3D9.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
-				IgnoreDefaultLibraryNames="LIBCMTD"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseWin32D3D9|Win32"
+			Name="ReleaseWin32DX11|Win32"
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
@@ -310,81 +235,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="DebugWin32OpenGL|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
-			ConfigurationType="4"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="true"
-				AdditionalOptions="/MP"
-				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;&quot;../glew-1.6.0/include&quot;;../DeviceWin32OpenGL/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_OPENGL;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				StructMemberAlignment="3"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="Common.h"
-				AssemblerOutput="0"
-				WarningLevel="3"
-				DebugInformationFormat="4"
-				CallingConvention="0"
-				DisableSpecificWarnings="4584"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				UseUnicodeResponseFiles="true"
-				AdditionalDependencies="d3dx9.lib xinput.lib DeviceWin32D.lib DeviceWin32OpenGLD.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib"
-				OutputFile="$(OutDir)\$(ProjectName)DW32OGL.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;"
-				IgnoreDefaultLibraryNames="LIBCMTD"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="DebugWin32DX11|Win32"
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
@@ -438,6 +288,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				UseUnicodeResponseFiles="true"
+				AdditionalOptions="/ignore:4006 /ignore:4221"
 				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib d3dx9.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
 				OutputFile="$(OutDir)\$(ProjectName)DW32DX11.lib"
 				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
@@ -488,15 +339,7 @@
 				RelativePath=".\Src\PreCompiled.cpp"
 				>
 				<FileConfiguration
-					Name="DebugWin32D3D9|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseWin32D3D9|Win32"
+					Name="ReleaseWin32DX11|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -513,14 +356,6 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="PackerRelease|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugWin32OpenGL|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -646,22 +481,6 @@
 				<File
 					RelativePath=".\Src\hMaterial.cpp"
 					>
-					<FileConfiguration
-						Name="DebugWin32D3D9|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ShowIncludes="false"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="DebugWin32OpenGL|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ShowIncludes="false"
-						/>
-					</FileConfiguration>
 					<FileConfiguration
 						Name="DebugWin32DX11|Win32"
 						>
@@ -795,15 +614,7 @@
 					RelativePath=".\Src\hMalloc.c"
 					>
 					<FileConfiguration
-						Name="DebugWin32D3D9|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="ReleaseWin32D3D9|Win32"
+						Name="ReleaseWin32DX11|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -820,14 +631,6 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="PackerRelease|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							UsePrecompiledHeader="0"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="DebugWin32OpenGL|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -1043,23 +846,7 @@
 					RelativePath=".\Src\hSystem.cpp"
 					>
 					<FileConfiguration
-						Name="DebugWin32D3D9|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ShowIncludes="false"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="PackerDebug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ShowIncludes="false"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="DebugWin32OpenGL|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
