@@ -22,7 +22,6 @@ namespace Heart
     struct hVec2
     {
         hVec128 v;
-
         
         hVec2() {}
         hVec2( const hVec128& rhs );
@@ -31,6 +30,7 @@ namespace Heart
         hVec2& operator = ( const hCPUVec2& b );
         operator hCPUVec2 () const;
         operator hFloatInVec() const { return v; }
+        hVec128 Get128() const { return v; }
     };
 
 
@@ -104,7 +104,7 @@ namespace hVec2Func
 
     hFORCEINLINE hVec2 set( hFloat x, hFloat y )
     {
-        return XMVectorSet( x, y, 1.f, 1.f );
+        return XMVectorSet( x, y, 0.f, 0.f );
     }
 
     hFORCEINLINE hBool compare( const hVec2& a, const hVec2& b )

@@ -27,7 +27,7 @@ namespace Heart
         explicit hQuaternion( const hCPUQuaternion& rhs );
         hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w );
         hQuaternion& operator = ( const hCPUQuaternion& b );
-        operator hCPUVec4 () const;
+        operator hCPUQuaternion () const;
         operator hFloatInVec() const { return q; }
     };
 
@@ -144,7 +144,7 @@ namespace hQuaternionFunc
     {
     }
 
-    hFORCEINLINE hQuaternion::hQuaternion( const hCPUVec4& rhs ) 
+    hFORCEINLINE hQuaternion::hQuaternion( const hCPUQuaternion& rhs ) 
     {
         *this = hQuaternionFunc::set( rhs.x, rhs.y, rhs.z, rhs.w );
     }
@@ -154,15 +154,15 @@ namespace hQuaternionFunc
         *this = hQuaternionFunc::set( x, y, z, w );
     }
 
-    hFORCEINLINE hQuaternion& hQuaternion::operator = ( const hCPUVec4& b )
+    hFORCEINLINE hQuaternion& hQuaternion::operator = ( const hCPUQuaternion& b )
     {
         hQuaternionFunc::load( *this, &b );
         return *this;
     }
 
-    hFORCEINLINE hQuaternion::operator hCPUVec4 () const
+    hFORCEINLINE hQuaternion::operator hCPUQuaternion () const
     {
-        hCPUVec4 r;
+        hCPUQuaternion r;
         hQuaternionFunc::store( *this, &r );
         return r;
     }

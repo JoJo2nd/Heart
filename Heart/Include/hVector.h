@@ -17,15 +17,91 @@ typedef XMVECTOR            hVec128;
 namespace Heart
 {
 
-    hFORCEINLINE void hVectorLoad( hVec128& v, const hFloat* f )
+    hFORCEINLINE void hVec128Load( hVec128& v, const hFloat* f )
     {
         v = XMLoadFloat( f );
     }
 
-    hFORCEINLINE void hVectorStore( const hVec128& v, hFloat* f )
+    hFORCEINLINE void hVec128Store( const hVec128& v, hFloat* f )
     {
         XMStoreFloat( f, v );
     }
+
+    hFORCEINLINE hVec128 hVec128Abs( const hVec128& v )
+    {
+        return XMVectorAbs( v );
+    }
+
+    hFORCEINLINE hVec128 hVec128Min( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorMin( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128Max( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorMax( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128Less( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorLess( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128LessEqual( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorLessOrEqual( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128Equal( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorEqual( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128GreaterEqual( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorGreaterOrEqual( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec128 hVec128Greater( const hVec128& lhs, const hVec128& rhs )
+    {
+        return XMVectorGreater( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool hVec128AllLess( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterOrEqualR( &r, lhs, rhs );
+        return XMComparisonAllFalse( r );
+    }
+
+    hFORCEINLINE hBool hVec128AllLessEqual( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterR( &r, lhs, rhs );
+        return XMComparisonAllFalse( r );
+    }
+
+    hFORCEINLINE hBool hVec128AllEqual( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorEqualR( &r, lhs, rhs );
+        return XMComparisonAllTrue( r );
+    }
+
+    hFORCEINLINE hBool hVec128AllGreaterEqual( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterOrEqualR( &r, lhs, rhs );
+        return XMComparisonAllTrue( r );
+    }
+
+    hFORCEINLINE hBool hVec128AllGreater( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterR( &r, lhs, rhs );
+        return XMComparisonAllTrue( r );
+    }
+
 
     struct hFloatInVec
     {
@@ -37,13 +113,14 @@ namespace Heart
         hFORCEINLINE operator hFloat ()
         {
             hFloat a;
-            hVectorStore( v, &a );
+            hVec128Store( v, &a );
             return a;
         }
-
+        hFORCEINLINE operator hVec128 () const { return v; }
+        hFORCEINLINE hVec128 Get128() const { return v; }
         hFORCEINLINE hFloatInVec& operator = ( hFloat b )
         {
-            hVectorLoad( v, &b );
+            hVec128Load( v, &b );
             return *this;
         }
     };

@@ -31,6 +31,7 @@ namespace Heart
         hVec3& operator = ( const hCPUVec3& b );
         operator hCPUVec3 () const;
         operator hFloatInVec() const { return v; }
+        hVec128 Get128() const { return v; }
     };
 
 
@@ -54,7 +55,7 @@ namespace hVec3Func
 
     hFORCEINLINE hFloatInVec lengthSquare( const hVec3& v )
     {
-        return XMVector3Length( v.v ); 
+        return XMVector3LengthSq( v.v ); 
     }
 
     hFORCEINLINE hVec3 normalise( const hVec3& v )
@@ -104,12 +105,32 @@ namespace hVec3Func
 
     hFORCEINLINE hVec3 set( hFloat x, hFloat y, hFloat z )
     {
-        return XMVectorSet( x, y, z, 1.f );
+        return XMVectorSet( x, y, z, 0.f );
     }
 
-    hFORCEINLINE hBool compare( const hVec3& a, const hVec3& b )
+    hFORCEINLINE hBool equal( const hVec3& a, const hVec3& b )
     {
         return XMVector3Equal( a.v, b.v ) > 0;
+    }
+
+    hFORCEINLINE hBool Less( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Less( a.v, b.v ) > 0;
+    }
+
+    hFORCEINLINE hBool LessEqual( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3LessOrEqual( a.v, b.v ) > 0;
+    }
+
+    hFORCEINLINE hBool Greater( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Greater( a.v, b.v ) > 0;
+    }
+
+    hFORCEINLINE hBool GreaterEqual( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3GreaterOrEqual( a.v, b.v ) > 0;
     }
 
     hFORCEINLINE void store( const hVec3& a, hCPUVec3* b )
@@ -166,12 +187,32 @@ namespace hVec3Func
 
     hFORCEINLINE hBool operator == ( const hVec3& a, const hVec3& b )
     {
-        return hVec3Func::compare( a, b );
+        return hVec3Func::equal( a, b );
     }
 
     hFORCEINLINE hBool operator != (  const hVec3& a, const hVec3& b )
     {
         return !(a == b);
+    }
+
+    hFORCEINLINE hBool operator < ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Less( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator <= ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Less( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator > ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Greater( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator >= ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::GreaterEqual( lhs, rhs );
     }
 
     hFORCEINLINE hVec3 operator - ( const hVec3& a )

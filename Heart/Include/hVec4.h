@@ -31,6 +31,7 @@ namespace Heart
         hVec4& operator = ( const hCPUVec4& b );
         operator hCPUVec4 () const;
         operator hFloatInVec() const { return v; }
+        hVec128 Get128() const { return v; }
     };
 
 
@@ -54,7 +55,7 @@ namespace hVec4Func
 
     hFORCEINLINE hFloatInVec lengthSquare( const hVec4& v )
     {
-        return XMVector4Length( v.v ); 
+        return XMVector4LengthSq( v.v ); 
     }
 
     hFORCEINLINE hVec4 normalise( const hVec4& v )
