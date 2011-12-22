@@ -30,7 +30,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 	typedef XMMATRIX hMatrix;
 
-    namespace hMatrix
+    namespace hMatrixFunc
 	{
 		hFORCEINLINE hMatrix& LookAt( const hVec3& eye, const hVec3& lookat, const hVec3& up )
 		{
