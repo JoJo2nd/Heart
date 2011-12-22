@@ -17,91 +17,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="DebugWin32D3D9|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
-			ConfigurationType="1"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
-				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;../DeviceWin32D3D9/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise;../crypto/Include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HEART_ENGINE;HEART_PLAT_D3D9;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;ENABLE_SQUIRREL_EXT;D3D_DEBUG_INFO"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				StructMemberAlignment="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="4"
-				CallingConvention="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				UseLibraryDependencyInputs="true"
-				UseUnicodeResponseFiles="false"
-				AdditionalDependencies="HeartDW32D3D9.lib"
-				ShowProgress="0"
-				OutputFile="$(OutDir)\$(ProjectName)Win32D3D9D.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)..\_outdir\$(SolutionName)&quot;;&quot;$(SolutionDir)..\_outdir\$(SolutionName)\DebugWin32D3D9&quot;"
-				IgnoreDefaultLibraryNames="msvcr90"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				TurnOffAssemblyGeneration="false"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseWin32D3D9|Win32"
+			Name="ReleaseWin32DX11|Win32"
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
@@ -185,88 +101,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="DebugWin32OpenGL|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
-			ConfigurationType="1"
-			CharacterSet="0"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
-				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;&quot;../glew-1.6.0/include&quot;;../DeviceWin32OpenGL/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HEART_ENGINE;HEART_PLAT_OPENGL;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;ENABLE_SQUIRREL_EXT;D3D_DEBUG_INFO"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				StructMemberAlignment="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="4"
-				CallingConvention="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				UseUnicodeResponseFiles="false"
-				AdditionalDependencies="HeartDW32OGL.lib"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(OutDir)"
-				IgnoreDefaultLibraryNames="msvcr90"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="DebugWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
 			CharacterSet="0"
 			>
@@ -367,22 +204,6 @@
 			<File
 				RelativePath=".\Src\HeartTestBed.cpp"
 				>
-				<FileConfiguration
-					Name="DebugWin32D3D9|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ShowIncludes="false"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugWin32OpenGL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ShowIncludes="false"
-					/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="DebugWin32DX11|Win32"
 					>
