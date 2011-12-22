@@ -10,126 +10,164 @@
 #define HMQUATERNION_H__
 
 #include "hTypes.h"
-#include "hDebugMacros.h"
-#include <float.h>
+#include "hVec3.h"
 #include <xnamath.h>
 
 namespace Heart
 {
 
-    typedef XMVECTOR hQuaternion;
     typedef XMFLOAT4 hCPUQuaternion;
+
+    struct hQuaternion
+    {
+        XMVECTOR q;
+
+        hQuaternion() {}
+        hQuaternion( const hVec128& rhs );
+        explicit hQuaternion( const hCPUQuaternion& rhs );
+        hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w );
+        hQuaternion& operator = ( const hCPUQuaternion& b );
+        operator hCPUVec4 () const;
+        operator hFloatInVec() const { return q; }
+    };
 
 namespace hQuaternionFunc
 {
-    hFORCEINLINE hQuaternion&	identity()
+    hFORCEINLINE hQuaternion identity()
 	{
         return XMQuaternionIdentity();
 	}
 
-	hFORCEINLINE hQuaternion&	RotateAxis( hFloat t, const hVec3& axis )
-	{
-        return XMQuaternionRotationAxis( axis, t );
-	}
-
-	hFORCEINLINE hQuaternion&	rotateX( hFloat t )
-	{
-        return RotateAxis( t, hCPUVec3( 1.f, 0.f, 0.f ) );
-	}
-
-    hFORCEINLINE hQuaternion&	rotateY( hFloat t )
+    hFORCEINLINE hQuaternion set( hFloat x, hFloat y, hFloat z, hFloat w )
     {
-        return RotateAxis( t, hCPUVec3( 0.f, 1.f, 0.f ) );
+        return XMVectorSet( x, y, z, w );
     }
 
-    hFORCEINLINE hQuaternion&	rotateZ( hFloat t )
+	hFORCEINLINE hQuaternion RotateAxis( hFloat t, const hVec3& axis )
+	{
+        return XMQuaternionRotationAxis( axis.v, t );
+	}
+
+	hFORCEINLINE hQuaternion rotateX( hFloat t )
+	{
+        return RotateAxis( t, hVec3( 1.f, 0.f, 0.f ) );
+	}
+
+    hFORCEINLINE hQuaternion rotateY( hFloat t )
     {
-        return RotateAxis( t, hCPUVec3( 0.f, 0.f, 1.f ) );
+        return RotateAxis( t, hVec3( 0.f, 1.f, 0.f ) );
     }
 
-    hFORCEINLINE hQuaternion& rotate( hFloat x, hFloat y, hFloat z )
+    hFORCEINLINE hQuaternion rotateZ( hFloat t )
+    {
+        return RotateAxis( t, hVec3( 0.f, 0.f, 1.f ) );
+    }
+
+    hFORCEINLINE hQuaternion rotate( hFloat x, hFloat y, hFloat z )
     {
         return XMQuaternionRotationRollPitchYaw( x, y, z );
     }
 
-    hFORCEINLINE hQuaternion& rotate( const hVec3& v )
+    hFORCEINLINE hQuaternion rotate( const hVec3& v )
     {
-        return XMQuaternionRotationRollPitchYawFromVector( v );
+        return XMQuaternionRotationRollPitchYawFromVector( v.v );
     }
 
-	hFORCEINLINE hQuaternion& mult( const hQuaternion& a, const hQuaternion& b )
+	hFORCEINLINE hQuaternion mult( const hQuaternion& a, const hQuaternion& b )
 	{
-        return XMQuaternionMultiply( a, b );
+        return XMQuaternionMultiply( a.q, b.q );
 	}
 
-    hFORCEINLINE hQuaternion& normalise( const hQuaternion& a)
+    hFORCEINLINE hQuaternion normalise( const hQuaternion& a)
 	{
-        return XMQuaternionNormalize( a );
+        return XMQuaternionNormalize( a.q );
 	}
 
-    hFORCEINLINE hQuaternion& normaliseFast( const hQuaternion& a)
+    hFORCEINLINE hQuaternion normaliseFast( const hQuaternion& a)
     {
-        return XMQuaternionNormalize( a );
+        return XMQuaternionNormalize( a.q );
     }
 
-	hFORCEINLINE hFloat length( const hQuaternion& a )
+	hFORCEINLINE hFloatInVec length( const hQuaternion& a )
 	{
-		return XMQuaternionLength( a );
+		return XMQuaternionLength( a.q );
 	}
 
-    hFORCEINLINE hFloat lengthSquare( const hQuaternion& a )
+    hFORCEINLINE hFloatInVec lengthSquare( const hQuaternion& a )
     {
-        return XMQuaternionLengthSq( a );
+        return XMQuaternionLengthSq( a.q );
     }
 
-    hFORCEINLINE hFloat dot( const hQuaternion& a, const hQuaternion& b )
+    hFORCEINLINE hFloatInVec dot( const hQuaternion& a, const hQuaternion& b )
 	{
-		return XMQuaternionDot( a, b );
+		return XMQuaternionDot( a.q, b.q );
 	}
 
-	hFORCEINLINE hQuaternion& slerp( const hQuaternion& a, const hQuaternion& b, hFloat dt )
+	hFORCEINLINE hQuaternion slerp( const hQuaternion& a, const hQuaternion& b, hFloat dt )
 	{
-        return XMQuaternionSlerp( a, b, dt );
+        return XMQuaternionSlerp( a.q, b.q, dt );
 	}
 
-	hFORCEINLINE hQuaternion& conjugate( hQuaternion& a )
+	hFORCEINLINE hQuaternion conjugate( const hQuaternion& a )
 	{
-        return XMQuaternionConjugate( a );
+        return XMQuaternionConjugate( a.q );
 	}
 
-	hFORCEINLINE hQuaternion& decompress( hFloat x, hFloat y, hFloat z )
+	hFORCEINLINE hQuaternion decompress( hFloat x, hFloat y, hFloat z )
 	{
 		hFloat w = 1.0f - (x * x) - (y * y) - (z * z);
 		w = sqrt( fabs( w ) );
-		return normalise( hCPUQuaternion( w, x, y, z ) );
+		return normalise( hQuaternion( w, x, y, z ) );
 	}
 
     hFORCEINLINE hBool IsIdentity( const hQuaternion& q )
 	{
-		return XMQuaternionIsIdentity( q );
+		return XMQuaternionIsIdentity( q.q ) > 0;
 	}
 
     hFORCEINLINE void store( const hQuaternion& a, hCPUQuaternion* b )
     {
-        XMStoreFloat4( b, a );
+        XMStoreFloat4( b, a.q );
     }
 
-    hFORCEINLINE void load( const hQuaternion& a, hCPUQuaternion* b )
+    hFORCEINLINE void load( hQuaternion& a, const hCPUQuaternion* b )
     {
-        a = XMLoadFloat4( b );
+        a.q = XMLoadFloat4( b );
     }
 }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-    hFORCEINLINE hCPUQuaternion& operator = ( const hCPUQuaternion& a, const hQuaternion& b )
+    hFORCEINLINE hQuaternion::hQuaternion( const hVec128& rhs ) 
+        : q(rhs)
     {
-        hQuaternionFunc::store( b, &a );
     }
 
-    hFORCEINLINE hQuaternion& operator = ( const hQuaternion& a, const hCPUQuaternion& b )
+    hFORCEINLINE hQuaternion::hQuaternion( const hCPUVec4& rhs ) 
     {
-        hQuaternionFunc::load( a, &b );
+        *this = hQuaternionFunc::set( rhs.x, rhs.y, rhs.z, rhs.w );
     }
-    
+
+    hFORCEINLINE hQuaternion::hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w )
+    {
+        *this = hQuaternionFunc::set( x, y, z, w );
+    }
+
+    hFORCEINLINE hQuaternion& hQuaternion::operator = ( const hCPUVec4& b )
+    {
+        hQuaternionFunc::load( *this, &b );
+        return *this;
+    }
+
+    hFORCEINLINE hQuaternion::operator hCPUVec4 () const
+    {
+        hCPUVec4 r;
+        hQuaternionFunc::store( *this, &r );
+        return r;
+    }
+        
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hQuaternion, hSerialisedElementHeader::Type_User );
 }
 
 #endif // HMQUATERNION_H__

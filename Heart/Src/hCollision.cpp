@@ -12,6 +12,9 @@
 //#include "hPlane.h"
 #include "hVec2.h"
 #include "hVec3.h"
+#include "hVec4.h"
+#include "hQuaternion.h"
+#include "hMatrix.h"
 
 // Test if sphere with radius r moving from a to b intersects with plane p
 // int TestMovingSpherePlane(Point a, Point b, float r, Plane p)
