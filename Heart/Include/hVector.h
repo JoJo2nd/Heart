@@ -102,6 +102,41 @@ namespace Heart
         return XMComparisonAllTrue( r );
     }
 
+    hFORCEINLINE hUint32 hVec128LessSelect( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterOrEqualR( &r, lhs, rhs );
+        return r;
+    }
+
+    hFORCEINLINE hUint32 hVec128LessEqualSelect( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterR( &r, lhs, rhs );
+        return r;
+    }
+
+    hFORCEINLINE hUint32 hVec128EqualSelect( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorEqualR( &r, lhs, rhs );
+        return r;
+    }
+
+    hFORCEINLINE hUint32 hVec128GreaterEqualSelect( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterOrEqualR( &r, lhs, rhs );
+        return r;
+    }
+
+    hFORCEINLINE hUint32 hVec128GreaterSelect( const hVec128& lhs, const hVec128& rhs )
+    {
+        UINT r;
+        XMVectorGreaterR( &r, lhs, rhs );
+        return r;
+    }
+
 
     struct hFloatInVec
     {

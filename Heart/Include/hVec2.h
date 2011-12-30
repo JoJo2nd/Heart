@@ -30,6 +30,7 @@ namespace Heart
         hVec2& operator = ( const hCPUVec2& b );
         operator hCPUVec2 () const;
         operator hFloatInVec() const { return v; }
+        operator hVec128() const { return v; }
         hVec128 Get128() const { return v; }
     };
 

@@ -28,7 +28,8 @@ namespace Heart
         hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w );
         hQuaternion& operator = ( const hCPUQuaternion& b );
         operator hCPUQuaternion () const;
-        operator hFloatInVec() const { return q; }
+        hFORCEINLINE operator hFloatInVec() const { return q; }
+        hFORCEINLINE operator hVec128() const { return q; }
     };
 
 namespace hQuaternionFunc
@@ -77,6 +78,11 @@ namespace hQuaternionFunc
 	{
         return XMQuaternionMultiply( a.q, b.q );
 	}
+
+    hFORCEINLINE hVec3 mult( const hVec3& lhs, const hQuaternion& rhs )
+    {
+        return XMVector3Rotate( lhs, rhs );
+    }
 
     hFORCEINLINE hQuaternion normalise( const hQuaternion& a)
 	{
