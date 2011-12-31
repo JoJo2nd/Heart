@@ -27,6 +27,66 @@ namespace Heart
         XMStoreFloat( f, v );
     }
 
+    hFORCEINLINE hFloat hVec128GetX( const hVec128& v )
+    {
+        return XMVectorGetX( v );
+    }
+
+    hFORCEINLINE hFloat hVec128GetY( const hVec128& v )
+    {
+        return XMVectorGetY( v );
+    }
+
+    hFORCEINLINE hFloat hVec128GetZ( const hVec128& v )
+    {
+        return XMVectorGetZ( v );
+    }
+
+    hFORCEINLINE hFloat hVec128GetW( const hVec128& v )
+    {
+        return XMVectorGetW( v );
+    }
+
+    hFORCEINLINE hVec128 hVec128SetX( const hVec128& v, hFloat x )
+    {
+        return XMVectorSetX( v, x );
+    }
+
+    hFORCEINLINE hVec128 hVec128SetY( const hVec128& v, hFloat y )
+    {
+        return XMVectorSetY( v, y );
+    }
+
+    hFORCEINLINE hVec128 hVec128SetZ( const hVec128& v, hFloat z )
+    {
+        return XMVectorSetZ( v, z );
+    }
+
+    hFORCEINLINE hVec128 hVec128SetW( const hVec128& v, hFloat w )
+    {
+        return XMVectorSetW( v, w );
+    }
+
+    hFORCEINLINE hVec128 hVec128SplatX( const hVec128& v )
+    {
+        return XMVectorSplatX( v );
+    }
+
+    hFORCEINLINE hVec128 hVec128SplatY( const hVec128& v )
+    {
+        return XMVectorSplatY( v );
+    }
+
+    hFORCEINLINE hVec128 hVec128SplatZ( const hVec128& v )
+    {
+        return XMVectorSplatZ( v );
+    }
+
+    hFORCEINLINE hVec128 hVec128SplatW( const hVec128& v )
+    {
+        return XMVectorSplatW( v );
+    }
+
     hFORCEINLINE hVec128 hVec128Abs( const hVec128& v )
     {
         return XMVectorAbs( v );

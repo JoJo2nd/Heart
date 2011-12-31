@@ -59,10 +59,10 @@ namespace Utility
 		}
 	}
 
-	void ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, Heart::hVec2* pOutSamples )
+	void ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, hVec2* pOutSamples )
 	{
 		// The first sample always has a zero offset.
-		pOutSamples[0] = ZeroVector2;
+        pOutSamples[0] = hVec2Func::zeroVector();
 
 		// Add pairs of additional sample taps, positioned
 		// along a line in both directions from the center.
@@ -78,7 +78,7 @@ namespace Utility
 			// positioning us nicely in between two texels.
 			hFloat sampleOffset = i * 2 + 1.5f;
 
-			Heart::hVec2 delta = Heart::hVec2( dx, dy ) * sampleOffset;
+			hVec2 delta = hVec2( dx, dy ) * sampleOffset;
 
 			// Store texture coordinate offsets for the positive and negative taps.
 			pOutSamples[i * 2 + 1] = delta;
@@ -97,6 +97,7 @@ namespace Utility
 								hResourceHandle< hIndexBuffer >* outIdxBuf, 
 								hResourceHandle< hVertexBuffer >* outVtxBuf )
 	{
+/*
 		hUint16 vtxCnt = (hUint16)((rings + 1) * (segments+1)) + 1;
 		hUint16 idxCnt = (hUint16)(6 * rings * (segments+1)) + 1;
 		hVertexDeclaration* vtxDecl;
@@ -174,6 +175,7 @@ namespace Utility
 
 		(*outIdxBuf)->Unlock();
 		(*outVtxBuf)->Unlock();
+*/
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -191,6 +193,7 @@ namespace Utility
 									hResourceHandle< hIndexBuffer >* outIdxBuf, 
 									hResourceHandle< hVertexBuffer >* outVtxBuf )
 	{
+/*
 		hUint16 vtxCnt = (hUint16)((rings + 1) * (segments+1)) + 1;
 		hUint16 idxCnt = (hUint16)(6 * rings * (segments+1)) + 1;
 		hUint32 dwColour = (hUint32)colour;
@@ -236,6 +239,7 @@ namespace Utility
 
 		*startIdx = idxIdx;
 		*startVtx = vtxIdx;
+*/
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -315,12 +319,12 @@ namespace Utility
 			float x = radius * sinf( dSegAngle*i );
 			float y = radius * cosf( dSegAngle*i );
 
-			hVec3::set( x, y, depth, segmentPts[i] );
+			segmentPts[i] = hVec3( x, y, depth );
 			(*outVtxBuf)->SetElement( vidx++, hrVE_XYZ, segmentPts[i] );
 		}
-		hVec3::set( 0.0f, 0.0f, 0.0f, segmentPts[segments] );//Tip of cone
+		segmentPts[segments] = hVec3( 0.0f, 0.0f, 0.0f );//Tip of cone
 		(*outVtxBuf)->SetElement( vidx++, hrVE_XYZ, segmentPts[segments] );
-		hVec3::set( 0.0f, 0.0f, depth, segmentPts[segments+1] );// centre base of cone
+		segmentPts[segments+1] = hVec3( 0.0f, 0.0f, depth );// centre base of cone
 		(*outVtxBuf)->SetElement( vidx++, hrVE_XYZ, segmentPts[segments+1] );
 
 		//Create the Cone
@@ -376,18 +380,20 @@ namespace Utility
 			float x = radius * sinf( dSegAngle*i );
 			float y = radius * cosf( dSegAngle*i );
 
-			hVec4::set( x, y, lenght, 1.0f, segmentPts[i] );
+			segmentPts[i] = hVec4( x, y, lenght, 1.0f );
 		}
-		hVec4::set( 0.0f, 0.0f, 0.0f, 1.0f, segmentPts[segments] );//Tip of cone
-		hVec4::set( 0.0f, 0.0f, lenght, 1.0f, segmentPts[segments+1] );// centre base of cone
+		segmentPts[segments]   = hVec4( 0.0f, 0.0f, 0.0f, 1.0f );//Tip of cone
+		segmentPts[segments+1] = hVec4( 0.0f, 0.0f, lenght, 1.0f );// centre base of cone
 
 		hVec4 v;
 		hMatrix wvp;
-		hMatrix::mult( transform, vp, &wvp );
+		//hMatrix::mult( transform, vp, &wvp );
+        wvp = (*transform) * (*vp);
 
 		for ( hUint16 i = 0; i < segments+2; ++i )
 		{
-			hMatrix::mult( segmentPts[i], &wvp, v );
+			//hMatrix::mult( segmentPts[i], &wvp, v );
+            v = segmentPts[i] * wvp;
 			(*outVtxBuf)->SetElement( vidx, hrVE_XYZW, v );
 			(*outVtxBuf)->SetElement( vidx++, hrVE_COLOR, dwColour );
 		}

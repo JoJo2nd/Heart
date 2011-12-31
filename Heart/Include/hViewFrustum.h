@@ -22,7 +22,7 @@ namespace Heart
 										hViewFrustum();
 		virtual							~hViewFrustum();
 
-		void							UpdateFromCamera( hVec3 EyeVec, hVec3 LookAt, hVec3 Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho );
+		void							UpdateFromCamera( const hVec3& EyeVec, const hVec3& LookAt, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho );
 		hBool							TestAABB( const hAABB& AABB );
 		hBool							TestMovingAABB( const hAABB& aabb, const hVec3& dir );
 		const hVec3&					FrustumPoint( hUint32 i ) const { return frustumPoints_[ i ]; }

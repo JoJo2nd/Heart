@@ -65,14 +65,12 @@ namespace Heart
 		meshes_[nMeshes_] = mesh;
 		++nMeshes_;
 
-		Heart::hVec3::set( 0.0f, 0.0f, 0.0f, orginAABB_.c );
-		orginAABB_.r[0] = 0.0f;
-		orginAABB_.r[1] = 0.0f;
-		orginAABB_.r[2] = 0.0f;
+		orginAABB_.c_ = hVec3Func::zeroVector();
+        orginAABB_.r_ = hVec3Func::zeroVector();
 
 		for ( hUint32 i = 0; i < nMeshes_; ++i )
 		{
-			Heart::hAABB::ExpandBy( orginAABB_, *meshes_[i]->GetAABB() );
+			hAABB::ExpandBy( orginAABB_, *meshes_[i]->GetAABB() );
 		}
 	}
 

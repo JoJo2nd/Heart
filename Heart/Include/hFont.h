@@ -56,8 +56,8 @@ namespace Private
 	 	hUint32					Width_;
 		hUint32					xAdvan_;
 	 	hInt32					BaseLine_;
-		hVec2				    UV1_;
-	 	hVec2				    UV2_;
+		hCPUVec2				UV1_;
+	 	hCPUVec2				UV2_;
 	};
 }
 
@@ -74,8 +74,8 @@ namespace Private
 		hUint32				FontWidth() const { return fontWidth_; };
 		hUint32				RenderString( hIndexBuffer& iBuffer, 
 										  hVertexBuffer& vBuffer, 
-										  const Heart::hVec2& topleft, 
-										  const Heart::hVec2& bottomright, 
+										  const hCPUVec2& topleft, 
+										  const hCPUVec2& bottomright, 
 										  const hChar* str, 
 										  hCommandBufferList* pCmdList );
 
@@ -89,7 +89,7 @@ namespace Private
         HEART_ALLOW_SERIALISE_FRIEND();
 
 		hBool						FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr );
-		void						RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hVec2& topleft, const hVec2& bottomright, hFloat w, hUint32& charsWritten );
+		void						RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten );
 		Private::hFontCharacter*	GetFontCharacter( hUint32 charcode );
 
 	 	hFontStyle					style_;

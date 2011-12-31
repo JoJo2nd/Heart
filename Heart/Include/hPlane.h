@@ -12,15 +12,14 @@
 
 #include "hTypes.h"
 #include "hVector.h"
+#include "hVec3.h"
 
 namespace Heart
 {
-	class hAABB;
+	struct hAABB;
 
-	class hPlane
+	struct hPlane
 	{
-	public:
-
 		//hVec3		n;// normal to plane [1/1/2009 James]
 		//hFloat		d;// d = dot( n, p ) for any point on the plane
 		// a*p.X + b*p.Y + c*p.Z + p.W = 0
@@ -47,6 +46,7 @@ namespace hPlaneFunc
 // 			out.d = hVec3Func::dot( out.n, a );
  			hPlane p;
             p.p = XMPlaneFromPoints( a.v, b.v, c.v );
+            return p;
 	}
 
 	/**
@@ -63,10 +63,15 @@ namespace hPlaneFunc
         return hVec128AllLess( XMPlaneDotCoord( p.p, a.v ), hVec3Func::zeroVector() );
 	}
 
-	static hBool intersectMovingAABB( const hAABB& a, const hVec3& d, const hPlane& p );
+    hFORCEINLINE hFloat DistFromPlane( const hVec3& a, const hPlane& p )
+    {
+        return hVec128GetX( XMPlaneDotCoord( p.p, a.v ) );
+    }
+
+	hBool intersectMovingAABB( const hAABB& a, const hVec3& d, const hPlane& p );
 
 	//Return +ive number if true, -ive if false
-	static hFloat AABBInfrontOfPlane( const hAABB& a, const hPlane& p );
+	hFloat AABBInfrontOfPlane( const hAABB& a, const hPlane& p );
 
 }
 

@@ -27,7 +27,7 @@ namespace Heart
 			DirtyLookAt_ = FocusPoint_;
 			DirtyUp_ = Up_;
 
-			Heart::hMatrix::LookAt( &ViewMatrix_, DirtyEye_, DirtyLookAt_, DirtyUp_ );
+			ViewMatrix_ = hMatrixFunc::LookAt( DirtyEye_, DirtyLookAt_, DirtyUp_ );
 
 			Frustum_.UpdateFromCamera( DirtyEye_, DirtyLookAt_, DirtyUp_, FOV_, Aspect_, Near_, Far_, isOrtho_ );
 
@@ -62,12 +62,12 @@ namespace Heart
 
 	void hCamera::DefaultCamera()
 	{
-		Heart::hVec3::set( 0.0f, 1.0f, 0.0f, Up_ );
+		Up_ = hVec3( 0.0f, 1.0f, 0.0f );
 		FOV_ = hmPI / 4.0f;//45.0f
-		Heart::hMatrix::identity( &ViewMatrix_ );
+		ViewMatrix_ = hMatrixFunc::identity();
 		isOrtho_ = hFalse;
-		Heart::hVec3::set( 0.0f, 0.0f, 0.0f, FocusPoint_ );
-		Heart::hVec3::set( 0.0f, 0.0f, 10.0f, CameraPos_ );
+		FocusPoint_ = hVec3( 0.0f, 0.0f, 0.0f );
+		CameraPos_  = hVec3( 0.0f, 0.0f, 10.0f );
 		Viewport_.x_ = 0;
 		Viewport_.y_ = 0;
 		Viewport_.width_ = 800;
@@ -85,7 +85,7 @@ namespace Heart
 		Far_ = Far;
 		isOrtho_ = hFalse;
 
-		Heart::hMatrix::perspectiveFOV( &ProjectionMatrix_, FOV_, Aspect_, Near_, Far_ );
+		ProjectionMatrix_ = hMatrixFunc::perspectiveFOV( FOV_, Aspect_, Near_, Far_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -99,25 +99,27 @@ namespace Heart
 		Far_ = zfar;
 		isOrtho_ = hTrue;
 
-		Heart::hMatrix::orthoProj( &ProjectionMatrix_, width, height, Near_, Far_ );
+		ProjectionMatrix_ = hMatrixFunc::orthoProj( width, height, Near_, Far_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	Heart::hVec3 hCamera::ProjectTo2D( Heart::hVec3 point )
+	hVec3 hCamera::ProjectTo2D( const hVec3& point )
 	{
-		Heart::hVec4 ret;
-		Heart::hMatrix view, proj,viewProj;
+		hVec4 ret;
+		hMatrix view, proj,viewProj;
 
 		view = GetViewMatrix();
 		proj = GetProjectionMatrix();
-		Heart::hVec4 point4( point.x, point.y, point.z, 1.0f );
-		Heart::hMatrix::mult( &view, &proj, &viewProj );
-		Heart::hMatrix::mult( point4, &viewProj, ret );
-		Heart::hVec3 r2( ((ret.x/ret.w) * Viewport_.width_ / 2), ((ret.y/ret.w) * Viewport_.height_ / 2), ret.z/ret.w );
-		return r2;
+		hVec4 point4( point );
+		viewProj = hMatrixFunc::mult( view, proj );
+		ret = hMatrixFunc::mult( point4, viewProj ); 
+		//hVec3 r2( ((ret.x/ret.w) * Viewport_.width_ / 2), ((ret.y/ret.w) * Viewport_.height_ / 2), ret.z/ret.w );
+        hVec3 r2( hVec3Func::div( (hVec3)ret, hVec128SplatW( ret ) ) );
+        
+        return hVec3Func::componentMult( r2, hVec3( Viewport_.width_ / 2.f, Viewport_.height_ / 2.f, 1.f ) );
 
 	}
 

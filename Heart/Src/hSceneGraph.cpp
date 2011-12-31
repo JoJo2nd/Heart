@@ -54,7 +54,7 @@ namespace Heart
 		//CreateResourceNode( HEART_SCENE_ROOT_NAME, RootNode_, pnewnode );
 
 		rootNode_->DefaultState();
-		rootNode_->SetMatrix( &Heart::IdentityMatrix );
+		rootNode_->SetMatrix( &hMatrixFunc::identity() );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -77,10 +77,7 @@ namespace Heart
 		{
 			buildingMatrixStack_ = hTrue;
 
-			Heart::hMatrix idnt;
-			Heart::hMatrix::identity( &idnt );
-
-			MatrixStack_.push( idnt );
+			MatrixStack_.push( hMatrixFunc::identity() );
 		}
 
 		pVisitor->PreVisit( this );
@@ -122,7 +119,7 @@ namespace Heart
 // 				pNode->pAttachedAnimator()->Update( pNode );
 // 			}
 
-			Heart::hMatrix::mult( pNode->GetMatrix(), parent, &top );
+			top = hMatrixFunc::mult( *pNode->GetMatrix(), *parent );
 
 			MatrixStack_.push( top );
 
@@ -171,7 +168,7 @@ namespace Heart
 // 				pNode->pAttachedAnimator()->Update( pNode );
 // 			}
 
-			Heart::hMatrix::mult( pNode->GetMatrix(), parent, &top );
+			top = hMatrixFunc::mult( *pNode->GetMatrix(), *parent );
 
 			MatrixStack_.push( top );
 		}

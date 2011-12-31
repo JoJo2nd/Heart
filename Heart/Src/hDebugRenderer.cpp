@@ -264,13 +264,13 @@ namespace
 		camera->UpdateCamera();
 		hMatrix vp = *camera->GetViewProjectionMatrix();
 		hMatrix op;
-		hMatrix::orthoProjOffCentre( &op, 0, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0, 0.0f, 1.0f );
+        op = hMatrixFunc::orthoProjOffCentre( 0, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0, 0.0f, 1.0f );
 
 		renderer->NewRenderCommand< Cmd::SetMaterial >( debugMat_ );
 
-		renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &IdentityMatrix );
-		renderer->NewRenderCommand< Cmd::SetViewMatrix >( &IdentityMatrix );
-		renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &IdentityMatrix );
+        renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &hMatrixFunc::identity() );
+		renderer->NewRenderCommand< Cmd::SetViewMatrix >( &hMatrixFunc::identity() );
+		renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &hMatrixFunc::identity() );
 
 		if ( nSphereCommands_ > 0 || nConeCommands_ > 0 )
 		{
@@ -344,7 +344,7 @@ namespace
 
 			for ( hUint32 i2 = 0; i2 < 4; ++i2 )
 			{
-				hMatrix::mult( points[i2], &op, points[i2] );
+				points[i2] = points[i2] * op;
 			}
 
 			lineVtxBuf_->SetElement( lineIndexCount, hrVE_XYZW, points[0] );
@@ -394,59 +394,63 @@ namespace
 
 	void CreateAABBPoints( hVec4* points, const hAABB* aabb, const hMatrix& vp )
 	{
+        hCPUVec3 aabbc = aabb->c_;
+        hCPUVec3 aabbr = aabb->r_;
+        hCPUVec4 tmpPoints[24];
+
 		////////////////////////////////////////////////////////////////////////
 		//  aabb top
 		// line 1
 		// top left, far(+Z)
-		points[ 0 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 0 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 0 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 0 ].w = 1.0f;
+		tmpPoints[ 0 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 0 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 0 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 0 ].w = 1.0f;
 
 		//top left, close(-Z)
-		points[ 1 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 1 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 1 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 1 ].w = 1.0f;
+		tmpPoints[ 1 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 1 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 1 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 1 ].w = 1.0f;
 
 		//line 2
 		//top left, close
-		points[ 2 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 2 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 2 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 2 ].w = 1.0f;
+		tmpPoints[ 2 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 2 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 2 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 2 ].w = 1.0f;
 
 		//top right, close
-		points[ 3 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 3 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 3 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 3 ].w = 1.0f;
+		tmpPoints[ 3 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 3 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 3 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 3 ].w = 1.0f;
 
 		//line 3
 		//top right, close
-		points[ 4 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 4 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 4 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 4 ].w = 1.0f;
+		tmpPoints[ 4 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 4 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 4 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 4 ].w = 1.0f;
 
 		//top right, far
-		points[ 5 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 5 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 5 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 5 ].w = 1.0f;
+		tmpPoints[ 5 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 5 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 5 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 5 ].w = 1.0f;
 
 		//line 4
 		//top right, far
-		points[ 6 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 6 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 6 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 6 ].w = 1.0f;
+		tmpPoints[ 6 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 6 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 6 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 6 ].w = 1.0f;
 
 		//top left, far
-		points[ 7 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 7 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 7 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 7 ].w = 1.0f;
+		tmpPoints[ 7 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 7 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 7 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 7 ].w = 1.0f;
 
 		// aabb top
 		//////////////////////////////////////////////////////////////////////////
@@ -454,55 +458,55 @@ namespace
 		// aabb bottom
 		//line 1
 		//bottom left, far(+Z)
-		points[ 8 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 8 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 8 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 8 ].w = 1.0f;
+		tmpPoints[ 8 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 8 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 8 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 8 ].w = 1.0f;
 
 		//bottom left, close(-Z)
-		points[ 9 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 9 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 9 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 9 ].w = 1.0f;
+		tmpPoints[ 9 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 9 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 9 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 9 ].w = 1.0f;
 
 		//line 2
 		//bottom left, close
-		points[ 10 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 10 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 10 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 10 ].w = 1.0f;
+		tmpPoints[ 10 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 10 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 10 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 10 ].w = 1.0f;
 
 		//bottom right, close
-		points[ 11 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 11 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 11 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 11 ].w = 1.0f;
+		tmpPoints[ 11 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 11 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 11 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 11 ].w = 1.0f;
 
 		//line 3
 		//bottom right, close
-		points[ 12 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 12 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 12 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 12 ].w = 1.0f;
+		tmpPoints[ 12 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 12 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 12 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 12 ].w = 1.0f;
 
 		//bottom right, far
-		points[ 13 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 13 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 13 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 13 ].w = 1.0f;
+		tmpPoints[ 13 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 13 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 13 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 13 ].w = 1.0f;
 
 		//line 4
 		//bottom right, far
-		points[ 14 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 14 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 14 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 14 ].w = 1.0f;
+		tmpPoints[ 14 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 14 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 14 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 14 ].w = 1.0f;
 
 		//bottom left, far
-		points[ 15 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 15 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 15 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 15 ].w = 1.0f;
+		tmpPoints[ 15 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 15 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 15 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 15 ].w = 1.0f;
 
 		// aabb bottom
 		//////////////////////////////////////////////////////////////////////////
@@ -510,62 +514,62 @@ namespace
 		// aabb sides
 		//line 1
 		//top right, far
-		points[ 16 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 16 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 16 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 16 ].w = 1.0f;
+		tmpPoints[ 16 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 16 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 16 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 16 ].w = 1.0f;
 
 		//bottom right, far
-		points[ 17 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 17 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 17 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 17 ].w = 1.0f;
+		tmpPoints[ 17 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 17 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 17 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 17 ].w = 1.0f;
 
 		//line 2
 		//top right, close
-		points[ 18 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 18 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 18 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 18 ].w = 1.0f;
+		tmpPoints[ 18 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 18 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 18 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 18 ].w = 1.0f;
 
 		//botom right, close
-		points[ 19 ].x = aabb->c.x + aabb->r[ 0 ];
-		points[ 19 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 19 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 19 ].w = 1.0f;
+		tmpPoints[ 19 ].x = aabbc.x + aabbr.x;
+		tmpPoints[ 19 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 19 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 19 ].w = 1.0f;
 
 		//line 3
 		//top left, close
-		points[ 20 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 20 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 20 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 20 ].w = 1.0f;
+		tmpPoints[ 20 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 20 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 20 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 20 ].w = 1.0f;
 
 		//bottom left, close
-		points[ 21 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 21 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 21 ].z = aabb->c.z - aabb->r[ 2 ];
-		points[ 21 ].w = 1.0f;
+		tmpPoints[ 21 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 21 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 21 ].z = aabbc.z - aabbr.z;
+		tmpPoints[ 21 ].w = 1.0f;
 
 		//line 4
 		//top left, far
-		points[ 22 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 22 ].y = aabb->c.y + aabb->r[ 1 ];
-		points[ 22 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 22 ].w = 1.0f;
+		tmpPoints[ 22 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 22 ].y = aabbc.y + aabbr.y;
+		tmpPoints[ 22 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 22 ].w = 1.0f;
 
 		//bottom left, far
-		points[ 23 ].x = aabb->c.x - aabb->r[ 0 ];
-		points[ 23 ].y = aabb->c.y - aabb->r[ 1 ];
-		points[ 23 ].z = aabb->c.z + aabb->r[ 2 ];
-		points[ 23 ].w = 1.0f;
+		tmpPoints[ 23 ].x = aabbc.x - aabbr.x;
+		tmpPoints[ 23 ].y = aabbc.y - aabbr.y;
+		tmpPoints[ 23 ].z = aabbc.z + aabbr.z;
+		tmpPoints[ 23 ].w = 1.0f;
 
 		// aabb sides
 		////////////////////////////////////////////////////////////////////////
 
 		for ( hUint32 i = 0; i < 24; ++i )
 		{
-			hMatrix::mult( points[i], &vp, points[i] );
+			points[i] = hMatrixFunc::mult( (hVec4)tmpPoints[i], vp );
 		}
 	}
 

@@ -18,10 +18,8 @@ purpose:
 namespace Heart
 {
 
-	class hAABB
-	{
-	public:
-
+	struct hAABB
+    {
         hVec3                       c_;
         hVec3                       r_;// half widths across x, y & z
 
@@ -377,8 +375,11 @@ namespace Heart
 	            }
 
 	            // No overlap possible if time of first contact occurs after time of last contact
-	            if (tfirst > tlast) return hFalse;
+	            if (tfirst > tlast) 
+                    return hFalse;
             }
+
+            return hTrue;
 	    }
 
     };

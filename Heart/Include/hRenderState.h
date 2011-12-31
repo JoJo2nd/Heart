@@ -196,7 +196,7 @@ public:
 	{
 		hMatrix ident;
 
-		hMatrix::identity( &ident );
+		ident = hMatrixFunc::identity();
 
 
 		setIndexStream( NULL );
@@ -583,17 +583,17 @@ public:
 	}
 	void					SetLightPosition( const hVec3& pos )
 	{
-		if ( lightingStateBlock_.lightPosition_ != hVec4( pos.x, pos.y, pos.z, 1.0f ) )
+		if ( lightingStateBlock_.lightPosition_ != hVec4( pos ) )
 		{
-			lightingStateBlock_.lightPosition_ = hVec4( pos.x, pos.y, pos.z, 1.0f );
+			lightingStateBlock_.lightPosition_ = hVec4( pos );
 			lightingStateBlock_.lightPositionDirty_ = hTrue;
 		}
 	}
 	void					SetLightDirection( const hVec3& dir )
 	{
-		if ( lightingStateBlock_.lightDirection_ != hVec4( dir.x, dir.y, dir.z, 1.0f ) )
+		if ( lightingStateBlock_.lightDirection_ != hVec4( dir ) )
 		{
-			lightingStateBlock_.lightDirection_ = hVec4( dir.x, dir.y, dir.z, 1.0f );
+			lightingStateBlock_.lightDirection_ = hVec4( dir );
 			lightingStateBlock_.lightDirecitonDirty_ = hTrue;
 		}
 	}

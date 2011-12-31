@@ -26,6 +26,7 @@ namespace Heart
         
         hVec4() {}
         hVec4( const hVec128& rhs );
+        explicit hVec4( const hVec3& rhs );
         explicit hVec4( const hCPUVec4& rhs );
         hVec4( hFloat x, hFloat y, hFloat z, hFloat w );
         hVec4& operator = ( const hCPUVec4& b );
@@ -188,6 +189,11 @@ namespace hVec4Func
     hFORCEINLINE hVec4::hVec4( const hVec128& rhs ) 
         : v(rhs)
     {
+    }
+
+    hFORCEINLINE hVec4::hVec4( const hVec3& rhs ) 
+    {
+        v = hVec128SetW( rhs.v, 1.f );
     }
 
     hFORCEINLINE hVec4::hVec4( const hCPUVec4& rhs ) 

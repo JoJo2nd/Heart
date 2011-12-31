@@ -165,6 +165,16 @@ namespace hMatrixFunc
 	{
         XMMatrixDecompose( &scl->v, &q->q, &trans->v, m );
     }
+
+    hFORCEINLINE hVec3 getTranslation( const hMatrix& m )
+    {
+        return m.r[3];
+    }
+
+    hFORCEINLINE hVec4 getRow( const hMatrix& m, hUint32 row )
+    {
+        return m.r[row];
+    }
 }
 
     hFORCEINLINE hMatrix operator * ( const hMatrix& lhs, const hMatrix& rhs )

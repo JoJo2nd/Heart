@@ -62,6 +62,7 @@ namespace Heart
 #define hAlign( x, align ) ( x + align - (x % align) )
 #define hAlloca( x ) alloca( x )
 #define MAX_LUA_FILESYSTEMS  (6)
+#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 
 #ifndef NULL
 	#define NULL 0

@@ -84,6 +84,11 @@ namespace hVec3Func
         return XMVectorScale( a.v, s );
     }
 
+    hFORCEINLINE hVec3 componentMult( const hVec3& a, const hVec3& b )
+    {
+        return XMVectorMultiply( a, b );
+    }
+
     hFORCEINLINE hVec3 div( const hVec3& a, const hVec3& d )
     {
         return XMVectorDivide( a.v, d.v );

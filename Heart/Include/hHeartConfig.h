@@ -48,6 +48,10 @@
 
 //#define HEART_ALLOW_NEW
 
+#ifndef XM_NO_OPERATOR_OVERLOADS
+    #define XM_NO_OPERATOR_OVERLOADS
+#endif
+
 #ifdef HEART_ALLOW_NEW
 	#define hNEW( x ) new ( x )
 #else

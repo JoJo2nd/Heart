@@ -8,7 +8,7 @@
 *********************************************************************/
 
 #include "hTypes.h"
-#include "hVector.h"
+#include "hVec2.h"
 
 namespace Heart
 {
@@ -33,8 +33,8 @@ namespace Physics2D
 
 		void		Step( hFloat delta );
 
-		hVec2	Gravity() const { return gravity_; }
-		void		Gravity( hVec2 val ) { gravity_ = val; }
+		hVec2	    Gravity() const { return gravity_; }
+		void		Gravity( const hVec2& val ) { gravity_ = val; }
 		hUint32		Iterations() const { return iterations_; }
 		void		Iterations( hUint32 val ) { iterations_ = val; }
 

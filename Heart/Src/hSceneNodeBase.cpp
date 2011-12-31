@@ -152,12 +152,12 @@ namespace Heart
 
 	void hSceneNodeBase::ResetAABB()
 	{
-		orginAABB_.c = ZeroVector3;
-		orginAABB_.r[0] = orginAABB_.r[1] = orginAABB_.r[2] = 0.0f;
-		localAABB_.c = ZeroVector3;
-		localAABB_.r[0] = localAABB_.r[1] = localAABB_.r[2] = 0.0f;
-		globalAABB_.c = ZeroVector3;
-		globalAABB_.r[0] = globalAABB_.r[1] = globalAABB_.r[2] = 0.0f;
+        orginAABB_.c_ = hVec3Func::zeroVector();
+		globalAABB_.r_ = hVec3Func::zeroVector();
+		localAABB_.c_ = hVec3Func::zeroVector();
+		globalAABB_.r_ = hVec3Func::zeroVector();
+		globalAABB_.c_ = hVec3Func::zeroVector();
+        globalAABB_.r_ = hVec3Func::zeroVector();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -166,10 +166,11 @@ namespace Heart
 
 	void hSceneNodeBase::InitTransform()
 	{
-		hMatrix::identity( &xf_[0].matrix_ );
-		hMatrix::identity( &xf_[0].globalMatrix_ );
-		hMatrix::identity( &xf_[1].matrix_ );
-		hMatrix::identity( &xf_[1].globalMatrix_ );	
+        for ( hUint32 i = 0; i < hStaticArraySize( xf_ ); ++i )
+        {
+            xf_[i].matrix_ = hMatrixFunc::identity();
+		    xf_[i].globalMatrix_ = hMatrixFunc::identity();
+        }
 
 		castsShadow_ = hTrue;
 		MakeDirty();

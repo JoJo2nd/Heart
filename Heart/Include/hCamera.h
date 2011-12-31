@@ -51,9 +51,7 @@ namespace Heart
 		hVec3								FocusPoint() const { return FocusPoint_; }
 		hVec3								LookAt() const
 		{
-			Heart::hVec3 la = FocusPoint_ - CameraPos_;
-			la.normalise();
-			return la;
+			return hVec3Func::normalise( FocusPoint_ - CameraPos_ );
 		}
 		void									SetUp( const hVec3& up )
 		{
@@ -63,9 +61,7 @@ namespace Heart
 		hVec3								Up() const { return Up_; }
 		hVec3								Left() const
 		{
-			Heart::hVec3 r;
-			Heart::hVec3::cross( LookAt(), Up_, r );
-			return r;
+			return hVec3Func::cross( LookAt(), Up_ );
 		}
 		void									SetViewMatrix( hMatrix& m ) 
 		{ 
@@ -99,7 +95,7 @@ namespace Heart
 				DirtyLookAt_ = FocusPoint_;
 				DirtyUp_ = Up_;
 
-				Heart::hMatrix::LookAt( &ViewMatrix_, DirtyEye_, DirtyLookAt_, DirtyUp_ );
+				ViewMatrix_ = hMatrixFunc::LookAt( DirtyEye_, DirtyLookAt_, DirtyUp_ );
 
 				Frustum_.UpdateFromCamera( DirtyEye_, DirtyLookAt_, DirtyUp_, FOV_, Aspect_, Near_, Far_, isOrtho_ );
 
@@ -109,7 +105,7 @@ namespace Heart
 		}
 		void									CameraPosition( hFloat x, hFloat y, hFloat z )
 		{
-			Heart::hVec3::set( x, y, z, CameraPos_ );
+			CameraPos_ = hVec3Func::set( x, y, z );
 			MakeDirty();
 		}
 		void									CameraPosition( const hVec3& pos ) 
@@ -117,9 +113,9 @@ namespace Heart
 			CameraPos_ = pos; 
 			MakeDirty(); 
 		}
-		hVec3								ProjectTo2D( hVec3 point );
+		hVec3								    ProjectTo2D( const hVec3& point );
 		void									SetViewport( const hViewport& vp ) { Viewport_ = vp; }
-		hViewport						GetViewport() const { return Viewport_; }
+		hViewport						        GetViewport() const { return Viewport_; }
 		hFloat									GetFar() const { return Far_; }
 		hFloat									GetNear() const { return Near_; }
 

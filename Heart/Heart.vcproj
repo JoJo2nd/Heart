@@ -289,7 +289,7 @@
 				Name="VCLibrarianTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/ignore:4006 /ignore:4221"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib d3dx9.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
 				OutputFile="$(OutDir)\$(ProjectName)DW32DX11.lib"
 				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
 				IgnoreDefaultLibraryNames="LIBCMTD"

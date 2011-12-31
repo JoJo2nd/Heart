@@ -26,12 +26,12 @@ namespace Heart
 
 hUint32 hFont::RenderString( hIndexBuffer& iBuffer, 
 							hVertexBuffer& vBuffer, 
-							const Heart::hVec2& topleft, 
-							const Heart::hVec2& bottomright, 
+							const hCPUVec2& topleft, 
+							const hCPUVec2& bottomright, 
 							const hChar* str,
 							hCommandBufferList* pCmdList )
 {
-	static hChar pFormatedString[ 4098 ];
+	//hChar pFormatedString[ 4098 ];
 	Private::hFontLine Lines[ 256 ];
 	hUint32 nLines = 0;
 	hFloat wid = bottomright.x - topleft.x;
@@ -260,7 +260,7 @@ hBool hFont::FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hVec2& topleft, const hVec2& bottomright, hFloat w, hUint32& charsWritten )
+void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten )
 {
 	hFloat startx;
 	hFloat boty = cury - fontHeight_ + baseLine_;
@@ -306,10 +306,10 @@ void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& 
 		// ordered top left, top right, bottom left, bottom right
 		Vex quad[ 4 ] = 
 		{
-			{ hVec3( startx			, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, c.UV1_ },
+			{ hVec3( startx			, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, (hVec2)c.UV1_ },
 			{ hVec3( startx + c.Width_	, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, hVec2( c.UV2_.x, c.UV1_.y ) },
 			{ hVec3( startx			, boty + c.BaseLine_			, 0.0f ), style_.Colour_, hVec2( c.UV1_.x, c.UV2_.y ) },
-			{ hVec3( startx + c.Width_	, boty + c.BaseLine_			, 0.0f ), style_.Colour_, c.UV2_ },
+			{ hVec3( startx + c.Width_	, boty + c.BaseLine_			, 0.0f ), style_.Colour_, (hVec2)c.UV2_ },
 		};
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////

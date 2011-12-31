@@ -10,13 +10,12 @@
 #define HRRENDERUTILITY_H__
 
 #include "hTypes.h"
-#include "hVector.h"
+#include "hVec3.h"
+#include "hMatrix.h"
 #include "hResource.h"
 
 namespace Heart
 {
-	class hVec3;
-	class hMatrix;
 
 	class hRenderer;
 	class hIndexBuffer;
