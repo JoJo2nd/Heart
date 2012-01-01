@@ -220,6 +220,7 @@ namespace hVec4Func
     }
 
     SERIALISE_WORKER_TYPE_SPECIALISATION( hVec4, hSerialisedElementHeader::Type_User );
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hCPUVec4, hSerialisedElementHeader::Type_User );
 }
 
 #endif // hmVec4_h__

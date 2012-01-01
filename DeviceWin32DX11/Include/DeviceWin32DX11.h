@@ -99,6 +99,7 @@ typedef Heart::hdDX11RasterizerState        hdRasterizerState;
 typedef Heart::hdDX11DepthStencilState      hdDepthStencilState;
 typedef Heart::hdDX11InputState             hdInputState;
 typedef Heart::hdDX11SamplerState           hdSamplerState;
+typedef Heart::hdDX11LockedResourceData     hdTextureMapData;
 
 
 #endif // DEVICEWIN32DX11_H__

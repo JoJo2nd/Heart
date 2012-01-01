@@ -226,7 +226,7 @@ namespace Cmd
 	{
 	public:
 
-		ReleaseTexture( hTextureBase* ptex );
+		ReleaseTexture( hTexture* ptex );
 		virtual ~ReleaseTexture();
 
 		void Execute( hRenderer* pRenderer );

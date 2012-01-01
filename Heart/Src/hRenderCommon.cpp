@@ -1256,8 +1256,8 @@ namespace Cmd
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	ReleaseTexture::ReleaseTexture( hTextureBase* ptex ) :
-		pTexture_( ptex )
+	ReleaseTexture::ReleaseTexture( hTexture* ptex ) :
+		pTexture_( (hTextureBase*)ptex )
 	{
 		size_ = sizeof( ReleaseTexture );
 	}

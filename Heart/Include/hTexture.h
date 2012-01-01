@@ -25,19 +25,13 @@ namespace Cmd
 	class FlushTextureLevel;
 }
 
-	struct hTextureLockInfo
-	{
-		void*		ptr_;
-		hUint32		level_;
-		hUint32		pitch_;
-	};
-
-	class hTexture : public hTextureBase
+    class hTexture : public pimpl< hdTexture >, 
+                     public hResourceClassBase
 	{
 	public:
 
 		hTexture( hRenderer* prenderer ) 
-			: hTextureBase( prenderer )
+			: renderer_( prenderer )
             , textureData_(NULL)
 			, lockPtr_(NULL)
             , levelDescs_(NULL)
@@ -56,8 +50,8 @@ namespace Cmd
 
 		virtual hUint32			Width( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].width_; }
 		virtual hUint32			Height( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].height_; }
-		void					Lock( hUint16 level, hTextureLockInfo* info );
-		void					Unlock( hTextureLockInfo* info );
+		//void					Lock( hUint16 level, hTextureMapInfo* info );
+		//void					Unlock( hTextureMapInfo* info );
         void                    Serialise( hSerialiser* ser ) const;
         void                    Deserialise( hSerialiser* ser );
 
@@ -73,6 +67,7 @@ namespace Cmd
 		hTexture( const hTexture& c );
 		hTexture& operator = ( const hTexture& rhs );
 
+        hRenderer*				renderer_;
 		TextureFormat			format_;
         hUint32                 totalDataSize_;
 		hByte*					textureData_;
@@ -80,6 +75,15 @@ namespace Cmd
 		LevelDesc*				levelDescs_;
 		void*					lockPtr_;
 	};
+
+    struct hTextureMapInfo
+    {
+        void*		        ptr_;
+        hUint32		        level_;
+        hUint32		        pitch_;
+        hTexture*           tex_;
+        hdTextureMapData    privateDeviceData_;
+    };
 
     template<>
     inline void SerialiseMethod< Heart::hTexture >( Heart::hSerialiser* ser, const Heart::hTexture& tex )

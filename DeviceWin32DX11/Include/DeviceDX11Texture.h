@@ -38,6 +38,6 @@ namespace Heart
         friend class hdDX11RenderDevice;
         friend class hdDX11RenderSubmissionCtx;
 
-        ID3D11Texture2D*    dx11Texture_;
+        ID3D11Texture2D*            dx11Texture_;
     };
 }

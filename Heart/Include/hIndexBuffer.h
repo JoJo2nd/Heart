@@ -31,10 +31,6 @@ namespace Cmd
 		{}
 		~hIndexBuffer() 
 		{
-			if ( IsDiskResource() )
-			{
-				SetImpl( NULL );
-			}
 		}
 
 		void			Lock();
@@ -58,6 +54,13 @@ namespace Cmd
 		hUint16			nIndices_;
 		hUint16*		lockPtr_;
 	};
+
+    struct hIndexBufferMapInfo
+    {
+        void*           ptr_;
+        hUint32         size_;
+        hIndexBuffer*   ib_;
+    };
 }
 
 #endif // INDEXBUFFER_H__

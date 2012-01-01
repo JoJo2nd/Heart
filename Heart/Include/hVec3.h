@@ -259,6 +259,7 @@ namespace hVec3Func
     }
 
     SERIALISE_WORKER_TYPE_SPECIALISATION( hVec3, hSerialisedElementHeader::Type_User );
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hCPUVec3, hSerialisedElementHeader::Type_User );
 }
 
 #endif // hmVec3_h__

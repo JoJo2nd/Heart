@@ -30,10 +30,6 @@ namespace Cmd
 		{}
 		~hVertexBuffer() 
 		{
-			if ( IsDiskResource() )
-			{
-				SetImpl( NULL );
-			}
 		}
 
 		void				SetVertexDeclarartion( hVertexDeclaration* pVtxDecl ) { pVtxDecl_ = pVtxDecl; }
@@ -65,8 +61,14 @@ namespace Cmd
 		hUint32					vtxBufferSize_;
 		void*					pVtxBuffer_;
 		hByte*					lockPtr_;
-
 	};
+
+    struct hVertexBufferMapInfo
+    {
+        void*           ptr_;
+        hUint32         size_;
+        hVertexBuffer*  vb_;
+    };
 }
 
 #endif // VERTEXBUFFER_H__

@@ -76,7 +76,7 @@ namespace Heart
 
         EffectSemantics::EffectSemanticID   semanticID_; //EFFECTSEMANTICID_MAX if not valid
         hChar                               semanticName_[hMAX_SEMANTIC_LEN];
-        hTextureBase*                       boundTexture_;
+        hTexture*                           boundTexture_;
         hColour                             borderColour_;
         hSAMPLER_STATE_VALUE                minFilter_;
         hSAMPLER_STATE_VALUE                magFilter_;

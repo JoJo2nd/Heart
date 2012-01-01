@@ -32,13 +32,16 @@ namespace Heart
 	class hRenderState;
 	struct hViewport;
 	class hTexture;
+    struct hTextureMapInfo;
 	class hTextureBase;
 	class hRenderTargetTexture;
 	class DepthSurface;
 	class hVertexDeclaration;
 	class hMaterial;
 	class hIndexBuffer;
+    struct hIndexBufferMapInfo;
 	class hVertexBuffer;
+    struct hVertexBufferMapInfo;
 	class hMesh;
 	
 	struct hRenderFrameStats
@@ -61,7 +64,7 @@ namespace Heart
         hRenderSubmissionCtx() {}
         ~hRenderSubmissionCtx() {}
         
-        void    SetMaterial( hMaterial* );
+        void    SetMaterial( hMaterial* mat );
         void	SetIndexStream( hdIndexBuffer* pIIBuf );
         void	SetVertexStream( hdVtxBuffer* pIVBuf, hdVtxDecl* pDecl );
         void	SetRenderState( RENDER_STATE, RENDER_STATE_VALUE );
@@ -74,8 +77,16 @@ namespace Heart
         void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
         void	DrawPrimitive( hUint32 nPrimatives );
         void	DrawVertexStream( PrimitiveType primType );
+        void    Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo );
+        void    Unmap( hIndexBufferMapInfo* outInfo );
+        void    Map( hVertexBuffer* ib, hVertexBufferMapInfo* outInfo );
+        void    Unmap( hVertexBufferMapInfo* outInfo );
+        void    Map( hTexture* ib, hTextureMapInfo* outInfo );
+        void    Unmap( hTextureMapInfo* outInfo );
+
 
     private:
+
         hdRenderSubmissionCtx   impl_;
     };
 

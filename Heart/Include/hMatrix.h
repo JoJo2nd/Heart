@@ -197,6 +197,8 @@ namespace hMatrixFunc
         return hMatrixFunc::mult( lhs, rhs );
     }
 
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hMatrix, hSerialisedElementHeader::Type_User );
+
 }
 
 #endif 

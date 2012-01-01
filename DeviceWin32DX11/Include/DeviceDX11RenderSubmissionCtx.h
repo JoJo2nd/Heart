@@ -30,6 +30,8 @@
 
 namespace Heart
 {
+    typedef D3D11_MAPPED_SUBRESOURCE hdDX11LockedResourceData;
+
     class hdDX11Texture;
     class hdDX11IndexBffer;
     class hdDX11VertexBuffer;
@@ -54,6 +56,8 @@ namespace Heart
         void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
         void	DrawPrimitive( hUint32 nPrimatives );
         void	DrawVertexStream( PrimitiveType primType );
+        void    Map( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
+        void    Unmap( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device ) { device_ = device; }
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
