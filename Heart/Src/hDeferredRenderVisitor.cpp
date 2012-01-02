@@ -187,6 +187,7 @@ namespace Heart
 
 		//cameraEye_ = Matrix::GetTranslation( pCameraNode_->GetGlobalMatrix() );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "G Buffer Pass" );
 
 		renderer->NewRenderCommand< Cmd::SetRenderTarget >( 0, renderTargets_[0] );
@@ -216,6 +217,7 @@ namespace Heart
 		renderer->NewRenderCommand< Cmd::SetDepthBuffer >( (hRenderTargetTexture*)NULL );
 
 		renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -227,6 +229,7 @@ namespace Heart
 
 		hMatrix proj,iproj;
 		iproj = hMatrixFunc::inverse( *camera_->GetProjectionMatrix() );
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, inverseCamProjParam_, (hFloat*)&iproj );
 		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( pointLightInsideMat_, inverseCamProjPointParam_, (hFloat*)&iproj );
 
@@ -235,6 +238,7 @@ namespace Heart
 		//TODO: Render Baked Light Pass
 		renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Baked Light Pass" );
 		renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 		//Render Light Pass (x nLights_)
 		for ( hUint32 i = 0; i < nLights_; ++i )
 		{
@@ -242,7 +246,9 @@ namespace Heart
 			{
 				if ( lights_[i].shadowCaster_ )
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Dir Light Shadow Pass" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 					//Create a Shadow Map of the scene.
 					//Means another visit of the scene -_-
 					sunShadowVisitor_.SetLightMatrix( &lights_[i].matrix_ );
@@ -260,6 +266,7 @@ namespace Heart
 					wvDir = hMatrixFunc::multNormal( dir, wvit );
 					wvDir = hVec3Func::normaliseFast( wvDir );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
  					renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, dirShadowMatrixParm_, (hFloat*)sunShadowVisitor_.GetShadowMatrix() );
 					renderer->NewRenderCommand< Cmd::SetDirectionLight >( wvDir, lights_[i].power_, lights_[i].diffuse_, WHITE, lights_[i].exp_ );
 
@@ -272,13 +279,16 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( 2 );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 				}
 				else
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Dir Light Pass" );
 
 					renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 					proj = hMatrixFunc::orthoProj( (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0.0f, 10.0f );
 
@@ -289,6 +299,7 @@ namespace Heart
 					wvDir = hMatrixFunc::multNormal( dir, wvit );
 					wvDir = hVec3Func::normaliseFast( wvDir );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::SetDirectionLight >( wvDir, lights_[i].power_, lights_[i].diffuse_, WHITE, lights_[i].exp_ );
 
                     renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &hMatrixFunc::identity() );
@@ -300,6 +311,7 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( 2 );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 			}
 			else if ( lights_[i].type_ == LightType_POINT )
@@ -312,6 +324,7 @@ namespace Heart
 
 				world = hMatrixFunc::mult( scale, lights_[i].matrix_ );
 		
+#ifdef HEART_OLD_RENDER_SUBMISSION
 				renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Point Light Pass" );
 
 				renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
@@ -329,6 +342,7 @@ namespace Heart
 				renderer->NewRenderCommand< Cmd::DrawPrimative >( pointLightGeom_.nPrims_ );
 
 				renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 			}
 			else if ( lights_[i].type_ == LightType_SPOT )
 			{
@@ -345,7 +359,9 @@ namespace Heart
 
 				if ( lights_[i].shadowCaster_ )
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Spot Light Pass" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 					//Create a Shadow Map of the scene.
 					//Means another visit of the scene -_-
 					shadowVisitor_.SetLightMatrix( &lights_[i].matrix_ );
@@ -355,6 +371,7 @@ namespace Heart
 					shadowVisitor_.SetShadowTarget( shadowTarget_ );
 					pSceneGraph->VisitScene( &shadowVisitor_, hSceneGraph::TOP_DOWN, false );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &world );
 					renderer->NewRenderCommand< Cmd::SetViewMatrix >( camera_->GetViewMatrix() );
@@ -379,10 +396,12 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( spotLightGeom_.nPrims_ );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 				else
 				{
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Spot Light Pass" );
 
 					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &world );
@@ -407,6 +426,7 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( spotLightGeom_.nPrims_ );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 			}
 		}

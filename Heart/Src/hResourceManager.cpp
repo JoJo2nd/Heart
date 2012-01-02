@@ -214,7 +214,7 @@ namespace Heart
 	hUint32 hResourceManager::ProcessDataFixup( void* )
 	{
 		//process the requests
-		while( !exitSignal_ || !canQuit_ )
+		while( !exitSignal_ /*|| !canQuit_*/ )
 		{
 			loaderSemaphone_.Wait();
 

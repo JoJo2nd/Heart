@@ -40,6 +40,7 @@ namespace Heart
     struct hdDX11DepthStencilState
     {
         ID3D11DepthStencilState* stateObj_;
+        hUint32                  stencilRef_;
     };
 
     struct hdDX11InputState

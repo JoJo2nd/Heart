@@ -159,7 +159,9 @@ namespace Heart
 		{
 			hMesh* pmesh = meshesToRelease_.peek();
 			meshesToRelease_.pop();
+#ifdef HEART_OLD_RENDER_SUBMISSION
 			NewRenderCommand< Cmd::ReleaseMesh >( pmesh );
+#endif // HEART_OLD_RENDER_SUBMISSION
 			++ret;
 		}
 		return ret;

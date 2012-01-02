@@ -21,7 +21,9 @@ namespace Heart
 	void hIndexBuffer::Release()
 	{
 		hcAssert( renderer_ );
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::ReleaseIndexBuffer >( this );
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -40,7 +42,9 @@ namespace Heart
 
 	void hIndexBuffer::Unlock()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::FlushIndexBufferData >( this, lockPtr_, nIndices_*sizeof(hUint16) );
+#endif // HEART_OLD_RENDER_SUBMISSION
 		lockPtr_ = NULL;
 	}
 

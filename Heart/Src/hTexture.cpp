@@ -21,7 +21,9 @@ namespace Heart
 
 	void hTexture::Release()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::ReleaseTexture >( this );
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////

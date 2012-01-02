@@ -20,7 +20,9 @@ namespace Heart
 
 	void hVertexBuffer::Release()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::ReleaseVertexBuffer >( this );
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -39,7 +41,9 @@ namespace Heart
 
 	void hVertexBuffer::Unlock()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::FlushVertexBufferData >( this, lockPtr_, pVtxDecl_->Stride()*vtxCount_ );
+#endif // HEART_OLD_RENDER_SUBMISSION
 		lockPtr_ = NULL;
 	}
 

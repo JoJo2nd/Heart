@@ -266,11 +266,13 @@ namespace
 		hMatrix op;
         op = hMatrixFunc::orthoProjOffCentre( 0, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0, 0.0f, 1.0f );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer->NewRenderCommand< Cmd::SetMaterial >( debugMat_ );
 
         renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &hMatrixFunc::identity() );
 		renderer->NewRenderCommand< Cmd::SetViewMatrix >( &hMatrixFunc::identity() );
 		renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &hMatrixFunc::identity() );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 		if ( nSphereCommands_ > 0 || nConeCommands_ > 0 )
 		{
@@ -313,8 +315,10 @@ namespace
 			sphereIdxBuf_->Unlock();
 			sphereVtxBuf_->Unlock();
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 			renderer->NewRenderCommand< Cmd::SetStreams >( sphereIdxBuf_, sphereVtxBuf_ );
 			renderer->NewRenderCommand< Cmd::DrawPrimative >( sphereIdx / 3 );
+#endif
 		}
 
 		for ( hUint32 i = 0; i < nAABBCommands_; ++i )
@@ -380,7 +384,9 @@ namespace
 
 		if ( nScreenRectCommands_ > 0 || nAABBCommands_ > 0 )
 		{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 			renderer->NewRenderCommand< Cmd::DrawVertexStream >( lineVtxBuf_, PRIMITIVETYPE_LINELIST );
+#endif // HEART_OLD_RENDER_SUBMISSION
 		}
 
 		ResetCommands();

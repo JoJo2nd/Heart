@@ -45,10 +45,10 @@ namespace Heart
 
         void	SetIndexStream( hdDX11IndexBffer* pIIBuf );
         void	SetVertexStream( hdDX11VertexBuffer* pIVBuf, hdDX11VertexDecl* pDecl );
-        void	SetRenderStateBlock( const hdDX11BlendState& );
-        void	SetRenderStateBlock( const hdDX11DepthStencilState& );
-        void	SetRenderStateBlock( const hdDX11RasterizerState& );
-        void	SetRenderStateBlock( const hdDX11SamplerState& );
+        void	SetRenderStateBlock( hdDX11BlendState& );
+        void	SetRenderStateBlock( hdDX11DepthStencilState& );
+        void	SetRenderStateBlock( hdDX11RasterizerState& );
+        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState& );
         void	SetVertexFormat( hdDX11VertexDecl* );
         void	SetRenderTarget( hUint32 idx , hdDX11Texture* pTarget );
         void	SetViewport( const hViewport& viewport );

@@ -33,7 +33,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::SetIndexStream( hdDX11IndexBffer* pIIBuf )
     {
-
+        //device_->IASetIndexBuffer( pIIBuf-> )
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -49,36 +49,38 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( const hdDX11BlendState& )
+    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11BlendState& st )
     {
-        
+        hFloat factors[4] = { 1.f, 1.f, 1.f, 1.f };
+        device_->OMSetBlendState( st.stateObj_, factors, ~0U );
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( const hdDX11DepthStencilState& )
+    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11DepthStencilState& st )
     {
-
+        device_->OMSetDepthStencilState( st.stateObj_, st.stencilRef_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( const hdDX11RasterizerState& )
+    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11RasterizerState& st )
     {
-
+        device_->RSSetState( st.stateObj_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( const hdDX11SamplerState& )
+    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState& st )
     {
-
+        device_->VSSetSamplers( samplerIdx, 1, &st.stateObj_ );
+        device_->PSSetSamplers( samplerIdx, 1, &st.stateObj_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

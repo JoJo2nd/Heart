@@ -95,7 +95,9 @@ namespace Heart
 			return;
 		}
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
 	 	hMatrix lv;
@@ -125,7 +127,8 @@ namespace Heart
  	 	//hMatrixFunc::mult( &tmp, &lproj, &shadowMatrix_ );
  	 	shadowMatrix_ = iv * lv * lproj;
  	
-		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
+#ifdef HEART_OLD_RENDER_SUBMISSION
+        renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
  	 	renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
  	 	renderer_->NewRenderCommand< Cmd::SetViewport >( vp );
@@ -153,6 +156,7 @@ namespace Heart
 
 		renderer_->NewRenderCommand< Cmd::EndDebuggerEvent >();
 		renderer_->NewRenderCommand< Cmd::IncrementRenderStatsPass >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 
@@ -288,7 +292,9 @@ namespace Heart
 			return;
 		}
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
 		hMatrix lv;
@@ -392,6 +398,7 @@ namespace Heart
 		tmp = hMatrixFunc::mult( iv, lv );
 		shadowMatrix_ = hMatrixFunc::mult( tmp, lproj );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 		renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
@@ -420,6 +427,7 @@ namespace Heart
 
 		renderer_->NewRenderCommand< Cmd::EndDebuggerEvent >();
 		renderer_->NewRenderCommand< Cmd::IncrementRenderStatsPass >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 }
