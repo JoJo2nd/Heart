@@ -172,27 +172,27 @@ void hMaterial::Deserialise( hSerialiser* ser )
 
 void hMaterialTechniquePass::DefaultState()
 {
-    alphaBlendEnable_ = RSV_DISABLE;
-    alphaSrcBlend_ = RSV_BLEND_OP_ONE;
-    alphaDstBlend_ = RSV_BLEND_OP_ZERO;
-    alphaBlendFunction_ = RSV_BLEND_FUNC_ADD;
-    zTestEnable_ = RSV_DISABLE;
-    zWriteEnable_ = RSV_DISABLE;
-    zCompareFunction_ = RSV_Z_CMP_LESS;
-    cullMode_ = RSV_CULL_MODE_NONE;
-    fillMode_ =RSV_FILL_MODE_SOLID;
-    stencilTest_ = RSV_DISABLE;
-    stencilFail_ = RSV_SO_KEEP;
-    stencilZFail_ = RSV_SO_KEEP;
-    stencilPass_ = RSV_SO_KEEP;
-    stencilFunc_ = RSV_SF_CMP_ALWAYS;
-    stencilRef_ = 0;
-    stencilWriteMask_ = 0xFFFFFFFF;
-    stencilMask_ = 0xFFFFFFFF;
-    colourMask1_ = RSV_COLOUR_WRITE_FULL;
-    colourMask2_ = RSV_COLOUR_WRITE_FULL;
-    colourMask3_ = RSV_COLOUR_WRITE_FULL;
-    colourMask4_ = RSV_COLOUR_WRITE_FULL;
+//     alphaBlendEnable_ = RSV_DISABLE;
+//     alphaSrcBlend_ = RSV_BLEND_OP_ONE;
+//     alphaDstBlend_ = RSV_BLEND_OP_ZERO;
+//     alphaBlendFunction_ = RSV_BLEND_FUNC_ADD;
+//     zTestEnable_ = RSV_DISABLE;
+//     zWriteEnable_ = RSV_DISABLE;
+//     zCompareFunction_ = RSV_Z_CMP_LESS;
+//     cullMode_ = RSV_CULL_MODE_NONE;
+//     fillMode_ =RSV_FILL_MODE_SOLID;
+//     stencilTest_ = RSV_DISABLE;
+//     stencilFail_ = RSV_SO_KEEP;
+//     stencilZFail_ = RSV_SO_KEEP;
+//     stencilPass_ = RSV_SO_KEEP;
+//     stencilFunc_ = RSV_SF_CMP_ALWAYS;
+//     stencilRef_ = 0;
+//     stencilWriteMask_ = 0xFFFFFFFF;
+//     stencilMask_ = 0xFFFFFFFF;
+//     colourMask1_ = RSV_COLOUR_WRITE_FULL;
+//     colourMask2_ = RSV_COLOUR_WRITE_FULL;
+//     colourMask3_ = RSV_COLOUR_WRITE_FULL;
+//     colourMask4_ = RSV_COLOUR_WRITE_FULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -204,15 +204,15 @@ void hSamplerParameter::DefaultState()
     semanticID_ = EffectSemantics::EFFECTSEMANTICID_MAX;
     semanticName_[0] = 0;
     boundTexture_ = NULL;
-    borderColour_ = WHITE;
-    minFilter_ = SSV_POINT;
-    magFilter_ = SSV_POINT;
-    mipFilter_ = SSV_POINT;
-    addressU_ = SSV_CLAMP;
-    addressV_ = SSV_CLAMP;
-    addressW_ = SSV_CLAMP;
-    mipLODBias_ = 0.f;
-    maxAnisotropy_ = 1;
+//     borderColour_ = WHITE;
+//     minFilter_ = SSV_POINT;
+//     magFilter_ = SSV_POINT;
+//     mipFilter_ = SSV_POINT;
+//     addressU_ = SSV_CLAMP;
+//     addressV_ = SSV_CLAMP;
+//     addressW_ = SSV_CLAMP;
+//     mipLODBias_ = 0.f;
+//     maxAnisotropy_ = 1;
 }
 
 //////////////////////////////////////////////////////////////////////////

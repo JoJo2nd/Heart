@@ -77,6 +77,9 @@ namespace Heart
         EffectSemantics::EffectSemanticID   semanticID_; //EFFECTSEMANTICID_MAX if not valid
         hChar                               semanticName_[hMAX_SEMANTIC_LEN];
         hTexture*                           boundTexture_;
+        hSamplerStateDesc                   samplerDesc_;
+        hdSamplerState*                     samplerState_;
+#if 0
         hColour                             borderColour_;
         hSAMPLER_STATE_VALUE                minFilter_;
         hSAMPLER_STATE_VALUE                magFilter_;
@@ -87,6 +90,7 @@ namespace Heart
         hFloat                              mipLODBias_;
         hUint32                             maxAnisotropy_;
         void*                               deviceSampler_;
+#endif
     };
 
     class hMaterialTechniquePass
@@ -104,6 +108,13 @@ namespace Heart
 
         hShaderProgram*                     vertexProgram_;
         hShaderProgram*                     fragmentProgram_;
+        hBlendStateDesc                     blendStateDesc_;
+        hdBlendState*                       blendState_;
+        hDepthStencilStateDesc              depthStencilStateDesc_;
+        hdDepthStencilState*                depthStencilState_;
+        hRasterizerStateDesc                rasterizerStateDesc_;
+        hdRasterizerState*                  rasterizerState_;
+#if 0
         RENDER_STATE_VALUE                  alphaBlendEnable_;
         RENDER_STATE_VALUE                  alphaSrcBlend_;
         RENDER_STATE_VALUE                  alphaDstBlend_;
@@ -125,6 +136,7 @@ namespace Heart
         hUint32                             colourMask2_;
         hUint32                             colourMask3_;
         hUint32                             colourMask4_;
+#endif
     };
 
     class hMaterialTechnique
@@ -239,27 +251,30 @@ namespace Heart
     {
         SERIALISE_ELEMENT_PTR_AS_INT( data.vertexProgram_ );
         SERIALISE_ELEMENT_PTR_AS_INT( data.fragmentProgram_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaBlendEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaSrcBlend_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaDstBlend_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaBlendFunction_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.zTestEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.zWriteEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.zCompareFunction_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.cullMode_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.fillMode_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilTest_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFail_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilZFail_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilPass_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFunc_ );
-        SERIALISE_ELEMENT( data.stencilRef_ );
-        SERIALISE_ELEMENT( data.stencilWriteMask_ );
-        SERIALISE_ELEMENT( data.stencilMask_ );
-        SERIALISE_ELEMENT( data.colourMask1_ );
-        SERIALISE_ELEMENT( data.colourMask2_ );
-        SERIALISE_ELEMENT( data.colourMask3_ );
-        SERIALISE_ELEMENT( data.colourMask4_ );
+        SERIALISE_ELEMENT( data.blendStateDesc_ );
+        SERIALISE_ELEMENT( data.depthStencilStateDesc_ );
+        SERIALISE_ELEMENT( data.rasterizerStateDesc_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaBlendEnable_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaSrcBlend_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaDstBlend_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.alphaBlendFunction_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.zTestEnable_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.zWriteEnable_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.zCompareFunction_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.cullMode_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.fillMode_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilTest_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFail_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilZFail_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilPass_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFunc_ );
+//         SERIALISE_ELEMENT( data.stencilRef_ );
+//         SERIALISE_ELEMENT( data.stencilWriteMask_ );
+//         SERIALISE_ELEMENT( data.stencilMask_ );
+//         SERIALISE_ELEMENT( data.colourMask1_ );
+//         SERIALISE_ELEMENT( data.colourMask2_ );
+//         SERIALISE_ELEMENT( data.colourMask3_ );
+//         SERIALISE_ELEMENT( data.colourMask4_ );
     }
 
     template<>
@@ -267,27 +282,30 @@ namespace Heart
     {
         DESERIALISE_ELEMENT_INT_AS_PTR( data.vertexProgram_ );
         DESERIALISE_ELEMENT_INT_AS_PTR( data.fragmentProgram_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaBlendEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaSrcBlend_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaDstBlend_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaBlendFunction_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.zTestEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.zWriteEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.zCompareFunction_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.cullMode_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.fillMode_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilTest_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFail_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilZFail_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilPass_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFunc_ );
-        DESERIALISE_ELEMENT( data.stencilRef_ );
-        DESERIALISE_ELEMENT( data.stencilWriteMask_ );
-        DESERIALISE_ELEMENT( data.stencilMask_ );
-        DESERIALISE_ELEMENT( data.colourMask1_ );
-        DESERIALISE_ELEMENT( data.colourMask2_ );
-        DESERIALISE_ELEMENT( data.colourMask3_ );
-        DESERIALISE_ELEMENT( data.colourMask4_ );
+        DESERIALISE_ELEMENT( data.blendStateDesc_ );
+        DESERIALISE_ELEMENT( data.depthStencilStateDesc_ );
+        DESERIALISE_ELEMENT( data.rasterizerStateDesc_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaBlendEnable_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaSrcBlend_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaDstBlend_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.alphaBlendFunction_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.zTestEnable_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.zWriteEnable_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.zCompareFunction_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.cullMode_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.fillMode_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilTest_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFail_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilZFail_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilPass_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFunc_ );
+//         DESERIALISE_ELEMENT( data.stencilRef_ );
+//         DESERIALISE_ELEMENT( data.stencilWriteMask_ );
+//         DESERIALISE_ELEMENT( data.stencilMask_ );
+//         DESERIALISE_ELEMENT( data.colourMask1_ );
+//         DESERIALISE_ELEMENT( data.colourMask2_ );
+//         DESERIALISE_ELEMENT( data.colourMask3_ );
+//         DESERIALISE_ELEMENT( data.colourMask4_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -317,26 +335,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    
-//     template<>
-//     inline void SerialiseMethod< Heart::hShaderParameter >( Heart::hSerialiser* ser, const Heart::hShaderParameter& data )
-//     {
-//         SERIALISE_ELEMENT_ENUM_AS_INT( data.semanticID_ ); 
-//         SERIALISE_ELEMENT( data.semanticName_ );
-//         SERIALISE_ELEMENT_COUNT( data.name_, data.nameLength_ ); 
-//     }
-// 
-//     template<>
-//     inline void DeserialiseMethod< Heart::hShaderParameter >( Heart::hSerialiser* ser, Heart::hShaderParameter& data )
-//     {
-//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.semanticID_ ); 
-//         DESERIALISE_ELEMENT( data.semanticName_ );
-//         DESERIALISE_ELEMENT( data.name_); 
-//     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
 
     template<>
     inline void SerialiseMethod< Heart::hShaderConstBuffer >( Heart::hSerialiser* ser, const Heart::hShaderConstBuffer& data )
@@ -361,15 +359,16 @@ namespace Heart
     {
         SERIALISE_ELEMENT( data.semanticName_ );
         SERIALISE_ELEMENT_PTR_AS_INT( data.boundTexture_ );
-        SERIALISE_ELEMENT( data.borderColour_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.minFilter_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.magFilter_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.mipFilter_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressU_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressV_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressW_ );
-        SERIALISE_ELEMENT( data.mipLODBias_ );
-        SERIALISE_ELEMENT( data.maxAnisotropy_ );
+        SERIALISE_ELEMENT( data.samplerDesc_ );
+//         SERIALISE_ELEMENT( data.borderColour_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.minFilter_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.magFilter_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.mipFilter_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.addressU_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.addressV_ );
+//         SERIALISE_ELEMENT_ENUM_AS_INT( data.addressW_ );
+//         SERIALISE_ELEMENT( data.mipLODBias_ );
+//         SERIALISE_ELEMENT( data.maxAnisotropy_ );
     }
 
     template<>
@@ -377,15 +376,16 @@ namespace Heart
     {
         DESERIALISE_ELEMENT( data.semanticName_ );
         DESERIALISE_ELEMENT_INT_AS_PTR( data.boundTexture_ );
-        DESERIALISE_ELEMENT( data.borderColour_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.minFilter_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.magFilter_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.mipFilter_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressU_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressV_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressW_ );
-        DESERIALISE_ELEMENT( data.mipLODBias_ );
-        DESERIALISE_ELEMENT( data.maxAnisotropy_ );
+        DESERIALISE_ELEMENT( data.samplerDesc_ );
+//         DESERIALISE_ELEMENT( data.borderColour_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.minFilter_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.magFilter_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.mipFilter_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressU_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressV_ );
+//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressW_ );
+//         DESERIALISE_ELEMENT( data.mipLODBias_ );
+//         DESERIALISE_ELEMENT( data.maxAnisotropy_ );
     }
 }
 

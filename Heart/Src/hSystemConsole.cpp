@@ -382,7 +382,7 @@ namespace Heart
 				if ( keyboard_->GetButtonDown( Device::IID_UPARROW, keyboardAccessKey_ ) )
 				{
 					++inputHistoryEntry_;
-					if ( inputHistoryEntry_ >= inputHistroy_.size() )
+					if ( (hUint32)inputHistoryEntry_ >= inputHistroy_.size() )
 					{
 						inputHistoryEntry_ = inputHistroy_.size() - 1;
 					}

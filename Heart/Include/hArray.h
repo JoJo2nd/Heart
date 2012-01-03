@@ -79,13 +79,13 @@ namespace Heart
             }
         }
 
-		_Ty& operator [] ( const hUint32 i )
+		hFORCEINLINE _Ty& operator [] ( const hUint32 i )
 		{
 			hcAssert( i >= 0 && i < size_ );
 			return values_[ i ];
 		}
 
-		const _Ty& operator [] ( const hUint32 i ) const
+		hFORCEINLINE const _Ty& operator [] ( const hUint32 i ) const
 		{
 			hcAssert( i>= 0 && i < size_ );
 			return values_[ i ];

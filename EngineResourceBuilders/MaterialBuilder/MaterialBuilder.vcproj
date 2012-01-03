@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="shlwapi.lib GameDatabaseLibD.lib HeartPD.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
+				AdditionalDependencies="GameDatabaseLibD.lib HeartPD.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib"
 				GenerateDebugInformation="true"

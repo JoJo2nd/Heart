@@ -400,4 +400,494 @@ namespace Heart
         delete texture;
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11BlendState* hdDX11RenderDevice::CreateBlendState( const hBlendStateDesc& desc )
+    {
+        HRESULT hr;
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+
+        resourceMutex_.Lock();
+
+        hdDX11BlendState* outBlendState = blendStates_.Find( stateKey );
+
+        if ( !outBlendState )
+        {
+            //
+            outBlendState = hNEW( hGeneralHeap ) hdDX11BlendState();
+            D3D11_BLEND_DESC blendDesc;
+
+            //Build device state desc
+            hZeroMem( &blendDesc, sizeof(blendDesc) );
+            blendDesc.IndependentBlendEnable = FALSE;
+            
+            switch( desc.blendEnable_ )
+            {
+            case RSV_ENABLE:    blendDesc.RenderTarget[0].BlendEnable = TRUE;   break;
+            case RSV_DISABLE:   blendDesc.RenderTarget[0].BlendEnable = FALSE;  break;
+            default:            hcAssert( hFalse );
+            }
+
+            switch( desc.srcBlend_ )
+            {
+            case RSV_BLEND_OP_ZERO:           blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ZERO            ;   break;
+            case RSV_BLEND_OP_ONE:            blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE             ;   break;
+            case RSV_BLEND_OP_SRC_COLOUR:     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_COLOR       ;   break;
+            case RSV_BLEND_OP_INVSRC_COLOUR:  blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_SRC_COLOR   ;   break;
+            case RSV_BLEND_OP_SRC_ALPHA:      blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA       ;   break;
+            case RSV_BLEND_OP_INVSRC_ALPHA:   blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_SRC_ALPHA   ;   break;
+            case RSV_BLEND_OP_DEST_ALPHA:     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_DEST_ALPHA      ;   break;
+            case RSV_BLEND_OP_INVDEST_ALPHA:  blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_DEST_ALPHA  ;   break;
+            case RSV_BLEND_OP_DEST_COLOUR:    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_DEST_COLOR      ;   break;
+            case RSV_BLEND_OP_INVDEST_COLOUR: blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_DEST_COLOR  ;   break;
+            default: hcAssert( false );
+            }
+
+            switch( desc.destBlend_ )
+            {
+            case RSV_BLEND_OP_ZERO:           blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO            ;   break;
+            case RSV_BLEND_OP_ONE:            blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE             ;   break;
+            case RSV_BLEND_OP_SRC_COLOUR:     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_COLOR       ;   break;
+            case RSV_BLEND_OP_INVSRC_COLOUR:  blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_COLOR   ;   break;
+            case RSV_BLEND_OP_SRC_ALPHA:      blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA       ;   break;
+            case RSV_BLEND_OP_INVSRC_ALPHA:   blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA   ;   break;
+            case RSV_BLEND_OP_DEST_ALPHA:     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_DEST_ALPHA      ;   break;
+            case RSV_BLEND_OP_INVDEST_ALPHA:  blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_DEST_ALPHA  ;   break;
+            case RSV_BLEND_OP_DEST_COLOUR:    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_DEST_COLOR      ;   break;
+            case RSV_BLEND_OP_INVDEST_COLOUR: blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_DEST_COLOR  ;   break;
+            default: hcAssert( false );
+            }
+
+
+            switch( desc.srcBlendAlpha_ )
+            {
+            case RSV_BLEND_OP_ZERO:           blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO            ;   break;
+            case RSV_BLEND_OP_ONE:            blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE             ;   break;
+            case RSV_BLEND_OP_SRC_COLOUR:     blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_COLOR       ;   break;
+            case RSV_BLEND_OP_INVSRC_COLOUR:  blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_COLOR   ;   break;
+            case RSV_BLEND_OP_SRC_ALPHA:      blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA       ;   break;
+            case RSV_BLEND_OP_INVSRC_ALPHA:   blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA   ;   break;
+            case RSV_BLEND_OP_DEST_ALPHA:     blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_DEST_ALPHA      ;   break;
+            case RSV_BLEND_OP_INVDEST_ALPHA:  blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_DEST_ALPHA  ;   break;
+            case RSV_BLEND_OP_DEST_COLOUR:    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_DEST_COLOR      ;   break;
+            case RSV_BLEND_OP_INVDEST_COLOUR: blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_INV_DEST_COLOR  ;   break;
+            default: hcAssert( false );
+            }
+
+            switch( desc.destBlendAlpha_ )
+            {
+            case RSV_BLEND_OP_ZERO:           blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO            ;   break;
+            case RSV_BLEND_OP_ONE:            blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE             ;   break;
+            case RSV_BLEND_OP_SRC_COLOUR:     blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_SRC_COLOR       ;   break;
+            case RSV_BLEND_OP_INVSRC_COLOUR:  blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_COLOR   ;   break;
+            case RSV_BLEND_OP_SRC_ALPHA:      blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_SRC_ALPHA       ;   break;
+            case RSV_BLEND_OP_INVSRC_ALPHA:   blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA   ;   break;
+            case RSV_BLEND_OP_DEST_ALPHA:     blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA      ;   break;
+            case RSV_BLEND_OP_INVDEST_ALPHA:  blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_DEST_ALPHA  ;   break;
+            case RSV_BLEND_OP_DEST_COLOUR:    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_COLOR      ;   break;
+            case RSV_BLEND_OP_INVDEST_COLOUR: blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_DEST_COLOR  ;   break;
+            default: hcAssert( false );
+            }
+
+            switch( desc.blendOp_ )
+            {
+            case RSV_BLEND_FUNC_ADD:   blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;          break;
+            case RSV_BLEND_FUNC_SUB:   blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_REV_SUBTRACT; break;
+            case RSV_BLEND_FUNC_MIN:   blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MIN;          break;
+            case RSV_BLEND_FUNC_MAX:   blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_MAX;          break;
+            default:            hcAssert( hFalse );
+            }
+
+            switch( desc.blendOpAlpha_ )
+            {
+            case RSV_BLEND_FUNC_ADD:   blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;          break;
+            case RSV_BLEND_FUNC_SUB:   blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_REV_SUBTRACT; break;
+            case RSV_BLEND_FUNC_MIN:   blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MIN;          break;
+            case RSV_BLEND_FUNC_MAX:   blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_MAX;          break;
+            default:            hcAssert( hFalse );
+            }
+
+            blendDesc.RenderTarget[0].RenderTargetWriteMask |= (desc.renderTargetWriteMask_ & RSV_COLOUR_WRITE_RED)   ? D3D11_COLOR_WRITE_ENABLE_RED   : 0;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask |= (desc.renderTargetWriteMask_ & RSV_COLOUR_WRITE_BLUE)  ? D3D11_COLOR_WRITE_ENABLE_BLUE  : 0;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask |= (desc.renderTargetWriteMask_ & RSV_COLOUR_WRITE_GREEN) ? D3D11_COLOR_WRITE_ENABLE_GREEN : 0;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask |= (desc.renderTargetWriteMask_ & RSV_COLOUR_WRITE_ALPHA) ? D3D11_COLOR_WRITE_ENABLE_ALPHA : 0;
+
+            hr = d3d11Device_->CreateBlendState( &blendDesc, &outBlendState->stateObj_ );
+            hcAssert( SUCCEEDED( hr ) );
+
+            blendStates_.Insert( stateKey, outBlendState );
+        }
+
+        hAtomic::Increment( &outBlendState->refCount_ );
+
+        resourceMutex_.Unlock();
+
+        return outBlendState;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyBlendState( hdDX11BlendState* state )
+    {
+        hcAssert( state );
+        hAtomic::Decrement( &state->refCount_ );
+
+        if ( state->refCount_ == 0 )
+        {
+            resourceMutex_.Lock();
+
+            blendStates_.Remove( state->GetKey() );
+
+            delete state; 
+
+            resourceMutex_.Unlock();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11RasterizerState* hdDX11RenderDevice::CreateRasterizerState( const hRasterizerStateDesc& desc )
+    {
+        HRESULT hr;
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+
+        resourceMutex_.Lock();
+
+        hdDX11RasterizerState* outRasState = rasterizerStates_.Find( stateKey );
+
+        if ( !outRasState )
+        {
+            outRasState = hNEW( hGeneralHeap ) hdDX11RasterizerState();
+            D3D11_RASTERIZER_DESC rasDesc;
+
+            rasDesc.FrontCounterClockwise = FALSE;
+            rasDesc.AntialiasedLineEnable = TRUE;
+            rasDesc.MultisampleEnable = FALSE;
+
+            switch ( desc.fillMode_ )
+            {
+            case RSV_FILL_MODE_SOLID:       rasDesc.FillMode = D3D11_FILL_SOLID;    break;
+            case RSV_FILL_MODE_WIREFRAME:   rasDesc.FillMode = D3D11_FILL_WIREFRAME;break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.cullMode_ )
+            {
+            case RSV_CULL_MODE_NONE:        rasDesc.CullMode = D3D11_CULL_NONE;     break;
+            case RSV_CULL_MODE_CW:          rasDesc.CullMode = D3D11_CULL_FRONT;    break;
+            case RSV_CULL_MODE_CCW:         rasDesc.CullMode = D3D11_CULL_BACK;     break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.scissorEnable_ )
+            {
+            case RSV_ENABLE:    rasDesc.ScissorEnable = TRUE;  break;
+            case RSV_DISABLE:   rasDesc.ScissorEnable = FALSE; break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.depthClipEnable_ )
+            {
+            case RSV_ENABLE:    rasDesc.DepthClipEnable = TRUE;  break;
+            case RSV_DISABLE:   rasDesc.DepthClipEnable = FALSE; break;
+            default: hcAssert( hFalse );
+            }
+
+            rasDesc.DepthBias            = (INT)desc.depthBias_;
+            rasDesc.DepthBiasClamp       = desc.depthBiasClamp_;
+            rasDesc.SlopeScaledDepthBias = desc.slopeScaledDepthBias_;
+
+            hr = d3d11Device_->CreateRasterizerState( &rasDesc, &outRasState->stateObj_ );
+            hcAssert( SUCCEEDED( hr ) );
+
+            rasterizerStates_.Insert( stateKey, outRasState );
+        }
+
+        hAtomic::Increment( &outRasState->refCount_ );
+
+        resourceMutex_.Unlock();
+
+        return outRasState;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestoryRasterizerState( hdDX11RasterizerState* state )
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11DepthStencilState* hdDX11RenderDevice::CreateDepthStencilState( const hDepthStencilStateDesc& desc )
+    {
+        HRESULT hr;
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+
+        resourceMutex_.Lock();
+
+        hdDX11DepthStencilState* outDSState = depthStencilStates_.Find( stateKey );
+
+        if ( !outDSState )
+        {
+            outDSState = hNEW( hGeneralHeap ) hdDX11DepthStencilState();
+            D3D11_DEPTH_STENCIL_DESC dsDesc;
+
+            switch ( desc.depthEnable_ )
+            {
+            case RSV_ENABLE:        dsDesc.DepthEnable = TRUE;  break;
+            case RSV_DISABLE:       dsDesc.DepthEnable = FALSE; break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.depthFunc_ )
+            {
+            case RSV_Z_CMP_NEVER:           dsDesc.DepthFunc = D3D11_COMPARISON_NEVER;          break;
+            case RSV_Z_CMP_LESS:            dsDesc.DepthFunc = D3D11_COMPARISON_LESS;           break;
+            case RSV_Z_CMP_EQUAL:           dsDesc.DepthFunc = D3D11_COMPARISON_EQUAL;          break;
+            case RSV_Z_CMP_LESSEQUAL:       dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;     break;
+            case RSV_Z_CMP_GREATER:         dsDesc.DepthFunc = D3D11_COMPARISON_GREATER;        break;
+            case RSV_Z_CMP_NOT_EQUAL:       dsDesc.DepthFunc = D3D11_COMPARISON_NOT_EQUAL;      break;
+            case RSV_Z_CMP_GREATER_EQUAL:   dsDesc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;  break;
+            case RSV_Z_CMP_ALWAYS:          dsDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;         break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.depthWriteMask_ )
+            {
+            case RSV_ENABLE:        dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;  break;
+            case RSV_DISABLE:       dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.stencilEnable_ )
+            {
+            case RSV_ENABLE:        dsDesc.StencilEnable = TRUE;  break;
+            case RSV_DISABLE:       dsDesc.StencilEnable = FALSE; break;
+            default: hcAssert( hFalse );
+            }
+
+            dsDesc.StencilReadMask = (UINT8)desc.stencilReadMask_;
+            dsDesc.StencilWriteMask = (UINT8)desc.stencilWriteMask_;
+
+            switch ( desc.stencilFunc_ )
+            {
+            case RSV_SF_CMP_NEVER:          dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NEVER;          break;
+            case RSV_SF_CMP_LESS:           dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_LESS;           break;
+            case RSV_SF_CMP_EQUAL:          dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;          break;
+            case RSV_SF_CMP_LESSEQUAL:      dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_LESS_EQUAL;     break;
+            case RSV_SF_CMP_GREATER:        dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_GREATER;        break;
+            case RSV_SF_CMP_NOT_EQUAL:      dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;      break;     
+            case RSV_SF_CMP_GREATER_EQUAL:  dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;  break;
+            case RSV_SF_CMP_ALWAYS:         dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;         break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.stencilPassOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            switch ( desc.stencilFailOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            switch ( desc.stencilDepthFailOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            switch ( desc.stencilFunc_ )
+            {
+            case RSV_SF_CMP_NEVER:          dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;          break;
+            case RSV_SF_CMP_LESS:           dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_LESS;           break;
+            case RSV_SF_CMP_EQUAL:          dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;          break;
+            case RSV_SF_CMP_LESSEQUAL:      dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_LESS_EQUAL;     break;
+            case RSV_SF_CMP_GREATER:        dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_GREATER;        break;
+            case RSV_SF_CMP_NOT_EQUAL:      dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;      break;     
+            case RSV_SF_CMP_GREATER_EQUAL:  dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_GREATER_EQUAL;  break;
+            case RSV_SF_CMP_ALWAYS:         dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;         break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.stencilPassOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            switch ( desc.stencilFailOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            switch ( desc.stencilDepthFailOp_ )
+            {
+            case RSV_SO_KEEP:    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;     break;
+            case RSV_SO_ZERO:    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_ZERO;     break;
+            case RSV_SO_REPLACE: dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_REPLACE;  break;
+            case RSV_SO_INCRSAT: dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR_SAT; break;
+            case RSV_SO_DECRSAT: dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR_SAT; break;
+            case RSV_SO_INVERT:  dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_INVERT;   break;
+            case RSV_SO_INCR:    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;     break;
+            case RSV_SO_DECR:    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;     break;
+            }
+
+            hr = d3d11Device_->CreateDepthStencilState( &dsDesc, &outDSState->stateObj_ );
+            hcAssert( SUCCEEDED( hr ) );
+
+            depthStencilStates_.Insert( stateKey, outDSState );
+        }
+
+        hAtomic::Increment( &outDSState->refCount_ );
+
+        resourceMutex_.Unlock();
+
+        return outDSState;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestoryDepthStencilState( hdDX11DepthStencilState* state )
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11SamplerState* hdDX11RenderDevice::CreateSamplerState( const hSamplerStateDesc& desc )
+    {
+        HRESULT hr;
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+
+        resourceMutex_.Lock();
+
+        hdDX11SamplerState* outSamState = samplerStateMap_.Find( stateKey );
+
+        if ( !outSamState )
+        {
+            outSamState = hNEW( hGeneralHeap ) hdDX11SamplerState();
+            D3D11_SAMPLER_DESC samDesc;
+
+            switch ( desc.filter_ )
+            {
+            case SSV_POINT:             samDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR; break;
+            case SSV_LINEAR:            samDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;  break;
+            case SSV_ANISOTROPIC:       samDesc.Filter = D3D11_FILTER_COMPARISON_ANISOTROPIC;        break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.addressU_ )
+            {
+            case SSV_WRAP:      samDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;   break;
+            case SSV_MIRROR:    samDesc.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+            case SSV_CLAMP:     samDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  break;
+            case SSV_BORDER:    samDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER; break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.addressV_ )
+            {
+            case SSV_WRAP:      samDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;   break;
+            case SSV_MIRROR:    samDesc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+            case SSV_CLAMP:     samDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;  break;
+            case SSV_BORDER:    samDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER; break;
+            default: hcAssert( hFalse );
+            }
+
+            switch ( desc.addressW_ )
+            {
+            case SSV_WRAP:      samDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;   break;
+            case SSV_MIRROR:    samDesc.AddressW = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+            case SSV_CLAMP:     samDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;  break;
+            case SSV_BORDER:    samDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER; break;
+            default: hcAssert( hFalse );
+            }
+
+            samDesc.BorderColor[0] = desc.borderColour_.r_;
+            samDesc.BorderColor[1] = desc.borderColour_.g_;
+            samDesc.BorderColor[2] = desc.borderColour_.b_;
+            samDesc.BorderColor[3] = desc.borderColour_.a_;
+
+            samDesc.MaxAnisotropy   = desc.maxAnisotropy_;
+            samDesc.MinLOD          = desc.minLOD_;
+            samDesc.MaxLOD          = desc.maxLOD_;
+            samDesc.MipLODBias      = desc.mipLODBias_;
+
+            samDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+
+            hr = d3d11Device_->CreateSamplerState( &samDesc, &outSamState->stateObj_ );
+            hcAssert( SUCCEEDED( hr ) );
+
+            samplerStateMap_.Insert( stateKey, outSamState );
+        }
+
+        hAtomic::Increment( &outSamState->refCount_ );
+
+        resourceMutex_.Unlock();
+
+        return outSamState;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroySamplerState( hdDX11SamplerState* state )
+    {
+
+    }
 }

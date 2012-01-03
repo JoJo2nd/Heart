@@ -57,11 +57,20 @@ namespace Heart
         hdDX11Texture*              CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize );
         void                        DestroyTexture( hdDX11Texture* texture );
         hdDX11BlendState*           CreateBlendState( const hBlendStateDesc& desc );
+        void                        DestroyBlendState( hdDX11BlendState* state );
         hdDX11RasterizerState*      CreateRasterizerState( const hRasterizerStateDesc& desc );
+        void                        DestoryRasterizerState( hdDX11RasterizerState* state );
         hdDX11DepthStencilState*    CreateDepthStencilState( const hDepthStencilStateDesc& desc );
+        void                        DestoryDepthStencilState( hdDX11DepthStencilState* state );
         hdDX11SamplerState*         CreateSamplerState( const hSamplerStateDesc& desc );
+        void                        DestroySamplerState( hdDX11SamplerState* state );
 
     private:
+
+        typedef hMap< hUint32, hdDX11BlendState >         BlendStateMapType;
+        typedef hMap< hUint32, hdDX11RasterizerState >    RasterizerStateMapType;
+        typedef hMap< hUint32, hdDX11DepthStencilState >  DepthStencilStateMapType;
+        typedef hMap< hUint32, hdDX11SamplerState >       SamplerStateMapType;
 
         Device::Kernel*             kernel_;
         hUint32                     width_;
@@ -74,6 +83,11 @@ namespace Heart
         ID3D11RenderTargetView*     renderTargetView_;
         ID3D11Texture2D*            depthStencil_;
         ID3D11DepthStencilView*     depthStencilView_;
+        hMutex                      resourceMutex_;
+        BlendStateMapType           blendStates_;
+        RasterizerStateMapType      rasterizerStates_;
+        DepthStencilStateMapType    depthStencilStates_;
+        SamplerStateMapType         samplerStateMap_;
     };
 
 }

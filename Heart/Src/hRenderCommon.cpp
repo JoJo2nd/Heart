@@ -48,7 +48,7 @@ namespace Cmd
 	{
 		PRINT_RENDER();
 		pRenderer_->RenderStateCache().commit();
-		pRenderer_->ClearTarget( true, hColour( clearColour_.r_, clearColour_.g_, clearColour_.b_, clearColour_.a_ ), true, 1.0f );
+		//pRenderer_->ClearTarget( true, hColour( clearColour_.r_, clearColour_.g_, clearColour_.b_, clearColour_.a_ ), true, 1.0f );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ namespace Cmd
 	void ClearDepth::Execute( hRenderer* pRenderer_ )
 	{
 		PRINT_RENDER();
-		pRenderer_->ClearTarget( false, hColour( 0.0f, 0.0f, 0.0f, 0.0f ), true, 1.0f );
+		//pRenderer_->ClearTarget( false, hColour( 0.0f, 0.0f, 0.0f, 0.0f ), true, 1.0f );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -105,7 +105,7 @@ namespace Cmd
 	{
 		PRINT_RENDER();
 		pRenderer_->RenderStateCache().defaultRenderState();
-		pRenderer_->Begin();	
+		//pRenderer_->Begin();	
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -134,7 +134,7 @@ namespace Cmd
 	{
 		PRINT_RENDER();
 		pRenderer_->RenderStateCache().EndFrame();
-		pRenderer_->End();
+		//pRenderer_->End();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -162,7 +162,7 @@ namespace Cmd
 	void FlipBuffers::Execute( hRenderer* pRenderer_ )
 	{
 		PRINT_RENDER();
-		pRenderer_->SwapBuffers();
+		//pRenderer_->SwapBuffers();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -280,7 +280,7 @@ namespace Cmd
 		PRINT_RENDER();
 		pRenderer_->RenderStateCache().commit();
 
-		pRenderer_->DrawPrimative( nPrimatives_ );
+		//pRenderer_->DrawPrimative( nPrimatives_ );
 
 #ifdef HEART_COLLECT_RENDER_STATS
 		++pRenderer_->pFrameStats()->nDrawCalls_;
@@ -316,10 +316,10 @@ namespace Cmd
 	{
 		PRINT_RENDER();
 
-		renderer->SetVertexFormat( vtxBuf_->GetVertexDeclaration() );
-		renderer->SetVertexBuffer( vtxBuf_ );
-		renderer->RenderStateCache().commit();
-		renderer->DrawVertexStream( primType_ );
+		//renderer->SetVertexFormat( vtxBuf_->GetVertexDeclaration() );
+		//renderer->SetVertexBuffer( vtxBuf_ );
+		//renderer->RenderStateCache().commit();
+		//renderer->DrawVertexStream( primType_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1518,7 +1518,7 @@ namespace Cmd
 	void SetRenderTarget::Execute( hRenderer* pRenderer )
 	{
 		pRenderer->RenderStateCache().commit();
-		pRenderer->SetRenderTarget( pTarget_, targetIdx_ );
+		//pRenderer->SetRenderTarget( pTarget_, targetIdx_ );
 	}
 
 
@@ -1548,7 +1548,7 @@ namespace Cmd
 
 	void BeginDebuggerEvent::Execute( hRenderer* pRenderer )
 	{
-		pRenderer->PushDebuggerEvent( name_ );
+		//pRenderer->PushDebuggerEvent( name_ );
 	}
 
 
@@ -1567,7 +1567,7 @@ namespace Cmd
 
 	void EndDebuggerEvent::Execute( hRenderer* pRenderer )
 	{
-		pRenderer->PopDebuggerEvent();
+		//pRenderer->PopDebuggerEvent();
 	}
 
 
@@ -1835,8 +1835,8 @@ namespace Cmd
 
 	void FlushVertexBufferData::Execute( hRenderer* renderer )
 	{
-		renderer->Bind( vertexBuffer_ );
-		vertexBuffer_->FlushVertexData( data_, dataSize_ );
+		//renderer->Bind( vertexBuffer_ );
+		//vertexBuffer_->FlushVertexData( data_, dataSize_ );
 		renderer->ReleaseTempRenderMemory( data_ );
 	}
 
@@ -1868,8 +1868,8 @@ namespace Cmd
 
 	void FlushIndexBufferData::Execute( hRenderer* renderer )
 	{
-		renderer->Bind( indexBuffer_ );
-		indexBuffer_->FlushIndexData( data_, dataSize_ );
+		//renderer->Bind( indexBuffer_ );
+		//indexBuffer_->FlushIndexData( data_, dataSize_ );
 		renderer->ReleaseTempRenderMemory( data_ );
 	}
 
@@ -1902,8 +1902,8 @@ namespace Cmd
 
 	void FlushTextureLevel::Execute( hRenderer* renderer )
 	{
-		renderer->Bind( tex_ );
-		tex_->FlushLevel( level_, pitch_, data_ );
+		//renderer->Bind( tex_ );
+		//tex_->FlushLevel( level_, pitch_, data_ );
 	}
 
 }

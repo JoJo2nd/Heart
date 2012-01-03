@@ -414,6 +414,10 @@ namespace Heart
                     hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
                     resource->FindOrAddShaderParameter( param );
                 }
+
+                CreateBlendState( resource->techniques_[tech].passes_[pass].blendStateDesc_, &resource->techniques_[tech].passes_[pass].blendState_ );
+                CreateRasterizerState( resource->techniques_[tech].passes_[pass].rasterizerStateDesc_, &resource->techniques_[tech].passes_[pass].rasterizerState_ );
+                CreateDepthStencilState( resource->techniques_[tech].passes_[pass].depthStencilStateDesc_, &resource->techniques_[tech].passes_[pass].depthStencilState_ );
             }
         }
         hUint32 nSamp = resource->samplers_.GetSize();
@@ -423,6 +427,7 @@ namespace Heart
             {
                 hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
                 resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->GetResource( sid ) );
+                CreateSamplerState( resource->samplers_[samp].samplerDesc_, &resource->samplers_[samp].samplerState_ );
             }
         }
         resManager->UnlockResourceDatabase();
@@ -809,7 +814,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-
+/*
 	void hRenderer::SetIndexBuffer( hIndexBuffer* pIBuffer )
 	{
 // 		Bind( pIBuffer );
@@ -832,7 +837,7 @@ namespace Heart
 
 	void hRenderer::SetTexture( hTextureBase* pTexture, hUint32 idx )
 	{
-/*		pImpl()->SetTexture( pTexture->pImpl(), idx );*/
+//		pImpl()->SetTexture( pTexture->pImpl(), idx );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -876,7 +881,7 @@ namespace Heart
 // 			pImpl()->SetDepthSurface( NULL );
 // 		}
 	}
-
+*/
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -901,50 +906,50 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::Bind( hVertexDeclaration* vtxDecl )
-	{
-// 		if ( vtxDecl->pImpl()->Bound() )
-// 			return;
-// 		pImpl()->CreateVertexDeclaration( vtxDecl->pImpl(), vtxDecl->vtxFlags_, vtxDecl->stride_, vtxDecl->elementOffsets_ );
-	}
+// 	void hRenderer::Bind( hVertexDeclaration* vtxDecl )
+// 	{
+// // 		if ( vtxDecl->pImpl()->Bound() )
+// // 			return;
+// // 		pImpl()->CreateVertexDeclaration( vtxDecl->pImpl(), vtxDecl->vtxFlags_, vtxDecl->stride_, vtxDecl->elementOffsets_ );
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::Bind( hVertexBuffer* vtxBuffer )
-	{
-// 		Bind( vtxBuffer->pVtxDecl_ );
 // 
-// 		if ( vtxBuffer->pImpl()->Bound() )
-// 			return;
-// 
-// 		pImpl()->CreateVertexBuffer( vtxBuffer->pImpl(), vtxBuffer->vtxCount_, vtxBuffer->pVtxDecl_->Stride(), 0 );
-	}
+// 	void hRenderer::Bind( hVertexBuffer* vtxBuffer )
+// 	{
+// // 		Bind( vtxBuffer->pVtxDecl_ );
+// // 
+// // 		if ( vtxBuffer->pImpl()->Bound() )
+// // 			return;
+// // 
+// // 		pImpl()->CreateVertexBuffer( vtxBuffer->pImpl(), vtxBuffer->vtxCount_, vtxBuffer->pVtxDecl_->Stride(), 0 );
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::Bind( hIndexBuffer* idxBuffer )
-	{
-// 		if ( idxBuffer->pImpl()->Bound() )
-// 			return;
-// 
-// 		pImpl()->CreateIndexBuffer( idxBuffer->pImpl(), idxBuffer->pIndices_, idxBuffer->nIndices_, idxBuffer->primitiveType_, 0 );
-	}
+// 	void hRenderer::Bind( hIndexBuffer* idxBuffer )
+// 	{
+// // 		if ( idxBuffer->pImpl()->Bound() )
+// // 			return;
+// // 
+// // 		pImpl()->CreateIndexBuffer( idxBuffer->pImpl(), idxBuffer->pIndices_, idxBuffer->nIndices_, idxBuffer->primitiveType_, 0 );
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::Bind( hTexture* texture )
-	{
-// 		if ( texture->pImpl()->Bound() )
-// 			return;
-// 
-// 		pImpl()->CreateTexture( texture->pImpl(), texture->levelDescs_[0].width_, texture->levelDescs_[0].height_, texture->nLevels_, texture->format_ );
-	}
+// 	void hRenderer::Bind( hTexture* texture )
+// 	{
+// // 		if ( texture->pImpl()->Bound() )
+// // 			return;
+// // 
+// // 		pImpl()->CreateTexture( texture->pImpl(), texture->levelDescs_[0].width_, texture->levelDescs_[0].height_, texture->nLevels_, texture->format_ );
+// 	}
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////

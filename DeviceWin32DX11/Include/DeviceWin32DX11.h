@@ -48,6 +48,7 @@
 #include "hTypes.h"
 #include "hDebugMacros.h"
 #include "hMemory.h"
+#include "hMemoryUtil.h"
 #include "hEventManager.h"
 #include "hAtomic.h"
 #include "hRendererConstants.h"

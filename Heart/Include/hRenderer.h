@@ -67,8 +67,6 @@ namespace Heart
         void    SetMaterial( hMaterial* mat );
         void	SetIndexStream( hdIndexBuffer* pIIBuf );
         void	SetVertexStream( hdVtxBuffer* pIVBuf, hdVtxDecl* pDecl );
-        void	SetRenderState( RENDER_STATE, RENDER_STATE_VALUE );
-        void	SetRenderState( RENDER_STATE, hFloat );
         void	SetVertexFormat( hdVtxDecl* );
         void	SetTexture( hdTexture* pTexture, hUint32 idx );
         void	SetRenderTarget( hUint32 idx , hdTexture* pTarget );
@@ -77,6 +75,7 @@ namespace Heart
         void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
         void	DrawPrimitive( hUint32 nPrimatives );
         void	DrawVertexStream( PrimitiveType primType );
+        void    RunCommandList( hRenderSubmissionCtx* cmdBuf );
         void    Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo );
         void    Unmap( hIndexBufferMapInfo* outInfo );
         void    Map( hVertexBuffer* ib, hVertexBufferMapInfo* outInfo );
@@ -134,6 +133,14 @@ namespace Heart
 		/*
 			pimpl methods
 		*/
+        void                                                    CreateBlendState( const hBlendStateDesc& desc, hdBlendState** state ) { *state = pImpl()->CreateBlendState( desc ); }
+        void                                                    DestroyBlendState( hdBlendState* state ) { pImpl()->DestroyBlendState( state ); } 
+        void                                                    CreateRasterizerState( const hRasterizerStateDesc& desc, hdRasterizerState** state ) { *state = pImpl()->CreateRasterizerState( desc ); }
+        void                                                    DestoryRasterizerState( hdRasterizerState* state ) { pImpl()->DestoryRasterizerState( state ); } 
+        void                                                    CreateDepthStencilState( const hDepthStencilStateDesc& desc, hdDepthStencilState** state ) { *state = pImpl()->CreateDepthStencilState( desc ); }
+        void                                                    DestoryDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
+        void                                                    CreateSamplerState( const hSamplerStateDesc& desc, hdSamplerState** state ) { *state = pImpl()->CreateSamplerState( desc ); }
+        void                                                    DestorySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
 		void													GetVertexDeclaration(  hVertexDeclaration*& pOut, hUint32 vtxFlags );
 		void													DestroyMaterial( hMaterial* pMat );
 		void													CreateTexture( hResourceHandle< hTexture >& pOut, hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, const char* name = "RuntimeTexture" );
@@ -147,26 +154,30 @@ namespace Heart
 		//////////////////////////////////////////////////////////////////////////
 		//Set Methods ////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
-		void													SetRenderState( RENDER_STATE state, RENDER_STATE_VALUE val ) { /*pImpl()->SetRenderState( state, val );*/ }
+/*
+        void													SetRenderState( RENDER_STATE state, RENDER_STATE_VALUE val ) { pImpl()->SetRenderState( state, val ); }
 		void													SetIndexBuffer( hIndexBuffer* pIBuffer );
 		void													SetVertexBuffer( hVertexBuffer* pVBuffer );
 		void													SetVertexFormat( hVertexDeclaration* pVtxDecl );
 		void													SetTexture( hTextureBase* pTexture, hUint32 idx );
 		void													SetRenderTarget( hRenderTargetTexture* pTarget, hUint32 idx );
 		void													SetDepthSurface( hRenderTargetTexture* pSurface );
-		void													SetViewport( const hViewport& viewport ) { /*pImpl()->SetViewport( viewport );*/ }
-		void													SetScissorRect( const ScissorRect& scissor ) { /*pImpl()->SetScissorRect( scissor );*/ }
+		void													SetViewport( const hViewport& viewport ) { pImpl()->SetViewport( viewport ); }
+		void													SetScissorRect( const ScissorRect& scissor ) { pImpl()->SetScissorRect( scissor ); }
+*/
 		//////////////////////////////////////////////////////////////////////////
 		//Buffer Methods//////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
-		void													ClearTarget( hBool clearColour, hColour colour, hBool clearZ, hFloat z ) { /*pImpl()->ClearTarget( clearColour, colour, clearZ, z );*/ }
-		void													Begin() { statPass_ = 0; /*pImpl()->BeginRender();*/ }
-		void													DrawPrimative( hUint32 nPrimatives ) { /*pImpl()->DrawPrimitive( nPrimatives );*/ }
-		void													DrawVertexStream( PrimitiveType primType ) { /*pImpl()->DrawVertexStream( primType );*/ }
-		void													End() { /*pImpl()->EndRender(); */}
-		void													SwapBuffers() { /*pImpl()->SwapBuffers();*/ }
-		void													PushDebuggerEvent( const hChar* name ) { /*pImpl()->BeginDebuggerEvent( name );*/ };
-		void													PopDebuggerEvent() { /*pImpl()->EndDebuggerEvent();*/ }
+/*
+		void													ClearTarget( hBool clearColour, hColour colour, hBool clearZ, hFloat z ) { pImpl()->ClearTarget( clearColour, colour, clearZ, z ); }
+		void													Begin() { statPass_ = 0; pImpl()->BeginRender(); }
+		void													DrawPrimative( hUint32 nPrimatives ) { pImpl()->DrawPrimitive( nPrimatives ); }
+		void													DrawVertexStream( PrimitiveType primType ) { pImpl()->DrawVertexStream( primType ); }
+		void													End() { pImpl()->EndRender(); }
+		void													SwapBuffers() { pImpl()->SwapBuffers(); }
+		void													PushDebuggerEvent( const hChar* name ) { pImpl()->BeginDebuggerEvent( name ); };
+		void													PopDebuggerEvent() { pImpl()->EndDebuggerEvent(); }
+*/
 		void*													AquireTempRenderMemory( hUint32 size );
 		void													ReleaseTempRenderMemory( void* ptr );
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,10 +186,10 @@ namespace Heart
 		hRenderFrameStats*										pFrameStats() { return pThreadFrameStats_->passes_ + statPass_; }
 		void													pFrameStats( hRenderFrameStatsCollection* framestats ) { pThreadFrameStats_ = framestats; }
 		void													NextStatCollectPass() { ++statPass_; }
-		void													Bind( hVertexDeclaration* vtxDecl );
-		void													Bind( hVertexBuffer* vtxBuffer );
-		void													Bind( hIndexBuffer* idxBuffer );
-		void													Bind( hTexture* texture );
+// 		void													Bind( hVertexDeclaration* vtxDecl );
+// 		void													Bind( hVertexBuffer* vtxBuffer );
+// 		void													Bind( hIndexBuffer* idxBuffer );
+// 		void													Bind( hTexture* texture );
 
 		/*
 			end new engine design methods
