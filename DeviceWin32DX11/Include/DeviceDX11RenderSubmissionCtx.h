@@ -32,32 +32,43 @@ namespace Heart
 {
     typedef D3D11_MAPPED_SUBRESOURCE hdDX11LockedResourceData;
 
-    class hdDX11Texture;
-    class hdDX11IndexBffer;
-    class hdDX11VertexBuffer;
-    class hdDX11VertexDecl;
-
     class hdDX11RenderSubmissionCtx
     {
     public:
-        hdDX11RenderSubmissionCtx() {}
-        ~hdDX11RenderSubmissionCtx() {}
+        hdDX11RenderSubmissionCtx() 
+            : depthStencilView_(NULL)
+        {
+            for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i )
+            {
+                renderTargetViews_[i] = NULL;
+            }
+        }
+        ~hdDX11RenderSubmissionCtx() 
+        {}
 
-        void	SetIndexStream( hdDX11IndexBffer* pIIBuf );
-        void	SetVertexStream( hdDX11VertexBuffer* pIVBuf, hdDX11VertexDecl* pDecl );
-        void	SetRenderStateBlock( hdDX11BlendState& );
-        void	SetRenderStateBlock( hdDX11DepthStencilState& );
-        void	SetRenderStateBlock( hdDX11RasterizerState& );
-        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState& );
-        void	SetVertexFormat( hdDX11VertexDecl* );
-        void	SetRenderTarget( hUint32 idx , hdDX11Texture* pTarget );
+        void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
+        void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
+        void	SetRenderStateBlock( hdDX11BlendState& st );
+        void	SetRenderStateBlock( hdDX11DepthStencilState& st );
+        void	SetRenderStateBlock( hdDX11RasterizerState& st );
+        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState& st );
+        void    SetConstantBlock( hdDX11ParameterConstantBlock* block );
+        void    SetPixelShader( hdDX11ShaderProgram* prog );
+        void    SetVertexShader( hdDX11ShaderProgram* prog );
+        void	SetVertexFormat( hdDX11VertexLayout* vf );
+        void	SetRenderTarget( hUint32 idx , hdDX11Texture* target );
         void	SetViewport( const hViewport& viewport );
         void	SetScissorRect( const ScissorRect& scissor );
         void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
-        void	DrawPrimitive( hUint32 nPrimatives );
-        void	DrawVertexStream( PrimitiveType primType );
+        void    SetPrimitiveType( PrimitiveType type );
+        void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
+        void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
         void    Map( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
         void    Unmap( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
+        void    Map( hdDX11IndexBuffer* ib, hdDX11LockedResourceData* data );
+        void    Unmap( hdDX11IndexBuffer* ib, hdDX11LockedResourceData* data );
+        void    Map( hdDX11VertexBuffer* vb, hdDX11LockedResourceData* data );
+        void    Unmap( hdDX11VertexBuffer* vb, hdDX11LockedResourceData* data );
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device ) { device_ = device; }
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
@@ -66,7 +77,10 @@ namespace Heart
 
         friend class hdDX11RenderDevice;
 
-        ID3D11RenderTargetView* renderTargetView_;
+        static const hUint32    MAX_RENDERTARGE_VIEWS = 4;
+
+        PrimitiveType           primType_;
+        ID3D11RenderTargetView* renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView* depthStencilView_;
         ID3D11DeviceContext*    device_;
     };

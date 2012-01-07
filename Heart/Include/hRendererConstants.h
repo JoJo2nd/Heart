@@ -267,17 +267,17 @@ namespace Heart
 		hrVF_BLENDMASK			= hrVF_BLEND1 | hrVF_BLEND2 | hrVF_BLEND3 | hrVF_BLEND4,
 	};
 
-	enum BufferFlags
+	enum ResourceFlags
 	{
-		DISCARD_ON_LOCK		= 1,
-		DYNAMIC				= 1 << 1,
+		RESOURCEFLAG_DYNAMIC				= 1 << 1,
+        RESOURCEFLAG_RENDERTARGET   		= 1 << 2,
+        RESOURCEFLAG_DEPTHTARGET    		= 1 << 3,
 	};
 
 	enum PrimitiveType
 	{
 		PRIMITIVETYPE_TRILIST,
 		PRIMITIVETYPE_TRISTRIP,
-		PRIMITIVETYPE_TRIFAN,
 		PRIMITIVETYPE_LINELIST,
 
 		PRIMITIVETYPE_MAX

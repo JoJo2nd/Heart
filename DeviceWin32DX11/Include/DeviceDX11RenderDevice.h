@@ -31,6 +31,7 @@
 namespace Heart
 {
     class hdDX11RenderSubmissionCtx;
+    class hdDX11VertexBuffer;
     class hdDX11Texture;
     class hdDX11ShaderProgram;
 
@@ -53,17 +54,26 @@ namespace Heart
         hUint32 Height() const { return height_; }
 
         //Resource Create Calls
-        hdDX11ShaderProgram*        CompileShader( const hChar* shaderProg, hUint32 len, ShaderType type );
-        hdDX11Texture*              CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize );
-        void                        DestroyTexture( hdDX11Texture* texture );
-        hdDX11BlendState*           CreateBlendState( const hBlendStateDesc& desc );
-        void                        DestroyBlendState( hdDX11BlendState* state );
-        hdDX11RasterizerState*      CreateRasterizerState( const hRasterizerStateDesc& desc );
-        void                        DestoryRasterizerState( hdDX11RasterizerState* state );
-        hdDX11DepthStencilState*    CreateDepthStencilState( const hDepthStencilStateDesc& desc );
-        void                        DestoryDepthStencilState( hdDX11DepthStencilState* state );
-        hdDX11SamplerState*         CreateSamplerState( const hSamplerStateDesc& desc );
-        void                        DestroySamplerState( hdDX11SamplerState* state );
+        hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type );
+        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, hUint32 count );
+        void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
+        void                            DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count );
+        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags );
+        void                            DestroyTexture( hdDX11Texture* texture );
+        hdDX11IndexBuffer*              CreateIndexBuffer( hUint32 sizeInBytes, void* initialData, hUint32 flags );
+        void                            DestroyIndexBuffer( hdDX11IndexBuffer* indexBuffer );
+        hdDX11VertexLayout*             CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen );
+        void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
+        hdDX11VertexBuffer*             CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialData, hUint32 flags );
+        void                            DestroyVertexBuffer( hdDX11VertexBuffer* indexBuffer );
+        hdDX11BlendState*               CreateBlendState( const hBlendStateDesc& desc );
+        void                            DestroyBlendState( hdDX11BlendState* state );
+        hdDX11RasterizerState*          CreateRasterizerState( const hRasterizerStateDesc& desc );
+        void                            DestoryRasterizerState( hdDX11RasterizerState* state );
+        hdDX11DepthStencilState*        CreateDepthStencilState( const hDepthStencilStateDesc& desc );
+        void                            DestoryDepthStencilState( hdDX11DepthStencilState* state );
+        hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
+        void                            DestroySamplerState( hdDX11SamplerState* state );
 
     private:
 
@@ -71,6 +81,9 @@ namespace Heart
         typedef hMap< hUint32, hdDX11RasterizerState >    RasterizerStateMapType;
         typedef hMap< hUint32, hdDX11DepthStencilState >  DepthStencilStateMapType;
         typedef hMap< hUint32, hdDX11SamplerState >       SamplerStateMapType;
+        typedef hMap< hUint32, hdDX11VertexLayout >       VertexLayoutMapType;
+
+        hUint32                     BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements );
 
         Device::Kernel*             kernel_;
         hUint32                     width_;
@@ -88,6 +101,7 @@ namespace Heart
         RasterizerStateMapType      rasterizerStates_;
         DepthStencilStateMapType    depthStencilStates_;
         SamplerStateMapType         samplerStateMap_;
+        VertexLayoutMapType         vertexLayoutMap_;
     };
 
 }

@@ -136,7 +136,7 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
 
         mainRenderCtx_.device_ = mainDeviceCtx_;
-        mainRenderCtx_.renderTargetView_ = renderTargetView_;
+        mainRenderCtx_.renderTargetViews_[0] = renderTargetView_;
         mainRenderCtx_.depthStencilView_ = depthStencilView_;
     }
 
@@ -216,7 +216,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader( const hChar* shaderProg, hUint32 len, ShaderType type )
+    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type )
     {
         HRESULT hr;
 /*
@@ -282,6 +282,7 @@ namespace Heart
 
         if ( type == ShaderType_FRAGMENTPROG )
         {
+            shader->inputLayoutFlags_ = 0;
             hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
@@ -289,10 +290,25 @@ namespace Heart
         }
         else if ( type == ShaderType_VERTEXPROG )
         {
+            resourceMutex_.Lock();
+
+            hdDX11VertexLayout* vl = vertexLayoutMap_.Find( inputLayout );
+
+            if ( !vl )
+            {
+                vl = CreateVertexLayout( inputLayout, shaderProg, len );
+                vertexLayoutMap_.Insert( inputLayout, vl );
+            }
+
+            shader->inputLayoutFlags_ = inputLayout;
+            shader->inputLayout_ = vl;
+            
             hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
+
+            resourceMutex_.Unlock();
         }
 
 //HOW TO:
@@ -342,8 +358,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize )
+    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags )
     {
+        HRESULT hr;
         hdDX11Texture* texture = hNEW ( hRendererHeap ) hdDX11Texture;
 
         D3D11_TEXTURE2D_DESC desc;
@@ -368,9 +385,9 @@ namespace Heart
         case TFORMAT_DXT3:      desc.Format = DXGI_FORMAT_BC3_UNORM; break;
         case TFORMAT_DXT1:      desc.Format = DXGI_FORMAT_BC1_UNORM; break; 
         }
-        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-        desc.CPUAccessFlags  = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+        desc.CPUAccessFlags  = (flags & RESOURCEFLAG_DYNAMIC) || initialData == NULL ? (D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE) : 0;
         desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
         D3D11_SUBRESOURCE_DATA data;
@@ -384,7 +401,27 @@ namespace Heart
             dataptr = &data;
         }
 
-        d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );
+        hr = d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );
+
+        if ( flags & RESOURCEFLAG_RENDERTARGET )
+        {
+            hr = d3d11Device_->CreateRenderTargetView( texture->dx11Texture_, NULL, &texture->renderTargetView_ );
+            hcAssert( SUCCEEDED( hr ) );
+        }
+
+        if ( flags & RESOURCEFLAG_DEPTHTARGET )
+        {
+            D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+            ZeroMemory( &descDSV, sizeof(descDSV) );
+            descDSV.Format = desc.Format;
+            descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+            descDSV.Texture2D.MipSlice = 0;
+            hr = d3d11Device_->CreateDepthStencilView( texture->dx11Texture_, &descDSV, &texture->depthStencilView_ );
+            hcAssert( SUCCEEDED( hr ) );
+        }
+
+        hr = d3d11Device_->CreateShaderResourceView( texture->dx11Texture_, NULL, &texture->shaderResourceView_ );
+        hcAssert( SUCCEEDED( hr ) );
 
         return texture;
     }
@@ -398,6 +435,107 @@ namespace Heart
         texture->dx11Texture_->Release();
         texture->dx11Texture_ = NULL;
         delete texture;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBuffer( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    {
+        hdDX11IndexBuffer* idxBuf = hNEW( hGeneralHeap ) hdDX11IndexBuffer();
+        HRESULT hr;
+        D3D11_BUFFER_DESC desc;
+        D3D11_SUBRESOURCE_DATA initData;
+
+        hZeroMem( &desc, sizeof(desc) );
+        desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        desc.ByteWidth = sizeInBytes;
+        desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+        desc.CPUAccessFlags = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE : D3D11_CPU_ACCESS_WRITE;
+        desc.MiscFlags = 0;
+
+        hZeroMem( &initData, sizeof(initData) );
+        initData.pSysMem = initialDataPtr;
+
+        hr = d3d11Device_->CreateBuffer( &desc, &initData, &idxBuf->buffer_ );
+        hcAssert( SUCCEEDED( hr ) );
+
+        return idxBuf;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyIndexBuffer( hdDX11IndexBuffer* indexBuffer )
+    {
+        indexBuffer->buffer_->Release();
+        indexBuffer->buffer_ = NULL;
+        delete indexBuffer;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11VertexLayout* hdDX11RenderDevice::CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen )
+    {
+        HRESULT hr;
+        hdDX11VertexLayout* layout = hNEW( hGeneralHeap ) hdDX11VertexLayout();
+        D3D11_INPUT_ELEMENT_DESC elements[32];
+        hUint32 stride;
+        hUint32 elementCount = BuildVertexFormatArray( vertexFormat, &stride, elements );
+
+        hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout->layout_ );
+        hcAssert( SUCCEEDED( hr ) );
+
+        return layout;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyVertexLayout( hdDX11VertexLayout* layout )
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    {
+        hdDX11VertexBuffer* vtxBuf = hNEW( hGeneralHeap ) hdDX11VertexBuffer();
+        HRESULT hr;
+        D3D11_BUFFER_DESC desc;
+        D3D11_SUBRESOURCE_DATA initData;
+
+        hZeroMem( &desc, sizeof(desc) );
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        desc.ByteWidth = sizeInBytes;
+        desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+        desc.CPUAccessFlags = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE : D3D11_CPU_ACCESS_WRITE;
+        desc.MiscFlags = 0;
+
+        hZeroMem( &initData, sizeof(initData) );
+        initData.pSysMem = initialDataPtr;
+
+        hr = d3d11Device_->CreateBuffer( &desc, &initData, &vtxBuf->buffer_ );
+        hcAssert( SUCCEEDED( hr ) );
+
+        return vtxBuf;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyVertexBuffer( hdDX11VertexBuffer* indexBuffer )
+    {
+
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -890,4 +1028,214 @@ namespace Heart
     {
 
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11RenderDevice::BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements )
+    {
+        hUint32 elementsadded = 0;
+        WORD offset = 0;
+        const hUint32 flags = vertexFormat;
+
+        // declaration doesn't exist so create it
+        if ( flags & hrVF_XYZ )
+        {
+            elements[ elementsadded ].SemanticName = "POSITION";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;            
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 3;
+        }
+        if ( flags & hrVF_XYZW )
+        {
+            elements[ elementsadded ].SemanticName = "POSITIONT";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;   
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 4;
+        }
+        if ( flags & hrVF_NORMAL )
+        {
+            elements[ elementsadded ].SemanticName = "NORMAL";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;  
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 3;
+        }
+        if ( flags & hrVF_TANGENT )
+        {
+            elements[ elementsadded ].SemanticName = "TANGENT";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;  
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 3;
+        }
+        if ( flags & hrVF_BINORMAL )
+        {
+            elements[ elementsadded ].SemanticName = "BINORMAL";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;  
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 3;
+        }
+        if ( flags & hrVF_COLOR )
+        {
+            elements[ elementsadded ].SemanticName = "COLOR";
+            elements[ elementsadded ].SemanticIndex = 0;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R8G8B8A8_UINT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;  
+
+            ++elementsadded;
+            offset += sizeof( hByte ) * 4;
+        }
+
+        hChar usageoffset = -1;
+        switch( flags & hrVF_UVMASK )
+        {
+        case hrVF_8UV: usageoffset = 8; break;
+        case hrVF_7UV: usageoffset = 7; break;
+        case hrVF_6UV: usageoffset = 6; break;
+        case hrVF_5UV: usageoffset = 5; break;
+        case hrVF_4UV: usageoffset = 4; break;
+        case hrVF_3UV: usageoffset = 3; break;
+        case hrVF_2UV: usageoffset = 2; break;
+        case hrVF_1UV: usageoffset = 1; break;
+        }
+
+        for ( hChar i = 0; i < usageoffset; ++i )
+        {
+            elements[ elementsadded ].SemanticName = "TEXCOORD";
+            elements[ elementsadded ].SemanticIndex = (UINT)i;
+            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32_FLOAT;
+            elements[ elementsadded ].InputSlot = 0;
+            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
+            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
+            elements[ elementsadded ].InstanceDataStepRate = 0;  
+
+            ++elementsadded;
+            offset += sizeof( hFloat ) * 2;
+        }
+
+        //TODO:...
+//         switch( flags & hrVF_BLENDMASK )
+//         {
+//         case hrVF_BLEND4: usageoffset = 4; break;
+//         case hrVF_BLEND3: usageoffset = 3; break;
+//         case hrVF_BLEND2: usageoffset = 2; break;
+//         case hrVF_BLEND1: usageoffset = 1; break;
+//         }
+// 
+//         if ( flags & hrVF_BLENDMASK )
+//         {
+//             elements[ elementsadded ].Stream = 0;
+//             elements[ elementsadded ].Offset = offset;
+//             elements[ elementsadded ].Type = D3DDECLTYPE_UBYTE4;
+//             elements[ elementsadded ].Method = D3DDECLMETHOD_DEFAULT;
+//             elements[ elementsadded ].Usage = D3DDECLUSAGE_BLENDINDICES;
+//             elements[ elementsadded ].UsageIndex = 0;
+// 
+//             ++elementsadded;
+//             offset += sizeof( hByte ) * 4;
+// 
+//             for ( BYTE i = 0; i < usageoffset; ++i )
+//             {
+//                 elements[ elementsadded ].Stream = 0;
+//                 elements[ elementsadded ].Offset = offset;
+//                 elements[ elementsadded ].Type = D3DDECLTYPE_FLOAT1;
+//                 elements[ elementsadded ].Method = D3DDECLMETHOD_DEFAULT;
+//                 elements[ elementsadded ].Usage = D3DDECLUSAGE_BLENDWEIGHT;
+//                 elements[ elementsadded ].UsageIndex = i;
+//                 pOffsets[ hrVE_BLEND1 + i ] = offset;
+// 
+//                 ++elementsadded;
+//                 offset += sizeof( hFloat );
+//             }
+//         }
+
+        //set the stride
+        *stride = offset;
+        return elementsadded;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, hUint32 count )
+    {
+        hdDX11ParameterConstantBlock* constBlocks = hNEW( hGeneralHeap ) hdDX11ParameterConstantBlock[count];
+        for ( hUint32 i = 0; i < count; ++i )
+        {
+            HRESULT hr;
+            D3D11_BUFFER_DESC desc;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.ByteWidth = sizes[i]*sizeof(hFloat);
+            desc.CPUAccessFlags = 0;
+            hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
+            hcAssert( hr );
+            constBlocks[i].slot_ = i;
+            constBlocks[i].size_ = sizes[i];
+            constBlocks[i].cpuIntermediateData_ = hNEW( hGeneralHeap ) hFloat[sizes[i]];
+        }
+
+        return constBlocks;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* /*constBlock*/, hShaderParameter* /*params*/, hUint32 /*parameters*/ )
+    {
+        //Does Nothing
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count )
+    {
+        for ( hUint32 i = 0; i < count; ++i )
+        {
+            constBlocks[i].constBuffer_->Release();
+            constBlocks[i].constBuffer_ = NULL;
+            delete constBlocks[i].cpuIntermediateData_;
+            constBlocks[i].cpuIntermediateData_ = NULL;
+        }
+
+        delete constBlocks;
+    }
+
 }

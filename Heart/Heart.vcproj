@@ -431,6 +431,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Src\hRenderSubmissionContext.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hRenderSubmissionContext.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Src\hRenderUtility.cpp"
 					>
 				</File>

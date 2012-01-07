@@ -57,7 +57,10 @@
 // Device Includes ///////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#include "DeviceDX11VertexLayout.h"
 #include "DeviceDX11ShaderProgram.h"
+#include "DeviceDX11IndexBuffer.h"
+#include "DeviceDX11VertexBuffer.h"
 #include "DeviceDX11Texture.h"
 #include "DeviceDX11RenderStateBlock.h"
 #include "DeviceDX11RenderSubmissionCtx.h"
@@ -89,12 +92,12 @@ namespace Heart
 typedef Heart::hdDX11RenderDevice		    hdRenderDevice;
 typedef Heart::hdDX11RenderSubmissionCtx	hdRenderSubmissionCtx;
 typedef Heart::hdDX11PlaceholderType        hdRenderer;
-typedef Heart::hdDX11PlaceholderType		hdVtxDecl;//make this include input state
-typedef Heart::hdDX11PlaceholderType		hdVtxBuffer;
-typedef Heart::hdDX11PlaceholderType	    hdIndexBuffer;
-typedef Heart::hdDX11PlaceholderType		hdTexture;
-typedef Heart::hdDX11PlaceholderType		hdMaterial;
+typedef Heart::hdDX11VertexLayout   		hdVtxDecl;//make this include input state
+typedef Heart::hdDX11VertexBuffer	    	hdVtxBuffer;
+typedef Heart::hdDX11IndexBuffer    	    hdIndexBuffer;
+typedef Heart::hdDX11Texture		        hdTexture;
 typedef Heart::hdDX11ShaderProgram          hdShaderProgram;
+typedef Heart::hdDX11ParameterConstantBlock hdParameterConstantBlock;
 typedef Heart::hdDX11BlendState             hdBlendState;
 typedef Heart::hdDX11RasterizerState        hdRasterizerState;
 typedef Heart::hdDX11DepthStencilState      hdDepthStencilState;

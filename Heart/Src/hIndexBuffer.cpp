@@ -75,12 +75,12 @@ namespace Heart
 
 	void hIndexBuffer::FlushIndexData( void* data, hUint32 size )
 	{
-		void* mapped = pImpl()->Map();
-		if ( mapped )
-		{
-			memcpy( mapped, data, size );
-		}
-		pImpl()->Unmap( mapped );
+// 		void* mapped = pImpl()->Map();
+// 		if ( mapped )
+// 		{
+// 			memcpy( mapped, data, size );
+// 		}
+// 		pImpl()->Unmap( mapped );
 	}
 
 }

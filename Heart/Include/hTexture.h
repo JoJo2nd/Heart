@@ -62,7 +62,7 @@ namespace Cmd
 		friend class Cmd::FlushTextureLevel;
 
 		void					Release();
-		void					FlushLevel( hUint32 level, hUint32 inpitch, void* data );
+		//void					FlushLevel( hUint32 level, hUint32 inpitch, void* data );
 
 		hTexture( const hTexture& c );
 		hTexture& operator = ( const hTexture& rhs );

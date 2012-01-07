@@ -69,4 +69,70 @@ namespace Heart
         return hFalse;
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetConstantBufferCount() const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        return desc.ConstantBuffers;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetConstantBufferSize( hUint32 idx ) const
+    {
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        constInfo->GetDesc( &bufInfo );
+
+        return bufInfo.Size / sizeof(hFloat);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hFloat* hdDX11ShaderProgram::GetShaderParameterDefaultValue( hUint32 idx ) const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        for ( hUint32 buffer = 0; buffer < desc.ConstantBuffers; ++buffer )
+        {
+            ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
+            D3D11_SHADER_BUFFER_DESC bufInfo;
+            constInfo->GetDesc( &bufInfo );
+
+            if ( idx < bufInfo.Variables )
+            {
+                 ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( idx );
+                D3D11_SHADER_VARIABLE_DESC varDesc;
+                var->GetDesc( &varDesc );
+
+                return (hFloat*)varDesc.DefaultValue;
+            }
+            else
+            {
+                idx -= bufInfo.Variables;
+            }
+        }
+
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11ParameterConstantBlock::Flush( ID3D11DeviceContext* ctx )
+    {
+        ctx->UpdateSubresource( constBuffer_, 0, NULL, cpuIntermediateData_, 0, 0 );
+    }
+
 }

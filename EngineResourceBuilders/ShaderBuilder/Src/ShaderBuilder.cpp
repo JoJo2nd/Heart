@@ -87,6 +87,14 @@ void ShaderProgramBuilder::BuildResource()
     D3D11_SHADER_DESC desc;
     reflect->GetDesc( &desc );
 
+    outputProgram_.vertexInputLayoutFlags_ = 0;
+
+    if ( outputProgram_.shaderType_ == Heart::ShaderType_VERTEXPROG )
+    {
+        ParseVertexInputFormat(desc, reflect);
+
+    }
+
     outputProgram_.parameterCount_ = 0;
     outputProgram_.totalParameterSize_ = 0;
     //outputProgram_.constBuffers_.Resize( desc.ConstantBuffers );
@@ -134,6 +142,52 @@ void ShaderProgramBuilder::CleanUpFromBuild()
     {
         result_->Release();
         result_ = NULL;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ShaderProgramBuilder::ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect )
+{
+    for ( hUint32 i = 0; i < desc.InputParameters; ++i )
+    {
+        D3D11_SIGNATURE_PARAMETER_DESC inputDesc;
+        reflect->GetInputParameterDesc( i, &inputDesc );
+
+        if ( Heart::hStrCmp( inputDesc.SemanticName, "POSITION" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_XYZ;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "POSITIONT" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_XYZW;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "NORMAL" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_NORMAL;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "TANGENT" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_TANGENT;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "BINORMAL" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_BINORMAL;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "COLOR" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_COLOR;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "TEXCOORD" ) == 0 )
+        {
+            outputProgram_.vertexInputLayoutFlags_ |= Heart::hrVF_1UV << inputDesc.SemanticIndex;
+        }
+        else
+        {
+            AppendWarning( "Unknown input semantic %s for vertex program", inputDesc.SemanticName );
+        }
     }
 }
 

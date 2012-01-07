@@ -21,6 +21,7 @@
 #include "hResource.h"
 #include "hRendererConstants.h"
 #include "hDebugRenderer.h"
+#include "hRenderSubmissionContext.h"
 
 namespace Heart
 {
@@ -56,38 +57,6 @@ namespace Heart
 		static const hUint32 MAX_PASSES = 8;
 		hRenderFrameStats passes_[ MAX_PASSES ];
 	};
-
-    class hRenderSubmissionCtx
-    {
-    public:
-
-        hRenderSubmissionCtx() {}
-        ~hRenderSubmissionCtx() {}
-        
-        void    SetMaterial( hMaterial* mat );
-        void	SetIndexStream( hdIndexBuffer* pIIBuf );
-        void	SetVertexStream( hdVtxBuffer* pIVBuf, hdVtxDecl* pDecl );
-        void	SetVertexFormat( hdVtxDecl* );
-        void	SetTexture( hdTexture* pTexture, hUint32 idx );
-        void	SetRenderTarget( hUint32 idx , hdTexture* pTarget );
-        void	SetViewport( const hViewport& viewport );
-        void	SetScissorRect( const ScissorRect& scissor );
-        void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
-        void	DrawPrimitive( hUint32 nPrimatives );
-        void	DrawVertexStream( PrimitiveType primType );
-        void    RunCommandList( hRenderSubmissionCtx* cmdBuf );
-        void    Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo );
-        void    Unmap( hIndexBufferMapInfo* outInfo );
-        void    Map( hVertexBuffer* ib, hVertexBufferMapInfo* outInfo );
-        void    Unmap( hVertexBufferMapInfo* outInfo );
-        void    Map( hTexture* ib, hTextureMapInfo* outInfo );
-        void    Unmap( hTextureMapInfo* outInfo );
-
-
-    private:
-
-        hdRenderSubmissionCtx   impl_;
-    };
 
 	class hRenderer : public pimpl< hdRenderDevice >
 	{
@@ -141,6 +110,9 @@ namespace Heart
         void                                                    DestoryDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
         void                                                    CreateSamplerState( const hSamplerStateDesc& desc, hdSamplerState** state ) { *state = pImpl()->CreateSamplerState( desc ); }
         void                                                    DestorySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
+        hdParameterConstantBlock*                               CreateConstantBuffers( const hUint32* sizes, hUint32 count ) { return pImpl()->CreateConstantBlocks( sizes, count ); }
+        void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
+        void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }
 		void													GetVertexDeclaration(  hVertexDeclaration*& pOut, hUint32 vtxFlags );
 		void													DestroyMaterial( hMaterial* pMat );
 		void													CreateTexture( hResourceHandle< hTexture >& pOut, hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, const char* name = "RuntimeTexture" );

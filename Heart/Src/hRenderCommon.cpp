@@ -349,9 +349,9 @@ namespace Cmd
 	void SetStreams::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pRenderer->RenderStateCache().vertexDecl( pVBuf_->GetVertexDeclaration() );
-		pRenderer->RenderStateCache().setIndexStream( pIBuf_ );
-		pRenderer->RenderStateCache().setVertexStream( pVBuf_ );
+		//pRenderer->RenderStateCache().vertexDecl( pVBuf_->GetVertexDeclaration() );
+		//pRenderer->RenderStateCache().setIndexStream( pIBuf_ );
+		//pRenderer->RenderStateCache().setVertexStream( pVBuf_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -474,7 +474,7 @@ namespace Cmd
 	void BindTexture::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pMat_->BindTextureParameter( pTexParam_, pTex_ );
+		//pMat_->BindTextureParameter( pTexParam_, pTex_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1012,7 +1012,7 @@ namespace Cmd
 	void SetMaterialFloatParameter::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pMat_->SetFloatArrayParameter( parameter_, &val_, 1 );
+		//pMat_->SetFloatArrayParameter( parameter_, &val_, 1 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1046,7 +1046,7 @@ namespace Cmd
 	void SetMaterialFloat3Parameter::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pMat_->SetFloatArrayParameter( parameter_, val_, 3 );
+		//pMat_->SetFloatArrayParameter( parameter_, val_, 3 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1080,7 +1080,7 @@ namespace Cmd
 	void SetMaterialColorParameter::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pMat_->SetFloatArrayParameter( parameter_, floatArray_, 4 );
+		//pMat_->SetFloatArrayParameter( parameter_, floatArray_, 4 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1117,7 +1117,7 @@ namespace Cmd
 	void SetMaterialFloat4x4Parameter::Execute( hRenderer* pRenderer )
 	{
 		PRINT_RENDER();
-		pMat_->SetFloatArrayParameter( parameter_, val_, 16 );
+		//pMat_->SetFloatArrayParameter( parameter_, val_, 16 );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

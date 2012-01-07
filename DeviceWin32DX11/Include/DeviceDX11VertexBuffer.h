@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	DeviceDX11Texture.h	
+	filename: 	DeviceDX11VertexBuffer.h	
 	
-	Copyright (c) 18:12:2011 James Moran
+	Copyright (c) 6:1:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,30 +24,20 @@
 	distribution.
 
 *********************************************************************/
+#ifndef DEVICEDX11VERTEXBUFFER_H__
+#define DEVICEDX11VERTEXBUFFER_H__
 
 namespace Heart
 {
-    class hdDX11Texture
+    class hdDX11VertexBuffer
     {
     public:
-        hdDX11Texture() 
-            : dx11Texture_(NULL)
-            , renderTargetView_(NULL)
-            , depthStencilView_(NULL)
-            , shaderResourceView_(NULL)
-        {}
-        ~hdDX11Texture() 
-        {}
+        hdDX11VertexBuffer() {}
+        ~hdDX11VertexBuffer() {}
 
-    private:
-
-        friend class hdDX11RenderDevice;
-        friend class hdDX11RenderSubmissionCtx;
-
-        ID3D11Texture2D*            dx11Texture_;
-        ID3D11RenderTargetView*     renderTargetView_;
-        ID3D11DepthStencilView*     depthStencilView_;
-        ID3D11ShaderResourceView*   shaderResourceView_;
-
+        hUint32             vertexLayoutFlags_;
+        ID3D11Buffer*       buffer_;
     };
 }
+
+#endif // DEVICEDX11VERTEXBUFFER_H__

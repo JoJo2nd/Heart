@@ -31,8 +31,8 @@ namespace Heart
 
 	void hVertexBuffer::Lock()
 	{
-		hcAssert( lockPtr_ == NULL );
-		lockPtr_ = (hByte*)renderer_->AquireTempRenderMemory( pVtxDecl_->Stride()*vtxCount_ );
+// 		hcAssert( lockPtr_ == NULL );
+// 		lockPtr_ = (hByte*)renderer_->AquireTempRenderMemory( pVtxDecl_->Stride()*vtxCount_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -53,12 +53,12 @@ namespace Heart
 
 	void hVertexBuffer::FlushVertexData( void* dataPtr, hUint32 size )
 	{
-		void* mapped = pImpl()->Map();
-		if ( mapped )
-		{
-			memcpy( mapped, dataPtr, size );
-		}
-		pImpl()->Unmap( mapped );
+// 		void* mapped = pImpl()->Map();
+// 		if ( mapped )
+// 		{
+// 			memcpy( mapped, dataPtr, size );
+// 		}
+// 		pImpl()->Unmap( mapped );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

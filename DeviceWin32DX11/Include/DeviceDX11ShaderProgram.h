@@ -31,6 +31,19 @@
 namespace Heart
 {
 
+    struct hdDX11ParameterConstantBlock
+    {
+        
+        hUint32 GetSize() const { return size_; } //in Floats
+        hFloat* GetBufferAddress() const { return cpuIntermediateData_; }//
+        void    Flush( ID3D11DeviceContext* ctx );
+
+        hUint32         slot_;
+        ID3D11Buffer*   constBuffer_;
+        hUint32         size_;
+        hFloat*         cpuIntermediateData_;//intermediate data from CPU -> GPU
+    };
+
     class hdDX11ShaderProgram
     {
     public:
@@ -50,7 +63,10 @@ namespace Heart
             }
         }
 
-        hBool GetShaderParameter( hUint32 i, hShaderParameter* param );
+        hBool           GetShaderParameter( hUint32 i, hShaderParameter* param );
+        const hFloat*   GetShaderParameterDefaultValue( hUint32 idx ) const;
+        hUint32         GetConstantBufferCount() const;
+        hUint32         GetConstantBufferSize( hUint32 idx ) const;
 
     private:
 
@@ -58,6 +74,8 @@ namespace Heart
         friend class hdDX11RenderSubmissionCtx;
 
         ShaderType                  type_;
+        hUint32                     inputLayoutFlags_;
+        hdDX11VertexLayout*         inputLayout_;
         union 
         {
             ID3D11PixelShader*      pixelShader_;

@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	DeviceDX11Texture.h	
+	filename: 	DeviceDX11VertexLayout.h	
 	
-	Copyright (c) 18:12:2011 James Moran
+	Copyright (c) 6:1:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,30 +24,23 @@
 	distribution.
 
 *********************************************************************/
+#ifndef DEVICEDX11VERTEXLAYOUT_H__
+#define DEVICEDX11VERTEXLAYOUT_H__
 
 namespace Heart
 {
-    class hdDX11Texture
+    class hdDX11VertexLayout : public hMapElement< hUint32, hdDX11VertexLayout >
     {
     public:
-        hdDX11Texture() 
-            : dx11Texture_(NULL)
-            , renderTargetView_(NULL)
-            , depthStencilView_(NULL)
-            , shaderResourceView_(NULL)
+        hdDX11VertexLayout() 
+            : layout_(NULL)
         {}
-        ~hdDX11Texture() 
-        {}
+        ~hdDX11VertexLayout()
+        {
+        }
 
-    private:
-
-        friend class hdDX11RenderDevice;
-        friend class hdDX11RenderSubmissionCtx;
-
-        ID3D11Texture2D*            dx11Texture_;
-        ID3D11RenderTargetView*     renderTargetView_;
-        ID3D11DepthStencilView*     depthStencilView_;
-        ID3D11ShaderResourceView*   shaderResourceView_;
-
+        ID3D11InputLayout*      layout_;
     };
 }
+
+#endif // DEVICEDX11VERTEXLAYOUT_H__

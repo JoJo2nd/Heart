@@ -178,7 +178,7 @@ namespace Heart
 		{
 			hMaterial* pmat = materialsToRelease_.peek();
 			materialsToRelease_.pop();
-			pmat->Release();
+			//pmat->Release();
 			++ret;
 		}
 		return ret;
@@ -379,7 +379,7 @@ namespace Heart
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
-        //Fixup deps!
+        //Fixup dependencies
         resManager->LockResourceDatabase();
         hUint32 nTech = resource->techniques_.GetSize();
         for ( hUint32 tech = 0; tech < nTech; ++tech )
@@ -396,23 +396,31 @@ namespace Heart
                 resource->techniques_[tech].passes_[pass].fragmentProgram_ = fp;
 
                 hdShaderProgram* prog = vp->pImpl();
+                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
+                {
+                    resource->AddConstBufferDesc( i, prog->GetConstantBufferSize( i ) );
+                }
                 hUint32 parameterCount = vp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
                 {
                     hShaderParameter param;
                     hBool ok = prog->GetShaderParameter( i, &param );
                     hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    resource->FindOrAddShaderParameter( param );
+                    resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
                 }
 
                 prog = fp->pImpl();
+                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
+                {
+                    resource->AddConstBufferDesc( i, prog->GetConstantBufferSize( i ) );
+                }
                 parameterCount = fp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
                 {
                     hShaderParameter param;
                     hBool ok = prog->GetShaderParameter( i, &param );
                     hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    resource->FindOrAddShaderParameter( param );
+                    resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
                 }
 
                 CreateBlendState( resource->techniques_[tech].passes_[pass].blendStateDesc_, &resource->techniques_[tech].passes_[pass].blendState_ );
@@ -455,7 +463,7 @@ namespace Heart
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
-        resource->SetImpl( pImpl()->CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->shaderType_ ) );
+        resource->SetImpl( pImpl()->CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ) );
      
         return resource;
     }
