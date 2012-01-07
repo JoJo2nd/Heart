@@ -91,7 +91,6 @@ namespace Heart
 
 typedef Heart::hdDX11RenderDevice		    hdRenderDevice;
 typedef Heart::hdDX11RenderSubmissionCtx	hdRenderSubmissionCtx;
-typedef Heart::hdDX11PlaceholderType        hdRenderer;
 typedef Heart::hdDX11VertexLayout   		hdVtxDecl;//make this include input state
 typedef Heart::hdDX11VertexBuffer	    	hdVtxBuffer;
 typedef Heart::hdDX11IndexBuffer    	    hdIndexBuffer;
@@ -103,7 +102,8 @@ typedef Heart::hdDX11RasterizerState        hdRasterizerState;
 typedef Heart::hdDX11DepthStencilState      hdDepthStencilState;
 typedef Heart::hdDX11InputState             hdInputState;
 typedef Heart::hdDX11SamplerState           hdSamplerState;
-typedef Heart::hdDX11LockedResourceData     hdTextureMapData;
+typedef Heart::hdDX11MappedResourceData     hdMappedData;
+typedef Heart::hdDX11CommandBuffer          hdRenderCommandBuffer;
 
 
 #endif // DEVICEWIN32DX11_H__

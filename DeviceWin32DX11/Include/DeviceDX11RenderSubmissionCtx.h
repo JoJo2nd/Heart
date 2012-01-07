@@ -30,7 +30,8 @@
 
 namespace Heart
 {
-    typedef D3D11_MAPPED_SUBRESOURCE hdDX11LockedResourceData;
+    typedef D3D11_MAPPED_SUBRESOURCE hdDX11MappedResourceData;
+    typedef ID3D11CommandList* hdDX11CommandBuffer;
 
     class hdDX11RenderSubmissionCtx
     {
@@ -46,6 +47,7 @@ namespace Heart
         ~hdDX11RenderSubmissionCtx() 
         {}
 
+        hdDX11CommandBuffer     SaveToCommandBuffer();
         void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
         void	SetRenderStateBlock( hdDX11BlendState& st );
@@ -63,19 +65,18 @@ namespace Heart
         void    SetPrimitiveType( PrimitiveType type );
         void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
-        void    Map( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
-        void    Unmap( hdDX11Texture* tex, hUint32 level, hdDX11LockedResourceData* data );
-        void    Map( hdDX11IndexBuffer* ib, hdDX11LockedResourceData* data );
-        void    Unmap( hdDX11IndexBuffer* ib, hdDX11LockedResourceData* data );
-        void    Map( hdDX11VertexBuffer* vb, hdDX11LockedResourceData* data );
-        void    Unmap( hdDX11VertexBuffer* vb, hdDX11LockedResourceData* data );
+        void    RunSubmissionBuffer( hdDX11CommandBuffer cmdBuf );
+        void    Map( hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11Texture* tex, hUint32 level );
+        void    Map( hdDX11IndexBuffer* ib, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11IndexBuffer* ib );
+        void    Map( hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11VertexBuffer* vb );
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device ) { device_ = device; }
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
 
     private:
-
-        friend class hdDX11RenderDevice;
 
         static const hUint32    MAX_RENDERTARGE_VIEWS = 4;
 

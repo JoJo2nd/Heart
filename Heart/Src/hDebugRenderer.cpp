@@ -284,32 +284,32 @@ namespace
 
 			for ( hUint32 i = 0; i < nSphereCommands_; ++i )
 			{
-				Utility::BuildDebugSphereMesh( 
-					sphereCommands_[i].centre_, 
-					8, 
-					6, 
-					sphereCommands_[i].radius_, 
-					&sphereIdx, 
-					&sphereVtx, 
-					sphereCommands_[i].colour_, 
-					&vp, 
-					&sphereIdxBuf_, 
-					&sphereVtxBuf_ );
+// 				Utility::BuildDebugSphereMesh( 
+// 					sphereCommands_[i].centre_, 
+// 					8, 
+// 					6, 
+// 					sphereCommands_[i].radius_, 
+// 					&sphereIdx, 
+// 					&sphereVtx, 
+// 					sphereCommands_[i].colour_, 
+// 					&vp, 
+// 					&sphereIdxBuf_, 
+// 					&sphereVtxBuf_ );
 			}
 
 			for ( hUint32 i = 0; i < nConeCommands_; ++i )
 			{
-				Utility::BuildDebugConeMesh(
-					&coneCommands_[i].xf_, 
-					8, 
-					coneCommands_[i].radius_, 
-					coneCommands_[i].lenght_, 
-					&sphereIdx, 
-					&sphereVtx, 
-					coneCommands_[i].colour_, 
-					&vp, 
-					&sphereIdxBuf_, 
-					&sphereVtxBuf_ );
+// 				Utility::BuildDebugConeMesh(
+// 					&coneCommands_[i].xf_, 
+// 					8, 
+// 					coneCommands_[i].radius_, 
+// 					coneCommands_[i].lenght_, 
+// 					&sphereIdx, 
+// 					&sphereVtx, 
+// 					coneCommands_[i].colour_, 
+// 					&vp, 
+// 					&sphereIdxBuf_, 
+// 					&sphereVtxBuf_ );
 			}
 
 			sphereIdxBuf_->Unlock();

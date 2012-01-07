@@ -7,11 +7,6 @@
 	purpose:	
 *********************************************************************/
 
-// #include "Common.h"
-// #include "DeviceFileSystem.h"
-// #include <windows.h>
-// #include <malloc.h>
-
 
 namespace Heart
 {

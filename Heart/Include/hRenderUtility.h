@@ -17,7 +17,7 @@
 namespace Heart
 {
 
-	class hRenderer;
+	class hRenderSubmissionCtx;
 	class hIndexBuffer;
 	class hVertexBuffer;
 
@@ -30,16 +30,16 @@ namespace Utility
 		hUint16 segments, 
 		hUint16 rings, 
 		hFloat radius,
-		hRenderer* renderer, 
-		hResourceHandle< hIndexBuffer >* outIdxBuf,
-		hResourceHandle< hVertexBuffer >* outVtxBuf );
+		hRenderSubmissionCtx* ctx, 
+		hIndexBuffer* outIdxBuf,
+		hVertexBuffer* outVtxBuf );
 	extern void		BuildConeMesh(
 		hUint16 segments, 
 		hFloat radius,
 		hFloat depth,
-		hRenderer* renderer, 
-		hResourceHandle< hIndexBuffer >* outIdxBuf,
-		hResourceHandle< hVertexBuffer >* outVtxBuf );
+		hRenderSubmissionCtx* ctx, 
+		hIndexBuffer* outIdxBuf,
+		hVertexBuffer* outVtxBuf );
 	extern void		BuildDebugSphereMesh( 
 		const hVec3& centre,
 		hUint16 segments, 
@@ -49,8 +49,8 @@ namespace Utility
 		hUint16* startVtx,
 		hColour colour,
 		hMatrix* vp,
-		hResourceHandle< hIndexBuffer >* outIdxBuf, 
-		hResourceHandle< hVertexBuffer >* outVtxBuf );
+		hIndexBuffer* outIdxBuf, 
+		hVertexBuffer* outVtxBuf );
 	extern void		BuildDebugConeMesh(
 		const hMatrix* transform,
 		hUint16 segments, 
@@ -60,12 +60,12 @@ namespace Utility
 		hUint16* startVtx, 
 		hColour colour, 
 		hMatrix* vp, 
-		hResourceHandle< hIndexBuffer >* outIdxBuf, 
-		hResourceHandle< hVertexBuffer >* outVtxBuf );
+		hIndexBuffer* outIdxBuf, 
+		hVertexBuffer* outVtxBuf );
 	extern void		BuildFullscreenQuadMesh(
-		hRenderer* renderer, 
-		hResourceHandle< hIndexBuffer >* outIdxBuf,
-		hResourceHandle< hVertexBuffer >* outVtxBuf );
+		hRenderSubmissionCtx* ctx, 
+		hIndexBuffer* outIdxBuf,
+		hVertexBuffer* outVtxBuf );
 
 }																					
 }

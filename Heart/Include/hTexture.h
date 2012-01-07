@@ -82,7 +82,7 @@ namespace Cmd
         hUint32		        level_;
         hUint32		        pitch_;
         hTexture*           tex_;
-        hdTextureMapData    privateDeviceData_;
+        hdMappedData    privateDeviceData_;
     };
 
     template<>

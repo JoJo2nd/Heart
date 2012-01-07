@@ -41,17 +41,19 @@ namespace Heart
         hdDX11RenderDevice();
         ~hdDX11RenderDevice();
 
-        void    Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync );
-        void    Destroy();
-        void    ActiveContext() {}
-        void    BeginRender();
-        void    EndRender();
-        void	SwapBuffers();
-        void    RunSubmissionCtx( hdDX11RenderSubmissionCtx* subCtx );
-        hdDX11RenderSubmissionCtx* GetMainSubmissionCtx() { return &mainRenderCtx_; };
+        void                            Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync );
+        void                            Destroy();
+        void                            ActiveContext() {}
+        void                            BeginRender();
+        void                            EndRender();
+        void	                        SwapBuffers();
+        void                            InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
+        void                            DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
+        void                            RunSubmissionCtx( hdDX11RenderSubmissionCtx* subCtx );
+        hdDX11RenderSubmissionCtx*      GetMainSubmissionCtx() { return &mainRenderCtx_; };
         
-        hUint32 Width() const { return width_; }
-        hUint32 Height() const { return height_; }
+        hUint32                         Width() const { return width_; }
+        hUint32                         Height() const { return height_; }
 
         //Resource Create Calls
         hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type );

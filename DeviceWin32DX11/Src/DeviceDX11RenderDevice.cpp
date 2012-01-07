@@ -135,9 +135,9 @@ namespace Heart
         hr = d3d11Device_->CreateDepthStencilView( depthStencil_, &descDSV, &depthStencilView_ );
         hcAssert( SUCCEEDED( hr ) );
 
-        mainRenderCtx_.device_ = mainDeviceCtx_;
-        mainRenderCtx_.renderTargetViews_[0] = renderTargetView_;
-        mainRenderCtx_.depthStencilView_ = depthStencilView_;
+        mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_ );
+        //mainRenderCtx_.renderTargetViews_[0] = renderTargetView_;
+        //mainRenderCtx_.depthStencilView_ = depthStencilView_;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -201,6 +201,27 @@ namespace Heart
     void hdDX11RenderDevice::SwapBuffers()
     {
         mainSwapChain_->Present( 1, 0 );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx )
+    {
+        ID3D11DeviceContext* rsc;
+        d3d11Device_->CreateDeferredContext( 0, &rsc );
+        ctx->SetDeviceCtx( rsc );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx )
+    {
+        ctx->GetDeviceCtx()->Release();
+        ctx->SetDeviceCtx( NULL );
     }
 
     //////////////////////////////////////////////////////////////////////////

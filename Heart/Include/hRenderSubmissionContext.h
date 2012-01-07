@@ -58,6 +58,7 @@ namespace Heart
         ~hRenderSubmissionCtx() 
         {}
 
+        hdRenderCommandBuffer SaveToCommandBuffer();
         void	SetIndexStream( hIndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf );
         void    SetVertexDeclaration( hVertexDeclaration* vtxDecl );
@@ -69,16 +70,19 @@ namespace Heart
         void    SetConstantBuffer( hdParameterConstantBlock* constBuffer );
         void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
         void    SetPrimitiveType( PrimitiveType primType );
-        void	DrawPrimitive( hUint32 nPrimatives );
-        void    RunCommandList( hRenderSubmissionCtx* cmdBuf );
+        void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
+        void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
+        void    RunCommandBuffer( hdRenderCommandBuffer cmdBuf );
         void    Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo );
         void    Unmap( hIndexBufferMapInfo* outInfo );
         void    Map( hVertexBuffer* ib, hVertexBufferMapInfo* outInfo );
         void    Unmap( hVertexBufferMapInfo* outInfo );
-        void    Map( hTexture* ib, hTextureMapInfo* outInfo );
+        void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
         void    Unmap( hTextureMapInfo* outInfo );
 
     private:
+
+        friend class hRenderer;
 
         hdRenderSubmissionCtx   impl_;
     };

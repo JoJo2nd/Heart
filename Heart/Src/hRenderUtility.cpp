@@ -91,23 +91,22 @@ namespace Utility
 	//////////////////////////////////////////////////////////////////////////
 
 	extern void BuildSphereMesh( hUint16 segments, 
-								hUint16 rings, 
-								hFloat radius, 
-								hRenderer* renderer, 
-								hResourceHandle< hIndexBuffer >* outIdxBuf, 
-								hResourceHandle< hVertexBuffer >* outVtxBuf )
+								 hUint16 rings, 
+								 hFloat radius, 
+								 hRenderSubmissionCtx* ctx, 
+								 hIndexBuffer* idxBuf, 
+								 hVertexBuffer* vtxBuf )
 	{
-/*
 		hUint16 vtxCnt = (hUint16)((rings + 1) * (segments+1)) + 1;
 		hUint16 idxCnt = (hUint16)(6 * rings * (segments+1)) + 1;
-		hVertexDeclaration* vtxDecl;
 
-		renderer->GetVertexDeclaration( vtxDecl, hrVF_XYZ | hrVF_NORMAL );
-		renderer->CreateIndexBuffer( *outIdxBuf, NULL, idxCnt, 0, PRIMITIVETYPE_TRILIST, "SphereMeshIB" );
-		renderer->CreateVertexBuffer( *outVtxBuf, vtxCnt, vtxDecl, 0, "SphereMeshVB" );
+        hIndexBufferMapInfo  ibMap;
+        hVertexBufferMapInfo vbMap;
+        ctx->Map( idxBuf, &ibMap );
+        ctx->Map( vtxBuf, &vbMap );
 
-		(*outIdxBuf)->Lock();
-		(*outVtxBuf)->Lock();
+        hFloat* vtx      = (hFloat*)vbMap.ptr_;
+        hUint16* indices = (hUint16*)ibMap.ptr_;
 
 		hFloat dRingAngle = (hmPI / rings);
 		hFloat dSegAngle = (2 * hmPI / segments);
@@ -126,56 +125,39 @@ namespace Utility
 			{
 				float x0 = r0 * sinf(seg * dSegAngle);
 				float z0 = r0 * cosf(seg * dSegAngle);
-				hVec3 n,v( x0, y0, z0 );
-				hVec3::normalise( v, n );//needs flipping, but shouldn't
+				hVec3 v( x0, y0, z0 );
+				hCPUVec3 vNormal = hVec3Func::normaliseFast( v );//needs flipping, but shouldn't
 
 				// Add one vertex to the strip which makes up the sphere
-				(*outVtxBuf)->SetElement( vtxIdx, hrVE_XYZ, v );
-	// 			*pVertex++ = x0;
-	// 			*pVertex++ = y0;
-	// 			*pVertex++ = z0;
+	 			*vtx++ = x0;
+	 			*vtx++ = y0;
+	 			*vtx++ = z0;
 
 				//Normal
-				(*outVtxBuf)->SetElement( vtxIdx, hrVE_NORMAL, n );
-	//			Vector3 vNormal = Vector3(x0, y0, z0).normalisedCopy();
-	// 			*pVertex++ = vNormal.x;
-	// 			*pVertex++ = vNormal.y;
-	// 			*pVertex++ = vNormal.z;
+	 			*vtx++ = vNormal.x;
+	 			*vtx++ = vNormal.y;
+	 			*vtx++ = vNormal.z;
 
 				//UV
-	// 			*pVertex++ = (float) seg / (float) nSegments;
-	// 			*pVertex++ = (float) ring / (float) nRings;
+	 			*vtx++ = (float) seg / (float) segments;
+	 			*vtx++ = (float) ring / (float) rings;
 
 				if ( ring != rings ) 
 				{
 					// each vertex (except the last) has six indices pointing to it
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx );
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx+segments+1 );
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx+segments );
-					
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx+1 );
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx+segments+1 );				
-					(*outIdxBuf)->SetIndex( idxIdx++, vtxIdx );
-
-	// 				*pIndices++ = wVerticeIndex + nSegments + 1;
-	// 				*pIndices++ = wVerticeIndex;               
-	// 				*pIndices++ = wVerticeIndex + nSegments;
-	// 				*pIndices++ = wVerticeIndex + nSegments + 1;
-	// 				*pIndices++ = wVerticeIndex + 1;
-	// 				*pIndices++ = wVerticeIndex;
+	 				*indices++ = vtxIdx + segments + 1;
+	 				*indices++ = vtxIdx;               
+	 				*indices++ = vtxIdx + segments;
+	 				*indices++ = vtxIdx + segments + 1;
+	 				*indices++ = vtxIdx + 1;
+	 				*indices++ = vtxIdx;
 				}
 				++vtxIdx;
 			}
 		}
 
-		//Vec3 n,v( 0.0f, -radius, 0.0f );
-		//Vec3::normalise( v, n );//needs flipping, but shouldn't
-		//(*outVtxBuf)->SetElement( vtxIdx, hrVE_XYZ, v );
-		//(*outVtxBuf)->SetElement( vtxIdx, hrVE_NORMAL, n );
-
-		(*outIdxBuf)->Unlock();
-		(*outVtxBuf)->Unlock();
-*/
+        ctx->Unmap( &ibMap );
+        ctx->Unmap( &vbMap );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -247,39 +229,49 @@ namespace Utility
 	//////////////////////////////////////////////////////////////////////////
 
 	extern void BuildFullscreenQuadMesh( 
-		hRenderer* renderer, 
-		hResourceHandle< hIndexBuffer >* outIdxBuf, 
-		hResourceHandle< hVertexBuffer >* outVtxBuf )
+        hFloat width,
+        hFloat height,
+		hRenderSubmissionCtx* ctx,  
+		hIndexBuffer* idxBuf, 
+		hVertexBuffer* vtxBuf )
 	{
-// 		hVertexDeclaration* vtxDecl;
-// 		hUint16 quadIdx[] =
-// 		{
-// 			0,2,1,2,3,1
-// 		};
-// 		hFloat wo2 = renderer->Width() / 2.0f;
-// 		hFloat ho2 = renderer->Height() / 2.0f;
-//
-// 		renderer->GetVertexDeclaration( vtxDecl, hrVF_XYZ | hrVF_1UV  );
-// 
-// 		renderer->CreateIndexBuffer( (*outIdxBuf), quadIdx, 6, 0, PRIMITIVETYPE_TRILIST );
-// 
-// 		renderer->CreateVertexBuffer( (*outVtxBuf), 4, vtxDecl, 0 );
-// 
-// 		(*outVtxBuf)->Lock();
-// 
-// 		(*outVtxBuf)->SetElement( 0, hrVE_XYZ, hVec3( -wo2,  ho2, 0.25f ) );
-// 		(*outVtxBuf)->SetElement( 0, hrVE_1UV, hVec2( 0.0f, 0.0f ) );
-// 
-// 		(*outVtxBuf)->SetElement( 1, hrVE_XYZ, hVec3(  wo2,  ho2, 0.25f ) );
-// 		(*outVtxBuf)->SetElement( 1, hrVE_1UV, hVec2( 1.0f, 0.0f ) );
-// 
-// 		(*outVtxBuf)->SetElement( 2, hrVE_XYZ, hVec3( -wo2, -ho2, 0.25f ) );
-// 		(*outVtxBuf)->SetElement( 2, hrVE_1UV, hVec2( 0.0f, 1.0f ) );
-// 
-// 		(*outVtxBuf)->SetElement( 3, hrVE_XYZ, hVec3(  wo2, -ho2, 0.25f ) );
-// 		(*outVtxBuf)->SetElement( 3, hrVE_1UV, hVec2( 1.0f, 1.0f ) );
-// 
-// 		(*outVtxBuf)->Unlock();
+		hUint16 quadIdx[] =
+		{
+			0,2,1,2,3,1
+		};
+		hFloat wo2 = width / 2.0f;
+		hFloat ho2 = height / 2.0f;
+        struct Vertex
+        {
+            hCPUVec3 pos;
+            hCPUVec2 uv;
+        };
+
+        hIndexBufferMapInfo ibMapInfo;
+        ctx->Map( idxBuf, &ibMapInfo );
+
+        hMemCpy( ibMapInfo.ptr_, quadIdx, sizeof(quadIdx) );
+
+        ctx->Unmap( &ibMapInfo );
+
+        hVertexBufferMapInfo vbMapInfo;
+        ctx->Map( vtxBuf, &vbMapInfo );
+
+        Vertex* vtx = (Vertex*)vbMapInfo.ptr_;
+
+        vtx[0].pos = hCPUVec3( -wo2, ho2,  0.25f );
+        vtx[0].uv  = hCPUVec2( 0.f, 0.f );
+
+        vtx[0].pos = hCPUVec3(  wo2, ho2,  0.25f );
+        vtx[0].uv  = hCPUVec2( 1.f, 0.f );
+
+        vtx[0].pos = hCPUVec3( -wo2, -ho2, 0.25f );
+        vtx[0].uv  = hCPUVec2( 0.f, 1.f );
+
+        vtx[0].pos = hCPUVec3(  wo2, -ho2, 0.25f );
+        vtx[0].uv  = hCPUVec2( 1.f, 1.f );
+
+        ctx->Unmap( &vbMapInfo );
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

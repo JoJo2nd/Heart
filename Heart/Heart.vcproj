@@ -739,14 +739,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Include\new_off.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\new_on.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Include\NumericalLimits.h"
 					>
 				</File>
