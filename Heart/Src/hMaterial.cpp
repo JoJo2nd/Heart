@@ -11,7 +11,6 @@
 #include "hMaterial.h"
 #include "hRendererConstants.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 #include "hRenderState.h"
 
 

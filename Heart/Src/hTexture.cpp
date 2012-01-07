@@ -11,7 +11,6 @@
 #include "Heart.h"
 #include "hTexture.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {

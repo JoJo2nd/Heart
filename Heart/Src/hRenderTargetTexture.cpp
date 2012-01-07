@@ -11,7 +11,6 @@
 #include "hRenderTargetTexture.h"
 #include "Heart.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 
 namespace Heart

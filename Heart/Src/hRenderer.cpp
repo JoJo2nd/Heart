@@ -14,7 +14,6 @@
 #include "hVertexDeclarations.h"
 #include "hResourceManager.h"
 #include "hRenderState.h"
-#include "hRenderCommon.h"
 #include "hTexture.h"
 #include "hIndexBuffer.h"
 #include "hVertexBuffer.h"
@@ -38,14 +37,12 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	hRenderer::hRenderer()
-		: vertexDeclManager_( NULL )
-		,currentRenderStatFrame_( 0 )
-		,pThreadFrameStats_( NULL )
-		,statPass_( 0 )
+		: currentRenderStatFrame_( 0 )
+		, pThreadFrameStats_( NULL )
+		, statPass_( 0 )
 	{
 		SetImpl( hNEW ( hGeneralHeap ) hdRenderDevice );
 
-		vertexDeclManager_ = hNEW ( hRendererHeap ) hVertexDeclarationManager( *this );
 		renderStateCache_ = hNEW ( hRendererHeap ) hRenderState( *this );
 	}
 
@@ -91,7 +88,6 @@ namespace Heart
 	{	
 		hcAssert( renderThread_.IsComplete() );
 
-		delete vertexDeclManager_;
 		delete renderStateCache_;
 	}
 
@@ -634,15 +630,6 @@ namespace Heart
 // 		hcAssert( IsRenderThread() );
 // 
 // 		pImpl()->DestroyVertexDeclaration( pVD->pImpl() );
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::GetVertexDeclaration( hVertexDeclaration*& pOut, hUint32 vtxFlags )
-	{
-		pOut = vertexDeclManager_->GetVertexDeclartion( vtxFlags );
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

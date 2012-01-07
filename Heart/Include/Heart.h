@@ -122,14 +122,11 @@
 // Render /////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include "hRendererConstants.h"
-#include "hRenderCommon.h"
 #include "hRenderer.h"
 #include "hRenderState.h"
 #include "hVertexDeclarations.h"
-#include "hVertexDeclarationManager.h"
 #include "hVertexBuffer.h"
 #include "hIndexBuffer.h"
-#include "hCommandBufferList.h"
 #include "hCamera.h"
 #include "hViewFrustum.h"
 #include "hTextureBase.h"

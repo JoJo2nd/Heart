@@ -12,12 +12,10 @@
 #include "hTypes.h"
 #include "hMemory.h"
 #include "hMath.h"
-#include "hVertexDeclarationManager.h"
 #include "hThread.h"
 #include "hLocklessComPipe.h"
 #include "hSemaphore.h"
 #include "hThreadEvent.h"
-#include "hCommandBufferList.h"
 #include "hResource.h"
 #include "hRendererConstants.h"
 #include "hDebugRenderer.h"
@@ -113,7 +111,6 @@ namespace Heart
         hdParameterConstantBlock*                               CreateConstantBuffers( const hUint32* sizes, hUint32 count ) { return pImpl()->CreateConstantBlocks( sizes, count ); }
         void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
         void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }
-		void													GetVertexDeclaration(  hVertexDeclaration*& pOut, hUint32 vtxFlags );
 		void													DestroyMaterial( hMaterial* pMat );
 		void													CreateTexture( hResourceHandle< hTexture >& pOut, hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, const char* name = "RuntimeTexture" );
 		void													DestroyTexture( hTextureBase* pOut );
@@ -171,7 +168,6 @@ namespace Heart
 		void													EndRenderFrame();
 		hUint32													Width() { return 0/*pImpl()->Width()*/; }
 		hUint32													Height() { return 0/*pImpl()->Height()*/; }
-		hVertexDeclarationManager*								pVertexDeclManager() { return vertexDeclManager_; }
 		hUint32													CurrentFPS() { return FPS_; }
 		void													StopRenderThread()
 		{
@@ -343,7 +339,6 @@ namespace Heart
 		hBool													fullscreen_;
 		hBool													vsync_;
 
-		hVertexDeclarationManager*								vertexDeclManager_;
 		hRenderState*											renderStateCache_;
 		hResourceManager*										resourceManager_;
 

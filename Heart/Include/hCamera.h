@@ -15,7 +15,6 @@
 #include "hMath.h"
 #include "hArray.h"
 #include "hViewFrustum.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {

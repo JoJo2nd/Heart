@@ -14,7 +14,6 @@
 #include "hResourceManager.h"
 #include "hRenderer.h"
 #include "hTexture.h"
-#include "hRenderCommon.h"
 #include "hVertexBuffer.h"
 #include "hIndexBuffer.h"
 #include "hLuaStateManager.h"

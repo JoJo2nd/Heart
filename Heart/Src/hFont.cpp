@@ -14,8 +14,6 @@
 #include "hTexture.h"
 #include "hVertexBuffer.h"
 #include "hIndexBuffer.h"
-#include "hCommandBufferList.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {

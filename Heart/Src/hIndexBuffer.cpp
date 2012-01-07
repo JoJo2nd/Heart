@@ -10,7 +10,6 @@
 #include "Common.h"
 #include "hIndexBuffer.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {

@@ -10,7 +10,6 @@
 #include "Common.h"
 #include "hVertexBuffer.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {

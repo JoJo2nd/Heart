@@ -383,27 +383,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Src\hCommandBufferList.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hCommandBufferList.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Src\hIndexBuffer.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\Include\hIndexBuffer.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\hRenderCommon.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hRenderCommon.h"
 					>
 				</File>
 				<File
@@ -452,14 +436,6 @@
 				</File>
 				<File
 					RelativePath=".\Include\hVertexBuffer.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\hVertexDeclarationManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hVertexDeclarationManager.h"
 					>
 				</File>
 				<File
