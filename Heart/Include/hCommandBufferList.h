@@ -23,6 +23,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 	class hCommandBufferList
 	{
 	public:
@@ -122,6 +123,7 @@ namespace Heart
 		hByte*			pCommands_;
 		hByte*			pCommandsEnd_;
 	};
+#endif
 }
 
 #endif // DISPLAYLIST_H__

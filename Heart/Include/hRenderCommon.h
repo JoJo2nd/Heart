@@ -6,6 +6,8 @@
 	
 	purpose:	
 *********************************************************************/
+#ifdef HEART_OLD_RENDER_SUBMISSION
+
 #ifndef HRRENDERCOMMON_H__
 #define HRRENDERCOMMON_H__
 
@@ -961,3 +963,5 @@ namespace Cmd
 }
 
 #endif // HRRENDERCOMMON_H__
+
+#endif //HEART_OLD_RENDER_SUBMISSION

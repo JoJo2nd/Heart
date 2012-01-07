@@ -109,10 +109,10 @@ namespace Heart
 
 	void hSystemConsole::Destroy()
 	{
-		if ( pRenderCmdBuffer_ )
-		{
-			delete pRenderCmdBuffer_;
-		}
+// 		if ( pRenderCmdBuffer_ )
+// 		{
+// 			delete pRenderCmdBuffer_;
+// 		}
 		if ( indexBuffer_.HasData() )
 		{
 			indexBuffer_.Release();

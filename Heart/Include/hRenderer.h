@@ -375,7 +375,7 @@ namespace Heart
 		hLocklessComPipe< DEFAULT_MODIFY_BUFFER_SIZE >			modifyResourceBuffer_;
 
 		//Display List stuff
-		hCommandBufferList*										pCurrentDisplayList_;
+		//hCommandBufferList*										pCurrentDisplayList_;
 		
 		static void*											pRenderThreadID_;
 	};

@@ -130,35 +130,29 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 		}
 	}
 
-	if ( pCmdList )
-	{
-		//hcAssertMsg( pDrawMaterial, "Must give a material to render the text with" );
-		hcAssert( startOffset % 3 == 0 );//sanity check
-
-		//cleart the prev list
-		pCmdList->Clear();
-
-		// addative blend
-		// material should handle blend
-		//pCmdList->NewRenderCommand< Cmd::SetAlphaBlend >( RSV_ENABLE, RSV_BLEND_FUNC_ADD, RSV_BLEND_OP_SRC_ALPHA, RSV_BLEND_OP_INVSRC_ALPHA );
-
-		pCmdList->NewRenderCommand< Cmd::SetStreams >( &iBuffer, &vBuffer );
-		pCmdList->NewRenderCommand< Cmd::DrawPrimative >( charsWritten * 2 + ( startOffset / 3 ) );
-	}
+// 	if ( pCmdList )
+// 	{
+// 		//hcAssertMsg( pDrawMaterial, "Must give a material to render the text with" );
+// 		hcAssert( startOffset % 3 == 0 );//sanity check
+// 
+// 		//cleart the prev list
+// 		pCmdList->Clear();
+// 
+// 		// addative blend
+// 		// material should handle blend
+// 		//pCmdList->NewRenderCommand< Cmd::SetAlphaBlend >( RSV_ENABLE, RSV_BLEND_FUNC_ADD, RSV_BLEND_OP_SRC_ALPHA, RSV_BLEND_OP_INVSRC_ALPHA );
+// 
+// 		pCmdList->NewRenderCommand< Cmd::SetStreams >( &iBuffer, &vBuffer );
+// 		pCmdList->NewRenderCommand< Cmd::DrawPrimative >( charsWritten * 2 + ( startOffset / 3 ) );
+// 	}
 	
 	return charsWritten * 2;
 }
 
-/*/////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-function: FitLine - 
-
-purpose: builds an entire line for a font render. Return true to continue 
-		 on to next line. False when the string is complete.
-
-author: James Moran
-
-/////////////////////////////////////////////////////////////////////////*/
 hBool hFont::FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr )
 {
  	hBool canfit = hTrue;

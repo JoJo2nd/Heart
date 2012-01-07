@@ -8,6 +8,9 @@
 *********************************************************************/
 
 #include "Common.h"
+
+#ifdef HEART_OLD_RENDER_SUBMISSION
+
 #include "hRenderCommon.h"
 #include "Heart.h"
 #include "hRenderer.h"
@@ -1908,3 +1911,4 @@ namespace Cmd
 
 }
 }
+#endif //HEART_OLD_RENDER_SUBMISSION

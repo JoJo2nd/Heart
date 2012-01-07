@@ -101,7 +101,7 @@ namespace Heart
 		hUint32												nInputPrims_;
 		hResourceHandle< hIndexBuffer >				IBInput_;
 		hResourceHandle< hVertexBuffer >				VBInput_;
-		hCommandBufferList*							pRenderCmdBuffer_;
+		//hCommandBufferList*							pRenderCmdBuffer_;
 		//console print mutex
 		static hMutex										messagesMutex_;
 		static string										awaitingMessages_;
