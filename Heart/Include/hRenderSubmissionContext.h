@@ -72,6 +72,8 @@ namespace Heart
     public:
 
         hRenderSubmissionCtx()
+            : viewportConstants_(NULL)
+            , debugEnabled_(hFalse)
         {}
         ~hRenderSubmissionCtx() 
         {}
@@ -120,6 +122,7 @@ namespace Heart
         hInstanceConstants              instanceConstants_;
         hdRenderSubmissionCtx           impl_;
         hdRenderSubmissionCtx           debug_;
+        hUint32                         debugEnabled_;
     };
 
 }

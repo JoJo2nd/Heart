@@ -375,14 +375,6 @@
 				Name="Renderer"
 				>
 				<File
-					RelativePath=".\Src\hCamera.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hCamera.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Src\hIndexBuffer.cpp"
 					>
 				</File>
@@ -428,6 +420,14 @@
 				</File>
 				<File
 					RelativePath=".\Include\hRenderUtility.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Src\hRenderViewport.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hRenderViewport.h"
 					>
 				</File>
 				<File
