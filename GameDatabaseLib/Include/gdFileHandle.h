@@ -75,6 +75,7 @@ namespace GameData
         ~gdFileHandle();
 
         void                    Open( const gdChar* filename, gdBool write = false );
+        gdBool                  IsValid() const { return file_ != NULL; }
         void                    Close();
         const gdFileTimestamp&  GetFileTimestamp() const;
         gdUint64                GetFileSize() const;

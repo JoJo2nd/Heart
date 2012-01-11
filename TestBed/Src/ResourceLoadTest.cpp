@@ -33,10 +33,10 @@
 
 void ResourceLoadTest::PreEnter()
 {
-    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX", &tex1_ );
-    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX", &tex2_ );
-    resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX", &mat1_ );
-    resPack_.AddResourceToPackage( "FONTS/SYSTEM.FNT", &font1_ );
+    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX", tex1_ );
+    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX", tex2_ );
+    resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX", mat1_ );
+    resPack_.AddResourceToPackage( "FONTS/SYSTEM.FNT", font1_ );
 
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
@@ -49,12 +49,7 @@ hUint32 ResourceLoadTest::Enter()
 {
     if ( resPack_.IsPackageLoaded() )
     {
-        resPack_.BeingResourceFind();
-        tex1_ = resPack_.GetResource( tex1_ );
-        tex2_ = resPack_.GetResource( tex2_ );
-        mat1_ = resPack_.GetResource( mat1_ );
-        font1_ = resPack_.GetResource( font1_ );
-        resPack_.EndResourceFind();
+        resPack_.GetResourcePointers();
         return Heart::hStateBase::FINISHED;
     }
     

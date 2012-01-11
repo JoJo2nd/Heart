@@ -51,18 +51,21 @@ namespace Heart
 
     void hMaterial::FindOrAddShaderParameter( const hShaderParameter& newParam, const hFloat* defaultVal )
     {
+        hUint32 constBufIdx = FindConstBufferIndexFromID( newParam.cBuffer_ );
         hUint32 size = constParameters_.GetSize();
         for ( hUint32 i = 0; i < size; ++i )
         {
             if ( Heart::hStrCmp( constParameters_[i].name_, newParam.name_ ) == 0 )
             {
-                hcAssertMsg( constParameters_[i].cBuffer_ == newParam.cBuffer_ && 
+                hcAssertMsg( constParameters_[i].cBuffer_ == constBufIdx && 
                              constParameters_[i].cReg_ == newParam.cReg_,
                              "Shader Const Parameter registers must match across material techniques and passes." );
                 return;
             }
         }
 
+        hShaderParameter copyParam = newParam;
+        copyParam.cBuffer_ = constBufIdx;
         constParameters_.PushBack( newParam );
 
         if ( defaultVal )
@@ -75,17 +78,48 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::AddConstBufferDesc( hUint32 idx, hUint32 size )
+    void hMaterial::AddConstBufferDesc( const hChar* name, hUint32 size )
     {
-        if ( constBufferSizes_.GetSize() <= idx )
+        hUint32 crc = hCRC32::StringCRC( name );
+        hUint32 cbdCount = constBufferDescs_.GetSize();
+        hBool added = hFalse;
+
+        for ( hUint32 i = 0; i < cbdCount; ++i )
         {
-            constBufferSizes_.Resize( idx+1 );
-            constBufferSizes_[idx] = size;
+            if ( crc == constBufferDescs_[i].nameCRC_ )
+            {
+                constBufferDescs_[i].size_ = hMax( constBufferDescs_[i].size_, size );
+                added = hTrue;
+            }
+            
         }
-        else
+
+        if ( !added )
         {
-            hcAssertMsg( constBufferSizes_[idx] == size, "Constant buffers must match across techniques" );
+            hConstBufferDesc desc;
+            desc.nameCRC_   = crc;
+            desc.size_      = size;
+            constBufferDescs_.PushBack( desc );
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hMaterial::FindConstBufferIndexFromID( hUint32 id )
+    {
+        hUint32 size = constBufferDescs_.GetSize();
+        for ( hUint32 i = 0; i < size; ++i )
+        {
+            if ( id == constBufferDescs_[i].nameCRC_ )
+            {
+                return i;
+            }
+        }
+
+        hcAssertFailMsg( "Can't find constant buffer to match id 0x%08X", id );
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -108,6 +142,7 @@ namespace Heart
         boundTexture_ = NULL;
     }
 
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -117,7 +152,13 @@ namespace Heart
         , parentMaterial_(parentMat)
     {
         hcAssert( parentMat );
-        renderer->CreateConstantBuffers( parentMat->GetConstantBufferSizes(), parentMat->GetConstantBufferCount() );
+        hUint32 cbCount = parentMat->GetConstantBufferCount();
+        hUint32* sizes = (hUint32*)hAlloca( cbCount*sizeof(hUint32) );
+        for ( hUint32 i = 0; i < cbCount; ++i )
+        {
+            sizes[i] = parentMat->GetConstantBufferSize( i );
+        }
+        renderer->CreateConstantBuffers( sizes, parentMat->GetConstantBufferCount() );
     }
 
     //////////////////////////////////////////////////////////////////////////

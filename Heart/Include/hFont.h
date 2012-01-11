@@ -16,9 +16,7 @@
 namespace Heart
 {
 
-	class hResourceDependencyList;
 	class hTexture;
-	class hCommandBufferList;
 
 	struct hFontStyle
 	{
@@ -77,7 +75,7 @@ namespace Private
 										  const hCPUVec2& topleft, 
 										  const hCPUVec2& bottomright, 
 										  const hChar* str, 
-										  hCommandBufferList* pCmdList );
+										  hRenderSubmissionCtx* rnCtx );
 
 		static hResourceClassBase*		OnFontLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager );
 		static hUint32		            OnFontUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );

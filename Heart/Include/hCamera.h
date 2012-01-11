@@ -120,6 +120,9 @@ namespace Heart
 		hViewport						        GetViewport() const { return Viewport_; }
 		hFloat									GetFar() const { return Far_; }
 		hFloat									GetNear() const { return Near_; }
+        //TODO:             
+        void                                    SetRenderTargetSetup();
+        void                                    SetTechniquePass();
 
 	private:
 

@@ -111,9 +111,9 @@ namespace Heart
 		void													DestroyMaterial( hMaterial* pMat );
 		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, hUint32 flags, hTexture** outTex );
 		void													DestroyTexture( hTexture* pOut );
-		void													CreateIndexBuffer( hResourceHandle< hIndexBuffer >& pOut, hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, const char* name = "RuntimeIndexBuffer" );
+		void													CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB );
 		void													DestroyIndexBuffer( hIndexBuffer* pOut );
-		void													CreateVertexBuffer( hResourceHandle< hVertexBuffer >& pOut, hUint32 nElements, hVertexDeclaration* pVtxDecl, hUint32 flags, const char* name = "RuntimeVertexBuffer" );
+		void													CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 stride, hUint32 layout, hUint32 flags, hVertexBuffer** outVB );
 		void													DestoryVertexBuffer( hVertexBuffer* pOut );
 
 		void*													AquireTempRenderMemory( hUint32 size );

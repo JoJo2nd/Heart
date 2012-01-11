@@ -66,6 +66,7 @@ namespace GameData
         void    ClearBuildMessages();
         const hChar* GetWarningMessages() const;
         const hChar* GetErrorMessages() const;
+        const hChar* GetBuiltResourcesMessages() const;
 
         gdDEFINE_SAVE_VERSION( 1 )
 
@@ -107,6 +108,8 @@ namespace GameData
             const gdPlugInInformation& plugInInfo );
         void    AppendWarningMessages( const gdUniqueResourceID& res, const hChar* warning );
         void    AppendErrorMessages( const gdUniqueResourceID& res, const hChar* warning );
+        void    AppendBuiltResource( const gdUniqueResourceID& res );
+        void    AppendCacheResource( const gdUniqueResourceID& res );
 
         typedef std::map< gdUint32, gdResourceInfo* >       ResourceMapType;
         typedef std::list< gdString >                       StringList;
@@ -130,6 +133,7 @@ namespace GameData
         boost::filesystem::path databasePath_;
         gdString                errorMessages_;
         gdString                warningMessages_;
+        gdString                builtMessages_;
 
 //Stop Hiding warning C4251
 #pragma warning ( pop )

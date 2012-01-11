@@ -59,8 +59,7 @@ namespace Heart
     struct hShaderParameter
     {
         hShaderParameter() 
-            : semanticID_(~0U)
-            , name_(NULL)
+            : name_(NULL)
             , size_(0)
             , cReg_(0)
             , cBuffer_(0)
@@ -68,11 +67,10 @@ namespace Heart
 
         }
 
-        hUint32	                            semanticID_; //EFFECTSEMANTICID_MAX(~0U) if not valid
         hChar*						        name_; 
         hUint32                             size_;
-        hUint32                             cReg_ : 24;
-        hUint32                             cBuffer_ : 8;
+        hUint32                             cReg_;
+        hUint32                             cBuffer_;
     };
 
     enum ShaderType

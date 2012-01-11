@@ -96,10 +96,10 @@ namespace
 	ScreenRectCommand								screenRectCommands_[MAX_SCREENRECT_COMMANDS];
 	hUint32											nConeCommands_;
 	ConeCommand										coneCommands_[MAX_CONE_COMMANDS];
-	hResourceHandle< hMaterial >		debugMat_;
-	hResourceHandle< hIndexBuffer >		sphereIdxBuf_;
-	hResourceHandle< hVertexBuffer >	sphereVtxBuf_;
-	hResourceHandle< hVertexBuffer >	lineVtxBuf_;//< aabb's and screen rects go here
+	hMaterial*		                                debugMat_;
+	hIndexBuffer*		                            sphereIdxBuf_;
+	hVertexBuffer*	                                sphereVtxBuf_;
+	hVertexBuffer*	                                lineVtxBuf_;//< aabb's and screen rects go here
 	hBool											debugDrawEnable_ = hFalse;
 }
 
@@ -111,7 +111,7 @@ namespace
 	bool	CheckLoaded()
 	{
 		bool loaded = true;
-		loaded &= debugMat_.IsLoaded();
+		//loaded &= debugMat_.IsLoaded();
 		return loaded;
 	}
 	void ResetCommands();
@@ -142,25 +142,25 @@ namespace
 
 	void Destory()
 	{
-		if ( debugMat_.HasData() )
-		{
-			debugMat_.Release();
-		}
-
-		if ( sphereIdxBuf_.HasData() )
-		{
-			sphereIdxBuf_.Release();
-		}
-
-		if ( sphereVtxBuf_.HasData() )
-		{
-			sphereVtxBuf_.Release();
-		}
-
-		if ( lineVtxBuf_.HasData() )
-		{
-			lineVtxBuf_.Release();
-		}
+// 		if ( debugMat_.HasData() )
+// 		{
+// 			debugMat_.Release();
+// 		}
+// 
+// 		if ( sphereIdxBuf_.HasData() )
+// 		{
+// 			sphereIdxBuf_.Release();
+// 		}
+// 
+// 		if ( sphereVtxBuf_.HasData() )
+// 		{
+// 			sphereVtxBuf_.Release();
+// 		}
+// 
+// 		if ( lineVtxBuf_.HasData() )
+// 		{
+// 			lineVtxBuf_.Release();
+// 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

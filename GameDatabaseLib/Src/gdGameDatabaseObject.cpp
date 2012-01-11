@@ -686,7 +686,12 @@ namespace GameData
         boost::filesystem::path infoMD5 = localCachePath / "info.md5";
         boost::filesystem::path infoDeps = localCachePath / "info.deps";
 
-        //TODO: Check the cache!
+        //set current directory to build path
+        boost::filesystem::path workingDir(resInfo->GetInputFilePath());
+        workingDir = workingDir.parent_path();
+        boost::filesystem::current_path( workingDir );
+
+        // Check the cache!
         gdBool cacheValid = IsResourceCacheValid( 
             resInfo,
             localCachePath,
@@ -699,18 +704,13 @@ namespace GameData
         gdBool buildSuccess = false;
         if ( !cacheValid )
         {
-            //In case the build doesn't work, delete teh md5 file so cache checks fail next time
+            //In case the build doesn't work, delete the md5 file so cache checks fail next time
             if ( boost::filesystem::exists( infoMD5 ) )
             {
                 boost::filesystem::remove( infoMD5 );
             }
             inputFile.Open( resInfo->GetInputFilePath() );
             outputFile.Open( outputPath.generic_string().c_str(), true );
-
-            //set current directory to build path
-            boost::filesystem::path workingDir(resInfo->GetInputFilePath());
-            workingDir = workingDir.parent_path();
-            boost::filesystem::current_path( workingDir );
 
             //BUILD!
             gdResourceBuilderConstructionInfo  builderInfo( 
@@ -787,6 +787,8 @@ namespace GameData
                     return gdERROR_INVALID_PARAM;
                 }
 
+                AppendBuiltResource( resID );
+
                 //Attempt to build the deps
                 for ( gdDependencyArrayType::const_iterator i = builder->GetDependencyMap()->begin(); i != builder->GetDependencyMap()->end(); ++i )
                 {
@@ -817,6 +819,8 @@ namespace GameData
             {
                 return gdERROR_UNHANDLED_SAVE_EXPECTION;
             }
+
+            AppendCacheResource( resID );
 
             //Attempt to build the deps
             for ( gdDependencyArrayType::const_iterator i = depsRoot.begin(); i != depsRoot.end(); ++i )
@@ -912,6 +916,7 @@ namespace GameData
     {
         warningMessages_ = "";
         errorMessages_ = "";
+        builtMessages_ = "";
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -946,6 +951,30 @@ namespace GameData
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void gdGameDatabaseObject::AppendBuiltResource( const gdUniqueResourceID& res )
+    {
+        builtMessages_ += "BUILT ";
+        builtMessages_ += res.GetResourcePath();
+        builtMessages_ += res.GetResourceName();
+        builtMessages_ += "\n";
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void gdGameDatabaseObject::AppendCacheResource( const gdUniqueResourceID& res )
+    {
+        builtMessages_ += "CACHED ";
+        builtMessages_ += res.GetResourcePath();
+        builtMessages_ += res.GetResourceName();
+        builtMessages_ += "\n";
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     const hChar* gdGameDatabaseObject::GetWarningMessages() const
     {
         return warningMessages_.c_str();
@@ -959,5 +988,15 @@ namespace GameData
     {
         return errorMessages_.c_str();
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    const hChar* gdGameDatabaseObject::GetBuiltResourcesMessages() const
+    {
+        return builtMessages_.c_str();
+    }
+
 
 }

@@ -193,11 +193,7 @@ namespace Heart
 		ReleasePendingRenderResources();
 
 		// clear the render buffer
-		//NewRenderCommand< Cmd::CollectRenderStats >( rendererStats_ + ((currentRenderStatFrame_+1) % 2) );
 		++currentRenderStatFrame_;
-
-		//NewRenderCommand< Cmd::BeginScene >();
-		//NewRenderCommand< Cmd::ClearScreen >( hColour( 0.0f, 0.7f, 0.0f, 1.0f ) );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -206,9 +202,6 @@ namespace Heart
     
 	void hRenderer::EndRenderFrame()
 	{
-		//NewRenderCommand< Cmd::EndScene >();
-		//NewRenderCommand< Cmd::FlipBuffers >();
-		//NewRenderCommand< Cmd::EndFrame >();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -385,7 +378,7 @@ namespace Heart
                 hdShaderProgram* prog = vp->pImpl();
                 for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
                 {
-                    resource->AddConstBufferDesc( i, prog->GetConstantBufferSize( i ) );
+                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferSize( i ) );
                 }
                 hUint32 parameterCount = vp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
@@ -399,7 +392,7 @@ namespace Heart
                 prog = fp->pImpl();
                 for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
                 {
-                    resource->AddConstBufferDesc( i, prog->GetConstantBufferSize( i ) );
+                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferSize( i ) );
                 }
                 parameterCount = fp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
@@ -701,25 +694,16 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateIndexBuffer( hResourceHandle< hIndexBuffer >& pOut, hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, const char* name )
+	void hRenderer::CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB )
 	{
-// 		hIndexBuffer* pdata = hNEW ( hRendererHeap ) hIndexBuffer( this );
-// 		pdata->pIndices_ = NULL;
-// 		pdata->nIndices_ = nIndices;
-// 		pdata->primitiveType_ = primType;
-// 		pdata->SetImpl( hNEW ( hRendererHeap ) hdIndexBuffer() );
-// 
-// 		//pImpl()->CreateIndexBuffer( pdata->pImpl(), pIndices, nIndices, primType, flags );
-// 
-// 		//resourceManager_->CreateResource( "ixb", pOut, pdata, name );
-// 
-// 		if ( pIndices )
-// 		{
-// 			//TODO: update on bind
-// 			pdata->Lock();
-// 			pdata->SetData( pIndices, nIndices*sizeof(hUint16) );
-// 			pdata->Unlock();
-// 		}
+		hIndexBuffer* pdata = hNEW ( hRendererHeap ) hIndexBuffer( this );
+		pdata->pIndices_ = NULL;
+		pdata->nIndices_ = nIndices;
+		pdata->primitiveType_ = primType;
+
+		pdata->SetImpl( pImpl()->CreateIndexBuffer( nIndices*sizeof(hUint16), pIndices, flags ) );
+
+        *outIB = pdata;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -738,17 +722,13 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateVertexBuffer( hResourceHandle< hVertexBuffer >& pOut, hUint32 nElements, hVertexDeclaration* pVtxDecl, hUint32 flags, const char* name )
+	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 stride, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
 	{
-// 		hVertexBuffer* pdata = hNEW ( hRendererHeap ) hVertexBuffer( this );
-// 		pdata->SetImpl( hNEW ( hRendererHeap ) hdVtxBuffer() );
-// 
-// 		pdata->SetVertexDeclarartion( pVtxDecl );
-// 		pdata->vtxCount_ = nElements;
+        hVertexBuffer* pdata = hNEW ( hRendererHeap ) hVertexBuffer( this );
+        pdata->vtxCount_ = nElements;
+        pdata->stride_ = stride;
 
-		//pImpl()->CreateVertexBuffer( pdata->pImpl(), nElements, pVtxDecl->Stride(), flags );
-
-		//resourceManager_->CreateResource( "vxb", pOut, pdata, name );
+        pdata->SetImpl( pImpl()->CreateVertexBuffer( layout, nElements*stride, initData, flags ) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

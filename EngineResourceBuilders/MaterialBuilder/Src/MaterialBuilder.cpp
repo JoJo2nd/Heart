@@ -13,9 +13,12 @@
 
 //typedef void (*CGIncludeCallbackFunc)( CGcontext context, const char *filename );
 
+static MaterialEffectBuilder* g_matBuilder = NULL;
+
 void cgIncludeCallback( CGcontext context, const char *filename )
 {
-    cgSetCompilerIncludeFile( context, filename, filename );
+    cgSetCompilerIncludeFile( context, filename, filename+1 );
+    g_matBuilder->TouchFileIntoBuildCache( filename+1 );
 }
 
 //void cgSetCompilerIncludeCallback( CGcontext context, CGIncludeCallbackFunc func );
@@ -46,6 +49,8 @@ MaterialEffectBuilder::~MaterialEffectBuilder()
 
 void MaterialEffectBuilder::BuildResource()
 {
+    g_matBuilder = this;
+
     CGcontext cgCtx = cgCreateContext();
     cgD3D9RegisterStates( cgCtx );
     cgD3D10RegisterStates( cgCtx );
@@ -85,7 +90,8 @@ void MaterialEffectBuilder::BuildResource()
 //         }
 //     }
 //     
-    //cgSetCompilerIncludeCallback( cgCtx, cgIncludeCallback );
+    
+    cgSetCompilerIncludeCallback( cgCtx, cgIncludeCallback );
     
     Heart::hMaterial hMat(NULL);
     CGeffect cgFX = cgCreateEffect( cgCtx, cgFXSource, NULL );

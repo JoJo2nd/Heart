@@ -398,4 +398,21 @@ namespace GameData
     {
         return &dependencies_;
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void gdResourceBuilderBase::TouchFileIntoBuildCache( const hChar* path )
+    {
+        gdFileHandle handle;
+        handle.Open( path );
+        if ( handle.IsValid() )
+        {
+            handle.Open( path );
+            timestampInfo_.AddFileTimestamp( handle.GetFileTimestamp() );
+            handle.Close();
+        }
+    }
+
 }

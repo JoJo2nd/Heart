@@ -146,13 +146,12 @@ namespace Heart
 		}
 
         void                                FindOrAddShaderParameter( const hShaderParameter& newParam, const hFloat* defaultVal );
-        void                                AddConstBufferDesc( hUint32 idx, hUint32 size );
+        void                                AddConstBufferDesc( const hChar* name, hUint32 size );
 		hUint32								GetShaderParameterCount() const { return constParameters_.GetSize(); }
 		const hShaderParameter*				GetShaderParameter( const hChar* name ) const;
 		const hShaderParameter*				GetShaderParameterByIndex( hUint32 index ) const;
-        hUint32                             GetConstantBufferCount() const { return constBufferSizes_.GetSize(); }
-        hUint32                             GetConstantBufferSize( hUint32 idx ) const { return constBufferSizes_[idx]; }
-        const hUint32*                      GetConstantBufferSizes() const { return constBufferSizes_; }
+        hUint32                             GetConstantBufferCount() const { return constBufferDescs_.GetSize(); }
+        hUint32                             GetConstantBufferSize( hUint32 idx ) const { return constBufferDescs_[idx].size_; }
         const hFloat*                       GetConstantBufferDefaultData() const;
         hMaterialInstance*                  CreateMaterialInstance();
 
@@ -163,17 +162,29 @@ namespace Heart
 		friend class hRenderer;
 		friend class MaterialEffectBuilder;
         
+        struct hConstBufferDesc
+        {
+            hConstBufferDesc() 
+                : nameCRC_(0)
+                , size_(0)
+            {
+            }
+            hUint32     nameCRC_;
+            hUint32     size_;
+        };
 
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
         typedef hVector< hSamplerParameter >  SamplerArrayType;
         typedef hVector< hShaderParameter >   ParameterArrayType;
-        typedef hVector< hUint32 >            SizeArrayType;
+        typedef hVector< hConstBufferDesc >   ConstBufferDescArrayType;
+
+        hUint32                             FindConstBufferIndexFromID( hUint32 id );
 
 		hRenderer*							pRenderer_;
         TechniqueArrayType                  techniques_;
         SamplerArrayType                    samplers_;
         ParameterArrayType                  constParameters_;
-        SizeArrayType                       constBufferSizes_;
+        ConstBufferDescArrayType            constBufferDescs_;
 	};
 
     class hMaterialInstance

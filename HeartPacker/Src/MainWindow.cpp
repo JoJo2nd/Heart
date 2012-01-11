@@ -456,6 +456,7 @@ void MainWindow::OnBuildAllData( wxCommandEvent& evt )
             wxString msg;
             msg += mainResourceDatabase_->GetErrorMessages();
             msg += mainResourceDatabase_->GetWarningMessages();
+            msg += mainResourceDatabase_->GetBuiltResourcesMessages();
             msgDlg.ShowDetailedText( msg );
             msgDlg.ShowModal();
         }
@@ -464,6 +465,7 @@ void MainWindow::OnBuildAllData( wxCommandEvent& evt )
             wxRichMessageDialog msgDlg(this,"Build Success.","Complete.",wxOK|wxCENTER);
             wxString msg;
             msg += mainResourceDatabase_->GetWarningMessages();
+            msg += mainResourceDatabase_->GetBuiltResourcesMessages();
             msgDlg.ShowDetailedText( msg );
             msgDlg.ShowModal();
         }

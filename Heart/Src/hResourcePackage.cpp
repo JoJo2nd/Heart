@@ -72,16 +72,6 @@ namespace Heart
     hBool hResourcePackage::IsPackageLoaded()
     {
         hBool loaded = completedLoads_ == resourceNames_.GetSize();
-//         if ( loaded )
-//         {
-//             const hChar** names = (const hChar**)resourceNames_.GetBuffer();
-//             hResourceClassBase** resources = (hResourceClassBase**)hAlloca( completedLoads_*sizeof(hResourceClassBase*) );
-//             resourceManager_->GetResources( names, resources, completedLoads_ );
-//             for ( hUint32 i = 0; i < completedLoads_; ++i )
-//             {
-//                 *((hResourceClassBase**)resourceDests_[i]) = resources[i];
-//             }
-//         }
         return loaded;
     }
     //////////////////////////////////////////////////////////////////////////
@@ -100,6 +90,21 @@ namespace Heart
     void hResourcePackage::EndResourceFind()
     {
         resourceManager_->UnlockResourceDatabase();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::GetResourcePointers()
+    {
+        hcAssert( IsPackageLoaded() );
+        BeingResourceFind();
+        for ( hUint32 i = 0; i < completedLoads_; ++i )
+        {
+            *(resourceDests_[i]) = resourceManager_->GetResource( resourcecCRC_[i] );
+        }
+        EndResourceFind();
     }
 
 }

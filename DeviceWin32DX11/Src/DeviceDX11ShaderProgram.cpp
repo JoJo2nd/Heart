@@ -45,6 +45,7 @@ namespace Heart
             ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
             D3D11_SHADER_BUFFER_DESC bufInfo;
             constInfo->GetDesc( &bufInfo );
+            hUint32 cBufferCRC = hCRC32::StringCRC( bufInfo.Name );
 
             if ( i < bufInfo.Variables )
             {
@@ -55,7 +56,7 @@ namespace Heart
                 //lets be cheeky and nab the shader var name here!
                 param->name_    = (hChar*)varDesc.Name;
                 param->size_    = varDesc.Size / sizeof(hFloat);
-                param->cBuffer_ = buffer;
+                param->cBuffer_ = cBufferCRC;
                 param->cReg_    = varDesc.StartOffset / sizeof(hFloat);
 
                 return hTrue;
@@ -92,6 +93,19 @@ namespace Heart
         constInfo->GetDesc( &bufInfo );
 
         return bufInfo.Size / sizeof(hFloat);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hChar* hdDX11ShaderProgram::GetConstantBufferName( hUint32 idx ) const
+    {
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        constInfo->GetDesc( &bufInfo );
+
+        return bufInfo.Name;
     }
 
     //////////////////////////////////////////////////////////////////////////

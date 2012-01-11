@@ -27,7 +27,7 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 							const hCPUVec2& topleft, 
 							const hCPUVec2& bottomright, 
 							const hChar* str,
-							hCommandBufferList* pCmdList )
+							hRenderSubmissionCtx* rnCtx )
 {
 	//hChar pFormatedString[ 4098 ];
 	Private::hFontLine Lines[ 256 ];

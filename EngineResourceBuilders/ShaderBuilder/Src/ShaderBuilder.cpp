@@ -22,6 +22,46 @@ const hChar* ShaderProgramBuilder::ParameterName_DebugInfo = "Include Debug Info
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+struct FXIncludeHandler : public ID3DInclude 
+{
+    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) 
+    //HRESULT Open( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+    {
+        GameData::gdFileHandle* f = progameBuilder_->OpenFile( pFileName );
+
+        if ( !f->IsValid() )
+            return E_FAIL;
+
+        gdByte* buffer = new gdByte[(hUint32)f->GetFileSize()];
+        f->Read( buffer, (hUint32)f->GetFileSize() );
+
+        *ppData = buffer;
+        *pBytes = (UINT)f->GetFileSize();
+
+        includes_.push_back( *ppData );
+
+        return S_OK;
+    }
+
+    STDMETHOD(Close)(THIS_ LPCVOID pData)
+    //HRESULT Close(LPCVOID pData)
+    {
+        delete pData;
+        includes_.remove( pData );
+
+        return S_OK;
+    }
+
+    typedef std::list< const void* > IncludedDataArray;
+
+    ShaderProgramBuilder*   progameBuilder_;
+    IncludedDataArray       includes_;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 ShaderProgramBuilder::ShaderProgramBuilder( const GameData::gdResourceBuilderConstructionInfo& resBuilderInfo )
     : gdResourceBuilderBase( resBuilderInfo )
     , cgFXSource(NULL)
@@ -50,14 +90,17 @@ void ShaderProgramBuilder::BuildResource()
     D3D_SHADER_MACRO macros[] =
     {
         { "HEART_USING_HLSL", "1" },
+        { "HEART_USING_HLSL_COMPILER", "1" },
         { NULL, NULL }
     };
+    FXIncludeHandler include;
+    include.progameBuilder_ = this;
     const char* entry = GetParameter( ParameterName_Entry ).GetAsString();
     const char* profile = GetParameter( ParameterName_Profile ).GetAsString();
     hr = D3DX11CompileFromFile( 
         GetInputFile()->GetPath(), 
         macros, 
-        NULL, //Includes
+        &include, //Includes
         GetParameter( ParameterName_Entry ).GetAsString(),
         GetParameter( ParameterName_Profile ).GetAsString(), 
         compileFlags, 

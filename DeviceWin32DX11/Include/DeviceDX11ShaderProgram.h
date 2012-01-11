@@ -66,6 +66,7 @@ namespace Heart
         hBool           GetShaderParameter( hUint32 i, hShaderParameter* param );
         const hFloat*   GetShaderParameterDefaultValue( hUint32 idx ) const;
         hUint32         GetConstantBufferCount() const;
+        const hChar*    GetConstantBufferName( hUint32 idx ) const;
         hUint32         GetConstantBufferSize( hUint32 idx ) const;
 
     private:

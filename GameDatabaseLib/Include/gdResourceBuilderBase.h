@@ -104,6 +104,7 @@ namespace GameData
         hUint32 AddBuildDependency( const hChar* resType, const hChar* depName, const hChar* inputPath );
         gdParameterValue* GetDependencyParameter( hUint32 depID, const hChar* name );
         const gdDependencyArrayType* GetDependencyMap() const;
+        void TouchFileIntoBuildCache( const hChar* path );
         virtual void BuildResource() = 0;
         virtual void CleanUpFromBuild() = 0;
 

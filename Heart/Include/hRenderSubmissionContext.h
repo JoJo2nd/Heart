@@ -48,6 +48,24 @@ namespace Heart
     class hMesh;
     struct hSamplerParameter;
     class hShaderProgram;
+    class hRenderViewport;
+
+    //Should these be in there own file?
+    struct hViewportShaderConstants
+    {
+        hMatrix view_;
+        hMatrix viewInverse_;
+        hMatrix viewInverseTranspose_;
+        hMatrix projection_;
+        hMatrix projectionInverse_;
+    };
+
+    struct hInstanceConstants
+    {
+        hMatrix worldViewProj_;
+        hMatrix worldView_;
+        hMatrix world_;
+    };
 
     class hRenderSubmissionCtx
     {
@@ -57,6 +75,8 @@ namespace Heart
         {}
         ~hRenderSubmissionCtx() 
         {}
+
+        void    SetViewport( hRenderViewport* viewport );
 
         hdRenderCommandBuffer SaveToCommandBuffer();
         void	SetIndexStream( hIndexBuffer* pIIBuf );
@@ -80,11 +100,26 @@ namespace Heart
         void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
         void    Unmap( hTextureMapInfo* outInfo );
 
+        //Debug
+        void	EnableDebugDrawing( hBool val );
+        void	RenderDebugText( hFloat x, hFloat y, const char* fmt, ... );
+        void	RenderDebugSphere( const hVec3& centre, hFloat radius, const hColour& colour );
+        void	RenderDebugAABB( const hAABB& aabb, const hColour& colour );
+        void	RenderDebugScreenQuad( const hRect& rect, const hColour& colour );
+        void	RenderDebugCone( const hMatrix& transform, hFloat radius, hFloat len, const hColour& colour );
+        hdRenderCommandBuffer SaveDebugCallsToCommandBuffer();
+
     private:
 
-        friend class hRenderer;
+        friend class hRenderer; 
 
-        hdRenderSubmissionCtx   impl_;
+        //Debug
+        void	InitialiseDebugInterface( hRenderer* renderer );
+
+        const hViewportShaderConstants* viewportConstants_;
+        hInstanceConstants              instanceConstants_;
+        hdRenderSubmissionCtx           impl_;
+        hdRenderSubmissionCtx           debug_;
     };
 
 }
