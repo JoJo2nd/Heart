@@ -33,20 +33,15 @@ namespace Cmd
 		{
 		}
 
-		void			Lock();
-		void			Unlock();
-		hUint16			IndexCount() const { return nIndices_; };
-		void			SetIndex( hUint16 idx, hUint16 val );
-		void			SetData( hUint16* data, hUint32 size );
+		hUint16			GetIndexCount() const { return nIndices_; };
+        PrimitiveType   GetPrimitiveType() const { return primitiveType_; }
 
 	private:
 
 		friend class hRenderer;
-		friend class Cmd::FlushIndexBufferData;
 		friend class IndexBufferBuilder;
 
 		void			Release();
-		void			FlushIndexData( void* data, hUint32 size );
 
 		hRenderer*		renderer_;
 		PrimitiveType	primitiveType_;

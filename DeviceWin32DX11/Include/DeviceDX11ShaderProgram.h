@@ -68,6 +68,8 @@ namespace Heart
         hUint32         GetConstantBufferCount() const;
         const hChar*    GetConstantBufferName( hUint32 idx ) const;
         hUint32         GetConstantBufferSize( hUint32 idx ) const;
+        hUint32         GetConstantBufferReg( hUint32 idx ) const;
+        hUint32         GetSamplerRegister( const hChar* name ) const;
 
     private:
 

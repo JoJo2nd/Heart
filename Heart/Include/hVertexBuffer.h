@@ -45,7 +45,6 @@ namespace Cmd
 	private:
 
 		friend class hRenderer;
-		friend class Cmd::FlushVertexBufferData;
 		friend class VertexBufferBuilder;
 
 		void					Release();

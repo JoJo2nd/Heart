@@ -10,7 +10,7 @@
 #define HRSCENEGRAPHNODECAMERA_H__
 
 #include "hSceneNodeBase.h"
-#include "hCamera.h"
+#include "hRendererCamera.h"
 #include "hSceneGraphVisitorBase.h"
 
 namespace Heart

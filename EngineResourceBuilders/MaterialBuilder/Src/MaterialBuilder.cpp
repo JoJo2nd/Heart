@@ -11,6 +11,8 @@
 #include "Heart.h"
 
 
+const hChar* MaterialEffectBuilder::ParameterName_DebugInfo = "Include Debug Info";
+
 //typedef void (*CGIncludeCallbackFunc)( CGcontext context, const char *filename );
 
 static MaterialEffectBuilder* g_matBuilder = NULL;
@@ -114,7 +116,6 @@ void MaterialEffectBuilder::BuildResource()
         for ( CGpass pass = cgGetFirstPass( tech ); pass != 0; pass = cgGetNextPass( pass ), ++passCount )
         {
             Heart::hMaterialTechniquePass hPass;
-            hPass.DefaultState();
 
             CGprogram vp = cgGetPassProgram( pass, CG_VERTEX_DOMAIN );
             CGprogram fp = cgGetPassProgram( pass, CG_FRAGMENT_DOMAIN );
@@ -130,12 +131,14 @@ void MaterialEffectBuilder::BuildResource()
             GetDependencyParameter( vpResId, "Entry Point" )->Set( vpEntry );
             GetDependencyParameter( vpResId, "Profile" )->Set( vpProfileName );
             GetDependencyParameter( vpResId, "Program Type" )->SetEnumByValue( Heart::ShaderType_VERTEXPROG );
+            GetDependencyParameter( vpResId, ParameterName_DebugInfo )->Set( GetParameter( ParameterName_DebugInfo ).GetAsBool() );
 
             Heart::hStrPrintf( depName, 64, "t%02up%02ufp", techCount, passCount );
             hUint32 fpResId = AddBuildDependency( "Shader Program", depName, GetInputFile()->GetPath() );
             GetDependencyParameter( fpResId, "Entry Point" )->Set( fpEntry );
             GetDependencyParameter( fpResId, "Profile" )->Set( fpProfileName );
             GetDependencyParameter( fpResId, "Program Type" )->SetEnumByValue( Heart::ShaderType_FRAGMENTPROG );
+            GetDependencyParameter( fpResId, ParameterName_DebugInfo )->Set( GetParameter( ParameterName_DebugInfo ).GetAsBool() );
 
             hPass.vertexProgram_   = (Heart::hShaderProgram*)vpResId;
             hPass.fragmentProgram_ = (Heart::hShaderProgram*)fpResId;
@@ -176,6 +179,10 @@ void MaterialEffectBuilder::BuildResource()
                                     MapCgSamplerStateToRuntimeState( &samplerParameter, lpsa );
                                 }
 
+                                samplerParameter.samplerReg_ = ~0U;
+                                samplerParameter.nameLen_ = Heart::hStrLen( ps );
+                                samplerParameter.name_ = new hChar[Heart::hStrLen(ps)+1];
+                                Heart::hStrCopy( samplerParameter.name_, Heart::hStrLen(ps)+1, ps );
                                 hMat.samplers_.PushBack( samplerParameter );
                                 sharedSamplerNames.insert( ps );
                             }
@@ -399,7 +406,7 @@ void MaterialEffectBuilder::MapCgSamplerStateToRuntimeState( Heart::hSamplerPara
     CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapT", lhs->samplerDesc_.addressV_, rhs, remap, foundState );
     CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapR", lhs->samplerDesc_.addressW_, rhs, remap, foundState );
     //CONVERT_CG_INT_ENUM_STATE_SAMP( "MinFilter", lhs->samplerDesc_.minFilter_, rhs, remap, foundState );
-    //CONVERT_CG_INT_ENUM_STATE_SAMP( "MagFilter", lhs->samplerDesc_.magFilter_, rhs, remap, foundState );
+   CONVERT_CG_INT_ENUM_STATE_SAMP( "MagFilter", lhs->samplerDesc_.filter_, rhs, remap, foundState );
     CONVERT_CG_INT_ENUM_STATE_SAMP( "MipFilter", lhs->samplerDesc_.filter_, rhs, remap, foundState );
     CONVERT_CG_FLOAT_STATE_SAMP( "MipMapLodBias", lhs->samplerDesc_.mipLODBias_, rhs, foundState );
     CONVERT_CG_FLOAT_STATE_SAMP( "LODBias", lhs->samplerDesc_.mipLODBias_, rhs, foundState );

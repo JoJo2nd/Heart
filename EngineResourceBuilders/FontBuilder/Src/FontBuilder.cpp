@@ -18,6 +18,7 @@ const hFloat			FontBuilder::TO_PIXELS				= ( 1.0f / 64.0f );
 const hChar*    		FontBuilder::FREETYPE_FILE_PARAM	= "Input";
 const hChar*            FontBuilder::FONT_SIZE_PARAM		= "Font Size";
 const hChar*            FontBuilder::FONT_CHAR_ARRAY		= "Character List";
+const hChar*            FontBuilder::FONT_MATERIAL_PARAM    = "Font Material";
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -104,6 +105,8 @@ void FontBuilder::BuildResource()
 		font.fontCharacters_[i].UV2_.y = -fontCharacterData_[ i ].V2_;
 		font.fontCharacters_[i].CharCode_ = fontCharacterData_[ i ].Char_;
 	}
+
+    font.fontMaterial_ = (Heart::hMaterialInstance*)AddBuildDependency( "Cg Effect", "FNTMAT", GetParameter( FONT_MATERIAL_PARAM ).GetAsFilepath() );
 
     GetSerilaiseObject()->Serialise( GetOutputFile(), font );
 

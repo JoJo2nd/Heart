@@ -85,7 +85,8 @@ ShaderProgramBuilder::~ShaderProgramBuilder()
 void ShaderProgramBuilder::BuildResource()
 {
     HRESULT hr;
-    hUint32 compileFlags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY /*| D3DCOMPILE_DEBUG*/;
+    hUint32 compileFlags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
+    compileFlags |= GetParameter( ParameterName_DebugInfo ).GetAsBool() ? D3DCOMPILE_DEBUG : 0;
     ID3DBlob* errors;
     D3D_SHADER_MACRO macros[] =
     {

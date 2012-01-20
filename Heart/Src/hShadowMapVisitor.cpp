@@ -99,7 +99,7 @@ namespace Heart
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
 #endif // HEART_OLD_RENDER_SUBMISSION
 
-		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
+        hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 	 	hMatrix lv;
 	 	hMatrix lp;
 	 	hVec3 tFrustPoints[ 8 ];
@@ -296,7 +296,7 @@ namespace Heart
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
 #endif // HEART_OLD_RENDER_SUBMISSION
 
-		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
+		hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 		hMatrix lv;
 		hMatrix lp;
 		hVec3 teye = lightMatrix_.r[3];//( lightMatrix_.m41, lightMatrix_.m42, lightMatrix_.m43 );

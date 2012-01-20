@@ -67,6 +67,7 @@ void CY_API __cyInitMD5( cy_md5_ctxt* );
 void CY_API __cyLoopMD5( cy_md5_ctxt*, const cyByte*, cyUint );
 void CY_API __cyPadMD5( cy_md5_ctxt* );
 void CY_API __cyResultMD5( cyByte*, cy_md5_ctxt* );
+void CY_API __cyMD5ToString( const cyByte*, cyChar* );
 
 /* compatibility */
 #define cyMD5_CTX		cy_md5_ctxt
@@ -77,6 +78,7 @@ void CY_API __cyResultMD5( cyByte*, cy_md5_ctxt* );
         __cyPadMD5((md5Ctx)); \
         __cyResultMD5((digest), (md5Ctx)); \
     } while (0)
+#define cyMD5DigestToString( digest, str ) __cyMD5ToString( digest, str )
 
 #ifdef __cplusplus
 };

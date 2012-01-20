@@ -66,8 +66,9 @@ namespace Heart
             resourcecCRC_.PushBack( crc );
             resourceDests_.PushBack( (hResourceClassBase**)&output );
         }
+        void    AddResourceToPackage( const hChar* resourcePath );
 		void	BeginPackageLoad( hResourceManager* resourceManager );
-        hBool	IsPackageLoaded();
+        hBool	IsPackageLoaded() const;
         void    GetResourcePointers();
 		void	CancelPackageLoad();
 

@@ -29,6 +29,7 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 							const hChar* str,
 							hRenderSubmissionCtx* rnCtx )
 {
+
 	//hChar pFormatedString[ 4098 ];
 	Private::hFontLine Lines[ 256 ];
 	hUint32 nLines = 0;
@@ -43,9 +44,17 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 
 	hcAssert( wid > 0 && hei > 0 );
 
-	hUint16 iOffset = iBuffer.IndexCount(); 
-	hUint32 vOffset = vBuffer.VertexCount();
+	hUint16 iOffset = 0;//iBuffer.GetIndexCount(); 
+	hUint16 vOffset = 0;//vBuffer.VertexCount();
 	hUint32 startOffset = iOffset;
+
+    hIndexBufferMapInfo  ibMap;
+    hVertexBufferMapInfo vbMap;
+    rnCtx->Map( &iBuffer, &ibMap );
+    rnCtx->Map( &vBuffer, &vbMap );
+
+    hUint16* idx = (hUint16*)ibMap.ptr_;
+    void* vtx = vbMap.ptr_;
 
 	if ( wid > 0 && hei > 0 )
 	{
@@ -114,7 +123,7 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 		{
 			for ( hUint32 i = 0; i < nLines; ++i )
 			{
-				RenderLine( iBuffer, vBuffer, iOffset, vOffset, Lines[ i ], starty, topleft, bottomright, wid, charsWritten );
+				RenderLine( &idx, &vtx, vOffset, Lines[ i ], starty, topleft, bottomright, wid, charsWritten );
 				starty += lineinc;
 			}
 		}
@@ -122,11 +131,27 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
 		{
 			for ( hUint32 i = nLines - 1; i < nLines; --i )
 			{
-				RenderLine( iBuffer, vBuffer, iOffset, vOffset, Lines[ i ], starty, topleft, bottomright, wid, charsWritten );
+				RenderLine( &idx, &vtx, vOffset, Lines[ i ], starty, topleft, bottomright, wid, charsWritten );
 				starty += lineinc;
 			}
 		}
 	}
+
+    rnCtx->Unmap( &ibMap );
+    rnCtx->Unmap( &vbMap );
+
+    rnCtx->SetMaterialInstance( fontMaterial_ );
+    hUint32 passes = rnCtx->GetMaterialInstancePasses();
+    for ( hUint32 i = 0; i < passes; ++i )
+    {
+        rnCtx->BeingMaterialInstancePass( i );
+
+        rnCtx->SetVertexStream( 0, &vBuffer );
+        rnCtx->SetIndexStream( &iBuffer );
+
+        rnCtx->DrawIndexedPrimitive( charsWritten * 2, 0 );
+        rnCtx->EndMaterialInstancePass();
+    }
 
 // 	if ( pCmdList )
 // 	{
@@ -252,7 +277,7 @@ hBool hFont::FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten )
+void hFont::RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten )
 {
 	hFloat startx;
 	hFloat boty = cury - fontHeight_ + baseLine_;
@@ -290,24 +315,43 @@ void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& 
 
 		struct Vex
 		{
-			hVec3	pos_;
-			hUint32		colour_;
-			hVec2	uv_;
+			hCPUVec3	pos_;
+			hColour		colour_;
+			hCPUVec2	uv_;
 		};
 
 		// ordered top left, top right, bottom left, bottom right
 		Vex quad[ 4 ] = 
 		{
-			{ hVec3( startx			, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, (hVec2)c.UV1_ },
-			{ hVec3( startx + c.Width_	, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, hVec2( c.UV2_.x, c.UV1_.y ) },
-			{ hVec3( startx			, boty + c.BaseLine_			, 0.0f ), style_.Colour_, hVec2( c.UV1_.x, c.UV2_.y ) },
-			{ hVec3( startx + c.Width_	, boty + c.BaseLine_			, 0.0f ), style_.Colour_, (hVec2)c.UV2_ },
+			{ hCPUVec3( startx			    , boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, c.UV1_ },
+			{ hCPUVec3( startx + c.Width_	, boty + c.Height_ + c.BaseLine_, 0.0f ), style_.Colour_, hCPUVec2( c.UV2_.x, c.UV1_.y ) },
+			{ hCPUVec3( startx			    , boty + c.BaseLine_			, 0.0f ), style_.Colour_, hCPUVec2( c.UV1_.x, c.UV2_.y ) },
+			{ hCPUVec3( startx + c.Width_	, boty + c.BaseLine_			, 0.0f ), style_.Colour_, c.UV2_ },
 		};
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		// Draw as a quad /////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////
+		hUint16* idx = *iBuffer;
+        Vex* vtx = (Vex*)*vBuffer;
+        *idx = vOffset;   ++idx;
+        *idx = vOffset+2; ++idx;
+        *idx = vOffset+1; ++idx;
 
+        *idx = vOffset+2; ++idx;
+        *idx = vOffset+3; ++idx;
+        *idx = vOffset+1; ++idx;
+
+        for ( hUint32 i = 0; i < 4; ++i )
+        {
+	        *vtx = quad[ i ]; ++vtx;
+            ++vOffset;
+        }
+
+        *iBuffer = idx;
+        *vBuffer = vtx;
+
+/*
 		iBuffer.SetIndex( iOffset++, (hUint16)vOffset   );
 		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+2 );
 		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+1 );
@@ -323,7 +367,7 @@ void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& 
 			vBuffer.SetElement( vOffset, hrVE_1UV, quad[ i ].uv_ );
 			++vOffset;
 		}
-
+*/
 		startx += c.xAdvan_;
 
 		++charsWritten;
@@ -335,11 +379,25 @@ void hFont::RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 {
     hFont* resource = hNEW ( hGeneralHeap ) hFont;
     hSerialiser ser;
     ser.Deserialise( dataStream, *resource );
+
+    resManager->GetRederer()->CreateTexture( 
+        resource->fontSourceWidth_, 
+        resource->fontSourceHeight_, 
+        0, 
+        (void*)resource->fontSourceData_, 
+        resource->fontSourceSize_, 
+        TFORMAT_ARGB8, 
+        RESOURCEFLAG_RENDERTARGET, 
+        &resource->texturePages_ );
+
+    resource->fontMaterial_ = resManager->GetMaterialManager()->CreateMaterialInstance( (hUint32)resource->fontMaterial_ );
+    const hSamplerParameter* samp = resource->fontMaterial_->GetSamplerParameterByName( "ColorSampler" );
+    resource->fontMaterial_->SetSamplerParameter( samp, resource->texturePages_ );
 
  	return resource;
 }

@@ -35,7 +35,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hViewFrustum::UpdateFromCamera( const hVec3& EyeVec, const hVec3& LookAt, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho )
+	void hViewFrustum::UpdateFromCamera( const hVec3& EyeVec, const hVec3& LookDir, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho )
 	{
 		hFloat oNear = Near;
 		if ( ortho )
@@ -48,7 +48,7 @@ namespace Heart
 		hFloat NearH = 2 * tan( fov / 2 ) * oNear;
 		hFloat NearW = NearH * Aspect;
 		hVec3 Right;
-		hVec3 D = hVec3Func::normalise( LookAt - EyeVec );
+		hVec3 D = hVec3Func::normalise( LookDir );
 		hVec3 EyeFar = EyeVec + ( D * Far );
 		hVec3 EyeNear = EyeVec + ( D * Near );
 		Right = hVec3Func::cross( Up, D );

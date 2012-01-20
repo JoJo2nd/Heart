@@ -39,11 +39,13 @@
 #include "hThreadEvent.h"
 #include "hSemaphore.h"
 #include "hSerialiserFileStream.h"
+#include "hResourcePackage.h"
 
 namespace Heart
 {
 
 	class hRenderer;
+    class hRenderMaterialManager;
 	class hIFile;
 
 	class hResourceManager;
@@ -86,7 +88,7 @@ namespace Heart
 			WRITE,
 		};
 
-		typedef huFunctor< hResourceClassBase*(*)(const hChar*, hSerialiserFileStream*, hResourceManager* ) >::type			ResourceLoadCallback;
+		typedef huFunctor< hResourceClassBase*(*)(const hChar*, hUint32 resId, hSerialiserFileStream*, hResourceManager* ) >::type			ResourceLoadCallback;
 		typedef huFunctor< hUint32(*)(const hChar*, hResourceClassBase*, hResourceManager* ) >::type			ResourceUnloadCallback;
 
 		hResourceManager();
@@ -97,9 +99,9 @@ namespace Heart
 		*
 		* @return   hBool
 		*/
-		hBool							Initialise( hIFileSystem* pFileSystem, const char** requiredResources );
+		hBool							Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
 
-		hBool							RequiredResourcesReady() const;
+		hBool							RequiredResourcesReady();
 
 		static hUint32					BuildResourceCRC( const hChar* resourceName );
 
@@ -127,7 +129,7 @@ namespace Heart
 		hBool							ResourceLoadsComplete( const hUint32* resourceKeys, hUint32 count );
 		
 		void							GetResources( const hChar** resourceKeys, hResourceClassBase** outPtrs, hUint32 count );
-
+        hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
         void                            LockResourceDatabase() { resourceDatabaseMutex_.Lock(); resourceDatabaseLocked_ = hTrue; }
         hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( crc ); }
         void                            UnlockResourceDatabase() { resourceDatabaseLocked_ = hFalse; resourceDatabaseMutex_.Unlock(); }
@@ -161,6 +163,9 @@ namespace Heart
 		*/
 		void							Shutdown( hRenderer* prenderer );
 
+        hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
+        hRenderer*                      GetRederer() { return renderer_; }
+
 
 
 	private:
@@ -185,9 +190,15 @@ namespace Heart
 			ResourceUnloadCallback		unloadCallback;
 		};
 
+        struct ResourceRemap : public hMapElement< hUint32, ResourceRemap >
+        {
+            hUint32 mapToPath;
+        };
+
 		typedef hMap< ResourceType, ResourceHandler >		ResourceHandlerMap;
 		typedef hMap< hUint32, hResourceClassBase >			ResourceMap;
 		typedef hMap< hUint32, hResourceLoadRequest >		ResourceLoadRequestMap;
+        typedef hMap< hUint32, ResourceRemap >              ResourceRemappingMapType;
 
 		/**
 		* LoadResource - Attempts to get a resource. If resource is not yet IsLoaded, It begins the load process.
@@ -203,14 +214,18 @@ namespace Heart
         void                            CompleteLoadRequest( hResourceLoadRequest* request );
         void                            LoadResourceFromPath( const hChar* path );
         hBool							EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
-
+        void                            LoadResourceRemapTable();
 
 		static hResourceManager*		pInstance_;
 
 		//NEW
 		hIFileSystem*					filesystem_;
-
+        hRenderer*                      renderer_;
+        hRenderMaterialManager*         materialManager_;
 		ResourceHandlerMap				resHandlers_;
+        hUint32                         remappingNamesSize_;
+        hChar*                          remappingNames_;
+        ResourceRemappingMapType        remappings_;
 
 		//
 		hThread							resourceLoaderThread_;
@@ -228,7 +243,8 @@ namespace Heart
 
 		hVector< hUint32 >				requiredResourceKeys_;
 		hVector< hResourceClassBase* >	requiredResources_;
-
+        hResourcePackage                requiredResourcesPackage_;
+        hBool                           gotRequiredResources_;
 		hResourceLoadRequest*			pVolatileDepResource_;
 	};
 

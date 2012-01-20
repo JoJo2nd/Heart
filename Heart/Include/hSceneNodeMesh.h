@@ -12,7 +12,7 @@
 
 #include "hSceneNodeBase.h"
 #include "hMesh.h"
-#include "hCamera.h"
+#include "hRendererCamera.h"
 #include "hSceneGraphVisitorBase.h"
 
 namespace Heart

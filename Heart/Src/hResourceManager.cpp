@@ -47,6 +47,9 @@ namespace Heart
 	hResourceManager::hResourceManager() 
 		: exitSignal_( hFalse )
         , resourceDatabaseLocked_( hFalse )
+        , gotRequiredResources_( hFalse )
+        , remappingNames_(NULL)
+        , remappingNamesSize_(0)
 	{
 		hcAssert( pInstance_ == NULL );
 
@@ -75,10 +78,15 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hResourceManager::Initialise( hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
+	hBool hResourceManager::Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
 	{
 		hUint32 nRequiredResources = 0;
 		filesystem_ = pFileSystem;
+        renderer_ = renderer;
+        materialManager_ = renderer->GetMaterialManager();
+
+        //Load up the Resource Remap Table
+        LoadResourceRemapTable();
 
 		loaderSemaphone_.Create( 0, 4096 );
 
@@ -87,12 +95,20 @@ namespace Heart
 			hThread::PRIORITY_ABOVENORMAL,
 			Device::Thread::ThreadFunc::bind< hResourceManager, &hResourceManager::ProcessDataFixup >( this ), NULL );
 
-		for ( const char** c = requiredResources; *c; ++c ) { ++nRequiredResources; }
+		for ( const char** c = requiredResources; *c; ++c )
+        {    
+            ++nRequiredResources; 
+        }
 		requiredResourceKeys_.Resize( nRequiredResources );
-		requiredResources_.Reserve( nRequiredResources );
+		requiredResources_.Resize( nRequiredResources );
+
+        for ( hUint32 i = 0; i < nRequiredResources; ++i )
+        {    
+            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i], requiredResources_[i] );
+        }
 
 		//Begin loading the required resources
-		//BeginResourceLoads( nRequiredResources, nRequiredResources );
+		requiredResourcesPackage_.BeginPackageLoad( this );
 
 		return hTrue;
 	}
@@ -363,6 +379,16 @@ namespace Heart
         hcAssertMsg( handler, "Can't find resource handler data for extention %s", ext );
 
         hUint32 crc = BuildResourceCRC( path );
+
+        //Check the remappings
+        ResourceRemap* remap = remappings_.Find( crc );
+
+        if ( remap )
+        {
+            path = remappingNames_+remap->mapToPath;
+            crc = BuildResourceCRC( path );
+        }
+
         resourceDatabaseMutex_.Lock();
         hResourceClassBase* resource = loadedResources_.Find( crc );
         resourceDatabaseMutex_.Unlock();
@@ -375,11 +401,14 @@ namespace Heart
             hcPrintf( "Loading Resource %s (crc32: %u)", path, crc );
             resource = handler->loadCallback( 
                 resType.ext, 
+                crc, 
                 &loaderStream, 
                 this );
             loaderStream.Close();
 
             hcAssert( resource );
+            resource->SetResID( crc );
+            resource->IsDiskResource( hTrue );
             resource->manager_ = this;
             resourceDatabaseMutex_.Lock();
             // Push the new resource into loaded resource map
@@ -413,9 +442,85 @@ namespace Heart
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	hBool hResourceManager::RequiredResourcesReady() const
+	hBool hResourceManager::RequiredResourcesReady()
 	{
-		return hTrue;
+        if ( requiredResourcesPackage_.IsPackageLoaded() )
+        {
+            if ( !gotRequiredResources_ )
+            {
+                requiredResourcesPackage_.GetResourcePointers();
+                gotRequiredResources_ = hTrue;
+            }
+            return hTrue;
+        }
+		return hFalse;
 	}
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::LoadResourceRemapTable()
+    {
+        /* 
+         * The remap table follows this format.
+         * (4 bytes) CRC of valid resource, (4 bytes) CRC of remapped resource (xN), (4 bytes) 0 null terminator
+         * (Repeat)...
+         */
+        hIFile* rrt = filesystem_->OpenFile( "RRT", FILEMODE_READ );
+        remappingNames_ = 0;
+        remappingNamesSize_ = 0;
+        hUint32 remapCRC = 0;
+        hChar* currentPath = NULL;
+        hUint32 pathOffset = 0;
+
+        for ( hUint64 i = rrt->Length(); i <= rrt->Length(); )
+        {
+            if ( !currentPath )
+            {
+                hUint32 len;
+                rrt->Read( &len, sizeof(len) );
+                remappingNames_ = (hChar*)hRealloc( remappingNames_, remappingNamesSize_+len+1 );
+                rrt->Read( remappingNames_+remappingNamesSize_, len );
+                remappingNames_[remappingNamesSize_+len] = 0;
+                currentPath = remappingNames_+remappingNamesSize_;
+                pathOffset = remappingNamesSize_;
+                remappingNamesSize_ += len+1;
+
+                i -= (sizeof(len)+len);
+            }
+            else
+            {
+                rrt->Read( &remapCRC, sizeof(remapCRC) );
+                i -= sizeof(remapCRC);
+
+                if ( remapCRC )
+                {
+                    ResourceRemap* remap = hNEW( hGeneralHeap ) ResourceRemap();
+                    remap->mapToPath = pathOffset;
+
+                    remappings_.Insert( remapCRC, remap );
+                }
+                else
+                {
+                    currentPath = NULL;
+                }
+            }
+        }
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hResourceManager::GetResourceKeyRemapping( hUint32 key ) const
+    {
+        ResourceRemap* remap = remappings_.Find( key );
+        if ( remap )
+        {
+            return BuildResourceCRC( remappingNames_+remap->mapToPath );
+        }
+        return key;
+    }
 
 }

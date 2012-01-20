@@ -21,6 +21,7 @@
 #include "hSystem.h"
 #include "hRenderTargetTexture.h"
 #include "hSerialiserFileStream.h"
+#include "hRenderUtility.h"
 
 
 namespace Heart
@@ -31,6 +32,24 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	void* hRenderer::pRenderThreadID_ = NULL;
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    void* RnTmpMalloc( hUint32 size )
+    {
+        return hRendererHeap.alignAlloc( size, 16 );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    void RnTmpFree( void* ptr )
+    {
+        hRendererHeap.release( ptr );
+    }
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -68,7 +87,23 @@ namespace Heart
 		resourceManager_ = pResourceManager;
 		system_			=  pSystem;
 
-        pImpl()->Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_ );
+        techniqueManager_.Initialise( resourceManager_ );
+
+        hRenderDeviceSetup setup;
+        setup.alloc_ = RnTmpMalloc;
+        setup.free_ = RnTmpFree;
+        pImpl()->Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
+
+        pImpl()->InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
+        mainSubmissionCtx_.EnableDebugDrawing( false );
+
+        CreateIndexBuffer( NULL, RenderUtility::GetSphereMeshIndexCount( 16, 8 ), 0, PRIMITIVETYPE_TRILIST, &debugSphereIB_ );
+        CreateVertexBuffer( NULL, RenderUtility::GetSphereMeshVertexCount( 16, 8 ), hrVF_XYZ, 0, &debugSphereVB_ );
+        RenderUtility::BuildSphereMesh( 16, 8, 1.f, &mainSubmissionCtx_,debugSphereIB_, debugSphereVB_ );
+
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        pImpl()->SetPIXDebuggingMutex( &pixMutex_ );
+#endif
 
 		renderThread_.Begin( 
 			"Rendering hThread",
@@ -184,7 +219,7 @@ namespace Heart
 	{
 		if ( wait )
 		{
-			while ( !renderCmdBuffer_.IsEmpty() )
+			while ( !renderCmdPipe_.IsEmpty() )
 			{
 				Threading::ThreadYield();
 			}
@@ -199,9 +234,30 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::SubmitRenderCommandBuffer( hdRenderCommandBuffer cmdBuf, hBool releaseBuf )
+    {
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        if ( !cmdBuf )
+            return;
+#endif
+        hRendererCmd newCmd;
+        newCmd.type_ = releaseBuf ? RENDERCMD_CMD_BUFFER_RELEASE : RENDERCMD_CMD_BUFFER;
+        newCmd.commandBuffer_ = cmdBuf;
+
+        renderCmdPipe_.push( newCmd );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     
 	void hRenderer::EndRenderFrame()
 	{
+        hRendererCmd newCmd;
+        newCmd.type_ = RENDERCMD_SWAP;
+
+        renderCmdPipe_.push( newCmd );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -229,11 +285,37 @@ namespace Heart
 		hFloat frameCounter = 0.0f;
 		hUint32 frames = 0;
 
-        //TEMP:
+        pImpl()->BeginRender();
+
         do {
-            pImpl()->BeginRender();
-            pImpl()->EndRender();
-            pImpl()->SwapBuffers();
+            if ( !renderCmdPipe_.IsEmpty()  )
+            {
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+                pixMutex_.Lock();
+#endif
+                hRendererCmd& cmd = renderCmdPipe_.peek();
+
+                switch ( cmd.type_ )
+                {
+                case RENDERCMD_CMD_BUFFER:
+                    mainSubmissionCtx_.RunCommandBuffer( cmd.commandBuffer_ );
+                    break;
+                case RENDERCMD_CMD_BUFFER_RELEASE:
+                    mainSubmissionCtx_.RunCommandBuffer( cmd.commandBuffer_ );
+                    pImpl()->ReleaseCommandBuffer( cmd.commandBuffer_ );
+                    break;
+                case RENDERCMD_SWAP:
+                    pImpl()->EndRender();
+                    pImpl()->SwapBuffers();
+                    pImpl()->BeginRender();
+                    break;
+                }
+
+                renderCmdPipe_.pop();
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+                pixMutex_.Unlock();
+#endif
+            }
         } while( !renderThreadKill_.TryWait() );
 /*
 		renderStateCache_->defaultRenderState();
@@ -326,7 +408,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
         hTexture* resource = hNEW ( hGeneralHeap ) hTexture( this );
         hSerialiser ser;
@@ -353,7 +435,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
         hMaterial* resource = hNEW ( hGeneralHeap ) hMaterial( this );
         hSerialiser ser;
@@ -361,10 +443,23 @@ namespace Heart
 
         //Fixup dependencies
         resManager->LockResourceDatabase();
+
+        hUint32 nSamp = resource->samplers_.GetSize();
+        for ( hUint32 samp = 0; samp < nSamp; ++samp )
+        {
+            if ( resource->samplers_[samp].boundTexture_ )
+            {
+                hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
+                resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->GetResource( sid ) );
+            }
+            CreateSamplerState( resource->samplers_[samp].samplerDesc_, &resource->samplers_[samp].samplerState_ );
+        }
+
         hUint32 nTech = resource->techniques_.GetSize();
         for ( hUint32 tech = 0; tech < nTech; ++tech )
         {
             hUint32 nPasses = resource->techniques_[tech].passes_.GetSize();
+            resource->techniques_[tech].mask_ = techniqueManager_.AddRenderTechnique( &resource->techniques_[tech].name_[0] )->mask_;
             for ( hUint32 pass = 0; pass < nPasses; ++pass )
             {
                 hUint32 vpid = (hUint32)resource->techniques_[tech].passes_[pass].vertexProgram_;
@@ -378,7 +473,7 @@ namespace Heart
                 hdShaderProgram* prog = vp->pImpl();
                 for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
                 {
-                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferSize( i ) );
+                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
                 }
                 hUint32 parameterCount = vp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
@@ -388,19 +483,38 @@ namespace Heart
                     hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
                     resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
                 }
+                for ( hUint32 samp = 0; samp < nSamp; ++samp )
+                {
+                    hUint32 reg = prog->GetSamplerRegister( resource->samplers_[samp].name_ );
+                    if ( reg != ~0U )
+                    {
+                        hcAssert( reg == resource->samplers_[samp].samplerReg_ || ~0U == resource->samplers_[samp].samplerReg_ );
+                        resource->samplers_[samp].samplerReg_ = reg;
+                    }
+                }
 
                 prog = fp->pImpl();
                 for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
                 {
-                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferSize( i ) );
+                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
                 }
                 parameterCount = fp->GetParameterCount();
                 for ( hUint32 i = 0; i < parameterCount; ++i )
                 {
+
                     hShaderParameter param;
                     hBool ok = prog->GetShaderParameter( i, &param );
                     hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
                     resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
+                }
+                for ( hUint32 samp = 0; samp < nSamp; ++samp )
+                {
+                    hUint32 reg = prog->GetSamplerRegister( resource->samplers_[samp].name_ );
+                    if ( reg != ~0U )
+                    {
+                        hcAssert( reg == resource->samplers_[samp].samplerReg_ || ~0U == resource->samplers_[samp].samplerReg_ );
+                        resource->samplers_[samp].samplerReg_ = reg;
+                    }
                 }
 
                 CreateBlendState( resource->techniques_[tech].passes_[pass].blendStateDesc_, &resource->techniques_[tech].passes_[pass].blendState_ );
@@ -408,17 +522,10 @@ namespace Heart
                 CreateDepthStencilState( resource->techniques_[tech].passes_[pass].depthStencilStateDesc_, &resource->techniques_[tech].passes_[pass].depthStencilState_ );
             }
         }
-        hUint32 nSamp = resource->samplers_.GetSize();
-        for ( hUint32 samp = 0; samp < nSamp; ++samp )
-        {
-            if ( resource->samplers_[samp].boundTexture_ )
-            {
-                hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
-                resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->GetResource( sid ) );
-                CreateSamplerState( resource->samplers_[samp].samplerDesc_, &resource->samplers_[samp].samplerState_ );
-            }
-        }
+
         resManager->UnlockResourceDatabase();
+
+        techniqueManager_.OnMaterialLoad( resource, resID );
 
 		return resource;
 	}
@@ -429,6 +536,8 @@ namespace Heart
 
 	hUint32 hRenderer::OnMaterialUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 	{
+        techniqueManager_.OnMaterialUnload( static_cast< hMaterial* >( resource ) );
+
 		delete resource;
 		return 0;
 	}
@@ -437,7 +546,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+    hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
         hShaderProgram* resource = hNEW ( hGeneralHeap ) hShaderProgram;
         hSerialiser ser;
@@ -657,13 +766,13 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, hUint32 flags, hTexture** outTex )
+	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
 		(*outTex) = hNEW ( hGeneralHeap ) hTexture( this );
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
-		(*outTex)->levelDescs_ = hNEW ( hRendererHeap ) hTexture::LevelDesc[ levels ];
+        (*outTex)->levelDescs_ = levels ? hNEW ( hRendererHeap ) hTexture::LevelDesc[ levels ] : NULL;
 		(*outTex)->textureData_ = NULL;
 
 		hUint32 tw = width;
@@ -674,7 +783,7 @@ namespace Heart
 			(*outTex)->levelDescs_[ i ].height_ = th;
 		}
 
-		hdTexture* dt = pImpl()->CreateTextrue( width, height, levels, format, NULL, 0, flags );
+		hdTexture* dt = pImpl()->CreateTextrue( width, height, levels, format, initialData, initDataSize, flags );
         (*outTex)->SetImpl( dt );
 	}
 
@@ -722,13 +831,15 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 stride, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
+	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
 	{
         hVertexBuffer* pdata = hNEW ( hRendererHeap ) hVertexBuffer( this );
         pdata->vtxCount_ = nElements;
-        pdata->stride_ = stride;
+        pdata->stride_ = pImpl()->ComputeVertexLayoutStride( layout );
 
-        pdata->SetImpl( pImpl()->CreateVertexBuffer( layout, nElements*stride, initData, flags ) );
+        pdata->SetImpl( pImpl()->CreateVertexBuffer( layout, nElements*pdata->stride_, initData, flags ) );
+
+        *outVB = pdata;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -749,8 +860,7 @@ namespace Heart
 
 	void* hRenderer::AquireTempRenderMemory( hUint32 size )
 	{
-		//TODO: double buffer this in some way and make is fast
-		return hRendererHeap.alignAlloc( size, 16 );
+		return RnTmpMalloc( size );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -759,8 +869,7 @@ namespace Heart
 
 	void hRenderer::ReleaseTempRenderMemory( void* ptr )
 	{
-		//TODO: double buffer this in some way and make it fast
-		hRendererHeap.release( ptr );
+		RnTmpFree( ptr );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -770,7 +879,16 @@ namespace Heart
     hRenderSubmissionCtx* hRenderer::CreateRenderSubmissionCtx()
     {
         hRenderSubmissionCtx* ret = hNEW( hRendererHeap ) hRenderSubmissionCtx();
+        ret->Initialise( this );
         pImpl()->InitialiseRenderSubmissionCtx( &ret->impl_ );
+        pImpl()->InitialiseRenderSubmissionCtx( &ret->debug_ );
+        if ( !debugMaterial_ )
+        {
+            resourceManager_->LockResourceDatabase();
+            debugMaterial_ = static_cast< hMaterial* >( resourceManager_->GetResource( hResourceManager::BuildResourceCRC( "ENGINE/EFFECTS/DEBUG.CFX" ) ) );
+            resourceManager_->UnlockResourceDatabase();
+        }
+        ret->InitialiseDebugInterface( debugSphereIB_, debugSphereVB_, debugMaterial_ );
         return ret;
     }
 
@@ -782,6 +900,7 @@ namespace Heart
     {
         hcAssert( ctx );
         pImpl()->DestroyRenderSubmissionCtx( &ctx->impl_ );
+        pImpl()->DestroyRenderSubmissionCtx( &ctx->debug_ );
         delete ctx;
     }
 

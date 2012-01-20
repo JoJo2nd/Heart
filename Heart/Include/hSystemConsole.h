@@ -12,6 +12,7 @@
 
 #include "hTypes.h"
 #include "hFont.h"
+#include "hRendererCamera.h"
 
 namespace Heart
 {
@@ -31,8 +32,6 @@ namespace Heart
 			: keyboard_( NULL )
 			,shown_( hFalse )
 			,nInputChars_( 0 )
-			,pVertexDecl_( 0 )
-			,pTextVertexDecl_( 0 )
 			,screenWidth_( 0 )
 			,screenHeight_( 0 )
 			,nInputPrims_( 0 )
@@ -63,29 +62,27 @@ namespace Heart
 		static const hUint32								MAX_CONSOLE_LOG_SIZE = 4086;
 		static const hUint32								INPUT_BUFFER_LEN = 128;
 		static const hUint32								MAX_PREV_COMMAND_LOGS = 32;
-		static const hChar*									FONT_RESOURCE_NAME;
-		static const hChar*									TEXT_MATERIAL_NAME;
-		static const hChar*									CONSOLE_MATERIAL_NAME;
+		static const hUint32								FONT_RESOURCE_NAME;
+		static const hUint32								CONSOLE_MATERIAL_NAME;
 
 		void												UpdateConsole();
 		void 												ClearConsoleBuffer();
 		void 												ExecuteBuffer();
 		void												LogString( const hChar* inputStr );
 
+        hRenderer*                                          renderer_;
 		hResourceManager*									pResourceManager_;
-		hResourceHandle< hFont >						fontResource_;
+        hRendererCamera                                     renderCamera_;
+        hRenderSubmissionCtx*                               rndCtx_;
+		hFont*						                        fontResource_;
 		//Background rendering 
-		hResourceHandle< hMaterial >					material_;
-		hResourceHandle< hIndexBuffer >				indexBuffer_;
-		hResourceHandle< hVertexBuffer >				vertexBuffer_;
-		hVertexDeclaration*							pVertexDecl_;
-		//Text Rendering
-		hResourceHandle< hMaterial >					textMaterial_;
-		hVertexDeclaration*							pTextVertexDecl_;
+		hMaterialInstance* 					                material_;
+		hIndexBuffer*				                        indexBuffer_;
+		hVertexBuffer* 				                        vertexBuffer_;
 		//
 		hUint32												screenWidth_;
 		hUint32												screenHeight_;
-		const hKeyboard*										keyboard_;			
+		const hKeyboard*									keyboard_;			
 		hBool												shown_;
 		hUint32												keyboardAccessKey_;
 		hUint32												nInputChars_;
@@ -99,9 +96,9 @@ namespace Heart
 		hLuaStateManager*									vm_;
 		//input rendering vars
 		hUint32												nInputPrims_;
-		hResourceHandle< hIndexBuffer >				IBInput_;
-		hResourceHandle< hVertexBuffer >				VBInput_;
-		//hCommandBufferList*							pRenderCmdBuffer_;
+		hIndexBuffer*				                        IBInput_;
+		hVertexBuffer* 				                        VBInput_;
+
 		//console print mutex
 		static hMutex										messagesMutex_;
 		static string										awaitingMessages_;

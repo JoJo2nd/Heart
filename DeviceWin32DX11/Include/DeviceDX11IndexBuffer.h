@@ -36,6 +36,8 @@ namespace Heart
         ~hdDX11IndexBuffer() {}
 
         ID3D11Buffer*       buffer_;
+        hUint32             flags_;
+        hUint32             dataSize_;
     };
 }
 

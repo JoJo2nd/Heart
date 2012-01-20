@@ -1,7 +1,7 @@
 /********************************************************************
 	created:	2009/12/31
 	created:	31:12:2009   9:30
-	filename: 	Utility.h	
+	filename: 	RenderUtility.h	
 	author:		James
 	
 	purpose:	
@@ -21,11 +21,13 @@ namespace Heart
 	class hIndexBuffer;
 	class hVertexBuffer;
 
-namespace Utility
+namespace RenderUtility
 {
 	extern hFloat	ComputeGaussianCurve( hFloat step, hFloat power );
 	extern void		ComputeBlurWeights( hFloat blurPower, hUint32 samples, hFloat* pOutWeights );
 	extern void		ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, Heart::hVec2* pOutSamples );
+    inline hUint16 GetSphereMeshVertexCount( hUint16 segments, hUint16 rings ) { return (hUint16)((rings + 1) * (segments+1)) + 1; }
+    inline hUint16 GetSphereMeshIndexCount( hUint16 segments, hUint16 rings ) { return (hUint16)(6 * rings * (segments+1)) + 1; }
 	extern void		BuildSphereMesh( 
 		hUint16 segments, 
 		hUint16 rings, 

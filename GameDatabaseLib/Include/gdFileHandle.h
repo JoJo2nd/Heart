@@ -87,6 +87,7 @@ namespace GameData
         gdUint32                Write( const void* pBuffer, gdUint32 size );
         gdUint32                Seek( gdUint64 offset );
         gdUint64                Tell();
+        void                    SetEnableMD5Gen( gdBool val ) { md5Enabled_ = val; }
 
     private:
         
@@ -95,6 +96,7 @@ namespace GameData
         gdUint64                            fileSize_;
         cyMD5_CTX                           writtenDataMD5_;
         gdByte                              md5Digest_[16];
+        gdBool                              md5Enabled_;
     };
 }
 

@@ -52,6 +52,16 @@ extern "C" __declspec(dllexport) void GetPlugInInformation( GameData::gdPlugInIn
 
         info->AppendDefaultParameter( param );
     }
+
+    {
+        gdParameterDefinition param;
+        gdParameterValue val( gdParameterValue::Type_Bool );
+        val.Set( hFalse );
+        param.SetName( ShaderProgramBuilder::ParameterName_DebugInfo );
+        param.SetDefaultValue( val );
+
+        info->AppendDefaultParameter( param );
+    }
 }
 
 //define the entry points for the resource plug in loader

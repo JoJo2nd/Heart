@@ -1,7 +1,7 @@
 /********************************************************************
 	created:	2009/12/31
 	created:	31:12:2009   9:38
-	filename: 	Utility.cpp	
+	filename: 	RenderUtility.cpp	
 	author:		James
 	
 	purpose:	
@@ -21,7 +21,7 @@
 
 namespace Heart
 {
-namespace Utility
+namespace RenderUtility
 {
 
 	hFloat ComputeGaussianCurve( hFloat step, hFloat power )
@@ -97,8 +97,8 @@ namespace Utility
 								 hIndexBuffer* idxBuf, 
 								 hVertexBuffer* vtxBuf )
 	{
-		hUint16 vtxCnt = (hUint16)((rings + 1) * (segments+1)) + 1;
-		hUint16 idxCnt = (hUint16)(6 * rings * (segments+1)) + 1;
+		hUint16 vtxCnt = GetSphereMeshVertexCount( segments, rings );//(hUint16)((rings + 1) * (segments+1)) + 1;
+		hUint16 idxCnt = GetSphereMeshIndexCount( segments, rings );//(hUint16)(6 * rings * (segments+1)) + 1;
 
         hIndexBufferMapInfo  ibMap;
         hVertexBufferMapInfo vbMap;
@@ -133,14 +133,14 @@ namespace Utility
 	 			*vtx++ = y0;
 	 			*vtx++ = z0;
 
-				//Normal
-	 			*vtx++ = vNormal.x;
-	 			*vtx++ = vNormal.y;
-	 			*vtx++ = vNormal.z;
-
-				//UV
-	 			*vtx++ = (float) seg / (float) segments;
-	 			*vtx++ = (float) ring / (float) rings;
+// 				//Normal
+// 	 			*vtx++ = vNormal.x;
+// 	 			*vtx++ = vNormal.y;
+// 	 			*vtx++ = vNormal.z;
+// 
+// 				//UV
+// 	 			*vtx++ = (float) seg / (float) segments;
+// 	 			*vtx++ = (float) ring / (float) rings;
 
 				if ( ring != rings ) 
 				{

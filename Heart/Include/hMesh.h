@@ -76,7 +76,7 @@ namespace Heart
 			idx.Acquire();
 			indices_ = idx;
 
-			nPrimatives_ = indices_->IndexCount() / 3;
+			nPrimatives_ = indices_->GetIndexCount() / 3;
 		}
 		void									SetMaterial( const MaterialResource& mat )
 		{

@@ -25,7 +25,7 @@ namespace Heart
 	class DepthSurface;
 	class hMesh;
 	class hRenderTargetTexture;
-	class hCamera;
+	class hRendererCamera;
 	class hSceneGraph;
 	class hSceneNodeBase;
 	class hSceneNodeMesh;

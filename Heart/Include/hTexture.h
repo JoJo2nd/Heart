@@ -68,7 +68,7 @@ namespace Cmd
 		hTexture& operator = ( const hTexture& rhs );
 
         hRenderer*				renderer_;
-		TextureFormat			format_;
+		hTextureFormat			format_;
         hUint32                 totalDataSize_;
 		hByte*					textureData_;
 		hUint32					nLevels_;

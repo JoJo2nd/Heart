@@ -30,6 +30,7 @@
 #include "hTypes.h"
 #include "hMemory.h"
 #include "hMath.h"
+#include "hMaterial.h"
 
 namespace Heart
 {
@@ -41,14 +42,17 @@ namespace Heart
     class DepthSurface;
     class hVertexDeclaration;
     class hMaterialInstance;
+    class hMaterialTechnique;
     class hIndexBuffer;
     struct hIndexBufferMapInfo;
     class hVertexBuffer;
     struct hVertexBufferMapInfo;
     class hMesh;
+    class hMaterial;
     struct hSamplerParameter;
     class hShaderProgram;
-    class hRenderViewport;
+    class hRendererCamera;
+    class hRenderer;
 
     //Should these be in there own file?
     struct hViewportShaderConstants
@@ -78,19 +82,34 @@ namespace Heart
         ~hRenderSubmissionCtx() 
         {}
 
-        void    SetViewport( hRenderViewport* viewport );
+        void    Initialise( hRenderer* renderer );
 
-        hdRenderCommandBuffer SaveToCommandBuffer();
+        //Helper Functions
+        void    SetRendererCamera( hRendererCamera* viewport );
+        void    SetMaterialInstance( hMaterialInstance* instance );
+        hUint32 GetMaterialInstancePasses() const { return currentTechnique_->GetPassCount(); }
+        void    BeingMaterialInstancePass( hUint32 i );
+        void    EndMaterialInstancePass();
+
+        void    BeginPIXDebugging() { impl_.BeginPIXDebugging(); }
+        hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
+        //Raw Functions
         void	SetIndexStream( hIndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf );
-        void    SetVertexDeclaration( hVertexDeclaration* vtxDecl );
         void	SetRenderTarget( hUint32 idx , hTexture* pTarget );
+        void    SetDepthTarget( hTexture* depth );
         void	SetViewport( const hViewport& viewport );
         void	SetScissorRect( const ScissorRect& scissor );
         void    SetPixelShader( hShaderProgram* ps );
         void    SetVertexShader( hShaderProgram* vs );
         void    SetConstantBuffer( hdParameterConstantBlock* constBuffer );
-        void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
+        void    SetSampler( hUint32 idx, hTexture* tex, hdSamplerState* samplerState );
+        void	SetRenderStateBlock( hdDX11BlendState* st ) { impl_.SetRenderStateBlock( st ); }
+        void	SetRenderStateBlock( hdDX11DepthStencilState* st ) { impl_.SetRenderStateBlock( st ); }
+        void	SetRenderStateBlock( hdDX11RasterizerState* st ) { impl_.SetRenderStateBlock( st ); }
+        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st ) { impl_.SetRenderStateBlock( samplerIdx, st ); }
+        void	ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
+        void    SetWorldMatrix( const hMatrix& world );
         void    SetPrimitiveType( PrimitiveType primType );
         void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
@@ -103,7 +122,7 @@ namespace Heart
         void    Unmap( hTextureMapInfo* outInfo );
 
         //Debug
-        void	EnableDebugDrawing( hBool val );
+        void	EnableDebugDrawing( hBool val ) { debugEnabled_ = val; }
         void	RenderDebugText( hFloat x, hFloat y, const char* fmt, ... );
         void	RenderDebugSphere( const hVec3& centre, hFloat radius, const hColour& colour );
         void	RenderDebugAABB( const hAABB& aabb, const hColour& colour );
@@ -116,12 +135,24 @@ namespace Heart
         friend class hRenderer; 
 
         //Debug
-        void	InitialiseDebugInterface( hRenderer* renderer );
-
+        void	InitialiseDebugInterface( hIndexBuffer* sphereIB, hVertexBuffer* sphereVB, hMaterial* material );
+                          
+        hUint32                         techniqueMask_;
+        hMaterialInstance*              currentMaterial_;
+        hMaterialTechnique*             currentTechnique_;
         const hViewportShaderConstants* viewportConstants_;
-        hInstanceConstants              instanceConstants_;
+        hdParameterConstantBlock*       viewportConstantsBlock_;
+        hInstanceConstants*             instanceConstants_;
+        hdParameterConstantBlock*       instanceConstantsBlock_; 
         hdRenderSubmissionCtx           impl_;
+
+        //DEBUG
         hdRenderSubmissionCtx           debug_;
+        hVertexBuffer*                  debugVB_;
+        hIndexBuffer*                   debugIB_;
+        hMaterialInstance*              debugMaterial_;
+        hMaterialTechnique*             debugTechnique_;
+        const hShaderParameter*         debugColourParameter_;
         hUint32                         debugEnabled_;
     };
 

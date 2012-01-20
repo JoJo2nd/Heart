@@ -75,6 +75,7 @@ private:
     void            OnLoadResourceDatabase( wxCommandEvent& evt );
     void            OnBuildAllData( wxCommandEvent& evt );
     void            OnCleanAllData( wxCommandEvent& evt );
+    void            OnSetBuildOutput( wxCommandEvent& evt );
     void            OnSaveWindowLayout( wxCommandEvent& evt );
     void            OnLoadWindowLayout( wxCommandEvent& evt );
     void            OnSetDefaultWindowLayout( wxCommandEvent& evt );

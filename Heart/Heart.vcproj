@@ -391,11 +391,27 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Src\hRendererCamera.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hRendererCamera.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Src\hRendererConstants.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\Include\hRendererConstants.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Src\hRenderMaterialManager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hRenderMaterialManager.h"
 					>
 				</File>
 				<File
@@ -420,14 +436,6 @@
 				</File>
 				<File
 					RelativePath=".\Include\hRenderUtility.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\hRenderViewport.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hRenderViewport.h"
 					>
 				</File>
 				<File

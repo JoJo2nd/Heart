@@ -31,6 +31,7 @@ public:
 	static const hChar*     			FREETYPE_FILE_PARAM;
 	static const hChar*     			FONT_SIZE_PARAM;
 	static const hChar*     			FONT_CHAR_ARRAY;
+    static const hChar*                 FONT_MATERIAL_PARAM;
 
 private:
 

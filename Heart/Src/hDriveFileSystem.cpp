@@ -34,6 +34,8 @@ namespace Heart
 {
 namespace 
 {
+    static const hChar FILE_PREFIX[] = {"GAMEDATA/"};
+
 	struct EnumerateFilesCallbackInfo
 	{
 		EnumerateFilesCallback fn_;
@@ -43,7 +45,7 @@ namespace
 			FileInfo fi;
 			fi.name_ = pInfo->name_;
 			fi.directory_ = pInfo->directory_;
-			fi.path_ = pInfo->path_;
+			fi.path_ = pInfo->path_+(sizeof(FILE_PREFIX)-1);
 
 			return fn_( &fi );
 		}
@@ -58,6 +60,10 @@ namespace
 	{
 		Device::FileSystem::FileHandle* fh;
 		const hChar* devMode;
+        hUint32 len = hStrLen( filename )+hStrLen( FILE_PREFIX )+1;
+        hChar* fullFilename = (hChar*)hAlloca( len );
+        hStrCopy( fullFilename, len, FILE_PREFIX );
+        hStrCat( fullFilename, len, filename );
 
 		if ( mode == FILEMODE_WRITE )
 		{
@@ -71,9 +77,8 @@ namespace
 		{
 			return NULL;
 		}
-		
 
-		if ( !Device::FileSystem::Fopen( filename, devMode, &fh ) )
+		if ( !Device::FileSystem::Fopen( fullFilename, devMode, &fh ) )
 		{
 			return NULL;
 		}
@@ -109,7 +114,12 @@ namespace
 		EnumerateFilesCallbackInfo cbInfo;
         cbInfo.fn_ = fn;
 
-		Device::FileSystem::EnumerateFiles( path, Device::FileSystem::EnumerateFilesCallback::bind< EnumerateFilesCallbackInfo, &EnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
+        hUint32 len = hStrLen( path )+hStrLen( FILE_PREFIX )+1;
+        hChar* fullFilename = (hChar*)hAlloca( len );
+        hStrCopy( fullFilename, len, FILE_PREFIX );
+        hStrCat( fullFilename, len, path );
+
+		Device::FileSystem::EnumerateFiles( fullFilename, Device::FileSystem::EnumerateFilesCallback::bind< EnumerateFilesCallbackInfo, &EnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
 	}
 
 }

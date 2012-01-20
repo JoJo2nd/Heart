@@ -257,7 +257,7 @@ namespace Heart
 					sunShadowVisitor_.SetShadowTarget( shadowTarget_ );
 					pSceneGraph->VisitScene( &sunShadowVisitor_, hSceneGraph::TOP_DOWN, false );
 
-					proj =hMatrixFunc::orthoProj( (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0.0f, 10.0f );
+					proj =hMatrixFunc::orthoProj( (hFloat)renderer->GetWidth(), (hFloat)renderer->GetHeight(), 0.0f, 10.0f );
 
                     hVec3 wvDir,dir( hMatrixFunc::getRow( lights_[i].matrix_, 2 ) );
 					hMatrix wvi,wvit;
@@ -290,7 +290,7 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 #endif // HEART_OLD_RENDER_SUBMISSION
 
-					proj = hMatrixFunc::orthoProj( (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0.0f, 10.0f );
+					proj = hMatrixFunc::orthoProj( (hFloat)renderer->GetWidth(), (hFloat)renderer->GetHeight(), 0.0f, 10.0f );
 
 					hVec3 wvDir,dir(hMatrixFunc::getTranslation( lights_[i].matrix_ ) );
 					hMatrix wvi,wvit;

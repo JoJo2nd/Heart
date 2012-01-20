@@ -99,7 +99,8 @@ namespace hMatrixFunc
 
 	hFORCEINLINE hMatrix inverse( const hMatrix& in )
 	{
-        return XMMatrixInverse( NULL, in );
+        hVec128 det;
+        return XMMatrixInverse( &det, in );
 	}
 
 	hFORCEINLINE hBool isIdentity( const hMatrix& in )

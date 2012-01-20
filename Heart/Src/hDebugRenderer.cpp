@@ -264,7 +264,7 @@ namespace
 		camera->UpdateCamera();
 		hMatrix vp = *camera->GetViewProjectionMatrix();
 		hMatrix op;
-        op = hMatrixFunc::orthoProjOffCentre( 0, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0, 0.0f, 1.0f );
+        op = hMatrixFunc::orthoProjOffCentre( 0, (hFloat)renderer->GetWidth(), (hFloat)renderer->GetHeight(), 0, 0.0f, 1.0f );
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer->NewRenderCommand< Cmd::SetMaterial >( debugMat_ );
@@ -276,8 +276,8 @@ namespace
 
 		if ( nSphereCommands_ > 0 || nConeCommands_ > 0 )
 		{
-			sphereIdxBuf_->Lock();
-			sphereVtxBuf_->Lock();
+			//sphereIdxBuf_->Lock();
+			//sphereVtxBuf_->Lock();
 
 			hUint16 sphereIdx = 0;
 			hUint16 sphereVtx = 0;
@@ -312,8 +312,8 @@ namespace
 // 					&sphereVtxBuf_ );
 			}
 
-			sphereIdxBuf_->Unlock();
-			sphereVtxBuf_->Unlock();
+			//sphereIdxBuf_->Unlock();
+			//sphereVtxBuf_->Unlock();
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 			renderer->NewRenderCommand< Cmd::SetStreams >( sphereIdxBuf_, sphereVtxBuf_ );

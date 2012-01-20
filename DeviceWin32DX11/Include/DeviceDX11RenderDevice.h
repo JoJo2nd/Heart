@@ -35,13 +35,20 @@ namespace Heart
     class hdDX11Texture;
     class hdDX11ShaderProgram;
 
+
+    struct hRenderDeviceSetup
+    {
+        hTempRenderMemAlloc     alloc_;
+        hTempRenderMemFree      free_;
+    };
+
     class hdDX11RenderDevice
     {
     public:
         hdDX11RenderDevice();
         ~hdDX11RenderDevice();
 
-        void                            Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync );
+        void                            Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup );
         void                            Destroy();
         void                            ActiveContext() {}
         void                            BeginRender();
@@ -49,18 +56,19 @@ namespace Heart
         void	                        SwapBuffers();
         void                            InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         void                            DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
-        void                            RunSubmissionCtx( hdDX11RenderSubmissionCtx* subCtx );
+        void                            InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         hdDX11RenderSubmissionCtx*      GetMainSubmissionCtx() { return &mainRenderCtx_; };
         
         hUint32                         Width() const { return width_; }
         hUint32                         Height() const { return height_; }
 
+        hUint32                         ComputeVertexLayoutStride( hUint32 vertexlayout );
         //Resource Create Calls
         hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type );
-        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, hUint32 count );
+        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count );
         void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
         void                            DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count );
-        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, TextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags );
+        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags );
         void                            DestroyTexture( hdDX11Texture* texture );
         hdDX11IndexBuffer*              CreateIndexBuffer( hUint32 sizeInBytes, void* initialData, hUint32 flags );
         void                            DestroyIndexBuffer( hdDX11IndexBuffer* indexBuffer );
@@ -76,6 +84,11 @@ namespace Heart
         void                            DestoryDepthStencilState( hdDX11DepthStencilState* state );
         hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
         void                            DestroySamplerState( hdDX11SamplerState* state );
+        void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
+
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        void                            SetPIXDebuggingMutex( hMutex* mutex ) { pixMutex_ = mutex; }
+#endif
 
     private:
 
@@ -90,6 +103,8 @@ namespace Heart
         Device::Kernel*             kernel_;
         hUint32                     width_;
         hUint32                     height_;
+        hTempRenderMemAlloc         alloc_;
+        hTempRenderMemFree          free_;
         hdDX11RenderSubmissionCtx   mainRenderCtx_;
         IDXGISwapChain*             mainSwapChain_;
         ID3D11Device*               d3d11Device_;
@@ -104,6 +119,10 @@ namespace Heart
         DepthStencilStateMapType    depthStencilStates_;
         SamplerStateMapType         samplerStateMap_;
         VertexLayoutMapType         vertexLayoutMap_;
+
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        hMutex*                     pixMutex_;
+#endif
     };
 
 }

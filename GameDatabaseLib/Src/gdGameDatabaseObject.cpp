@@ -36,7 +36,8 @@ namespace GameData
     */
     const gdWchar gdGameDatabaseObject::plugInsFolderName_[]  = L"plug_ins";
     const gdWchar gdGameDatabaseObject::cacheFolderName_[]    = L"cache";
-    const gdWchar gdGameDatabaseObject::outputFolderName_[]   = L"output";
+    const gdWchar gdGameDatabaseObject::outputFolderName_[]   = L"GAMEDATA";
+    const gdWchar gdGameDatabaseObject::remapTableName_[]     = L"RRT";
     const gdWchar gdGameDatabaseObject::databaseFilename_[]   = L"gamedata.db";
 
     //////////////////////////////////////////////////////////////////////////
@@ -67,8 +68,8 @@ namespace GameData
         databaseFolderPath_ = path( destPath );
         plugInsPath_ = databaseFolderPath_ / plugInsFolderName_;
         cachePath_ = databaseFolderPath_ / cacheFolderName_;
-        outputPath_ = databaseFolderPath_ / outputFolderName_;
         databasePath_ = databaseFolderPath_ / databaseFilename_;
+        SetOutputPath( databaseFolderPath_.generic_string().c_str() );
 
         if ( !exists( databaseFolderPath_ ) )
         {
@@ -176,7 +177,14 @@ namespace GameData
 
         plugInsPath_ = databaseFolderPath_ / plugInsFolderName_;
         cachePath_ = databaseFolderPath_ / cacheFolderName_;
-        outputPath_ = databaseFolderPath_ / outputFolderName_;
+        if ( dataOutputPath_.empty() )
+        {
+            SetOutputPath( databaseFolderPath_.generic_string().c_str() );
+        }
+        else 
+        {
+            SetOutputPath( dataOutputPath_.c_str() );
+        }
 
         if ( !exists( databaseFolderPath_ ) )
         {
@@ -210,6 +218,28 @@ namespace GameData
             return err;
 
         return err;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const gdChar* gdGameDatabaseObject::GetOutputPath()
+    {
+        return dataOutputPath_.c_str();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    gdError gdGameDatabaseObject::SetOutputPath( const gdChar* path )
+    {
+        outputPath_ = path;
+        outputPath_ = outputPath_ / outputFolderName_;
+        dataOutputPath_ = path;
+
+        return gdERROR_OK;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -787,6 +817,7 @@ namespace GameData
                     return gdERROR_INVALID_PARAM;
                 }
 
+                ResolveDuplicates( resInfo, builder->GetMD5Digest() );
                 AppendBuiltResource( resID );
 
                 //Attempt to build the deps
@@ -820,6 +851,13 @@ namespace GameData
                 return gdERROR_UNHANDLED_SAVE_EXPECTION;
             }
 
+            gdFileHandle md5;
+            gdByte md5Str[CY_MD5_LEN];
+            md5.Open( infoMD5.generic_string().c_str(), false );
+            md5.Read( md5Str, CY_MD5_LEN );
+            md5.Close();
+
+            ResolveDuplicates( resInfo, md5Str );
             AppendCacheResource( resID );
 
             //Attempt to build the deps
@@ -829,6 +867,7 @@ namespace GameData
             }
         }
 
+#if 0
         if ( buildSuccess )
         {
             // Copy the output file to the dest directory
@@ -844,6 +883,7 @@ namespace GameData
             }
             boost::filesystem::copy_file( outputPath, finalPath );
         }
+#endif
 
         return retCode;
     }
@@ -854,7 +894,9 @@ namespace GameData
 
     gdError gdGameDatabaseObject::BuildAllResources( gdBuildProgressCallback callback, void* user )
     {
+        CleanDuplicatesList();
         ClearBuildMessages();
+
         gdError retCode = gdERROR_OK;
         try
         {
@@ -874,6 +916,11 @@ namespace GameData
         {
             gdAssert( false );
             return gdERROR_GENERIC;
+        }
+
+        if ( retCode == gdERROR_OK )
+        {
+            WriteOutputAndDuplicateRemapTable( duplicateResources_ );
         }
 
         return retCode;
@@ -998,5 +1045,144 @@ namespace GameData
         return builtMessages_.c_str();
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void gdGameDatabaseObject::CleanDuplicatesList()
+    {
+        duplicateResources_.clear();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void gdGameDatabaseObject::ResolveDuplicates( gdResourceInfo* res, const gdByte* md5Digest )
+    {
+        gdChar md5Str[64];
+        cyMD5DigestToString( md5Digest, md5Str );
+        gdString md5(md5Str);
+        DuplicateResourceMapType::iterator i = duplicateResources_.find( md5 );
+        if ( i == duplicateResources_.end() )
+        {
+            //Add new
+            ResourceListType newlist;
+            newlist.push_back( res );
+            duplicateResources_[md5] = newlist;
+        }
+        else
+        {
+            i->second.push_back( res );
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void gdGameDatabaseObject::WriteOutputAndDuplicateRemapTable( const DuplicateResourceMapType& duplicateMap )
+    {
+        boost::filesystem::path rrtpath = outputPath_ / remapTableName_;
+        gdFileHandle rrt;
+        rrt.Open( rrtpath.generic_string().c_str(), true );
+
+        for ( DuplicateResourceMapType::const_iterator i = duplicateMap.begin(); i != duplicateMap.end(); ++i )
+        {
+            if ( i->second.size() > 1 )
+            {
+                //Write the first, duplicates will remap to this file
+                gdUint32 nullterm = 0;
+                for ( ResourceListType::const_iterator li = i->second.begin(); li != i->second.end(); ++li )
+                {
+
+                    gdChar CRCString[64];
+                    gdResourceInfo* resInfo = (*li);
+                    const gdUniqueResourceID& resID = *resInfo->GetResourceID();
+
+                    sprintf_s( CRCString, 64, "0x%08X", resID.GetResourceCRCID() );
+                    const gdPlugInInformation* plugin;
+                    GetPlugInInfo( resInfo->GetResourceTypeName(), &plugin );
+                    boost::filesystem::path localCachePath = cachePath_ / CRCString;
+                    gdString resourceOutputName = resID.GetResourceName();
+                    resourceOutputName += plugin->GetBuiltDataExtension();
+                    localCachePath = localCachePath / resourceOutputName;
+
+                    if ( li == i->second.begin() )
+                    {
+                        // Copy the output file to the dest directory
+                        boost::filesystem::path finalPath = outputPath_ / resID.GetResourcePath();
+                        if ( !exists( finalPath ) )
+                        {
+                            boost::filesystem::create_directories( finalPath );
+                        }
+                        finalPath /= resourceOutputName;//+ plugininfo.fourCC
+                        if ( boost::filesystem::exists( finalPath ) )
+                        {
+                            boost::filesystem::remove( finalPath );
+                        }
+                        boost::filesystem::copy_file( localCachePath, finalPath );
+
+                        //Write the Path that other resources will go to
+                        finalPath = resID.GetResourcePath();
+                        finalPath /= resourceOutputName;
+
+                        hUint32 len = finalPath.generic_string().size();
+                        rrt.Write( &len, sizeof(len) );
+                        rrt.Write( finalPath.generic_string().c_str(), len );
+                    }
+                    else
+                    {
+                        // Make a placeholder file to the dest directory
+                        boost::filesystem::path finalPath = outputPath_ / resID.GetResourcePath();
+                        if ( !exists( finalPath ) )
+                        {
+                            boost::filesystem::create_directories( finalPath );
+                        }
+                        finalPath /= resourceOutputName;//+ plugininfo.fourCC
+                        if ( boost::filesystem::exists( finalPath ) )
+                        {
+                            boost::filesystem::remove( finalPath );
+                        }
+                        fclose( fopen( finalPath.generic_string().c_str(), "wb" ) );
+
+                        //Write the CRC 
+                        gdUint32 id = (*li)->GetResourceID()->GetResourceCRCID();
+                        rrt.Write( &id, sizeof(gdUint32) );
+                    }
+                }
+                rrt.Write( &nullterm, sizeof(gdUint32) );
+            }
+            else
+            {
+                gdChar CRCString[64];
+                gdResourceInfo* resInfo = *(i->second.begin());
+                const gdUniqueResourceID& resID = *resInfo->GetResourceID();
+
+                sprintf_s( CRCString, 64, "0x%08X", resID.GetResourceCRCID() );
+                const gdPlugInInformation* plugin;
+                GetPlugInInfo( resInfo->GetResourceTypeName(), &plugin );
+                boost::filesystem::path localCachePath = cachePath_ / CRCString;
+                gdString resourceOutputName = resID.GetResourceName();
+                resourceOutputName += plugin->GetBuiltDataExtension();
+                localCachePath = localCachePath / resourceOutputName;
+
+                // Copy the output file to the dest directory
+                boost::filesystem::path finalPath = outputPath_ / resID.GetResourcePath();
+                if ( !exists( finalPath ) )
+                {
+                    boost::filesystem::create_directories( finalPath );
+                }
+                finalPath /= resourceOutputName;//+ plugininfo.fourCC
+                if ( boost::filesystem::exists( finalPath ) )
+                {
+                    boost::filesystem::remove( finalPath );
+                }
+                boost::filesystem::copy_file( localCachePath, finalPath );
+            }
+        }
+
+        rrt.Close();
+    }
 
 }

@@ -31,8 +31,18 @@ extern "C" __declspec(dllexport) void GetPlugInInformation( GameData::gdPlugInIn
     {
         gdParameterDefinition param;
         gdParameterValue val( gdParameterValue::Type_String );
-        val.Set( "0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM[](){}=+-?!%^*\\/" );
+        val.Set( "0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM[](){}=+-?!%^*\\/.,:;@'~#_" );
         param.SetName( FontBuilder::FONT_CHAR_ARRAY );
+        param.SetDefaultValue( val );
+
+        info->AppendDefaultParameter( param );
+    }
+
+    {
+        gdParameterDefinition param;
+        gdParameterValue val( gdParameterValue::Type_Filename );
+        val.SetFile( "" );
+        param.SetName( FontBuilder::FONT_MATERIAL_PARAM );
         param.SetDefaultValue( val );
 
         info->AppendDefaultParameter( param );

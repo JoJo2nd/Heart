@@ -144,6 +144,36 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint32 hdDX11ShaderProgram::GetConstantBufferReg( hUint32 idx ) const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        constInfo->GetDesc( &bufInfo );
+        shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
+
+        return bindInfo.BindPoint;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetSamplerRegister( const hChar* name ) const
+    {
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        HRESULT hr = shaderInfo_->GetResourceBindingDescByName( name, &bindInfo );
+
+        return hr == S_OK ? bindInfo.BindPoint : ~0U;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11ParameterConstantBlock::Flush( ID3D11DeviceContext* ctx )
     {
         ctx->UpdateSubresource( constBuffer_, 0, NULL, cpuIntermediateData_, 0, 0 );

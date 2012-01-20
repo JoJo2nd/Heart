@@ -35,6 +35,8 @@ public:
     void    BuildResource();
     void    CleanUpFromBuild();
 
+    static const hChar* ParameterName_DebugInfo;
+
 private:
 
     void        MapCgPassStateToRuntimeState( Heart::hMaterialTechniquePass* lhs, CGstateassignment rhs );

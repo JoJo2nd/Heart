@@ -127,7 +127,7 @@
 #include "hVertexDeclarations.h"
 #include "hVertexBuffer.h"
 #include "hIndexBuffer.h"
-#include "hCamera.h"
+#include "hRendererCamera.h"
 #include "hViewFrustum.h"
 #include "hTextureBase.h"
 #include "hTexture.h"

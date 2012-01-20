@@ -42,6 +42,8 @@ namespace GameData
         gdError Create( const gdWchar* destPath );
         gdError Load( const gdWchar* path );
         gdError Save() const;
+        const gdChar* GetOutputPath();
+        gdError SetOutputPath( const gdChar* path );
         gdError AddResource( 
             const gdChar* inputFile, 
             const gdChar* path, 
@@ -68,22 +70,30 @@ namespace GameData
         const hChar* GetErrorMessages() const;
         const hChar* GetBuiltResourcesMessages() const;
 
-        gdDEFINE_SAVE_VERSION( 1 )
+        gdDEFINE_SAVE_VERSION( 2 )
 
     private:
 
         static const gdWchar    plugInsFolderName_[];
         static const gdWchar    cacheFolderName_[];  
-        static const gdWchar    outputFolderName_[]; 
+        static const gdWchar    outputFolderName_[];
+        static const gdWchar    remapTableName_[];
         static const gdWchar    databaseFilename_[];
 
         friend class boost::serialization::access;
+
+        typedef std::list< gdResourceInfo* >                ResourceListType;
+        typedef std::map< gdUint32, gdResourceInfo* >       ResourceMapType;
+        typedef std::map< gdString, ResourceListType >      DuplicateResourceMapType;
+        typedef std::list< gdString >                       StringList;
 
         template< typename _Ty >
         void serialize( _Ty& arc, const unsigned int version )
         {
             switch ( version )
             {
+            case 2:
+                arc & BOOST_SERIALIZATION_NVP(dataOutputPath_);
             case 1:
                 arc & BOOST_SERIALIZATION_NVP(usedResourceTypes_);
             case 0:
@@ -110,18 +120,20 @@ namespace GameData
         void    AppendErrorMessages( const gdUniqueResourceID& res, const hChar* warning );
         void    AppendBuiltResource( const gdUniqueResourceID& res );
         void    AppendCacheResource( const gdUniqueResourceID& res );
-
-        typedef std::map< gdUint32, gdResourceInfo* >       ResourceMapType;
-        typedef std::list< gdString >                       StringList;
+        void    CleanDuplicatesList();
+        void    ResolveDuplicates( gdResourceInfo* res, const gdByte* md5Digest );
+        void    WriteOutputAndDuplicateRemapTable( const DuplicateResourceMapType& duplicateMap );
 
 //Hide stupid ms warning C4251
 #pragma warning( push )
 #pragma warning( disable: 4251 )
 
-        gdString                databaseFilepath_;
-        gdString                dataSourcePath_;
-        ResourceMapType         resourceMap_;
-        StringList              usedResourceTypes_;
+        gdString                 databaseFilepath_;
+        gdString                 dataSourcePath_;
+        gdString                 dataOutputPath_;
+        ResourceMapType          resourceMap_;
+        StringList               usedResourceTypes_;
+        DuplicateResourceMapType duplicateResources_;
 
         //Non-serialized members
         gdResorucePlugInMap     loadedPlugIns_;  
