@@ -46,7 +46,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -64,11 +64,12 @@
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
 				AdditionalDependencies="cryptoD.lib"
-				OutputFile="$(OutDir)\$(ProjectName)D.dll"
+				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;..\external\boost\stage\lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				ImportLibrary="$(TargetDir)$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -95,8 +96,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -118,10 +119,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="0"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
+				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -138,11 +143,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="crypto.lib"
+				ShowProgress="0"
+				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;..\external\boost\stage\lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
+				OptimizeReferences="0"
+				EnableCOMDATFolding="0"
+				SetChecksum="false"
 				TargetMachine="1"
 			/>
 			<Tool

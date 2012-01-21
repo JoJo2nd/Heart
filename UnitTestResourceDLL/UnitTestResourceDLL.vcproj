@@ -63,7 +63,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="GameDatabaseLibD.lib HeartPD.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\external\boost\stage\lib"
+				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\external\boost\stage\lib;&quot;$(ProjectDir)\..\bin\tools\&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -92,8 +92,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
+			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -117,6 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="Include;..\GamedatabaseLib\Include;..\external\boost;..\crypto\Include;..\Heart\Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;UNITTESTRESOURCEDLL_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,6 +137,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\external\boost\stage\lib;&quot;$(ProjectDir)\..\bin\tools\&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

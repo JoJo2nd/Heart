@@ -9,7 +9,7 @@
 
 #include "ShaderBuilder.h"
 
-extern "C" __declspec(dllexport) void GetPlugInInformation( GameData::gdPlugInInformation* info )
+extern "C" __declspec(dllexport) void __cdecl GetPlugInInformation( GameData::gdPlugInInformation* info )
 {
     using namespace GameData;
 
@@ -65,12 +65,12 @@ extern "C" __declspec(dllexport) void GetPlugInInformation( GameData::gdPlugInIn
 }
 
 //define the entry points for the resource plug in loader
-extern "C" __declspec(dllexport) GameData::gdResourceBuilderBase* CreateResourceBuilder( const GameData::gdResourceBuilderConstructionInfo& builderInfo )
+extern "C" __declspec(dllexport) GameData::gdResourceBuilderBase* __cdecl CreateResourceBuilder( const GameData::gdResourceBuilderConstructionInfo& builderInfo )
 {
 	return new ShaderProgramBuilder( builderInfo );
 }
 
-extern "C" __declspec(dllexport) void DestroyResourceBuilder( GameData::gdResourceBuilderBase* pBuilder )
+extern "C" __declspec(dllexport) void __cdecl DestroyResourceBuilder( GameData::gdResourceBuilderBase* pBuilder )
 {
 	delete pBuilder;
 }

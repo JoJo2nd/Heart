@@ -72,7 +72,7 @@
 #endif
 
 #ifdef HEART_DEBUG
-    #define HEART_ALLOW_PIX_MT_DEBUGGING
+    //#define HEART_ALLOW_PIX_MT_DEBUGGING
 #endif
 
 #if defined (HEART_DEBUG)

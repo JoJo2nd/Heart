@@ -46,7 +46,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="2"
 				DebugInformationFormat="4"
@@ -84,7 +84,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="0"
@@ -113,7 +113,7 @@
 				AdditionalIncludeDirectories="Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="false"
 				FloatingPointModel="0"
 				RuntimeTypeInfo="false"

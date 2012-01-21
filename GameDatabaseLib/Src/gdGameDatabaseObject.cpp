@@ -34,11 +34,17 @@ namespace GameData
     /*
         VAssist suggests using __declspec(selectany) here?
     */
-    const gdWchar gdGameDatabaseObject::plugInsFolderName_[]  = L"plug_ins";
-    const gdWchar gdGameDatabaseObject::cacheFolderName_[]    = L"cache";
-    const gdWchar gdGameDatabaseObject::outputFolderName_[]   = L"GAMEDATA";
-    const gdWchar gdGameDatabaseObject::remapTableName_[]     = L"RRT";
-    const gdWchar gdGameDatabaseObject::databaseFilename_[]   = L"gamedata.db";
+//     static const gdWchar plugInsFolderName_[]  = L"plug_ins";
+//     static const gdWchar cacheFolderName_[]    = L"cache";
+//     static const gdWchar outputFolderName_[]   = L"GAMEDATA";
+//     static const gdWchar remapTableName_[]     = L"RRT";
+//     static const gdWchar databaseFilename_[]   = L"gamedata.db";
+
+#define plugInsFolderName_ (L"plug_ins")
+#define cacheFolderName_ (L"cache")
+#define outputFolderName_ (L"GAMEDATA")
+#define remapTableName_ (L"RRT")
+#define databaseFilename_ (L"gamedata.db")
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -534,6 +540,9 @@ namespace GameData
         gdPlugInInformation* newPlugIn = new gdPlugInInformation();
         for ( ; i != dirend; ++i )
         {
+            if ( !boost::filesystem::is_regular_file( i->path() ) )
+                continue;
+
             boost::filesystem::path dllPath = i->path();
             gdTime_t lastModify = boost::filesystem::last_write_time( dllPath );
             HMODULE dll = LoadLibraryEx( dllPath.generic_wstring().c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
@@ -866,24 +875,6 @@ namespace GameData
                 retCode |= BuildSingleResourceFromResInfo( *i->second->GetResourceID(), i->second );
             }
         }
-
-#if 0
-        if ( buildSuccess )
-        {
-            // Copy the output file to the dest directory
-            boost::filesystem::path finalPath = outputPath_ / resID.GetResourcePath();
-            if ( !exists( finalPath ) )
-            {
-                boost::filesystem::create_directories( finalPath );
-            }
-            finalPath /= resourceOutputName;//+ plugininfo.fourCC
-            if ( boost::filesystem::exists( finalPath ) )
-            {
-                boost::filesystem::remove( finalPath );
-            }
-            boost::filesystem::copy_file( outputPath, finalPath );
-        }
-#endif
 
         return retCode;
     }

@@ -18,7 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="ReleaseWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="0"
@@ -44,8 +44,8 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32D3D9/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_D3D9;USE_DL_PREFIX;ONLY_MSPACES;_HAS_ITERATOR_DEBUGGING=0;_SECURE_SCL=0"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
 				StructMemberAlignment="3"
@@ -55,7 +55,7 @@
 				PrecompiledHeaderThrough="Common.h"
 				AssemblerOutput="0"
 				WarningLevel="3"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 				CallingConvention="0"
 			/>
 			<Tool
@@ -69,9 +69,9 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d9.lib d3dx9.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32D3D9.lib lua.lib zlib.lib minizip.lib tinyXML.lib"
-				OutputFile="$(OutDir)\$(ProjectName)W32D3D9.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib crypto.lib"
+				OutputFile="$(OutDir)\$(ProjectName)W32DX11.lib"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Release"
 				IgnoreDefaultLibraryNames=""
 			/>
 			<Tool
@@ -120,7 +120,7 @@
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="Common.h"
 				AssemblerOutput="0"
@@ -163,7 +163,7 @@
 		</Configuration>
 		<Configuration
 			Name="PackerRelease|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)"
+			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="0"
@@ -188,11 +188,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;Include\Common;Include\Win32;..\lua\src;..\zlib\Include;..\minizip\Include;..\zziplib\Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;HEART_ALLOW_NEW;TIXML_USE_STL;HEART_ENGINE;HEART_STDIO_OUTPUT"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
-				StructMemberAlignment="5"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="false"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"
@@ -213,9 +213,9 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d9.lib d3dx9.lib dxguid.lib xinput.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib"
 				OutputFile="$(OutDir)\$(ProjectName)P.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;"
+				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)\..\Release&quot;"
 				IgnoreDefaultLibraryNames=""
 			/>
 			<Tool
@@ -266,7 +266,7 @@
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="Common.h"
@@ -291,7 +291,7 @@
 				AdditionalOptions="/ignore:4006 /ignore:4221"
 				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
 				OutputFile="$(OutDir)\$(ProjectName)DW32DX11.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
 				IgnoreDefaultLibraryNames="LIBCMTD"
 			/>
 			<Tool

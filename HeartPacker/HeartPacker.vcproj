@@ -64,8 +64,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wininet.lib GameDatabaseLibD.lib"
+				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)_$(ConfigurationName).exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\external\wxWidgets-2.9.2\lib\vc_lib&quot;;&quot;$(OutDir)&quot;;..\external\boost\stage\lib"
+				AdditionalLibraryDirectories="&quot;..\external\wxWidgets-2.9.2\lib\vc_lib&quot;;&quot;$(OutDir)&quot;;..\external\boost\stage\lib;&quot;$(ProjectDir)\..\bin\tools\&quot;"
 				IgnoreDefaultLibraryNames="MSVCRT;LIBCMTD"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -99,7 +100,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
-			CharacterSet="0"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -119,15 +120,18 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\Heart\Include;..\Heart\Include\Common;..\Heart\Include\Win32;..\zlib\include;..\minizip\Include;..\libpng\include;..\squish;..\PackerSharedLib\Include;..\fbxsdk\2010.0\include;..\fbxsdk\2010.0\include\fbxfilesdk;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxplugins;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxmp;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxmodules;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxmath;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxio;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxevents;..\fbxsdk\2010.0\include\fbxfilesdk\kfbxcharacter;..\fbxsdk\2010.0\include\fbxfilesdk\fbxprocessors;..\fbxsdk\2010.0\include\fbxfilesdk\fbxcore;..\fbxsdk\2010.0\include\fbxfilesdk\fbx3d;..\fbxsdk\2010.0\include\fbxfilesdk\components;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;PRINTF_TO_STDIO;KFBX_PLUGIN;KFBX_FBXSDK;KFBX_NODLL;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;HEART_ALLOW_NEW;TIXML_USE_STL"
+				Optimization="0"
+				EnableIntrinsicFunctions="false"
+				AdditionalIncludeDirectories="Include;..\GameDatabaseLib\Include;&quot;..\external\wxWidgets-2.9.2\include&quot;;&quot;..\external\wxWidgets-2.9.2\include\msvc&quot;;..\external\boost;..\crypto\Include;..\Heart\Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;wxUSE_NO_MANIFEST=1"
 				MinimalRebuild="false"
+				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
-				StructMemberAlignment="5"
+				StructMemberAlignment="0"
+				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="PreCompiled.h"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -142,13 +146,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wininet.lib"
-				LinkIncremental="1"
-				IgnoreDefaultLibraryNames="LIBCMT"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="GameDatabaseLib.lib crypto.lib"
+				ShowProgress="0"
+				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)_$(ConfigurationName).exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;..\external\wxWidgets-2.9.2\lib\vc_lib&quot;;..\external\boost\stage\lib;&quot;$(OutDir)&quot;;&quot;$(ProjectDir)\..\bin\tools&quot;"
+				IgnoreDefaultLibraryNames="MSVCRTD;LTCG"
 				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
+				SubSystem="2"
+				OptimizeReferences="0"
+				EnableCOMDATFolding="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -204,6 +212,14 @@
 						PrecompiledHeaderThrough="PreCompiled.h"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\Src\Main.cpp"
@@ -241,6 +257,14 @@
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="1"
 						PrecompiledHeaderThrough="PreCompiled.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
 			</File>

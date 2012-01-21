@@ -74,12 +74,6 @@ namespace GameData
 
     private:
 
-        static const gdWchar    plugInsFolderName_[];
-        static const gdWchar    cacheFolderName_[];  
-        static const gdWchar    outputFolderName_[];
-        static const gdWchar    remapTableName_[];
-        static const gdWchar    databaseFilename_[];
-
         friend class boost::serialization::access;
 
         typedef std::list< gdResourceInfo* >                ResourceListType;

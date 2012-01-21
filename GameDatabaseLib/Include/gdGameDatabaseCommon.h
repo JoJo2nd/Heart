@@ -100,7 +100,7 @@ typedef gdUint32        gdError;
 
 #define gdDEFINE_DLL_FUNCTION_PROTOTYPE( ret, x )\
     extern const gdChar* gdDLL_##x;\
-    typedef ret (*gdDLLPT_##x)
+    typedef ret ( __cdecl *gdDLLPT_##x)
 #define gdDECLARE_DLL_FUNCTION_PROTOTYPE( ret, x )\
     const gdChar* gdDLL_##x = #x;
 #define gdGET_DLL_PROC_ADDRESS( handle, name ) \

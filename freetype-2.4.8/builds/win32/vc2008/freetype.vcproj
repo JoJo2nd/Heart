@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="freetype"
 	ProjectGUID="{78B079BD-9FC7-4B9E-B4A6-96DA0F00248B}"
 	TargetFrameworkVersion="131072"
@@ -121,7 +121,7 @@
 				AdditionalIncludeDirectories="..\..\..\include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				DisableLanguageExtensions="true"
 				PrecompiledHeaderFile=".\..\..\..\objs\release_mt/freetype.pch"
@@ -416,7 +416,7 @@
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;_CRT_SECURE_NO_WARNINGS;FT_DEBUG_LEVEL_ERROR;FT_DEBUG_LEVEL_TRACE;FT2_BUILD_LIBRARY;_CRT_SECURE_NO_DEPRECATE"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				DisableLanguageExtensions="true"
 				PrecompiledHeaderFile=".\..\..\..\objs\debug_mt/freetype.pch"
 				AssemblerListingLocation=".\..\..\..\objs\debug_mt/"
@@ -1237,6 +1237,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\base\ftgxval.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\base\ftlcdfil.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\base\ftmm.c"
 					>
 					<FileConfiguration
@@ -1304,6 +1312,14 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\..\src\base\ftotval.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\base\ftpatent.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\base\ftpfr.c"
 					>
 				</File>
@@ -1321,22 +1337,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\base\ftxf86.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\base\ftlcdfil.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\base\ftgxval.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\base\ftotval.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\base\ftpatent.c"
 					>
 				</File>
 				<File

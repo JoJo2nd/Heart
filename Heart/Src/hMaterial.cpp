@@ -44,7 +44,7 @@ namespace Heart
 
     const hShaderParameter* hMaterial::GetShaderParameterByIndex( hUint32 index ) const
     {
-     	hcAssert( index < constParameters_.GetSize() )
+     	hcAssert( index < constParameters_.GetSize() );
      	
         return &constParameters_[index];
     }
