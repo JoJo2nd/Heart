@@ -30,41 +30,79 @@
 
 namespace Heart
 {
-    class hdDX11Texture;
-    class hdDX11IndexBffer;
-    class hdDX11VertexBuffer;
-    class hdDX11VertexDecl;
+    typedef D3D11_MAPPED_SUBRESOURCE hdDX11MappedResourceData;
+    typedef ID3D11CommandList* hdDX11CommandBuffer;
 
     class hdDX11RenderSubmissionCtx
     {
     public:
-        hdDX11RenderSubmissionCtx() {}
-        ~hdDX11RenderSubmissionCtx() {}
+        hdDX11RenderSubmissionCtx() 
+            : depthStencilView_(NULL)
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+            , debugMode_( hFalse )
+#endif
+        {
+            for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i )
+            {
+                renderTargetViews_[i] = NULL;
+            }
+        }
+        ~hdDX11RenderSubmissionCtx() 
+        {}
 
-        void	SetIndexStream( hdDX11IndexBffer* pIIBuf );
-        void	SetVertexStream( hdDX11VertexBuffer* pIVBuf, hdDX11VertexDecl* pDecl );
-        void	SetRenderStateBlock( const hdDX11BlendState& );
-        void	SetRenderStateBlock( const hdDX11DepthStencilState& );
-        void	SetRenderStateBlock( const hdDX11RasterizerState& );
-        void	SetRenderStateBlock( const hdDX11SamplerState& );
-        void	SetVertexFormat( hdDX11VertexDecl* );
-        void	SetRenderTarget( hUint32 idx , hdDX11Texture* pTarget );
+        void    BeginPIXDebugging();
+        hdDX11CommandBuffer     SaveToCommandBuffer();
+        void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
+        void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
+        void	SetRenderStateBlock( hdDX11BlendState* st );
+        void	SetRenderStateBlock( hdDX11DepthStencilState* st );
+        void	SetRenderStateBlock( hdDX11RasterizerState* st );
+        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st );
+        void    SetConstantBlock( hdDX11ParameterConstantBlock* block );
+        void    SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state );
+        void    SetPixelShader( hdDX11ShaderProgram* prog );
+        void    SetVertexShader( hdDX11ShaderProgram* prog );
+        void	SetRenderTarget( hUint32 idx , hdDX11Texture* target );
+        void    SetDepthTarget( hdDX11Texture* depth );
         void	SetViewport( const hViewport& viewport );
         void	SetScissorRect( const ScissorRect& scissor );
-        void	ClearTarget( hBool clearColour, hColour& colour, hBool clearZ, hFloat z );
-        void	DrawPrimitive( hUint32 nPrimatives );
-        void	DrawVertexStream( PrimitiveType primType );
+        void	ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
+        void    SetPrimitiveType( PrimitiveType type );
+        void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
+        void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
+        void    RunSubmissionBuffer( hdDX11CommandBuffer cmdBuf );
+        void    Map( hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11Texture* tex, hUint32 level, void* ptr );
+        void    Map( hdDX11IndexBuffer* ib, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11IndexBuffer* ib, void* ptr );
+        void    Map( hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data );
+        void    Unmap( hdDX11VertexBuffer* vb, void* ptr );
 
-        void                    SetDeviceCtx( ID3D11DeviceContext* device ) { device_ = device; }
+        void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
+        void                    SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth );
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        void                    SetPIXDebuggingOptions( ID3D11DeviceContext* mainCtx, hMutex* mutex );
+#endif//HEART_ALLOW_PIX_MT_DEBUGGING
 
     private:
 
-        friend class hdDX11RenderDevice;
+        static const hUint32    MAX_RENDERTARGE_VIEWS = 4;
 
-        ID3D11RenderTargetView* renderTargetView_;
+        PrimitiveType           primType_;
+        hTempRenderMemAlloc     alloc_;
+        hTempRenderMemFree      free_;
+        ID3D11RenderTargetView* defaultRenderView_;
+        ID3D11DepthStencilView* defaultDepthView_;
+        ID3D11RenderTargetView* renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView* depthStencilView_;
         ID3D11DeviceContext*    device_;
+#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
+        hMutex*                 debugMutex_;
+        ID3D11DeviceContext*    mainDeviceCtx_;
+        ID3D11DeviceContext*    tempCtx_;
+        hBool                   debugMode_;
+#endif //HEART_ALLOW_PIX_MT_DEBUGGING
     };
 }
 

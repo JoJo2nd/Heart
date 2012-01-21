@@ -163,11 +163,11 @@ namespace Device
 			break;
 		case WM_CHAR:
 			{
-// 				hChar charcode = ( wParam & 0x7F );
-// 				if ( charcode > 0 )
-// 				{
-// 					pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardCharacterEvent( charcode ) );
-// 				}
+				hChar charcode = ( wParam & 0x7F );
+				if ( charcode > 0 )
+				{
+					pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardCharacterEvent( charcode ) );
+				}
 			}
 			break;
 		default:

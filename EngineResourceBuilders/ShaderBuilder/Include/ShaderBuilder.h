@@ -28,6 +28,9 @@ public:
     ShaderProgramBuilder( const GameData::gdResourceBuilderConstructionInfo& resBuilderInfo );
     ~ShaderProgramBuilder();
     void    BuildResource();
+
+    void ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect );
+
     void    CleanUpFromBuild();
 
     static const hChar* ParameterName_Entry;

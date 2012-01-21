@@ -75,6 +75,26 @@ namespace Heart
 		}
 	};
 
+    class hMutexAutoScope
+    {
+    public:
+        hMutexAutoScope( hMutex* mtx )
+            : mtx_(mtx)
+        {
+            mtx_->Lock();
+        }
+        ~hMutexAutoScope()
+        {
+            mtx_->Unlock();
+        }
+    private:
+        
+        //hMutexAutoScope();
+        hMutexAutoScope( const hMutexAutoScope& rhs );
+
+        hMutex*     mtx_;
+    };
+
 }
 
 #endif // hcMutex_h__

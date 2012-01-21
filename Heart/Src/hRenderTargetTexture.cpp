@@ -11,7 +11,6 @@
 #include "hRenderTargetTexture.h"
 #include "Heart.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 
 namespace Heart
@@ -22,6 +21,8 @@ namespace Heart
 
 	void hRenderTargetTexture::Release()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::ReleaseRenderTarget >( this );
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 }

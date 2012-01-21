@@ -48,8 +48,17 @@
 
 //#define HEART_ALLOW_NEW
 
-#ifdef HEART_ALLOW_NEW
-	#define hNEW( x ) new ( x )
+#ifndef XM_NO_OPERATOR_OVERLOADS
+    #define XM_NO_OPERATOR_OVERLOADS
+#endif
+
+#ifndef HEART_ALLOW_NEW
+    #ifdef HEART_DEBUG
+        #define hNEW( heap ) new ( heap, __FILE__, __LINE__ )
+    #else
+        #define hNEW( heap ) new ( heap )
+    #endif
+    #define hDELETE   delete 
 #else
 	#define TIXML_OVERRIDENEW
 #endif 
@@ -60,8 +69,10 @@
 
 #ifdef WIN32
 	#define HEART_PLAT_WINDOWS
-	#define HEART_USE_D3D_VECTOR
-	#define HEART_USE_D3D_MATRIX
+#endif
+
+#ifdef HEART_DEBUG
+    //#define HEART_ALLOW_PIX_MT_DEBUGGING
 #endif
 
 #if defined (HEART_DEBUG)

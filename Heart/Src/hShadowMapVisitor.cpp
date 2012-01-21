@@ -74,15 +74,13 @@ namespace Heart
 
 	void hShadowMapVisitor::PreVisit( Heart::hSceneGraph* pSceneGraph )
 	{
-		using namespace Heart;
-
 		hcAssert( renderer_ );
 
 		nShadowCasters_ = 0;
 		//Build frustum for light tests
-		hVec3 eye( lightMatrix_.m41, lightMatrix_.m42, lightMatrix_.m43 );
-		hVec3 up( lightMatrix_.m21, lightMatrix_.m22, lightMatrix_.m23 );
-		hVec3 at( lightMatrix_.m31, lightMatrix_.m32, lightMatrix_.m33 );
+		hVec3 eye = lightMatrix_.r[3];
+        hVec3 up = lightMatrix_.r[1];
+		hVec3 at = lightMatrix_.r[2];
 		lightFrustum_.UpdateFromCamera( eye, eye+at, up, lightFOV_, 1, 0.01f, lightFalloff_, false );
 	}
 
@@ -97,9 +95,11 @@ namespace Heart
 			return;
 		}
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
-		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
+        hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 	 	hMatrix lv;
 	 	hMatrix lp;
 	 	hVec3 tFrustPoints[ 8 ];
@@ -107,14 +107,14 @@ namespace Heart
 	 	hMatrix ldirm, lproj;
 	 
 	 	// build a matrix looking in the lights direction
-		hMatrix::inverse( &lightMatrix_, &ldirm );
+		ldirm = hMatrixFunc::inverse( lightMatrix_ );
 	
 		hFloat zBais = (lightFalloff_/500.0f)*0.001f;//is .5% good enough, need config?
 		zBais = zBais < 0.0001f ? 0.0001f : zBais;
 
 	 	//build a projection matrix with these Z values
 		//Matrix::perspective( &lproj, minV.x, maxV.x, minV.y, maxV.y, minV.z - (zBais*100.0f), maxV.z + (zBais*100.0f) );
-		hMatrix::perspectiveFOV( &lproj, lightFOV_, 1, /*minV.z - */(zBais*100.0f), lightFalloff_ + (zBais*100.0f) );
+		lproj = hMatrixFunc::perspectiveFOV( lightFOV_, 1, /*minV.z - */(zBais*100.0f), lightFalloff_ + (zBais*100.0f) );
 	 
 		lp = lproj;
 	 	lv = ldirm;
@@ -122,11 +122,13 @@ namespace Heart
  	 	//build the shadow projection matrix 
  	 	//(inverse view matrix)*( light view matrix )*( projection matrix )
  	 	hMatrix iv, tmp;
- 	 	hMatrix::inverse( cameraNode_->GetViewMatrix(), &iv );
- 	 	hMatrix::mult( &iv, &lv, &tmp );
- 	 	hMatrix::mult( &tmp, &lproj, &shadowMatrix_ );
+ 	 	iv = hMatrixFunc::inverse( *cameraNode_->GetViewMatrix() );
+ 	 	//hMatrixFunc::mult( &iv, &lv, &tmp );
+ 	 	//hMatrixFunc::mult( &tmp, &lproj, &shadowMatrix_ );
+ 	 	shadowMatrix_ = iv * lv * lproj;
  	
-		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
+#ifdef HEART_OLD_RENDER_SUBMISSION
+        renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
  	 	renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
  	 	renderer_->NewRenderCommand< Cmd::SetViewport >( vp );
@@ -154,6 +156,7 @@ namespace Heart
 
 		renderer_->NewRenderCommand< Cmd::EndDebuggerEvent >();
 		renderer_->NewRenderCommand< Cmd::IncrementRenderStatsPass >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 
@@ -272,8 +275,8 @@ namespace Heart
 
 		nShadowCasters_ = 0;
 		// store the light direction for aabb tests
-		hVec3 at = hVec3( lightMatrix_.m31, lightMatrix_.m32, lightMatrix_.m33 );
-		cameraEye_ = hMatrix::GetTranslation( cameraNode_->GetGlobalMatrix() );
+		hVec3 at = lightMatrix_.r[2];//hVec3( lightMatrix_.m31, lightMatrix_.m32, lightMatrix_.m33 );
+		cameraEye_ = cameraNode_->GetGlobalMatrix()->r[3];//hMatrixFunc::GetTranslation( *cameraNode_->GetGlobalMatrix() );
 		lightDir_ = at*1000.0f;
 
 	}
@@ -289,72 +292,75 @@ namespace Heart
 			return;
 		}
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
-		hViewport vp = { 0, 0, shadowTarget_->Width(), shadowTarget_->Height() };
+		hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 		hMatrix lv;
 		hMatrix lp;
-		hVec3 teye( lightMatrix_.m41, lightMatrix_.m42, lightMatrix_.m43 );
-		hVec3 tat ( lightMatrix_.m31, lightMatrix_.m32, lightMatrix_.m33 );
-		hVec3 tup ( lightMatrix_.m21, lightMatrix_.m22, lightMatrix_.m23 );
+		hVec3 teye = lightMatrix_.r[3];//( lightMatrix_.m41, lightMatrix_.m42, lightMatrix_.m43 );
+		hVec3 tat  = lightMatrix_.r[2];//( lightMatrix_.m31, lightMatrix_.m32, lightMatrix_.m33 );
+		hVec3 tup  = lightMatrix_.r[1];//( lightMatrix_.m21, lightMatrix_.m22, lightMatrix_.m23 );
 		hVec3 tFrustPoints[ 8 ];
-		hVec3 minV, maxV;
+		hCPUVec3 minV( -FLT_MAX, -FLT_MAX, -FLT_MAX ), maxV( FLT_MAX, FLT_MAX, FLT_MAX );
 		hMatrix ldirm, lproj;
 		hViewFrustum* pFrust = cameraNode_->GetViewFrustum();
 
-		minV.x = FLT_MAX;
-		minV.y = FLT_MAX;
-		minV.z = FLT_MAX;
-
-		maxV.x = -FLT_MAX;
-		maxV.y = -FLT_MAX;
-		maxV.z = -FLT_MAX;
+// 		minV.x = FLT_MAX;
+// 		minV.y = FLT_MAX;
+// 		minV.z = FLT_MAX;
+// 
+// 		maxV.x = -FLT_MAX;
+// 		maxV.y = -FLT_MAX;
+// 		maxV.z = -FLT_MAX;
 
 		// build a matrix looking in the lights direction
-		hMatrix::lookAt( &ldirm, ZeroVector3, tat, tup );
+        ldirm = hMatrixFunc::LookAt( hVec3Func::zeroVector(), tat, tup );
 
 		//find the min & max Z for the othro projection matrix
 		//find the bounds for the clip & projection matrix
 		for ( hUint32 i = 0; i < nShadowCasters_; ++i )
 		{
-			Heart::hAABB& aabb = shadowCasters_[ i ].aabb_;
-			hVec3 v[8],xfv[8];
+			hCPUVec3 aabbc = shadowCasters_[ i ].aabb_.c_;
+            hCPUVec3 aabbr = shadowCasters_[ i ].aabb_.r_;
+			hCPUVec3 v[8],xfv[8];
 
-			v[ 0 ].x = aabb.c.x + aabb.r[ 0 ];
-			v[ 0 ].y = aabb.c.y + aabb.r[ 1 ];
-			v[ 0 ].z = aabb.c.z + aabb.r[ 2 ];
+			v[ 0 ].x = aabbc.x + aabbr.x;
+			v[ 0 ].y = aabbc.y + aabbr.y;
+			v[ 0 ].z = aabbc.z + aabbr.z;
 
-			v[ 1 ].x = aabb.c.x - aabb.r[ 0 ];
-			v[ 1 ].y = aabb.c.y + aabb.r[ 1 ];
-			v[ 1 ].z = aabb.c.z + aabb.r[ 2 ];
+			v[ 1 ].x = aabbc.x - aabbr.x;
+			v[ 1 ].y = aabbc.y + aabbr.y;
+			v[ 1 ].z = aabbc.z + aabbr.z;
 
-			v[ 2 ].x = aabb.c.x + aabb.r[ 0 ];
-			v[ 2 ].y = aabb.c.y - aabb.r[ 1 ];
-			v[ 2 ].z = aabb.c.z + aabb.r[ 2 ];
+			v[ 2 ].x = aabbc.x + aabbr.x;
+			v[ 2 ].y = aabbc.y - aabbr.y;
+			v[ 2 ].z = aabbc.z + aabbr.z;
 
-			v[ 3 ].x = aabb.c.x - aabb.r[ 0 ];
-			v[ 3 ].y = aabb.c.y - aabb.r[ 1 ];
-			v[ 3 ].z = aabb.c.z + aabb.r[ 2 ];
+			v[ 3 ].x = aabbc.x - aabbr.x;
+			v[ 3 ].y = aabbc.y - aabbr.y;
+			v[ 3 ].z = aabbc.z + aabbr.z;
 
-			v[ 4 ].x = aabb.c.x + aabb.r[ 0 ];
-			v[ 4 ].y = aabb.c.y + aabb.r[ 1 ];
-			v[ 4 ].z = aabb.c.z - aabb.r[ 2 ];
+			v[ 4 ].x = aabbc.x + aabbr.x;
+			v[ 4 ].y = aabbc.y + aabbr.y;
+			v[ 4 ].z = aabbc.z - aabbr.z;
 
-			v[ 5 ].x = aabb.c.x - aabb.r[ 0 ];
-			v[ 5 ].y = aabb.c.y + aabb.r[ 1 ];
-			v[ 5 ].z = aabb.c.z - aabb.r[ 2 ];
+			v[ 5 ].x = aabbc.x - aabbr.x;
+			v[ 5 ].y = aabbc.y + aabbr.y;
+			v[ 5 ].z = aabbc.z - aabbr.z;
 
-			v[ 6 ].x = aabb.c.x + aabb.r[ 0 ];
-			v[ 6 ].y = aabb.c.y - aabb.r[ 1 ];
-			v[ 6 ].z = aabb.c.z - aabb.r[ 2 ];
+			v[ 6 ].x = aabbc.x + aabbr.x;
+			v[ 6 ].y = aabbc.y - aabbr.y;
+			v[ 6 ].z = aabbc.z - aabbr.z;
 
-			v[ 7 ].x = aabb.c.x - aabb.r[ 0 ];
-			v[ 7 ].y = aabb.c.y - aabb.r[ 1 ];
-			v[ 7 ].z = aabb.c.z - aabb.r[ 2 ];
+			v[ 7 ].x = aabbc.x - aabbr.x;
+			v[ 7 ].y = aabbc.y - aabbr.y;
+			v[ 7 ].z = aabbc.z - aabbr.z;
 
 			for ( hUint32 iV = 0; iV < 8; ++iV )
 			{
-				hMatrix::mult( v[ iV ], &ldirm, xfv[ iV ] );
+				xfv[ iV ] = hMatrixFunc::mult( (hVec3)v[ iV ], ldirm );
 
 				maxV.x = hMax( xfv[ iV ].x, maxV.x );
 				maxV.y = hMax( xfv[ iV ].y, maxV.y );
@@ -370,11 +376,11 @@ namespace Heart
 		zBais = zBais < 0.0001f ? 0.0001f : zBais;
 
 		//build a projection matrix with these Z values
-		hMatrix::orthoProjOffCentre( &lproj, minV.x, maxV.x, minV.y, maxV.y, minV.z - (zBais*100.0f), maxV.z + (zBais*100.0f) );
+		lproj = hMatrixFunc::orthoProjOffCentre( minV.x, maxV.x, minV.y, maxV.y, minV.z - (zBais*100.0f), maxV.z + (zBais*100.0f) );
 
 		hMatrix clipm;
-		hMatrix::identity( &clipm );
-
+		clipm = hMatrixFunc::identity();
+/*
 		clipm.m11 = 2 / ( maxV.x - minV.x );
 		clipm.m22 = 2 / ( maxV.y - minV.y );
 		clipm.m14 = -0.5f*( maxV.x + minV.x )*clipm.m11;
@@ -382,15 +388,17 @@ namespace Heart
 
 
 		hMatrix::mult( &clipm, &lproj, &lp );
+*/
 		lv = ldirm;
 
 		//build the shadow projection matrix 
 		//(inverse view matrix)*( light view matrix )*( projection matrix )
 		hMatrix iv, tmp;
-		hMatrix::inverse( cameraNode_->GetViewMatrix(), &iv );
-		hMatrix::mult( &iv, &lv, &tmp );
-		hMatrix::mult( &tmp, &lproj, &shadowMatrix_ );
+		iv = hMatrixFunc::inverse( *cameraNode_->GetViewMatrix() );
+		tmp = hMatrixFunc::mult( iv, lv );
+		shadowMatrix_ = hMatrixFunc::mult( tmp, lproj );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 		renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
@@ -419,6 +427,7 @@ namespace Heart
 
 		renderer_->NewRenderCommand< Cmd::EndDebuggerEvent >();
 		renderer_->NewRenderCommand< Cmd::IncrementRenderStatsPass >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 }

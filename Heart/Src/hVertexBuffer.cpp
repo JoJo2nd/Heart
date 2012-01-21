@@ -10,7 +10,6 @@
 #include "Common.h"
 #include "hVertexBuffer.h"
 #include "hRenderer.h"
-#include "hRenderCommon.h"
 
 namespace Heart
 {
@@ -20,7 +19,9 @@ namespace Heart
 
 	void hVertexBuffer::Release()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::ReleaseVertexBuffer >( this );
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -29,8 +30,8 @@ namespace Heart
 
 	void hVertexBuffer::Lock()
 	{
-		hcAssert( lockPtr_ == NULL );
-		lockPtr_ = (hByte*)renderer_->AquireTempRenderMemory( pVtxDecl_->Stride()*vtxCount_ );
+// 		hcAssert( lockPtr_ == NULL );
+// 		lockPtr_ = (hByte*)renderer_->AquireTempRenderMemory( pVtxDecl_->Stride()*vtxCount_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -39,7 +40,9 @@ namespace Heart
 
 	void hVertexBuffer::Unlock()
 	{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::FlushVertexBufferData >( this, lockPtr_, pVtxDecl_->Stride()*vtxCount_ );
+#endif // HEART_OLD_RENDER_SUBMISSION
 		lockPtr_ = NULL;
 	}
 
@@ -49,12 +52,12 @@ namespace Heart
 
 	void hVertexBuffer::FlushVertexData( void* dataPtr, hUint32 size )
 	{
-		void* mapped = pImpl()->Map();
-		if ( mapped )
-		{
-			memcpy( mapped, dataPtr, size );
-		}
-		pImpl()->Unmap( mapped );
+// 		void* mapped = pImpl()->Map();
+// 		if ( mapped )
+// 		{
+// 			memcpy( mapped, dataPtr, size );
+// 		}
+// 		pImpl()->Unmap( mapped );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

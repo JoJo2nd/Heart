@@ -26,47 +26,45 @@ namespace Cmd
 
 		hVertexBuffer( hRenderer* prenderer )
 			: renderer_( prenderer )
-			, lockPtr_( NULL )
 		{}
 		~hVertexBuffer() 
 		{
-			if ( IsDiskResource() )
-			{
-				SetImpl( NULL );
-			}
 		}
 
-		void				SetVertexDeclarartion( hVertexDeclaration* pVtxDecl ) { pVtxDecl_ = pVtxDecl; }
-		hVertexDeclaration*	GetVertexDeclaration() const { return pVtxDecl_; }
+// 		void				SetVertexDeclarartion( hVertexDeclaration* pVtxDecl ) { pVtxDecl_ = pVtxDecl; }
+// 		hVertexDeclaration*	GetVertexDeclaration() const { return pVtxDecl_; }
 		void				Lock();
 		void				Unlock();
+        hUint32             GetStride() const { return stride_; }
 		hUint32				VertexCount() const { return vtxCount_; }
 		template< typename _Ty >
 		void				SetElement( hUint32 idx, VertexElement element, const _Ty& val )
 		{
-			hcAssertMsg( pVtxDecl_, "No vertex declaration assigned to vertex buffer" );
-			hUint32 offset = pVtxDecl_->GetElementOffset( element );
-			SetData( idx, pVtxDecl_->Stride(), offset, (void*)&val, sizeof( _Ty ) );
 		}
 
 	private:
 
 		friend class hRenderer;
-		friend class Cmd::FlushVertexBufferData;
 		friend class VertexBufferBuilder;
 
 		void					Release();
 		void					SetData( hUint32 idx, hUint32 stride, hUint32 offset, void* pData, hUint32 size );
 		void					FlushVertexData( void* dataPtr, hUint32 size );
 
-		hVertexDeclaration*		pVtxDecl_;
 		hRenderer*				renderer_;
+        hUint32                 stride_;
 		hUint32					vtxCount_;
 		hUint32					vtxBufferSize_;
 		void*					pVtxBuffer_;
 		hByte*					lockPtr_;
-
 	};
+
+    struct hVertexBufferMapInfo
+    {
+        void*           ptr_;
+        hUint32         size_;
+        hVertexBuffer*  vb_;
+    };
 }
 
 #endif // VERTEXBUFFER_H__

@@ -56,6 +56,14 @@
         ser->WriteData< IDGetter >( (hUint32)x );\
     }
 
+#define SERIALISE_ELEMENT_RESOURCE_CRC( x ) \
+    {\
+        ser->SetEnableMD5FileGen( hFalse );\
+        CREATE_SERIALISE_CLASS( x );\
+        ser->WriteData< IDGetter >( (hUint32)x );\
+        ser->SetEnableMD5FileGen( hTrue );\
+    }
+
 #define SERIALISE_ELEMENT_COUNT( x, count ) \
     {\
         CREATE_SERIALISE_CLASS( x );\
@@ -75,6 +83,12 @@
     }
 
 #define DESERIALISE_ELEMENT_INT_AS_PTR( x ) \
+    {\
+        CREATE_SERIALISE_CLASS( x );\
+        ser->ReadData< IDGetter >( *((hUint32*)& x) );\
+    }
+
+#define DESERIALISE_ELEMENT_RESOURCE_CRC( x ) \
     {\
         CREATE_SERIALISE_CLASS( x );\
         ser->ReadData< IDGetter >( *((hUint32*)& x) );\
@@ -117,6 +131,7 @@ namespace Heart
         virtual hUint32				Write( const void* pBuffer, hUint32 size ) = 0;
         virtual hUint32				Seek( hUint64 offset ) = 0;
         virtual hUint64				Tell() = 0;
+        virtual void                SetEnableMD5Gen( hBool val ) = 0;
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -163,6 +178,12 @@ namespace Heart
         ~hSerialiser()
         {
         }
+
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        
+        void SetEnableMD5FileGen( hBool val ) { file_->SetEnableMD5Gen( val ); }
 
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -370,13 +391,13 @@ namespace Heart
     { \
      \
         template< typename _ArrayQType, typename _MetaName > \
-        static void DoSerialise( hSerialiser* ser, ty data ) \
+        static void DoSerialise( hSerialiser* ser, const ty & data ) \
         { \
             typedef _MetaName NameInfo; \
             ser->Write( data, 1, NameInfo::GetCRCID(), 0 ); \
         } \
         template< typename _ArrayQType, typename _MetaName > \
-        static void DoSerialise( hSerialiser* ser, const ty data[_ArrayQType::ElementCount] ) \
+        static void DoSerialise( hSerialiser* ser, const ty (&data)[_ArrayQType::ElementCount] ) \
         { \
             typedef _MetaName NameInfo; \
             static const hUint32 arraycount = _ArrayQType::ElementCount; \

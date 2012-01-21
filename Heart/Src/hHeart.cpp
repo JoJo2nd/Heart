@@ -111,7 +111,9 @@ namespace Heart
 		//TODO: Get these from the game + engine list
 		const char*  requiredResourcesList[] =
  		{
-// 			"engine/fonts/console.fnt",
+ 			"ENGINE/EFFECTS/DEBUG.CFX",
+            "ENGINE/FONTS/CONSOLE.FNT",
+            "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
 // 			"engine/materials/basic2dtex.mat",
 // 			"engine/materials/consoleback.mat",
 // 			"engine/materials/directionlight.mat",
@@ -224,7 +226,7 @@ namespace Heart
 						resourceMananger_
 						);
 
-		resourceMananger_->Initialise( fileMananger_, requiredResourcesList );
+		resourceMananger_->Initialise( renderer_, fileMananger_, requiredResourcesList );
 
 		sceneGraph_->Initialise( resourceMananger_ );
 

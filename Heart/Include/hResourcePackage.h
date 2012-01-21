@@ -57,31 +57,30 @@ namespace Heart
 		}
 
         template< typename _Ty >
-        void    AddResourceToPackage( const hChar* resourcePath, _Ty** output )
+        void    AddResourceToPackage( const hChar* resourcePath, _Ty*& output )
         {
             hUint32 crc = hResourceManager::BuildResourceCRC( resourcePath );
-            hChar* path = hNEW( hGeneralHeap ) hChar[ strlen( resourcePath )+1 ];
-            strcpy( path, resourcePath );
+            hChar* path = hNEW( hGeneralHeap ) hChar[ hStrLen( resourcePath )+1 ];
+            hStrCopy( path, hStrLen( resourcePath )+1, resourcePath );
             resourceNames_.PushBack( path );
-
-            *output = (_Ty*)crc;
+            resourcecCRC_.PushBack( crc );
+            resourceDests_.PushBack( (hResourceClassBase**)&output );
         }
+        void    AddResourceToPackage( const hChar* resourcePath );
 		void	BeginPackageLoad( hResourceManager* resourceManager );
-        hBool	IsPackageLoaded();
+        hBool	IsPackageLoaded() const;
+        void    GetResourcePointers();
 		void	CancelPackageLoad();
-        void    BeingResourceFind();
-        template < typename _Ty >
-        _Ty*    GetResource( _Ty* res )
-        {
-            return static_cast< _Ty* >( resourceManager_->GetResource( (hUint32)res ) );
-        }
-        void    EndResourceFind();
 
 	private:
 
         void	AddResourceToPackageInternal( const hChar* resourcePath, hResourceClassBase*& dest );
+        void    BeingResourceFind();
+        void    EndResourceFind();
 
         hVector< hChar* >               resourceNames_;
+        hVector< hUint32 >              resourcecCRC_;
+        hVector< hResourceClassBase** > resourceDests_;
 		hResourceManager*				resourceManager_;
         hUint32                         completedLoads_;
 	};

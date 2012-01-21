@@ -98,16 +98,12 @@ namespace Heart
 	{
 		if ( type_ == LightType_POINT )
 		{
-			orginAABB_.r[0] = maxRadius_;
-			orginAABB_.r[1] = maxRadius_;
-			orginAABB_.r[2] = maxRadius_;
+			orginAABB_.r_ = hVec3( maxRadius_, maxRadius_, maxRadius_ );
 		}
 		else if ( type_ == LightType_SPOT )
 		{
-			hVec3::set( 0.0f, 0.0f, falloffDist_/2.0f, orginAABB_.c );
-			orginAABB_.r[0] = outerRadius_;
-			orginAABB_.r[1] = outerRadius_;
-			orginAABB_.r[2] = falloffDist_/2.0f;
+            orginAABB_.c_ = hVec3( 0.0f, 0.0f, falloffDist_/2.0f );
+            orginAABB_.r_ = hVec3( outerRadius_, outerRadius_, falloffDist_/2.0f );
 		}
 	}
 

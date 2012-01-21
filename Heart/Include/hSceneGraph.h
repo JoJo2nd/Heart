@@ -12,7 +12,7 @@
 
 #include "hTypes.h"
 #include "hSceneNodeBase.h"
-#include "hCamera.h"
+#include "hRendererCamera.h"
 #include "hResource.h"
 #include "hResourceManager.h"
 

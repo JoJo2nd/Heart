@@ -196,7 +196,7 @@ public:
 	{
 		hMatrix ident;
 
-		hMatrix::identity( &ident );
+		ident = hMatrixFunc::identity();
 
 
 		setIndexStream( NULL );
@@ -241,14 +241,14 @@ public:
 		hViewport vp;
 		vp.x_ = 0;
 		vp.y_ = 0;
-		vp.width_ = Renderer_.Width();
-		vp.height_ = Renderer_.Height();
+		vp.width_ = Renderer_.GetWidth();
+		vp.height_ = Renderer_.GetHeight();
 		SetViewport( vp );
 		ScissorRect s;
 		s.top_ = 0;
-		s.bottom_ = Renderer_.Height();
+		s.bottom_ = Renderer_.GetHeight();
 		s.left_ = 0;
-		s.right_ = Renderer_.Width();
+		s.right_ = Renderer_.GetWidth();
 		setScissorRect( s );
 		SetRenderTargetTexture( 0, NULL );
 		SetRenderTargetTexture( 1, NULL );
@@ -498,7 +498,7 @@ public:
 			PushDirtyState( RS_COLOUR_WRITE_4 );
 		}
 	}
-	void*					GetSemanticIDParameterData( EffectSemantics::EffectSemanticID id );
+	void*					GetSemanticIDParameterData( hUint32 id );
 	// hrTextureStateBlock
 	//TODO: remove this so it can be based on semantics
 	void					setTexture( hUint32 idx, hTextureBase* val )
@@ -583,17 +583,17 @@ public:
 	}
 	void					SetLightPosition( const hVec3& pos )
 	{
-		if ( lightingStateBlock_.lightPosition_ != hVec4( pos.x, pos.y, pos.z, 1.0f ) )
+		if ( lightingStateBlock_.lightPosition_ != hVec4( pos ) )
 		{
-			lightingStateBlock_.lightPosition_ = hVec4( pos.x, pos.y, pos.z, 1.0f );
+			lightingStateBlock_.lightPosition_ = hVec4( pos );
 			lightingStateBlock_.lightPositionDirty_ = hTrue;
 		}
 	}
 	void					SetLightDirection( const hVec3& dir )
 	{
-		if ( lightingStateBlock_.lightDirection_ != hVec4( dir.x, dir.y, dir.z, 1.0f ) )
+		if ( lightingStateBlock_.lightDirection_ != hVec4( dir ) )
 		{
-			lightingStateBlock_.lightDirection_ = hVec4( dir.x, dir.y, dir.z, 1.0f );
+			lightingStateBlock_.lightDirection_ = hVec4( dir );
 			lightingStateBlock_.lightDirecitonDirty_ = hTrue;
 		}
 	}

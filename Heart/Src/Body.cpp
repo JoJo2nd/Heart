@@ -23,11 +23,11 @@ namespace Physics2D
 
 	Body::Body()
 	{
-		hVec2::Set( 0.0f, 0.0f, position_ );
+		position_ = hVec2( 0.0f, 0.0f );
 		rotation_ = 0.0f;
-		hVec2::Set( 0.0f, 0.0f, velocity_ );
+		velocity_ = hVec2( 0.0f, 0.0f );
 		angularVelocity_ = 0.0f;
-		hVec2::Set( 0.0f, 0.0f, force_ );
+		force_ = hVec2( 0.0f, 0.0f );
 		torque_ = 0.0f;
 		friction_ = 0.2f;
 

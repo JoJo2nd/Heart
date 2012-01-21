@@ -14,7 +14,6 @@
 #include "hResourceManager.h"
 #include "hRenderer.h"
 #include "hTexture.h"
-#include "hRenderCommon.h"
 #include "hVertexBuffer.h"
 #include "hIndexBuffer.h"
 #include "hLuaStateManager.h"
@@ -26,9 +25,8 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	const hChar*		hSystemConsole::FONT_RESOURCE_NAME = "engine/fonts/console.fnt";
-	const hChar*		hSystemConsole::TEXT_MATERIAL_NAME = "engine/materials/basic2dtex.mat";
-	const hChar*		hSystemConsole::CONSOLE_MATERIAL_NAME = "engine/materials/consoleback.mat";
+    const hUint32		hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceCRC( "ENGINE/FONTS/CONSOLE.FNT" );
+	const hUint32		hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceCRC( "ENGINE/EFFECTS/SIMPLECOLOUR.CFX" );
 	hMutex				hSystemConsole::messagesMutex_;
 	string				hSystemConsole::awaitingMessages_;
 	hBool				hSystemConsole::alive_ = hTrue;
@@ -39,68 +37,57 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	void hSystemConsole::Initialise( hControllerManager* pControllerManager,
-									hLuaStateManager* pSquirrel,
-									hResourceManager* pResourceManager,
-									hRenderer* pRenderer )
+									 hLuaStateManager* pSquirrel,
+									 hResourceManager* pResourceManager,
+									 hRenderer* renderer )
 	{
 		keyboard_ = pControllerManager->GetSystemKeyboard();
 		pResourceManager_ = pResourceManager;
+        renderer_ = renderer;
 		vm_ = pSquirrel;
 
-		screenWidth_ = pRenderer->Width();
-		screenHeight_ = pRenderer->Height();
+		screenWidth_ = renderer_->GetWidth();
+		screenHeight_ = renderer_->GetHeight();
  
-// 		//////////////////////////////////////////////////////////////////////////
-// 		// Get resources for displaying the console //////////////////////////////
-// 		//////////////////////////////////////////////////////////////////////////
-// 
-// 		pResourceManager_->GetResource( FONT_RESOURCE_NAME, fontResource_ );
-// 		pResourceManager_->GetResource( TEXT_MATERIAL_NAME, textMaterial_ );
-// 		pResourceManager_->GetResource( CONSOLE_MATERIAL_NAME, material_ );
-// 
-// 		pRenderer->GetVertexDeclaration( pVertexDecl_, 
-// 											hrVF_XYZ | hrVF_COLOR );
-// 
-// 		pRenderer->GetVertexDeclaration( pTextVertexDecl_,
-// 											hrVF_XYZ | hrVF_COLOR | hrVF_1UV );
-// 
-// 		hUint16 idx[] =
-// 		{
-// 			0,2,1, 2,3,1, 
-// 		};
-// 		
-// 		pRenderer->CreateIndexBuffer( indexBuffer_, idx, 6, 0, PRIMITIVETYPE_TRILIST );
-// 		
-// 		pRenderer->CreateIndexBuffer( IBInput_, NULL, (INPUT_BUFFER_LEN+MAX_CONSOLE_LOG_SIZE+1)*6, DYNAMIC, PRIMITIVETYPE_TRILIST );
-// 
-// 		pRenderer->CreateVertexBuffer( vertexBuffer_, 4, pVertexDecl_, 0 );
-// 
-// 		pRenderer->CreateVertexBuffer( VBInput_, (INPUT_BUFFER_LEN+MAX_CONSOLE_LOG_SIZE+1)*6, pTextVertexDecl_, DYNAMIC );
-// 
-// 		//////////////////////////////////////////////////////////////////////////
-// 		// Screen is set up as 0,0 in the centre /////////////////////////////////
-// 		//////////////////////////////////////////////////////////////////////////
-// 		vertexBuffer_->Lock();
-// 		//top left
-// 		vertexBuffer_->SetElement( 0, hrVE_XYZ, hVec3( screenWidth_ / -2.0f, screenHeight_ / 2.0f, 0.0f ) );
-// 		vertexBuffer_->SetElement( 0, hrVE_COLOR, (hUint32)hColour( 0.0f, 0.0f, 0.0f, 0.8f ) );
-// 
-// 		//top right
-// 		vertexBuffer_->SetElement( 1, hrVE_XYZ, hVec3( screenWidth_ / 2.0f, screenHeight_ / 2.0f, 0.0f ) );
-// 		vertexBuffer_->SetElement( 1, hrVE_COLOR, (hUint32)hColour( 0.0f, 0.0f, 0.0f, 0.8f ) );
-// 
-// 		//bottom left
-// 		vertexBuffer_->SetElement( 2, hrVE_XYZ, hVec3( screenWidth_ / -2.0f, 0.0f, 0.0f ) );
-// 		vertexBuffer_->SetElement( 2, hrVE_COLOR, (hUint32)hColour( 0.6f, 0.6f, 0.6f, 0.8f ) );
-// 
-// 		//bottom right
-// 		vertexBuffer_->SetElement( 3, hrVE_XYZ, hVec3( screenWidth_ / 2.0f, 0.0f, 0.0f ) );
-// 		vertexBuffer_->SetElement( 3, hrVE_COLOR, (hUint32)hColour( 0.6f, 0.6f, 0.6f, 0.8f ) );
-// 
-// 
-// 		vertexBuffer_->Unlock();
-// 
-// 		pRenderCmdBuffer_ = pRenderer->NewRenderCommandList();
+        //////////////////////////////////////////////////////////////////////////
+        // Greate resources for displaying the console //////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+
+		hUint16 idx[] =
+		{
+			0,2,1, 2,3,1, 
+		};
+
+        struct Vertex
+        {
+            hCPUVec3 p;
+            hColour  c;
+        };
+
+        //////////////////////////////////////////////////////////////////////////
+        // Screen is set up as 0,0 in the centre /////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        Vertex verts[] = 
+        {
+            {hVec3( screenWidth_ / -2.0f, screenHeight_ / 2.0f, 0.0f ), hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
+            {hVec3( screenWidth_ / 2.0f, screenHeight_ / 2.0f, 0.0f ) , hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
+            {hVec3( screenWidth_ / -2.0f, 0.0f, 0.0f )                , hColour( 0.6f, 0.6f, 0.6f, 0.8f )},
+            {hVec3( screenWidth_ / 2.0f, 0.0f, 0.0f )                 , hColour( 0.6f, 0.6f, 0.6f, 0.8f )},
+        };
+		
+		renderer_->CreateIndexBuffer( idx, 6, 0, PRIMITIVETYPE_TRILIST, &indexBuffer_ );	
+		renderer_->CreateIndexBuffer( NULL, (INPUT_BUFFER_LEN+MAX_CONSOLE_LOG_SIZE+1)*6, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &IBInput_ );
+
+		renderer_->CreateVertexBuffer( verts, 4, hrVF_XYZ | hrVF_COLOR, 0, &vertexBuffer_ );
+		renderer_->CreateVertexBuffer( NULL, (INPUT_BUFFER_LEN+MAX_CONSOLE_LOG_SIZE+1)*6, hrVF_XYZ | hrVF_COLOR | hrVF_1UV, RESOURCEFLAG_DYNAMIC, &VBInput_ );
+
+        renderCamera_.Initialise( renderer_ );
+        renderCamera_.SetOrthoParams( (hFloat)screenWidth_, (hFloat)screenHeight_, -0.0f, 1.0f );
+        renderCamera_.SetViewMatrix( hMatrixFunc::identity() );
+        renderCamera_.SetViewport( hViewport( 0, 0, screenWidth_, screenHeight_ ) );
+
+        rndCtx_ = renderer_->CreateRenderSubmissionCtx();
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -109,38 +96,38 @@ namespace Heart
 
 	void hSystemConsole::Destroy()
 	{
-		if ( pRenderCmdBuffer_ )
-		{
-			delete pRenderCmdBuffer_;
-		}
-		if ( indexBuffer_.HasData() )
-		{
-			indexBuffer_.Release();
-		}
-		if ( vertexBuffer_.HasData() )
-		{
-			vertexBuffer_.Release();
-		}
-		if ( IBInput_.HasData() )
-		{
-			IBInput_.Release();
-		}
-		if ( VBInput_.HasData() )
-		{
-			VBInput_.Release();
-		}
-		if ( fontResource_.HasData() )
-		{
-			fontResource_.Release();
-		}
-		if ( textMaterial_.HasData() )
-		{
-			textMaterial_.Release();
-		}
-		if ( material_.HasData() )
-		{
-			material_.Release();
-		}
+// 		if ( pRenderCmdBuffer_ )
+// 		{
+// 			delete pRenderCmdBuffer_;
+// 		}
+// 		if ( indexBuffer_.HasData() )
+// 		{
+// 			indexBuffer_.Release();
+// 		}
+// 		if ( vertexBuffer_.HasData() )
+// 		{
+// 			vertexBuffer_.Release();
+// 		}
+// 		if ( IBInput_.HasData() )
+// 		{
+// 			IBInput_.Release();
+// 		}
+// 		if ( VBInput_.HasData() )
+// 		{
+// 			VBInput_.Release();
+// 		}
+// 		if ( fontResource_.HasData() )
+// 		{
+// 			fontResource_.Release();
+// 		}
+// 		if ( textMaterial_.HasData() )
+// 		{
+// 			textMaterial_.Release();
+// 		}
+// 		if ( material_.HasData() )
+// 		{
+// 			material_.Release();
+// 		}
 		messagesMutex_.Lock();
 		alive_ = hFalse;
 		awaitingMessages_.clear();
@@ -154,26 +141,35 @@ namespace Heart
 
 	void hSystemConsole::Update()
 	{
+		if ( !loaded_ )
+		{
+			if ( pResourceManager_->RequiredResourcesReady() )
+			{
+                //////////////////////////////////////////////////////////////////////////
+                // Get resources for displaying the console //////////////////////////////
+                //////////////////////////////////////////////////////////////////////////
 
-// 		if ( !loaded_ )
-// 		{
-// 			loaded_ = hTrue;
-// 			if ( !fontResource_.IsLoaded() || !textMaterial_.IsLoaded() || !material_.IsLoaded() )
-// 			{
-// 				loaded_ = hFalse;
-// 			}
-// 		}
-// 		else
-// 		{
-// 			messagesMutex_.Lock();
-// 			if ( !awaitingMessages_.empty() )
-// 			{
-// 				LogString( awaitingMessages_.c_str() );
-// 				awaitingMessages_.clear();
-// 			}
-// 			messagesMutex_.Unlock();
-// 			UpdateConsole();
-// 		}
+                pResourceManager_->LockResourceDatabase();
+                fontResource_ = static_cast< hFont* >( pResourceManager_->GetResource( FONT_RESOURCE_NAME ) );
+                material_     = renderer_->GetMaterialManager()->CreateMaterialInstance( CONSOLE_MATERIAL_NAME );
+                pResourceManager_->UnlockResourceDatabase();
+
+                renderCamera_.SetTechniquePass( renderer_->GetMaterialManager()->GetRenderTechniqueInfo( "main" ) );
+
+				loaded_ = hTrue;
+			}
+		}
+		else
+		{
+			messagesMutex_.Lock();
+			if ( !awaitingMessages_.empty() )
+			{
+				LogString( awaitingMessages_.c_str() );
+				awaitingMessages_.clear();
+			}
+			messagesMutex_.Unlock();
+			UpdateConsole();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -182,81 +178,72 @@ namespace Heart
 
 	void hSystemConsole::Render( hRenderer* pRenderer )
 	{
-// 		if ( loaded_ && shown_ )
-// 		{
-// 			// Set up ortho view
-// 			hViewport vp = { 0, 0, pRenderer->Width(), pRenderer->Height() };
-// 			hMatrix	idnt,wvp;
-// 
-// 			hMatrix::identity( &idnt );
-// 			hMatrix::orthoProj( &wvp, (hFloat)screenWidth_, (hFloat)screenHeight_, -0.0f, 1.0f );
-// 
-// 			//Render the background to the console
-// 			pRenderer->NewRenderCommand< Cmd::SetViewport >( vp );
-// 			pRenderer->NewRenderCommand< Cmd::SetWorldMatrix >( &idnt );
-// 			pRenderer->NewRenderCommand< Cmd::SetViewMatrix >( &idnt );
-// 			pRenderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &wvp );
-// 			pRenderer->NewRenderCommand< Cmd::SetMaterial >( material_ );
-// 			pRenderer->NewRenderCommand< Cmd::SetStreams >( indexBuffer_, vertexBuffer_ );
-// 			pRenderer->NewRenderCommand< Cmd::DrawPrimative >( 2 );
-// 
-// 			//Render the current Text
-// 			if ( ( inputDirty_ || logDirty_ ) )
-// 			{
-// 				nInputPrims_ = 0;
-// 				IBInput_->Lock();
-// 				VBInput_->Lock();
-// 
-// 				//Render input
-// 				hFontStyle style;
-// 				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_TOP;
-// 				style.Colour_ = hColour( 1.0f, 1.0f, 1.0f, 1.0f );
-// 
-// 				fontResource_->SetFontStyle( style );
-// 
-// 				if ( nInputChars_ )
-// 				{
-// 					nInputPrims_ = fontResource_->RenderString( 
-// 													*IBInput_, 
-// 													*VBInput_, 
-// 													hVec2( screenWidth_ / -2.0f, (hFloat)fontResource_->FontHeight() ),
-// 													hVec2( screenWidth_ / 2.0f, 0.0f ),
-// 													inputBuffer_,
-// 													textMaterial_,
-// 													pRenderCmdBuffer_ );
-// 				}
-// 
-// 				//Render Log
-// 				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_BOTTOM;
-// 				style.Colour_ = hColour( 0.7f, 0.7f, 0.7f, 0.7f );;
-// 
-// 				fontResource_->SetFontStyle( style );
-// 
-// 				if ( !consoleLog_.empty() )
-// 				{
-// 					nInputPrims_ += fontResource_->RenderString( 
-// 													*IBInput_, 
-// 													*VBInput_, 
-// 													hVec2( screenWidth_ / -2.0f, screenHeight_ / 2.0f ),
-// 													hVec2( screenWidth_ / 2.0f,  (hFloat)fontResource_->FontHeight() ),
-// 													consoleLog_.c_str(),
-// 													textMaterial_,
-// 													pRenderCmdBuffer_ );
-// 				}
-// 
-// 				IBInput_->Unlock();
-// 				VBInput_->Unlock();
-// 
-// 				inputDirty_ = hFalse;
-// 				logDirty_ = hFalse;
-// 			}
-// 
-// 			//Render the log
-// 			if ( nInputPrims_ )
-// 			{
-// 				pRenderer->DrawRenderCommandList( pRenderCmdBuffer_ );
-// 			}
-// 		}
+		if ( loaded_ && shown_ )
+		{
+			// Set up ortho view
+            rndCtx_->SetRendererCamera( &renderCamera_ );
+            rndCtx_->SetMaterialInstance( material_ );
+            rndCtx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
+            rndCtx_->SetPrimitiveType( Heart::PRIMITIVETYPE_TRILIST );
+            rndCtx_->SetVertexStream( 0, vertexBuffer_ );
+            rndCtx_->SetIndexStream( indexBuffer_ );
+
+            hUint32 passes = rndCtx_->GetMaterialInstancePasses();
+            for ( hUint32 i = 0; i < passes; ++i )
+            {
+                rndCtx_->BeingMaterialInstancePass( i );
+                rndCtx_->DrawIndexedPrimitive( 2, 0 );
+                rndCtx_->EndMaterialInstancePass();
+            }
+
+			//Render the current Text
+			//if ( ( inputDirty_ || logDirty_ ) )
+			{
+				nInputPrims_ = 0;
+
+				//Render input
+				hFontStyle style;
+				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_TOP;
+				style.Colour_ = hColour( 1.0f, 1.0f, 1.0f, 1.0f );
+
+				fontResource_->SetFontStyle( style );
+
+				if ( nInputChars_ )
+				{
+					nInputPrims_ = fontResource_->RenderString( 
+													*IBInput_, 
+													*VBInput_, 
+													hVec2( screenWidth_ / -2.0f, (hFloat)fontResource_->FontHeight() ),
+													hVec2( screenWidth_ / 2.0f, 0.0f ),
+													inputBuffer_,
+													rndCtx_ );
+				}
+
+				//Render Log
+				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_BOTTOM;
+				style.Colour_ = hColour( 0.7f, 0.7f, 0.7f, 0.7f );;
+
+				fontResource_->SetFontStyle( style );
+
+				if ( !consoleLog_.empty() )
+				{
+					nInputPrims_ += fontResource_->RenderString( 
+													*IBInput_, 
+													*VBInput_, 
+													hVec2( screenWidth_ / -2.0f, screenHeight_ / 2.0f ),
+													hVec2( screenWidth_ / 2.0f,  (hFloat)fontResource_->FontHeight() ),
+													consoleLog_.c_str(),
+                                                    rndCtx_ );
+				}
+
+
+				inputDirty_ = hFalse;
+				logDirty_ = hFalse;
+			}
+		}
+
+        hdRenderCommandBuffer cb = rndCtx_->SaveToCommandBuffer();
+        pRenderer->SubmitRenderCommandBuffer( cb, hTrue );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -382,7 +369,7 @@ namespace Heart
 				if ( keyboard_->GetButtonDown( Device::IID_UPARROW, keyboardAccessKey_ ) )
 				{
 					++inputHistoryEntry_;
-					if ( inputHistoryEntry_ >= inputHistroy_.size() )
+					if ( (hUint32)inputHistoryEntry_ >= inputHistroy_.size() )
 					{
 						inputHistoryEntry_ = inputHistroy_.size() - 1;
 					}

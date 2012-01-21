@@ -35,29 +35,18 @@ namespace Heart
 		{}
 		hBool					IsDiskResource() const { return (flags_ & ResourceFlags_DISKRESOURCE) == ResourceFlags_DISKRESOURCE; }
 		void					IsDiskResource( hBool val ) { flags_ = val ? (flags_ | ResourceFlags_DISKRESOURCE) : (flags_ & ~ResourceFlags_DISKRESOURCE); }
-		hUint32 				GetResID() const { return resourceID_; }
-		hResourceClassBase*		GetDependency( hUint32 resourceid )
-		{
-			for ( hUint32 i = 0, c = dependencies_.GetSize(); i < c; ++i )
-			{
-				if ( dependencies_[i]->GetResID() == resourceid )
-					return dependencies_[i];
-			}
-		}
-		
+        hUint32 				GetResourceID() const { return resourceID_; }
 
 	private:
 
-		void	OnZeroRef() const;;
+		void	OnZeroRef() const;
 		void	SetResID( hUint32 id ) { resourceID_ = id; }
 
 		friend class hResourceManager;
 		friend class hResourceDependencyList;
 
 		hResourceManager*				manager_;
-		hVector< hResourceClassBase* >	dependencies_;
 		hUint32							resourceID_;
-		hUint32							resourceSize_;
 		hUint32							flags_;
 	};
 

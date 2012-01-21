@@ -46,7 +46,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -65,7 +65,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib GameDatabaseLibD.lib HeartPD.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib"
+				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib;&quot;$(ProjectDir)\..\..\bin\tools\&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -120,14 +120,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\..\Heart\Include;..\..\Heart\Include\Common;..\..\Heart\Include\Win32;..\..\HeartPacker\Include;..\..\PackerSharedLib\Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SHADERBUILDER_EXPORTS;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;HEART_ALLOW_NEW;TIXML_USE_STL;USE_DL_PREFIX;ONLY_MSPACES"
+				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;..\../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SHADERBUILDER_EXPORTS;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11"
 				RuntimeLibrary="2"
-				StructMemberAlignment="5"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="3"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,12 +140,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="shlwapi.lib"
+				AdditionalDependencies="HeartP.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
 				LinkIncremental="1"
-				GenerateDebugInformation="true"
+				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerRelease&quot;;..\..\external\boost\stage\lib"
+				GenerateDebugInformation="false"
 				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
+				OptimizeReferences="0"
+				EnableCOMDATFolding="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -179,10 +180,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\Include\CgStateConverters.h"
-				>
-			</File>
 			<File
 				RelativePath=".\Src\Main.cpp"
 				>

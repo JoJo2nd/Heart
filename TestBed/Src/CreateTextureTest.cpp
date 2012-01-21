@@ -34,8 +34,10 @@
 
 void CreateTextureTest::PostEnter()
 {
+/*
 	engine_->GetRenderer()->CreateTexture( texture_, 256, 256, 1, Heart::TFORMAT_ARGB8, "TestTexture" );
-	Heart::hTextureLockInfo lock;
+
+	Heart::hTextureMapInfo lock;
 	texture_->Lock( 0, &lock );
 
 	hUint32* pixel = (hUint32*)lock.ptr_;
@@ -56,6 +58,7 @@ void CreateTextureTest::PostEnter()
 	}
 
 	texture_->Unlock( &lock );
+*/
 }
 
 //////////////////////////////////////////////////////////////////////////

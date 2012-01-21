@@ -58,8 +58,13 @@ private:
     Heart::hResourcePackage                 resPack_;
     Heart::hTexture*                        tex1_;
     Heart::hTexture*                        tex2_;
-    Heart::hMaterial*                       mat1_;
     Heart::hFont*                           font1_;
+    Heart::hIndexBuffer*                    ib_;
+    Heart::hVertexBuffer*                   vb_;
+    Heart::hMaterialInstance*               material_;
+    Heart::hMaterialTechnique*              tech_;
+    Heart::hRenderSubmissionCtx*            rndCtx_;
+    Heart::hRendererCamera                  viewport_;
 };
 
 #endif // RESOURCELOADTEST_H__

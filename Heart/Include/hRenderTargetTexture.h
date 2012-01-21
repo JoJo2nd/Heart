@@ -33,7 +33,7 @@ namespace Heart
 		{
 		}
 
-		TextureFormat	format_; 
+		hTextureFormat	format_; 
 	 	hUint32					width_;
 	 	hUint32					height_;
 	};

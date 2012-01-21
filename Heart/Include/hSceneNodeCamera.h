@@ -10,7 +10,7 @@
 #define HRSCENEGRAPHNODECAMERA_H__
 
 #include "hSceneNodeBase.h"
-#include "hCamera.h"
+#include "hRendererCamera.h"
 #include "hSceneGraphVisitorBase.h"
 
 namespace Heart
@@ -69,7 +69,7 @@ namespace Heart
 		void					SetOrthoWidth( hFloat val ) { orthoWidth_ = val; }
 		hFloat					GetOrthoHeight() const { return orthoHeight_; }
 		void					SetOrthoHeight( hFloat val ) { orthoHeight_ = val; }
-		Heart::hVec3		ProjectTo2D( Heart::hVec3 point );
+		hVec3		            ProjectTo2D( const hVec3& point );
 		hViewFrustum*			GetViewFrustum() { return &frustum_; } 
 
 #ifndef HEART_RESOURCE_BUILDER

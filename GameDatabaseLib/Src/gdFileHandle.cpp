@@ -117,6 +117,7 @@ namespace GameData
 
     gdFileHandle::gdFileHandle()
         : file_( NULL )
+        , md5Enabled_( true )
     {
 
     }
@@ -189,8 +190,8 @@ namespace GameData
     gdUint32 gdFileHandle::Read( void* pBuffer, gdUint32 size )
     {
         //memcpy( pBuffer, (gdByte*)GetFilePointer() + filePos_, size );
-        fread( pBuffer, size, 1, file_ );
-        return size;
+        gdUint32 ret = fread( pBuffer, size, 1, file_ );
+        return ret;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -199,7 +200,10 @@ namespace GameData
 
     gdUint32 gdFileHandle::Write( const void* pBuffer, gdUint32 size )
     {
-        cyMD5Update( &writtenDataMD5_, pBuffer, size );
+        if ( md5Enabled_ )
+        {
+            cyMD5Update( &writtenDataMD5_, pBuffer, size );
+        }
         //memcpy( (gdByte*)GetFilePointer() + filePos_, pBuffer, size );
         fwrite( pBuffer, size, 1, file_ );
         return size;

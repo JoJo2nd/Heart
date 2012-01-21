@@ -78,7 +78,7 @@ namespace Poly2Util
 			hVec2 b = points[ (i+1) % nPoints ];
 			hVec2 c = points[ (i+2) % nPoints ];
 
-			if ( hVec2::Cross( b-a, c-b ) > 0.0f )
+			if ( ((hCPUVec2)hVec2Func::cross( b-a, c-b )).x > 0.0f )
 			{
 				return hFalse;
 			}

@@ -1,11 +1,28 @@
 /********************************************************************
-	created:	2009/01/06
 
-	filename: 	ViewFrustum.cpp
-
-	author:		James Moran
+	filename: 	hViewFrustum.cpp	
 	
-	purpose:	
+	Copyright (c) 30:12:2011 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
 
 #include "Common.h"
@@ -18,7 +35,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hViewFrustum::UpdateFromCamera( Heart::hVec3 EyeVec, Heart::hVec3 LookAt, Heart::hVec3 Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho )
+	void hViewFrustum::UpdateFromCamera( const hVec3& EyeVec, const hVec3& LookDir, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho )
 	{
 		hFloat oNear = Near;
 		if ( ortho )
@@ -30,12 +47,11 @@ namespace Heart
 		hFloat FarW = FarH * Aspect;
 		hFloat NearH = 2 * tan( fov / 2 ) * oNear;
 		hFloat NearW = NearH * Aspect;
-		Heart::hVec3 Right;
-		Heart::hVec3 D;
-		Heart::hVec3::normalise( LookAt - EyeVec, D );
-		Heart::hVec3 EyeFar = EyeVec + ( D * Far );
-		Heart::hVec3 EyeNear = EyeVec + ( D * Near );
-		Heart::hVec3::cross( Up, D, Right );
+		hVec3 Right;
+		hVec3 D = hVec3Func::normalise( LookDir );
+		hVec3 EyeFar = EyeVec + ( D * Far );
+		hVec3 EyeNear = EyeVec + ( D * Near );
+		Right = hVec3Func::cross( Up, D );
 
 		// re-generate our 6 planes [1/8/2009 James]
 	#define ftl 0
@@ -71,24 +87,24 @@ namespace Heart
 		//
 		if ( ortho )
 		{
-			Heart::hPlane::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ], near_ );
-			Heart::hPlane::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ], far_ );
-			Heart::hPlane::buildPlane( vex[ ntr ], vex[ ftr ], vex[ ftl ], top_ );
-			Heart::hPlane::buildPlane( vex[ nbl ], vex[ fbl ], vex[ fbr ], bottom_ );
-			Heart::hPlane::buildPlane( vex[ nbr ], vex[ fbr ], vex[ ftr ], right_ );
-			Heart::hPlane::buildPlane( vex[ ntl ], vex[ ftl ], vex[ fbl ], left_ );
+			near_   = hPlaneFunc::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
+			far_    = hPlaneFunc::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
+			top_    = hPlaneFunc::buildPlane( vex[ ntr ], vex[ ftr ], vex[ ftl ] );
+			bottom_ = hPlaneFunc::buildPlane( vex[ nbl ], vex[ fbl ], vex[ fbr ] );
+			right_  = hPlaneFunc::buildPlane( vex[ nbr ], vex[ fbr ], vex[ ftr ] );
+			left_   = hPlaneFunc::buildPlane( vex[ ntl ], vex[ ftl ], vex[ fbl ] );
 		}
 		else
 		{
-			Heart::hPlane::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ], near_ );
-			Heart::hPlane::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ], far_ );
-			Heart::hPlane::buildPlane( EyeVec, vex[ ftr ], vex[ ftl ], top_ );
-			Heart::hPlane::buildPlane( EyeVec, vex[ fbl ], vex[ fbr ], bottom_ );
-			Heart::hPlane::buildPlane( EyeVec, vex[ fbr ], vex[ ftr ], right_ );
-			Heart::hPlane::buildPlane( EyeVec, vex[ ftl ], vex[ fbl ], left_ );
+			near_   = hPlaneFunc::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
+			far_    = hPlaneFunc::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
+			top_    = hPlaneFunc::buildPlane( EyeVec, vex[ ftr ], vex[ ftl ] );
+			bottom_ = hPlaneFunc::buildPlane( EyeVec, vex[ fbl ], vex[ fbr ] );
+			right_  = hPlaneFunc::buildPlane( EyeVec, vex[ fbr ], vex[ ftr ] );
+			left_   = hPlaneFunc::buildPlane( EyeVec, vex[ ftl ], vex[ fbl ] );
 		}
 
-		Heart::hAABB::computeFromPointSet( vex, 8, viewFrustumAABB_ );
+        viewFrustumAABB_ = hAABB::computeFromPointSet( vex, 8 );
 
 	#undef ftl
 	#undef ftr
@@ -110,25 +126,33 @@ namespace Heart
 		if ( Heart::hAABB::intersect( AABB, viewFrustumAABB_ ) )
 		{
 			//do culling test against planes
-			Heart::hVec3 vex[ 8 ];
+			hVec3 vex[ 8 ];
 
-			Heart::hVec3::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 0 ] );//bottem left near
-			Heart::hVec3::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 1 ] );//bottem right near
-			Heart::hVec3::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 2 ] );//bottem right far
-			Heart::hVec3::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 3 ] );//bottem left far
-			Heart::hVec3::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 4 ] );//top left near
-			Heart::hVec3::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 5 ] );//top right near
-			Heart::hVec3::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 6 ] );//top right far
-			Heart::hVec3::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 7 ] );//top left far
+			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 0 ] );//bottem left near
+            vex[0] = AABB.c_ - AABB.r_;
+			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 1 ] );//bottem right near
+            vex[1] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, -1.f, -1.f ) );
+			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 2 ] );//bottem right far
+            vex[2] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, -1.f, 1.f ) );
+			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 3 ] );//bottem left far
+            vex[3] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, -1.f, +1.f ) );
+			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 4 ] );//top left near
+            vex[4] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, 1.f, -1.f ) );
+			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 5 ] );//top right near
+            vex[5] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, 1.f, -1.f ) );
+			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 6 ] );//top right far
+            vex[6] = AABB.c_ + AABB.r_;
+			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 7 ] );//top left far
+            vex[7] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, 1.f, 1.f ) );
 
-			Heart::hPlane* planes[ 5 ] = {&top_, &bottom_, &left_, &right_, &far_ };
+			hPlane* planes[ 5 ] = {&top_, &bottom_, &left_, &right_, &far_ };
 			for ( hUint32 p = 0; p < 5; ++p )
 			{
-				Heart::hPlane* pPlane = planes[ p ];
+				hPlane* pPlane = planes[ p ];
 				hBool fullyBehindPlane = hTrue;
 				for ( hUint32 i = 0; i < 8; ++i )
 				{
-					if ( !Heart::hPlane::pointBehindPlane( vex[ i ], *pPlane ) )
+					if ( !hPlaneFunc::pointBehindPlane( vex[ i ], *pPlane ) )
 					{
 						fullyBehindPlane = hFalse;
 						break;
@@ -158,16 +182,16 @@ namespace Heart
 		hFloat f,l;
 		hBool inside = hTrue;
 
-		if ( Heart::hAABB::intersectMovingAABB( viewFrustumAABB_, aabb, Heart::ZeroVector3, dir, f, l ) )
+        if ( hAABB::intersectMovingAABB( viewFrustumAABB_, aabb, hVec3Func::zeroVector(), dir, f, l ) )
 		{
  			for ( hUint32 p = 0; p < 6; ++p )
  			{
- 				Heart::hPlane* pPlane = planes[ p ];
- 				if ( Heart::hPlane::intersectMovingAABB( aabb, dir, *pPlane ) )
+ 				hPlane* pPlane = planes[ p ];
+ 				if ( hPlaneFunc::intersectMovingAABB( aabb, dir, *pPlane ) )
  				{
  					return hTrue;
  				}
-				inside &= Heart::hPlane::AABBInfrontOfPlane( aabb, *pPlane ) > 0.0f;
+				inside &= hPlaneFunc::AABBInfrontOfPlane( aabb, *pPlane ) > 0.0f;
  			}
 		}
 

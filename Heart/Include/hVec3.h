@@ -1,338 +1,265 @@
 /********************************************************************
 	created:	2008/07/13
-	created:	13:7:2008   19:50
+	created:	13:7:2008   10:27
 	filename: 	Vec3.h
 	author:		James Moran
 	
 	purpose:	
 *********************************************************************/
+#ifndef hmVec3_h__
+#define hmVec3_h__
+
 #include <math.h>
 #include "hTypes.h"
+#include "hVector.h"
+#include <xnamath.h>
 
 namespace Heart
 {
-	//-----------------------------------------------------------------------
-	///
-	/// @class Vec3
-	/// @brief 
-	/// @author James Moran
-	/// @date [13/7/2008]
-	/// @version 1.0
-	///
-	//-----------------------------------------------------------------------
-	class hVec3
-	{
-	public:
 
-		union
-		{
-			struct
-			{
-				hFloat   	x;
-				hFloat   	y;
-				hFloat   	z;
-			};
-			struct
-			{
-				hFloat		v[ 3 ];
-			};
-		};
+    typedef XMFLOAT3 hCPUVec3;
 
-		hVec3() 
-		{
+    struct hVec3
+    {
+        hVec128 v;
 
-		}
-
-		hVec3( hFloat x, hFloat y, hFloat z ) :
-			x( x ),
-			y( y ),
-			z( z )
-		{
-
-		}
-
-		//operators
-		//add
-		hVec3 operator + ( const hVec3& a ) const
-		{
-			return hVec3( x + a.x, y + a.y, z + a.z );
-		}
-
-		hVec3& operator += ( const hVec3& a )
-		{
-			x += a.x;
-			y += a.y;
-			z += a.z;
-
-			return *this;
-		}
-
-		//minus
-		hVec3 operator - ( const hVec3& a ) const 
-		{
-			return hVec3( x - a.x, y - a.y, z - a.z );
-		}
-
-		hVec3& operator -= ( const hVec3& a )
-		{
-			x -= a.x;
-			y -= a.y;
-			z -= a.z;
-
-			return *this;
-		}
-
-		// scale
-		hVec3 operator * ( const hFloat s ) const 
-		{
-			return hVec3( x * s, y * s, z * s );
-		}
-
-		hVec3& operator *= ( const hFloat s )
-		{
-			x *= s;
-			y *= s;
-			z *= s;
-
-			return *this;
-		}
-
-		//divide
-		hVec3 operator / ( const hFloat s ) const 
-		{
-			return hVec3( x / s, y / s, z / s );
-		}
-
-		hVec3& operator /= ( const hFloat s )
-		{
-			x /= s;
-			y /= s;
-			z /= s;
-
-			return *this;
-		}
-
-		bool operator == ( const hVec3& a ) const
-		{
-			return x == a.x && y == a.y && z == a.z;
-		}
-
-		bool operator != ( const hVec3& a )
-		{
-			return !(*this == a);
-		}
-
-		//dot 
-		hFloat operator * ( const hVec3& a ) const
-		{
-			return ( x * a.x ) + ( y * a.y ) + ( z * a.z );
-		}
-
-		//functions
-		hFloat mag() const
-		{
-			return sqrt( magSqr() ); 
-		}
-
-		hFloat magSqr() const
-		{
-			return ( x * x ) + ( y * y ) + ( z * z );
-		}
-
-		void normalise()
-		{
-			hFloat k = mag();
-			x /= k;
-			y /= k;
-			z /= k;
-		}
-
-		//////////////////////////////////////////////////////////////////////////
-		// C style funcitons
+        
+        hVec3() {}
+        hVec3( const hVec128& rhs );
+        explicit hVec3( const hCPUVec3& rhs );
+        hVec3( hFloat x, hFloat y, hFloat z );
+        hVec3& operator = ( const hCPUVec3& b );
+        operator hCPUVec3 () const;
+        operator hFloatInVec() const { return v; }
+        operator hVec128() const { return v; }
+        hVec128 Get128() const { return v; }
+    };
 
 
-		/**
-		* 
-		*
-		* @param 		v
-		* @return   	hFloat
-		*/
-		static hFloat magSqr( const hVec3& v )
-		{
-			return ( v.x * v.x ) + ( v.y * v.y ) + ( v.z * v.z );
-		}
+namespace hVec3Func
+{
+    hFORCEINLINE hVec3 zeroVector()
+    {
+        return XMVectorZero();
+    }
 
-		/**
-		* 
-		*
-		* @param 		v
-		* @return   	hFloat
-		*/
-		static hFloat mag( const hVec3& v )
-		{
-			return sqrt( magSqr( v ) );
-		}
+    //functions
+    hFORCEINLINE hFloatInVec length( const hVec3& v )
+    {
+        return XMVector3Length( v.v ); 
+    }
 
-		/**
-		* 
-		*
-		* @param 		v
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3& normalise( const hVec3& v, hVec3& out )
-		{
-			hFloat m = mag( v );
+    hFORCEINLINE hFloatInVec lengthFast( const hVec3& v )
+    {
+        return XMVector3LengthEst( v.v );
+    }
 
-			out.x = v.x / m;
-			out.y = v.y / m;
-			out.z = v.z / m;
+    hFORCEINLINE hFloatInVec lengthSquare( const hVec3& v )
+    {
+        return XMVector3LengthSq( v.v ); 
+    }
 
-			return out;
-		}
+    hFORCEINLINE hVec3 normalise( const hVec3& v )
+    {
+        return XMVector3Normalize( v.v );
+    }
 
-		/**
-		*	a + b = out
-		*
-		* @param 		a
-		* @param 		b
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3* add( const hVec3* a, const hVec3* b, hVec3* out )
-		{
-			out->x = a->x + b->x;
-			out->y = a->y + b->y;
-			out->z = a->z + b->z;
+    hFORCEINLINE hVec3 normaliseFast( const hVec3& v )
+    {
+        return XMVector3NormalizeEst( v.v );
+    }
 
-			return out;
-		}
+    hFORCEINLINE hVec3 add( const hVec3& a, const hVec3& b )
+    {
+        return XMVectorAdd( a.v, b.v );
+    }
 
-		/**
-		*	a - b = out
-		*
-		* @param 		a
-		* @param 		b
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3& sub( const hVec3& a, const hVec3& b, hVec3& out )
-		{
-			out.x = a.x - b.x;
-			out.y = a.y - b.y;
-			out.z = a.z - b.z;
+    hFORCEINLINE hVec3 sub( const hVec3& a, const hVec3& b )
+    {
+        return XMVectorSubtract( a.v, b.v );
+    }
 
-			return out;
-		}
+    hFORCEINLINE hVec3 scale( const hVec3& a, const hFloat s )
+    {
+        return XMVectorScale( a.v, s );
+    }
 
-		/**
-		*	a * s = out
-		*
-		* @param 		a
-		* @param 		s
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3* mul( const hVec3* a, const hFloat s, hVec3* out )
-		{
-			out->x = a->x * s;
-			out->y = a->y * s;
-			out->z = a->z * s;
+    hFORCEINLINE hVec3 componentMult( const hVec3& a, const hVec3& b )
+    {
+        return XMVectorMultiply( a, b );
+    }
 
-			return out;
-		}
+    hFORCEINLINE hVec3 div( const hVec3& a, const hVec3& d )
+    {
+        return XMVectorDivide( a.v, d.v );
+    }
 
-		/**
-		*	a / s = out
-		*
-		* @param 		a
-		* @param 		s
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3* div( const hVec3* a, const hFloat s, hVec3* out )
-		{
-			out->x = a->x / s;
-			out->y = a->y / s;
-			out->z = a->z / s;
+    hFORCEINLINE hFloatInVec dot( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Dot( a.v, b.v );
+    }
 
-			return out;
-		}
+    hFORCEINLINE hVec3 neg( const hVec3& a )
+    {
+        return XMVectorNegate( a.v );
+    }
 
-		/**
-		*  a *dot* b = return value
-		*
-		* @param 		a
-		* @param 		b
-		* @return   	hFloat
-		*/
-		static hFloat dot( const hVec3& a, const hVec3& b )
-		{
-			return a.x * b.x + a.y * b.y + a.z * b.z;
-		}
+    hFORCEINLINE hVec3 cross( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Cross( a.v, b.v );
+    }
 
-		/**
-		*  -a = out
-		*
-		* @param 		a
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3* neg( const hVec3* a, hVec3* out )
-		{
-			out->x = -a->x;
-			out->y = -a->y;
-			out->z = -a->z;
+    hFORCEINLINE hVec3 set( hFloat x, hFloat y, hFloat z )
+    {
+        return XMVectorSet( x, y, z, 0.f );
+    }
 
-			return out;
-		}
+    hFORCEINLINE hBool equal( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Equal( a.v, b.v ) > 0;
+    }
 
-		/**
-		* a *cross* b = out
-		*
-		* @param 		a
-		* @param 		b
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3& cross( const hVec3& a, const hVec3& b, hVec3& out )
-		{
-			out.x = ( a.y * b.z ) - ( a.z * b.y );
-			out.y = ( a.z * b.x ) - ( a.x * b.z );
-			out.z = ( a.x * b.y ) - ( a.y * b.x );
+    hFORCEINLINE hBool Less( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Less( a.v, b.v ) > 0;
+    }
 
-			return out;
-		}
+    hFORCEINLINE hBool LessEqual( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3LessOrEqual( a.v, b.v ) > 0;
+    }
 
-		/**
-		* 
-		*
-		* @param 		x
-		* @param 		y
-		* @param 		z
-		* @param 		out
-		* @return   	Vec3*
-		*/
-		static hVec3& set( hFloat x, hFloat y, hFloat z, hVec3& out )
-		{
-			out.x = x;
-			out.y = y;
-			out.z = z;
-			
-			return out;
-		}
+    hFORCEINLINE hBool Greater( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3Greater( a.v, b.v ) > 0;
+    }
 
-	};
+    hFORCEINLINE hBool GreaterEqual( const hVec3& a, const hVec3& b )
+    {
+        return XMVector3GreaterOrEqual( a.v, b.v ) > 0;
+    }
 
+    hFORCEINLINE void store( const hVec3& a, hCPUVec3* b )
+    {
+        XMStoreFloat3( b, a.v );
+    }
 
-	inline hVec3 operator * ( const hFloat s, const hVec3& v )
-	{
-		return hVec3( v.x * s, v.y * s, v.z *s );
-	}
-
-	inline hVec3 operator - ( const hVec3& a )
-	{
-		return hVec3( -a.x , -a.y, -a.z );
-	}
+    hFORCEINLINE void load( hVec3& a, const hCPUVec3* b )
+    {
+        a.v = XMLoadFloat3( b );
+    }
 
 }
+
+    hFORCEINLINE hVec3 operator + ( const hVec3& a, const hVec3& b )
+    {
+        return hVec3Func::add( a, b );
+    }
+
+    hFORCEINLINE hVec3 operator += ( const hVec3& a, const hVec3& b )
+    {
+        return hVec3Func::add( a, b );
+    }
+
+    hFORCEINLINE hVec3 operator - ( const hVec3& a, const hVec3& b )
+    {
+        return hVec3Func::sub( a, b );
+    }
+
+    hFORCEINLINE hVec3 operator -= ( const hVec3& a, const hVec3& b )
+    {
+        return hVec3Func::sub( a, b );
+    }
+
+    hFORCEINLINE hVec3 operator * ( const hVec3& v, const hFloat s )
+    {
+        return hVec3Func::scale( v, s );
+    }
+
+    hFORCEINLINE hVec3 operator *= ( const hVec3& v, hFloat s )
+    {
+        return hVec3Func::scale( v, s );
+    }
+
+    hFORCEINLINE hVec3 operator / ( const hVec3& v, const hVec3& s ) 
+    {
+        return hVec3Func::div( v, s );
+    }
+
+    hFORCEINLINE hVec3 operator /= ( const hVec3& v, const hVec3& s )
+    {
+        return hVec3Func::div( v, s );
+    }
+
+    hFORCEINLINE hBool operator == ( const hVec3& a, const hVec3& b )
+    {
+        return hVec3Func::equal( a, b );
+    }
+
+    hFORCEINLINE hBool operator != (  const hVec3& a, const hVec3& b )
+    {
+        return !(a == b);
+    }
+
+    hFORCEINLINE hBool operator < ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Less( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator <= ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Less( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator > ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::Greater( lhs, rhs );
+    }
+
+    hFORCEINLINE hBool operator >= ( const hVec3& lhs, const hVec3& rhs )
+    {
+        return hVec3Func::GreaterEqual( lhs, rhs );
+    }
+
+    hFORCEINLINE hVec3 operator - ( const hVec3& a )
+    {
+        return hVec3Func::neg( a );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hFORCEINLINE hVec3::hVec3( const hVec128& rhs ) 
+        : v(rhs)
+    {
+    }
+
+    hFORCEINLINE hVec3::hVec3( const hCPUVec3& rhs ) 
+    {
+        *this = hVec3Func::set( rhs.x, rhs.y, rhs.z );
+    }
+
+    hFORCEINLINE hVec3::hVec3( hFloat x, hFloat y, hFloat z )
+    {
+        *this = hVec3Func::set( x, y, z );
+    }
+
+    hFORCEINLINE hVec3& hVec3::operator = ( const hCPUVec3& b )
+    {
+        hVec3Func::load( *this, &b );
+        return *this;
+    }
+
+    hFORCEINLINE hVec3::operator hCPUVec3 () const
+    {
+        hCPUVec3 r;
+        hVec3Func::store( *this, &r );
+        return r;
+    }
+
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hVec3, hSerialisedElementHeader::Type_User );
+    SERIALISE_WORKER_TYPE_SPECIALISATION( hCPUVec3, hSerialisedElementHeader::Type_User );
+}
+
+#endif // hmVec3_h__

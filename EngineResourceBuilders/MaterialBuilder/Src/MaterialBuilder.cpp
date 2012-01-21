@@ -11,11 +11,16 @@
 #include "Heart.h"
 
 
+const hChar* MaterialEffectBuilder::ParameterName_DebugInfo = "Include Debug Info";
+
 //typedef void (*CGIncludeCallbackFunc)( CGcontext context, const char *filename );
+
+static MaterialEffectBuilder* g_matBuilder = NULL;
 
 void cgIncludeCallback( CGcontext context, const char *filename )
 {
-    cgSetCompilerIncludeFile( context, filename, filename );
+    cgSetCompilerIncludeFile( context, filename, filename+1 );
+    g_matBuilder->TouchFileIntoBuildCache( filename+1 );
 }
 
 //void cgSetCompilerIncludeCallback( CGcontext context, CGIncludeCallbackFunc func );
@@ -46,6 +51,8 @@ MaterialEffectBuilder::~MaterialEffectBuilder()
 
 void MaterialEffectBuilder::BuildResource()
 {
+    g_matBuilder = this;
+
     CGcontext cgCtx = cgCreateContext();
     cgD3D9RegisterStates( cgCtx );
     cgD3D10RegisterStates( cgCtx );
@@ -85,7 +92,8 @@ void MaterialEffectBuilder::BuildResource()
 //         }
 //     }
 //     
-    //cgSetCompilerIncludeCallback( cgCtx, cgIncludeCallback );
+    
+    cgSetCompilerIncludeCallback( cgCtx, cgIncludeCallback );
     
     Heart::hMaterial hMat(NULL);
     CGeffect cgFX = cgCreateEffect( cgCtx, cgFXSource, NULL );
@@ -108,7 +116,6 @@ void MaterialEffectBuilder::BuildResource()
         for ( CGpass pass = cgGetFirstPass( tech ); pass != 0; pass = cgGetNextPass( pass ), ++passCount )
         {
             Heart::hMaterialTechniquePass hPass;
-            hPass.DefaultState();
 
             CGprogram vp = cgGetPassProgram( pass, CG_VERTEX_DOMAIN );
             CGprogram fp = cgGetPassProgram( pass, CG_FRAGMENT_DOMAIN );
@@ -124,12 +131,14 @@ void MaterialEffectBuilder::BuildResource()
             GetDependencyParameter( vpResId, "Entry Point" )->Set( vpEntry );
             GetDependencyParameter( vpResId, "Profile" )->Set( vpProfileName );
             GetDependencyParameter( vpResId, "Program Type" )->SetEnumByValue( Heart::ShaderType_VERTEXPROG );
+            GetDependencyParameter( vpResId, ParameterName_DebugInfo )->Set( GetParameter( ParameterName_DebugInfo ).GetAsBool() );
 
             Heart::hStrPrintf( depName, 64, "t%02up%02ufp", techCount, passCount );
             hUint32 fpResId = AddBuildDependency( "Shader Program", depName, GetInputFile()->GetPath() );
             GetDependencyParameter( fpResId, "Entry Point" )->Set( fpEntry );
             GetDependencyParameter( fpResId, "Profile" )->Set( fpProfileName );
             GetDependencyParameter( fpResId, "Program Type" )->SetEnumByValue( Heart::ShaderType_FRAGMENTPROG );
+            GetDependencyParameter( fpResId, ParameterName_DebugInfo )->Set( GetParameter( ParameterName_DebugInfo ).GetAsBool() );
 
             hPass.vertexProgram_   = (Heart::hShaderProgram*)vpResId;
             hPass.fragmentProgram_ = (Heart::hShaderProgram*)fpResId;
@@ -170,6 +179,10 @@ void MaterialEffectBuilder::BuildResource()
                                     MapCgSamplerStateToRuntimeState( &samplerParameter, lpsa );
                                 }
 
+                                samplerParameter.samplerReg_ = ~0U;
+                                samplerParameter.nameLen_ = Heart::hStrLen( ps );
+                                samplerParameter.name_ = new hChar[Heart::hStrLen(ps)+1];
+                                Heart::hStrCopy( samplerParameter.name_, Heart::hStrLen(ps)+1, ps );
                                 hMat.samplers_.PushBack( samplerParameter );
                                 sharedSamplerNames.insert( ps );
                             }
@@ -295,36 +308,38 @@ void MaterialEffectBuilder::MapCgPassStateToRuntimeState( Heart::hMaterialTechni
         { "decrsat" ,   RSV_SO_DECRSAT },
     };
 
-    CONVERT_CG_BOOL_STATE( "BlendEnable", lhs->alphaBlendEnable_, stas, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "BlendOp", lhs->alphaBlendFunction_, stas, blendFuncEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "BlendEquation", lhs->alphaBlendFunction_, stas, blendFuncEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "SrcBlend", lhs->alphaSrcBlend_, stas, blendOpEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "DestBlend", lhs->alphaDstBlend_, stas, blendOpEnum, foundState );
-    CONVERT_CG_INTx2_ENUM_STATE( "BlendFucn", lhs->alphaSrcBlend_, lhs->alphaDstBlend_, stas, blendOpEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "DepthFunc", lhs->zCompareFunction_, stas, depthEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "ZFunc", lhs->zCompareFunction_, stas, depthEnum, foundState );
-    CONVERT_CG_BOOL_STATE( "DepthMask", lhs->zWriteEnable_, stas, foundState );
-    CONVERT_CG_BOOL_STATE( "ZWriteEnable", lhs->zWriteEnable_, stas, foundState );
-    CONVERT_CG_BOOL_STATE( "DepthTestEnable", lhs->zTestEnable_, stas, foundState );
-    CONVERT_CG_BOOL_STATE( "ZEnable", lhs->zTestEnable_, stas, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "FillMode", lhs->fillMode_, stas, fillModeEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "CullMode", lhs->cullMode_, stas, cullModeEnum, foundState );
-    CONVERT_CG_BOOL_STATE( "StencilEnable", lhs->stencilTest_, stas, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "StencilFunc", lhs->stencilFunc_, stas, stencilFuncEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "StencilFail", lhs->stencilFail_, stas, stencilOpEnum, foundState );
-    CONVERT_CG_INT_STATE( "StencilRef", lhs->stencilRef_, stas, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "StencilPass", lhs->stencilPass_, stas, stencilOpEnum, foundState );
-    CONVERT_CG_INT_ENUM_STATE( "StencilZFail", lhs->stencilZFail_, stas, stencilOpEnum, foundState );
-    CONVERT_CG_INT_STATE( "StencilWriteMask", lhs->stencilWriteMask_, stas, foundState );
-    CONVERT_CG_INT_STATE( "StencilMask", lhs->stencilMask_, stas, foundState );
+    CONVERT_CG_BOOL_STATE( "BlendEnable", lhs->blendStateDesc_.blendEnable_, stas, foundState );
+    CONVERT_CG_BOOL_STATE( "AlphaBlendEnable", lhs->blendStateDesc_.blendEnable_, stas, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "BlendOp", lhs->blendStateDesc_.blendOp_, stas, blendFuncEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "BlendEquation", lhs->blendStateDesc_.blendOp_, stas, blendFuncEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "SrcBlend", lhs->blendStateDesc_.srcBlend_, stas, blendOpEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "DestBlend", lhs->blendStateDesc_.destBlend_, stas, blendOpEnum, foundState );
+    CONVERT_CG_INTx2_ENUM_STATE( "BlendFunc", lhs->blendStateDesc_.srcBlend_, lhs->blendStateDesc_.destBlend_, stas, blendOpEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "DepthFunc", lhs->depthStencilStateDesc_.depthFunc_, stas, depthEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "ZFunc", lhs->depthStencilStateDesc_.depthFunc_, stas, depthEnum, foundState );
+    CONVERT_CG_BOOL_STATE( "DepthMask", lhs->depthStencilStateDesc_.depthEnable_, stas, foundState );
+    CONVERT_CG_BOOL_STATE( "ZWriteEnable", lhs->depthStencilStateDesc_.depthEnable_, stas, foundState );
+    CONVERT_CG_BOOL_STATE( "DepthTestEnable", lhs->depthStencilStateDesc_.depthEnable_, stas, foundState );
+    CONVERT_CG_BOOL_STATE( "ZEnable", lhs->depthStencilStateDesc_.depthEnable_, stas, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "FillMode", lhs->rasterizerStateDesc_.fillMode_, stas, fillModeEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "CullMode", lhs->rasterizerStateDesc_.cullMode_, stas, cullModeEnum, foundState );
+    CONVERT_CG_BOOL_STATE( "StencilEnable", lhs->depthStencilStateDesc_.stencilEnable_, stas, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "StencilFunc", lhs->depthStencilStateDesc_.stencilFunc_, stas, stencilFuncEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "StencilFail", lhs->depthStencilStateDesc_.stencilFailOp_, stas, stencilOpEnum, foundState );
+    CONVERT_CG_INT_STATE( "StencilRef", lhs->depthStencilStateDesc_.stencilRef_, stas, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "StencilPass", lhs->depthStencilStateDesc_.stencilPassOp_, stas, stencilOpEnum, foundState );
+    CONVERT_CG_INT_ENUM_STATE( "StencilZFail", lhs->depthStencilStateDesc_.stencilDepthFailOp_, stas, stencilOpEnum, foundState );
+    CONVERT_CG_INT_STATE( "StencilWriteMask", lhs->depthStencilStateDesc_.stencilWriteMask_, stas, foundState );
+    CONVERT_CG_INT_STATE( "StencilMask", lhs->depthStencilStateDesc_.stencilReadMask_, stas, foundState );
     CONVERT_CG_BOOL_COLOURWRITE_STATE( 
         "ColourWriteEnable", 
-        lhs->colourMask1_, 
+        lhs->blendStateDesc_.renderTargetWriteMask_, 
         Heart::RSV_COLOUR_WRITE_RED, 
         Heart::RSV_COLOUR_WRITE_GREEN, 
         Heart::RSV_COLOUR_WRITE_BLUE, 
         Heart::RSV_COLOUR_WRITE_ALPHA, stas, 
         foundState );
+/*
     CONVERT_CG_BOOL_COLOURWRITE_STATE( 
         "ColourWriteEnable1", 
         lhs->colourMask2_, 
@@ -349,7 +364,7 @@ void MaterialEffectBuilder::MapCgPassStateToRuntimeState( Heart::hMaterialTechni
         Heart::RSV_COLOUR_WRITE_BLUE, 
         Heart::RSV_COLOUR_WRITE_ALPHA, stas,
         foundState );
-
+*/
     // Warning on Unknown State Value...
     if ( !foundState )
     {
@@ -384,19 +399,19 @@ void MaterialEffectBuilder::MapCgSamplerStateToRuntimeState( Heart::hSamplerPara
         { "linearmipmaplinear",      Heart::SSV_LINEAR },
     };
 
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressU", lhs->addressU_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressV", lhs->addressV_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressW", lhs->addressW_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapS", lhs->addressU_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapT", lhs->addressV_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapR", lhs->addressW_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "MinFilter", lhs->minFilter_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "MagFilter", lhs->magFilter_, rhs, remap, foundState );
-    CONVERT_CG_INT_ENUM_STATE_SAMP( "MipFilter", lhs->mipFilter_, rhs, remap, foundState );
-    CONVERT_CG_FLOAT_STATE_SAMP( "MipMapLodBias", lhs->mipLODBias_, rhs, foundState );
-    CONVERT_CG_FLOAT_STATE_SAMP( "LODBias", lhs->mipLODBias_, rhs, foundState );
-    CONVERT_CG_COLOUR_STATE_SAMP( "BorderColor", lhs->borderColour_, rhs, foundState );
-    CONVERT_CG_INT_STATE_SAMP( "MaxAnisotropy", lhs->maxAnisotropy_, rhs, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressU", lhs->samplerDesc_.addressU_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressV", lhs->samplerDesc_.addressV_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "AddressW", lhs->samplerDesc_.addressW_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapS", lhs->samplerDesc_.addressU_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapT", lhs->samplerDesc_.addressV_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "WrapR", lhs->samplerDesc_.addressW_, rhs, remap, foundState );
+    //CONVERT_CG_INT_ENUM_STATE_SAMP( "MinFilter", lhs->samplerDesc_.minFilter_, rhs, remap, foundState );
+   CONVERT_CG_INT_ENUM_STATE_SAMP( "MagFilter", lhs->samplerDesc_.filter_, rhs, remap, foundState );
+    CONVERT_CG_INT_ENUM_STATE_SAMP( "MipFilter", lhs->samplerDesc_.filter_, rhs, remap, foundState );
+    CONVERT_CG_FLOAT_STATE_SAMP( "MipMapLodBias", lhs->samplerDesc_.mipLODBias_, rhs, foundState );
+    CONVERT_CG_FLOAT_STATE_SAMP( "LODBias", lhs->samplerDesc_.mipLODBias_, rhs, foundState );
+    CONVERT_CG_COLOUR_STATE_SAMP( "BorderColor", lhs->samplerDesc_.borderColour_, rhs, foundState );
+    CONVERT_CG_INT_STATE_SAMP( "MaxAnisotropy", lhs->samplerDesc_.maxAnisotropy_, rhs, foundState );
     {
         CGstate cgst = cgGetSamplerStateAssignmentState( rhs ); 
         if ( cgst && Heart::hStrCmp( cgGetStateName( cgst ), "Texture" ) == 0 ) 
@@ -407,7 +422,7 @@ void MaterialEffectBuilder::MapCgSamplerStateToRuntimeState( Heart::hSamplerPara
             {
                 const hChar* texturename = cgGetStringAnnotationValue( at );
                 hUint32 texResId = AddBuildDependency( "texture", cgGetParameterName( atp ), texturename );
-                lhs->boundTexture_ = (Heart::hTextureBase*)texResId;
+                lhs->boundTexture_ = (Heart::hTexture*)texResId;
                 foundState = true;
             }
         }

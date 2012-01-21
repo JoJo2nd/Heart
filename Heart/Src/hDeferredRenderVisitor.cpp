@@ -149,15 +149,15 @@ namespace Heart
 			lights_[nLights_].exp_			= visit.GetSpecularExponent();
 			lights_[nLights_].diffuse_		= visit.GetDiffuse();
 			lights_[nLights_].shadowCaster_ = visit.GetCastShadows();
-			lights_[nLights_].inside_		= hAABB::PointWithinAABBSphere( hMatrix::GetTranslation( camera_->GetGlobalMatrix() ), *visit.GetGlobalAABB() );
+			lights_[nLights_].inside_		= hAABB::PointWithinAABBSphere( hMatrixFunc::getTranslation( *camera_->GetGlobalMatrix() ), *visit.GetGlobalAABB() );
 
 			if ( visit.GetLightType() == LightType_POINT )
 			{
 				lights_[nLights_].minRadius_	= visit.GetMinRadius();
 				lights_[nLights_].maxRadius_	= visit.GetMaxRadius();
 
-				Heart::DebugRenderer::RenderDebugSphere( hMatrix::GetTranslation( visit.GetGlobalMatrix() ), visit.GetMinRadius(), visit.GetDiffuse() );
-				Heart::DebugRenderer::RenderDebugSphere( hMatrix::GetTranslation( visit.GetGlobalMatrix() ), visit.GetMaxRadius(), visit.GetDiffuse() );
+				Heart::DebugRenderer::RenderDebugSphere( hMatrixFunc::getTranslation( *visit.GetGlobalMatrix() ), visit.GetMinRadius(), visit.GetDiffuse() );
+				Heart::DebugRenderer::RenderDebugSphere( hMatrixFunc::getTranslation( *visit.GetGlobalMatrix() ), visit.GetMaxRadius(), visit.GetDiffuse() );
 				Heart::DebugRenderer::RenderDebugAABB( *visit.GetGlobalAABB(), visit.GetDiffuse() );
 			}
 			else if ( visit.GetLightType() == LightType_SPOT ) 
@@ -187,6 +187,7 @@ namespace Heart
 
 		//cameraEye_ = Matrix::GetTranslation( pCameraNode_->GetGlobalMatrix() );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "G Buffer Pass" );
 
 		renderer->NewRenderCommand< Cmd::SetRenderTarget >( 0, renderTargets_[0] );
@@ -216,6 +217,7 @@ namespace Heart
 		renderer->NewRenderCommand< Cmd::SetDepthBuffer >( (hRenderTargetTexture*)NULL );
 
 		renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -226,15 +228,17 @@ namespace Heart
 	{
 
 		hMatrix proj,iproj;
-		hMatrix::inverse( camera_->GetProjectionMatrix(), &iproj );
-		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, inverseCamProjParam_, iproj.m );
-		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( pointLightInsideMat_, inverseCamProjPointParam_, iproj.m );
+		iproj = hMatrixFunc::inverse( *camera_->GetProjectionMatrix() );
+#ifdef HEART_OLD_RENDER_SUBMISSION
+		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, inverseCamProjParam_, (hFloat*)&iproj );
+		renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( pointLightInsideMat_, inverseCamProjPointParam_, (hFloat*)&iproj );
 
 		//Clear Final Target
 		renderer->NewRenderCommand< Cmd::ClearScreen >( hColour( 0.0f, 0.0f, 0.0f, 1.0f ) );
 		//TODO: Render Baked Light Pass
 		renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Baked Light Pass" );
 		renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 		//Render Light Pass (x nLights_)
 		for ( hUint32 i = 0; i < nLights_; ++i )
 		{
@@ -242,7 +246,9 @@ namespace Heart
 			{
 				if ( lights_[i].shadowCaster_ )
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Dir Light Shadow Pass" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 					//Create a Shadow Map of the scene.
 					//Means another visit of the scene -_-
 					sunShadowVisitor_.SetLightMatrix( &lights_[i].matrix_ );
@@ -251,20 +257,21 @@ namespace Heart
 					sunShadowVisitor_.SetShadowTarget( shadowTarget_ );
 					pSceneGraph->VisitScene( &sunShadowVisitor_, hSceneGraph::TOP_DOWN, false );
 
-					hMatrix::orthoProj( &proj, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0.0f, 10.0f );
+					proj =hMatrixFunc::orthoProj( (hFloat)renderer->GetWidth(), (hFloat)renderer->GetHeight(), 0.0f, 10.0f );
 
-					hVec3 wvDir,dir( lights_[i].matrix_.m31, lights_[i].matrix_.m32, lights_[i].matrix_.m33 );
+                    hVec3 wvDir,dir( hMatrixFunc::getRow( lights_[i].matrix_, 2 ) );
 					hMatrix wvi,wvit;
-					hMatrix::inverse( camera_->GetViewMatrix(), &wvi );
-					hMatrix::transpose( &wvi, &wvit );
-					hMatrix::multRotOnly( dir, &wvit, wvDir );
-					hVec3::normalise( wvDir, wvDir );
+					wvi = hMatrixFunc::inverse( *camera_->GetViewMatrix() );
+					wvit = hMatrixFunc::transpose( wvi );
+					wvDir = hMatrixFunc::multNormal( dir, wvit );
+					wvDir = hVec3Func::normaliseFast( wvDir );
 
- 					renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, dirShadowMatrixParm_, sunShadowVisitor_.GetShadowMatrix()->m );
+#ifdef HEART_OLD_RENDER_SUBMISSION
+ 					renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( dirLightMatWShadow_, dirShadowMatrixParm_, (hFloat*)sunShadowVisitor_.GetShadowMatrix() );
 					renderer->NewRenderCommand< Cmd::SetDirectionLight >( wvDir, lights_[i].power_, lights_[i].diffuse_, WHITE, lights_[i].exp_ );
 
-					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &IdentityMatrix );
-					renderer->NewRenderCommand< Cmd::SetViewMatrix >( &IdentityMatrix );
+                    renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &hMatrixFunc::identity() );
+					renderer->NewRenderCommand< Cmd::SetViewMatrix >( &hMatrixFunc::identity() );
 					renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &proj );
 
 					renderer->NewRenderCommand< Cmd::SetMaterial >( dirLightMatWShadow_ );
@@ -272,27 +279,31 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( 2 );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 
 				}
 				else
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Dir Light Pass" );
 
 					renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
+#endif // HEART_OLD_RENDER_SUBMISSION
 
-					hMatrix::orthoProj( &proj, (hFloat)renderer->Width(), (hFloat)renderer->Height(), 0.0f, 10.0f );
+					proj = hMatrixFunc::orthoProj( (hFloat)renderer->GetWidth(), (hFloat)renderer->GetHeight(), 0.0f, 10.0f );
 
-					hVec3 wvDir,dir(hMatrix::GetTranslation( lights_[i].matrix_ ) );
+					hVec3 wvDir,dir(hMatrixFunc::getTranslation( lights_[i].matrix_ ) );
 					hMatrix wvi,wvit;
-					hMatrix::inverse( camera_->GetViewMatrix(), &wvi );
-					hMatrix::transpose( &wvi, &wvit );
-					hMatrix::multRotOnly( dir, &wvit, wvDir );
-					hVec3::normalise( wvDir, wvDir );
+					wvi = hMatrixFunc::inverse( *camera_->GetViewMatrix() );
+					wvit = hMatrixFunc::transpose( wvi );
+					wvDir = hMatrixFunc::multNormal( dir, wvit );
+					wvDir = hVec3Func::normaliseFast( wvDir );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::SetDirectionLight >( wvDir, lights_[i].power_, lights_[i].diffuse_, WHITE, lights_[i].exp_ );
 
-					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &IdentityMatrix );
-					renderer->NewRenderCommand< Cmd::SetViewMatrix >( &IdentityMatrix );
+                    renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &hMatrixFunc::identity() );
+					renderer->NewRenderCommand< Cmd::SetViewMatrix >( &hMatrixFunc::identity() );
 					renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( &proj );
 
 					renderer->NewRenderCommand< Cmd::SetMaterial >( dirLightMat_ );
@@ -300,18 +311,20 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( 2 );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 			}
 			else if ( lights_[i].type_ == LightType_POINT )
 			{
 				hVec3 vspos;
-				hMatrix::mult( hMatrix::GetTranslation( lights_[i].matrix_ ), camera_->GetViewMatrix(), vspos );
+				vspos = hMatrixFunc::mult( hMatrixFunc::getTranslation( lights_[i].matrix_ ), *camera_->GetViewMatrix() );
 
 				hMatrix scale,world;
-				hMatrix::scale( lights_[i].maxRadius_*1.01f, lights_[i].maxRadius_*1.01f, lights_[i].maxRadius_*1.01f, &scale );
+				scale = hMatrixFunc::scale( lights_[i].maxRadius_*1.01f, lights_[i].maxRadius_*1.01f, lights_[i].maxRadius_*1.01f );
 
-				hMatrix::mult( &scale, &lights_[i].matrix_, &world );
+				world = hMatrixFunc::mult( scale, lights_[i].matrix_ );
 		
+#ifdef HEART_OLD_RENDER_SUBMISSION
 				renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Point Light Pass" );
 
 				renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
@@ -329,23 +342,26 @@ namespace Heart
 				renderer->NewRenderCommand< Cmd::DrawPrimative >( pointLightGeom_.nPrims_ );
 
 				renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 			}
 			else if ( lights_[i].type_ == LightType_SPOT )
 			{
 				hVec3 vspos,vsdir;
-				hMatrix::mult( hMatrix::GetTranslation( lights_[i].matrix_ ), camera_->GetViewMatrix(), vspos );
-				hMatrix::multRotOnly( hVec3( lights_[i].matrix_.m31, lights_[i].matrix_.m32, lights_[i].matrix_.m33 ), camera_->GetViewMatrix(), vsdir );
-				hVec3::normalise( vsdir, vsdir );
+				vspos = hMatrixFunc::mult( hMatrixFunc::getTranslation( lights_[i].matrix_ ), *camera_->GetViewMatrix() );
+                vsdir = hMatrixFunc::multNormal( (hVec3)hMatrixFunc::getRow( lights_[i].matrix_, 2 ), *camera_->GetViewMatrix() );
+				vsdir = hVec3Func::normaliseFast( vsdir );
 
 				hMatrix scale,world;
 				hFloat xyscale = tan( lights_[i].spotAngleRad_ )*lights_[i].spotFalloff_;
-				hMatrix::scale( xyscale*2.0f, xyscale*2.0f, lights_[i].spotFalloff_, &scale );
+				scale = hMatrixFunc::scale( xyscale*2.0f, xyscale*2.0f, lights_[i].spotFalloff_ );
 
-				hMatrix::mult( &scale, &lights_[i].matrix_, &world );
+				world = hMatrixFunc::mult( scale, lights_[i].matrix_ );
 
 				if ( lights_[i].shadowCaster_ )
 				{
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Spot Light Pass" );
+#endif // HEART_OLD_RENDER_SUBMISSION
 					//Create a Shadow Map of the scene.
 					//Means another visit of the scene -_-
 					shadowVisitor_.SetLightMatrix( &lights_[i].matrix_ );
@@ -355,12 +371,13 @@ namespace Heart
 					shadowVisitor_.SetShadowTarget( shadowTarget_ );
 					pSceneGraph->VisitScene( &shadowVisitor_, hSceneGraph::TOP_DOWN, false );
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &world );
 					renderer->NewRenderCommand< Cmd::SetViewMatrix >( camera_->GetViewMatrix() );
 					renderer->NewRenderCommand< Cmd::SetProjectionMatrix >( camera_->GetProjectionMatrix() );
 					renderer->NewRenderCommand< Cmd::SetStreams >( spotLightGeom_.idxBuf_, spotLightGeom_.vtxBuf_ );
-					renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( spotLightShadow2ndMat_, spotShadowMatrixParm_, shadowVisitor_.GetShadowMatrix()->m );
+					renderer->NewRenderCommand< Cmd::SetMaterialFloat4x4Parameter >( spotLightShadow2ndMat_, spotShadowMatrixParm_, (hFloat*)shadowVisitor_.GetShadowMatrix() );
 					renderer->NewRenderCommand< Cmd::SetSpotLight >( 
 						vspos, vsdir,
 						1.0f-lights_[i].minRadius_, 
@@ -379,10 +396,12 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( spotLightGeom_.nPrims_ );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 				else
 				{
 
+#ifdef HEART_OLD_RENDER_SUBMISSION
 					renderer->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Spot Light Pass" );
 
 					renderer->NewRenderCommand< Cmd::SetWorldMatrix >( &world );
@@ -407,6 +426,7 @@ namespace Heart
 					renderer->NewRenderCommand< Cmd::DrawPrimative >( spotLightGeom_.nPrims_ );
 
 					renderer->NewRenderCommand< Cmd::EndDebuggerEvent >();
+#endif // HEART_OLD_RENDER_SUBMISSION
 				}
 			}
 		}
@@ -600,9 +620,9 @@ namespace Heart
 	void hDeferredRenderVisitor::BuildScissorForPointLight( LightNodeData* light, ScissorRect* out )
 	{
 		hMatrix wvp;
-		hVec3 sp;
-		hVec3 lc = hMatrix::GetTranslation( light->matrix_ );
-		hVec3 vpd( (hFloat)camera_->GetViewport().width_, (hFloat)camera_->GetViewport().height_, 0.0f );
+		hCPUVec3 sp;
+		hCPUVec3 lc = hMatrixFunc::getTranslation( light->matrix_ );
+		hCPUVec3 vpd( (hFloat)camera_->GetViewport().width_, (hFloat)camera_->GetViewport().height_, 0.0f );
 		//Matrix::mult( &light->matrix_, camera_->GetViewProjectionMatrix(), &wvp );
 		wvp = *camera_->GetViewProjectionMatrix();
 		hFloat xr = light->maxRadius_;

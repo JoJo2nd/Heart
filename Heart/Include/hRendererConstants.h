@@ -20,6 +20,10 @@ namespace Heart
 
 	struct hViewport
 	{
+        hViewport() {}
+        hViewport( hUint32 x,hUint32 y,hUint32 w,hUint32 h )
+            : x_(x), y_(y), width_(w), height_(h)
+        {}
 		hUint32 x_,y_,width_,height_;
 	};
 
@@ -52,15 +56,19 @@ namespace Heart
 		}
 	};
 
-	static const hUint32 NUM_RENDER_BUFFERS = 3;
 	const hColour WHITE( 1.0f, 1.0f, 1.0f, 1.0f );
 	const hColour BLACK( 0.0f, 0.0f, 0.0f, 1.0f );
+
+#define HEART_VIEWPORT_CONSTANTS_REGISTIER (0)
+#define HEART_INSTANCE_CONSTANTS_REGISTIER (1)
+
+    typedef void* (*hTempRenderMemAlloc)( hUint32 size );
+    typedef void (*hTempRenderMemFree)( void* ptr );
 
     struct hShaderParameter
     {
         hShaderParameter() 
-            : semanticID_(~0U)
-            , name_(NULL)
+            : name_(NULL)
             , size_(0)
             , cReg_(0)
             , cBuffer_(0)
@@ -68,11 +76,10 @@ namespace Heart
 
         }
 
-        hUint32	                            semanticID_; //EFFECTSEMANTICID_MAX(~0U) if not valid
         hChar*						        name_; 
         hUint32                             size_;
-        hUint32                             cReg_ : 24;
-        hUint32                             cBuffer_ : 8;
+        hUint32                             cReg_;
+        hUint32                             cBuffer_;
     };
 
     enum ShaderType
@@ -81,9 +88,11 @@ namespace Heart
         ShaderType_FRAGMENTPROG,
 
         ShaderType_MAX,
+
+        ShaderType_FORCE_DWORD = ~0U
     };
 
-	enum TextureFormat
+	enum hTextureFormat
 	{
 		TFORMAT_ARGB8,
 		TFORMAT_XRGB8,
@@ -97,7 +106,9 @@ namespace Heart
 		TFORMAT_L8,
 		TFORMAT_DXT5,
         TFORMAT_DXT3,
-        TFORMAT_DXT1
+        TFORMAT_DXT1,
+
+        TFORMAT_FORCE_DWORD = ~0U
 	};
 
 	enum RENDER_STATE
@@ -128,7 +139,7 @@ namespace Heart
 
 		RS_MAX,
 
-		RS_FORCE_DWORD = 0xFFFFFFFF
+		RS_FORCE_DWORD = ~0U
 	};
 
 	enum RENDER_STATE_FLAG
@@ -138,6 +149,8 @@ namespace Heart
 		RSV_COLOUR_WRITE_BLUE	= 1 << 2,
 		RSV_COLOUR_WRITE_ALPHA	= 1 << 3,
 		RSV_COLOUR_WRITE_FULL	= 0x0000000F,
+
+        RSF_FORCE_DWORD = ~0U
 	};
 
 	enum RENDER_STATE_VALUE
@@ -237,7 +250,9 @@ namespace Heart
 		hrVE_TANGENT,		
 		hrVE_BINORMAL,		
 
-		hrVE_MAX			
+		hrVE_MAX,
+
+        hrVE_FORCE_DWORD = ~0U
 	};
 
 	enum VertexFlags
@@ -267,17 +282,17 @@ namespace Heart
 		hrVF_BLENDMASK			= hrVF_BLEND1 | hrVF_BLEND2 | hrVF_BLEND3 | hrVF_BLEND4,
 	};
 
-	enum BufferFlags
+	enum ResourceFlags
 	{
-		DISCARD_ON_LOCK		= 1,
-		DYNAMIC				= 1 << 1,
+		RESOURCEFLAG_DYNAMIC				= 1 << 1,
+        RESOURCEFLAG_RENDERTARGET   		= 1 << 2,
+        RESOURCEFLAG_DEPTHTARGET    		= 1 << 3,
 	};
 
 	enum PrimitiveType
 	{
 		PRIMITIVETYPE_TRILIST,
 		PRIMITIVETYPE_TRISTRIP,
-		PRIMITIVETYPE_TRIFAN,
 		PRIMITIVETYPE_LINELIST,
 
 		PRIMITIVETYPE_MAX
@@ -294,6 +309,18 @@ namespace Heart
 
     struct hBlendStateDesc
     {
+        hBlendStateDesc()
+        {
+            blendEnable_           = RSV_DISABLE;
+            srcBlend_              = RSV_BLEND_OP_ONE;
+            destBlend_             = RSV_BLEND_OP_ZERO;
+            blendOp_               = RSV_BLEND_FUNC_ADD;
+            srcBlendAlpha_         = RSV_BLEND_OP_ONE;
+            destBlendAlpha_        = RSV_BLEND_OP_ZERO;
+            blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
+            renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
+        }
+
         RENDER_STATE_VALUE    blendEnable_;
         RENDER_STATE_VALUE    srcBlend_;
         RENDER_STATE_VALUE    destBlend_;
@@ -306,6 +333,21 @@ namespace Heart
 
     struct hDepthStencilStateDesc
     {
+        hDepthStencilStateDesc()
+        {
+            depthEnable_        = RSV_DISABLE;
+            depthWriteMask_     = RSV_DISABLE;
+            depthFunc_          = RSV_Z_CMP_LESS;
+            stencilEnable_      = RSV_DISABLE;
+            stencilReadMask_    = ~0U;
+            stencilWriteMask_   = ~0U;
+            stencilFailOp_      = RSV_SO_KEEP;
+            stencilDepthFailOp_ = RSV_SO_KEEP;
+            stencilPassOp_      = RSV_SO_KEEP;
+            stencilFunc_        = RSV_SF_CMP_ALWAYS;
+            stencilRef_         = 0;  
+        }
+
         RENDER_STATE_VALUE    depthEnable_;
         RENDER_STATE_VALUE    depthWriteMask_;
         RENDER_STATE_VALUE    depthFunc_;
@@ -316,14 +358,27 @@ namespace Heart
         RENDER_STATE_VALUE    stencilDepthFailOp_;
         RENDER_STATE_VALUE    stencilPassOp_;
         RENDER_STATE_VALUE    stencilFunc_;
+        hUint32               stencilRef_;
     };
 
     struct hRasterizerStateDesc
     {
+        hRasterizerStateDesc()
+        {
+            fillMode_              = RSV_FILL_MODE_SOLID;
+            cullMode_              = RSV_CULL_MODE_NONE;
+            frontCounterClockwise_ = RSV_DISABLE;
+            depthBias_             = 0;
+            depthBiasClamp_        = 0.f;
+            slopeScaledDepthBias_  = 0.f;
+            depthClipEnable_       = RSV_ENABLE;
+            scissorEnable_         = RSV_DISABLE;
+        }
+
         RENDER_STATE_VALUE    fillMode_;
         RENDER_STATE_VALUE    cullMode_;
         RENDER_STATE_VALUE    frontCounterClockwise_;
-        hUint32               depthBias_;
+        hInt32                depthBias_;
         hFloat                depthBiasClamp_;
         hFloat                slopeScaledDepthBias_;
         RENDER_STATE_VALUE    depthClipEnable_;
@@ -332,71 +387,29 @@ namespace Heart
 
     struct hSamplerStateDesc
     {
+        hSamplerStateDesc()
+        {
+            filter_        = SSV_POINT;
+            addressU_      = SSV_CLAMP;
+            addressV_      = SSV_CLAMP;
+            addressW_      = SSV_CLAMP;
+            mipLODBias_    = 0;
+            maxAnisotropy_ = 16;
+            borderColour_  = WHITE;
+            minLOD_        = -FLT_MAX;
+            maxLOD_        = FLT_MAX;             
+        }
+
         hSAMPLER_STATE_VALUE    filter_;
         hSAMPLER_STATE_VALUE    addressU_;
         hSAMPLER_STATE_VALUE    addressV_;
         hSAMPLER_STATE_VALUE    addressW_;
         hFloat                  mipLODBias_;
         hUint32                 maxAnisotropy_;
-        hColour                 borderColor_;
+        hColour                 borderColour_;
         hFloat                  minLOD_;
         hFloat                  maxLOD_;
     };
-
-namespace EffectSemantics
-{
-	enum EffectSemanticID
-	{
-		EFFECTSEMANTICID_SCREENPARAMETERS,
-		EFFECTSEMANTICID_WORLDMATRIX,
-		EFFECTSEMANTICID_INVERSEWORLDMATRIX,
-		EFFECTSEMANTICID_WORLDINVERSETRANSPOSEMATRIX,
-		EFFECTSEMANTICID_VIEWMATRIX,
-		EFFECTSEMANTICID_INVERSEVIEWMATRIX,
-		EFFECTSEMANTICID_INVERSETRANSPOSEVIEWMATRIX,
-		EFFECTSEMANTICID_PROJECTIONMATRIX,
-		EFFECTSEMANTICID_INVERSEPROJECTIONMATRIX,
-		EFFECTSEMANTICID_VIEWPROJECTIONMATRIX,
-		EFFECTSEMANTICID_INVERSEVIEWPROJECTIONMATRIX,
-		EFFECTSEMANTICID_WORLDVIEWMATRIX,
-		EFFECTSEMANTICID_WORLDVIEWINVERSEMATRIX,
-		EFFECTSEMANTICID_WORLDINVERSETRANSPOSEVIEWMATRIX,
-		EFFECTSEMANTICID_WORLDVIEWINVERSETRANSPOSEMATRIX,
-		EFFECTSEMANTICID_WORLDVIEWPROJECTIONMATRIX,
-		EFFECTSEMANTICID_MATERIALAMBIENT,
-		EFFECTSEMANTICID_MATERIALDIFFUSE,
-		EFFECTSEMANTICID_MATERIALEMISSIVE,
-		EFFECTSEMANTICID_MATERIALSPECULAR,
-		EFFECTSEMANTICID_MATERIALSPECPOWER,
-		EFFECTSEMANTICID_FOGSTART,
-		EFFECTSEMANTICID_FOGRANGE,
-		EFFECTSEMANTICID_FOGCOLOUR,
-		EFFECTSEMANTICID_LIGHTBRIGHTNESS,
-		EFFECTSEMANTICID_LIGHTPOSITION,
-		EFFECTSEMANTICID_LIGHTDIRECTION,
-		EFFECTSEMANTICID_LIGHTDIFFUSE,
-		EFFECTSEMANTICID_LIGHTSPECULAR,
-		EFFECTSEMANTICID_LIGHTMINRADIUS,
-		EFFECTSEMANTICID_LIGHTMAXRADIUS,
-		EFFECTSEMANTICID_LIGHTEXPONENT,
-		EFFECTSEMANTICID_LIGHTFALLOFF,
-		EFFECTSEMANTICID_DIFFUSETEXTURE0,
-		EFFECTSEMANTICID_DIFFUSETEXTURE1,
-		EFFECTSEMANTICID_DIFFUSETEXTURE2,
-		EFFECTSEMANTICID_DIFFUSETEXTURE3,
-		EFFECTSEMANTICID_NORMALTEXTURE,
-		EFFECTSEMANTICID_SPECULARTEXTURE,
-		EFFECTSEMANTICID_LIGHTMAPTEXTURE,
-		EFFECTSEMANTICID_SHADOWMAPTEXTURE,
-
-		EFFECTSEMANTICID_MAX
-	};
-
-	static const hUint32 DIFFISE_TEXTURE_SEMANTIC_COUNT = EFFECTSEMANTICID_DIFFUSETEXTURE3 - EFFECTSEMANTICID_DIFFUSETEXTURE0;
-	static const hUint32 TEXTURE_SEMANTIC_COUNT = EFFECTSEMANTICID_SHADOWMAPTEXTURE - EFFECTSEMANTICID_DIFFUSETEXTURE0;
-
-	extern const hChar* SemanticNames[];
-}//EffectSemantics
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -419,6 +432,123 @@ namespace EffectSemantics
         DESERIALISE_ELEMENT( data.b_ );
         DESERIALISE_ELEMENT( data.a_ );
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    template<>
+    inline void SerialiseMethod< hBlendStateDesc >( hSerialiser* ser, const hBlendStateDesc& data )
+    {
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendEnable_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.srcBlend_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.destBlend_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendOp_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.srcBlendAlpha_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.destBlendAlpha_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendOpAlpha_ );
+        SERIALISE_ELEMENT( data.renderTargetWriteMask_ );
+    }
+
+    template<>
+    inline void DeserialiseMethod< hBlendStateDesc >( hSerialiser* ser, hBlendStateDesc& data )
+    {
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendEnable_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.srcBlend_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.destBlend_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendOp_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.srcBlendAlpha_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.destBlendAlpha_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendOpAlpha_ );
+        DESERIALISE_ELEMENT( data.renderTargetWriteMask_ );
+    }
+
+    template<>
+    inline void SerialiseMethod< hDepthStencilStateDesc >( hSerialiser* ser, const hDepthStencilStateDesc& data )
+    {
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthEnable_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthWriteMask_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthFunc_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilEnable_ );
+        SERIALISE_ELEMENT( data.stencilReadMask_ );
+        SERIALISE_ELEMENT( data.stencilWriteMask_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFailOp_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilDepthFailOp_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilPassOp_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFunc_ );
+        SERIALISE_ELEMENT( data.stencilRef_ );
+    }
+
+    template<>
+    inline void DeserialiseMethod< hDepthStencilStateDesc >( hSerialiser* ser, hDepthStencilStateDesc& data )
+    {
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthEnable_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthWriteMask_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthFunc_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilEnable_ );
+        DESERIALISE_ELEMENT( data.stencilReadMask_ );
+        DESERIALISE_ELEMENT( data.stencilWriteMask_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFailOp_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilDepthFailOp_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilPassOp_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFunc_ );
+        DESERIALISE_ELEMENT( data.stencilRef_ );
+    }
+
+    template<>
+    inline void SerialiseMethod< hRasterizerStateDesc >( hSerialiser* ser, const hRasterizerStateDesc& data )
+    {
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.fillMode_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.cullMode_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.frontCounterClockwise_ );
+        SERIALISE_ELEMENT( data.depthBias_ );
+        SERIALISE_ELEMENT( data.depthBiasClamp_ );
+        SERIALISE_ELEMENT( data.slopeScaledDepthBias_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthClipEnable_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.scissorEnable_ );
+    }
+
+    template<>
+    inline void DeserialiseMethod< hRasterizerStateDesc >( hSerialiser* ser, hRasterizerStateDesc& data )
+    {
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.fillMode_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.cullMode_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.frontCounterClockwise_ );
+        DESERIALISE_ELEMENT( data.depthBias_ );
+        DESERIALISE_ELEMENT( data.depthBiasClamp_ );
+        DESERIALISE_ELEMENT( data.slopeScaledDepthBias_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthClipEnable_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.scissorEnable_ );
+    }
+
+    template<>
+    inline void SerialiseMethod< hSamplerStateDesc >( hSerialiser* ser, const hSamplerStateDesc& data )
+    {
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.filter_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressU_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressV_ );
+        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressW_ );
+        SERIALISE_ELEMENT( data.mipLODBias_ );
+        SERIALISE_ELEMENT( data.maxAnisotropy_ );
+        SERIALISE_ELEMENT( data.borderColour_ );
+        SERIALISE_ELEMENT( data.minLOD_ );
+        SERIALISE_ELEMENT( data.maxLOD_ );
+    }
+
+    template<>
+    inline void DeserialiseMethod< hSamplerStateDesc >( hSerialiser* ser, hSamplerStateDesc& data )
+    {
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.filter_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressU_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressV_ );
+        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressW_ );
+        DESERIALISE_ELEMENT( data.mipLODBias_ );
+        DESERIALISE_ELEMENT( data.maxAnisotropy_ );
+        DESERIALISE_ELEMENT( data.borderColour_ );
+        DESERIALISE_ELEMENT( data.minLOD_ );
+        DESERIALISE_ELEMENT( data.maxLOD_ );
+    }
+
 }//Heart
 
 #endif // RENDERERCONSTANTS_H__

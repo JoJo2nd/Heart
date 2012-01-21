@@ -45,6 +45,7 @@ namespace Heart
             ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
             D3D11_SHADER_BUFFER_DESC bufInfo;
             constInfo->GetDesc( &bufInfo );
+            hUint32 cBufferCRC = hCRC32::StringCRC( bufInfo.Name );
 
             if ( i < bufInfo.Variables )
             {
@@ -55,7 +56,7 @@ namespace Heart
                 //lets be cheeky and nab the shader var name here!
                 param->name_    = (hChar*)varDesc.Name;
                 param->size_    = varDesc.Size / sizeof(hFloat);
-                param->cBuffer_ = buffer;
+                param->cBuffer_ = cBufferCRC;
                 param->cReg_    = varDesc.StartOffset / sizeof(hFloat);
 
                 return hTrue;
@@ -67,6 +68,115 @@ namespace Heart
         }
 
         return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetConstantBufferCount() const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        return desc.ConstantBuffers;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetConstantBufferSize( hUint32 idx ) const
+    {
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        constInfo->GetDesc( &bufInfo );
+
+        return bufInfo.Size / sizeof(hFloat);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hChar* hdDX11ShaderProgram::GetConstantBufferName( hUint32 idx ) const
+    {
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        constInfo->GetDesc( &bufInfo );
+
+        return bufInfo.Name;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hFloat* hdDX11ShaderProgram::GetShaderParameterDefaultValue( hUint32 idx ) const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        for ( hUint32 buffer = 0; buffer < desc.ConstantBuffers; ++buffer )
+        {
+            ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
+            D3D11_SHADER_BUFFER_DESC bufInfo;
+            constInfo->GetDesc( &bufInfo );
+
+            if ( idx < bufInfo.Variables )
+            {
+                 ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( idx );
+                D3D11_SHADER_VARIABLE_DESC varDesc;
+                var->GetDesc( &varDesc );
+
+                return (hFloat*)varDesc.DefaultValue;
+            }
+            else
+            {
+                idx -= bufInfo.Variables;
+            }
+        }
+
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetConstantBufferReg( hUint32 idx ) const
+    {
+        D3D11_SHADER_DESC desc;
+        shaderInfo_->GetDesc( &desc );
+
+        ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( idx );
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        constInfo->GetDesc( &bufInfo );
+        shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
+
+        return bindInfo.BindPoint;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetSamplerRegister( const hChar* name ) const
+    {
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        HRESULT hr = shaderInfo_->GetResourceBindingDescByName( name, &bindInfo );
+
+        return hr == S_OK ? bindInfo.BindPoint : ~0U;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11ParameterConstantBlock::Flush( ID3D11DeviceContext* ctx )
+    {
+        ctx->UpdateSubresource( constBuffer_, 0, NULL, cpuIntermediateData_, 0, 0 );
     }
 
 }

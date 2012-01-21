@@ -75,6 +75,7 @@ namespace GameData
         ~gdFileHandle();
 
         void                    Open( const gdChar* filename, gdBool write = false );
+        gdBool                  IsValid() const { return file_ != NULL; }
         void                    Close();
         const gdFileTimestamp&  GetFileTimestamp() const;
         gdUint64                GetFileSize() const;
@@ -86,6 +87,7 @@ namespace GameData
         gdUint32                Write( const void* pBuffer, gdUint32 size );
         gdUint32                Seek( gdUint64 offset );
         gdUint64                Tell();
+        void                    SetEnableMD5Gen( gdBool val ) { md5Enabled_ = val; }
 
     private:
         
@@ -94,6 +96,7 @@ namespace GameData
         gdUint64                            fileSize_;
         cyMD5_CTX                           writtenDataMD5_;
         gdByte                              md5Digest_[16];
+        gdBool                              md5Enabled_;
     };
 }
 

@@ -32,7 +32,21 @@
 namespace Heart
 {
 
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::AddResourceToPackage( const hChar* resourcePath )
+    {
+        hUint32 crc = hResourceManager::BuildResourceCRC( resourcePath );
+        hChar* path = hNEW( hGeneralHeap ) hChar[ hStrLen( resourcePath )+1 ];
+        hStrCopy( path, hStrLen( resourcePath )+1, resourcePath );
+        resourceNames_.PushBack( path );
+        resourcecCRC_.PushBack( crc );
+        resourceDests_.PushBack( (hResourceClassBase**)NULL );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
@@ -69,19 +83,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackage::IsPackageLoaded()
+    hBool hResourcePackage::IsPackageLoaded() const
     {
         hBool loaded = completedLoads_ == resourceNames_.GetSize();
-//         if ( loaded )
-//         {
-//             const hChar** names = (const hChar**)resourceNames_.GetBuffer();
-//             hResourceClassBase** resources = (hResourceClassBase**)hAlloca( completedLoads_*sizeof(hResourceClassBase*) );
-//             resourceManager_->GetResources( names, resources, completedLoads_ );
-//             for ( hUint32 i = 0; i < completedLoads_; ++i )
-//             {
-//                 *((hResourceClassBase**)resourceDests_[i]) = resources[i];
-//             }
-//         }
         return loaded;
     }
     //////////////////////////////////////////////////////////////////////////
@@ -100,6 +104,22 @@ namespace Heart
     void hResourcePackage::EndResourceFind()
     {
         resourceManager_->UnlockResourceDatabase();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::GetResourcePointers()
+    {
+        hcAssert( IsPackageLoaded() );
+        BeingResourceFind();
+        for ( hUint32 i = 0; i < completedLoads_; ++i )
+        {
+            if ( resourceDests_[i] )
+                *(resourceDests_[i]) = resourceManager_->GetResource( resourcecCRC_[i] );
+        }
+        EndResourceFind();
     }
 
 }

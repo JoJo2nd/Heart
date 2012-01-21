@@ -28,6 +28,7 @@
 #include "cryptoMD5.h"
 #include <sys/types.h>
 #include <memory.h>
+#include <stdio.h>
 
 #define md5copy( x, y, z ) memcpy( y, x, z )
 
@@ -291,4 +292,19 @@ static void CY_API cy_md5_calc( cyByte *b64, cy_md5_ctxt *ctxt )
     ctxt->md5_stb += B;
     ctxt->md5_stc += C;
     ctxt->md5_std += D;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void CY_API __cyMD5ToString( const cyByte* digest, cyChar* str )
+{
+    cyUint i;
+    for ( i = 0; i < CY_MD5_LEN; ++i )
+    {
+        sprintf( str, "%02X", *digest  );
+        str += 2;
+        ++digest;
+    }
 }

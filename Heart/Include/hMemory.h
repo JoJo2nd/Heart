@@ -397,7 +397,6 @@ inline void operator delete[] ( void* mem )
 
 }
 
-#include "new_on.h"
 
 #endif // HEART_ALLOW_NEW
 

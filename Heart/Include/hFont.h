@@ -16,14 +16,12 @@
 namespace Heart
 {
 
-	class hResourceDependencyList;
 	class hTexture;
-	class hCommandBufferList;
 
 	struct hFontStyle
 	{
 		hUint32			Alignment_;
-		hUint32			Colour_;
+		hColour			Colour_;
 		hUint32			Order_;
 	};
 
@@ -56,8 +54,8 @@ namespace Private
 	 	hUint32					Width_;
 		hUint32					xAdvan_;
 	 	hInt32					BaseLine_;
-		hVec2				    UV1_;
-	 	hVec2				    UV2_;
+		hCPUVec2				UV1_;
+	 	hCPUVec2				UV2_;
 	};
 }
 
@@ -74,12 +72,12 @@ namespace Private
 		hUint32				FontWidth() const { return fontWidth_; };
 		hUint32				RenderString( hIndexBuffer& iBuffer, 
 										  hVertexBuffer& vBuffer, 
-										  const Heart::hVec2& topleft, 
-										  const Heart::hVec2& bottomright, 
+										  const hCPUVec2& topleft, 
+										  const hCPUVec2& bottomright, 
 										  const hChar* str, 
-										  hCommandBufferList* pCmdList );
+										  hRenderSubmissionCtx* rnCtx );
 
-		static hResourceClassBase*		OnFontLoad( const hChar* ext, hSerialiserFileStream* dataStream, hResourceManager* resManager );
+		static hResourceClassBase*		OnFontLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
 		static hUint32		            OnFontUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
 
 	private:
@@ -89,13 +87,13 @@ namespace Private
         HEART_ALLOW_SERIALISE_FRIEND();
 
 		hBool						FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr );
-		void						RenderLine( hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, hUint16& iOffset, hUint32& vOffset, Private::hFontLine& line, hFloat cury, const hVec2& topleft, const hVec2& bottomright, hFloat w, hUint32& charsWritten );
+		void						RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten );
 		Private::hFontCharacter*	GetFontCharacter( hUint32 charcode );
 
 	 	hFontStyle					style_;
 	 	hUint32						nTexturePages_;
 	 	hTexture*				    texturePages_;
-        hMaterial*                  fontMaterial_;
+        hMaterialInstance*          fontMaterial_;
 	 	hUint32						fontWidth_;
 	 	hUint32						fontHeight_;
 	 	hUint32						baseLine_;
@@ -117,7 +115,7 @@ namespace Private
     inline void SerialiseMethod< Heart::hFont >( Heart::hSerialiser* ser, const Heart::hFont& data )
     {
         SERIALISE_ELEMENT( data.nTexturePages_ );
-        SERIALISE_ELEMENT_PTR_AS_INT( data.fontMaterial_ );
+        SERIALISE_ELEMENT_RESOURCE_CRC( data.fontMaterial_ );
         SERIALISE_ELEMENT( data.fontWidth_ );
         SERIALISE_ELEMENT( data.fontHeight_ );
         SERIALISE_ELEMENT( data.baseLine_ );
@@ -134,7 +132,7 @@ namespace Private
     inline void DeserialiseMethod< Heart::hFont >( Heart::hSerialiser* ser, Heart::hFont& data )
     {
         DESERIALISE_ELEMENT( data.nTexturePages_ );
-        DESERIALISE_ELEMENT_INT_AS_PTR( data.fontMaterial_ );
+        DESERIALISE_ELEMENT_RESOURCE_CRC( data.fontMaterial_ );
         DESERIALISE_ELEMENT( data.fontWidth_ );
         DESERIALISE_ELEMENT( data.fontHeight_ );
         DESERIALISE_ELEMENT( data.baseLine_ );

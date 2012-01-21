@@ -66,6 +66,7 @@ enum UIEventID
 
     UIID_BUILDALL,
     UIID_CLEAN,
+    UIID_SETOUTPUT,
 
     UIID_MAX
 };

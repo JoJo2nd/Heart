@@ -270,25 +270,25 @@ namespace Heart
 
 		friend class									hSceneGraph;
 
-		void											ApplyTransforms( const hMatrix* pm ) 
+		void ApplyTransforms( const hMatrix* pm ) 
 		{
 			//GetMatrix calls always return idx 0 matrix
 			//SetMatrix calls always return idx 1 matrix
 			//< index 0 is current data, constant across a frame
 			//< index 1 is to be applied data, mutable and applied to index 0 at beginning of a frame
 
-			xf_[0].matrix_ = xf_[1].matrix_;
-			hMatrix::mult( &xf_[1].matrix_, pm, &xf_[0].globalMatrix_ );
+			xf_[0].matrix_       = xf_[1].matrix_;
+			xf_[0].globalMatrix_ = xf_[1].matrix_ * (*pm);
 			//update AABB... etc
-			Heart::hAABB::rotate( orginAABB_, xf_[0].globalMatrix_, localAABB_ );
-			Heart::hAABB::rotate( orginAABB_, xf_[0].globalMatrix_, globalAABB_ );
+			localAABB_  = hAABB::rotate( orginAABB_, xf_[0].globalMatrix_ );
+			globalAABB_ = hAABB::rotate( orginAABB_, xf_[0].globalMatrix_ );
 		}
 
-		void											UpdateAABB()
+		void UpdateAABB()
 		{
 			for ( ChildListNode* i = children_.GetHead(); i; i = i->GetNext() )
 			{
-				Heart::hAABB::ExpandBy( globalAABB_, i->child_->globalAABB_ );
+				hAABB::ExpandBy( globalAABB_, i->child_->globalAABB_ );
 			}
 		}
 

@@ -91,9 +91,9 @@ namespace Heart
 		explicit pimpl( _Ty* pImpl ) : pImpl_( pImpl ) {}
 		virtual ~pimpl() { delete pImpl_; pImpl_ = NULL; }
 	
-		void SetImpl( _Ty* pImpl ) { pImpl_ = pImpl; }
-		_Ty* pImpl() { return pImpl_; }
-		const _Ty* pImpl() const { return pImpl_; }
+		hFORCEINLINE void SetImpl( _Ty* pImpl ) { pImpl_ = pImpl; }
+		hFORCEINLINE _Ty* pImpl() { return pImpl_; }
+		hFORCEINLINE const _Ty* pImpl() const { return pImpl_; }
 
 	private:
 

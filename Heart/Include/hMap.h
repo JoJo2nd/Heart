@@ -207,21 +207,21 @@ namespace Heart
 			return rem;
 		}
 
+        TypePtr			Find( KeyType key )  const
+        {
+            MapElementPtr r = rbTreeRoot_;
 
-		TypePtr			Find( KeyType key ) 
-		{
-			MapElementPtr r = rbTreeRoot_;
+            while ( r )
+            {
+                if ( key == r->GetKey() )
+                    return r;
 
-			while ( r )
-			{
-				if ( key == r->GetKey() )
-					return r;
+                r = r->leftRight_[r->GetKey() < key];
+            }
 
-				r = r->leftRight_[r->GetKey() < key];
-			}
+            return NULL;
+        }
 
-			return NULL;
-		}
 		void			Clear( hBool deleteAll )
 		{
 			if ( deleteAll )

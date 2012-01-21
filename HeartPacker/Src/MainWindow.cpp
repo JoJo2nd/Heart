@@ -70,6 +70,7 @@ BEGIN_EVENT_TABLE( MainWindow, wxFrame )
     EVT_MENU( UIID_OPENGAMEDATADATABASE, MainWindow::OnLoadResourceDatabase )
     EVT_MENU( UIID_BUILDALL, MainWindow::OnBuildAllData )
     EVT_MENU( UIID_CLEAN, MainWindow::OnCleanAllData )
+    EVT_MENU( UIID_SETOUTPUT, MainWindow::OnSetBuildOutput )
     EVT_MENU( UIID_SAVEWINDOWLAYOUT, MainWindow::OnSaveWindowLayout )
     EVT_MENU( UIID_LOADWINDOWLAYOUT, MainWindow::OnLoadWindowLayout )
     EVT_MENU( UIID_SETLAYOUTASDEFAULT, MainWindow::OnSetDefaultWindowLayout )
@@ -119,6 +120,7 @@ void MainWindow::InitFrame()
     buildMenu_ = new wxMenu();
     buildMenu_->Append( UIID_BUILDALL, _T( "Build All" ) );
     buildMenu_->Append( UIID_CLEAN, _T( "Clean Data" ) );
+    buildMenu_->Append( UIID_SETOUTPUT, _T( "Set Build Output Directory" ) );
     menuBar_->Append( buildMenu_, "&Build" );
 
     //Windows Menu
@@ -456,6 +458,7 @@ void MainWindow::OnBuildAllData( wxCommandEvent& evt )
             wxString msg;
             msg += mainResourceDatabase_->GetErrorMessages();
             msg += mainResourceDatabase_->GetWarningMessages();
+            msg += mainResourceDatabase_->GetBuiltResourcesMessages();
             msgDlg.ShowDetailedText( msg );
             msgDlg.ShowModal();
         }
@@ -464,6 +467,7 @@ void MainWindow::OnBuildAllData( wxCommandEvent& evt )
             wxRichMessageDialog msgDlg(this,"Build Success.","Complete.",wxOK|wxCENTER);
             wxString msg;
             msg += mainResourceDatabase_->GetWarningMessages();
+            msg += mainResourceDatabase_->GetBuiltResourcesMessages();
             msgDlg.ShowDetailedText( msg );
             msgDlg.ShowModal();
         }
@@ -496,5 +500,22 @@ void MainWindow::OnCleanAllData( wxCommandEvent& evt )
         wxBusyInfo wait("Please wait, working...");
 
         mainResourceDatabase_->CleanData();
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MainWindow::OnSetBuildOutput( wxCommandEvent& evt )
+{
+    if ( mainResourceDatabase_ )
+    {
+        wxDirDialog dlg( this, "Choose a build output directory", mainResourceDatabase_->GetOutputPath() );
+
+        if ( dlg.ShowModal() == wxID_OK )
+        {
+            mainResourceDatabase_->SetOutputPath( dlg.GetPath().c_str() );
+        }
     }
 }

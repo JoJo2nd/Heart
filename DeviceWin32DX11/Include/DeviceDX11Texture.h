@@ -30,14 +30,24 @@ namespace Heart
     class hdDX11Texture
     {
     public:
-        hdDX11Texture() {}
-        ~hdDX11Texture() {}
+        hdDX11Texture() 
+            : dx11Texture_(NULL)
+            , renderTargetView_(NULL)
+            , depthStencilView_(NULL)
+            , shaderResourceView_(NULL)
+        {}
+        ~hdDX11Texture() 
+        {}
 
     private:
 
         friend class hdDX11RenderDevice;
         friend class hdDX11RenderSubmissionCtx;
 
-        ID3D11Texture2D*    dx11Texture_;
+        ID3D11Texture2D*            dx11Texture_;
+        ID3D11RenderTargetView*     renderTargetView_;
+        ID3D11DepthStencilView*     depthStencilView_;
+        ID3D11ShaderResourceView*   shaderResourceView_;
+
     };
 }

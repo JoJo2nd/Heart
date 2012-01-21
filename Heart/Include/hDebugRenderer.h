@@ -28,12 +28,13 @@
 #ifndef DEBUGRENDERER_H__
 #define DEBUGRENDERER_H__
 
+#include "hMatrix.h"
+
 namespace Heart
 {
 	class hResourceManager;
-	class hVec3;
-	class hMatrix;
-	class hAABB;
+	struct hVec3;
+	struct hAABB;
 	struct hRect;
 	struct hColour;
 	class hRenderer;
