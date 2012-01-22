@@ -11,7 +11,6 @@
 #define JOBMANAGER_H__
 
 #include "hTypes.h"
-#include "HeartSTL.h"	
 #include "hIReferenceCounted.h"
 #include "hThread.h"
 #include "hMutex.h"
@@ -46,30 +45,6 @@ namespace Heart
 		hJob( const hJob& /*c*/ ) {}
 	};
 
-	class hSimpleJob : public hJob
-	{
-	public:
-
-		typedef huFunctor< void(*)(void*) >::type SimpleJobCall;
-
-		hSimpleJob( SimpleJobCall tocall, void* puser ) :
-			func_( tocall )
-			,puser_( puser )
-		{}
-		virtual ~hSimpleJob() {}
-
-	private:
-
-		virtual void	JobTick()
-		{
-			func_( puser_ );
-			Finished();
-		}
-
-		SimpleJobCall		func_;
-		void*				puser_;
-	};
-
 	class hJobManager
 	{
 	public:
@@ -83,6 +58,7 @@ namespace Heart
 
 	private:
 
+#ifdef HEART_REWRITE_ME
 		typedef deque< hJob* >	JobQueueType;
 		typedef list< hJob* >	JobListType;
 
@@ -96,6 +72,7 @@ namespace Heart
 
 		hBool					workingFlag_;
 		volatile hBool			finish_;
+#endif
 	};
 }
 

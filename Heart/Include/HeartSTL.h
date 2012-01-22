@@ -24,29 +24,6 @@
 
 namespace Heart
 {
-	template< typename _Ty >
-	class vector : public std::vector< _Ty, HeapAllocator< _Ty, &hGeneralHeap > >
-	{
-	public:
-		vector()
-		{
-		}
-	private:
-		//vector& operator = ( const vector< _Ty >& ) {}
-	};
-
-	template< typename _Ty >
-	class list : public std::list< _Ty, HeapAllocator< _Ty, &hGeneralHeap > >
-	{
-	public:
-		list()
-		{
-		}
-	private:
-		list( const list< _Ty >& ) {}
-		list& operator = ( const list< _Ty >& ) {}
-	};
-
 	class string : public std::basic_string< char, std::char_traits<char>, HeapAllocator< char, &hGeneralHeap > >
 	{
 	public:
@@ -59,19 +36,6 @@ namespace Heart
 	private:
 	};
 
-
-	template< typename _KeyTy, typename _ValTy >
-	class map : public std::map< _KeyTy, _ValTy, std::less< _KeyTy >, HeapAllocator< std::pair< _KeyTy, _ValTy >, &hGeneralHeap > >
-	{
-	public:
-		map()
-		{
-		}
-	private:
-		map( const map< _KeyTy, _ValTy >& ){}
-		map& operator = ( const map< _KeyTy, _ValTy >& ) {}
-	};
-
 	template< typename _Ty >
 	class deque : public std::deque< _Ty, HeapAllocator< _Ty, &hGeneralHeap > >
 	{
@@ -82,23 +46,6 @@ namespace Heart
 		deque& operator = ( const deque< _Ty >& ) {}
 	};
 
-	template< typename _Ty >
-	class pimpl
-	{
-	public:
-
-		pimpl() : pImpl_( NULL ) {}
-		explicit pimpl( _Ty* pImpl ) : pImpl_( pImpl ) {}
-		virtual ~pimpl() { delete pImpl_; pImpl_ = NULL; }
-	
-		hFORCEINLINE void SetImpl( _Ty* pImpl ) { pImpl_ = pImpl; }
-		hFORCEINLINE _Ty* pImpl() { return pImpl_; }
-		hFORCEINLINE const _Ty* pImpl() const { return pImpl_; }
-
-	private:
-
-		_Ty* pImpl_;
-	};
 }
 
 #endif // HEARTSTL_H__

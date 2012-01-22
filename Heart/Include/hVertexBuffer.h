@@ -20,7 +20,7 @@ namespace Cmd
 	class FlushVertexBufferData;
 }
 
-	class hVertexBuffer : public pimpl< hdVtxBuffer >, public hResourceClassBase
+	class hVertexBuffer : public hPtrImpl< hdVtxBuffer >, public hResourceClassBase
 	{
 	public:
 

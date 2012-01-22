@@ -30,8 +30,8 @@
 
 #include "hIFileSystem.h"
 #include "hSemaphore.h"
-#include "HeartSTL.h"
 #include "unzip.h"
+#include "HeartSTL.h"
 
 namespace Heart
 {

@@ -887,6 +887,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Include\hPtrImpl.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Include\hQueue.h"
 					>
 				</File>
@@ -914,26 +918,6 @@
 			<Filter
 				Name="Physics"
 				>
-				<File
-					RelativePath=".\Include\Arbiter.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\Body.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\Body.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Src\World.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\World.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Event"

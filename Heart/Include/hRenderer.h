@@ -73,7 +73,7 @@ namespace Heart
         };
     };
 
-	class hRenderer : public pimpl< hdRenderDevice >
+	class hRenderer : public hPtrImpl< hdRenderDevice >
 	{
 	public:
 

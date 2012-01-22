@@ -36,7 +36,7 @@ namespace Heart
     };
 
     //Temp placement
-    class hShaderProgram : public pimpl< hdShaderProgram >,
+    class hShaderProgram : public hPtrImpl< hdShaderProgram >,
                            public hResourceClassBase
     {
     public:

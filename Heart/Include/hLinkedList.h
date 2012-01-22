@@ -116,6 +116,12 @@ namespace Heart
 		}
 		void					InsertBefore( ElementTypePtr node, ElementTypePtr add )
 		{
+            if ( !node )
+            {
+                PushBack( add );
+                return;
+            }
+
 			if ( node->lprev_ )
 			{ 
 				node->lprev_->lnext_ = (TypePtr)add;

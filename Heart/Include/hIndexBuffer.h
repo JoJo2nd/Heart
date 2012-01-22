@@ -11,7 +11,7 @@
 
 #include "hTypes.h"
 #include "hResource.h"
-#include "HeartSTL.h"
+#include "hPtrImpl.h"
 #include "hRendererConstants.h"
 
 namespace Heart
@@ -22,7 +22,7 @@ namespace Cmd
 	class FlushIndexBufferData;
 }
 
-	class hIndexBuffer : public pimpl< hdIndexBuffer >, public hResourceClassBase
+	class hIndexBuffer : public hPtrImpl< hdIndexBuffer >, public hResourceClassBase
 	{
 	public:
 		hIndexBuffer( hRenderer* prenderer ) 

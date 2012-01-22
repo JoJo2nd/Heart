@@ -10,7 +10,7 @@
 #define HITEXTUREBASE_H__
 
 #include "hTypes.h"
-#include "HeartSTL.h"
+#include "hPtrImpl.h"
 #include "hIReferenceCounted.h"
 #include "hResource.h"
 
@@ -19,7 +19,7 @@ namespace Heart
 
 	class hRenderer;
 
-	class hTextureBase : public pimpl< hdTexture >, 
+	class hTextureBase : public hPtrImpl< hdTexture >, 
 						 public hResourceClassBase
 	{
 	public:

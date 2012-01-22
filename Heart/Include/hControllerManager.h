@@ -12,6 +12,7 @@
 #include "hTypes.h"
 #include "hController.h"
 #include "hKeyboard.h"
+#include "hPtrImpl.h"
 
 namespace Heart
 {
@@ -20,7 +21,7 @@ namespace Events
 	class EventManager;
 }
 
-	class hControllerManager : public pimpl< Device::InputDeviceManager >
+	class hControllerManager : public hPtrImpl< Device::InputDeviceManager >
 	{
 	public:
 

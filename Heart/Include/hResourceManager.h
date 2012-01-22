@@ -32,7 +32,6 @@
 #include "hResource.h"
 #include "hIFileSystem.h"
 #include "huFunctor.h"
-#include "HeartSTL.h"
 #include "hMutex.h"
 #include "hDeferredReturn.h"
 #include "hThread.h"

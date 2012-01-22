@@ -16,8 +16,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hJobManager::hJobManager() :
-		workingFlag_( hFalse )
+	hJobManager::hJobManager()
 	{
 
 	}
@@ -37,6 +36,7 @@ namespace Heart
 
 	void hJobManager::Initialise()
 	{
+#ifdef HEART_REWRITE_ME
 		for ( hUint32 i = 0; i < MAX_JOB_THREADS; ++i )
 		{
 			jobThreads_[ i ].Begin(
@@ -45,6 +45,7 @@ namespace Heart
 				Heart::Device::Thread::ThreadFunc::bind< hJobManager, &hJobManager::JobWorker >( this ), 
 				NULL );
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -53,6 +54,7 @@ namespace Heart
 
 	void hJobManager::Destory()
 	{
+#ifdef HEART_REWRITE_ME
 		finish_ = hTrue;
 
 		for ( hUint32 i = 0; i < MAX_JOB_THREADS; ++i )
@@ -62,6 +64,7 @@ namespace Heart
 				Threading::ThreadYield();
 			}
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -70,6 +73,7 @@ namespace Heart
 
 	hJob* hJobManager::PushJob( hJob* todo )
 	{
+#ifdef HEART_REWRITE_ME
 		if ( !finish_ )
 		{
 			jobQueueMutex_.Lock();
@@ -79,14 +83,17 @@ namespace Heart
 		}
 
 		return todo;
+#endif
+        return NULL;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-
+#ifdef HEART_REWRITE_ME
 	hUint32 hJobManager::JobWorker( void* data )
 	{
+
 		list< hJob* >			runningJobs_;
 		hBool					complete = hFalse;
 
@@ -152,5 +159,5 @@ namespace Heart
 
 		return 0;
 	}
-
+#endif
 }

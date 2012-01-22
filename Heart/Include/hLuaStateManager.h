@@ -12,7 +12,6 @@
 
 #include "hTypes.h"
 #include "hMemory.h"
-#include "HeartSTL.h"
 extern "C"
 {
 #include "lua.h"
@@ -46,29 +45,29 @@ namespace Heart
 
 	private:
 
-		struct LuaThreadState
+        struct LuaThreadState : hLinkedListElement< LuaThreadState >
 		{
-			LuaThreadState() : 
-				lua_(NULL)
-				,status_(0)
-				,yieldRet_(0)
+			LuaThreadState() 
+                : lua_(NULL)
+				, status_(0)
+				, yieldRet_(0)
 			{}
 			lua_State*			lua_;
 			hUint32				status_;				
 			hInt32				yieldRet_;
 		};
 
-		typedef list< LuaThreadState > ThreadList;
+		typedef hLinkedList< LuaThreadState > ThreadList;
 
-		hBool			RunLuaThread( ThreadList::iterator* i );
+		hBool			RunLuaThread( LuaThreadState* i );
 		lua_State*		NewLuaState( lua_State* parent );
 		static void*	LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
 		static int		LuaPanic (lua_State* L);
 		static void		LuaHook( lua_State* L, lua_Debug* LD );
 
-		static hLuaStateManager* gLuaStateManagerInstance;
-		lua_State*		mainLuaState_;
-		ThreadList		luaThreads_;
+		static hLuaStateManager*    gLuaStateManagerInstance;
+		lua_State*		            mainLuaState_;
+		ThreadList		            luaThreads_;
 	};
 }
 

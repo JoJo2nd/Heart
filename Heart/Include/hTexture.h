@@ -25,7 +25,7 @@ namespace Cmd
 	class FlushTextureLevel;
 }
 
-    class hTexture : public pimpl< hdTexture >, 
+    class hTexture : public hPtrImpl< hdTexture >, 
                      public hResourceClassBase
 	{
 	public:

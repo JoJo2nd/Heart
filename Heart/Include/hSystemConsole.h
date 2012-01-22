@@ -13,6 +13,7 @@
 #include "hTypes.h"
 #include "hFont.h"
 #include "hRendererCamera.h"
+#include "HeartSTL.h"
 
 namespace Heart
 {

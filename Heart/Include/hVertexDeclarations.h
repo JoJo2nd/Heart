@@ -10,11 +10,11 @@
 #define HRVERTEXDECLARATIONS_H__
 
 #include "hRendererConstants.h"
-#include "HeartSTL.h"
+#include "hPtrImpl.h"
 
 namespace Heart
 {
-	class hVertexDeclaration : public pimpl< hdVtxDecl >
+	class hVertexDeclaration : public hPtrImpl< hdVtxDecl >
 	{
 	public:
 		

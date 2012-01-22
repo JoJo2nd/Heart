@@ -28,7 +28,6 @@
 #define HRESOURCEPACKAGE_H__
 
 #include "hTypes.h"
-#include "HeartSTL.h"
 #include "hArray.h"
 
 namespace Heart

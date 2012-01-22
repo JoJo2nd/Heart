@@ -61,8 +61,8 @@ namespace Private
 
 	private:
 
-		typedef vector< Device::InputDeviceTypes >	ITypesVector;
-		typedef vector< Private::Button >							ButtonsVector;
+		typedef hVector< Device::InputDeviceTypes >	ITypesVector;
+		typedef hVector< Private::Button >          ButtonsVector;
 
 		ITypesVector			devices_;
 		ButtonsVector			buttonMappings_;	
@@ -179,16 +179,11 @@ namespace Private
 		}
 #endif // 0
 
-		typedef list< Device::IInput* > DeviceList;
-
 		hUint32						padPort_;
 		hUint32						nButtonMappings_;//to remove
 		Private::Button				buttonMappings_[ MAX_BUTTON_MAPPINGS ];//to remove
 
 		ControllerConfig			padConfig_;
-
-		hUint32						nDevices_;//to remove
-		DeviceList					deviceList_;//to remove
 		
 	};
 }

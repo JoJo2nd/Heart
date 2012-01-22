@@ -78,16 +78,16 @@ namespace Heart
 
 	void hLuaStateManager::Update()
 	{
-		for ( ThreadList::iterator i = luaThreads_.begin(), e = luaThreads_.end(); i != e; )
+		for ( LuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
 		{
-			if ( RunLuaThread( &i ) )
+            LuaThreadState* next = i->GetNext();
+			if ( RunLuaThread( i ) )
 			{
-				i = luaThreads_.erase( i );
+				LuaThreadState* removed = luaThreads_.Remove( i );
+                hDELETE removed;
 			}
-			else 
-			{
-				++i;
-			}
+
+            i = next;
 		}
 	}
 
@@ -109,7 +109,9 @@ namespace Heart
 		if ( newthread.status_ == LUA_YIELD )
 		{
 			newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-			luaThreads_.push_back( newthread );
+            LuaThreadState* listState = hNEW( hGeneralHeap ) LuaThreadState();
+            *listState = newthread;
+			luaThreads_.PushBack( listState );
 		}
 		else if ( newthread.status_ > LUA_YIELD )
 		{
@@ -163,9 +165,9 @@ namespace Heart
 	// 23:25:22 ////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hLuaStateManager::RunLuaThread( ThreadList::iterator* i )
+	hBool hLuaStateManager::RunLuaThread( LuaThreadState* luaTState )
 	{
-		LuaThreadState* ts = &(*(*i));
+		LuaThreadState* ts = luaTState;
 		if ( ts->status_ == LUA_YIELD )
 		{
 			int status = HLUA_WAKEUP;
