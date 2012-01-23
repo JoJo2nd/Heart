@@ -743,6 +743,18 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Include\hEntityDataDefinition.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Src\hEntityFactory.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hEntityFactory.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Src\hStateBase.cpp"
 					>
 				</File>
@@ -1096,6 +1108,18 @@
 				</File>
 				<File
 					RelativePath=".\Include\hLuaStateManager.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Components"
+				>
+				<File
+					RelativePath=".\Src\hLuaScriptComponent.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hLuaScriptComponent.h"
 					>
 				</File>
 			</Filter>

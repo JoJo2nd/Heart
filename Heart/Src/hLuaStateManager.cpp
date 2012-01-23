@@ -14,6 +14,7 @@
 #include "hIFile.h"
 #include "hThread.h"
 #include "hLuaHeartLib.h"
+#include "hLuaScriptComponent.h"
 
 static Heart::hIFileSystem* gLuaFileSystems[MAX_LUA_FILESYSTEMS] = {NULL};
 
@@ -78,12 +79,12 @@ namespace Heart
 
 	void hLuaStateManager::Update()
 	{
-		for ( LuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
+		for ( hLuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
 		{
-            LuaThreadState* next = i->GetNext();
+            hLuaThreadState* next = i->GetNext();
 			if ( RunLuaThread( i ) )
 			{
-				LuaThreadState* removed = luaThreads_.Remove( i );
+				hLuaThreadState* removed = luaThreads_.Remove( i );
                 hDELETE removed;
 			}
 
@@ -97,7 +98,7 @@ namespace Heart
 
 	void hLuaStateManager::ExecuteBuffer( const hChar* buff, hUint32 size )
 	{
-		LuaThreadState newthread;
+		hLuaThreadState newthread;
 		newthread.lua_ = NewLuaState( mainLuaState_ );
 		newthread.status_ = HLUA_NEWTHREAD;
 		newthread.yieldRet_ = 0;
@@ -109,7 +110,7 @@ namespace Heart
 		if ( newthread.status_ == LUA_YIELD )
 		{
 			newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-            LuaThreadState* listState = hNEW( hGeneralHeap ) LuaThreadState();
+            hLuaThreadState* listState = hNEW( hGeneralHeap ) hLuaThreadState();
             *listState = newthread;
 			luaThreads_.PushBack( listState );
 		}
@@ -165,9 +166,9 @@ namespace Heart
 	// 23:25:22 ////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hLuaStateManager::RunLuaThread( LuaThreadState* luaTState )
+	hBool hLuaStateManager::RunLuaThread( hLuaThreadState* luaTState )
 	{
-		LuaThreadState* ts = luaTState;
+		hLuaThreadState* ts = luaTState;
 		if ( ts->status_ == LUA_YIELD )
 		{
 			int status = HLUA_WAKEUP;
@@ -305,6 +306,30 @@ namespace Heart
 	{
 		luaL_register( mainLuaState_, "Heart", libfunc );
 	}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hComponent* hLuaStateManager::LuaScriptComponentCreate( hEntity* owner )
+    {
+        hLuaThreadState* newthread = hNEW( hGeneralHeap ) hLuaThreadState();
+        newthread->lua_ = NewLuaState( mainLuaState_ );
+        newthread->status_ = HLUA_NEWTHREAD;
+        newthread->yieldRet_ = 0;
+
+        return hNEW( hVMHeap ) hLuaScriptComponent( owner, newthread );;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLuaStateManager::LuaScriptComponentDestroy( hComponent* luaComp )
+    {
+        hDELETE luaComp;
+    }
+
 }
 
 extern "C"

@@ -212,8 +212,8 @@ void FontBuilder::CheckParameters()
 void FontBuilder::GenerateFontBitmap()
 {
 	// added 1 pixel buffers to each side of characters to cope with filtering
-	maxX_ += 2;
-	maxY_ += 2;
+	maxX_ += 1;
+	maxY_ += 1;
 	//  calc needed params for texture gen
 	hUint32 charsperline = PNG_WIDTH / maxX_;
 	hUint32 lines = ( fontCharacterData_.size() / charsperline ) + 1;

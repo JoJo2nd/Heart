@@ -39,6 +39,7 @@ namespace Heart
 
     enum hComponentPropertyType
     {
+        eComponentPropertyType_Bool,
         eComponentPropertyType_Int,
         eComponentPropertyType_UInt,
         eComponentPropertyType_Int16,
@@ -79,11 +80,11 @@ namespace Heart
 
         }
 
-        hEntity*                    GetEntity() const { return entity_; }
-        virtual hUint32             GetPropertyCount() const = 0;
-        virtual hComponentProperty* GetPropertyArray() const = 0;
-        virtual void                PostEntityCreate() = 0;
-        virtual void                PreEntityDestroy() = 0;
+        hEntity*                            GetEntity() const { return entity_; }
+        virtual hUint32                     GetPropertyCount() const = 0;
+        virtual const hComponentProperty*   GetPropertyArray() const = 0;
+        virtual void                        PostEntityCreate() {};
+        virtual void                        PreEntityDestroy() {};
 
     private:
 
@@ -93,24 +94,32 @@ namespace Heart
 #define HEART_COMPONENT_TYPE() \
     public: \
         hUint32                             GetComponentID() const { return componentID_; }\
+        hUint32*                            GetComponentIDAddress() const { return &componentID_; }\
+        hUint32                             GetComponentHash() const { return componentHash_; }\
+        hUint32                             GetPropertyCount() const;\
+        const hComponentProperty*           GetPropertyArray() const { return propertyArray_; }\
     private: \
         static const hChar                  componentName_[];\
         static const hChar                  componentDoc_[];\
-        static const hUint32                componentID_;\
+        static const hUint32                componentHash_;\
+        static hUint32                      componentID_;\
         static const hComponentProperty     propertyArray_[];\
 
 #define HEART_DEFINE_COMPONENT_TYPE( klass, name, doc )\
-    const klass::componentID_ = hCRC32::StringCRC( componentName_ );\
-    const klass::componentName_[] = { name };\
-    const klass::componentDoc_[] = { doc };\
+    const hUint32   klass::componentHash_   = hCRC32::StringCRC( name );\
+    hUint32         klass::componentID_     = ~0U;\
+    const hChar     klass::componentName_[] = { name };\
+    const hChar     klass::componentDoc_[]  = { doc };\
 
 #define HEART_COMPONET_PROPERTIES_BEGIN( klass )\
-    const klass::hComponentProperty propertyArray_[] = {
+    const hComponentProperty klass::propertyArray_[] = {
 
-#define HEART_COMPONET_PROPERTIES_END() };\
+#define HEART_COMPONET_PROPERTIES_END( klass ) \
+    };\
+    hUint32         klass::GetPropertyCount() const { return hStaticArraySize(propertyArray_); }
 
 #define HEART_COMPONENT_PROPERTY( klass, name, var, type, doc )\
-    { name, doc, eComponentPropertyType_##type, hOffsetOf( klass, var ) }
+    { name, doc, eComponentPropertyType_##type, hOffsetOf( klass, var ) },
 }
 
 #endif // HCOMPONENT_H__

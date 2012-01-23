@@ -22,9 +22,24 @@ extern "C"
 namespace Heart
 {
 	class hIFileSystem;
+    class hEntity;
+    class hComponent;
+    class hLuaScriptComponent;
 
 	typedef huFunctor< hBool (*)( lua_State* ) >::type VMYieldCallback;
 	typedef huFunctor< void (*)( lua_State* ) >::type VMResumeCallback;
+
+    struct hLuaThreadState : hLinkedListElement< hLuaThreadState >
+    {
+        hLuaThreadState() 
+            : lua_(NULL)
+            , status_(0)
+            , yieldRet_(0)
+        {}
+        lua_State*			lua_;
+        hUint32				status_;				
+        hInt32				yieldRet_;
+    };
 
 	class hLuaStateManager
 	{
@@ -45,25 +60,15 @@ namespace Heart
 
 	private:
 
-        struct LuaThreadState : hLinkedListElement< LuaThreadState >
-		{
-			LuaThreadState() 
-                : lua_(NULL)
-				, status_(0)
-				, yieldRet_(0)
-			{}
-			lua_State*			lua_;
-			hUint32				status_;				
-			hInt32				yieldRet_;
-		};
+		typedef hLinkedList< hLuaThreadState > ThreadList;
 
-		typedef hLinkedList< LuaThreadState > ThreadList;
-
-		hBool			RunLuaThread( LuaThreadState* i );
-		lua_State*		NewLuaState( lua_State* parent );
-		static void*	LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
-		static int		LuaPanic (lua_State* L);
-		static void		LuaHook( lua_State* L, lua_Debug* LD );
+		hBool			            RunLuaThread( hLuaThreadState* i );
+		lua_State*		            NewLuaState( lua_State* parent );
+		static void*	            LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
+		static int		            LuaPanic (lua_State* L);
+		static void		            LuaHook( lua_State* L, lua_Debug* LD );
+        hComponent*                 LuaScriptComponentCreate( hEntity* owner );
+        void                        LuaScriptComponentDestroy( hComponent* luaComp );
 
 		static hLuaStateManager*    gLuaStateManagerInstance;
 		lua_State*		            mainLuaState_;
