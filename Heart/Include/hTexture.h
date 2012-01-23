@@ -11,8 +11,8 @@
 #define hiTexture_h__
 
 #include "hTypes.h"
-#include "hTextureBase.h"
 #include "hRendererConstants.h"
+#include "hPtrImpl.h"
 
 class HeartEngine;
 

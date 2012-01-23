@@ -27,7 +27,6 @@
 
 #include "Common.h"
 #include "hDeferredRenderVisitor.h"
-#include "hRenderTargetTexture.h"
 #include "hSceneGraph.h"
 #include "hSceneNodeMesh.h"
 #include "hSceneNodeLocator.h"

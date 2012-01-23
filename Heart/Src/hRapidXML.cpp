@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hMutex.h	
+	filename: 	hRapidXML.cpp	
 	
-	Copyright (c) 8:6:2008 James Moran
+	Copyright (c) 22:1:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -25,65 +25,30 @@
 
 *********************************************************************/
 
-#ifndef hcMutex_h__
-#define hcMutex_h__
+#include "Common.h"
+#include "hRapidXML.h"
 
-#include "hTypes.h"
-#include "DeviceMutex.h"
-
-namespace Heart
+namespace rapidxml
 {
-	class hMutex : public Device::Mutex
-	{
-	public:
-
-		hMutex()
-		{
-			Device::Mutex::Create();
-		}
-		~hMutex()
-		{
-			Device::Mutex::Destroy();
-		}
-
-		void Lock()
-		{
-			Device::Mutex::Lock();
-		}
-		void TryLock()
-		{
-			Device::Mutex::TryLock();
-		}
-		void Unlock()
-		{
-			Device::Mutex::Unlock();
-		}
-	private:
-		hMutex( const hMutex& c )
-		{
-			//non copyable 
-		}
-	};
-
-    class hMutexAutoScope
+    //! When exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, 
+    //! this function is called to notify user about the error.
+    //! It must be defined by the user.
+    //! <br><br>
+    //! This function cannot return. If it does, the results are undefined.
+    //! <br><br>
+    //! A very simple definition might look like that:
+    //! <pre>
+    //! void %rapidxml::%parse_error_handler(const char *what, void *where)
+    //! {
+    //!     std::cout << "Parse error: " << what << "\n";
+    //!     std::abort();
+    //! }
+    //! </pre>
+    //! \param what Human readable description of the error.
+    //! \param where Pointer to character data where error was detected.
+    void parse_error_handler(const char *what, void *where)
     {
-    public:
-        hMutexAutoScope( hMutex* mtx )
-            : mtx_(mtx)
-        {
-            mtx_->Lock();
-        }
-        ~hMutexAutoScope()
-        {
-            mtx_->Unlock();
-        }
-    private:
-        
-        hMutexAutoScope( const hMutexAutoScope& rhs );
-
-        hMutex*     mtx_;
-    };
-
+        hcPrintf( "XML Parse Error: %s", what );
+        throw std::exception( what );
+    }
 }
-
-#endif // hcMutex_h__

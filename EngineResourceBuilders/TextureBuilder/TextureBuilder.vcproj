@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;../../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include"
+				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;../../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include;&quot;..\..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TEXTUREBUILDER_EXPORTS;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11;HEART_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;../../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include"
+				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;../../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include;&quot;..\..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TEXTUREBUILDER_EXPORTS;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"

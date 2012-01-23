@@ -11,16 +11,8 @@
 #define HEARTSTL_H__
 
 #include "hMemory.h"
-//JM TODO: remove
-#include <vector>
-#include <list>
-#include <map>
 #include <string>
 #include <deque>
-//JM: Replacements :D
-#include "hArray.h"
-#include "hLinkedList.h"
-#include "hMap.h"
 
 namespace Heart
 {

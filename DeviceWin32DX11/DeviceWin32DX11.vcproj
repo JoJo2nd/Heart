@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../Heart/Include;../lua/src;../zlib/Include;../minizip/Include;../tinyXML/Include;../crypto/Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../Heart/Include;../lua/src;../zlib/Include;../minizip/Include;../tinyXML/Include;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../Heart/Include;../lua/src;../zlib/Include;../minizip/Include;../tinyXML/Include;../crypto/Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../Heart/Include;../lua/src;../zlib/Include;../minizip/Include;../tinyXML/Include;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"

@@ -19,7 +19,6 @@
 #include "hVertexBuffer.h"
 #include "hMesh.h"
 #include "hSystem.h"
-#include "hRenderTargetTexture.h"
 #include "hSerialiserFileStream.h"
 #include "hRenderUtility.h"
 
@@ -131,7 +130,7 @@ namespace Heart
 		hUint32 ret = 0;
 		while( !texturesToRelease_.IsEmpty() )
 		{
-			hTextureBase* ptex = texturesToRelease_.peek();
+			hTexture* ptex = texturesToRelease_.peek();
 			texturesToRelease_.pop();
 			ptex->Release();
 			++ret;

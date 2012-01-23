@@ -125,8 +125,7 @@ namespace KernelEvents
 		const SystemHandle*		GetSystemHandle() { return &systemHandle_; };
 		void					SetWindowTitle( const hChar* titleStr );
 		void					Update();
-
-		void PumpMessages();
+		void                    PumpMessages();
 		void					Destroy();
 		
 	private:

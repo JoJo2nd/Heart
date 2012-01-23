@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hMutex.h	
+	filename: 	hString.h	
 	
-	Copyright (c) 8:6:2008 James Moran
+	Copyright (c) 22:1:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,66 +24,27 @@
 	distribution.
 
 *********************************************************************/
+#ifndef HSTRING_H__
+#define HSTRING_H__
 
-#ifndef hcMutex_h__
-#define hcMutex_h__
-
-#include "hTypes.h"
-#include "DeviceMutex.h"
+#include <string>
 
 namespace Heart
 {
-	class hMutex : public Device::Mutex
-	{
-	public:
-
-		hMutex()
-		{
-			Device::Mutex::Create();
-		}
-		~hMutex()
-		{
-			Device::Mutex::Destroy();
-		}
-
-		void Lock()
-		{
-			Device::Mutex::Lock();
-		}
-		void TryLock()
-		{
-			Device::Mutex::TryLock();
-		}
-		void Unlock()
-		{
-			Device::Mutex::Unlock();
-		}
-	private:
-		hMutex( const hMutex& c )
-		{
-			//non copyable 
-		}
-	};
-
-    class hMutexAutoScope
+    /*
+     * This will need to be replaced at some point, possibly after I write a free list or pool allocator
+     */
+    class hString : public std::basic_string< char, std::char_traits<char>, HeapAllocator< char, &hGeneralHeap > >
     {
     public:
-        hMutexAutoScope( hMutex* mtx )
-            : mtx_(mtx)
+        hString()
         {
-            mtx_->Lock();
         }
-        ~hMutexAutoScope()
-        {
-            mtx_->Unlock();
-        }
+        hString( const hChar* c ) 
+            : std::basic_string< char, std::char_traits<char>, HeapAllocator< char, &hGeneralHeap > >( c )
+        {}
     private:
-        
-        hMutexAutoScope( const hMutexAutoScope& rhs );
-
-        hMutex*     mtx_;
     };
-
 }
 
-#endif // hcMutex_h__
+#endif // HSTRING_H__

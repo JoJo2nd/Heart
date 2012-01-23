@@ -218,7 +218,7 @@ namespace Heart
 		hThreadEvent											renderThreadKill_;
 
 		//Simpler Render Buffer
-		hLocklessFixedComPipe< hTextureBase*, MAX_RESOURCES >	texturesToRelease_;
+		hLocklessFixedComPipe< hTexture*, MAX_RESOURCES >	    texturesToRelease_;
 		hLocklessFixedComPipe< hVertexBuffer*, MAX_RESOURCES >	vertexBuffersToRelease_;
 		hLocklessFixedComPipe< hIndexBuffer*, MAX_RESOURCES >	indexBuffersToRelease_;
 		hLocklessFixedComPipe< hMesh*, MAX_RESOURCES >			meshesToRelease_;

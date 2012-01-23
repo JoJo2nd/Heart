@@ -13,7 +13,6 @@
 #include "hSceneNodeCamera.h"
 #include "hSceneNodeLocator.h"
 #include "hSceneNodeMesh.h"
-#include "hRenderTargetTexture.h"
 #include "hResourceManager.h"
 
 namespace Heart
@@ -97,7 +96,6 @@ namespace Heart
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
-#endif // HEART_OLD_RENDER_SUBMISSION
 
         hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 	 	hMatrix lv;
@@ -127,7 +125,6 @@ namespace Heart
  	 	//hMatrixFunc::mult( &tmp, &lproj, &shadowMatrix_ );
  	 	shadowMatrix_ = iv * lv * lproj;
  	
-#ifdef HEART_OLD_RENDER_SUBMISSION
         renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
  	 	renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
@@ -294,7 +291,6 @@ namespace Heart
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
-#endif // HEART_OLD_RENDER_SUBMISSION
 
 		hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 		hMatrix lv;
@@ -398,7 +394,6 @@ namespace Heart
 		tmp = hMatrixFunc::mult( iv, lv );
 		shadowMatrix_ = hMatrixFunc::mult( tmp, lproj );
 
-#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 		renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );

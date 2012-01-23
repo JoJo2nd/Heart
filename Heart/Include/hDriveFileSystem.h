@@ -50,6 +50,7 @@ namespace Heart
 		* @return   hIFile*
 		*/
 		hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
+        hIFile* OpenFileRoot( const hChar* filename, FileMode mode ) const;
 		
 		/**
 		* CloseFile 

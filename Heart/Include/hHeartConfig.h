@@ -58,7 +58,8 @@
     #else
         #define hNEW( heap ) new ( heap )
     #endif
-    #define hDELETE   delete 
+    #define hDELETE         delete 
+    #define hDELETE_ARRAY   delete[] 
 #else
 	#define TIXML_OVERRIDENEW
 #endif 
@@ -88,5 +89,7 @@
 #ifndef HEART_USE_REFLECTION
     #define HEART_USE_REFLECTION
 #endif
+
+#define RAPIDXML_NO_EXCEPTIONS
 
 #endif // _HHEARTCONFIG_H__

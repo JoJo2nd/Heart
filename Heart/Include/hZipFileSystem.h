@@ -68,6 +68,7 @@ namespace Device
 		* @return   hIFile*
 		*/
 		virtual hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
+        virtual hIFile* OpenFileRoot( const hChar* /*filename*/, FileMode /*mode*/ ) const { return NULL; }
 		
 		/**
 		* CloseFile 

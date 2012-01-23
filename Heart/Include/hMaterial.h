@@ -12,7 +12,7 @@
 #include "hArray.h"
 #include "hRendererConstants.h"
 #include "hResource.h"
-#include "hTextureBase.h"
+#include "hPtrImpl.h"
 
 namespace Heart
 {

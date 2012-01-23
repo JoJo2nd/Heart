@@ -61,6 +61,7 @@ namespace Heart
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )
 #define hAlign( x, align ) ( x + align - (x % align) )
 #define hAlloca( x ) alloca( x )
+#define hOffsetOf( s, m ) (&(((s*)0)->m))
 #define MAX_LUA_FILESYSTEMS  (6)
 #define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 

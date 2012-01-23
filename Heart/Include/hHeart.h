@@ -9,6 +9,8 @@
 #include "hMemory.h"
 #include "huFunctor.h"
 #include "hConfigOptions.h"
+#include "hEntity.h"
+#include "hComponent.h"
 
 namespace Heart
 {

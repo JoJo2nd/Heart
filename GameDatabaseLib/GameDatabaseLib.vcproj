@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include"
+				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -121,7 +121,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include"
+				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"

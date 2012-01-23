@@ -44,7 +44,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -115,7 +115,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -188,7 +188,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -261,7 +261,7 @@
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -495,23 +495,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Src\hRenderTargetTexture.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hRenderTargetTexture.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Src\hTexture.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\Include\hTexture.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hTextureBase.h"
 					>
 				</File>
 			</Filter>
@@ -651,10 +639,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Include\hMemoryUtil.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Include\hMutex.h"
 					>
 				</File>
@@ -700,10 +684,6 @@
 				</File>
 				<File
 					RelativePath=".\Include\hSerialiserFileStream.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Include\hStringUtil.h"
 					>
 				</File>
 				<File
@@ -754,6 +734,14 @@
 			<Filter
 				Name="Logic"
 				>
+				<File
+					RelativePath=".\Include\hComponent.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hEntity.h"
+					>
+				</File>
 				<File
 					RelativePath=".\Src\hStateBase.cpp"
 					>
@@ -887,6 +875,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Include\hMemoryUtil.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Include\hPtrImpl.h"
 					>
 				</File>
@@ -895,7 +887,23 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Src\hRapidXML.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hRapidXML.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Include\hStack.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hString.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hStringUtil.h"
 					>
 				</File>
 				<File
@@ -938,10 +946,6 @@
 					RelativePath=".\Include\hUTF8.h"
 					>
 				</File>
-			</Filter>
-			<Filter
-				Name="Resources"
-				>
 			</Filter>
 			<Filter
 				Name="Input"
