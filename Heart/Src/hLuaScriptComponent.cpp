@@ -36,6 +36,25 @@ namespace Heart
     HEART_COMPONET_PROPERTIES_BEGIN( hLuaScriptComponent )
         HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Auto Run",      autoLoadScript_,    Bool,           "Automatically run script when object is created." )
         HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Asset",  resourceCRC_,       ResourceAsset,  "Script asset to use." )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Auto Run",      scriptName_,        String,         "Name of script in debugger." )
+        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Name",   scriptName_,        String,         "Name of script in debugger." )
     HEART_COMPONET_PROPERTIES_END( hLuaScriptComponent );
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hComponent* hLuaScriptComponent::hLuaComponentCreate( hEntity* owner )
+    {
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLuaScriptComponent::hLuaComponentDestroy( hComponent* comp )
+    {
+
+    }
+
 }

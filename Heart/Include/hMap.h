@@ -337,6 +337,7 @@ namespace Heart
 			}
 
 			hUint32 direct = root->key_ < node->key_;
+            hcAssertMsg( root->key_ != node->key_, "This map does not support duplicate entries" );
 			node->parent_ = root;
 			root->leftRight_[direct] = TreeInsert( node, root->leftRight_[direct] );
 

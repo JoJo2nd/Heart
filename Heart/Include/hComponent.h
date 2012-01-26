@@ -81,10 +81,6 @@ namespace Heart
         }
 
         hEntity*                            GetEntity() const { return entity_; }
-        virtual hUint32                     GetPropertyCount() const = 0;
-        virtual const hComponentProperty*   GetPropertyArray() const = 0;
-        virtual void                        PostEntityCreate() {};
-        virtual void                        PreEntityDestroy() {};
 
     private:
 
@@ -93,11 +89,12 @@ namespace Heart
 
 #define HEART_COMPONENT_TYPE() \
     public: \
-        hUint32                             GetComponentID() const { return componentID_; }\
-        hUint32*                            GetComponentIDAddress() const { return &componentID_; }\
-        hUint32                             GetComponentHash() const { return componentHash_; }\
-        hUint32                             GetPropertyCount() const;\
-        const hComponentProperty*           GetPropertyArray() const { return propertyArray_; }\
+        static const hChar*                 GetComponentName() { return componentName_; }\
+        static hUint32                      GetComponentID() { return componentID_; }\
+        static hUint32*                     GetComponentIDAddress() { return &componentID_; }\
+        static hUint32                      GetComponentHash() { return componentHash_; }\
+        static hUint32                      GetPropertyCount();\
+        static const hComponentProperty*    GetPropertyArray() { return propertyArray_; }\
     private: \
         static const hChar                  componentName_[];\
         static const hChar                  componentDoc_[];\
@@ -116,7 +113,7 @@ namespace Heart
 
 #define HEART_COMPONET_PROPERTIES_END( klass ) \
     };\
-    hUint32         klass::GetPropertyCount() const { return hStaticArraySize(propertyArray_); }
+    hUint32         klass::GetPropertyCount() { return hStaticArraySize(propertyArray_); }
 
 #define HEART_COMPONENT_PROPERTY( klass, name, var, type, doc )\
     { name, doc, eComponentPropertyType_##type, hOffsetOf( klass, var ) },

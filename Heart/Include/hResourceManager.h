@@ -130,7 +130,7 @@ namespace Heart
 		void							GetResources( const hChar** resourceKeys, hResourceClassBase** outPtrs, hUint32 count );
         hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
         void                            LockResourceDatabase() { resourceDatabaseMutex_.Lock(); resourceDatabaseLocked_ = hTrue; }
-        hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( crc ); }
+        hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( GetResourceKeyRemapping( crc ) ); }
         void                            UnlockResourceDatabase() { resourceDatabaseLocked_ = hFalse; resourceDatabaseMutex_.Unlock(); }
 
 		/**
@@ -177,6 +177,10 @@ namespace Heart
 			{
 				return strcmp( ext, b.ext ) == 0;
 			}
+            hBool						operator != ( const ResourceType& b ) const 
+            {
+                return strcmp( ext, b.ext ) != 0;
+            }
 			hBool						operator < ( const ResourceType& b ) const
 			{
 				return strcmp( ext, b.ext ) < 0;

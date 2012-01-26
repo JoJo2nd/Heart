@@ -31,16 +31,18 @@
 #include "hComponent.h"
 #include "hEntity.h"
 #include "hEntityDataDefinition.h"
+#include "hString.h"
 
 namespace Heart
 {
+    class hIFileSystem;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    typedef huFunctor< hComponent*(*)( hEntity* ) >::type	        ComponentCreateCallback;
-    typedef huFunctor< void (*)(hComponent*) >::type	ComponentDestroyCallback;
+    typedef huFunctor< hComponent*(*)( hEntity* ) >::type	ComponentCreateCallback;
+    typedef huFunctor< void (*)(hComponent*) >::type	    ComponentDestroyCallback;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -50,10 +52,24 @@ namespace Heart
     {
     public:
 
-        hEntityFactory();
-        ~hEntityFactory();
+        hEntityFactory()
+            : fileSystem_(NULL)
+        {
 
-        void RegisterComponent( const hChar* componentName, hUint32** outComponentID, ComponentCreateCallback createFunc, ComponentDestroyCallback destroyFunc );
+        }
+        ~hEntityFactory()
+        {
+
+        }
+
+        void Initialise( hIFileSystem* fileSystem );
+        void RegisterComponent( 
+            const hChar* componentName, 
+            hUint32* outComponentID, 
+            const hComponentProperty* props, 
+            hUint32 propCount, 
+            ComponentCreateCallback createFunc, 
+            ComponentDestroyCallback destroyFunc );
         void DumpComponentDefintions();
 
     private:
@@ -63,8 +79,24 @@ namespace Heart
         hEntityFactory( const hEntityFactory& rhs );
         hEntityFactory& operator = ( const hEntityFactory& rhs );
 
-        
+        struct hComponentFactory : public hMapElement< hString, hComponentFactory >
+        {
+            hUint32                   componentID_;
+            const hChar*              componentName_;
+            hUint32                   componentPropCount_;
+            const hComponentProperty* componentProperties_;
+            ComponentCreateCallback   createFunc_;
+            ComponentDestroyCallback  destroyFunc_;
+        };
+
+        typedef hMap< hString, hComponentFactory > ComponentFactoryMapType;
+
+        hIFileSystem*               fileSystem_;
+        ComponentFactoryMapType     factoryMap_;
     };
+
+#define HEART_REGISTER_COMPONENT_FACTORY( ef, c, createFunc, destroyFunc ) \
+    ef->RegisterComponent( c::GetComponentName(), c::GetComponentIDAddress(), c::GetPropertyArray(), c::GetPropertyCount(), createFunc, destroyFunc );
 }
 
 #endif // HENTITYFACTORY_H__

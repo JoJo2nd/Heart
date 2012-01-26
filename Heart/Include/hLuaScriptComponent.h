@@ -46,6 +46,9 @@ namespace Heart
 
         }
 
+        static hComponent* hLuaComponentCreate( hEntity* owner );
+        static void        hLuaComponentDestroy( hComponent* comp );
+
     private:
 
         hLuaThreadState*    luaThread_;
@@ -54,6 +57,7 @@ namespace Heart
         hUint32             resourceCRC_;
         const hChar*        scriptName_;
     };
+
 }
 
 #endif // HLUASCRIPTCOMPONENT_H__

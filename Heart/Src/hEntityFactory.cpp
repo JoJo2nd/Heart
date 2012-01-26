@@ -26,8 +26,55 @@
 *********************************************************************/
 
 #include "Common.h"
+#include "hEntityFactory.h"
 
 namespace Heart
 {
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hEntityFactory::Initialise( hIFileSystem* fileSystem )
+    {
+        fileSystem_ = fileSystem;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hEntityFactory::RegisterComponent( 
+        const hChar* componentName, 
+        hUint32* outComponentID, 
+        const hComponentProperty* props, 
+        hUint32 propCount, 
+        ComponentCreateCallback createFunc, 
+        ComponentDestroyCallback destroyFunc )
+    {
+        hComponentFactory* fact = hNEW( hGeneralHeap ) hComponentFactory();
+        //TODO:
+        // fact->componentID_ = GetNewComponentID();
+        // *outComponentID = fact->componentID_;
+        fact->componentName_        = componentName;
+        fact->componentPropCount_   = propCount;
+        fact->componentProperties_  = props;
+        fact->createFunc_           = createFunc;
+        fact->destroyFunc_          = destroyFunc;
+
+        factoryMap_.Insert( componentName, fact );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hEntityFactory::DumpComponentDefintions()
+    {
+        for ( hComponentFactory* i = factoryMap_.GetHead(); i; i = i->GetNext() )
+        {
+            
+        }
+    }
 
 }

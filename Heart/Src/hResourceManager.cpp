@@ -352,6 +352,17 @@ namespace Heart
         hChar* depPath;
         hcAssert( path );
 
+        hUint32 crc = BuildResourceCRC( path );
+
+        //Check the remappings
+        ResourceRemap* remap = remappings_.Find( crc );
+
+        if ( remap )
+        {
+            path = remappingNames_+remap->mapToPath;
+            crc = BuildResourceCRC( path );
+        }
+
         // must load all the dependency folder first
         hUint32 extLen = strlen( path );
         hcAssertMsg( path[ extLen-4 ] == '.', "resource %s doesn't seem to have a valid extention", path );
@@ -377,17 +388,6 @@ namespace Heart
 
         ResourceHandler* handler = resHandlers_.Find( resType );
         hcAssertMsg( handler, "Can't find resource handler data for extention %s", ext );
-
-        hUint32 crc = BuildResourceCRC( path );
-
-        //Check the remappings
-        ResourceRemap* remap = remappings_.Find( crc );
-
-        if ( remap )
-        {
-            path = remappingNames_+remap->mapToPath;
-            crc = BuildResourceCRC( path );
-        }
 
         resourceDatabaseMutex_.Lock();
         hResourceClassBase* resource = loadedResources_.Find( crc );
@@ -506,6 +506,8 @@ namespace Heart
                 }
             }
         }
+
+        filesystem_->CloseFile( rrt );
 
     }
 
