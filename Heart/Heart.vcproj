@@ -735,6 +735,10 @@
 				Name="Logic"
 				>
 				<File
+					RelativePath=".\Src\hComponent.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\Include\hComponent.h"
 					>
 				</File>

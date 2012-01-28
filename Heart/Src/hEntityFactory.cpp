@@ -27,6 +27,9 @@
 
 #include "Common.h"
 #include "hEntityFactory.h"
+#include "hRapidXML.h"
+#include "hIFileSystem.h"
+#include "hIFile.h"
 
 namespace Heart
 {
@@ -71,10 +74,40 @@ namespace Heart
 
     void hEntityFactory::DumpComponentDefintions()
     {
+        hXMLDocument comxml;
+
+        rapidxml::xml_node<>* root = comxml.allocate_node( rapidxml::node_element, "components" );
+        comxml.append_node( root );
+
         for ( hComponentFactory* i = factoryMap_.GetHead(); i; i = i->GetNext() )
         {
-            
+            rapidxml::xml_node<>* comp = comxml.allocate_node( rapidxml::node_element, "component" );
+            comp->append_attribute( comxml.allocate_attribute( "name", i->componentName_ ) );
+            for ( hUint32 prop = 0; prop < i->componentPropCount_; ++prop )
+            {
+                rapidxml::xml_node<>* propsnode = comxml.allocate_node( rapidxml::node_element, "properties" );
+                propsnode->append_node( comxml.allocate_node( rapidxml::node_element, "name", i->componentProperties_[prop].name_ ) );
+                propsnode->append_node( comxml.allocate_node( rapidxml::node_element, "doc",  i->componentProperties_[prop].doc_ ) );
+                propsnode->append_node( comxml.allocate_node( rapidxml::node_element, "type", i->componentProperties_[prop].typeStr_ ) );
+
+                comp->append_node( propsnode );
+            }
+
+            root->append_node( comp );
         }
+
+        static const hUint32 buffersize = 2*1024*1024;
+        hChar* buf = (hChar*)hMalloc( buffersize );
+        hChar* end = rapidxml::print( buf, comxml );
+        hUint32 size = (hUint32)(end - buf);
+
+        hcAssert( size < buffersize );
+
+        hIFile* file = fileSystem_->OpenFileRoot( "COMPONENTS.XML", FILEMODE_WRITE );
+        file->Write( buf, size );
+        fileSystem_->CloseFile( file );
+
+        hFree( buf );
     }
 
 }

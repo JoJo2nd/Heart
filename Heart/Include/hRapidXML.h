@@ -30,6 +30,7 @@
 
 #include "hTypes.h"
 #include "rapidxml\rapidxml.hpp"
+#include "rapidxml\rapidxml_print.hpp"
 
 namespace Heart
 {
@@ -79,6 +80,7 @@ namespace Heart
             }
             return hTrue;
         }
+
     private:
 
         hXMLDocument( const hXMLDocument& rhs );

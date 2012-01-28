@@ -54,12 +54,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
+
+    extern const hChar* ComponentPropertyName[];
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     
     struct hComponentProperty
     {
         const hChar*            name_;
         const hChar*            doc_;
         hComponentPropertyType  type_;
+        const hChar*            typeStr_;
         hUint32                 offset_;
     };
 
@@ -116,7 +123,7 @@ namespace Heart
     hUint32         klass::GetPropertyCount() { return hStaticArraySize(propertyArray_); }
 
 #define HEART_COMPONENT_PROPERTY( klass, name, var, type, doc )\
-    { name, doc, eComponentPropertyType_##type, hOffsetOf( klass, var ) },
+    { name, doc, eComponentPropertyType_##type, ComponentPropertyName[eComponentPropertyType_##type], hOffsetOf( klass, var ) },
 }
 
 #endif // HCOMPONENT_H__
