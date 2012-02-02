@@ -191,6 +191,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\EntityTree.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\EntityTree.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration

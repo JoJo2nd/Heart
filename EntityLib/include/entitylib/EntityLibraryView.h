@@ -54,8 +54,11 @@ namespace Entity
         const IErrorObject      SaveLibrary( const char* path );
         uint                    GetComponentCount() const { return components_.size(); }
         const IComponentView*   GetComponentView( uint componentIdx ) const { return static_cast< const IComponentView* >( components_[componentIdx] ); }
+        const IComponentView*   GetComponentViewByName( const char* name ) const;
         uint                    GetEntityDefinitionCount() const { return entities_.size(); }
         IEntityDefinitionView*  GetEntityDefinition( uint definitionIdx ) const { return static_cast< IEntityDefinitionView* >( entities_[definitionIdx] ); }
+        IEntityDefinitionView*  GetEntityDefinitionByName(  const char* name ) const;
+        const IErrorObject      AddEntity( const char* name );
     
     private:
 

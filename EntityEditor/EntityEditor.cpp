@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 #include "EntityEditor.h"
+#include "EntityTree.h"
 #include "entitylib\EntityLib.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -100,15 +101,15 @@ void MainWindow::InitWindowWidgets()
     fileMenu_->AppendSeparator();
     fileMenu_->Append( wxID_EXIT, _T( "E&xit" ) );
 
-    SetEnableContextMenuOptions( false );
+    SetEnableContextMenuBarOptions( false );
 
     wxMenuBar* menuBar = new wxMenuBar();
     menuBar->Append( fileMenu_, _T( "&File" ) );
 
     SetMenuBar( menuBar );
 
-    entityTree_ = new wxTreeCtrl( this );
-    entityProp_ = new wxPropertyGrid( this );
+    entityTree_ = new EntityTreeView( this );
+    entityProp_ = new wxPropertyGrid( this, uiID_ENTITYPROPVIEW );
 
     wxFlexGridSizer* sizer = new wxFlexGridSizer( 2, 0, 0 );
     sizer->Add( entityTree_, 0, wxEXPAND );
@@ -125,7 +126,7 @@ void MainWindow::InitWindowWidgets()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void MainWindow::SetEnableContextMenuOptions( bool enable )
+void MainWindow::SetEnableContextMenuBarOptions( bool enable )
 {
     fileMenu_->Enable( wxID_SAVE, enable );
     fileMenu_->Enable( wxID_SAVEAS, enable );
@@ -140,7 +141,7 @@ void MainWindow::SetEnableContextMenuOptions( bool enable )
 void MainWindow::OnNewEvent( wxCommandEvent& /*evt*/ )
 {
     library_ = CreateEntityLibraryView();
-    SetEnableContextMenuOptions( library_ ? true : false );
+    SetEnableContextMenuBarOptions( library_ ? true : false );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -169,7 +170,7 @@ void MainWindow::OnOpenEvent( wxCommandEvent& /*evt*/ )
         library_ = NULL;
     }
 
-    SetEnableContextMenuOptions( library_ ? true : false );
+    SetEnableContextMenuBarOptions( library_ ? true : false );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -250,3 +251,6 @@ void MainWindow::OnExitEvent( wxCommandEvent& /*evt*/ )
 {
     Close();
 }
+
+
+

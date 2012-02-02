@@ -33,11 +33,13 @@ namespace Entity
     class ILibraryView;
 }
 
+class EntityTreeView;
+
 class MainWindow : public wxFrame
 {
 public:
     MainWindow()
-        : wxFrame(NULL, -1, "Heart Entity Editor")
+        : wxFrame(NULL, uiID_MAIN, "Heart Entity Editor")
         , appConfig_("HeartEntityEditor", "", "heartentityeditor.config", "heartentityeditor.config")
         , entityTree_(NULL)
         , entityProp_(NULL)
@@ -49,17 +51,16 @@ public:
     {
     }
 
+    Entity::ILibraryView* GetLibraryView() const { return library_; };
+
 private:
 
     DECLARE_EVENT_TABLE();
 
-    enum 
-    {
-        uiID_IMPORT,
-        uiID_EXPORT,
-    };
-
+    //Common
     void InitWindowWidgets();
+    void SetEnableContextMenuBarOptions( bool enable );
+    // Main Menu
     void OnNewEvent( wxCommandEvent& evt );
     void OnOpenEvent( wxCommandEvent& evt );
     void OnSaveEvent( wxCommandEvent& evt );
@@ -67,11 +68,11 @@ private:
     void OnImportEvent( wxCommandEvent& evt );
     void OnExportEvent( wxCommandEvent& evt );
     void OnExitEvent( wxCommandEvent& evt );
-    void SetEnableContextMenuOptions( bool enable );
+    
 
     wxMenu*                 fileMenu_;
     wxFileConfig            appConfig_;
-    wxTreeCtrl*             entityTree_;
+    EntityTreeView*         entityTree_;
     wxPropertyGrid*         entityProp_;
     Entity::ILibraryView*   library_;
 };

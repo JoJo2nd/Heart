@@ -118,6 +118,9 @@ namespace Entity
         virtual const IComponentView*   GetComponent( uint compIdx ) const = 0;
         virtual uint                    GetPropertyCount() const = 0;
         virtual IComponentProperty*     GetProperty( uint propIdx ) = 0;
+        //TODO:
+        // Add Component
+        // Remove Component
     private:
 
         template< typename _Ty >
@@ -134,8 +137,11 @@ namespace Entity
         virtual const IErrorObject      SaveLibrary( const char* path ) = 0;
         virtual uint                    GetComponentCount() const = 0;
         virtual const IComponentView*   GetComponentView( uint componentIdx ) const = 0;
+        virtual const IComponentView*   GetComponentViewByName( const char* name ) const = 0; 
         virtual uint                    GetEntityDefinitionCount() const = 0;
         virtual IEntityDefinitionView*  GetEntityDefinition( uint definitionIdx ) const = 0;
+        virtual IEntityDefinitionView*  GetEntityDefinitionByName( const char* name ) const = 0;
+        virtual const IErrorObject      AddEntity( const char* name ) = 0;
 
     private:
 

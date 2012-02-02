@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	EntityEditorConfig.h	
+	filename: 	EntityTree.h	
 	
-	Copyright (c) 28:1:2012 James Moran
+	Copyright (c) 2:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,25 +24,39 @@
 	distribution.
 
 *********************************************************************/
+#ifndef ENTITYTREE_H__
+#define ENTITYTREE_H__
 
-#ifndef ENTITYEDITORCONFIG_H__
-#define ENTITYEDITORCONFIG_H__
+#include "EntityEditorConfig.h"
+#include "EntityEditor.h"
 
+class MainWindow;
 
-#define _CRT_SECURE_NO_WARNINGS
-#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-
-enum
+class EntityTreeView : public wxTreeCtrl
 {
-    uiID_MAIN = 6000,//== wxID_HIGHEST+1,
-    uiID_IMPORT,
-    uiID_EXPORT,
-    uiID_ENTITYTREEVIEW,
-    uiID_ENTITYPROPVIEW,
-    uiID_NEWENTITY,
-    uiID_DELETEENTITY,
-    uiID_ADDCOMPONENTS,
-    uiID_REMOVECOMPONENTS,
+public:
+    EntityTreeView( MainWindow* parent )
+        : wxTreeCtrl( parent, uiID_ENTITYTREEVIEW )
+        , parent_(parent)
+        , contextMenu_(NULL)
+    {
+        InitWindowWidgets();
+    }
+
+private:
+
+    DECLARE_EVENT_TABLE();
+
+    void InitWindowWidgets();
+    //Tree View
+    void OnNewEntity( wxCommandEvent& evt );
+    void OnDeleteEntity( wxCommandEvent& evt );
+    void OnAddComponents( wxCommandEvent& evt );
+    void OnRemoveComponents( wxCommandEvent& evt );
+    void OnEntityContextMenu( wxMouseEvent& evt );
+
+    MainWindow*     parent_;
+    wxMenu*         contextMenu_;
 };
 
-#endif // ENTITYEDITORCONFIG_H__
+#endif // ENTITYTREE_H__
