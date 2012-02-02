@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hComponent.cpp	
+	filename: 	stdafx.cpp	
 	
 	Copyright (c) 28:1:2012 James Moran
 	
@@ -24,18 +24,8 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hComponent.h"
 
-namespace Heart
-{
-    extern const hChar* ComponentPropertyName[] =
-    {
-        "Bool",
-        "Int",
-        "UInt",
-        "Float",
-        "String",
-        "ResourceAsset",
-    };
-}
+#include "stdafx.h"
+
+// TODO: reference any additional headers you need in STDAFX.H
+// and not in this file

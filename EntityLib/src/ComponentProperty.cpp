@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hComponent.cpp	
+	filename: 	ComponentProperty.cpp	
 	
-	Copyright (c) 28:1:2012 James Moran
+	Copyright (c) 29:1:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,18 +24,20 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hComponent.h"
 
-namespace Heart
+#include "entitylib/ComponentProperty.h"
+#include "entitylib/EntityDefinitionView.h"
+
+namespace Entity
 {
-    extern const hChar* ComponentPropertyName[] =
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void OverrideComponentProperty::GetOverride()
     {
-        "Bool",
-        "Int",
-        "UInt",
-        "Float",
-        "String",
-        "ResourceAsset",
-    };
+        override_ = new ComponentProperty( *base_ );
+    }
+
 }

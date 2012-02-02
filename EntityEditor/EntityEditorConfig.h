@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hComponent.cpp	
+	filename: 	EntityEditorConfig.h	
 	
 	Copyright (c) 28:1:2012 James Moran
 	
@@ -24,18 +24,12 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hComponent.h"
 
-namespace Heart
-{
-    extern const hChar* ComponentPropertyName[] =
-    {
-        "Bool",
-        "Int",
-        "UInt",
-        "Float",
-        "String",
-        "ResourceAsset",
-    };
-}
+#ifndef ENTITYEDITORCONFIG_H__
+#define ENTITYEDITORCONFIG_H__
+
+
+#define _CRT_SECURE_NO_WARNINGS
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+
+#endif // ENTITYEDITORCONFIG_H__

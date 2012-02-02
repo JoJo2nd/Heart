@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hComponent.cpp	
+	filename: 	stdafx.h	
 	
 	Copyright (c) 28:1:2012 James Moran
 	
@@ -24,18 +24,35 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hComponent.h"
 
-namespace Heart
-{
-    extern const hChar* ComponentPropertyName[] =
-    {
-        "Bool",
-        "Int",
-        "UInt",
-        "Float",
-        "String",
-        "ResourceAsset",
-    };
-}
+#include "EntityEditorConfig.h"
+
+// Windows Header Files:
+#include <windows.h>
+
+// C RunTime Header Files
+#include <stdlib.h>
+#include <malloc.h>
+#include <memory.h>
+#include <tchar.h>
+#include <stdio.h>
+#include <vector>
+#include <list>
+
+#include "wx/wx.h"
+#include "wx/sizer.h"
+#include "wx/gbsizer.h"
+#include "wx/busyinfo.h"
+#include "wx/aui/aui.h"
+#include "wx/treectrl.h"
+#include "wx/propgrid/propgrid.h"
+#include "wx/fileconf.h"
+#include "wx/msgdlg.h"
+#include "wx/filedlg.h"
+#include "wx/wfstream.h"
+#include "wx/filehistory.h"
+#include "wx/progdlg.h"
+#include "wx/richmsgdlg.h"
+
+
+// TODO: reference additional headers your program requires here
