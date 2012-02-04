@@ -822,6 +822,10 @@
 			<Filter
 				Name="Sound"
 				>
+				<File
+					RelativePath=".\Include\hSoundManager.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="OS"

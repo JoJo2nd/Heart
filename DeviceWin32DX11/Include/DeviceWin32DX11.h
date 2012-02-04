@@ -87,24 +87,23 @@ namespace Heart
     struct hdDX11DepthStencilState;
     struct hdDX11InputState;
     struct hdDX11SamplerState;
+
+    typedef hdDX11RenderDevice		    hdRenderDevice;
+    typedef hdDX11RenderSubmissionCtx	hdRenderSubmissionCtx;
+    typedef hdDX11VertexLayout   		hdVtxDecl;//make this include input state
+    typedef hdDX11VertexBuffer	    	hdVtxBuffer;
+    typedef hdDX11IndexBuffer    	    hdIndexBuffer;
+    typedef hdDX11Texture		        hdTexture;
+    typedef hdDX11ShaderProgram          hdShaderProgram;
+    typedef hdDX11ParameterConstantBlock hdParameterConstantBlock;
+    typedef hdDX11BlendState             hdBlendState;
+    typedef hdDX11RasterizerState        hdRasterizerState;
+    typedef hdDX11DepthStencilState      hdDepthStencilState;
+    typedef hdDX11InputState             hdInputState;
+    typedef hdDX11SamplerState           hdSamplerState;
+    typedef hdDX11MappedResourceData     hdMappedData;
+    typedef hdDX11CommandBuffer          hdRenderCommandBuffer;
 }
-
-
-typedef Heart::hdDX11RenderDevice		    hdRenderDevice;
-typedef Heart::hdDX11RenderSubmissionCtx	hdRenderSubmissionCtx;
-typedef Heart::hdDX11VertexLayout   		hdVtxDecl;//make this include input state
-typedef Heart::hdDX11VertexBuffer	    	hdVtxBuffer;
-typedef Heart::hdDX11IndexBuffer    	    hdIndexBuffer;
-typedef Heart::hdDX11Texture		        hdTexture;
-typedef Heart::hdDX11ShaderProgram          hdShaderProgram;
-typedef Heart::hdDX11ParameterConstantBlock hdParameterConstantBlock;
-typedef Heart::hdDX11BlendState             hdBlendState;
-typedef Heart::hdDX11RasterizerState        hdRasterizerState;
-typedef Heart::hdDX11DepthStencilState      hdDepthStencilState;
-typedef Heart::hdDX11InputState             hdInputState;
-typedef Heart::hdDX11SamplerState           hdSamplerState;
-typedef Heart::hdDX11MappedResourceData     hdMappedData;
-typedef Heart::hdDX11CommandBuffer          hdRenderCommandBuffer;
 
 
 #endif // DEVICEWIN32DX11_H__

@@ -146,7 +146,7 @@ void ResourceLoadTest::MainRender()
     }
 
 
-    hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
+    Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
 
     engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
 }
