@@ -54,7 +54,7 @@
 #define ENTITYLIB_ERROR_GENERIC()                   ENTITYLIB_ERROR_GENERIC1( "Generic Error." )
 #define ENTITYLIB_ERROR_GENERIC1( m )               ENTITYLIB_ERROR_GENERIC2( m, __FILE__, __LINE__ )
 #define ENTITYLIB_ERROR_GENERIC2( m, file, line )   ENTITYLIB_ERROR_GENERIC3( m, file, line )
-#define ENTITYLIB_ERROR_GENERIC3( m, file, line )   Entity::IErrorObject( false, m, "@ " file "(" #line ")" )
-#define ENTITYLIB_OK()                              Entity::IErrorObject( true, "None", "@None" )
+#define ENTITYLIB_ERROR_GENERIC3( m, file, line )   Entity::IErrorObject( false, m, "\n" file "(" #line ")" )
+#define ENTITYLIB_OK()                              Entity::IErrorObject( true, "None", "\nNone" )
 
 #endif // ENTITYLIBCOMMON_H__

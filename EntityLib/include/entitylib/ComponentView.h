@@ -55,8 +55,23 @@ namespace Entity
                     return &properties_[i];
                 }
             }
+            return NULL;
         }
-        void                        AppendProperty( const ComponentProperty& prop ) { properties_.push_back( prop ); }
+        ComponentProperty*          UpdateProperty( const ComponentProperty& prop ) 
+        { 
+            ComponentProperty* foundprop = FindPropertyByName( prop.GetName() );
+            if ( !foundprop )
+            {
+                properties_.push_back( prop ); 
+            }
+            else
+            {
+                *foundprop = prop;
+            }
+
+            //TODO: return correct value...
+            return NULL;
+        }
         void                        RemovePropertyByName( const char* name )
         {
             for ( PropertyVectorType::iterator i = properties_.begin(), iend = properties_.end(); i < iend; ++i )

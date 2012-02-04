@@ -45,8 +45,12 @@ namespace Entity
         }
 
         const char*             GetName() const { return name_.c_str(); }
+        void                    SetName( const char* name ) { name_ = name; }
         uint                    GetComponentCount() const { return components_.size(); }
         const IComponentView*   GetComponent( uint compIdx ) const { return components_[compIdx]; }
+        bool                    HasComponent( const IComponentView* componet ) const;
+        const IErrorObject      AppendComponent( const IComponentView* component );
+        const IErrorObject      RemoveComponent( const char* name );
         uint                    GetPropertyCount() const { return overrides_.size(); }
         IComponentProperty*     GetProperty( uint propIdx ) { return overrides_[propIdx]; }
 
@@ -68,13 +72,14 @@ namespace Entity
             }
         }
 
-        typedef std::vector< ComponentView* >                ComponentVectorType;
+        typedef std::vector< const ComponentView* >          ComponentVectorType;
         typedef std::vector< OverrideComponentProperty* >    PropertyVectorType;
 
         std::string             name_;
         ComponentVectorType     components_;
         PropertyVectorType      overrides_;     
     };
+
 }
 
 BOOST_CLASS_VERSION( Entity::EntityDefinitionView, 1 )

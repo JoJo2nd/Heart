@@ -33,12 +33,14 @@
 namespace Entity
 {
     class EntityDefinitionView;
+    class ComponentView;
 
     class ComponentProperty : public IComponentProperty
     {
     public:
         ComponentProperty() 
-            : type_( PropertyValueType_None )
+            : type_(PropertyValueType_None)
+            , owner_(NULL)
         {
             memset( &value_, 0, sizeof(value_) );
         }
@@ -48,6 +50,7 @@ namespace Entity
             name_ = rhs.name_;
             type_ = rhs.type_;
             doc_  = rhs.doc_; 
+            owner_ = rhs.owner_;
             if ( rhs.type_ == PropertyValueType_String )
             {
                 SetValueString( rhs.GetValueString() );
@@ -64,6 +67,8 @@ namespace Entity
         {
             name_ = rhs.name_;
             type_ = rhs.type_;
+            doc_  = rhs.doc_; 
+            owner_ = rhs.owner_;
             if ( rhs.type_ == PropertyValueType_String )
             {
                 SetValueString( rhs.GetValueString() );
@@ -75,27 +80,29 @@ namespace Entity
             return *this;
         }
 
-        const char*         GetName() const { return name_.c_str(); }
-        const char*         GetDoc() const { return doc_.c_str(); }
-        PropertyValueType   GetValueType() const { return type_; }
-        bool                GetValueBool() const { return value_.asBool_; }
-        int                 GetValueInt() const { return value_.asInt_; }
-        uint                GetValueUint() const { return value_.asUint_; }
-        const char*         GetValueString() const { return valueStr_.c_str(); }
-        float               GetValueFloat() const { return value_.asFloat_; }
-        void                SetValueBool( bool v ) { value_.asBool_ = v; }
-        void                SetValueInt( int v ) { value_.asInt_ = v; }
-        void                SetValueUint( uint v ) { value_.asUint_ = v; }
-        void                SetValueFloat( float v ) { value_.asFloat_ = v; }
-        void                SetResourceID( uint32 v ) { value_.asResourceID_ = v; }
-        void                SetValueString( const char* v ) 
+        const char*           GetName() const { return name_.c_str(); }
+        const char*           GetDoc() const { return doc_.c_str(); }
+        const IComponentView* GetOwnerComponent() const { return (IComponentView*)owner_; }
+        PropertyValueType     GetValueType() const { return type_; }
+        bool                  GetValueBool() const { return value_.asBool_; }
+        int                   GetValueInt() const { return value_.asInt_; }
+        uint                  GetValueUint() const { return value_.asUint_; }
+        const char*           GetValueString() const { return valueStr_.c_str(); }
+        float                 GetValueFloat() const { return value_.asFloat_; }
+        void                  SetValueBool( bool v ) { value_.asBool_ = v; }
+        void                  SetValueInt( int v ) { value_.asInt_ = v; }
+        void                  SetValueUint( uint v ) { value_.asUint_ = v; }
+        void                  SetValueFloat( float v ) { value_.asFloat_ = v; }
+        void                  SetResourceID( uint32 v ) { value_.asResourceID_ = v; }
+        void                  SetValueString( const char* v ) 
         { 
             valueStr_ = v; 
         }
         //Our methods (private to this dll)
-        void                SetValueType( PropertyValueType v ) { type_ = v; }
-        void                SetDoc( const char* doc ) { doc_ = doc; }
-        void                SetName( const char* v ) { name_ = v; }
+        void                  SetValueType( PropertyValueType v ) { type_ = v; }
+        void                  SetDoc( const char* doc ) { doc_ = doc; }
+        void                  SetName( const char* v ) { name_ = v; }
+        void                  SetOwner( const ComponentView* component ) { owner_ = component; }
 
     private:
 
@@ -111,6 +118,7 @@ namespace Entity
             case 1:
                 arc & BOOST_SERIALIZATION_NVP(type_);
                 arc & BOOST_SERIALIZATION_NVP(name_);
+                arc & BOOST_SERIALIZATION_NVP(owner_);
                 arc & BOOST_SERIALIZATION_NVP(doc_);
                 arc & BOOST_SERIALIZATION_NVP(valueStr_);
                 arc & BOOST_SERIALIZATION_NVP(value_.asResourceID_);
@@ -119,10 +127,11 @@ namespace Entity
             }
         }
 
-        PropertyValueType   type_;
-        std::string         name_;
-        std::string         doc_; 
-        std::string         valueStr_;
+        PropertyValueType       type_;
+        const ComponentView*    owner_;
+        std::string             name_;
+        std::string             doc_; 
+        std::string             valueStr_;
         union 
         {
             bool    asBool_;
@@ -150,19 +159,20 @@ namespace Entity
             override_ = NULL;
         }
 
-        const char*         GetName() const { return base_->GetName(); }
-        const char*         GetDoc() const { return base_->GetDoc(); }
-        PropertyValueType   GetValueType() const { return base_->GetValueType(); }
-        bool                GetValueBool() const { return override_ ? override_->GetValueBool() : base_->GetValueBool(); }
-        int                 GetValueInt() const { return override_ ? override_->GetValueInt() : base_->GetValueInt(); }
-        uint                GetValueUint() const { return override_ ? override_->GetValueUint() : base_->GetValueUint(); }
-        const char*         GetValueString() const { return override_ ? override_->GetValueString() : base_->GetValueString(); }
-        float               GetValueFloat() const { return override_ ? override_->GetValueFloat() : base_->GetValueFloat(); }
-        void                SetValueBool( bool v ) { if ( !override_ ) GetOverride(); override_->SetValueBool( v ); }
-        void                SetValueInt( int v ) { if ( !override_ ) GetOverride(); override_->SetValueInt( v ); }
-        void                SetValueUint( uint v ) { if ( !override_ ) GetOverride(); override_->SetValueUint( v ); }
-        void                SetValueFloat( float v ) { if ( !override_ ) GetOverride(); override_->SetValueFloat( v ); }
-        void                SetValueString( const char* v ) { if ( !override_ ) GetOverride(); override_->SetValueString( v ); }
+        const char*             GetName() const { return base_->GetName(); }
+        const char*             GetDoc() const { return base_->GetDoc(); }
+        const IComponentView*   GetOwnerComponent() const { return base_->GetOwnerComponent(); }
+        PropertyValueType       GetValueType() const { return base_->GetValueType(); }
+        bool                    GetValueBool() const { return override_ ? override_->GetValueBool() : base_->GetValueBool(); }
+        int                     GetValueInt() const { return override_ ? override_->GetValueInt() : base_->GetValueInt(); }
+        uint                    GetValueUint() const { return override_ ? override_->GetValueUint() : base_->GetValueUint(); }
+        const char*             GetValueString() const { return override_ ? override_->GetValueString() : base_->GetValueString(); }
+        float                   GetValueFloat() const { return override_ ? override_->GetValueFloat() : base_->GetValueFloat(); }
+        void                    SetValueBool( bool v ) { if ( !override_ ) GetOverride(); override_->SetValueBool( v ); }
+        void                    SetValueInt( int v ) { if ( !override_ ) GetOverride(); override_->SetValueInt( v ); }
+        void                    SetValueUint( uint v ) { if ( !override_ ) GetOverride(); override_->SetValueUint( v ); }
+        void                    SetValueFloat( float v ) { if ( !override_ ) GetOverride(); override_->SetValueFloat( v ); }
+        void                    SetValueString( const char* v ) { if ( !override_ ) GetOverride(); override_->SetValueString( v ); }
 
 
     private:

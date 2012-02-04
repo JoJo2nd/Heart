@@ -48,6 +48,8 @@ namespace Entity
         PropertyValueType_None
     };
 
+    class IComponentView;
+
     class ENTITYLIB_DLL_API IErrorObject
     {
     public:
@@ -73,19 +75,20 @@ namespace Entity
     public:
         virtual ~IComponentProperty() {}
 
-        virtual const char*         GetName() const = 0;
-        virtual const char*         GetDoc() const = 0;
-        virtual PropertyValueType   GetValueType() const = 0;
-        virtual bool                GetValueBool() const = 0;
-        virtual int                 GetValueInt() const = 0;
-        virtual uint                GetValueUint() const = 0;
-        virtual const char*         GetValueString() const = 0;
-        virtual float               GetValueFloat() const = 0;
-        virtual void                SetValueBool( bool v ) = 0;
-        virtual void                SetValueInt( int v ) = 0;
-        virtual void                SetValueUint( uint v ) = 0;
-        virtual void                SetValueString( const char* v ) = 0;
-        virtual void                SetValueFloat( float v ) = 0;
+        virtual const char*             GetName() const = 0;
+        virtual const char*             GetDoc() const = 0;
+        virtual const IComponentView*   GetOwnerComponent() const = 0;
+        virtual PropertyValueType       GetValueType() const = 0;
+        virtual bool                    GetValueBool() const = 0;
+        virtual int                     GetValueInt() const = 0;
+        virtual uint                    GetValueUint() const = 0;
+        virtual const char*             GetValueString() const = 0;
+        virtual float                   GetValueFloat() const = 0;
+        virtual void                    SetValueBool( bool v ) = 0;
+        virtual void                    SetValueInt( int v ) = 0;
+        virtual void                    SetValueUint( uint v ) = 0;
+        virtual void                    SetValueString( const char* v ) = 0;
+        virtual void                    SetValueFloat( float v ) = 0;
 
     private:
 
@@ -116,11 +119,11 @@ namespace Entity
         virtual const char*             GetName() const = 0;
         virtual uint                    GetComponentCount() const = 0;
         virtual const IComponentView*   GetComponent( uint compIdx ) const = 0;
+        virtual bool                    HasComponent( const IComponentView* componet ) const = 0;
         virtual uint                    GetPropertyCount() const = 0;
         virtual IComponentProperty*     GetProperty( uint propIdx ) = 0;
-        //TODO:
-        // Add Component
-        // Remove Component
+        virtual const IErrorObject      AppendComponent( const IComponentView* component ) = 0;
+        virtual const IErrorObject      RemoveComponent( const char* name ) = 0;
     private:
 
         template< typename _Ty >
@@ -141,7 +144,8 @@ namespace Entity
         virtual uint                    GetEntityDefinitionCount() const = 0;
         virtual IEntityDefinitionView*  GetEntityDefinition( uint definitionIdx ) const = 0;
         virtual IEntityDefinitionView*  GetEntityDefinitionByName( const char* name ) const = 0;
-        virtual const IErrorObject      AddEntity( const char* name ) = 0;
+        virtual const IErrorObject      AddEntity( const char* name, IEntityDefinitionView** output ) = 0;
+        virtual const IErrorObject      RemoveEntity( IEntityDefinitionView* entity ) = 0;
 
     private:
 

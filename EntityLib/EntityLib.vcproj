@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\EntityDefinitionView.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\include\entitylib\EntityDefinitionView.h"
 				>
 			</File>

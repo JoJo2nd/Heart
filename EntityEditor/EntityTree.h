@@ -29,34 +29,49 @@
 
 #include "EntityEditorConfig.h"
 #include "EntityEditor.h"
+#include "entitylib\EntityLib.h"
 
 class MainWindow;
 
 class EntityTreeView : public wxTreeCtrl
 {
 public:
-    EntityTreeView( MainWindow* parent )
-        : wxTreeCtrl( parent, uiID_ENTITYTREEVIEW )
+    EntityTreeView( MainWindow* parent, wxPropertyGrid* propertyGrid )
+        : wxTreeCtrl( parent, uiID_ENTITYTREEVIEW, wxDefaultPosition, wxDefaultSize, wxTR_HAS_BUTTONS | wxTR_LINES_AT_ROOT | wxTR_HIDE_ROOT )
         , parent_(parent)
         , contextMenu_(NULL)
+        , propertyGrid_(propertyGrid)
     {
         InitWindowWidgets();
     }
+
+    void RefeshView();
 
 private:
 
     DECLARE_EVENT_TABLE();
 
+    struct ItemData : public wxTreeItemData
+    {
+        Entity::IEntityDefinitionView* entity_;
+    };
+
     void InitWindowWidgets();
+    void AddEntityToTree( Entity::IEntityDefinitionView* entity );
+    void UpdatePropertyView( Entity::IEntityDefinitionView* entity );
     //Tree View
     void OnNewEntity( wxCommandEvent& evt );
     void OnDeleteEntity( wxCommandEvent& evt );
     void OnAddComponents( wxCommandEvent& evt );
     void OnRemoveComponents( wxCommandEvent& evt );
     void OnEntityContextMenu( wxMouseEvent& evt );
+    void OnSelectionChange( wxTreeEvent& evt );
+    void OnPropertyGridChangedEvent( wxPropertyGridEvent& evt );
 
     MainWindow*     parent_;
     wxMenu*         contextMenu_;
+    wxTreeItemId    contextItem_;
+    wxPropertyGrid* propertyGrid_;
 };
 
 #endif // ENTITYTREE_H__

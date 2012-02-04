@@ -58,7 +58,8 @@ namespace Entity
         uint                    GetEntityDefinitionCount() const { return entities_.size(); }
         IEntityDefinitionView*  GetEntityDefinition( uint definitionIdx ) const { return static_cast< IEntityDefinitionView* >( entities_[definitionIdx] ); }
         IEntityDefinitionView*  GetEntityDefinitionByName(  const char* name ) const;
-        const IErrorObject      AddEntity( const char* name );
+        const IErrorObject      AddEntity( const char* name, IEntityDefinitionView** output );
+        const IErrorObject      RemoveEntity( IEntityDefinitionView* entity );
     
     private:
 

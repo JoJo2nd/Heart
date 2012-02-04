@@ -108,8 +108,8 @@ void MainWindow::InitWindowWidgets()
 
     SetMenuBar( menuBar );
 
-    entityTree_ = new EntityTreeView( this );
     entityProp_ = new wxPropertyGrid( this, uiID_ENTITYPROPVIEW );
+    entityTree_ = new EntityTreeView( this, entityProp_ );
 
     wxFlexGridSizer* sizer = new wxFlexGridSizer( 2, 0, 0 );
     sizer->Add( entityTree_, 0, wxEXPAND );
@@ -142,6 +142,7 @@ void MainWindow::OnNewEvent( wxCommandEvent& /*evt*/ )
 {
     library_ = CreateEntityLibraryView();
     SetEnableContextMenuBarOptions( library_ ? true : false );
+    entityTree_->RefeshView();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -171,6 +172,7 @@ void MainWindow::OnOpenEvent( wxCommandEvent& /*evt*/ )
     }
 
     SetEnableContextMenuBarOptions( library_ ? true : false );
+    entityTree_->RefeshView();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -232,6 +234,7 @@ void MainWindow::OnImportEvent( wxCommandEvent& /*evt*/ )
         library_->ImportComponetsFromXML( openFileDialog.GetPath().c_str() );
 
     }
+    entityTree_->RefeshView();
 }
 
 //////////////////////////////////////////////////////////////////////////

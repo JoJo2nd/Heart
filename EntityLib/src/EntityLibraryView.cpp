@@ -139,6 +139,7 @@ namespace Entity
 
         for ( XMLGetter componentDef = XMLGetter( &compXml ).FirstChild( "components" ).FirstChild( "component" ); componentDef.ToNode(); componentDef = componentDef.NextSibling( "component" ) )
         {
+            //TODO: make this handle re-importing components...
             ComponentView* compView = new ComponentView();
             
             compView->SetName( componentDef.GetAttributeValue( "name" ) );
@@ -157,6 +158,7 @@ namespace Entity
                 };
                 newProp.SetName( properties.FirstChild( "name" ).GetNodeValue() );
                 newProp.SetDoc( properties.FirstChild( "doc" ).GetNodeValue() );
+                newProp.SetOwner( compView );
                 for ( uint i = 0; i < sizeof(typeEnumNames)/sizeof(typeEnumNames[0]); ++i )
                 {
                     if ( _stricmp( properties.FirstChild( "type" ).GetNodeValue(), typeEnumNames[i] ) == 0 )
@@ -164,7 +166,7 @@ namespace Entity
                         newProp.SetValueType( (PropertyValueType)i );
                     }
                 }
-                compView->AppendProperty( newProp );
+                compView->UpdateProperty( newProp );
             }
 
             components_.push_back( compView );
@@ -219,6 +221,8 @@ namespace Entity
                 return components_[i];
             } 
         }
+
+        return NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -234,15 +238,54 @@ namespace Entity
                 return entities_[i];
             }
         }
+
+        return NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    const IErrorObject EntityLibraryView::AddEntity( const char* name )
+    const IErrorObject EntityLibraryView::AddEntity( const char* name, IEntityDefinitionView** output )
     {
-        return ENTITYLIB_ERROR( "Not implemented" );
+        std::string lwrName = name;
+        std::transform( lwrName.begin(), lwrName.end(), lwrName.begin(), tolower );
+
+        if ( GetEntityDefinitionByName( lwrName.c_str() ) )
+        {
+            return ENTITYLIB_ERROR( "Entity name already exists" );
+        }
+
+        EntityDefinitionView* entity = new EntityDefinitionView();
+        entity->SetName( lwrName.c_str() );
+
+        if ( output )
+        {
+            *output = entity;
+        }
+
+        entities_.push_back( entity );
+
+        return ENTITYLIB_OK();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const IErrorObject EntityLibraryView::RemoveEntity( IEntityDefinitionView* entity )
+    {
+        typedef std::vector< EntityDefinitionView* > Arr;
+        for ( Arr::iterator i = entities_.begin(); i != entities_.end(); ++i )
+        {
+            if ( (*i) == entity )
+            {
+                entities_.erase( i );
+                return ENTITYLIB_OK();
+            }
+        }
+
+        return ENTITYLIB_ERROR( "Entity not found in library" );
     }
 
 }

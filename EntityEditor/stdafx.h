@@ -45,6 +45,7 @@
 #include "wx/busyinfo.h"
 #include "wx/aui/aui.h"
 #include "wx/treectrl.h"
+#include "wx/generic/treectlg.h"
 #include "wx/propgrid/propgrid.h"
 #include "wx/fileconf.h"
 #include "wx/msgdlg.h"
