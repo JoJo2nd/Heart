@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11;HEART_RELEASE;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				ExceptionHandling="1"

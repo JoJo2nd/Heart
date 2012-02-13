@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib crypto.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib crypto.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
 				OutputFile="$(OutDir)\$(ProjectName)W32DX11.lib"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Release"
 				IgnoreDefaultLibraryNames=""
