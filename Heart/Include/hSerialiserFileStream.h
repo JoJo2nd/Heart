@@ -75,6 +75,7 @@ namespace Heart
             return fileHandle_->Tell();
         }
         void                SetEnableMD5Gen( hBool /*val*/ ){}
+        hBool               IsOpen() const { return fileHandle_ != NULL; }
 
     private:
 

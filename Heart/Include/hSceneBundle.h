@@ -50,7 +50,7 @@ namespace Heart
 			hUint32*	pMeshIdx_;
 		};
 
-		hResourceHandle< hSceneNodeBase >*	GetRootNode() const { return pNodes_; }
+		//hResourceHandle< hSceneNodeBase >*	GetRootNode() const { return pNodes_; }
 
 #ifndef HEART_RESOURCE_BUILDER
 	private:	
@@ -59,12 +59,12 @@ namespace Heart
 		friend class SceneBuilder;
 		friend class hSceneGraph;
 
-		hResourceHandle< hSceneNodeBase >	rootNode_;
+		//hResourceHandle< hSceneNodeBase >	rootNode_;
 		hUint32											nNodes_;
-		hResourceHandle< hSceneNodeBase >*	pNodes_;
+		//hResourceHandle< hSceneNodeBase >*	pNodes_;
 		ChildLink*										pChildLinks_;//size = nNodes
 		hUint32											nMeshes_;
-		hResourceHandle< hMesh >*			pMeshes_;
+		//hResourceHandle< hMesh >*			pMeshes_;
 	};
 }
 

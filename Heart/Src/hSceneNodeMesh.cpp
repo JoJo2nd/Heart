@@ -26,7 +26,9 @@ namespace Heart
 		hSceneNodeBase( SCENENODETYPE_MESH )
 		,nMeshes_( 0 )
 		,arrayReserve_( 0 )
+#if 0
 		,meshes_( NULL )
+#endif
 	{
 		ResetAABB();
 	}
@@ -37,15 +39,18 @@ namespace Heart
 
 	hSceneNodeMesh::~hSceneNodeMesh()
 	{
+#if 0
 		hcAssert( meshes_ == NULL );//Unload not been called?
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-
+#if 0
 	void hSceneNodeMesh::AppendMesh( const MeshRes& mesh )
 	{
+
 		if ( (nMeshes_+1) >= arrayReserve_ )
 		{
 			if ( arrayReserve_ == 0 )
@@ -72,17 +77,20 @@ namespace Heart
 		{
 			hAABB::ExpandBy( orginAABB_, *meshes_[i]->GetAABB() );
 		}
-	}
 
+	}
+#endif
 	//////////////////////////////////////////////////////////////////////////
 	// 19:21:29 ////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
+#if 0
 	void hSceneNodeMesh::RemoveMesh( hUint32 idx )
 	{
 		(void)idx;
 		hcBreak;//TODO
 	}
+#endif
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +98,7 @@ namespace Heart
 
 	void hSceneNodeMesh::UnloadCallback()
 	{
+#if 0
 		for ( hUint32 i = 0; i < nMeshes_; ++i )
 		{
 			meshes_[i].Release();
@@ -98,6 +107,7 @@ namespace Heart
 		meshes_ = NULL;
 		nMeshes_ = 0;
 		arrayReserve_ = 0;
+#endif
 	}
 
 }

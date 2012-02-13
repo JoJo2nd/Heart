@@ -40,8 +40,10 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef Heart::hResourceHandle< hMaterial > MaterialRes;
 		typedef Heart::hResourceHandle< hRenderTargetTexture > RenderTargetRes;
+#endif
 
 		hShadowMapVisitor();
 		~hShadowMapVisitor();
@@ -64,7 +66,9 @@ namespace Heart
 
 	public:
 
+#if 0
 		MaterialRes								shadowMaterial_;
+#endif
 		const Heart::hShaderParameter*	baisParam_;
 		Heart::hSceneGraph*				sceneGraph_;
 		Heart::hRenderer*				renderer_;

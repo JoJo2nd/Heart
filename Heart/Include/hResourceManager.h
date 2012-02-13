@@ -150,10 +150,11 @@ namespace Heart
 		*
 		* @return   void
 		*/
-		void							ForceResourceSweep()
-		{
-			loaderSemaphone_.Post();
-		}
+        void							ForceResourceSweep() { Post(); }
+        void                            Post()
+        {
+            loaderSemaphone_.Post();
+        }
 
 		/**
 		* Shutdown 
@@ -198,8 +199,14 @@ namespace Heart
             hUint32 mapToPath;
         };
 
+        struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
+        {
+            hStreamingResourceBase*     stream_;
+        };
+
 		typedef hMap< ResourceType, ResourceHandler >		ResourceHandlerMap;
 		typedef hMap< hUint32, hResourceClassBase >			ResourceMap;
+        typedef hMap< hUint32, StreamingResouce >           StreamingResourceMap;
 		typedef hMap< hUint32, hResourceLoadRequest >		ResourceLoadRequestMap;
         typedef hMap< hUint32, ResourceRemap >              ResourceRemappingMapType;
 
@@ -235,6 +242,7 @@ namespace Heart
 		hSemaphore						loaderSemaphone_;
 		hMutex							resourceDatabaseMutex_;
         hBool                           resourceDatabaseLocked_;
+        hMutex                          loadQueueMutex_;
 
 		hBool							exitSignal_;
 		hBool							canQuit_;
@@ -243,7 +251,7 @@ namespace Heart
 		ResourceLoadRequestMap			loadRequests_;
 		ResourceLoadRequestMap			loadRequestsProcessed_;
 		ResourceMap						loadedResources_;
-
+        StreamingResourceMap            streamingResources_;
 		hVector< hUint32 >				requiredResourceKeys_;
 		hVector< hResourceClassBase* >	requiredResources_;
         hResourcePackage                requiredResourcesPackage_;

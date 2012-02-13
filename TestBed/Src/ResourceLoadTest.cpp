@@ -37,7 +37,7 @@ void ResourceLoadTest::PreEnter()
     resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX", tex2_ );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
-
+    resPack_.AddResourceToPackage( "MUSIC/CAFO_S.OGG", stream_ );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 
@@ -50,6 +50,12 @@ hUint32 ResourceLoadTest::Enter()
     if ( resPack_.IsPackageLoaded() )
     {
         resPack_.GetResourcePointers();
+
+        //Start playing a sound
+        soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
+        soundSource_->SetSoundResource( stream_ );
+
+        soundSource_->Start();
 
         //Setup a view port for rendering
         Heart::hRenderViewportTargetSetup rtDesc;

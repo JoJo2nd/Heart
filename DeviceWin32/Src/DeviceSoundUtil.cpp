@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hSoundManager.h	
+	filename: 	DeviceSoundUtil.cpp	
 	
 	Copyright (c) 4:2:2012 James Moran
 	
@@ -24,40 +24,26 @@
 	distribution.
 
 *********************************************************************/
-#ifndef HSOUNDMANAGER_H__
-#define HSOUNDMANAGER_H__
-
-#include "hTypes.h"
-#include "hSoundSource.h"
-#include "hResourceManager.h"
 
 namespace Heart
 {
-    class hSoundManager
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hChar* GetOpenALErrorString( ALenum ercode )
     {
-    public:
-        hSoundManager()
+#define HEART_OPENAL_ERRORCASE( x ) case x: return #x
+        switch ( ercode )
         {
-
+        HEART_OPENAL_ERRORCASE( AL_INVALID_NAME );
+        HEART_OPENAL_ERRORCASE( AL_INVALID_ENUM );
+        HEART_OPENAL_ERRORCASE( AL_INVALID_VALUE );
+        HEART_OPENAL_ERRORCASE( AL_INVALID_OPERATION );
+        HEART_OPENAL_ERRORCASE( AL_OUT_OF_MEMORY );
+        default:
+        HEART_OPENAL_ERRORCASE( AL_NO_ERROR );
         }
-        ~hSoundManager()
-        {
-
-        }
-
-        void             Initialise();
-        void             Update();
-        void             CreateChannel( hUint32 /*channelID*/ ) {} //TODO:
-        void             DestroyChannel( hUint32 /*channelID*/ ) {} //TODO:
-        hSoundSource*    CreateSoundSource( hUint32 channel );
-        void             DestroySoundSource( hSoundSource* source );
-        void             Destory();
-
-    private:
-
-        hdSoundCore                 impl_;
-        hLinkedList< hSoundSource > soundSources_;
-    };
+    }
 }
-
-#endif // HSOUNDMANAGER_H__

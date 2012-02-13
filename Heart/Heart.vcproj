@@ -44,7 +44,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -115,7 +115,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -188,7 +188,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -261,7 +261,7 @@
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -289,7 +289,7 @@
 				Name="VCLibrarianTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/ignore:4006 /ignore:4221"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib libogg_staticD.lib libvorbis_staticD.lib libvorbisfile_staticD.lib"
 				OutputFile="$(OutDir)\$(ProjectName)DW32DX11.lib"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
 				IgnoreDefaultLibraryNames="LIBCMTD"
@@ -823,7 +823,27 @@
 				Name="Sound"
 				>
 				<File
+					RelativePath=".\Src\hSoundManager.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\Include\hSoundManager.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Src\hSoundResource.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hSoundResource.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hSoundSource.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hSoundSource.h"
 					>
 				</File>
 			</Filter>

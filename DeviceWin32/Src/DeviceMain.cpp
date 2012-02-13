@@ -43,11 +43,6 @@ int WINAPI WinMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	//Engine has not been created! 
 	hcAssert( gpConfig_ );
 
-	//////////////////////////////////////////////////////////////////////////
-	// Set the Device Layer that we'll use ///////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//Device::ImplFactory::SetVersion( Device::ImplFactory::hWIN32 | Device::ImplFactory::hDIRECT3D9 );
-
 	GetCurrentDirectory( 2047, gpConfig_->deviceConfig_.pWorkingDir_ );
 	gpConfig_->deviceConfig_.Instance_ = hinstance;
 	strcpy_s( gpConfig_->deviceConfig_.classname_, 128, "HeartEngineWndClass" );

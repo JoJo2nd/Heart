@@ -85,6 +85,5 @@ void CreateTextureTest::MainRender()
 
 hUint32 CreateTextureTest::Leave()
 {
-	texture_.Release();
 	return Heart::hStateBase::FINISHED;
 }

@@ -37,6 +37,7 @@ namespace Heart
         {
             //Attempt to open the default device
             alDevice_ = alcOpenDevice( NULL );
+            HEART_CHECK_OPENAL_ERRORS();
             CreateOpenALContext();
 
         }
@@ -46,6 +47,7 @@ namespace Heart
             const char* defaultDeviceName = alGetString( ALC_DEFAULT_DEVICE_SPECIFIER );
 
             alDevice_ = alcOpenDevice( defaultDeviceName );
+            HEART_CHECK_OPENAL_ERRORS();
             if ( alDevice_ )
             {
                 CreateOpenALContext();
@@ -55,6 +57,7 @@ namespace Heart
             do 
             {
                 alDevice_ = alcOpenDevice( deviceNames );
+                HEART_CHECK_OPENAL_ERRORS();
                 if ( alDevice_ )
                 {
                     CreateOpenALContext();
@@ -78,7 +81,11 @@ namespace Heart
     void hdW32SoundCoreDevice::CreateOpenALContext()
     {
         alContext_ = alcCreateContext( alDevice_, NULL );
+        HEART_CHECK_OPENAL_ERRORS();
         alcMakeContextCurrent( alContext_ );
+        HEART_CHECK_OPENAL_ERRORS();
+
+        hcPrintf( "OpenAL Device: 0x%08X Context 0x%08X", alDevice_, alContext_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -87,7 +94,13 @@ namespace Heart
 
     void hdW32SoundCoreDevice::Destory()
     {
+        alcDestroyContext( alContext_ );
+        HEART_CHECK_OPENAL_ERRORS();
+        alcCloseDevice( alDevice_ );
+        HEART_CHECK_OPENAL_ERRORS();
 
+        alContext_ = NULL;
+        alDevice_ = NULL;
     }
 
 }

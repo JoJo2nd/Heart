@@ -139,28 +139,10 @@ namespace Heart
 			++exitBail;
 		}
 
-#ifdef HEART_DEBUG
-// 		if ( loadedResources_.size() > 0 )
-// 		{
-// 			hcPrintf( "Unreleased Resources..." );
-// 			for ( ResourceMap::iterator i = loadedResources_.begin(); i != loadedResources_.end(); ++i )
-// 			{
-// 				hcPrintf( "hResource \"%s\"(ext: %s): 0x%08X", i->second.name_, i->second.ext_, i->second.pOutputData_ );
-// 			}
-// 		}
-// 		if ( createdResources_.size() > 0 )
-// 		{
-// 			hcPrintf( "Unreleased Runtime Resources..." );
-// 			for ( ResourceList::iterator i = createdResources_.begin(); i != createdResources_.end(); ++i )
-// 			{
-// 				hcPrintf( "hResource \"%s\"(ext: %s): 0x%08X", i->name_, i->ext_, i->pOutputData_ );
-// 			}
-// 		}
-#endif
-
 		hcAssert( resourceSweepCount_ == 0 );
 		requiredResources_.Clear();
 		requiredResourceKeys_.Clear();
+        streamingResources_.Clear( hTrue );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -230,14 +212,9 @@ namespace Heart
 	hUint32 hResourceManager::ProcessDataFixup( void* )
 	{
 		//process the requests
-		while( !exitSignal_ /*|| !canQuit_*/ )
+		while( !exitSignal_ )
 		{
 			loaderSemaphone_.Wait();
-
-			if ( exitSignal_ )
-			{
-				hAtomic::Increment( &resourceSweepCount_ );
-			}
 
 			while ( resourceSweepCount_ > 0 )
 			{
@@ -245,24 +222,32 @@ namespace Heart
 				hAtomic::Decrement( &resourceSweepCount_ );
 			}
 
+            loadQueueMutex_.Lock();
+
+            while ( hResourceLoadRequest* i = loadRequests_.GetHead() )
+            {
+                loadRequests_.Remove( i );
+                loadRequestsProcessed_.Insert( i->GetKey(), i );
+            }
+
+            loadQueueMutex_.Unlock();
+
+            //Process and file read requests
+            for ( StreamingResouce* i = streamingResources_.GetHead(); i; i = i->GetNext() )
+            {
+                i->stream_->UpdateFileOps();
+            }
+
 			// get the all pushed requests and move them in to the processed load request
 			// along with dependencies. 
-			for ( hResourceLoadRequest* i = loadRequests_.GetHead(); i; i = i->GetNext() )
+			for ( hResourceLoadRequest* i = loadRequestsProcessed_.GetHead(); i; i = i->GetNext() )
 			{
                 CompleteLoadRequest( i );
                 hAtomic::Increment( i->loadCounter_ );
                 delete i->path_;
 			}
 
-            loadRequests_.Clear( hTrue );
-
-// 			if ( loadRequestsProcessed_.GetSize() > 0 )
-// 			{
-// 				//signal the thread to continue processing
-// 				//but yield some cpu time
-// 				loaderSemaphone_.Post();
-// 				Threading::ThreadSleep( 1 );
-// 			}
+            loadRequestsProcessed_.Clear( hTrue );
 		}
 
 		return 0;
@@ -289,14 +274,10 @@ namespace Heart
 			return;
 		}
 
-		//JM TODO: check the cache
-		//pRet = QueryResourceCache( rescrc32 );
-
 		//not found in cache
-
 		// Request already open?
+		hMutexAutoScope loadQueueLock( &loadQueueMutex_ );
 		hResourceLoadRequest* request;
-
 
 		//create a load request.
 		request = hNEW ( hGeneralHeap ) hResourceLoadRequest();
@@ -404,7 +385,20 @@ namespace Heart
                 crc, 
                 &loaderStream, 
                 this );
-            loaderStream.Close();
+
+            if ( resource->GetFlags() & hResourceClassBase::ResourceFlags_STREAMING )
+            {
+                hStreamingResourceBase* stres = static_cast< hStreamingResourceBase* >( resource );
+                StreamingResouce* sr = hNEW( hGeneralHeap ) StreamingResouce();
+                sr->stream_ = stres;
+
+                stres->SetFileStream( loaderStream );
+                streamingResources_.Insert( crc, sr );
+            }
+            else
+            { 
+                loaderStream.Close();
+            }
 
             hcAssert( resource );
             resource->SetResID( crc );

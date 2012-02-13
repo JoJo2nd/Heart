@@ -126,7 +126,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include;..\Heart\Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;../tinyxml/Include;..\zziplib\Include;..\lua\src;..\libnoise;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HEART_ENGINE;HEART_PLAT_DX11;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -222,14 +222,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\ReflectionTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\ReflectionTest.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\ResourceLoadTest.cpp"
 				>
 			</File>
@@ -238,23 +230,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Src\SimpleRoomAddedLights.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\SimpleRoomAddedLights.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Src\TestBedCore.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\Include\TestBedCore.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\TestReflectionWriter.h"
 				>
 			</File>
 		</Filter>

@@ -29,6 +29,7 @@
 #define __HMCOMMON_H__
 
 #include "NumericalLimits.h"
+#include <math.h>
 
 #define hmPI						(3.14159265358979323846f)// long winded PI
 
@@ -91,5 +92,6 @@ namespace Util
 #define hMax( x, y ) ( x > y ) ? x : y
 
 #define hFabs( x ) (fabs( x ))
+#define hFloor( x ) (floor(x))
 
 #endif //__HMCOMMON_H__

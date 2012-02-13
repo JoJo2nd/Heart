@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hResource.cpp	
+	filename: 	hSoundManager.cpp	
 	
-	Copyright (c) 13:8:2011 James Moran
+	Copyright (c) 4:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,10 +24,9 @@
 	distribution.
 
 *********************************************************************/
+
 #include "Common.h"
-#include "hResource.h"
-#include "hResourceManager.h"
-#include "hAtomic.h"
+#include "hSoundManager.h"
 
 namespace Heart
 {
@@ -36,11 +35,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceClassBase::OnZeroRef() const
+    void hSoundManager::Initialise()
     {
-        if ( manager_ )
+        impl_.Initialise();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSoundManager::Update()
+    {
+        for ( hSoundSource* i = soundSources_.GetHead(); i; i = i->GetNext() )
         {
-            manager_->QueueResourceSweep();
+            i->Update();
         }
     }
 
@@ -48,73 +56,31 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32* opID )
+    void hSoundManager::Destory()
     {
-        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
-        {
-            if ( !readOps_[i].active_ )
-            {
-                readOps_[i].dstBuf_ = dstBuf;
-                readOps_[i].size_ = size;
-                readOps_[i].done_ = hFalse;
-
-                hAtomic::LWMemoryBarrier();
-                readOps_[i].active_ = hTrue;
-
-                *opID = i;
-                manager_->Post();
-                return ResourceFlags_OK;
-            }
-        }
-
-        *opID = ~0U;
-        return ResourceFlags_BUSY;
+        impl_.Destory();
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hStreamingResourceBase::UpdateFileOps()
+    hSoundSource* hSoundManager::CreateSoundSource( hUint32 channel )
     {
-        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
-        {
-            if ( readOps_[i].active_ && !readOps_[i].done_ )
-            {
-                readOps_[i].read_ = fileStream_.Read( readOps_[i].dstBuf_, readOps_[i].size_ );
-                hAtomic::LWMemoryBarrier();
-                readOps_[i].done_ = hTrue;
-            }
-        }
+        hSoundSource* sound = hNEW( hGeneralHeap ) hSoundSource();
+        soundSources_.PushBack( sound );
+
+        return sound;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
+    void hSoundManager::DestroySoundSource( hSoundSource* source )
     {
-        hcAssert( opID < MAX_READ_OPS );
-
-        if ( readOps_[opID].active_ && readOps_[opID].done_ )
-        {
-            *read = readOps_[opID].read_;
-            readOps_[opID].active_ = hFalse;
-            return ResourceFlags_OK;
-        }
-        return ResourceFlags_BUSY;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hStreamingResourceBase::~hStreamingResourceBase()
-    {
-        if ( fileStream_.IsOpen() )
-        {
-            fileStream_.Close();
-        }
+        soundSources_.Remove( source );
+        hDELETE source;
     }
 
 }

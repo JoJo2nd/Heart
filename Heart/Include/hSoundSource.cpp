@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hResource.cpp	
+	filename: 	hSoundSource.cpp	
 	
-	Copyright (c) 13:8:2011 James Moran
+	Copyright (c) 4:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,10 +24,10 @@
 	distribution.
 
 *********************************************************************/
+
 #include "Common.h"
-#include "hResource.h"
-#include "hResourceManager.h"
-#include "hAtomic.h"
+#include "hSoundSource.h"
+#include "hMathUtil.h"
 
 namespace Heart
 {
@@ -36,84 +36,79 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceClassBase::OnZeroRef() const
+    void hSoundSource::Start()
     {
-        if ( manager_ )
-        {
-            manager_->QueueResourceSweep();
-        }
+       hdSoundVoiceInfo info;
+       playbackHandle_ = soundBuffer_->CreatePlaybackHandle();
+
+       hZeroMem( &info, sizeof(info) );
+       info.audioFormat_ = soundBuffer_->GetFormat();
+       info.pitch_ = (hFloat)soundBuffer_->GetPitch();
+       info.callback_ = hdSoundVoiceCallback::bind< hSoundSource, &hSoundSource::DeviceCallback >( this );
+       
+       deviceVoice_.SetInfoAndInitialReads( info );
+       pcmDataWaiting_ = hFalse;
+       deviceVoice_.Start();
+       deviceVoice_.SetPitch( 1.f );
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32* opID )
+    void hSoundSource::Stop()
     {
-        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSoundSource::Update()
+    {
+        if ( playbackHandle_ != ~0U && soundBuffer_ && !nextPCMSize_ && !nextPCMSize_ )
         {
-            if ( !readOps_[i].active_ )
+            if ( soundBuffer_->DecodeAudioBlock( playbackHandle_, &nextPCMData_, &nextPCMSize_ ) == OGGDecode_OK )
             {
-                readOps_[i].dstBuf_ = dstBuf;
-                readOps_[i].size_ = size;
-                readOps_[i].done_ = hFalse;
-
-                hAtomic::LWMemoryBarrier();
-                readOps_[i].active_ = hTrue;
-
-                *opID = i;
-                manager_->Post();
-                return ResourceFlags_OK;
+                pcmDataWaiting_ = hTrue;
             }
         }
-
-        *opID = ~0U;
-        return ResourceFlags_BUSY;
+        deviceVoice_.UpdateVoice();
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hStreamingResourceBase::UpdateFileOps()
+    void hSoundSource::DeviceCallback( hdSoundVoice* voice, hdSoundCallbackReason reason )
     {
-        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
+        if ( reason == NEED_MORE_PCM_DATA && pcmDataWaiting_ )
         {
-            if ( readOps_[i].active_ && !readOps_[i].done_ )
+/*
+            the nth sample is given by A*sin(2*pi*n*f/R), where A is the amplitude (volume), f is the frequency in Hertz, and R is the sample rate in samples per second
+*/
+#if 0
+            static hUint32 n = 0;
+            hInt16 tone[4096];
+
+            for ( hUint32 i = 0; i < 4096; ++i, ++n )
             {
-                readOps_[i].read_ = fileStream_.Read( readOps_[i].dstBuf_, readOps_[i].size_ );
-                hAtomic::LWMemoryBarrier();
-                readOps_[i].done_ = hTrue;
+                tone[i] = (hInt16)hFloor( sin( 2.f*3.14f*n*261.626f/44100.f)*32767.f+.5f );
             }
+
+            voice->SetNextRead( tone, sizeof(tone) );
+            pcmDataWaiting_ = hTrue;
+#else
+            voice->SetNextRead( nextPCMData_, nextPCMSize_ );
+            nextPCMData_ = NULL;
+            nextPCMSize_ = 0;
+            pcmDataWaiting_ = hFalse;
+#endif
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
-    {
-        hcAssert( opID < MAX_READ_OPS );
-
-        if ( readOps_[opID].active_ && readOps_[opID].done_ )
+        else if ( reason == VOICE_STOPPED )
         {
-            *read = readOps_[opID].read_;
-            readOps_[opID].active_ = hFalse;
-            return ResourceFlags_OK;
-        }
-        return ResourceFlags_BUSY;
-    }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hStreamingResourceBase::~hStreamingResourceBase()
-    {
-        if ( fileStream_.IsOpen() )
-        {
-            fileStream_.Close();
         }
     }
 

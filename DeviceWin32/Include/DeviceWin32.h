@@ -48,6 +48,7 @@
 #include "hDebugMacros.h"
 #include "hMemory.h"
 #include "hMemoryUtil.h"
+#include "huFunctor.h"
 #include "hEventManager.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Sound /////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+#include "DeviceSoundUtil.h"
 #include "DeviceSoundVoice.h"
 #include "DeviceSoundCore.h"
 
@@ -87,6 +89,7 @@ namespace Heart
 {
     typedef hdW32SoundCoreDevice        hdSoundCore;
     typedef hdW32SoundVoiceDevice       hdSoundVoice;
+    typedef hdW32SoundVoiceInfo         hdSoundVoiceInfo;
 }
 
 #endif // DEVICEWIN32_H__

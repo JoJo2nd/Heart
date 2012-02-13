@@ -26,22 +26,28 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hMesh > MeshRes;
+#endif
 
 		hSceneNodeMesh();
 		virtual ~hSceneNodeMesh();
 
 		DEFINE_VISITABLE( hSceneNodeMesh );
 
+#if 0
 		void				AppendMesh( const MeshRes& mesh );
 		void				RemoveMesh( hUint32 idx );
+#endif
 		hUint32				GetMeshCount() const { return nMeshes_; }
-		hMesh*		GetMesh( hUint32 idx ) const 
+#if 0
+        hMesh*		GetMesh( hUint32 idx ) const 
 		{ 
 			if ( idx >= nMeshes_ )
 				return NULL;
 			return meshes_[idx];
 		}
+#endif
 
 	private:
 
@@ -49,7 +55,9 @@ namespace Heart
 
 		hUint32		nMeshes_;
 		hUint32		arrayReserve_;
+#if 0
 		MeshRes*	meshes_;
+#endif
 
 	};
 }

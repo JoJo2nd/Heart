@@ -8,12 +8,10 @@
 *********************************************************************/
 
 #include "TestBedCore.h"
-#include "SimpleRoomAddedLights.h"
 #include <time.h>
 #include "CreateTextureTest.h"
 #include "MapTest.h"
-#include "..\Include\ListTest.h"
-#include "ReflectionTest.h"
+#include "ListTest.h"
 #include "ResourceLoadTest.h"
 
 namespace Game
@@ -63,7 +61,6 @@ namespace Game
 		nextTest_ = 0;
 
         unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateResourceLoadTest >(this) );
-        unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateReflectionTestState >(this) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateMapTestsState >( this ) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateListTestState >( this ) );
 
@@ -142,15 +139,6 @@ namespace Game
 		currentTest_ = NULL;
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	Heart::hStateBase* TestBedCore::CreateSimpleLightRoom()
-	{
-		return hNEW ( hGeneralHeap ) SimpleRoomAddedLights( "testassets/simpleroom.scn", pEngine_ );
-	}
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -208,15 +196,6 @@ namespace Game
 	{
 		return hNEW ( hGeneralHeap ) ListTest( pEngine_ );
 	}
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    Heart::hStateBase* TestBedCore::CreateReflectionTestState()
-    {
-        return hNEW ( hGeneralHeap ) ReflectionTest( pEngine_ );
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

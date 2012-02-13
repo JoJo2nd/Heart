@@ -30,13 +30,16 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hVertexBuffer >	VertexBufferResource;
 		typedef hResourceHandle< hIndexBuffer >		IndexBufferResource;
 		typedef hResourceHandle< hMaterial >		MaterialResource;
+#endif
 
 		hMesh() {}
 		virtual ~hMesh() 
 		{
+#if 0
 			if ( vertices_.HasData() )
 			{
 				vertices_.Release();
@@ -49,15 +52,21 @@ namespace Heart
 			{
 				material_.Release();
 			}
+#endif
 		}
 
+#if 0
 		const VertexBufferResource&				GetVertexBuffer() const { return vertices_; }
 		const IndexBufferResource&				GetIndexBuffer() const { return indices_; }
+#endif
 		hUint32									GetPrimativeCount() const { return nPrimatives_; }
+#if 0
 		const MaterialResource&					GetMaterial() const { return material_; }
+#endif
 		const Heart::hAABB*						GetAABB() const { return &aabb_; }
 		void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
 
+#if 0
 		void									SetVertexBuffer( const VertexBufferResource& verts )
 		{
 			if ( vertices_.HasData() )
@@ -87,16 +96,21 @@ namespace Heart
 			mat.Acquire();
 			material_ = mat;
 		}
+#endif
 	
 	private:
 
 		friend class hRenderer;
 		friend class MeshBuilder;
 
+#if 0
 		VertexBufferResource	vertices_;
 		IndexBufferResource		indices_;
+#endif
 		hUint32					nPrimatives_;
+#if 0
 		MaterialResource		material_;
+#endif
 		Heart::hAABB		aabb_;
 	};
 }

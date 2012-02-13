@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hSoundManager.h	
+	filename: 	hSoundSource.h	
 	
 	Copyright (c) 4:2:2012 James Moran
 	
@@ -24,40 +24,50 @@
 	distribution.
 
 *********************************************************************/
-#ifndef HSOUNDMANAGER_H__
-#define HSOUNDMANAGER_H__
+#ifndef HSOUNDSOURCE_H__
+#define HSOUNDSOURCE_H__
 
 #include "hTypes.h"
-#include "hSoundSource.h"
-#include "hResourceManager.h"
+#include "hSoundResource.h"
 
 namespace Heart
 {
-    class hSoundManager
+    class hSoundResource;
+
+    class hSoundSource : public hLinkedListElement< hSoundSource >
     {
     public:
-        hSoundManager()
+        hSoundSource()
+            : soundBuffer_(NULL)
+            , playbackHandle_(~0U)
         {
 
         }
-        ~hSoundManager()
+        ~hSoundSource()
         {
 
         }
 
-        void             Initialise();
-        void             Update();
-        void             CreateChannel( hUint32 /*channelID*/ ) {} //TODO:
-        void             DestroyChannel( hUint32 /*channelID*/ ) {} //TODO:
-        hSoundSource*    CreateSoundSource( hUint32 channel );
-        void             DestroySoundSource( hSoundSource* source );
-        void             Destory();
+        void SetSoundResource( hSoundResource* resource ) { soundBuffer_ = resource; }
+        void Start();
+        void Stop();
+        void Update();
+        void SetPause( hBool pause );
+        void GetPause() const;
+        void SetLooping( hBool looping );
+        void GetLooping() const;
 
     private:
 
-        hdSoundCore                 impl_;
-        hLinkedList< hSoundSource > soundSources_;
+        void                 DeviceCallback( hdSoundVoice* voice, hdSoundCallbackReason reason );
+
+        hdSoundVoice         deviceVoice_;
+        hSoundResource*      soundBuffer_;
+        hSoundPlaybackHandle playbackHandle_;
+        void*                nextPCMData_;
+        hUint32              nextPCMSize_;
+        hBool                pcmDataWaiting_;
     };
 }
 
-#endif // HSOUNDMANAGER_H__
+#endif // HSOUNDSOURCE_H__

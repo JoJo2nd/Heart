@@ -61,10 +61,12 @@ namespace Heart
 
 	void hShadowMapVisitor::Destroy()
 	{
+#if 0
 		if ( shadowMaterial_.HasData() )
 		{
 			shadowMaterial_.Release();
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -172,9 +174,17 @@ namespace Heart
 				for ( hUint32 i = 0; i < c; ++i )
 				{
 					shadowCasters_[nShadowCasters_].aabb_ = *visit.GetGlobalAABB();
+#if 0
 					shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#else
+                    shadowCasters_[nShadowCasters_].meshData_ = NULL;
+#endif
 					shadowCasters_[nShadowCasters_].matrix_ = *visit.GetGlobalMatrix();
+#if 0
 					shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#else
+                    shadowCasters_[nShadowCasters_].castShadows_ = false;
+#endif
 					++nShadowCasters_;
 				}
 			}
@@ -224,9 +234,17 @@ namespace Heart
 				for ( hUint32 i = 0; i < c; ++i )
 				{
 					shadowCasters_[nShadowCasters_].aabb_ = *visit.GetLocalAABB();
-					shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#if 0
+                    shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#else
+                    shadowCasters_[nShadowCasters_].meshData_ = NULL;
+#endif
 					shadowCasters_[nShadowCasters_].matrix_ = *visit.GetGlobalMatrix();
-					shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#if 0
+                    shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#else
+                    shadowCasters_[nShadowCasters_].castShadows_ = false;
+#endif
 					++nShadowCasters_;
 				}
 			}

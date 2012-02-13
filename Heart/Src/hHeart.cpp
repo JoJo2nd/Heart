@@ -1,10 +1,28 @@
 /********************************************************************
-	created:	2008/06/08
-	created:	8:6:2008   20:23
-	filename: 	Heart.cpp
-	author:		James Moran
-	
-	purpose:	
+
+filename:     hHeart.cpp    
+
+Copyright (c) 4:2:2012 James Moran
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+claim that you wrote the original software. If you use this software
+in a product, an acknowledgment in the product documentation would be
+appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not be
+misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+distribution.
+
 *********************************************************************/
 
 #include "Common.h"
@@ -27,35 +45,37 @@
 #include "hConfigOptions.h"
 #include "hEntityFactory.h"
 #include "hLuaScriptComponent.h"
+#include "hSoundManager.h"
+#include "hSoundResource.h"
 
 /************************************************************************/
 /*
-	Engine Memory Heap allocations
+Engine Memory Heap allocations
 */
 /************************************************************************/
-#define MB				( 1024 * 1024 )
-hMemoryHeap hDebugHeap(			0   * MB, false );
-hMemoryHeap hRendererHeap(			2	* MB, false );
-hMemoryHeap hResourceHeap(			10	* MB, false );
-hMemoryHeap hSceneGraphHeap(		0	* MB, false );
-hMemoryHeap hGeneralHeap(			1	* MB, false );
-hMemoryHeap hVMHeap(				0	* MB, false );
+#define MB                ( 1024 * 1024 )
+hMemoryHeap hDebugHeap(       0 * MB, false );
+hMemoryHeap hRendererHeap(    2 * MB, false );
+hMemoryHeap hResourceHeap(   10 * MB, false );
+hMemoryHeap hSceneGraphHeap(  0 * MB, false );
+hMemoryHeap hGeneralHeap(     1 * MB, false );
+hMemoryHeap hVMHeap(          0 * MB, false );
 
 /************************************************************************/
-/*	Engine Init                                                         */
+/*    Engine Init                                                         */
 /************************************************************************/
 
 namespace Heart
 {
-	hChar			HeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
-	const hFloat	HeartEngine::HEART_VERSION = 0.4f;
-	HeartEngine*	HeartEngine::pInstance_ = NULL;
+    hChar            HeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
+    const hFloat    HeartEngine::HEART_VERSION = 0.4f;
+    HeartEngine*    HeartEngine::pInstance_ = NULL;
 
-	HeartEngine* InitHeartEngine( HeartConfig& Config, const char* configFile )
-	{
-		Config.pEngine_ = hNEW ( hGeneralHeap ) HeartEngine( Config, configFile );
-		return Config.pEngine_;
-	}
+    HeartEngine* InitHeartEngine( HeartConfig& Config, const char* configFile )
+    {
+        Config.pEngine_ = hNEW ( hGeneralHeap ) HeartEngine( Config, configFile );
+        return Config.pEngine_;
+    }
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -63,211 +83,175 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HeartEngine::HeartEngine(  HeartConfig& config, const char* configFile )
-	{
-		pInstance_ = this;
+    {
+        pInstance_ = this;
 
-		//strcpy_s( pHomeDirectory_, HOME_DIRECTORY_MAX_LEN, config.pWorkingDir_ );
+        //strcpy_s( pHomeDirectory_, HOME_DIRECTORY_MAX_LEN, config.pWorkingDir_ );
 
-		//
-		// Create engine classes
-		//
-		eventManager_ = hNEW ( hGeneralHeap ) EventManager();
+        //
+        // Create engine classes
+        //
+        eventManager_ = hNEW ( hGeneralHeap ) EventManager();
 
-		jobManager_ = hNEW ( hGeneralHeap ) hJobManager();
+        jobManager_ = hNEW ( hGeneralHeap ) hJobManager();
 
-		controllerManager_ = hNEW ( hGeneralHeap ) hControllerManager();
+        controllerManager_ = hNEW ( hGeneralHeap ) hControllerManager();
 
-		system_ = hNEW( hGeneralHeap ) hSystem();
+        system_ = hNEW( hGeneralHeap ) hSystem();
 
-		fileMananger_ = hNEW ( hGeneralHeap ) hDriveFileSystem();
+        fileMananger_ = hNEW ( hGeneralHeap ) hDriveFileSystem();
 
-		zipFileSystem_ = hNEW ( hGeneralHeap ) hZipFileSystem();
+        zipFileSystem_ = hNEW ( hGeneralHeap ) hZipFileSystem();
 
-		resourceMananger_ = hNEW ( hGeneralHeap ) hResourceManager();
+        resourceMananger_ = hNEW ( hGeneralHeap ) hResourceManager();
 
-		renderer_ = hNEW ( hGeneralHeap ) hRenderer();
-		
-		sceneGraph_ = hNEW ( hGeneralHeap ) hSceneGraph();
+        renderer_ = hNEW ( hGeneralHeap ) hRenderer();
 
-		console_ = hNEW ( hGeneralHeap ) hSystemConsole();
+        sceneGraph_ = hNEW ( hGeneralHeap ) hSceneGraph();
 
-		luaVM_ = hNEW ( hGeneralHeap ) hLuaStateManager();
+        soundManager_ = hNEW( hGeneralHeap ) hSoundManager();
+
+        console_ = hNEW ( hGeneralHeap ) hSystemConsole();
+
+        luaVM_ = hNEW ( hGeneralHeap ) hLuaStateManager();
 
         entityFactory_ = hNEW( hGeneralHeap ) hEntityFactory();
 
-		//////////////////////////////////////////////////////////////////////////
-		// Read in the configFile_ ////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////
-		if ( configFile )
-			configFile_.ReadConfig( configFile, fileMananger_ );
-		else
-			configFile_.ReadConfig( "config.cfg", fileMananger_ );
+        //////////////////////////////////////////////////////////////////////////
+        // Read in the configFile_ ////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        if ( configFile )
+            configFile_.ReadConfig( configFile, fileMananger_ );
+        else
+            configFile_.ReadConfig( "config.cfg", fileMananger_ );
 
-		config.Width_ = configFile_.GetScreenWidth();
-		config.Height_ = configFile_.GetScreenHeight();
-		config.Fullscreen_ = configFile_.GetFullscreen();
-		config.vsync_ = configFile_.GetVsync();
+        config.Width_ = configFile_.GetScreenWidth();
+        config.Height_ = configFile_.GetScreenHeight();
+        config.Fullscreen_ = configFile_.GetFullscreen();
+        config.vsync_ = configFile_.GetVsync();
 
 #ifdef HEART_PLAT_WINDOWS
-		config.deviceConfig_.Width_ = config.Width_;
-		config.deviceConfig_.Height_ = config.Height_;
+        config.deviceConfig_.Width_ = config.Width_;
+        config.deviceConfig_.Height_ = config.Height_;
 #endif
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		//TODO: Get these from the game + engine list
-		const char*  requiredResourcesList[] =
- 		{
- 			"ENGINE/EFFECTS/DEBUG.CFX",
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        //TODO: Get these from the game + engine list
+        const char*  requiredResourcesList[] =
+        {
+            "ENGINE/EFFECTS/DEBUG.CFX",
             "ENGINE/FONTS/CONSOLE.FNT",
             "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
-// 			"engine/materials/basic2dtex.mat",
-// 			"engine/materials/consoleback.mat",
-// 			"engine/materials/directionlight.mat",
-// 			"engine/materials/directionlightshadow.mat",
-// 			"engine/materials/shadowwrite.mat",
-// 			"engine/materials/pointlight1st.mat",
-// 			"engine/materials/pointlight2nd.mat",
-// 			"engine/materials/pointlightinside.mat",
-// 			"engine/materials/spotlight1st.mat",
-// 			"engine/materials/spotlight2nd.mat",
-// 			"engine/materials/spotlightshadow2nd.mat",
-			NULL
-		};
+            //             "engine/materials/basic2dtex.mat",
+            //             "engine/materials/consoleback.mat",
+            //             "engine/materials/directionlight.mat",
+            //             "engine/materials/directionlightshadow.mat",
+            //             "engine/materials/shadowwrite.mat",
+            //             "engine/materials/pointlight1st.mat",
+            //             "engine/materials/pointlight2nd.mat",
+            //             "engine/materials/pointlightinside.mat",
+            //             "engine/materials/spotlight1st.mat",
+            //             "engine/materials/spotlight2nd.mat",
+            //             "engine/materials/spotlightshadow2nd.mat",
+            NULL
+        };
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		// Register Engine side resource loaders //////////////////////////////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        // Register Engine side resource loaders //////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-		resourceMananger_->SetResourceHandlers( "TEX", 
-			hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnTextureLoad >( renderer_ ), 
-			hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnTextureUnload >( renderer_ ),
-			NULL );
+        resourceMananger_->SetResourceHandlers( "TEX", 
+            hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnTextureLoad >( renderer_ ), 
+            hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnTextureUnload >( renderer_ ),
+            NULL );
 
-		resourceMananger_->SetResourceHandlers( "FNT",
-			hResourceManager::ResourceLoadCallback::bind< &hFont::OnFontLoad >(),
-			hResourceManager::ResourceUnloadCallback::bind< &hFont::OnFontUnload >(),
-			NULL );
+        resourceMananger_->SetResourceHandlers( "FNT",
+            hResourceManager::ResourceLoadCallback::bind< &hFont::OnFontLoad >(),
+            hResourceManager::ResourceUnloadCallback::bind< &hFont::OnFontUnload >(),
+            NULL );
 
-		resourceMananger_->SetResourceHandlers( "CFX",
-			hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnMaterialLoad >( renderer_ ), 
-			hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnMaterialUnload >( renderer_ ),
-			NULL );
+        resourceMananger_->SetResourceHandlers( "CFX",
+            hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnMaterialLoad >( renderer_ ), 
+            hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnMaterialUnload >( renderer_ ),
+            NULL );
 
         resourceMananger_->SetResourceHandlers( "GPU",
             hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnShaderProgramLoad >( renderer_ ), 
             hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnShaderProgramUnload >( renderer_ ),
             NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "ixb",
-// 			hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnIndexBufferLoad >( renderer_ ), 
-// 			hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnIndexBufferUnload >( renderer_ ),
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "vxb",
-// 			hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnVertexBufferLoad >( renderer_ ), 
-// 			hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnVertexBufferUnload >( renderer_ ),
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "msh",
-// 			hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnMeshLoad >( renderer_ ), 
-// 			hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnMeshUnload >( renderer_ ),
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "scn",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneUnload >( sceneGraph_ ), 
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "sgn",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeUnload >( sceneGraph_ ), 
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "loc",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeLocatorLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeUnload >( sceneGraph_ ), 
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "lig",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeLightLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeUnload >( sceneGraph_ ), 
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "cam",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeCameraLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeUnload >( sceneGraph_ ), 
-// 			NULL );
-// 
-// 		resourceMananger_->SetResourceHandlers( "mhc",
-// 			hResourceManager::ResourceLoadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeMeshCollectionLoad >( sceneGraph_ ),
-// 			hResourceManager::ResourceUnloadCallback::bind< hSceneGraph, &hSceneGraph::OnSceneNodeUnload >( sceneGraph_ ), 
-// 			NULL );
 
-		//////////////////////////////////////////////////////////////////////////
-		// Register Engine Level Event Channels //////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////
-		eventManager_->AddChannel( KERNEL_EVENT_CHANNEL );
+        resourceMananger_->SetResourceHandlers( "OGG",
+            hResourceManager::ResourceLoadCallback::bind< &hSoundResource::OnSoundLoad >(), 
+            hResourceManager::ResourceUnloadCallback::bind< &hSoundResource::OnSoundUnload >(),
+            NULL );
 
-		//////////////////////////////////////////////////////////////////////////
-		// Init Engine Classes ///////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////
-		system_->Create( config, eventManager_ );
+        //////////////////////////////////////////////////////////////////////////
+        // Register Engine Level Event Channels //////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        eventManager_->AddChannel( KERNEL_EVENT_CHANNEL );
 
-		jobManager_->Initialise();
+        //////////////////////////////////////////////////////////////////////////
+        // Init Engine Classes ///////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        system_->Create( config, eventManager_ );
 
-		controllerManager_->Initialise( eventManager_ );
+        jobManager_->Initialise();
 
-		hClock::Initialise();
+        controllerManager_->Initialise( eventManager_ );
 
-		zipFileSystem_->Initialise( config.pGamedataPak_ );
+        hClock::Initialise();
 
-		renderer_->Create( 
-						system_,
-						config.Width_,
-						config.Height_,
-						config.bpp_,
-						config.MinShaderVersion_,
-						config.Fullscreen_,
-						config.vsync_,
-						resourceMananger_
-						);
+        zipFileSystem_->Initialise( config.pGamedataPak_ );
 
-		resourceMananger_->Initialise( renderer_, fileMananger_, requiredResourcesList );
+        renderer_->Create( 
+            system_,
+            config.Width_,
+            config.Height_,
+            config.bpp_,
+            config.MinShaderVersion_,
+            config.Fullscreen_,
+            config.vsync_,
+            resourceMananger_
+            );
 
-		sceneGraph_->Initialise( resourceMananger_ );
+        resourceMananger_->Initialise( renderer_, fileMananger_, requiredResourcesList );
 
-		hIFileSystem* luaFilesystems[] = 
-		{
-			//TODO: Add disk file system
-			//TODO: Add TCP/IP file system
-			//zipFileSystem_,
-			fileMananger_,
-			NULL
-		};
+        sceneGraph_->Initialise( resourceMananger_ );
 
-		luaVM_->Initialise( luaFilesystems );
+        soundManager_->Initialise();
+
+        hIFileSystem* luaFilesystems[] = 
+        {
+            //TODO: Add disk file system
+            //TODO: Add TCP/IP file system
+            //zipFileSystem_,
+            fileMananger_,
+            NULL
+        };
+
+        luaVM_->Initialise( luaFilesystems );
 
         entityFactory_->Initialise( fileMananger_ );
 
-		//////////////////////////////////////////////////////////////////////////
-		// Console needs resources, call after setup functions ///////////////////
-		//////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        // Console needs resources, call after setup functions ///////////////////
+        //////////////////////////////////////////////////////////////////////////
 
-		console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_ );
+        console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_ );
 
-		DebugRenderer::Initialise( resourceMananger_, renderer_ );
+        DebugRenderer::Initialise( resourceMananger_, renderer_ );
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		// Initialise Engine scripting elements ///////////////////////////////////////////////////////////
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+
         RegisterDefaultComponents();
 
         entityFactory_->DumpComponentDefintions();
 
-	}
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -280,167 +264,172 @@ namespace Heart
             ComponentDestroyCallback::bind< hLuaScriptComponent::hLuaComponentDestroy >() );
     }
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void HeartRunMainLoop( HeartConfig* config, Heart::HeartEngine* pEngine, LPSTR lpCmdLine, hBool* quitFlag )
-	{
+    void HeartRunMainLoop( HeartConfig* config, Heart::HeartEngine* pEngine, LPSTR lpCmdLine, hBool* quitFlag )
+    {
 
         hClock::Update();
 
-		//////////////////////////////////////////////////////////////////////////
-		// Engine Init Loop //////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////
-		do//while( !pEngine->GetResourceManager()->RequiredResourcesReady() )
-		{
-			pEngine->GetSystem()->Update();
+        //////////////////////////////////////////////////////////////////////////
+        // Engine Init Loop //////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        do//while( !pEngine->GetResourceManager()->RequiredResourcesReady() )
+        {
+            pEngine->GetSystem()->Update();
 
-			//before calling Update dispatch the last frames messages
-			pEngine->GetEventManager()->DispatchEvents();
+            //before calling Update dispatch the last frames messages
+            pEngine->GetEventManager()->DispatchEvents();
 
-			hClock::Update();
+            hClock::Update();
 
-			pEngine->GetConsole()->Update();
+            pEngine->GetConsole()->Update();
 
-			pEngine->GetControllerManager()->Update();
+            pEngine->GetControllerManager()->Update();
 
-			if ( (*quitFlag) )
-			{
-				pEngine->GetJobManager()->Destory();
-				break;
-			}
+            if ( (*quitFlag) )
+            {
+                pEngine->GetJobManager()->Destory();
+                break;
+            }
 
+            pEngine->GetSoundManager()->Update();
 
-			pEngine->GetVM()->Update();
+            pEngine->GetVM()->Update();
 
-			pEngine->GetRenderer()->BeginRenderFrame( hTrue );
+            pEngine->GetRenderer()->BeginRenderFrame( hTrue );
 
-			pEngine->GetConsole()->Render( pEngine->GetRenderer() );
+            pEngine->GetConsole()->Render( pEngine->GetRenderer() );
 
-			pEngine->GetRenderer()->EndRenderFrame();
+            pEngine->GetRenderer()->EndRenderFrame();
 
-		} 
-		while( !pEngine->GetResourceManager()->RequiredResourcesReady() );
+        } 
+        while( !pEngine->GetResourceManager()->RequiredResourcesReady() );
 
-		// Quit request in start up?
-		if ( !(*quitFlag) )
-		{
-			//////////////////////////////////////////////////////////////////////////
-			// Engine Setup is now complete, Let the game does its Init steps ////////
-			// The following could be moved elsewhere as its is pretty cross /////////
-			// platform //////////////////////////////////////////////////////////////
-			//////////////////////////////////////////////////////////////////////////
-			config->initFunc_( lpCmdLine, pEngine );
+        // Quit request in start up?
+        if ( !(*quitFlag) )
+        {
+            //////////////////////////////////////////////////////////////////////////
+            // Engine Setup is now complete, Let the game do its Init steps //////////
+            //////////////////////////////////////////////////////////////////////////
+            config->initFunc_( lpCmdLine, pEngine );
 
-			//////////////////////////////////////////////////////////////////////////
-			// Game Loop - again could be elsewhere //////////////////////////////////
-			//////////////////////////////////////////////////////////////////////////
-			for(;;)
-			{
-				pEngine->GetSystem()->Update();
+            //////////////////////////////////////////////////////////////////////////
+            // Game Loop /////////////////////////////////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////
+            for(;;)
+            {
+                pEngine->GetSystem()->Update();
 
-				//before calling Update dispatch the last frames messages
-				pEngine->GetEventManager()->DispatchEvents();
+                //before calling Update dispatch the last frames messages
+                pEngine->GetEventManager()->DispatchEvents();
 
-				hClock::Update();
+                hClock::Update();
 
-				pEngine->GetConsole()->Update();
+                pEngine->GetConsole()->Update();
 
-				pEngine->GetControllerManager()->Update();
+                pEngine->GetControllerManager()->Update();
 
-				if ( (*quitFlag) )
-				{
-					if ( config->shutdownTickFunc_( pEngine ) )
-					{
-						//wait on game to say ok to shutdown
-						pEngine->GetJobManager()->Destory();
-						break;
-					}
-				}
+                if ( (*quitFlag) )
+                {
+                    if ( config->shutdownTickFunc_( pEngine ) )
+                    {
+                        //wait on game to say ok to shutdown
+                        pEngine->GetJobManager()->Destory();
+                        break;
+                    }
+                }
 
-				config->updateFunc_( hClock::Delta(), pEngine );
+                pEngine->GetSoundManager()->Update();
 
-				pEngine->GetVM()->Update();
+                config->updateFunc_( hClock::Delta(), pEngine );
 
-				pEngine->GetRenderer()->BeginRenderFrame( hTrue );
+                pEngine->GetVM()->Update();
 
-				config->renderFunc_( hClock::Delta(), pEngine );
+                pEngine->GetRenderer()->BeginRenderFrame( hTrue );
 
-				pEngine->GetConsole()->Render( pEngine->GetRenderer() );
+                config->renderFunc_( hClock::Delta(), pEngine );
 
-				pEngine->GetRenderer()->EndRenderFrame();
+                pEngine->GetConsole()->Render( pEngine->GetRenderer() );
 
-			} 
-		}
+                pEngine->GetRenderer()->EndRenderFrame();
 
-		//////////////////////////////////////////////////////////////////////////
-		// Allow game to clean up ////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////////////////
-		config->postShutdownFunc_( pEngine );
-	}
+            } 
+        }
 
-	void ShutdownHeartEngine(  HeartEngine* pEngine  )
-	{
-		delete pEngine;
+        //////////////////////////////////////////////////////////////////////////
+        // Allow game to clean up ////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        config->postShutdownFunc_( pEngine );
+    }
 
-		// Check memory usage
+    void ShutdownHeartEngine(  HeartEngine* pEngine  )
+    {
+        hDELETE pEngine;
+
+        // Check memory usage
 #define CHECK_HEAP( x ) hcAssertMsg( x.BytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.BytesAllocated() );
 
-		CHECK_HEAP( hGeneralHeap );
-		CHECK_HEAP( hRendererHeap );
-		CHECK_HEAP( hResourceHeap );
-		CHECK_HEAP( hSceneGraphHeap );
-		CHECK_HEAP( hVMHeap );			
+        CHECK_HEAP( hGeneralHeap );
+        CHECK_HEAP( hRendererHeap );
+        CHECK_HEAP( hResourceHeap );
+        CHECK_HEAP( hSceneGraphHeap );
+        CHECK_HEAP( hVMHeap );
 
 #undef CHECK_HEAP
 
-	}
+    }
 
-	HeartEngine::~HeartEngine()
-	{
-		eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
+    HeartEngine::~HeartEngine()
+    {
+        eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
 
-		// job manager is destroyed by the quit logic
-		//jobManager_->Destory();
+        // job manager is destroyed by the quit logic
+        //jobManager_->Destory();
 
-		DebugRenderer::Destory();
+        DebugRenderer::Destory();
 
-		console_->Destroy();
+        console_->Destroy();
 
-		sceneGraph_->Destroy(); 
+        soundManager_->Destory();
 
-		resourceMananger_->Shutdown( renderer_ );
+        sceneGraph_->Destroy(); 
 
-		renderer_->StopRenderThread();
+        resourceMananger_->Shutdown( renderer_ );
 
-		zipFileSystem_->Destory();
+        renderer_->StopRenderThread();
 
-		luaVM_->Destroy();
+        zipFileSystem_->Destory();
 
-		renderer_->Destroy();
+        luaVM_->Destroy();
 
-		delete luaVM_;
+        renderer_->Destroy();
 
-		delete zipFileSystem_;
+        hDELETE luaVM_;
 
-		delete console_;
+        hDELETE zipFileSystem_;
 
-		delete sceneGraph_;
+        hDELETE console_;
 
-		delete renderer_;
+        hDELETE soundManager_;
 
-		delete controllerManager_;
+        hDELETE sceneGraph_;
 
-		delete resourceMananger_;
+        hDELETE renderer_;
 
-		delete fileMananger_;
+        hDELETE controllerManager_;
 
-		delete jobManager_;
+        hDELETE resourceMananger_;
 
-		delete eventManager_;
+        hDELETE fileMananger_;
 
-		delete system_;
-		
-	}
+        hDELETE jobManager_;
+
+        hDELETE eventManager_;
+
+        hDELETE system_;
+
+    }
 }

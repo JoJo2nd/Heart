@@ -44,21 +44,12 @@ namespace Game
 	private:
 
 		typedef huFunctor< Heart::hStateBase* (*)() >::type UnitTestCreator;
-		typedef Heart::hResourceHandle< Heart::hSceneNodeBase > SceneNodeRes;
-		typedef Heart::hResourceHandle< Heart::hSceneNodeLocator > LocatorNodeRes;
-		typedef Heart::hResourceHandle< Heart::hSceneNodeLight > LightNodeRes;
-		typedef Heart::hResourceHandle< Heart::hSceneNodeCamera > CameraNodeRes;
-		typedef Heart::hResourceHandle< Heart::hSceneNodeMesh > MeshNodeRes;
-		typedef Heart::hResourceHandle< Heart::hMaterial > MaterialRes;
-		typedef Heart::hResourceHandle< Heart::hMesh > MeshRes;
 
 		static const hUint32					NUM_UNIT_TESTS = 1;
 
-		Heart::hStateBase*						CreateSimpleLightRoom();
 		Heart::hStateBase*						CreateTextureTestState();
 		Heart::hStateBase*						CreateMapTestsState();
 		Heart::hStateBase*						CreateListTestState();
-        Heart::hStateBase*                      CreateReflectionTestState();
         Heart::hStateBase*						CreateResourceLoadTest();
 
 		static int								LuaNextTest( lua_State* L );

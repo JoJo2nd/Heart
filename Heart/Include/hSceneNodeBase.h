@@ -46,13 +46,17 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hSceneNodeBase > SceneNodeRes;
+#endif
 
 		// to allow class use in linked list [12/24/2008 James]
 		class ChildListNode : public hLinkedListElement< ChildListNode >
 		{
 		public:
+#if 0
 			SceneNodeRes			child_;
+#endif
 		};
 
 		struct TransformData
@@ -237,10 +241,12 @@ namespace Heart
 		void										SetGlobalMatrix( const hMatrix* m ) { xf_[1].globalMatrix_ = *m; }
 		const hAABB*								GetLocalAABB() const { return &localAABB_; }
 		const hAABB*								GetGlobalAABB() const { return &globalAABB_; }
+#if 0
 		SceneNodeRes&								pParent() 
 		{ 
 			return parent_; 
 		}
+
 		hUint32											nChildren() const 
 		{ 
 			return nChildren_; 
@@ -249,6 +255,7 @@ namespace Heart
 		{ 
 			return children_; 
 		}
+#endif
 		void											MakeDirty() 
 		{ 
 			DirtyTransform_ = hTrue; 
@@ -257,12 +264,14 @@ namespace Heart
 		{ 
 			DirtyTransform_ = hFalse; 
 		}
+#if 0
 		hBool											GetCastShadows() const { return castsShadow_; }
 		void											SetCastShadows( hBool val ) { castsShadow_ = val; }
 		void											AttachChild( SceneNodeRes& pChild );
 		void											RemoveChild( SceneNodeRes& pChild );
 		SceneNodeRes*									FindChild( const hChar* name );
-		void											DetachFromParent();
+#endif
+        void											DetachFromParent();
 
 #ifndef HEART_RESOURCE_BUILDER
 	protected:
@@ -286,10 +295,12 @@ namespace Heart
 
 		void UpdateAABB()
 		{
+#if 0
 			for ( ChildListNode* i = children_.GetHead(); i; i = i->GetNext() )
 			{
 				hAABB::ExpandBy( globalAABB_, i->child_->globalAABB_ );
 			}
+#endif
 		}
 
 
@@ -300,9 +311,11 @@ namespace Heart
 
 		virtual void									UnloadCallback() {}
 
+#if 0
 		void											SetParent( const SceneNodeRes& parent );
 		SceneNodeRes&									GetResourceHandle() { return us_; }
 		void											SetResourceHandle( const SceneNodeRes& us ) { us_ = us; }
+#endif
 /*
 		hUint32											typeID_;
 		huArray< hChar, 32 >							name_;
@@ -344,8 +357,10 @@ namespace Heart
 		Heart::hAABB								orginAABB_;//< local unrotated aabb
 		Heart::hAABB								localAABB_;//< local aabb rotated from matrix_
 		Heart::hAABB								globalAABB_;//< global aabb in world space, includes child aabb
+#if 0
 		SceneNodeRes									us_;
 		SceneNodeRes									parent_;
+#endif
 		hUint32											nChildren_;
 		hLinkedList< ChildListNode >					children_;
 

@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	ReflectionTest.h	
+	filename: 	DeviceSoundUtil.h	
 	
-	Copyright (c) 26:9:2011 James Moran
+	Copyright (c) 4:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,34 +24,32 @@
 	distribution.
 
 *********************************************************************/
-#ifndef REFLECTIONTEST_H__
-#define REFLECTIONTEST_H__
+#ifndef DEVICESOUNDUTIL_H__
+#define DEVICESOUNDUTIL_H__
 
-#include "Heart.h"
-#include "TestReflectionWriter.h"
-
-class ReflectionTest : public Heart::hStateBase
+namespace Heart
 {
-public:
-    ReflectionTest( Heart::HeartEngine* engine ) 
-        : hStateBase( "ReflectionTest" )
-        , engine_( engine )
+#ifdef HEART_DEBUG
+    #define HEART_CHECK_OPENAL_ERRORS() { ALenum er = alGetError(); hcAssertMsg( er == AL_NO_ERROR, "OpenAL Error: %s(%u)", GetOpenALErrorString(er), er ); }
+#else
+    #define HEART_CHECK_OPENAL_ERRORS()
+#endif
+
+    extern const hChar* GetOpenALErrorString( ALenum ercode );
+
+    enum hdSoundCallbackReason
     {
+        NEED_MORE_PCM_DATA,
+        VOICE_STOPPED,
+    };
 
-    }
-    ~ReflectionTest() {}
+    enum hdSoundFormat
+    {
+        HEART_SOUND_FMT_MONO8    = AL_FORMAT_MONO8,
+        HEART_SOUND_FMT_MONO16   = AL_FORMAT_MONO16,
+        HEART_SOUND_FMT_STEREO8  = AL_FORMAT_STEREO8,
+        HEART_SOUND_FMT_STEREO16 = AL_FORMAT_STEREO16,
+    };
+}
 
-    virtual void				PreEnter() {}
-    virtual hUint32				Enter() { return Heart::hStateBase::FINISHED; }
-    virtual void				PostEnter() {}
-    virtual hUint32				Main();
-    virtual void				MainRender() {}
-    virtual void				PreLeave() {}
-    virtual hUint32				Leave() { return Heart::hStateBase::FINISHED; }
-
-private:
-
-    Heart::HeartEngine*						engine_;
-};
-
-#endif // REFLECTIONTEST_H__
+#endif // DEVICESOUNDUTIL_H__

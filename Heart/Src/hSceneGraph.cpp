@@ -108,6 +108,7 @@ namespace Heart
 
 	void hSceneGraph::VisitTopDown( hSceneGraphVisitorBase* pVisitor, hSceneNodeBase* pNode, hBool useMatrixStack )
 	{
+#if 0
 		if ( useMatrixStack )
 		{
 			Heart::hMatrix* parent = MatrixStack_.top();
@@ -149,6 +150,7 @@ namespace Heart
 			pNode->UpdateAABB();
 			MatrixStack_.pop();
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -157,6 +159,7 @@ namespace Heart
 
 	void hSceneGraph::VisitBottomUp( hSceneGraphVisitorBase* pVisitor, hSceneNodeBase* pNode, hBool useMatrixStack )
 	{
+#if 0
 		if ( useMatrixStack )
 		{
 			Heart::hMatrix* parent = MatrixStack_.top();
@@ -188,6 +191,7 @@ namespace Heart
 		{
 			MatrixStack_.pop();
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -226,6 +230,7 @@ namespace Heart
 
 	hUint32 hSceneGraph::OnSceneLoad( const hChar* pExt, void* pLoadedData, void* pUserData, hResourceManager* pResourceManager )
 	{
+#if 0
 		hSceneBundle* pbundle = (hSceneBundle*)pLoadedData;
 		hByte* pdata = (hByte*)pLoadedData;
 
@@ -268,7 +273,7 @@ namespace Heart
 		}
 
 		pbundle->IsDiskResource( true );
-
+#endif
 		return 0;
 	}
 
@@ -280,6 +285,7 @@ namespace Heart
 	{
 		hSceneBundle* pbundle = (hSceneBundle*)pLoadedData;
 
+#if 0
 		// Unlink Children
 		for ( hUint32 i = 0; i < pbundle->nNodes_; ++i )
 		{
@@ -294,6 +300,7 @@ namespace Heart
 		{
 			pbundle->pMeshes_[i].Release();
 		}
+#endif
 
 		return 0;
 	}
