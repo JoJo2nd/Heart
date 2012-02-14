@@ -48,7 +48,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
-				StructMemberAlignment="3"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="false"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"

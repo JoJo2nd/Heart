@@ -90,6 +90,7 @@ namespace Heart
 
         hArray< ReadOp, MAX_READ_OPS >  readOps_;
         hSerialiserFileStream           fileStream_;
+        //hMutex                          lock_;
     };
 
 }

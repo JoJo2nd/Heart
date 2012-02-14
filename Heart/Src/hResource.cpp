@@ -50,6 +50,7 @@ namespace Heart
 
     hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32* opID )
     {
+        //hMutexAutoScope am( &lock_ );
         for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
         {
             if ( !readOps_[i].active_ )
@@ -77,6 +78,7 @@ namespace Heart
 
     void hStreamingResourceBase::UpdateFileOps()
     {
+        //hMutexAutoScope am( &lock_ );
         for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
         {
             if ( readOps_[i].active_ && !readOps_[i].done_ )
@@ -94,6 +96,7 @@ namespace Heart
 
     hResourceClassBase::ResourceFlags hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
     {
+        //hMutexAutoScope am( &lock_ );
         hcAssert( opID < MAX_READ_OPS );
 
         if ( readOps_[opID].active_ && readOps_[opID].done_ )
