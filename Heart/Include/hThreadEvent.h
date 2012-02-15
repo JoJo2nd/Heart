@@ -15,7 +15,7 @@
 namespace Heart
 {
 
-	class hThreadEvent : public Device::ThreadEvent
+	class hThreadEvent : public hdThreadEvent
 	{
 	public:
 		hThreadEvent() {}
@@ -23,17 +23,17 @@ namespace Heart
 
 		void Wait()
 		{
-			Device::ThreadEvent::WaitOnSignal();
+			hdThreadEvent::WaitOnSignal();
 		}
 
 		hBool TryWait()
 		{
-			return Device::ThreadEvent::TryOnSignal();
+			return hdThreadEvent::TryOnSignal();
 		}
 
 		void Signal()
 		{
-			Device::ThreadEvent::Signal();
+			hdThreadEvent::Signal();
 		}
 
 	private:

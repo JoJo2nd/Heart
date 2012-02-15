@@ -87,6 +87,7 @@
 
 namespace Heart
 {
+    typedef hdW32ThreadEvent            hdThreadEvent;
     typedef hdW32SoundCoreDevice        hdSoundCore;
     typedef hdW32SoundVoiceDevice       hdSoundVoice;
     typedef hdW32SoundVoiceInfo         hdSoundVoiceInfo;

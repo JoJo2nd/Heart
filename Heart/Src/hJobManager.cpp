@@ -12,6 +12,8 @@
 
 namespace Heart
 {
+#define HEART_JOB_THREADS (4)
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -36,16 +38,25 @@ namespace Heart
 
 	void hJobManager::Initialise()
 	{
-#ifdef HEART_REWRITE_ME
-		for ( hUint32 i = 0; i < MAX_JOB_THREADS; ++i )
+        jobQueueSemaphone_.Create( 0, HEART_JOB_THREADS+1 );
+        jobReadIndex_ = 0;
+        jobWriteIndex_= 0;
+
+        jobCoordinator_.Begin( 
+            "Job Coordinator", 
+            hThread::PRIORITY_HIGH, 
+            Heart::Device::Thread::ThreadFunc::bind< hJobManager, &hJobManager::JobCoordinator >( this ), 
+            NULL );
+
+        jobThreads_.Resize( HEART_JOB_THREADS );
+		for ( hUint32 i = 0; i < HEART_JOB_THREADS; ++i )
 		{
 			jobThreads_[ i ].Begin(
-				"hJob Task hThread",
-				hThread::PRIORITY_BELOWNORMAL,
-				Heart::Device::Thread::ThreadFunc::bind< hJobManager, &hJobManager::JobWorker >( this ), 
+				"Job Task Thread",
+				hThread::PRIORITY_NORMAL,
+				Heart::Device::Thread::ThreadFunc::bind< hJobManager, &hJobManager::JobThread >( this ), 
 				NULL );
 		}
-#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -54,9 +65,8 @@ namespace Heart
 
 	void hJobManager::Destory()
 	{
+        WaitOnFrameJobsToFinish();
 #ifdef HEART_REWRITE_ME
-		finish_ = hTrue;
-
 		for ( hUint32 i = 0; i < MAX_JOB_THREADS; ++i )
 		{
 			while ( !jobThreads_[ i ].IsComplete() ) 
@@ -67,33 +77,89 @@ namespace Heart
 #endif
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	hJob* hJobManager::PushJob( hJob* todo )
-	{
-#ifdef HEART_REWRITE_ME
-		if ( !finish_ )
-		{
-			jobQueueMutex_.Lock();
-			todo->AddRef();
-			pendingJob_.push_back( todo );
-			jobQueueMutex_.Unlock();
-		}
+    void hJobManager::PushJobChain( hJobChain* jobchain )
+    {
+        hMutexAutoScope am( &jobChainMatrix_ );
 
-		return todo;
-#endif
-        return NULL;
-	}
+        pendingJobChains_.PushBack( jobchain );
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-#ifdef HEART_REWRITE_ME
-	hUint32 hJobManager::JobWorker( void* data )
-	{
+        jobQueueSemaphone_.Post();
+    }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobManager::WaitOnFrameJobsToFinish()
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobManager::PushJobChainToCoordinator( hJobChain* chain )
+    {
+        processJobChains_[processJobChainCount_++] = chain;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobManager::PopJobChainFromCoordinator( hJobChain* chain )
+    {
+        for ( hUint32 i = 0; i < processJobChainCount_; ++i )
+        {
+            if ( processJobChains_[i] == chain )
+            {
+                processJobChains_[i] = processJobChains_[--processJobChainCount_];
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hJobManager::JobCoordinator( void* param )
+    {
+        while (1)
+        {
+            jobQueueSemaphone_.Wait();
+
+            jobChainMatrix_.Lock();
+
+            //push pending job chains to process job chains
+            hUint32 size = pendingJobChains_.GetSize();
+            for ( hUint32 i = 0; i < size; ++i )
+            {
+                PushJobChainToCoordinator( pendingJobChains_[i] );
+            }
+
+            pendingJobChainCount_ = 0;
+
+            jobChainMatrix_.Unlock();
+
+
+        }
+
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hJobManager::JobThread( void* param )
+    {
+        jobQueueSemaphone_.Wait();
+/*
 		list< hJob* >			runningJobs_;
 		hBool					complete = hFalse;
 
@@ -156,8 +222,8 @@ namespace Heart
 		{
 			(*i)->DecRef();
 		}
-
+*/
 		return 0;
-	}
-#endif
+    }
+
 }
