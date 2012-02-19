@@ -48,7 +48,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32* opID )
+    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID )
     {
         //hMutexAutoScope am( &lock_ );
         for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
@@ -57,6 +57,7 @@ namespace Heart
             {
                 readOps_[i].dstBuf_ = dstBuf;
                 readOps_[i].size_ = size;
+                readOps_[i].offset_ = offset;
                 readOps_[i].done_ = hFalse;
 
                 hAtomic::LWMemoryBarrier();
@@ -83,6 +84,7 @@ namespace Heart
         {
             if ( readOps_[i].active_ && !readOps_[i].done_ )
             {
+                fileStream_.Seek( readOps_[i].offset_ );
                 readOps_[i].read_ = fileStream_.Read( readOps_[i].dstBuf_, readOps_[i].size_ );
                 hAtomic::LWMemoryBarrier();
                 readOps_[i].done_ = hTrue;

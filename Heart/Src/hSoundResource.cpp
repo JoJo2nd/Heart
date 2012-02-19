@@ -188,9 +188,9 @@ namespace Heart
 
         /* Throw the comments plus a few lines about the bitstream we're decoding */
         hcPrintf( "Bitstream is %d channel, %ldHz", vobInfo_.channels, vobInfo_.rate );
-        hcPrintf( "Encoded by: %s\n\n", vobComment_.vendor);
+        hcPrintf( "Encoded by: %s", vobComment_.vendor);
 
-        initTell_ = (hUint32)dataStream->Tell();
+        initTell_ = (hUint32)dataStream->Tell() - 4096;
 
         return hTrue;
     }
@@ -230,7 +230,7 @@ namespace Heart
     hBool hSoundResource::RequestNextAudioBlock( hSoundPlaybackHandle handle )
     {
         hPlaybackInfo* info = &playbackInfos_[handle];
-        ResourceFlags ret = QueueStreamRead( info->inBuffer_, hPlaybackInfo::OGG_BUFFER_SIZE, &info->readOpID_ );
+        ResourceFlags ret = QueueStreamRead( info->inBuffer_, hPlaybackInfo::OGG_BUFFER_SIZE, info->tell_, &info->readOpID_ );
         return ret == ResourceFlags_OK;
     }
 
@@ -250,6 +250,7 @@ namespace Heart
         {
             info->inSizes = read;
             info->readOpID_ = ~0U;
+            info->tell_ += read;
 
             hChar* buffer = ogg_sync_buffer( &oggState_, hPlaybackInfo::OGG_BUFFER_SIZE );
             hMemCpy( buffer, info->inBuffer_, read );
@@ -308,8 +309,9 @@ namespace Heart
                 return info->state_; /* need more data */
             }
             if( result < 0 )
-            { /* missing or corrupt data at this page position */
-                hcPrintf( "Corrupt or missing data in bitstream; continuing..." );
+            { 
+                /* missing or corrupt data at this page position, ogg deals with this very well so
+                 * just plod on...*/
             }
             else
             {
@@ -326,7 +328,7 @@ namespace Heart
                     }
                     if(result<0)
                     { /* missing or corrupt data at this page position */
-                        /* no reason to complain; already complained above */
+                        /* no reason to complain; */
                     }
                     else
                     {
@@ -401,12 +403,31 @@ namespace Heart
                     *dstPtr = info->outBuffers_[info->currentOutBuffer_];
                     info->eos_ = hTrue;
                     info->state_ = OGGDecode_END;
-                    return info->state_;
+                    return OGGDecode_OK;
                 }
             }
         }
 
         return info->state_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSoundResource::Rewind( hSoundPlaybackHandle handle )
+    {
+        hPlaybackInfo* info = &playbackInfos_[handle];
+
+        info->tell_ = initTell_;
+        info->readOpID_ = ~0U;
+        info->inUse_ = hTrue;
+        info->eos_ = hFalse;
+        info->eoSource_ = hFalse;
+        info->state_ = OGGDecode_NEED_MORE_DATA;
+        info->decodingBlock = hFalse;
+
+        hcPrintf( "Stream Rewind" );
     }
 
     //////////////////////////////////////////////////////////////////////////

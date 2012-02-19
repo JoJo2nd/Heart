@@ -67,7 +67,7 @@ namespace Heart
             flags_ |= ResourceFlags_STREAMING;
         }
         virtual ~hStreamingResourceBase();
-        ResourceFlags QueueStreamRead( void* dstBuf, hUint32 size, hUint32* opID );
+        ResourceFlags QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID );
         ResourceFlags PollSteamRead( hUint32 opID, hUint32* read );
 
     private:
@@ -81,6 +81,7 @@ namespace Heart
             hUint32 read_;
             void*   dstBuf_;
             hUint32 size_;
+            hUint32 offset_;
         };
 
         static const hUint32 MAX_READ_OPS = 8;

@@ -58,10 +58,10 @@
     #else
         #define hNEW( heap ) new ( heap )
     #endif
+
+    #define hPLACEMENT_NEW( ptr ) new ( ptr ) 
     #define hDELETE         delete 
     #define hDELETE_ARRAY   delete[] 
-#else
-	#define TIXML_OVERRIDENEW
 #endif 
 
 #ifndef _CRT_SECURE_NO_WARNINGS

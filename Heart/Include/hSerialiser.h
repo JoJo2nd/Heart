@@ -449,7 +449,7 @@ namespace Heart
             ser->WriteEndMarker();
         }
         template< typename _ArrayQType, typename _MetaName >
-        static void DoSerialise( hSerialiser* ser, const _Ty data[_ArrayQType::ElementCount] )
+        static void DoSerialise( hSerialiser* ser, const _Ty (&data)[_ArrayQType::ElementCount] )
         {
             typedef _MetaName NameInfo;
             static const hUint32 arraycount = _ArrayQType::ElementCount;

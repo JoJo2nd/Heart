@@ -170,7 +170,7 @@ namespace Heart
 
 		static bool												IsRenderThread()
 		{
-			return pRenderThreadID_ == Threading::GetCurrentThreadID();
+			return pRenderThreadID_ == hThreading::GetCurrentThreadID();
 		}
 
 	private:

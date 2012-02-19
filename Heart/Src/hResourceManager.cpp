@@ -50,6 +50,7 @@ namespace Heart
         , gotRequiredResources_( hFalse )
         , remappingNames_(NULL)
         , remappingNamesSize_(0)
+        , resourceSweepCount_((hUint32*)hAlignMalloc( sizeof(hUint32), 32 ))
 	{
 		hcAssert( pInstance_ == NULL );
 
@@ -62,6 +63,8 @@ namespace Heart
 
 	hResourceManager::~hResourceManager()
 	{
+        hDELETE resourceSweepCount_;
+        resourceSweepCount_ = NULL;
 		pInstance_ = NULL;
 	}
 
@@ -104,7 +107,7 @@ namespace Heart
 
         for ( hUint32 i = 0; i < nRequiredResources; ++i )
         {    
-            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i], requiredResources_[i] );
+            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i] );
         }
 
 		//Begin loading the required resources
@@ -135,11 +138,11 @@ namespace Heart
 		{
 			prenderer->ReleasePendingRenderResources();
 			ForceResourceSweep();
-			Threading::ThreadSleep(1);
+			hThreading::ThreadSleep(1);
 			++exitBail;
 		}
 
-		hcAssert( resourceSweepCount_ == 0 );
+		hcAssert( *resourceSweepCount_ == 0 );
 		requiredResources_.Clear();
 		requiredResourceKeys_.Clear();
         streamingResources_.Clear( hTrue );
@@ -216,10 +219,10 @@ namespace Heart
 		{
 			loaderSemaphone_.Wait();
 
-			while ( resourceSweepCount_ > 0 )
+			while ( *resourceSweepCount_ > 0 )
 			{
 				DoResourceSweep();
-				hAtomic::Decrement( &resourceSweepCount_ );
+				hAtomic::Decrement( resourceSweepCount_ );
 			}
 
             loadQueueMutex_.Lock();

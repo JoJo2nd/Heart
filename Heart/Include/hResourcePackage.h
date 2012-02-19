@@ -43,7 +43,7 @@ namespace Heart
 	{
 	public:
 		hResourcePackage()
-			: completedLoads_( 0 )
+			: completedLoads_( (hUint32*)hAlignMalloc( sizeof(hUint32), 32 ) )
 		{}	
 		~hResourcePackage()
 		{
@@ -53,23 +53,17 @@ namespace Heart
             {
                 delete resourceNames_[i];
             }
+
+            delete completedLoads_;
+            completedLoads_ = NULL;
 		}
 
-        template< typename _Ty >
-        void    AddResourceToPackage( const hChar* resourcePath, _Ty*& output )
-        {
-            hUint32 crc = hResourceManager::BuildResourceCRC( resourcePath );
-            hChar* path = hNEW( hGeneralHeap ) hChar[ hStrLen( resourcePath )+1 ];
-            hStrCopy( path, hStrLen( resourcePath )+1, resourcePath );
-            resourceNames_.PushBack( path );
-            resourcecCRC_.PushBack( crc );
-            resourceDests_.PushBack( (hResourceClassBase**)&output );
-        }
-        void    AddResourceToPackage( const hChar* resourcePath );
-		void	BeginPackageLoad( hResourceManager* resourceManager );
-        hBool	IsPackageLoaded() const;
-        void    GetResourcePointers();
-		void	CancelPackageLoad();
+        void                AddResourceToPackage( const hChar* resourcePath );
+		void	            BeginPackageLoad( hResourceManager* resourceManager );
+        hBool	            IsPackageLoaded() const;
+        void                GetResourcePointers();
+        hResourceClassBase* GetResource( const hChar* resourcePath ) const;
+		void	            CancelPackageLoad();
 
 	private:
 
@@ -79,9 +73,9 @@ namespace Heart
 
         hVector< hChar* >               resourceNames_;
         hVector< hUint32 >              resourcecCRC_;
-        hVector< hResourceClassBase** > resourceDests_;
+        hVector< hResourceClassBase* >  resourceDests_;
 		hResourceManager*				resourceManager_;
-        hUint32                         completedLoads_;
+        hUint32*                        completedLoads_;
 	};
 }
 

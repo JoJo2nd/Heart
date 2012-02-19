@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	DeviceSocket.h	
+	filename: 	JobManagerTest.h	
 	
-	Copyright (c) 5:6:2011 James Moran
+	Copyright (c) 19:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,16 +24,32 @@
 	distribution.
 
 *********************************************************************/
+#ifndef JOBMANAGERTEST_H__
+#define JOBMANAGERTEST_H__
 
-#ifndef DEVICESOCKET_H__
-#define DEVICESOCKET_H__
+#include "Heart.h"
 
-namespace Heart	
+class JobManagerTest : public Heart::hStateBase
 {
-namespace Device
-{
-	
-}
-}
+public:
+    JobManagerTest( Heart::HeartEngine* engine ) 
+        : hStateBase( "ResourceLoadTest" )
+        , engine_( engine )
+        , jobChain1_(64)
+        , jobChain2_(64)
+    {
 
-#endif // DEVICESOCKET_H__
+    }
+    ~JobManagerTest() {}
+
+
+    virtual hUint32				Main();		
+
+private:
+
+    Heart::HeartEngine*			engine_;
+    Heart::hJobChain            jobChain1_;
+    Heart::hJobChain            jobChain2_;
+};
+
+#endif // JOBMANAGERTEST_H__

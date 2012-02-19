@@ -62,6 +62,7 @@ namespace Heart
         hUint32                        GetChannels() const { return vobInfo_.channels; }
         hdSoundFormat                  GetFormat() const { return GetChannels() == 2 ? HEART_SOUND_FMT_STEREO16 : HEART_SOUND_FMT_MONO16; }
         hSoundPlaybackHandle           CreatePlaybackHandle();
+        void                           Rewind( hSoundPlaybackHandle handle );
         hOGGDecodeState                DecodeAudioBlock( hSoundPlaybackHandle handle, void** dstPtr, hUint32* outSize );
         void                           ReleasePlaybackHandle( hSoundPlaybackHandle /*handle*/ ) {}
         static hResourceClassBase*     OnSoundLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );

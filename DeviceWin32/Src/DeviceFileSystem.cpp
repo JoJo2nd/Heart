@@ -144,6 +144,8 @@ namespace FileSystem
 			pHandle->filePos_ = size;
 		}
 
+        SetFilePointer( pHandle->fileHandle_, pHandle->filePos_, 0, FILE_BEGIN );
+
 		return FILEERROR_NONE;
 	}
 

@@ -175,7 +175,7 @@ namespace Heart
 
     hMaterialInstance* hMaterial::CreateMaterialInstance()
     {
-        return hNEW ( hGeneralHeap ) hMaterialInstance( this, pRenderer_ );
+        return hNEW( hGeneralHeap ) hMaterialInstance( this, pRenderer_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

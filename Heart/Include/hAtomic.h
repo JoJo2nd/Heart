@@ -47,16 +47,19 @@ namespace hAtomic
 
 inline void Increment( hUint32* i )
 {
+    hcAssert( ((hUint32)i % 32) == 0 );
 	InterlockedIncrementAcquire( (volatile LONG*)i );
 }
 
-inline void Decrement(hUint32* i )
+inline void Decrement( hUint32* i )
 {
+    hcAssert( ((hUint32)i % 32) == 0 );
 	InterlockedDecrementAcquire( (volatile LONG*)i );
 }
 
 inline hUint32 CompareAndSwap( hUint32* val, hUint32 compare, hUint32 newVal )
 {
+    hcAssert( ((hUint32)val % 32) == 0 );
 	return InterlockedCompareExchangeAcquire( (volatile LONG*) val, newVal, compare );
 }
 

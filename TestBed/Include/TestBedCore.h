@@ -51,6 +51,7 @@ namespace Game
 		Heart::hStateBase*						CreateMapTestsState();
 		Heart::hStateBase*						CreateListTestState();
         Heart::hStateBase*						CreateResourceLoadTest();
+        Heart::hStateBase*                      CreateJobTest();
 
 		static int								LuaNextTest( lua_State* L );
 

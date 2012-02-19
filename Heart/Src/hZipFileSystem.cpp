@@ -259,7 +259,7 @@ namespace
 		complete_ = true;
 		requestSemaphore_.Post();
 
-		while ( !zipIOThread_.IsComplete() ) { Threading::ThreadSleep( 1 ); }
+		while ( !zipIOThread_.IsComplete() ) { hThreading::ThreadSleep( 1 ); }
 
 		delete pStringPool_;
 
@@ -532,7 +532,7 @@ namespace
 		{
 			do 
 			{
-				Threading::ThreadSleep( 1 );
+				hThreading::ThreadSleep( 1 );
 			}
 			while ( !doneFileSystemRead_ );
 		}

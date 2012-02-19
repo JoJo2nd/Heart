@@ -220,7 +220,7 @@ namespace Heart
 		{
 			while ( !renderCmdPipe_.IsEmpty() )
 			{
-				Threading::ThreadYield();
+				hThreading::ThreadYield();
 			}
 		}
 
@@ -280,7 +280,7 @@ namespace Heart
 
 	hUint32 hRenderer::RenderThread( void* pParam )
 	{
-		pRenderThreadID_ = Threading::GetCurrentThreadID();
+		pRenderThreadID_ = hThreading::GetCurrentThreadID();
 		hFloat frameCounter = 0.0f;
 		hUint32 frames = 0;
 
@@ -378,7 +378,7 @@ namespace Heart
 			else
 			{
 				//Yield to another thread
-				Threading::ThreadYield();
+				hThreading::ThreadYield();
 			}
 
 			// Check for the kill command
@@ -598,7 +598,7 @@ namespace Heart
 // 		hIndexBuffer* pIB = (hIndexBuffer*)pLoadedData;
 // 		while( indexBuffersToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		indexBuffersToRelease_.push( pIB );
 		return 1;
@@ -644,7 +644,7 @@ namespace Heart
 // 		hVertexBuffer* pVB = (hVertexBuffer*)pLoadedData;
 // 		while( vertexBuffersToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		vertexBuffersToRelease_.push( pVB );
 		return 1;
@@ -694,7 +694,7 @@ namespace Heart
 // 
 // 		while( meshesToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		meshesToRelease_.push( pmesh );
 		return 1;
@@ -767,7 +767,7 @@ namespace Heart
 
 	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
-		(*outTex) = hNEW ( hGeneralHeap ) hTexture( this );
+        (*outTex) = hNEW( hGeneralHeap ) hTexture( this );
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;

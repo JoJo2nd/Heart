@@ -14,7 +14,7 @@
 
 namespace Heart
 {
-namespace Threading
+namespace hThreading
 {
 	inline void*	GetCurrentThreadID() { return Device::GetCurrentThreadID(); };
 	inline void		ThreadSleep( DWORD dwMilliseconds ) { Device::ThreadSleep( dwMilliseconds ); }

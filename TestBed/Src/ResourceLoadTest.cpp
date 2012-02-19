@@ -33,11 +33,11 @@
 
 void ResourceLoadTest::PreEnter()
 {
-    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX", tex1_ );
-    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX", tex2_ );
+    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
+    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
-    resPack_.AddResourceToPackage( "MUSIC/CAFO_S.OGG", stream_ );
+    resPack_.AddResourceToPackage( "MUSIC/ANON.OGG" );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 
@@ -51,10 +51,15 @@ hUint32 ResourceLoadTest::Enter()
     {
         resPack_.GetResourcePointers();
 
+        tex1_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
+        tex2_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/NARUTO_TEST.TEX" );
+        stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/ANON.OGG" );
+
         //Start playing a sound
         soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
         soundSource_->SetSoundResource( stream_ );
 
+        soundSource_->SetLooping( hTrue );
         soundSource_->Start();
 
         //Setup a view port for rendering

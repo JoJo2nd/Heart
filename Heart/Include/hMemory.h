@@ -14,7 +14,7 @@
 
 #define ALLOC_BREAK_NUM 0
 
-#define THREAD_CHECK()	{ hcAssert( lastThreadID_ == NULL || lastThreadID_ == Heart::Threading::GetCurrentThreadID() ); lastThreadID_ = Heart::Threading::GetCurrentThreadID(); }
+#define THREAD_CHECK()	{ hcAssert( lastThreadID_ == NULL || lastThreadID_ == Heart::hThreading::GetCurrentThreadID() ); lastThreadID_ = Heart::hThreading::GetCurrentThreadID(); }
 #define PRE_ACTION()	if ( useLocks_ ) lock_.Lock(); else THREAD_CHECK();
 #define POST_ACTION()	if ( ALLOC_BREAK_NUM && debugAlloc_ == ALLOC_BREAK_NUM ) hcBreak; if ( useLocks_ ) lock_.Unlock()
 
@@ -261,16 +261,20 @@ extern hMemoryHeap hGeneralHeap;
 extern hMemoryHeap hVMHeap;
 
 #ifdef HEART_DEBUG
-	#define hMalloc( s ) hGeneralHeap.alignAlloc( s, 16, __FILE__, __LINE__ )
+    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a, __FILE__, __LINE__ )
+	#define hMalloc( s ) hAlignMalloc( s, 16 )
 	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s, __FILE__, __LINE__ )
+    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a, __FILE__, __LINE__ )
 	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16, __FILE__, __LINE__ )
 	#define hHeapRealloc( h, p, s ) h.realloc( p, s, __FILE__, __LINE__ )
 	#define hFree( p ) hGeneralHeap.release( p )
 #else
-	#define hMalloc( s ) hGeneralHeap.alignAlloc( s, 16 )
+    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a )
+	#define hMalloc( s ) hAlignMalloc( s, 16 )
 	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s )
-	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16, __FILE__, __LINE__ )
-	#define hHeapRealloc( h, p, s ) h.realloc( p, s, __FILE__, __LINE__ )
+    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a )
+	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16 )
+	#define hHeapRealloc( h, p, s ) h.realloc( p, s )
 	#define hFree( p ) hGeneralHeap.release( p )
 #endif
 

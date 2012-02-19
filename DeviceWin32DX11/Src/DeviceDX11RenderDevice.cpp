@@ -724,7 +724,7 @@ namespace Heart
             blendStates_.Insert( stateKey, outBlendState );
         }
 
-        hAtomic::Increment( &outBlendState->refCount_ );
+        outBlendState->AddRef();
 
         resourceMutex_.Unlock();
 
@@ -738,9 +738,9 @@ namespace Heart
     void hdDX11RenderDevice::DestroyBlendState( hdDX11BlendState* state )
     {
         hcAssert( state );
-        hAtomic::Decrement( &state->refCount_ );
+        state->DecRef();
 
-        if ( state->refCount_ == 0 )
+        if ( state->GetRefCount() == 0 )
         {
             resourceMutex_.Lock();
 
@@ -814,7 +814,7 @@ namespace Heart
             rasterizerStates_.Insert( stateKey, outRasState );
         }
 
-        hAtomic::Increment( &outRasState->refCount_ );
+        outRasState->AddRef();
 
         resourceMutex_.Unlock();
 
@@ -990,7 +990,7 @@ namespace Heart
             depthStencilStates_.Insert( stateKey, outDSState );
         }
 
-        hAtomic::Increment( &outDSState->refCount_ );
+        outDSState->AddRef();
 
         resourceMutex_.Unlock();
 
@@ -1078,7 +1078,7 @@ namespace Heart
             samplerStateMap_.Insert( stateKey, outSamState );
         }
 
-        hAtomic::Increment( &outSamState->refCount_ );
+        outSamState->AddRef();
 
         resourceMutex_.Unlock();
 

@@ -9,6 +9,8 @@
 
 #include "Common.h"
 #include "hJobManager.h"
+#include "hThread.h"
+#include "hMathUtil.h"
 
 namespace Heart
 {
@@ -38,9 +40,11 @@ namespace Heart
 
 	void hJobManager::Initialise()
 	{
-        jobQueueSemaphone_.Create( 0, HEART_JOB_THREADS+1 );
+        jobQueueSemaphore_.Create( 0, HEART_JOB_THREADS+1 );
+        jobChainSemaphore_.Create( 0, 64 );
         jobReadIndex_ = 0;
         jobWriteIndex_= 0;
+        sleepingJobThreads_ = 0;
 
         jobCoordinator_.Begin( 
             "Job Coordinator", 
@@ -66,15 +70,6 @@ namespace Heart
 	void hJobManager::Destory()
 	{
         WaitOnFrameJobsToFinish();
-#ifdef HEART_REWRITE_ME
-		for ( hUint32 i = 0; i < MAX_JOB_THREADS; ++i )
-		{
-			while ( !jobThreads_[ i ].IsComplete() ) 
-			{
-				Threading::ThreadYield();
-			}
-		}
-#endif
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -85,9 +80,14 @@ namespace Heart
     {
         hMutexAutoScope am( &jobChainMatrix_ );
 
-        pendingJobChains_.PushBack( jobchain );
+        if ( pendingJobChainCount_ >= pendingJobChains_.GetSize() )
+            pendingJobChains_.PushBack( jobchain );
+        else
+            pendingJobChains_[pendingJobChainCount_] = jobchain;
 
-        jobQueueSemaphone_.Post();
+        ++pendingJobChainCount_;
+
+        jobChainSemaphore_.Post();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -105,7 +105,12 @@ namespace Heart
 
     void hJobManager::PushJobChainToCoordinator( hJobChain* chain )
     {
-        processJobChains_[processJobChainCount_++] = chain;
+        if ( processJobChainCount_ >= processJobChains_.GetSize())
+            processJobChains_.PushBack(chain);
+        else
+            processJobChains_[processJobChainCount_] = chain;
+
+        ++processJobChainCount_;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -127,17 +132,26 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hJobManager::PopJobChainFromCoordinator( hUint32 idx )
+    {
+        hcAssert( idx < processJobChainCount_ );
+        processJobChains_[idx] = processJobChains_[--processJobChainCount_];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hUint32 hJobManager::JobCoordinator( void* param )
     {
         while (1)
         {
-            jobQueueSemaphone_.Wait();
+            //jobChainSemaphore_.Wait();
 
             jobChainMatrix_.Lock();
 
             //push pending job chains to process job chains
-            hUint32 size = pendingJobChains_.GetSize();
-            for ( hUint32 i = 0; i < size; ++i )
+            for ( hUint32 i = 0; i < pendingJobChainCount_; ++i )
             {
                 PushJobChainToCoordinator( pendingJobChains_[i] );
             }
@@ -146,7 +160,44 @@ namespace Heart
 
             jobChainMatrix_.Unlock();
 
+            hUint32 chains = processJobChainCount_;
+            for ( hUint32 i =0; i < chains; ++i )
+            {
+                hJobChain* jc = processJobChains_[i];
+                if ( jc->IsBatchComplete() || jc->IsFirstBatch() || jc->IsComplete() )
+                {
+                    if ( jc->IsComplete() )
+                    {
+                        //The job Chain is complete. remove it and signal anyone waiting on it.
+                        PopJobChainFromCoordinator( i );
+                        jc->CompleteSignal();
+                    }
+                    else
+                    {
+                        hUint32 nextBatchCount = jc->GetJobBatchCount();
+                        hUint32 writeIdx = jobWriteIndex_;
+                        if ( (jobWriteIndex_+nextBatchCount)%JOB_QUEUE_SIZE != jobReadIndex_ )
+                        {
+                            hJobTagBatch* batch = jc->GetJobBatch();
+                            for ( hJob* job = jc->GetJob( batch->firstJob_ ); job; job = jc->GetJob( job->GetNextJobIndex() ) )
+                            {
+                                jobQueue_[writeIdx] = *job;
+                                writeIdx = (writeIdx+1)%JOB_QUEUE_SIZE;
+                            }
 
+                            hAtomic::LWMemoryBarrier();
+                            jobWriteIndex_ = writeIdx;
+
+                            jc->BatchUploaded();
+                        }
+
+                        WakeSleepingJobThreads();
+                    }
+                }
+            }
+
+            //TODO: Improve!
+            hThreading::ThreadSleep( 1 );
         }
 
         return 0;
@@ -158,72 +209,192 @@ namespace Heart
 
     hUint32 hJobManager::JobThread( void* param )
     {
-        jobQueueSemaphone_.Wait();
-/*
-		list< hJob* >			runningJobs_;
-		hBool					complete = hFalse;
+        while ( 1 )
+        {
+            hJob* job = GrabJob();
 
-		while ( !complete )
-		{
-			//size is const so should be able to get away with this without mutex Lock
-			if ( pendingJob_.size() > 0 )
-			{
-				jobQueueMutex_.Lock();
+            if ( !job )
+            {
+                hAtomic::Increment( &sleepingJobThreads_ );
+                jobQueueSemaphore_.Wait();
+                hAtomic::Decrement( &sleepingJobThreads_ );
+                continue;
+            }
 
-				JobQueueType::iterator i = pendingJob_.begin(), iend = pendingJob_.end();
-				for ( ; i != iend; ++i )
-				{
-					runningJobs_.push_back( *i );
-				}
+            (*job->GetEntryPoint())( job->GetDesc() );
+            job->CompleteJob();
+        }
 
-				pendingJob_.clear();
-				jobQueueMutex_.Unlock();
-			}
-
-			if ( runningJobs_.size() )
-			{
-				JobListType::iterator i = runningJobs_.begin(), iend = runningJobs_.end();
-				while ( i != iend && !finish_ )
-				{
-					(*i)->JobTick();
-					if ( (*i)->IsComplete() || (*i)->aborted_ )
-					{
-						hJob* ptr = *i;
-						ptr->Finished();
-						i = runningJobs_.erase( i );
-						ptr->DecRef();
-					}
-				}
-			}
-			else
-			{
-				Threading::ThreadYield();
-			}
-
-			if ( finish_ )
-			{
-				complete = hTrue;
-			}
-		}
-
-		jobQueueMutex_.Lock();
-
-		for ( JobQueueType::iterator i = pendingJob_.begin(), iend = pendingJob_.end(); 
-			i != iend; ++i )
-		{
-			runningJobs_.push_back( *i );
-		}
-
-		pendingJob_.clear();
-		jobQueueMutex_.Unlock();
-
-		for( JobListType::iterator i = runningJobs_.begin(), iend = runningJobs_.end();
-			i != iend; ++i )
-		{
-			(*i)->DecRef();
-		}
-*/
 		return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hJob* hJobManager::GrabJob()
+    {
+        hUint32 val;
+        hUint32 nextVal;
+        do 
+        {
+            val = jobReadIndex_;
+            nextVal = (val+1) % JOB_QUEUE_SIZE;
+
+            if ( val == jobWriteIndex_ )
+            {
+                return NULL;
+            }
+        }
+        while( hAtomic::CompareAndSwap( &jobReadIndex_, val, nextVal ) != val );
+
+        return &jobQueue_[val];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobManager::WakeSleepingJobThreads()
+    {
+        hUint32 towake = sleepingJobThreads_;
+        while ( towake-- )
+        {
+            jobQueueSemaphore_.Post();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hJobChain::hJobChain( hUint32 maxJob /*= 32 */ )
+    {
+        chainSemaphore_.Create( 0, 1 );
+        jobs_.Resize( maxJob );
+        ClearChain();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hJobChain::~hJobChain()
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobChain::PushJob( const hJobDesc& desc, hJobFunctionEntry entry, hUint32 syncTag )
+    {
+        hJob* job = &jobs_[jobCount_];
+        job->SetEntryPoint( entry );
+        job->SetDesc( desc );
+        job->SetTagBarrier( &jobBatches_[syncTag] );
+        job->SetNextJobIndex( jobBatches_[syncTag].firstJob_ );
+        jobBatches_[syncTag].firstJob_ = jobCount_;
+        ++jobBatches_[syncTag].jobsToComplete_;
+        ++jobCount_;
+
+        batchCount_ = hMax( syncTag, batchCount_ );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hJobChain::GetJobBatchCount() const
+    {
+        return jobBatches_[batch_].jobsToComplete_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hJobTagBatch* hJobChain::GetJobBatch()
+    {
+        return &jobBatches_[batch_];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hJobChain::IsBatchComplete()
+    {
+        if ( !jobBatches_[batch_].batchPushed_ )
+            return hFalse;
+        if ( IsComplete() || jobBatches_[batch_].jobsCompleted_ == jobBatches_[batch_].jobsToComplete_ )
+        {
+            ++batch_;
+            return hTrue;
+        }
+        return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hJobChain::IsComplete() const
+    {
+        return batch_ > batchCount_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobChain::ClearChain()
+    {
+        batch_ = 0;
+        batchCount_ = 0;
+        jobCount_ = 0;
+        for ( hUint32 i = 0; i < HEART_MAX_TAG_IDS; ++i )
+        {
+            jobBatches_[i].batchPushed_ = hFalse;
+            jobBatches_[i].firstJob_ = ~0U;
+            jobBatches_[i].jobsCompleted_ = 0;
+            jobBatches_[i].jobsToComplete_ = 0;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobDesc::AppendInputBuffer( void* ptr, hUint32 size )
+    {
+        hcAssert( inputBufferCount_ < HEART_MAX_INPUT_BUFFERS );
+        inputBuffes_[inputBufferCount_].ptr_  = ptr;
+        inputBuffes_[inputBufferCount_].size_ = size;
+        ++inputBufferCount_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJobDesc::AppendOutputBuffer( void* ptr, hUint32 size )
+    {
+        hcAssert( outputBufferCount_ < HEART_MAX_INPUT_BUFFERS );
+        outputBuffers_[outputBufferCount_].ptr_  = ptr;
+        outputBuffers_[outputBufferCount_].size_ = size;
+        ++outputBufferCount_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hJob::CompleteJob()
+    {
+        hcAssert( tagBarrier_ );
+        hAtomic::Increment( &tagBarrier_->jobsCompleted_ );
     }
 
 }

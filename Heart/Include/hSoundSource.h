@@ -40,6 +40,7 @@ namespace Heart
         hSoundSource()
             : soundBuffer_(NULL)
             , playbackHandle_(~0U)
+            , looping_(hFalse)
         {
 
         }
@@ -54,7 +55,7 @@ namespace Heart
         void Update();
         void SetPause( hBool pause );
         void GetPause() const;
-        void SetLooping( hBool looping );
+        void SetLooping( hBool looping ) { looping_ = looping; }
         void GetLooping() const;
 
     private:
@@ -67,6 +68,7 @@ namespace Heart
         void*                nextPCMData_;
         hUint32              nextPCMSize_;
         hBool                pcmDataWaiting_;
+        hBool                looping_;
     };
 }
 

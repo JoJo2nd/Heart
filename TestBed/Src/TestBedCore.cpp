@@ -13,6 +13,7 @@
 #include "MapTest.h"
 #include "ListTest.h"
 #include "ResourceLoadTest.h"
+#include "JobManagerTest.h"
 
 namespace Game
 {
@@ -29,8 +30,8 @@ namespace Game
 
 	TestBedCore::TestBedCore() 
 		: pEngine_( NULL )
-		,currentTest_( NULL )
-		,nextTest_( 0 )
+		, currentTest_( NULL )
+		, nextTest_( 0 )
 	{
 		pInstance_ = this;
 	}
@@ -60,6 +61,7 @@ namespace Game
 
 		nextTest_ = 0;
 
+        //unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateJobTest >(this) );
         unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateResourceLoadTest >(this) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateMapTestsState >( this ) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateListTestState >( this ) );
@@ -204,6 +206,15 @@ namespace Game
     Heart::hStateBase* TestBedCore::CreateResourceLoadTest()
     {
         return hNEW ( hGeneralHeap ) ResourceLoadTest( pEngine_ );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    Heart::hStateBase* TestBedCore::CreateJobTest()
+    {
+        return hNEW( hGeneralHeap ) JobManagerTest( pEngine_ );
     }
 
 }

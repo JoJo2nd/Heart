@@ -18,13 +18,14 @@ typedef bool				hBool;
 class hNullType {};
 struct hcEmptyType {};
 
-#define HEART_ALIGN( align ) __declspec( align(align) )
-#define HEART_ALIGNMENT( x, align ) __declspec( align(align) ) x
+#define HEART_ALIGN_VAR( alignment, type, name ) type __declspec( align(alignment) ) name
+#define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
+#define HEART_ALIGNMENT_END( x )
 
 #ifdef HEART_DEBUG
-#ifndef HEART_TRACK_MEMORY_ALLOCS
-#define HEART_TRACK_MEMORY_ALLOCS
-#endif
+    #ifndef HEART_TRACK_MEMORY_ALLOCS
+        #define HEART_TRACK_MEMORY_ALLOCS
+    #endif
 #endif
 
 namespace Heart

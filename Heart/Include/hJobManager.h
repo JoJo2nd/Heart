@@ -29,15 +29,20 @@ namespace Heart
         hUint32 size_;
     };
 
-    struct hJobTagBarrier
+    HEART_ALIGNMENT_BEGIN(32)
+    struct hJobTagBatch
     {
-        hUint32     jobsToComplete_;
         hUint32     jobsCompleted_;
-        hSemaphore* semaphore_;
-    };
+        hUint32     jobsToComplete_;
+        hUint32     firstJob_;
+        hBool       batchPushed_;
+    }HEART_ALIGNMENT_END(32);
 
     struct hJobDesc
     {
+        void         AppendInputBuffer( void* ptr, hUint32 size );
+        void         AppendOutputBuffer( void* ptr, hUint32 size );
+
         void*       scratchBuffer_;
         hUint32     scratchSize_;
         hUint32     inputBufferCount_;
@@ -46,7 +51,7 @@ namespace Heart
         hJobBuffer  outputBuffers_[HEART_MAX_OUTPUT_BUFFERS];
     };
 
-    typedef void (*hJobFunctionEntry)();
+    typedef void (*hJobFunctionEntry)( const hJobDesc& desc );
 
 	class hJob
 	{
@@ -55,17 +60,14 @@ namespace Heart
         ~hJob() {}
 
         void                SetEntryPoint( hJobFunctionEntry entry ) { entry_ = entry; }
-        void                AppendInputBuffer( void* ptr, hUint32 size );
-        void                AppendOutputBuffer( void* ptr, hUint32 size );
-        void                SetScratchBufferSize( hUint32 size ) { desc_.scratchSize_ = size; }
-        void                SetTag( hUint32 tag ) { tag_ = tag; hcAssert( tag_ < HEART_MAX_TAG_IDS ); }
-        void                SetPushed();
-        void                SetTagBarrier( hJobTagBarrier* barrier ) { tagBarrier_ = barrier; }
-        hBool               GetPushed() const { return pushed_; }
+        void                SetTagBarrier( hJobTagBatch* barrier ) { tagBarrier_ = barrier; }
         hJobFunctionEntry   GetEntryPoint() const { return entry_; }
         hUint32             GetTag() const { return tag_; }
+        void                SetDesc( const hJobDesc& desc ) { desc_ = desc; }
         const hJobDesc&     GetDesc() const { return desc_; }
         void                CompleteJob();
+        void                SetNextJobIndex( hUint32 idx ) { nextJobIndex_ = idx; }
+        hUint32             GetNextJobIndex() const { return nextJobIndex_; }
 
 	private:
 
@@ -74,11 +76,8 @@ namespace Heart
         hJobFunctionEntry   entry_;
         hJobDesc            desc_;
         hUint32             tag_;
-        hBool               pushed_;
-        hJobTagBarrier*     tagBarrier_;
-
-		hJob( const hJob& ) {}
-        hJob& operator = ( const hJob& ) {}
+        hJobTagBatch*       tagBarrier_;
+        hUint32             nextJobIndex_;
 	};
 
     class hJobChain
@@ -87,14 +86,27 @@ namespace Heart
         hJobChain( hUint32 maxJob = 32 );
         ~hJobChain();
 
-        void PushJob( const hJobDesc& desc, hUint32 syncTag );
-        void Sync() { chainSemaphore_.Wait(); }
+        void                PushJob( const hJobDesc& desc, hJobFunctionEntry entry, hUint32 syncTag );
+        void                Sync() { chainSemaphore_.Wait(); ClearChain(); }
+        hJob*               GetJob( hUint32 idx ) { return idx == ~0U ? NULL : &jobs_[idx]; }
+        hUint32             GetJobBatchCount() const;
+        hJobTagBatch*       GetJobBatch();
+        void                CompleteSignal() { chainSemaphore_.Post(); }
+        hBool               IsFirstBatch() const { return batch_ == 0 && !jobBatches_->batchPushed_; }
+        hBool               IsBatchComplete();
+        void                BatchUploaded() { jobBatches_[batch_].batchPushed_ = hTrue; }
+        hBool               IsComplete() const;
 
     private:
 
+        void                ClearChain();
+
+        hUint32             batch_;
+        hUint32             batchCount_;
         hSemaphore          chainSemaphore_;
+        hUint32             jobCount_;
         hVector< hJob >     jobs_;
-        hJobTagBarrier      tagOffsets_[HEART_MAX_TAG_IDS];
+        hJobTagBatch        jobBatches_[HEART_MAX_TAG_IDS];
 
         hJobChain( const hJobChain& ) {}
         hJobChain& operator = ( const hJobChain& ) {}
@@ -119,8 +131,12 @@ namespace Heart
         hUint32                 JobThread( void* param );
         void                    PushJobChainToCoordinator( hJobChain* chain );
         void                    PopJobChainFromCoordinator( hJobChain* chain );
+        void                    PopJobChainFromCoordinator( hUint32 idx );
+        hJob*                   GrabJob();
+        void                    WakeSleepingJobThreads();
 
-        hSemaphore              jobQueueSemaphone_;
+        hSemaphore              jobQueueSemaphore_;
+        hSemaphore              jobChainSemaphore_;
         hMutex                  jobChainMatrix_;
         hThread                 jobCoordinator_;
         hVector< hThread >      jobThreads_;
@@ -128,8 +144,12 @@ namespace Heart
         hVector< hJobChain* >   pendingJobChains_;
         hUint32                 processJobChainCount_;
         hVector< hJobChain* >   processJobChains_;
-        hUint32                 jobReadIndex_;
-        hUint32                 jobWriteIndex_;
+        //hUint32                 sleepingJobThreads_;
+        HEART_ALIGN_VAR( 32, hUint32, sleepingJobThreads_ );
+        //hUint32                 jobReadIndex_;
+        HEART_ALIGN_VAR( 32, hUint32, jobReadIndex_ );
+        //hUint32                 jobWriteIndex_;
+        HEART_ALIGN_VAR( 32, hUint32, jobWriteIndex_ );
         hJob                    jobQueue_[JOB_QUEUE_SIZE];
 	};
 }

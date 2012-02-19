@@ -16,7 +16,7 @@
 
 //#define ALLOC_BREAK_NUM 137
 
-#define THREAD_CHECK()	{ hcAssert( lastThreadID_ == NULL || lastThreadID_ == Heart::Threading::GetCurrentThreadID() ); lastThreadID_ = Heart::Threading::GetCurrentThreadID(); }
+#define THREAD_CHECK()	{ hcAssert( lastThreadID_ == NULL || lastThreadID_ == Heart::hThreading::GetCurrentThreadID() ); lastThreadID_ = Heart::hThreading::GetCurrentThreadID(); }
 #define PRE_ACTION()	if ( useLocks_ ) lock_.Lock(); else THREAD_CHECK();
 #define POST_ACTION()	if ( ALLOC_BREAK_NUM && debugAlloc_ == ALLOC_BREAK_NUM ) hcBreak; if ( useLocks_ ) lock_.Unlock();
 

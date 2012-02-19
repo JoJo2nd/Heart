@@ -217,26 +217,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\Src\DeviceImplFactory.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\Include\DeviceInput.h"
 				>
 				<FileConfiguration
@@ -438,26 +418,6 @@
 			</File>
 			<File
 				RelativePath=".\Include\DeviceSemaphore.h"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\Include\DeviceSocket.h"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

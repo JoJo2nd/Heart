@@ -69,9 +69,14 @@ namespace Heart
     {
         if ( playbackHandle_ != ~0U && soundBuffer_ && !nextPCMSize_ && !nextPCMSize_ )
         {
-            if ( soundBuffer_->DecodeAudioBlock( playbackHandle_, &nextPCMData_, &nextPCMSize_ ) == OGGDecode_OK )
+            hUint32 res = soundBuffer_->DecodeAudioBlock( playbackHandle_, &nextPCMData_, &nextPCMSize_ );
+            if ( res == OGGDecode_OK )
             {
                 pcmDataWaiting_ = hTrue;
+            }
+            else if ( res == OGGDecode_END && looping_ )
+            {
+                soundBuffer_->Rewind( playbackHandle_ );
             }
         }
         deviceVoice_.UpdateVoice();

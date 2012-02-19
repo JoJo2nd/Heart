@@ -141,7 +141,7 @@ namespace Heart
 		*/
 		void							QueueResourceSweep()
 		{
-			hAtomic::Increment( &resourceSweepCount_ );
+			hAtomic::Increment( resourceSweepCount_ );
 			loaderSemaphone_.Post();
 		}
 
@@ -246,7 +246,7 @@ namespace Heart
 
 		hBool							exitSignal_;
 		hBool							canQuit_;
-		mutable hUint32					resourceSweepCount_;
+		mutable hUint32*    			resourceSweepCount_;
 
 		ResourceLoadRequestMap			loadRequests_;
 		ResourceLoadRequestMap			loadRequestsProcessed_;

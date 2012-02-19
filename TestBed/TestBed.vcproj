@@ -214,6 +214,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\Src\JobManagerTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Include\JobManagerTest.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Include\ListTest.h"
 				>
 			</File>
