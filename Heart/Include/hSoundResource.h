@@ -31,22 +31,13 @@
 #include "hTypes.h"
 #include "hResource.h"
 #include "vorbis/codec.h"
+#include "hSoundSourceBuffer.h"
 
 namespace Heart
 {
 
-    typedef hUint32 hSoundPlaybackHandle;
-
-    enum hOGGDecodeState
-    {
-        OGGDecode_OK,
-        OGGDecode_BUSY,
-        OGGDecode_NEED_MORE_DATA,
-        OGGDecode_NEED_MORE_DATA_WAIT,
-        OGGDecode_END,
-    };
-
-    class hSoundResource : public hStreamingResourceBase
+    class hSoundResource : public hStreamingResourceBase,
+                           public hISoundSourceBuffer
     {
     public:
         hSoundResource()
@@ -61,6 +52,10 @@ namespace Heart
         hUint32                        GetPitch() const { return vobInfo_.rate; }
         hUint32                        GetChannels() const { return vobInfo_.channels; }
         hdSoundFormat                  GetFormat() const { return GetChannels() == 2 ? HEART_SOUND_FMT_STEREO16 : HEART_SOUND_FMT_MONO16; }
+        void                           GetBufferInfo( hSoundSourceBufferInfo* outInfo );
+        hUint32                        GetSourceCount() { return 0; }
+        hUint32                        GetSourceIndex( const hChar* ) { return ~0U; }
+        const hChar*                   GetSourceName( hUint32 ) { return NULL; }
         hSoundPlaybackHandle           CreatePlaybackHandle();
         void                           Rewind( hSoundPlaybackHandle handle );
         hOGGDecodeState                DecodeAudioBlock( hSoundPlaybackHandle handle, void** dstPtr, hUint32* outSize );

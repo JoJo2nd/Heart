@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="MaterialBuilder"
-	ProjectGUID="{B9E03EE0-3C97-461E-A823-D4693F986E53}"
-	RootNamespace="MaterialBuilder"
+	Name="OGGSoundBank"
+	ProjectGUID="{C9B19E04-10D6-49C3-849D-262E3C99D42B}"
+	RootNamespace="OGGSoundBank"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -18,11 +18,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops"
-			CharacterSet="0"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\Heart\HeartDebugDefineProps.vsprops"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,16 +40,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;..\../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include;&quot;..\..\rapidxml-1.13\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MATERIALBUILDER_EXPORTS;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;OGGSOUNDBANK_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				StructMemberAlignment="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
-				ShowIncludes="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,9 +59,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="GameDatabaseLibD.lib HeartPD.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib;&quot;$(ProjectDir)\..\..\bin\tools\&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -91,16 +84,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops"
-			CharacterSet="0"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\Heart\HeartReleaseDefineProps.vsprops"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -122,14 +112,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MATERIALBUILDER_EXPORTS;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OGGSOUNDBANK_EXPORTS"
 				RuntimeLibrary="2"
-				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -142,13 +130,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="HeartP.lib cg.lib cgD3D9.lib cgD3D10.lib cgD3D11.lib cgGL.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerRelease&quot;;..\..\external\boost\stage\lib;&quot;$(ProjectDir)\..\bin\tools&quot;"
-				GenerateDebugInformation="false"
+				GenerateDebugInformation="true"
 				SubSystem="2"
-				OptimizeReferences="0"
-				EnableCOMDATFolding="0"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -182,22 +168,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\Include\CgStateConverters.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\Main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Src\MaterialBuilder.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Include\MaterialBuilder.h"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

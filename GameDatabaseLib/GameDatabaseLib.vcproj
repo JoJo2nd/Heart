@@ -21,6 +21,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -99,6 +100,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -121,7 +123,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"

@@ -18,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="ReleaseWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -92,9 +91,8 @@
 		</Configuration>
 		<Configuration
 			Name="PackerDebug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -140,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib libogg_staticD.lib libvorbis_staticD.lib libvorbisfile_staticD.lib"
 				OutputFile="$(OutDir)\$(ProjectName)PD.lib"
 				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)\..\Debug&quot;"
 				IgnoreDefaultLibraryNames=""
@@ -163,9 +161,8 @@
 		</Configuration>
 		<Configuration
 			Name="PackerRelease|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -188,7 +185,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -213,7 +210,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib"
+				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
 				OutputFile="$(OutDir)\$(ProjectName)P.lib"
 				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)\..\Release&quot;"
 				IgnoreDefaultLibraryNames=""
@@ -236,9 +233,8 @@
 		</Configuration>
 		<Configuration
 			Name="DebugWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -844,6 +840,18 @@
 				</File>
 				<File
 					RelativePath=".\Include\hSoundSource.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hSoundSourceBuffer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Src\hStaticSoundResource.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Include\hStaticSoundResource.h"
 					>
 				</File>
 			</Filter>

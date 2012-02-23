@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="HeartBuildOutputDirProps"
+	OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
+	IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
+	>
+</VisualStudioPropertySheet>

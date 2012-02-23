@@ -456,4 +456,15 @@ namespace Heart
         decodingBlock = hFalse;
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSoundResource::GetBufferInfo( hSoundSourceBufferInfo* outInfo )
+    {
+        outInfo->channels_  = GetChannels();
+        outInfo->format_    = GetFormat();
+        outInfo->pitch_     = (hFloat)GetPitch();
+    }
+
 }

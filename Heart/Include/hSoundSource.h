@@ -29,10 +29,10 @@
 
 #include "hTypes.h"
 #include "hSoundResource.h"
+#include "hSoundSourceBuffer.h"
 
 namespace Heart
 {
-    class hSoundResource;
 
     class hSoundSource : public hLinkedListElement< hSoundSource >
     {
@@ -49,7 +49,7 @@ namespace Heart
 
         }
 
-        void SetSoundResource( hSoundResource* resource ) { soundBuffer_ = resource; }
+        void SetSoundResource( hISoundSourceBuffer* resource ) { soundBuffer_ = resource; }
         void Start();
         void Stop();
         void Update();
@@ -63,7 +63,7 @@ namespace Heart
         void                 DeviceCallback( hdSoundVoice* voice, hdSoundCallbackReason reason );
 
         hdSoundVoice         deviceVoice_;
-        hSoundResource*      soundBuffer_;
+        hISoundSourceBuffer* soundBuffer_;
         hSoundPlaybackHandle playbackHandle_;
         void*                nextPCMData_;
         hUint32              nextPCMSize_;

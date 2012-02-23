@@ -18,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -83,9 +82,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -109,7 +107,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;Src;../Heart/Include;../lua/src;../zlib/Include;../minizip/Include;../tinyXML/Include;../crypto/Include;&quot;..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"

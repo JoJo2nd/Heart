@@ -21,6 +21,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -98,6 +99,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -120,7 +122,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;..\..\GamedatabaseLib\Include;..\..\external\boost;..\..\crypto\Include;..\..\Heart\Include;..\..\libpng\Include;..\..\zlib\Include;..\..\squish;..\..\tinyXML\Include;..\..\DeviceWin32\Include;..\../DeviceWin32DX11/Include;..\..\lua\src;..\..\minizip\Include;&quot;..\..\rapidxml-1.13\include&quot;"
+				AdditionalIncludeDirectories="Include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SHADERBUILDER_EXPORTS;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;HEART_PLAT_DX11"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"

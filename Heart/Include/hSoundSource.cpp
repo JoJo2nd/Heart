@@ -39,11 +39,13 @@ namespace Heart
     void hSoundSource::Start()
     {
        hdSoundVoiceInfo info;
+       hSoundSourceBufferInfo bufInfo;
        playbackHandle_ = soundBuffer_->CreatePlaybackHandle();
+       soundBuffer_->GetBufferInfo( &bufInfo );
 
        hZeroMem( &info, sizeof(info) );
-       info.audioFormat_ = soundBuffer_->GetFormat();
-       info.pitch_ = (hFloat)soundBuffer_->GetPitch();
+       info.audioFormat_ = bufInfo.format_;
+       info.pitch_ = (hFloat)bufInfo.pitch_;
        info.callback_ = hdSoundVoiceCallback::bind< hSoundSource, &hSoundSource::DeviceCallback >( this );
        
        deviceVoice_.SetInfoAndInitialReads( info );
