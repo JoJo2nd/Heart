@@ -19,10 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops;..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\DeviceWin32\DeviceWin32.vsprops;..\..\..\Heart\DebugCommon.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -68,6 +66,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -90,10 +89,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops;..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\DeviceWin32\DeviceWin32.vsprops;..\..\..\Heart\ReleaseCommon.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -141,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\lib\Release\NvTriStrip.lib"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

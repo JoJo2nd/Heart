@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	DeviceConfig.h	
+	filename: 	Main.cpp	
 	
-	Copyright (c) 23:7:2011 James Moran
+	Copyright (c) 26:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,25 +24,26 @@
 	distribution.
 
 *********************************************************************/
-#ifndef DEVICECONFIG_H__
-#define DEVICECONFIG_H__
 
-namespace Heart
+#include "OGGSoundBankBuilder.h"
+
+extern "C" __declspec(dllexport) void __cdecl GetPlugInInformation( GameData::gdPlugInInformation* info )
 {
-	class hdDeviceConfig
-	{
-	public:
-		static const hUint32			HOME_DIRECTORY_MAX_LEN = 2048;
-		static const hUint32			WNDCLASSNAMELEN = 256;
+    using namespace GameData;
 
-		HINSTANCE		Instance_;
-		hChar			pWorkingDir_[ HOME_DIRECTORY_MAX_LEN ];
-		hChar			classname_[ WNDCLASSNAMELEN ];
-		hUint32			Width_;
-		hUint32			Height_;
-	};
-
-    int WINAPI HeartMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow );
+    info->SetConfigName( "PC" );
+    info->SetDefaultExtensions( ".xml" );
+    info->SetResourceTypeName( "Ogg Sound Bank" );
+    info->SetBuiltDataExtension( 'S', 'B', 'K' );
 }
 
-#endif // DEVICECONFIG_H__
+//define the entry points for the resource plug in loader
+extern "C" __declspec(dllexport) GameData::gdResourceBuilderBase* __cdecl CreateResourceBuilder( const GameData::gdResourceBuilderConstructionInfo& builderInfo )
+{
+    return new OGGSoundBankBuilder( builderInfo );
+}
+
+extern "C" __declspec(dllexport) void __cdecl DestroyResourceBuilder( GameData::gdResourceBuilderBase* pBuilder )
+{
+    delete pBuilder;
+}

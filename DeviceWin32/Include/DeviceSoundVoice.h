@@ -47,26 +47,8 @@ namespace Heart
     class hdW32SoundVoiceDevice
     {
     public:
-        hdW32SoundVoiceDevice()
-            : voice_(0)
-            , nextRead_(0)
-            , paused_(hFalse)
-            , sourceComplete_(hFalse)
-            , volume_(1.f)
-        {
-            alGenBuffers( BUFFER_COUNT, buffers_ );
-            HEART_CHECK_OPENAL_ERRORS();
-        }
-        ~hdW32SoundVoiceDevice()
-        {
-            ReleaseVoice();
-            if ( buffers_ )
-            {
-                alDeleteBuffers( BUFFER_COUNT, buffers_ );
-                HEART_CHECK_OPENAL_ERRORS();
-                hZeroMem( buffers_, sizeof(BUFFER_COUNT) );
-            }
-        }
+        hdW32SoundVoiceDevice();
+        ~hdW32SoundVoiceDevice();
 
         void    SetInfoAndInitialReads( const hdW32SoundVoiceInfo& info );
         void    SetNextRead( void* buffer, hUint32 sizeBytes );
@@ -83,25 +65,8 @@ namespace Heart
 
         static const hUint32 BUFFER_COUNT = 2;
 
-        void    AquireVoice()
-        {
-            if ( !voice_ )
-            {
-                alGenSources( 1, &voice_ );
-                HEART_CHECK_OPENAL_ERRORS();
-            }
-        }
-        void    ReleaseVoice()
-        {
-            if ( voice_ )
-            {
-                alSourceUnqueueBuffers( voice_, BUFFER_COUNT, buffers_ );
-                HEART_CHECK_OPENAL_ERRORS();
-                alDeleteSources( 1, &voice_ );
-                HEART_CHECK_OPENAL_ERRORS();
-                voice_ = 0;
-            }
-        }
+        void    AquireVoice();
+        void    ReleaseVoice();
 
         ALuint              buffers_[BUFFER_COUNT];
         ALuint              voice_;
@@ -109,6 +74,7 @@ namespace Heart
         hBool               paused_;
         hBool               sourceComplete_;
         hFloat              volume_;
+        hFloat              pitch_;
         hdW32SoundVoiceInfo info_;
     };
 }

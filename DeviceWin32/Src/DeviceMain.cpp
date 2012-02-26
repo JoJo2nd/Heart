@@ -36,7 +36,9 @@ namespace
 	}
 }
 
-int WINAPI WinMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+namespace Heart
+{
+int WINAPI HeartMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
 {	
 	using namespace Heart;
 
@@ -93,4 +95,5 @@ int WINAPI WinMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	hcPrintf( "Heart Engine Exit" );
 	return 0;
+}
 }

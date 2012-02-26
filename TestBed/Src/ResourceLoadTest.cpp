@@ -37,7 +37,8 @@ void ResourceLoadTest::PreEnter()
     resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
-    resPack_.AddResourceToPackage( "MUSIC/ANON.OGG" );
+    resPack_.AddResourceToPackage( "MUSIC/CAFO_S48.OGG" );
+    resPack_.AddResourceToPackage( "SFX/SNDBANK.SBK" );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 
@@ -53,14 +54,23 @@ hUint32 ResourceLoadTest::Enter()
 
         tex1_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
         tex2_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/NARUTO_TEST.TEX" );
-        stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/ANON.OGG" );
+        stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/CAFO_S48.OGG" );
+        soundBank_ = (Heart::hSoundBankResource*)resPack_.GetResource( "SFX/SNDBANK.SBK" );
 
         //Start playing a sound
         soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
         soundSource_->SetSoundResource( stream_ );
-
         soundSource_->SetLooping( hTrue );
         soundSource_->Start();
+
+        for ( hUint32 i = 0; i < 11; ++i )
+        {
+            staticSource_[i] = engine_->GetSoundManager()->CreateSoundSource(0);
+            staticSource_[i]->SetSoundResource( soundBank_->GetSoundSource(i) );
+            staticSource_[i]->SetLooping( hTrue );
+            //staticSource_[i]->Start();
+            staticSource_[i]->SetVolume( 0.0f );
+        }
 
         //Setup a view port for rendering
         Heart::hRenderViewportTargetSetup rtDesc;

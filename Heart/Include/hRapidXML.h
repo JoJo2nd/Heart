@@ -105,6 +105,20 @@ namespace Heart
 
             return hXMLGetter( node_->first_node( name ) );
         }
+        hXMLGetter              NextSibling()
+        {
+            if ( !node_ )
+                return hXMLGetter(NULL);
+
+            return hXMLGetter(node_->next_sibling(node_->name()));
+        }
+        hXMLGetter              NextSibling( const hChar* name )
+        {
+            if ( !node_ )
+                return hXMLGetter(NULL);
+
+            return hXMLGetter(node_->next_sibling(name));
+        }
         rapidxml::xml_attribute<>*  GetAttribute( const hChar* name )
         {
             if ( !node_ )

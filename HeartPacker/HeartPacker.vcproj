@@ -18,10 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;.\HeartPackerIncludeProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;.\HeartPackerIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\Heart\DebugCommon.vsprops;.\HeartToolPostBuildCmd.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops;..\Heart\HeartLinker.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -64,8 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wininet.lib GameDatabaseLibD.lib"
-				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)_$(ConfigurationName).exe"
+				AdditionalDependencies="wininet.lib GameDatabaseLib_$(BUILD_TYPE_NAME).lib"
+				ShowProgress="2"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\external\wxWidgets-2.9.2\lib\vc_lib&quot;;&quot;$(OutDir)&quot;;..\external\boost\stage\lib;&quot;$(ProjectDir)\..\bin\tools\&quot;"
 				IgnoreDefaultLibraryNames="MSVCRT;LIBCMTD"
@@ -93,15 +92,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;.\HeartPackerIncludeProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;.\HeartPackerIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\Heart\ReleaseCommon.vsprops;.\HeartToolPostBuildCmd.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11ReleaseLinker.vsprops;..\Heart\HeartLinker.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -130,7 +127,7 @@
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"
-				BufferSecurityCheck="false"
+				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="PreCompiled.h"
@@ -149,9 +146,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="GameDatabaseLib.lib crypto.lib"
+				AdditionalDependencies="wininet.lib GameDatabaseLib_$(BUILD_TYPE_NAME).lib"
 				ShowProgress="0"
-				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)_$(ConfigurationName).exe"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\external\wxWidgets-2.9.2\lib\vc_lib&quot;;..\external\boost\stage\lib;&quot;$(OutDir)&quot;;&quot;$(ProjectDir)\..\bin\tools&quot;"
 				IgnoreDefaultLibraryNames="MSVCRTD;LTCG"
@@ -181,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="&#x0D;&#x0A;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
 			/>
 		</Configuration>
 	</Configurations>

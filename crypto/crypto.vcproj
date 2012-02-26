@@ -18,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\DebugCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -62,7 +61,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(ProjectName)D.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -82,9 +80,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\ReleaseCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

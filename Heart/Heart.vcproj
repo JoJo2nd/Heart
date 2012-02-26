@@ -19,7 +19,7 @@
 		<Configuration
 			Name="ReleaseWin32DX11|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops;.\ReleaseCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -43,7 +43,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_RELEASE;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -68,9 +68,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib crypto.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
-				OutputFile="$(OutDir)\$(ProjectName)W32DX11.lib"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Release"
+				OutputFile="$(OutDir)\$(ProjectName)_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				IgnoreDefaultLibraryNames=""
 			/>
 			<Tool
@@ -92,7 +91,7 @@
 		<Configuration
 			Name="PackerDebug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops;.\DebugCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -138,8 +137,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib libogg_staticD.lib libvorbis_staticD.lib libvorbisfile_staticD.lib"
-				OutputFile="$(OutDir)\$(ProjectName)PD.lib"
+				OutputFile="$(OutDir)\$(ProjectName)_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
 				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)\..\Debug&quot;"
 				IgnoreDefaultLibraryNames=""
 			/>
@@ -162,7 +160,7 @@
 		<Configuration
 			Name="PackerRelease|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartReleaseDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops;.\ReleaseCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -210,9 +208,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32.lib DeviceWin32DX11.lib lua.lib zlib.lib minizip.lib tinyXML.lib libogg_static.lib libvorbis_static.lib libvorbisfile_static.lib"
-				OutputFile="$(OutDir)\$(ProjectName)P.lib"
-				AdditionalLibraryDirectories="..\libs\lib;&quot;$(OutDir)&quot;;&quot;$(OutDir)\..\Release&quot;"
+				OutputFile="$(OutDir)\$(ProjectName)_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
+				AdditionalLibraryDirectories=""
 				IgnoreDefaultLibraryNames=""
 			/>
 			<Tool
@@ -234,7 +231,7 @@
 		<Configuration
 			Name="DebugWin32DX11|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops"
+			InheritedPropertySheets=".\HeartIncludeProps.vsprops;.\HeartBuildOutputDirProps.vsprops;.\HeartDebugDefineProps.vsprops;.\HeartCommonDefinesProps.vsprops;.\DebugCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -257,7 +254,7 @@
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="Include;../DeviceWin32/Include;../DeviceWin32DX11/Include;..\lua\src;..\zlib\Include;..\minizip\Include;..\tinyXML\Include;..\crypto\Include;&quot;..\rapidxml-1.13\include&quot;;..\libvorbis\include;..\libogg\include"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HEART_ENGINE;HEART_PLAT_DX11;HEART_DEBUG;_CRT_SECURE_NO_WARNINGS;USE_DL_PREFIX;ONLY_MSPACES;D3D_DEBUG_INFO"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -285,9 +282,8 @@
 				Name="VCLibrarianTool"
 				UseUnicodeResponseFiles="true"
 				AdditionalOptions="/ignore:4006 /ignore:4221"
-				AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11d.lib dxguid.lib xinput.lib DeviceWin32D.lib DeviceWin32DX11D.lib luaD.lib zlibD.lib minizipD.lib tinyXMLD.lib cryptoD.lib libogg_staticD.lib libvorbis_staticD.lib libvorbisfile_staticD.lib"
-				OutputFile="$(OutDir)\$(ProjectName)DW32DX11.lib"
-				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;;&quot;$(OutDir)&quot;\..\Debug"
+				OutputFile="$(OutDir)\$(ProjectName)_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				IgnoreDefaultLibraryNames="LIBCMTD"
 			/>
 			<Tool

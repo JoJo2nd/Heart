@@ -51,6 +51,13 @@ OGGStreamBuilder::~OGGStreamBuilder()
 
 void OGGStreamBuilder::BuildResource()
 {
+    hUint32 insize = (hUint32)GetInputFile()->GetFileSize();
+    hByte* buf = new hByte[insize];
+    
+    GetInputFile()->Read( buf, insize );
+    GetOutputFile()->Write( buf, insize );
+
+    delete buf;
 }
 
 //////////////////////////////////////////////////////////////////////////

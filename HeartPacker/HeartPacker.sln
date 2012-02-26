@@ -64,7 +64,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "..\lua\lua.vcproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameDatabaseLib", "..\GameDatabaseLib\GameDatabaseLib.vcproj", "{E3FF92BE-320F-4F7D-97A9-37D281B665D6}"
 	ProjectSection(ProjectDependencies) = postProject
-		{F31D47E7-4C01-4B67-8EB8-4252E911878C} = {F31D47E7-4C01-4B67-8EB8-4252E911878C}
+		{91FAD237-335F-455A-ACBD-0220BDDEEF59} = {91FAD237-335F-455A-ACBD-0220BDDEEF59}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "crypto", "..\crypto\crypto.vcproj", "{F31D47E7-4C01-4B67-8EB8-4252E911878C}"
@@ -72,6 +72,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Device", "Device", "{CF82DE0B-7D37-459D-8109-602EC9F3263D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DeviceWin32", "..\DeviceWin32\DeviceWin32.vcproj", "{3D72FC73-6645-4806-8B7B-4B3C409AC1BA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3BD711CA-891A-4D65-A462-B2114402465F} = {3BD711CA-891A-4D65-A462-B2114402465F}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Render", "Render", "{9CC36963-FB17-4106-9593-D3DF2AF200B5}"
 EndProject
@@ -92,8 +95,16 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg_static", "..\libogg\win32\VS2008\libogg_static.vcproj", "{15CBFEFF-7965-41F5-B4E2-21E8795C9159}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OGGStreamBuilder", "..\EngineResourceBuilders\OGGStreamBuilder\OGGStreamBuilder.vcproj", "{AC91A50E-B9CB-4F86-ACF1-EFD342DCBD2C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{91FAD237-335F-455A-ACBD-0220BDDEEF59} = {91FAD237-335F-455A-ACBD-0220BDDEEF59}
+		{E3FF92BE-320F-4F7D-97A9-37D281B665D6} = {E3FF92BE-320F-4F7D-97A9-37D281B665D6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OGGSoundBank", "..\EngineResourceBuilders\OGGSoundBank\OGGSoundBank.vcproj", "{C9B19E04-10D6-49C3-849D-262E3C99D42B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{91FAD237-335F-455A-ACBD-0220BDDEEF59} = {91FAD237-335F-455A-ACBD-0220BDDEEF59}
+		{E3FF92BE-320F-4F7D-97A9-37D281B665D6} = {E3FF92BE-320F-4F7D-97A9-37D281B665D6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

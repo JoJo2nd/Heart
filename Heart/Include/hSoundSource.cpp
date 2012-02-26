@@ -51,7 +51,6 @@ namespace Heart
        deviceVoice_.SetInfoAndInitialReads( info );
        pcmDataWaiting_ = hFalse;
        deviceVoice_.Start();
-       deviceVoice_.SetPitch( 1.f );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -71,14 +70,15 @@ namespace Heart
     {
         if ( playbackHandle_ != ~0U && soundBuffer_ && !nextPCMSize_ && !nextPCMSize_ )
         {
+            nextPCMSize_ = 0;
             hUint32 res = soundBuffer_->DecodeAudioBlock( playbackHandle_, &nextPCMData_, &nextPCMSize_ );
-            if ( res == OGGDecode_OK )
-            {
-                pcmDataWaiting_ = hTrue;
-            }
-            else if ( res == OGGDecode_END && looping_ )
+            if ( res == OGGDecode_END && looping_ )
             {
                 soundBuffer_->Rewind( playbackHandle_ );
+            }
+            if ( nextPCMSize_ )
+            {
+                pcmDataWaiting_ = hTrue;
             }
         }
         deviceVoice_.UpdateVoice();

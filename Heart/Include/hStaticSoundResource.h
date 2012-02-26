@@ -99,8 +99,9 @@ namespace Heart
         hStaticSoundSource*          GetSoundSource( hUint32 idx ) { return sources_+idx; }
         static hResourceClassBase*   OnSoundBankLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
         static hUint32               OnSoundBankUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
-
+#ifndef OGGSOUNDBANK_EXPORTS
     private:
+#endif
 
         HEART_ALLOW_SERIALISE_FRIEND();
 

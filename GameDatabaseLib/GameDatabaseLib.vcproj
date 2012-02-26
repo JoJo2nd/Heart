@@ -18,10 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops;..\Heart\DebugCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\Heart\HeartLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -64,8 +62,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="cryptoD.lib"
-				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName)D.dll"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;..\external\boost\stage\lib"
 				GenerateDebugInformation="true"
@@ -93,14 +90,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\HeartPacker\HeartPackerIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\Heart\ReleaseCommon.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\Heart\HeartLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11ReleaseLinker.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -145,9 +141,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="crypto.lib"
 				ShowProgress="0"
-				OutputFile="$(ProjectDir)\..\bin\tools\$(ProjectName).dll"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;..\external\boost\stage\lib"
 				GenerateDebugInformation="true"
@@ -177,6 +172,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -32,6 +32,36 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hdW32SoundVoiceDevice::hdW32SoundVoiceDevice() : voice_(0)
+        , nextRead_(0)
+        , paused_(hFalse)
+        , sourceComplete_(hFalse)
+        , volume_(1.f)
+        , pitch_(1.f)
+    {
+        alGenBuffers( BUFFER_COUNT, buffers_ );
+        HEART_CHECK_OPENAL_ERRORS();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdW32SoundVoiceDevice::~hdW32SoundVoiceDevice()
+    {
+        ReleaseVoice();
+        if ( buffers_ )
+        {
+            alDeleteBuffers( BUFFER_COUNT, buffers_ );
+            HEART_CHECK_OPENAL_ERRORS();
+            hZeroMem( buffers_, sizeof(BUFFER_COUNT) );
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdW32SoundVoiceDevice::SetInfoAndInitialReads( const hdW32SoundVoiceInfo& info )
     {
         sourceComplete_ = hFalse;
@@ -93,9 +123,10 @@ namespace Heart
 
     void hdW32SoundVoiceDevice::TogglePause()
     {
+        paused_ = !paused_;
         if ( voice_ )
         {
-            if ( !paused_ )
+            if ( paused_ )
             {
                 alSourcePause( voice_ );
                 HEART_CHECK_OPENAL_ERRORS();
@@ -105,7 +136,6 @@ namespace Heart
                 alSourcePlay( voice_ );
                 HEART_CHECK_OPENAL_ERRORS();
             }
-            paused_ = !paused_;
         }
     }
 
@@ -124,9 +154,10 @@ namespace Heart
 
     void hdW32SoundVoiceDevice::SetPitch( hFloat pitch )
     {
+        pitch_ = pitch;
         if ( voice_ )
         {
-            alSourcef( voice_, AL_PITCH, pitch );
+            alSourcef( voice_, AL_PITCH, pitch_ );
             HEART_CHECK_OPENAL_ERRORS();
         }
     }
@@ -137,11 +168,11 @@ namespace Heart
 
     void hdW32SoundVoiceDevice::SetVolume( hFloat vol )
     {
+        volume_ = vol;
         if ( voice_ )
         {
-            alSourcef( voice_, AL_GAIN, vol );
+            alSourcef( voice_, AL_GAIN, volume_ );
             HEART_CHECK_OPENAL_ERRORS();
-            volume_ = vol;
         }
     }
 
@@ -184,6 +215,38 @@ namespace Heart
             {
                 info_.callback_( this, NEED_MORE_PCM_DATA );
             }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdW32SoundVoiceDevice::AquireVoice()
+    {
+        if ( !voice_ )
+        {
+            alGenSources( 1, &voice_ );
+            HEART_CHECK_OPENAL_ERRORS();
+
+            SetVolume(volume_);
+            SetPitch(pitch_);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdW32SoundVoiceDevice::ReleaseVoice()
+    {
+        if ( voice_ )
+        {
+            alSourceUnqueueBuffers( voice_, BUFFER_COUNT, buffers_ );
+            HEART_CHECK_OPENAL_ERRORS();
+            alDeleteSources( 1, &voice_ );
+            HEART_CHECK_OPENAL_ERRORS();
+            voice_ = 0;
         }
     }
 

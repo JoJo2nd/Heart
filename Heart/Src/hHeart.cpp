@@ -47,6 +47,7 @@ distribution.
 #include "hLuaScriptComponent.h"
 #include "hSoundManager.h"
 #include "hSoundResource.h"
+#include "hStaticSoundResource.h"
 
 /************************************************************************/
 /*
@@ -185,6 +186,11 @@ namespace Heart
         resourceMananger_->SetResourceHandlers( "OGG",
             hResourceManager::ResourceLoadCallback::bind< &hSoundResource::OnSoundLoad >(), 
             hResourceManager::ResourceUnloadCallback::bind< &hSoundResource::OnSoundUnload >(),
+            NULL );
+
+        resourceMananger_->SetResourceHandlers( "SBK",
+            hResourceManager::ResourceLoadCallback::bind< &hSoundBankResource::OnSoundBankLoad >(), 
+            hResourceManager::ResourceUnloadCallback::bind< &hSoundBankResource::OnSoundBankUnload >(),
             NULL );
 
         //////////////////////////////////////////////////////////////////////////

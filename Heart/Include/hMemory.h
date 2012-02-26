@@ -278,7 +278,7 @@ extern hMemoryHeap hVMHeap;
 	#define hFree( p ) hGeneralHeap.release( p )
 #endif
 
-#ifndef HEART_ALLOW_NEW
+#ifdef HEART_OVERRIDE_NEW
 
 inline void* operator new ( size_t size )
 {
@@ -290,81 +290,59 @@ inline void* operator new[] ( size_t size )
 	return hMalloc( size );
 }
 
-#endif // HEART_ALLOW_NEW
+#else
+
+inline void* operator new ( size_t size )
+{
+    return malloc( size );
+}
+
+inline void* operator new[] ( size_t size )
+{
+    return malloc( size );
+}
+
+#endif // HEART_OVERRIDE_NEW
 
 inline void* operator new ( size_t size, hMemoryHeap& heap )
 {
-#ifdef HEART_ALLOW_NEW
-	return ::operator new ( size );
-#else
 	return heap.alignAlloc( size, 16 );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void* operator new ( size_t size, hMemoryHeap& heap, const char* filename, size_t line )
 {
-#ifdef HEART_ALLOW_NEW
-	return ::operator new ( size );
-#else
 	return heap.alignAlloc( size, 16, filename, line );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void* operator new[] ( size_t size, hMemoryHeap& heap )
 {
-#ifdef HEART_ALLOW_NEW
-	return ::operator new[] ( size );
-#else
 	return heap.alignAlloc( size, 16 );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void* operator new[] ( size_t size, hMemoryHeap& heap, const char* filename, size_t line )
 {
-#ifdef HEART_ALLOW_NEW
-	return ::operator new[] ( size );
-#else
 	return heap.alignAlloc( size, 16, filename, line );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void operator delete ( void* mem, hMemoryHeap& heap )
 {
-#ifdef HEART_ALLOW_NEW
-	::operator delete ( mem );
-#else
 	heap.release( mem );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void operator delete[] ( void* mem, hMemoryHeap& heap )
 {
-#ifdef HEART_ALLOW_NEW
-	::operator delete[] ( mem );
-#else
 	heap.release( mem );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void operator delete ( void* mem, hMemoryHeap& heap, const char* /*filename*/, size_t /*line*/ )
 {
-#ifdef HEART_ALLOW_NEW
-	::operator delete ( mem );
-#else
 	heap.release( mem );
-#endif // HEART_ALLOW_NEW
 }
 
 inline void operator delete[] ( void* mem, hMemoryHeap& heap, const char* /*filename*/, size_t /*line*/ )
 {
-#ifdef HEART_ALLOW_NEW
-	::operator delete[] ( mem );
-#else
 	heap.release( mem );
-#endif // HEART_ALLOW_NEW
 }
-
-#ifndef HEART_ALLOW_NEW
 
 inline void operator delete ( void* mem )
 {
@@ -379,8 +357,11 @@ inline void operator delete ( void* mem )
 			return;
 		}
 	}
-
+#ifdef HEART_OVERRIDE_NEW
 	hcBreak;//couldn't find the heap
+#else
+    free( mem );
+#endif
 }
 
 inline void operator delete[] ( void* mem )
@@ -396,12 +377,11 @@ inline void operator delete[] ( void* mem )
 			return;
 		}
 	}
-
-	hcBreak;//couldn't find the heap
-
+#ifdef HEART_OVERRIDE_NEW
+    hcBreak;//couldn't find the heap
+#else
+    free( mem );
+#endif
 }
-
-
-#endif // HEART_ALLOW_NEW
 
 #endif // HCMEMORY_H__

@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;.\DeviceWin32DX11.vsprops;..\Heart\DebugCommon.vsprops;..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(ProjectName)D.lib"
+				OutputFile="$(OutDir)\DeviceRenderer_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -82,7 +82,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;.\DeviceWin32DX11.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\Heart\ReleaseCommon.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -125,6 +125,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\DeviceRenderer_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

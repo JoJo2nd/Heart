@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;.\DeviceWin32.vsprops;..\Heart\DebugCommon.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -61,8 +61,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="openAL32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)D.lib"
+				OutputFile="$(OutDir)\Device_$(PLAT_NAME)_$(BUILD_TYPE_NAME).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -83,7 +82,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;.\DeviceWin32.vsprops;..\Heart\ReleaseCommon.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -127,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="openAL32.lib"
+				OutputFile="$(OutDir)\Device_$(PLAT_NAME)_$(BUILD_TYPE_NAME).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

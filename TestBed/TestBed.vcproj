@@ -18,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="ReleaseWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartLinker.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\DeviceWin32DX11\DeviceWin32DX11ReleaseLinker.vsprops;..\Heart\ReleaseCommon.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\HeartCommonDefinesProps.vsprops;..\Heart\HeartPostBuildCmd.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -67,10 +66,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="HeartW32DX11.lib"
-				OutputFile="$(ProjectDir)\..\bin\game\$(ProjectName)Win32DX11.exe"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)..\_outdir\$(SolutionName)&quot;;&quot;$(SolutionDir)..\_outdir\$(SolutionName)\ReleaseWin32DX11&quot;"
+				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -98,13 +96,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="DebugWin32DX11|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartLinker.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops;..\Heart\DebugCommon.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\HeartCommonDefinesProps.vsprops;..\Heart\HeartPostBuildCmd.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -151,11 +149,10 @@
 				LinkLibraryDependencies="false"
 				UseLibraryDependencyInputs="true"
 				UseUnicodeResponseFiles="false"
-				AdditionalDependencies="HeartDW32DX11.lib"
 				ShowProgress="0"
-				OutputFile="$(ProjectDir)\..\bin\game\$(ProjectName)Win32DX11D.exe"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SolutionDir)..\_outdir\$(SolutionName)&quot;;&quot;$(SolutionDir)..\_outdir\$(SolutionName)\DebugWin32DX11&quot;"
+				AdditionalLibraryDirectories=""
 				IgnoreDefaultLibraryNames="msvcr90"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -182,6 +179,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;"
 			/>
 		</Configuration>
 	</Configurations>

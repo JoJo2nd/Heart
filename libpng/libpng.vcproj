@@ -18,9 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\DeviceWin32\DeviceWin32.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\DebugCommon.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -81,9 +80,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
+			InheritedPropertySheets="..\DeviceWin32\DeviceWin32.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\ReleaseCommon.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>

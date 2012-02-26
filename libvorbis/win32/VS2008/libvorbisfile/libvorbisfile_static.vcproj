@@ -21,10 +21,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops;..\..\..\..\Heart\DebugCommon.vsprops;..\..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -67,7 +65,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(ProjectName)_staticD.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -90,7 +87,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops;..\..\..\..\Heart\DebugCommon.vsprops;..\..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -154,10 +151,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops;..\..\..\..\Heart\ReleaseCommon.vsprops;..\..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -197,7 +192,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(ProjectName)_static.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -220,7 +214,7 @@
 			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;..\libogg.vsprops;..\..\..\..\Heart\ReleaseCommon.vsprops;..\..\..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\..\..\DeviceWin32\DeviceWin32.vsprops"
 			CharacterSet="1"
 			>
 			<Tool

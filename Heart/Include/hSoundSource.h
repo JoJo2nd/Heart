@@ -57,6 +57,7 @@ namespace Heart
         void GetPause() const;
         void SetLooping( hBool looping ) { looping_ = looping; }
         void GetLooping() const;
+        void SetVolume( hFloat val ) { deviceVoice_.SetVolume(val); }
 
     private:
 

@@ -8,4 +8,10 @@
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="..\..\GamedatabaseLib\Include;..\..\external\boost;../../DeviceWin32/Include;../../DeviceWin32DX11/Include;../../Heart/Include;..\..\lua\src;..\..\libpng\Include;..\..\zlib\Include;..\..\minizip\Include;..\..\tinyXML\Include;..\..\crypto\Include;&quot;..\..\rapidxml-1.13\include&quot;;..\..\libvorbis\include;..\..\libogg\include"
 	/>
+	<Tool
+		Name="VCLinkerTool"
+		LinkLibraryDependencies="false"
+		AdditionalDependencies="GameDatabaseLib_$(BUILD_TYPE_NAME).lib crypto_$(BUILD_TYPE_NAME).lib"
+		AdditionalLibraryDirectories="..\..\external\boost\stage\lib;"
+	/>
 </VisualStudioPropertySheet>

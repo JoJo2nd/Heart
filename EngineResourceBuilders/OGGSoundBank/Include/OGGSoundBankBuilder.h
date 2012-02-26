@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	DeviceConfig.h	
+	filename: 	OGGSoundBankBuilder.h	
 	
-	Copyright (c) 23:7:2011 James Moran
+	Copyright (c) 26:2:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,25 +24,31 @@
 	distribution.
 
 *********************************************************************/
-#ifndef DEVICECONFIG_H__
-#define DEVICECONFIG_H__
 
-namespace Heart
+#ifndef OGGSOUNDBANKBUILDER_H__
+#define OGGSOUNDBANKBUILDER_H__
+
+#include <stdio.h>
+#include <vector>
+#include <string>
+#include "GameDatabaseLib.h"
+#include "Heart.h"
+
+
+class OGGSoundBankBuilder : public GameData::gdResourceBuilderBase
 {
-	class hdDeviceConfig
-	{
-	public:
-		static const hUint32			HOME_DIRECTORY_MAX_LEN = 2048;
-		static const hUint32			WNDCLASSNAMELEN = 256;
+public:
+    OGGSoundBankBuilder( const GameData::gdResourceBuilderConstructionInfo& resBuilderInfo );
+    ~OGGSoundBankBuilder();
 
-		HINSTANCE		Instance_;
-		hChar			pWorkingDir_[ HOME_DIRECTORY_MAX_LEN ];
-		hChar			classname_[ WNDCLASSNAMELEN ];
-		hUint32			Width_;
-		hUint32			Height_;
-	};
+    void    BuildResource();
+    void    CleanUpFromBuild();
 
-    int WINAPI HeartMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow );
-}
+private:
 
-#endif // DEVICECONFIG_H__
+    hUint32     xmlsize_;
+    hChar*      xmlDocStr_;
+
+};
+
+#endif // OGGSOUNDBANKBUILDER_H__

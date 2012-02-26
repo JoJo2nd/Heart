@@ -148,8 +148,15 @@ namespace Heart
         ovcb.seek_func = hStaticSoundSource::OGGSeekFunc;
         ovcb.tell_func = hStaticSoundSource::OGGTellFunc;
         ovcb.close_func = NULL;
+        playbackInfos_[ret].source_ = this;
+        playbackInfos_[ret].eof_ = hFalse;
+        playbackInfos_[ret].tell_ = 0;
 
         ov_open_callbacks( &playbackInfos_[ret], &playbackInfos_[ret].oggctx_, NULL, 0, ovcb );
+
+        channels_ = playbackInfos_[ret].oggctx_.vi->channels;
+        pitch_ = (hFloat)playbackInfos_[ret].oggctx_.vi->rate;
+        format_ = channels_ >= 2 ? HEART_SOUND_FMT_STEREO16 : HEART_SOUND_FMT_MONO16;
 
         return ret;
     }
@@ -173,6 +180,7 @@ namespace Heart
     {
         hPlaybackInfo* src = &playbackInfos_[handle];
         ov_raw_seek( &src->oggctx_, 0 );
+        src->eof_ = hFalse;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -185,15 +193,18 @@ namespace Heart
         hUint32 read = 0;
         hUint32 left = hPlaybackInfo::PCM_BUFFER_SIZE;
 
-        while ( !src->eof_ && read < hPlaybackInfo::PCM_BUFFER_SIZE )
+        while ( !src->eof_ && read < hPlaybackInfo::PCM_BUFFER_SIZE*sizeof(ogg_uint16_t) )
         {
-            read = ov_read( &src->oggctx_, (char*)src->outBuffers_[src->buf_], (hPlaybackInfo::PCM_BUFFER_SIZE*sizeof(ogg_int16_t))-read, 0, 2, 1, &src->currentSelection_ );
-            if ( read == 0 )
+            hUint32 got = ov_read( &src->oggctx_, ((char*)src->outBuffers_[src->buf_])+read, (hPlaybackInfo::PCM_BUFFER_SIZE*sizeof(ogg_int16_t))-read, 0, 2, 1, &src->currentSelection_ );
+            if ( got == 0 )
                 src->eof_ = hTrue;
+            read += got;
         }
 
         *dstPtr = src->outBuffers_[src->buf_];
         *outSize = read;
+        ++src->buf_;
+        src->buf_ %= hPlaybackInfo::NUM_BUFFERS;
 
         return src->eof_ ? OGGDecode_END : OGGDecode_OK; 
     }

@@ -18,10 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\Heart\HeartDebugDefineProps.vsprops;..\..\Heart\DebugCommon.vsprops;..\..\DeviceWin32\DeviceWin32.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\..\HeartPacker\HeartPlugInPostBuildCmd.vsprops;..\..\Heart\HeartLinker.vsprops;..\..\DeviceWin32\DeviceLinker.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -63,7 +61,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="shlwapi.lib GameDatabaseLibD.lib HeartPD.lib"
+				AdditionalDependencies="libpng_$(BUILD_TYPE_NAME).lib squish_$(BUILD_TYPE_NAME).lib"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib;&quot;$(ProjectDir)\..\..\bin\tools\&quot;"
 				GenerateDebugInformation="true"
@@ -90,15 +89,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine=""
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)..\_outdir\$(SolutionName)\$(ConfigurationName)"
-			IntermediateDirectory="$(SolutionDir)..\_intdir\$(SolutionName)\$(ConfigurationName)_$(ProjectName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops"
+			InheritedPropertySheets="..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\Heart\HeartReleaseDefineProps.vsprops;..\..\DeviceWin32\DeviceWin32.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\..\Heart\ReleaseCommon.vsprops;..\..\HeartPacker\HeartPlugInPostBuildCmd.vsprops;..\..\Heart\HeartLinker.vsprops;..\..\DeviceWin32\DeviceLinker.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11ReleaseLinker.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -141,6 +138,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libpng_$(BUILD_TYPE_NAME).lib squish_$(BUILD_TYPE_NAME).lib"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerRelease&quot;;..\..\external\boost\stage\lib"
 				GenerateDebugInformation="false"
@@ -169,6 +168,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -19,7 +19,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartDebugDefineProps.vsprops"
+			InheritedPropertySheets="..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartDebugDefineProps.vsprops;..\..\DeviceWin32\DeviceWin32.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\..\Heart\DebugCommon.vsprops;..\..\HeartPacker\HeartPlugInPostBuildCmd.vsprops;..\..\Heart\HeartLinker.vsprops;..\..\DeviceWin32\DeviceLinker.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -60,6 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -85,12 +86,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartReleaseDefineProps.vsprops"
+			InheritedPropertySheets="..\..\Heart\HeartBuildOutputDirProps.vsprops;..\..\HeartPacker\HeartResourceBuilderIncludeProps.vsprops;..\..\Heart\HeartCommonDefinesProps.vsprops;..\..\Heart\HeartReleaseDefineProps.vsprops;..\..\DeviceWin32\DeviceWin32.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\..\Heart\ReleaseCommon.vsprops;..\..\HeartPacker\HeartPlugInPostBuildCmd.vsprops;..\..\Heart\HeartLinker.vsprops;..\..\DeviceWin32\DeviceLinker.vsprops;..\..\DeviceWin32DX11\DeviceWin32DX11ReleaseLinker.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -132,6 +134,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -159,6 +162,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_PLUGINS&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

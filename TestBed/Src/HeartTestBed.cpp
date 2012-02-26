@@ -28,3 +28,8 @@ Heart::HeartEngine*& pEngine = // Global ptr to the Heart Engine [10/8/2008 Jame
 			Heart::PostEngineShutdown::bind< Game::TestBedCore, &Game::TestBedCore::EngineShutdown >( &pCore )
 		)
 	);
+	
+int WINAPI WinMain( HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+{
+	return Heart::HeartMain( hinstance, hPrevInstance, lpCmdLine, nCmdShow );
+}
