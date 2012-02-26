@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="HeartPlugInPostBuildCmd"
+	>
+	<Tool
+		Name="VCPostBuildEventTool"
+		CommandLine="xcopy $(TargetPath) ../../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_plugins/$(TargetFileName)&#x0D;&#x0A;REM robocopy $(TargetDir) ../../bin/tools/$(PLAT_NAME)_$(BUILD_TYPE_NAME)_plugins $(TargetFileName)"
+	/>
+</VisualStudioPropertySheet>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="DeviceWin32DX11ReleaseLinker"
+	>
+	<Tool
+		Name="VCLibrarianTool"
+		AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="d3d11.lib d3dcompiler.lib d3dx11.lib dxguid.lib"
+	/>
+</VisualStudioPropertySheet>
