@@ -208,6 +208,7 @@ void hMemoryHeap::release( void* ptr )
 	if ( ptr != NULL )
 	{	
 		PRE_ACTION();
+        hcAssert( pointerBelongsToMe(ptr) );
 		size_t s = mspace_allocate_size(ptr);
 		alloced_ -= s;
 		RELEASE_TRACK_INFO( ptr, s );

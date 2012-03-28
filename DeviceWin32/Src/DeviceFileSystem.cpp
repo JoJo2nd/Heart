@@ -59,12 +59,12 @@ namespace FileSystem
 			creation = CREATE_ALWAYS;
 		}
 
-		(*pOut) = hNEW ( hGeneralHeap ) FileHandle;
+		(*pOut) = hNEW( hGeneralHeap, FileHandle );
 		(*pOut)->fileHandle_ = CreateFile( filename, access, share, secatt, creation, flags, NULL );
 
 		if ( (*pOut)->fileHandle_ == INVALID_HANDLE_VALUE )
 		{
-			delete *pOut;
+			hDELETE(hGeneralHeap, *pOut);
 			return hFalse;
 		}
 
@@ -82,7 +82,7 @@ namespace FileSystem
 	{
 		CloseHandle( pHandle->fileHandle_ );
 
-		delete pHandle;
+		hDELETE(hGeneralHeap, pHandle);
 		return hTrue;
 	}
 

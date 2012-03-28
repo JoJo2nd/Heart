@@ -55,7 +55,7 @@ namespace Heart
         ComponentCreateCallback createFunc, 
         ComponentDestroyCallback destroyFunc )
     {
-        hComponentFactory* fact = hNEW( hGeneralHeap ) hComponentFactory();
+        hComponentFactory* fact = hNEW(hGeneralHeap, hComponentFactory);
         //TODO:
         // fact->componentID_ = GetNewComponentID();
         // *outComponentID = fact->componentID_;

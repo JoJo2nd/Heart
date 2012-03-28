@@ -63,7 +63,8 @@ namespace Heart
 
         ~hXMLDocument()
         {
-            hDELETE_ARRAY data_;
+            hHeapFree( hGeneralHeap, data_ );
+            data_ = NULL;
         }
 
         template< hUint32 flags >

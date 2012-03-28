@@ -39,7 +39,7 @@ namespace Heart
     void hResourcePackage::AddResourceToPackage( const hChar* resourcePath )
     {
         hUint32 crc = hResourceManager::BuildResourceCRC( resourcePath );
-        hChar* path = hNEW( hGeneralHeap ) hChar[ hStrLen( resourcePath )+1 ];
+        hChar* path = hNEW_ARRAY(hGeneralHeap, hChar, hStrLen( resourcePath )+1);
         hStrCopy( path, hStrLen( resourcePath )+1, resourcePath );
         resourceNames_.PushBack( path );
         resourcecCRC_.PushBack( crc );
@@ -52,7 +52,7 @@ namespace Heart
 
 	void hResourcePackage::AddResourceToPackageInternal( const hChar* resourcePath, hResourceClassBase*& dest )
 	{
-        hChar* path = hNEW( hGeneralHeap ) hChar[ strlen( resourcePath )+1 ];
+        hChar* path = hNEW_ARRAY(hGeneralHeap, hChar, strlen( resourcePath )+1);
         strcpy( path, resourcePath );
         resourceNames_.PushBack( path );
 	}

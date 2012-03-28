@@ -50,7 +50,7 @@ namespace Heart
 	{
 		pResourceManager_ = pResourceManager;
 
-		rootNode_ = hNEW ( hSceneGraphHeap ) hSceneNodeLocator();
+		rootNode_ = hNEW(hSceneGraphHeap, hSceneNodeLocator);
 		//CreateResourceNode( HEART_SCENE_ROOT_NAME, RootNode_, pnewnode );
 
 		rootNode_->DefaultState();
@@ -63,8 +63,7 @@ namespace Heart
 
 	void hSceneGraph::Destroy()
 	{
-		delete rootNode_;
-        rootNode_ = NULL;
+		hDELETE_SAFE(hGeneralHeap, rootNode_);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

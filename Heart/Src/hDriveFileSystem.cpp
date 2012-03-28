@@ -93,7 +93,7 @@ namespace
             return NULL;
         }
 
-        hDriveFile* pFile = hNEW ( hGeneralHeap ) hDriveFile();
+        hDriveFile* pFile = hNEW(hGeneralHeap, hDriveFile);
         pFile->fileHandle_ = fh;
 
         return pFile;
@@ -112,7 +112,7 @@ namespace
 
 		Device::FileSystem::Fclose( ((hDriveFile*)pFile)->fileHandle_ );
 
-		delete pFile;
+		hDELETE(hGeneralHeap, pFile);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

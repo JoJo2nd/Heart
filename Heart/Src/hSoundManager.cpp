@@ -67,7 +67,7 @@ namespace Heart
 
     hSoundSource* hSoundManager::CreateSoundSource( hUint32 channel )
     {
-        hSoundSource* sound = hNEW( hGeneralHeap ) hSoundSource();
+        hSoundSource* sound = hNEW(hGeneralHeap, hSoundSource);
         soundSources_.PushBack( sound );
 
         return sound;
@@ -80,7 +80,7 @@ namespace Heart
     void hSoundManager::DestroySoundSource( hSoundSource* source )
     {
         soundSources_.Remove( source );
-        hDELETE source;
+        hDELETE(hGeneralHeap,source);
     }
 
 }

@@ -254,6 +254,8 @@ namespace Heart
 
         friend class hMaterial;
 
+        hPRIVATE_DESTRUCTOR();
+
         hMaterialInstance( hMaterial* parentMat, hRenderer* renderer );
         ~hMaterialInstance();
 

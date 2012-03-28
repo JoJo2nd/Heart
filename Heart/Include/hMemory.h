@@ -264,88 +264,68 @@ extern hMemoryHeap hVMHeap;
     #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a, __FILE__, __LINE__ )
 	#define hMalloc( s ) hAlignMalloc( s, 16 )
 	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s, __FILE__, __LINE__ )
+    #define hFree( p ) hGeneralHeap.release( p )
+    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
     #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a, __FILE__, __LINE__ )
 	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16, __FILE__, __LINE__ )
 	#define hHeapRealloc( h, p, s ) h.realloc( p, s, __FILE__, __LINE__ )
-	#define hFree( p ) hGeneralHeap.release( p )
+    #define hHeapFree( h, p ) h.release( p )
+    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
 #else
     #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a )
 	#define hMalloc( s ) hAlignMalloc( s, 16 )
 	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s )
+    #define hFree( p ) hGeneralHeap.release( p )
+    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
     #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a )
 	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16 )
 	#define hHeapRealloc( h, p, s ) h.realloc( p, s )
-	#define hFree( p ) hGeneralHeap.release( p )
+	#define hHeapFree( h, p ) h.release( p )
+    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
 #endif
 
-#ifdef HEART_OVERRIDE_NEW
+namespace Heart
+{
+
+    template< typename _Ty >
+    inline void hDestroyObjects(_Ty* ptr, hUint32 elements)
+    {
+        if ( !ptr ) return;
+        for ( hUint32 i = 0; i < elements; ++i )
+            ptr[i].~_Ty();
+    }
+
+}
+
+#define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+#define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
+#define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
+#define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
+#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
+#define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
+#define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
+#define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
+#define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
+
+#define hPRIVATE_DESTRUCTOR()\
+    template< typename _Ty > friend void hDestroyObjects(_Ty*, hUint32);
 
 inline void* operator new ( size_t size )
 {
-	return hMalloc( size );
-}
-
-inline void* operator new[] ( size_t size )
-{
-	return hMalloc( size );
-}
-
-#else
-
-inline void* operator new ( size_t size )
-{
+    hcBreak;
     return malloc( size );
 }
 
 inline void* operator new[] ( size_t size )
 {
+    hcBreak;
     return malloc( size );
 }
 
-#endif // HEART_OVERRIDE_NEW
-
-inline void* operator new ( size_t size, hMemoryHeap& heap )
-{
-	return heap.alignAlloc( size, 16 );
-}
-
-inline void* operator new ( size_t size, hMemoryHeap& heap, const char* filename, size_t line )
-{
-	return heap.alignAlloc( size, 16, filename, line );
-}
-
-inline void* operator new[] ( size_t size, hMemoryHeap& heap )
-{
-	return heap.alignAlloc( size, 16 );
-}
-
-inline void* operator new[] ( size_t size, hMemoryHeap& heap, const char* filename, size_t line )
-{
-	return heap.alignAlloc( size, 16, filename, line );
-}
-
-inline void operator delete ( void* mem, hMemoryHeap& heap )
-{
-	heap.release( mem );
-}
-
-inline void operator delete[] ( void* mem, hMemoryHeap& heap )
-{
-	heap.release( mem );
-}
-
-inline void operator delete ( void* mem, hMemoryHeap& heap, const char* /*filename*/, size_t /*line*/ )
-{
-	heap.release( mem );
-}
-
-inline void operator delete[] ( void* mem, hMemoryHeap& heap, const char* /*filename*/, size_t /*line*/ )
-{
-	heap.release( mem );
-}
 
 inline void operator delete ( void* mem )
 {
+    hcBreak;
 	if ( mem == NULL )
 		return;
 
@@ -357,15 +337,13 @@ inline void operator delete ( void* mem )
 			return;
 		}
 	}
-#ifdef HEART_OVERRIDE_NEW
-	hcBreak;//couldn't find the heap
-#else
+
     free( mem );
-#endif
 }
 
 inline void operator delete[] ( void* mem )
 {
+    hcBreak;
 	if ( mem == NULL )
 		return;
 
@@ -377,11 +355,8 @@ inline void operator delete[] ( void* mem )
 			return;
 		}
 	}
-#ifdef HEART_OVERRIDE_NEW
-    hcBreak;//couldn't find the heap
-#else
+
     free( mem );
-#endif
 }
 
 #endif // HCMEMORY_H__

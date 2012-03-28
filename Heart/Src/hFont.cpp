@@ -381,7 +381,7 @@ void hFont::RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Pri
 
 hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 {
-    hFont* resource = hNEW( hGeneralHeap ) hFont;
+    hFont* resource = hNEW(hGeneralHeap, hFont);
     hSerialiser ser;
     ser.Deserialise( dataStream, *resource );
 

@@ -132,7 +132,7 @@ namespace Heart
 		}
 
 		// insert before i
-		channels_.InsertBefore( i, hNEW ( hGeneralHeap ) Channel( channelId ) );
+		channels_.InsertBefore( i, hNEW(hGeneralHeap, Channel(channelId)) );
 
 	}
 
@@ -152,7 +152,7 @@ namespace Heart
 		}
 
         Channel* removed = channels_.Remove( i );
-        hDELETE removed;
+        hDELETE(hGeneralHeap, removed);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

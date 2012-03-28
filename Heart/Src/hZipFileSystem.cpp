@@ -261,11 +261,11 @@ namespace
 
 		while ( !zipIOThread_.IsComplete() ) { hThreading::ThreadSleep( 1 ); }
 
-		delete pStringPool_;
+		hDELETE_ARRAY(hGeneralHeap, pStringPool_, stringPoolSize_);
 
 		// delete zip entries
 		RemoveEntry( pRootEntry_ );
-		delete pRootEntry_;
+		hDELETE(hGeneralHeap, pRootEntry_);
 
 		unzClose( zipFileHandle_ );
 	}
@@ -286,7 +286,7 @@ namespace
 		if ( pZip->directory_ )
 			return NULL;
 
-		hZipFile* pZipFile = hNEW ( hGeneralHeap ) hZipFile();
+		hZipFile* pZipFile = hNEW(hGeneralHeap, hZipFile);
 		//setup the zipfile
 		pZipFile->pFileSystem_ = this;
 		pZipFile->filePos_ = 0;
@@ -358,9 +358,9 @@ namespace
 			stringPoolSize_ += strlen( pFileName ) + 1;
 		}
 
-		pStringPool_ = hNEW ( hGeneralHeap ) hChar[ stringPoolSize_ ];
+		pStringPool_ = hNEW_ARRAY(hGeneralHeap, hChar, stringPoolSize_);
 		pStringOfffset_ = pStringPool_;
-		pRootEntry_ = hNEW ( hGeneralHeap ) ZipFileEntry;
+		pRootEntry_ = hNEW(hGeneralHeap, ZipFileEntry);
 		pRootEntry_->name_ = NULL;
 		pRootEntry_->nEntries_ = 0;
 		pRootEntry_->pEntries_ = NULL;
@@ -491,9 +491,9 @@ namespace
 				pParent->nReserve_ = 8;
 			}
 
-			ZipFileEntry* ptmp = hNEW ( hGeneralHeap ) ZipFileEntry[ pParent->nReserve_ ];
+			ZipFileEntry* ptmp = hNEW_ARRAY(hGeneralHeap, ZipFileEntry, pParent->nReserve_);
 			memcpy( ptmp, pParent->pEntries_, pParent->nEntries_*sizeof(ZipFileEntry) );
-			delete pParent->pEntries_;
+			hDELETE_ARRAY(hGeneralHeap, pParent->pEntries_, pParent->nEntries_);
 			pParent->pEntries_ = ptmp;
 		}
 

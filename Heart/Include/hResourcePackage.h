@@ -43,7 +43,7 @@ namespace Heart
 	{
 	public:
 		hResourcePackage()
-			: completedLoads_( (hUint32*)hAlignMalloc( sizeof(hUint32), 32 ) )
+			: completedLoads_( hNEW_ALIGN(hGeneralHeap, 32, hUint32) )
 		{}	
 		~hResourcePackage()
 		{
@@ -51,10 +51,10 @@ namespace Heart
             hUint32 size = resourceNames_.GetSize();
             for ( hUint32 i = 0; i < size; ++i )
             {
-                delete resourceNames_[i];
+                hDELETE(hGeneralHeap, resourceNames_[i]);
             }
 
-            delete completedLoads_;
+            hDELETE(hGeneralHeap, completedLoads_);
             completedLoads_ = NULL;
 		}
 

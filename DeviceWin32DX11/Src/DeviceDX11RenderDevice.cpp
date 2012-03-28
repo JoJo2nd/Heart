@@ -311,7 +311,7 @@ namespace Heart
             return NULL;
         }
 */
-        hdDX11ShaderProgram* shader = hNEW ( hRendererHeap ) hdDX11ShaderProgram;
+        hdDX11ShaderProgram* shader = hNEW ( hRendererHeap, hdDX11ShaderProgram );
         shader->type_ = type;
 
         if ( type == ShaderType_FRAGMENTPROG )
@@ -395,7 +395,7 @@ namespace Heart
     hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags )
     {
         HRESULT hr;
-        hdDX11Texture* texture = hNEW ( hRendererHeap ) hdDX11Texture;
+        hdDX11Texture* texture = hNEW ( hRendererHeap, hdDX11Texture );
 
         D3D11_TEXTURE2D_DESC desc;
         hZeroMem( &desc, sizeof(desc) );
@@ -504,7 +504,7 @@ namespace Heart
 
     hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBuffer( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
-        hdDX11IndexBuffer* idxBuf = hNEW( hGeneralHeap ) hdDX11IndexBuffer();
+        hdDX11IndexBuffer* idxBuf = hNEW( hGeneralHeap, hdDX11IndexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -545,7 +545,7 @@ namespace Heart
     hdDX11VertexLayout* hdDX11RenderDevice::CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen )
     {
         HRESULT hr;
-        hdDX11VertexLayout* layout = hNEW( hGeneralHeap ) hdDX11VertexLayout();
+        hdDX11VertexLayout* layout = hNEW( hGeneralHeap, hdDX11VertexLayout );
         D3D11_INPUT_ELEMENT_DESC elements[32];
         hUint32 stride;
         hUint32 elementCount = BuildVertexFormatArray( vertexFormat, &stride, elements );
@@ -571,7 +571,7 @@ namespace Heart
 
     hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
-        hdDX11VertexBuffer* vtxBuf = hNEW( hGeneralHeap ) hdDX11VertexBuffer();
+        hdDX11VertexBuffer* vtxBuf = hNEW( hGeneralHeap, hdDX11VertexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -620,7 +620,7 @@ namespace Heart
         if ( !outBlendState )
         {
             //
-            outBlendState = hNEW( hGeneralHeap ) hdDX11BlendState();
+            outBlendState = hNEW( hGeneralHeap, hdDX11BlendState );
             D3D11_BLEND_DESC blendDesc;
 
             //Build device state desc
@@ -768,7 +768,7 @@ namespace Heart
 
         if ( !outRasState )
         {
-            outRasState = hNEW( hGeneralHeap ) hdDX11RasterizerState();
+            outRasState = hNEW( hGeneralHeap, hdDX11RasterizerState );
             D3D11_RASTERIZER_DESC rasDesc;
 
             rasDesc.FrontCounterClockwise = FALSE;
@@ -846,7 +846,7 @@ namespace Heart
 
         if ( !outDSState )
         {
-            outDSState = hNEW( hGeneralHeap ) hdDX11DepthStencilState();
+            outDSState = hNEW(hGeneralHeap, hdDX11DepthStencilState);
             D3D11_DEPTH_STENCIL_DESC dsDesc;
 
             switch ( desc.depthEnable_ )
@@ -1022,7 +1022,7 @@ namespace Heart
 
         if ( !outSamState )
         {
-            outSamState = hNEW( hGeneralHeap ) hdDX11SamplerState();
+            outSamState = hNEW(hGeneralHeap, hdDX11SamplerState);
             D3D11_SAMPLER_DESC samDesc;
 
             switch ( desc.filter_ )
@@ -1314,7 +1314,7 @@ namespace Heart
 
     hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count )
     {
-        hdDX11ParameterConstantBlock* constBlocks = hNEW( hGeneralHeap ) hdDX11ParameterConstantBlock[count];
+        hdDX11ParameterConstantBlock* constBlocks = hNEW_ARRAY(hGeneralHeap, hdDX11ParameterConstantBlock, count);
         for ( hUint32 i = 0; i < count; ++i )
         {
             HRESULT hr;
@@ -1328,7 +1328,7 @@ namespace Heart
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].slot_ = regs[i];
             constBlocks[i].size_ = sizes[i];
-            constBlocks[i].cpuIntermediateData_ = hNEW( hGeneralHeap ) hFloat[sizes[i]];
+            constBlocks[i].cpuIntermediateData_ = hNEW_ARRAY(hGeneralHeap, hFloat, sizes[i]);
         }
 
         return constBlocks;

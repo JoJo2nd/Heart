@@ -59,7 +59,7 @@ namespace Heart
 		, pThreadFrameStats_( NULL )
 		, statPass_( 0 )
 	{
-		SetImpl( hNEW ( hGeneralHeap ) hdRenderDevice );
+		SetImpl( hNEW(hGeneralHeap, hdRenderDevice) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -409,7 +409,7 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hTexture* resource = hNEW ( hGeneralHeap ) hTexture( this );
+        hTexture* resource = hNEW(hGeneralHeap, hTexture(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
         for ( hUint32 i = 0; i < resource->nLevels_; ++i )
@@ -436,7 +436,7 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hMaterial* resource = hNEW ( hGeneralHeap ) hMaterial( this );
+        hMaterial* resource = hNEW(hGeneralHeap, hMaterial(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
@@ -547,7 +547,7 @@ namespace Heart
 
     hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
-        hShaderProgram* resource = hNEW ( hGeneralHeap ) hShaderProgram;
+        hShaderProgram* resource = hNEW(hGeneralHeap, hShaderProgram);
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
@@ -767,11 +767,11 @@ namespace Heart
 
 	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
-        (*outTex) = hNEW( hGeneralHeap ) hTexture( this );
+        (*outTex) = hNEW(hGeneralHeap, hTexture(this));
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
-        (*outTex)->levelDescs_ = levels ? hNEW ( hRendererHeap ) hTexture::LevelDesc[ levels ] : NULL;
+        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(hRendererHeap, hTexture::LevelDesc, levels) : NULL;
 		(*outTex)->textureData_ = NULL;
 
 		hUint32 tw = width;
@@ -804,7 +804,7 @@ namespace Heart
 
 	void hRenderer::CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB )
 	{
-		hIndexBuffer* pdata = hNEW ( hRendererHeap ) hIndexBuffer( this );
+		hIndexBuffer* pdata = hNEW(hRendererHeap, hIndexBuffer(this));
 		pdata->pIndices_ = NULL;
 		pdata->nIndices_ = nIndices;
 		pdata->primitiveType_ = primType;
@@ -832,7 +832,7 @@ namespace Heart
 
 	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
 	{
-        hVertexBuffer* pdata = hNEW ( hRendererHeap ) hVertexBuffer( this );
+        hVertexBuffer* pdata = hNEW(hRendererHeap, hVertexBuffer(this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = pImpl()->ComputeVertexLayoutStride( layout );
 
@@ -877,7 +877,7 @@ namespace Heart
 
     hRenderSubmissionCtx* hRenderer::CreateRenderSubmissionCtx()
     {
-        hRenderSubmissionCtx* ret = hNEW( hRendererHeap ) hRenderSubmissionCtx();
+        hRenderSubmissionCtx* ret = hNEW(hRendererHeap, hRenderSubmissionCtx);
         ret->Initialise( this );
         pImpl()->InitialiseRenderSubmissionCtx( &ret->impl_ );
         pImpl()->InitialiseRenderSubmissionCtx( &ret->debug_ );

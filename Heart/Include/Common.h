@@ -27,6 +27,7 @@
 //Heart stuff
 #include "hHeartConfig.h"
 #include "hTypes.h"
+#include "hMemory.h"
 //#include "HeartSTL.h"
 
 #ifdef HEART_PLAT_WINDOWS

@@ -178,7 +178,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateTextureTestState()
 	{
-		return hNEW( hGeneralHeap ) CreateTextureTest( pEngine_ );
+		return hNEW(hGeneralHeap, CreateTextureTest(pEngine_));
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -187,7 +187,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateMapTestsState()
 	{
-		return hNEW ( hGeneralHeap ) MapTest( pEngine_ );
+		return hNEW(hGeneralHeap, MapTest(pEngine_));
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -196,7 +196,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateListTestState()
 	{
-		return hNEW ( hGeneralHeap ) ListTest( pEngine_ );
+		return hNEW(hGeneralHeap, ListTest(pEngine_));
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ namespace Game
 
     Heart::hStateBase* TestBedCore::CreateResourceLoadTest()
     {
-        return hNEW ( hGeneralHeap ) ResourceLoadTest( pEngine_ );
+        return hNEW(hGeneralHeap, ResourceLoadTest(pEngine_));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ namespace Game
 
     Heart::hStateBase* TestBedCore::CreateJobTest()
     {
-        return hNEW( hGeneralHeap ) JobManagerTest( pEngine_ );
+        return hNEW(hGeneralHeap, JobManagerTest(pEngine_));
     }
 
 }

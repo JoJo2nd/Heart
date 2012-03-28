@@ -19,7 +19,7 @@ namespace Heart
 
 	hControllerManager::hControllerManager()
 	{
-		SetImpl( hNEW ( hGeneralHeap ) Device::InputDeviceManager() );
+		SetImpl( hNEW(hGeneralHeap, Device::InputDeviceManager) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

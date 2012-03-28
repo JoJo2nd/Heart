@@ -20,12 +20,11 @@ namespace Heart
 	{
 	public:
 		hIReferenceCounted() 
-			: reference_( (hUint32*)hAlignMalloc( sizeof(hUint32), 32 ) )
+			: reference_( hNEW_ALIGN(hGeneralHeap,32,hUint32) )
 		{}
 		virtual ~hIReferenceCounted() 
         {
-            hDELETE reference_;
-            reference_ = 0;
+            hDELETE_SAFE( hGeneralHeap, reference_ );
         }
 		void			AddRef() const { hAtomic::Increment( reference_ ); }
 		void			DecRef() const { hcAssert( reference_ > 0 ); hAtomic::Decrement( reference_ ); if ( *reference_ == 0 ) { OnZeroRef(); } }
@@ -36,29 +35,6 @@ namespace Heart
 		virtual void	OnZeroRef() const {};
 
 		mutable hUint32*		reference_;
-	};
-
-
-	class hIAutoReferenceCounted 
-	{
-	public:
-		hIAutoReferenceCounted() 
-            : reference_( (hUint32*)hAlignMalloc( sizeof(hUint32), 32 ) )
-		{
-            *reference_ = 1;
-        }
-		void			AddRef() const { hAtomic::Increment( reference_ ); }
-		void			DecRef() const { hAtomic::Decrement( reference_ ); if ( *reference_ == 0 ) { hDELETE this; } }
-
-	protected:
-
-		virtual ~hIAutoReferenceCounted() 
-        {
-            hDELETE reference_;
-            reference_ = NULL;
-        }
-
-		mutable hUint32*			reference_;
 	};
 }
 

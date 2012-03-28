@@ -52,18 +52,6 @@
     #define XM_NO_OPERATOR_OVERLOADS
 #endif
 
-#ifndef HEART_ALLOW_NEW
-    #ifdef HEART_DEBUG
-        #define hNEW( heap ) new ( heap, __FILE__, __LINE__ )
-    #else
-        #define hNEW( heap ) new ( heap )
-    #endif
-
-    #define hPLACEMENT_NEW( ptr ) new ( ptr ) 
-    #define hDELETE         delete 
-    #define hDELETE_ARRAY   delete[] 
-#endif 
-
 #ifndef _CRT_SECURE_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS
 #endif

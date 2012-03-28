@@ -106,7 +106,7 @@ public:
 		{
 			MAPTESTPRINT( "!==========================================");
 
-			TestElement* v = hNEW ( hGeneralHeap ) TestElement();
+			TestElement* v = hNEW(hGeneralHeap, TestElement);
 			v->value_ = i;
 			v->somethingElse_ = ~i;
 			MAPTESTPRINT( "Inserting Key,Value (%u,%u)", t[i], i );

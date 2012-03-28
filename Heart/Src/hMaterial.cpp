@@ -175,7 +175,7 @@ namespace Heart
 
     hMaterialInstance* hMaterial::CreateMaterialInstance()
     {
-        return hNEW( hGeneralHeap ) hMaterialInstance( this, pRenderer_ );
+        return hNEW(hGeneralHeap, hMaterialInstance(this, pRenderer_));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ namespace Heart
 
     void hMaterial::DestroyMaterialInstance( hMaterialInstance* inst )
     {
-        delete inst;
+        hDELETE(hGeneralHeap, inst);
     }
 
     //////////////////////////////////////////////////////////////////////////

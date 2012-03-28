@@ -74,7 +74,7 @@ namespace Heart
 
     HeartEngine* InitHeartEngine( HeartConfig& Config, const char* configFile )
     {
-        Config.pEngine_ = hNEW ( hGeneralHeap ) HeartEngine( Config, configFile );
+        Config.pEngine_ = hNEW ( hGeneralHeap, HeartEngine( Config, configFile ) );
         return Config.pEngine_;
     }
 
@@ -92,31 +92,31 @@ namespace Heart
         //
         // Create engine classes
         //
-        eventManager_ = hNEW ( hGeneralHeap ) EventManager();
+        eventManager_ = hNEW(hGeneralHeap, EventManager);
 
-        jobManager_ = hNEW ( hGeneralHeap ) hJobManager();
+        jobManager_ = hNEW(hGeneralHeap, hJobManager);
 
-        controllerManager_ = hNEW ( hGeneralHeap ) hControllerManager();
+        controllerManager_ = hNEW(hGeneralHeap , hControllerManager);
 
-        system_ = hNEW( hGeneralHeap ) hSystem();
+        system_ = hNEW(hGeneralHeap, hSystem);
 
-        fileMananger_ = hNEW ( hGeneralHeap ) hDriveFileSystem();
+        fileMananger_ = hNEW(hGeneralHeap, hDriveFileSystem);
 
-        zipFileSystem_ = hNEW ( hGeneralHeap ) hZipFileSystem();
+        zipFileSystem_ = hNEW(hGeneralHeap, hZipFileSystem);
 
-        resourceMananger_ = hNEW ( hGeneralHeap ) hResourceManager();
+        resourceMananger_ = hNEW(hGeneralHeap, hResourceManager);
 
-        renderer_ = hNEW ( hGeneralHeap ) hRenderer();
+        renderer_ = hNEW(hGeneralHeap, hRenderer);
 
-        sceneGraph_ = hNEW ( hGeneralHeap ) hSceneGraph();
+        sceneGraph_ = hNEW(hGeneralHeap, hSceneGraph);
 
-        soundManager_ = hNEW( hGeneralHeap ) hSoundManager();
+        soundManager_ = hNEW(hGeneralHeap, hSoundManager);
 
-        console_ = hNEW ( hGeneralHeap ) hSystemConsole();
+        console_ = hNEW(hGeneralHeap, hSystemConsole);
 
-        luaVM_ = hNEW ( hGeneralHeap ) hLuaStateManager();
+        luaVM_ = hNEW(hGeneralHeap, hLuaStateManager);
 
-        entityFactory_ = hNEW( hGeneralHeap ) hEntityFactory();
+        entityFactory_ = hNEW(hGeneralHeap, hEntityFactory);
 
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ////////////////////////////////////////////////
@@ -373,7 +373,7 @@ namespace Heart
 
     void ShutdownHeartEngine(  HeartEngine* pEngine  )
     {
-        hDELETE pEngine;
+        hDELETE(hGeneralHeap, pEngine);
 
         // Check memory usage
 #define CHECK_HEAP( x ) hcAssertMsg( x.BytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.BytesAllocated() );
@@ -413,29 +413,29 @@ namespace Heart
 
         renderer_->Destroy();
 
-        hDELETE luaVM_;
+        hDELETE(hGeneralHeap, luaVM_);
 
-        hDELETE zipFileSystem_;
+        hDELETE(hGeneralHeap, zipFileSystem_);
 
-        hDELETE console_;
+        hDELETE(hGeneralHeap, console_);
 
-        hDELETE soundManager_;
+        hDELETE(hGeneralHeap, soundManager_);
 
-        hDELETE sceneGraph_;
+        hDELETE(hGeneralHeap, sceneGraph_);
 
-        hDELETE renderer_;
+        hDELETE(hGeneralHeap, renderer_);
 
-        hDELETE controllerManager_;
+        hDELETE(hGeneralHeap, controllerManager_);
 
-        hDELETE resourceMananger_;
+        hDELETE(hGeneralHeap, resourceMananger_);
 
-        hDELETE fileMananger_;
+        hDELETE(hGeneralHeap, fileMananger_);
 
-        hDELETE jobManager_;
+        hDELETE(hGeneralHeap, jobManager_);
 
-        hDELETE eventManager_;
+        hDELETE(hGeneralHeap, eventManager_);
 
-        hDELETE system_;
+        hDELETE(hGeneralHeap, system_);
 
     }
 }

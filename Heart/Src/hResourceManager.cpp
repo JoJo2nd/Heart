@@ -50,7 +50,7 @@ namespace Heart
         , gotRequiredResources_( hFalse )
         , remappingNames_(NULL)
         , remappingNamesSize_(0)
-        , resourceSweepCount_((hUint32*)hAlignMalloc( sizeof(hUint32), 32 ))
+        , resourceSweepCount_(hNEW_ALIGN(hGeneralHeap, 32, hUint32))
 	{
 		hcAssert( pInstance_ == NULL );
 
@@ -63,7 +63,7 @@ namespace Heart
 
 	hResourceManager::~hResourceManager()
 	{
-        hDELETE resourceSweepCount_;
+        hDELETE(hGeneralHeap, resourceSweepCount_);
         resourceSweepCount_ = NULL;
 		pInstance_ = NULL;
 	}
@@ -155,7 +155,7 @@ namespace Heart
     void hResourceManager::SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData )
     {
         ResourceType type;
-        ResourceHandler* handler = hNEW ( hGeneralHeap ) ResourceHandler();
+        ResourceHandler* handler = hNEW(hGeneralHeap, ResourceHandler);
 
         strcpy_s( type.ext, 4, typeExt );
 
@@ -247,7 +247,7 @@ namespace Heart
 			{
                 CompleteLoadRequest( i );
                 hAtomic::Increment( i->loadCounter_ );
-                delete i->path_;
+                hDELETE(hGeneralHeap, i->path_);
 			}
 
             loadRequestsProcessed_.Clear( hTrue );
@@ -283,11 +283,11 @@ namespace Heart
 		hResourceLoadRequest* request;
 
 		//create a load request.
-		request = hNEW ( hGeneralHeap ) hResourceLoadRequest();
+		request = hNEW(hGeneralHeap, hResourceLoadRequest);
 		//create space in the request in the loadedResources
 		request->crc32_ = rescrc32;
         request->loadCounter_ = loadCounter;
-		request->path_ = hNEW ( hGeneralHeap ) hChar[strlen(resourceName)+1];
+		request->path_ = hNEW_ARRAY(hGeneralHeap, hChar, strlen(resourceName)+1);
         strcpy( request->path_, resourceName );
 
 		loadRequests_.Insert( rescrc32, request );
@@ -392,7 +392,7 @@ namespace Heart
             if ( resource->GetFlags() & hResourceClassBase::ResourceFlags_STREAMING )
             {
                 hStreamingResourceBase* stres = static_cast< hStreamingResourceBase* >( resource );
-                StreamingResouce* sr = hNEW( hGeneralHeap ) StreamingResouce();
+                StreamingResouce* sr = hNEW(hGeneralHeap, StreamingResouce);
                 sr->stream_ = stres;
 
                 stres->SetFileStream( loaderStream );
@@ -492,7 +492,7 @@ namespace Heart
 
                 if ( remapCRC )
                 {
-                    ResourceRemap* remap = hNEW( hGeneralHeap ) ResourceRemap();
+                    ResourceRemap* remap = hNEW(hGeneralHeap, ResourceRemap);
                     remap->mapToPath = pathOffset;
 
                     remappings_.Insert( remapCRC, remap );

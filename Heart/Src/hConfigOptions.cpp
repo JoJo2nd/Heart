@@ -46,7 +46,7 @@ namespace Heart
 		if ( file )
 		{
 			hUint32 read;
-			char* data = hNEW ( hGeneralHeap ) char[(hUint32)file->Length()];
+			char* data = hNEW_ARRAY(hGeneralHeap, char, (hUint32)file->Length());
 			read = file->Read( data, (hUint32)file->Length() ) ;
 
 			if ( read == file->Length() )

@@ -85,7 +85,7 @@ namespace Heart
 			if ( RunLuaThread( i ) )
 			{
 				hLuaThreadState* removed = luaThreads_.Remove( i );
-                hDELETE removed;
+                hDELETE(hGeneralHeap, removed);
 			}
 
             i = next;
@@ -110,7 +110,7 @@ namespace Heart
 		if ( newthread.status_ == LUA_YIELD )
 		{
 			newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-            hLuaThreadState* listState = hNEW( hGeneralHeap ) hLuaThreadState();
+            hLuaThreadState* listState = hNEW(hGeneralHeap, hLuaThreadState);
             *listState = newthread;
 			luaThreads_.PushBack( listState );
 		}
@@ -143,11 +143,11 @@ namespace Heart
 		}
 		else if ( !ptr )
 		{
-			return hVMHeap.alloc( nsize, __FILE__, __LINE__ );
+			return hHeapMalloc(hVMHeap, nsize);
 		}
 		else 
 		{
-			return hVMHeap.realloc( ptr, nsize, __FILE__, __LINE__ );
+			return hHeapRealloc(hVMHeap, ptr, nsize);
 		}
 	}
 
@@ -313,12 +313,12 @@ namespace Heart
 
     hComponent* hLuaStateManager::LuaScriptComponentCreate( hEntity* owner )
     {
-        hLuaThreadState* newthread = hNEW( hGeneralHeap ) hLuaThreadState();
+        hLuaThreadState* newthread = hNEW(hGeneralHeap, hLuaThreadState);
         newthread->lua_ = NewLuaState( mainLuaState_ );
         newthread->status_ = HLUA_NEWTHREAD;
         newthread->yieldRet_ = 0;
 
-        return hNEW( hVMHeap ) hLuaScriptComponent( owner, newthread );;
+        return hNEW(hVMHeap, hLuaScriptComponent(owner, newthread));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -327,7 +327,7 @@ namespace Heart
 
     void hLuaStateManager::LuaScriptComponentDestroy( hComponent* luaComp )
     {
-        hDELETE luaComp;
+        hDELETE(hGeneralHeap, luaComp);
     }
 
 }
@@ -370,7 +370,7 @@ extern "C"
 			Heart::hIFile* file = gLuaFileSystems[i]->OpenFile( filename, Heart::FILEMODE_READ );
 			if ( file )
 			{
-				File* ff = hNEW ( hVMHeap ) File;
+				File* ff = hNEW(hVMHeap, File);
 				ff->file_ = file;
 				ff->fileSystem_ = gLuaFileSystems[i];
 				return ff;
@@ -499,7 +499,7 @@ extern "C"
 // 		{	
 // 			return NULL;
 // 		}
-		lf->buff = hNEW ( hVMHeap ) char[hLuaflen(lf->f)];
+		lf->buff = hNEW_ARRAY(hVMHeap, char, hLuaflen(lf->f));
 		lf->extraline = 1;
 		*size = hLuafread(lf->buff, 1, hLuaflen(lf->f), lf->f);
 		return (*size > 0) ? lf->buff : NULL;

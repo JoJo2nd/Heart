@@ -57,7 +57,7 @@ namespace Heart
 
         if ( !m )
         {
-            hLoadedMaterial* lm = hNEW( hGeneralHeap ) hLoadedMaterial;
+            hLoadedMaterial* lm = hNEW(hGeneralHeap, hLoadedMaterial);
 
             mat->AddRef();
             lm->material_ = mat;
@@ -145,7 +145,7 @@ namespace Heart
         hUint32 maskC = techniques_.GetSize();
         hRenderTechniqueInfo newInfo;
         newInfo.mask_ = 1 << maskC;
-        newInfo.name_ = hNEW( hGeneralHeap ) hChar[hStrLen(name)+1];
+        newInfo.name_ = hNEW_ARRAY(hGeneralHeap, hChar, hStrLen(name)+1);
         hStrCopy( newInfo.name_, hStrLen(name)+1, name );
 
         techniques_.PushBack( newInfo );

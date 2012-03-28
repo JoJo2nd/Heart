@@ -306,8 +306,10 @@ namespace Heart
 
 
 		// only scene graph can create scene graph nodes [12/24/2008 James]
+        public:
 														hSceneNodeBase( hUint32 typeId );
 		virtual											~hSceneNodeBase();
+        protected:
 
 		virtual void									UnloadCallback() {}
 

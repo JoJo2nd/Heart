@@ -289,10 +289,10 @@ namespace Heart
                 data = NULL;
                 return;
             case 1:
-                data = new _Ty();
+                data = new _Ty();//need placement_new( malloc_func() )
                 break;
             default:
-                data = new _Ty[ header.count_ ];
+                data = new _Ty[ header.count_ ];//need placement_new( malloc_func() )
                 break;
             }
 
