@@ -156,85 +156,6 @@ private:
 #undef PRE_ACTION
 #undef POST_ACTION
 
-template< class _Ty, hMemoryHeap* pHeap >
-class HeapAllocator : public std::allocator< _Ty >
-{	// generic allocator for objects of class _Ty
-public:
-	typedef typename _Ty			value_type;
-	typedef value_type				*pointer;
-	typedef value_type				& reference;
-	typedef const value_type		*const_pointer;
-	typedef const value_type		& const_reference;
-
-	typedef size_t		size_type;
-	typedef ptrdiff_t	difference_type;
-
-	template< class _Other >
-	struct rebind
-	{	// convert an allocator<_Ty> to an allocator <_Other>
-		typedef HeapAllocator< _Other, pHeap > other;
-	};
-
-	pointer address(reference _Val) const
-	{	// return address of mutable _Val
-		return (&_Val);
-	}
-
-	const_pointer address(const_reference _Val) const
-	{	// return address of nonmutable _Val
-		return (&_Val);
-	}
-
-	HeapAllocator() _THROW0()
-	{	// construct default allocator (do nothing)
-	}
-
-	HeapAllocator(const HeapAllocator<_Ty,pHeap>&) _THROW0()
-	{	// construct by copying (do nothing)
-	}
-
-	template<class _Other>
-	HeapAllocator(const HeapAllocator<_Other,pHeap>&) _THROW0()
-	{	// construct from a related allocator (do nothing)
-	}
-
-	template<class _Other>
-	HeapAllocator<_Ty,pHeap>& operator=(const HeapAllocator<_Other,pHeap>&)
-	{	// assign from a related allocator (do nothing)
-		return (*this);
-	}
-
-	void deallocate(pointer _Ptr, size_type)
-	{	// deallocate object at _Ptr, ignore size
-		pHeap->release( _Ptr );
-	}
-
-	pointer allocate(size_type _Count)
-	{	// allocate array of _Count elements
-		return (pointer)pHeap->alignAlloc( sizeof( value_type ) * _Count, 16 );
-	}
-
-	pointer allocate(size_type _Count, const void *)
-	{	// allocate array of _Count elements, ignore hint
-		return (allocate(_Count));
-	}
-
-	void construct(pointer _Ptr, const _Ty& _Val)
-	{	// construct object at _Ptr with value _Val
-		new (_Ptr) value_type(_Val);
-	}
-
-	void destroy(pointer _Ptr)
-	{	// destroy object at _Ptr
-		_Ptr->~value_type();
-	}
-
-	size_t max_size() const _THROW0()
-	{	// estimate maximum array size
-		size_t _Count = (size_t)(-1) / sizeof (_Ty);
-		return (0 < _Count ? _Count : 1);
-	}
-};
 
 // allocator TEMPLATE OPERATORS
 // template<class _Ty, class _Other> inline
@@ -260,30 +181,6 @@ extern hMemoryHeap hSceneGraphHeap;
 extern hMemoryHeap hGeneralHeap;
 extern hMemoryHeap hVMHeap;
 
-#ifdef HEART_DEBUG
-    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a, __FILE__, __LINE__ )
-	#define hMalloc( s ) hAlignMalloc( s, 16 )
-	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s, __FILE__, __LINE__ )
-    #define hFree( p ) hGeneralHeap.release( p )
-    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a, __FILE__, __LINE__ )
-	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16, __FILE__, __LINE__ )
-	#define hHeapRealloc( h, p, s ) h.realloc( p, s, __FILE__, __LINE__ )
-    #define hHeapFree( h, p ) h.release( p )
-    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
-#else
-    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a )
-	#define hMalloc( s ) hAlignMalloc( s, 16 )
-	#define hRealloc( p, s ) hGeneralHeap.realloc( p, s )
-    #define hFree( p ) hGeneralHeap.release( p )
-    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a )
-	#define hHeapMalloc( h, s ) h.alignAlloc( s, 16 )
-	#define hHeapRealloc( h, p, s ) h.realloc( p, s )
-	#define hHeapFree( h, p ) h.release( p )
-    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
-#endif
-
 namespace Heart
 {
 
@@ -297,66 +194,188 @@ namespace Heart
 
 }
 
-#define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
-#define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
-#define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
-#define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
-#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
-#define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
-#define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
-#define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
-#define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
-
 #define hPRIVATE_DESTRUCTOR()\
     template< typename _Ty > friend void hDestroyObjects(_Ty*, hUint32);
 
-inline void* operator new ( size_t size )
-{
-    hcBreak;
-    return malloc( size );
-}
+#ifndef HEART_USE_DEFAULT_MEM_ALLOC
 
-inline void* operator new[] ( size_t size )
-{
-    hcBreak;
-    return malloc( size );
-}
+#ifdef HEART_DEBUG
+    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a, __FILE__, __LINE__ )
+    #define hMalloc( s ) hAlignMalloc( s, 16 )
+    #define hRealloc( p, s ) hGeneralHeap.realloc( p, s, __FILE__, __LINE__ )
+    #define hFree( p ) hGeneralHeap.release( p )
+    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
+    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a, __FILE__, __LINE__ )
+    #define hHeapMalloc( h, s ) h.alignAlloc( s, 16, __FILE__, __LINE__ )
+    #define hHeapRealloc( h, p, s ) h.realloc( p, s, __FILE__, __LINE__ )
+    #define hHeapFree( h, p ) h.release( p )
+    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
+#else
+    #define hAlignMalloc( s, a ) hGeneralHeap.alignAlloc( s, a )
+    #define hMalloc( s ) hAlignMalloc( s, 16 )
+    #define hRealloc( p, s ) hGeneralHeap.realloc( p, s )
+    #define hFree( p ) hGeneralHeap.release( p )
+    #define hFreeSafe( p ) hGeneralHeap.release( p ); p = NULL
+    #define hHeapAlignMalloc( h, s, a )  h.alignAlloc( s, a )
+    #define hHeapMalloc( h, s ) h.alignAlloc( s, 16 )
+    #define hHeapRealloc( h, p, s ) h.realloc( p, s )
+    #define hHeapFree( h, p ) h.release( p )
+    #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
+#endif
 
+    #define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+    #define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
+    #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
+    #define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
+    #define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
+    #define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
+    #define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
+    #define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
+    #define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
 
-inline void operator delete ( void* mem )
-{
-    hcBreak;
-	if ( mem == NULL )
-		return;
+    /*
+    inline void* operator new ( size_t size )
+    {
+        hcBreak;
+    }
 
-	for ( hUint32 i = 0; i < hMemoryHeap::nHeapsInUse_; ++i )
-	{
-		if ( hMemoryHeap::pHeaps_[ i ]->pointerBelongsToMe( mem ) )
-		{
-			hMemoryHeap::pHeaps_[ i ]->release( mem );
-			return;
-		}
-	}
+    inline void* operator new[] ( size_t size )
+    {
+        hcBreak;
+    }
 
-    free( mem );
-}
+    inline void operator delete ( void* mem )
+    {
+        hcBreak;
+    }
 
-inline void operator delete[] ( void* mem )
-{
-    hcBreak;
-	if ( mem == NULL )
-		return;
+    inline void operator delete[] ( void* mem )
+    {
+        hcBreak;
+    }
+    */
+#else//HEART_USE_DEFAULT_MEM
 
-	for ( hUint32 i = 0; i < hMemoryHeap::nHeapsInUse_; ++i )
-	{
-		if ( hMemoryHeap::pHeaps_[ i ]->pointerBelongsToMe( mem ) )
-		{
-			hMemoryHeap::pHeaps_[ i ]->release( mem );
-			return;
-		}
-	}
+#define hAlignMalloc( s, a ) _aligned_malloc( s, a )
+#define hMalloc( s ) hAlignMalloc( s, 16 )
+#define hRealloc( p, s ) _aligned_realloc( p, s, 16 )
+#define hFree( p ) _aligned_free( p )
+#define hFreeSafe( p ) _aligned_free( p ); p = NULL
+#define hHeapAlignMalloc( h, s, a )  hAlignMalloc( s, a )
+#define hHeapMalloc( h, s ) hMalloc( s )
+#define hHeapRealloc( h, p, s ) hRealloc( p, s )
+#define hHeapFree( h, p ) hFree( p )
+#define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
 
-    free( mem );
-}
+    #define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+    #define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
+    #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
+    #define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
+    #define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
+    #define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
+    #define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
+    #define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
+    #define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
+
+    inline void* operator new ( size_t size )
+    {
+        return hMalloc(size);
+    }
+
+    inline void* operator new[] ( size_t size )
+    {
+        return hMalloc(size);
+    }
+
+    inline void operator delete ( void* mem )
+    {
+        hFree(mem);
+    }
+
+    inline void operator delete[] ( void* mem )
+    {
+        hFree(mem);
+    }
+#endif
+
+    template< class _Ty, hMemoryHeap* pHeap >
+    class HeapAllocator : public std::allocator< _Ty >
+    {	// generic allocator for objects of class _Ty
+    public:
+        typedef typename _Ty			value_type;
+        typedef value_type				*pointer;
+        typedef value_type				& reference;
+        typedef const value_type		*const_pointer;
+        typedef const value_type		& const_reference;
+
+        typedef size_t		size_type;
+        typedef ptrdiff_t	difference_type;
+
+        template< class _Other >
+        struct rebind
+        {	// convert an allocator<_Ty> to an allocator <_Other>
+            typedef HeapAllocator< _Other, pHeap > other;
+        };
+
+        pointer address(reference _Val) const
+        {	// return address of mutable _Val
+            return (&_Val);
+        }
+
+        const_pointer address(const_reference _Val) const
+        {	// return address of nonmutable _Val
+            return (&_Val);
+        }
+
+        HeapAllocator() _THROW0()
+        {	// construct default allocator (do nothing)
+        }
+
+        HeapAllocator(const HeapAllocator<_Ty,pHeap>&) _THROW0()
+        {	// construct by copying (do nothing)
+        }
+
+        template<class _Other>
+        HeapAllocator(const HeapAllocator<_Other,pHeap>&) _THROW0()
+        {	// construct from a related allocator (do nothing)
+        }
+
+        template<class _Other>
+        HeapAllocator<_Ty,pHeap>& operator=(const HeapAllocator<_Other,pHeap>&)
+        {	// assign from a related allocator (do nothing)
+            return (*this);
+        }
+
+        void deallocate(pointer _Ptr, size_type)
+        {	// deallocate object at _Ptr, ignore size
+            hHeapFree((*pHeap), _Ptr);
+        }
+
+        pointer allocate(size_type _Count)
+        {	// allocate array of _Count elements
+            return (pointer)hHeapMalloc((*pHeap),sizeof(value_type)*_Count);
+        }
+
+        pointer allocate(size_type _Count, const void *)
+        {	// allocate array of _Count elements, ignore hint
+            return (allocate(_Count));
+        }
+
+        void construct(pointer _Ptr, const _Ty& _Val)
+        {	// construct object at _Ptr with value _Val
+            new (_Ptr) value_type(_Val);
+        }
+
+        void destroy(pointer _Ptr)
+        {	// destroy object at _Ptr
+            _Ptr->~value_type();
+        }
+
+        size_t max_size() const _THROW0()
+        {	// estimate maximum array size
+            size_t _Count = (size_t)(-1) / sizeof (_Ty);
+            return (0 < _Count ? _Count : 1);
+        }
+    };
 
 #endif // HCMEMORY_H__

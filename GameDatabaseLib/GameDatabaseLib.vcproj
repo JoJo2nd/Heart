@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="Include;..\external\boost;..\crypto\Include;..\Heart\Include;&quot;..\rapidxml-1.13\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS;HEART_PACKER"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -90,7 +90,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -120,7 +120,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GAMEDATABASELIB_EXPORTS;HEART_PACKER"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				StructMemberAlignment="0"
@@ -172,7 +172,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

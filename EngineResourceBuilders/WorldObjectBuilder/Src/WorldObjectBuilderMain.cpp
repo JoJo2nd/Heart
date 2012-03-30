@@ -44,7 +44,7 @@ extern "C" __declspec(dllexport) void __cdecl GetPlugInInformation( GameData::gd
 //define the entry points for the resource plug in loader
 extern "C" __declspec(dllexport) GameData::gdResourceBuilderBase* __cdecl CreateResourceBuilder( const GameData::gdResourceBuilderConstructionInfo& builderInfo )
 {
-    return NULL;//new TextureBuilder( builderInfo );
+    return new WorldObjectBuilder( builderInfo );
 }
 
 extern "C" __declspec(dllexport) void __cdecl DestroyResourceBuilder( GameData::gdResourceBuilderBase* builder )

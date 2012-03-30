@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="Include;..\GameDatabaseLib\Include;&quot;..\external\wxWidgets-2.9.2\include&quot;;&quot;..\external\wxWidgets-2.9.2\include\msvc&quot;;..\external\boost;..\crypto\Include;..\Heart\Include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;wxUSE_NO_MANIFEST=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;wxUSE_NO_MANIFEST=1;HEART_PACKER"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -92,7 +92,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -122,7 +122,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="Include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;wxUSE_NO_MANIFEST=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_DL_PREFIX;ONLY_MSPACES;_CRT_SECURE_NO_WARNINGS;wxUSE_NO_MANIFEST=1;HEART_PACKER"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -178,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/tools/&quot; MKDIR &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/tools/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -74,6 +74,7 @@ namespace Heart
 
     void hEntityFactory::DumpComponentDefintions()
     {
+        /*
         hXMLDocument comxml;
 
         rapidxml::xml_node<>* root = comxml.allocate_node( rapidxml::node_element, "components" );
@@ -108,6 +109,7 @@ namespace Heart
         fileSystem_->CloseFile( file );
 
         hFree( buf );
+        */
     }
 
 }

@@ -63,8 +63,7 @@ namespace Heart
 
         ~hXMLDocument()
         {
-            hHeapFree( hGeneralHeap, data_ );
-            data_ = NULL;
+            hHeapFreeSafe( hGeneralHeap, data_ );
         }
 
         template< hUint32 flags >
