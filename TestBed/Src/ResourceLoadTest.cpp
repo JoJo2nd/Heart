@@ -39,6 +39,7 @@ void ResourceLoadTest::PreEnter()
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
     resPack_.AddResourceToPackage( "MUSIC/CAFO_S48.OGG" );
     resPack_.AddResourceToPackage( "SFX/SNDBANK.SBK" );
+    resPack_.AddResourceToPackage( "WORLD_OBJECTS.WOD" );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 

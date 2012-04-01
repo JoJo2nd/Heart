@@ -28,12 +28,6 @@
 #ifndef SYSTEMCONSOLE_H__
 #define SYSTEMCONSOLE_H__
 
-#include "hTypes.h"
-#include "hFont.h"
-#include "hRendererCamera.h"
-#include "HeartSTL.h"
-#include "hString.h"
-
 namespace Heart
 {
 	class hControllerManager;

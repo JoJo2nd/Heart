@@ -32,7 +32,6 @@
 #include <string>
 #include "GameDatabaseLib.h"
 #include "Heart.h"
-#include "hRapidXML.h"
 
 
 class WorldObjectBuilder : public GameData::gdResourceBuilderBase

@@ -25,12 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hEntityFactory.h"
-#include "hRapidXML.h"
-#include "hIFileSystem.h"
-#include "hIFile.h"
-
 namespace Heart
 {
 
@@ -110,6 +104,49 @@ namespace Heart
 
         hFree( buf );
         */
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hComponentFactory* hEntityFactory::GetCompontFactory( const hString& name ) const
+    {
+        return factoryMap_.Find(name);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hEntityFactory::OnWorldObjectScriptLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+    {
+        hUint32 buffersize;
+        hChar* xmlbuf;
+        hBool parseok;
+        hXMLDocument xml;
+        hWorldScriptObject* worldobjectscript = hNEW(hGeneralHeap, hWorldScriptObject);
+
+        buffersize = dataStream->GetTotalSize();
+        xmlbuf = (hChar*)hHeapMalloc(hResourceHeap,buffersize+32);
+        dataStream->Read(xmlbuf,buffersize);
+        xmlbuf[buffersize] = 0;
+        parseok = xml.ParseSafe<rapidxml::parse_default>(xmlbuf,&hResourceHeap);
+        hcAssert( parseok );
+        
+        worldobjectscript->ParseFromXML(xml, this, resManager);
+
+        return worldobjectscript;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hEntityFactory::OnWorldObjectScriptUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
+    {
+        hDELETE(hGeneralHeap, resource);
+        return 0;
     }
 
 }

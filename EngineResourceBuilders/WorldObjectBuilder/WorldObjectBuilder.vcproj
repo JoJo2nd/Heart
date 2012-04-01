@@ -177,6 +177,14 @@
 			<File
 				RelativePath=".\Src\WorldObjectBuilder.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ShowIncludes="false"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\Include\WorldObjectBuilder.h"
@@ -185,6 +193,14 @@
 			<File
 				RelativePath=".\Src\WorldObjectBuilderMain.cpp"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ShowIncludes="false"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

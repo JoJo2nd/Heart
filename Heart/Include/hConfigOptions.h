@@ -27,8 +27,6 @@
 #ifndef _CONFIGOPTIONS_H__
 #define _CONFIGOPTIONS_H__
 
-#include "hRapidXML.h"
-
 namespace Heart
 {
 	class hIFileSystem;

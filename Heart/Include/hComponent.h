@@ -27,8 +27,6 @@
 #ifndef HCOMPONENT_H__
 #define HCOMPONENT_H__
 
-#include "hTypes.h"
-
 namespace Heart
 {
     class hEntity;

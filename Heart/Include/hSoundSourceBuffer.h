@@ -27,8 +27,6 @@
 #ifndef HSOUNDSOURCEBUFFER_H__
 #define HSOUNDSOURCEBUFFER_H__
 
-#include "hTypes.h"
-
 namespace Heart
 {
     enum hOGGDecodeState

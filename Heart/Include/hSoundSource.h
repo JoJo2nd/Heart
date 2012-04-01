@@ -27,9 +27,6 @@
 #ifndef HSOUNDSOURCE_H__
 #define HSOUNDSOURCE_H__
 
-#include "hTypes.h"
-#include "hSoundResource.h"
-#include "hSoundSourceBuffer.h"
 
 namespace Heart
 {

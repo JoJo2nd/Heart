@@ -25,12 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hZipFileSystem.h"
-#include "DeviceFileSystem.h"
-#include "unzip.h"
-#include "hZipFile.h"
-#include "hAtomic.h"
 
 namespace Heart
 {

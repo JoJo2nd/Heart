@@ -28,7 +28,6 @@
 #ifndef HRAPIDXML_H__
 #define HRAPIDXML_H__
 
-#include "hTypes.h"
 #include "rapidxml\rapidxml.hpp"
 #include "rapidxml\rapidxml_print.hpp"
 
@@ -57,19 +56,24 @@ namespace Heart
     public:
         hXMLDocument()
             : data_(NULL)
+            , heap_(NULL)
         {
             set_allocator( hXML_alloc_func, hXML_free_func );
         }
 
         ~hXMLDocument()
         {
-            hHeapFreeSafe( hGeneralHeap, data_ );
+            if (heap_)
+            {
+                hHeapFreeSafe((*heap_), data_);
+            }
         }
 
         template< hUint32 flags >
-        hBool ParseSafe( hChar* data )
+        hBool ParseSafe( hChar* data, hMemoryHeap* heap )
         {
             data_ = data;
+            heap_ = heap;
             try
             {
                 parse< flags >( data );
@@ -87,6 +91,7 @@ namespace Heart
         hXMLDocument& operator = ( const hXMLDocument& rhs );
 
         hChar* data_;
+        hMemoryHeap* heap_;
     };
 
     class hXMLGetter
@@ -112,6 +117,13 @@ namespace Heart
 
             return hXMLGetter(node_->next_sibling(node_->name()));
         }
+        hXMLGetter              NextSiblingAny()
+        {
+            if ( !node_ )
+                return hXMLGetter(NULL);
+
+            return hXMLGetter(node_->next_sibling(NULL));
+        }
         hXMLGetter              NextSibling( const hChar* name )
         {
             if ( !node_ )
@@ -125,6 +137,43 @@ namespace Heart
                 return NULL;
 
             return node_->first_attribute( name );
+        }
+        hUint32 GetAttributeInt(const hChar* name)
+        {
+            rapidxml::xml_attribute<>* att;
+
+            if ( !node_ )
+                return NULL;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return 0;
+            else
+                return hAtoI(att->value());
+        }
+        hFloat GetAttributeFloat(const hChar* name)
+        {
+            rapidxml::xml_attribute<>* att;
+            if ( !node_ )
+                return NULL;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return 0.f;
+            else
+                return hAtoF(att->value());
+        }
+        const hChar* GetAttributeString(const hChar* name)
+        {
+            rapidxml::xml_attribute<>* att;
+            if ( !node_ )
+                return NULL;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return NULL;
+            else
+                return att->value();
         }
         rapidxml::xml_node<>*       ToNode() { return node_; }
 

@@ -25,11 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hTypes.h"
-#include "hLuaScriptComponent.h"
-#include "hCRC32.h"
-
 namespace Heart
 {
     HEART_DEFINE_COMPONENT_TYPE( hLuaScriptComponent , "ScriptComponent", "A Component to link a script to an entity." );

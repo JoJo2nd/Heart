@@ -121,8 +121,9 @@ void WorldObjectBuilder::ParseFile( XMLDoc& doc, GameData::gdFileHandle* file )
         for (; children.ToNode(); children = children.NextSibling())
         {
             children.ToNode()->parent()->remove_node(children.ToNode());
-            includes.ToNode()->append_node(children.ToNode());
+            includes.ToNode()->parent()->append_node(children.ToNode());
         }
+        includes.ToNode()->parent()->remove_node(includes.ToNode());
         incfile->Close();
     }
 }

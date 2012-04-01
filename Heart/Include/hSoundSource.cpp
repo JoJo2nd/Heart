@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hSoundSource.h"
-#include "hMathUtil.h"
-
 namespace Heart
 {
 

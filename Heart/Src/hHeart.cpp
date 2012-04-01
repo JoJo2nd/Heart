@@ -25,42 +25,18 @@ distribution.
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hHeart.h"
-#include "hMath.h"
-#include "hUtility.h"
-#include "hResourceManager.h"
-#include "hEventManager.h"
-#include "hControllerManager.h"
-#include "hSystem.h"
-#include "hFont.h"
-#include "hSystemConsole.h"
-#include "hLuaStateManager.h"
-#include "hJobManager.h"
-#include "hClock.h"
-#include "hZipFileSystem.h"
-#include "hDriveFileSystem.h"
-#include "hSceneGraph.h"
-#include "hDebugRenderer.h"
-#include "hConfigOptions.h"
-#include "hEntityFactory.h"
-#include "hLuaScriptComponent.h"
-#include "hSoundManager.h"
-#include "hSoundResource.h"
-#include "hStaticSoundResource.h"
-
 /************************************************************************/
 /*
 Engine Memory Heap allocations
 */
 /************************************************************************/
 #define MB                ( 1024 * 1024 )
-hMemoryHeap hDebugHeap(       0 * MB, false );
-hMemoryHeap hRendererHeap(    2 * MB, false );
-hMemoryHeap hResourceHeap(   10 * MB, false );
-hMemoryHeap hSceneGraphHeap(  0 * MB, false );
-hMemoryHeap hGeneralHeap(     1 * MB, false );
-hMemoryHeap hVMHeap(          0 * MB, false );
+Heart::hMemoryHeap hDebugHeap(       0 * MB, false );
+Heart::hMemoryHeap hRendererHeap(    2 * MB, false );
+Heart::hMemoryHeap hResourceHeap(   10 * MB, false );
+Heart::hMemoryHeap hSceneGraphHeap(  0 * MB, false );
+Heart::hMemoryHeap hGeneralHeap(     1 * MB, false );
+Heart::hMemoryHeap hVMHeap(          0 * MB, false );
 
 /************************************************************************/
 /*    Engine Init                                                         */
@@ -94,7 +70,7 @@ namespace Heart
         //
         eventManager_ = hNEW(hGeneralHeap, EventManager);
 
-        jobManager_ = hNEW(hGeneralHeap, hJobManager);
+        jobManager_ = hNEW_ALIGN(hGeneralHeap, 32, hJobManager);
 
         controllerManager_ = hNEW(hGeneralHeap , hControllerManager);
 
@@ -191,6 +167,11 @@ namespace Heart
         resourceMananger_->SetResourceHandlers( "SBK",
             hResourceManager::ResourceLoadCallback::bind< &hSoundBankResource::OnSoundBankLoad >(), 
             hResourceManager::ResourceUnloadCallback::bind< &hSoundBankResource::OnSoundBankUnload >(),
+            NULL );
+
+        resourceMananger_->SetResourceHandlers( "WOD", 
+            hResourceManager::ResourceLoadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptLoad >(entityFactory_),
+            hResourceManager::ResourceUnloadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptUnload >(entityFactory_),
             NULL );
 
         //////////////////////////////////////////////////////////////////////////
@@ -376,7 +357,7 @@ namespace Heart
         hDELETE(hGeneralHeap, pEngine);
 
         // Check memory usage
-#define CHECK_HEAP( x ) hcAssertMsg( x.BytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.BytesAllocated() );
+#define CHECK_HEAP( x ) hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
 
         CHECK_HEAP( hGeneralHeap );
         CHECK_HEAP( hRendererHeap );

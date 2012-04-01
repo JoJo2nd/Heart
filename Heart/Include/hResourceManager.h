@@ -28,18 +28,6 @@
 #ifndef RESOURCEMANAGER_H__
 #define RESOURCEMANAGER_H__
 
-#include "hTypes.h"
-#include "hResource.h"
-#include "hIFileSystem.h"
-#include "huFunctor.h"
-#include "hMutex.h"
-#include "hDeferredReturn.h"
-#include "hThread.h"
-#include "hThreadEvent.h"
-#include "hSemaphore.h"
-#include "hSerialiserFileStream.h"
-#include "hResourcePackage.h"
-
 namespace Heart
 {
 
@@ -132,7 +120,7 @@ namespace Heart
         void                            LockResourceDatabase() { resourceDatabaseMutex_.Lock(); resourceDatabaseLocked_ = hTrue; }
         hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( GetResourceKeyRemapping( crc ) ); }
         void                            UnlockResourceDatabase() { resourceDatabaseLocked_ = hFalse; resourceDatabaseMutex_.Unlock(); }
-
+        hResourceClassBase*             LoadResourceFromPath( const hChar* path );
 		/**
 		* QueueResourceSweep - Requestes the resource manager to search for unused resources and
 		* unload them
@@ -165,7 +153,7 @@ namespace Heart
 
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }
-
+        
 
 
 	private:
@@ -222,11 +210,11 @@ namespace Heart
 
 		void							DoResourceSweep();
         void                            CompleteLoadRequest( hResourceLoadRequest* request );
-        void                            LoadResourceFromPath( const hChar* path );
         hBool							EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
         void                            LoadResourceRemapTable();
 
 		static hResourceManager*		pInstance_;
+        static void*                    resourceThreadID_;
 
 		//NEW
 		hIFileSystem*					filesystem_;

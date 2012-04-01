@@ -55,7 +55,7 @@
 #include "cryptoCRC32.h"
 #include "cryptoMD5.h"
 
-#include "hSerialiser.h"
+#include "Heart.h"
 
 #include "gdGameDatabaseCommon.h"
 #include "gdFileHandle.h"

@@ -25,12 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hConfigOptions.h"
-#include "hIFileSystem.h"
-#include "hIFile.h"
-#include "DeviceKernel.h"
-
 namespace Heart
 {
 
@@ -52,7 +46,7 @@ namespace Heart
 			if ( read == file->Length() )
 			{
 				
-                if ( doc_.ParseSafe< rapidxml::parse_default >( data ) )
+                if ( doc_.ParseSafe< rapidxml::parse_default >(data, &hGeneralHeap) )
                 {
                     hXMLGetter getter( &doc_ );
                     rapidxml::xml_node<>* fullscreen = getter.FirstChild("renderer").FirstChild("fullscreen").ToNode();

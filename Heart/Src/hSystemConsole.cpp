@@ -25,17 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hSystemConsole.h"
-#include "hControllerManager.h"
-#include "hResource.h"
-#include "hResourceManager.h"
-#include "hRenderer.h"
-#include "hTexture.h"
-#include "hVertexBuffer.h"
-#include "hIndexBuffer.h"
-#include "hLuaStateManager.h"
-
 namespace Heart
 {
 

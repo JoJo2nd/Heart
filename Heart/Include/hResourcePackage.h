@@ -27,9 +27,6 @@
 #ifndef HRESOURCEPACKAGE_H__
 #define HRESOURCEPACKAGE_H__
 
-#include "hTypes.h"
-#include "hArray.h"
-
 namespace Heart
 {
 	class hResourceManager;

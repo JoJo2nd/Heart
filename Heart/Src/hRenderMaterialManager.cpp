@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hRenderMaterialManager.h"
-#include "hMaterial.h"
-
 namespace Heart
 {
     //////////////////////////////////////////////////////////////////////////
@@ -40,7 +36,7 @@ namespace Heart
         hUint32 count = techniques_.GetSize();
         for ( hUint32 i = 0; i < count; ++i )
         {
-            delete techniques_[i].name_;
+            hDELETE(hGeneralHeap, techniques_[i].name_);
             techniques_[i].name_ = NULL;
         }
     }

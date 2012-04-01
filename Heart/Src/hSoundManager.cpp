@@ -24,10 +24,6 @@
 	distribution.
 
 *********************************************************************/
-
-#include "Common.h"
-#include "hSoundManager.h"
-
 namespace Heart
 {
 

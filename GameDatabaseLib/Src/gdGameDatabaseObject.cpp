@@ -779,9 +779,15 @@ namespace GameData
                 builder->CleanUpFromBuild();
                 buildSuccess = true;
             }
-            catch( ... )
+            catch(gdBuildError be)
             {
                 AppendErrorMessages( resID, builder->GetErrorMessage() );
+                builder->CleanUpFromBuild();
+                retCode = gdERROR_GENERIC;
+            }
+            catch(...)
+            {
+                AppendErrorMessages( resID, "Unknown Exception Thrown" );
                 builder->CleanUpFromBuild();
                 retCode = gdERROR_GENERIC;
             }

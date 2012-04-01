@@ -25,15 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hDeferredRenderVisitor.h"
-#include "hSceneGraph.h"
-#include "hSceneNodeMesh.h"
-#include "hSceneNodeLocator.h"
-#include "hSceneNodeCamera.h"
-#include "hSceneNodeLight.h"
-#include "hRenderUtility.h"
-
 namespace Heart
 {
 #if 0

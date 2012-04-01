@@ -24,10 +24,6 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hResource.h"
-#include "hResourceManager.h"
-#include "hAtomic.h"
 
 namespace Heart
 {

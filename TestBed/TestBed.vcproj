@@ -96,11 +96,12 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="DebugWin32DX11|Win32"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="..\Heart\HeartIncludeProps.vsprops;..\Heart\HeartLinker.vsprops;..\DeviceWin32\DeviceWin32.vsprops;..\DeviceWin32\DeviceLinker.vsprops;..\DeviceWin32DX11\DeviceWin32DX11.vsprops;..\DeviceWin32DX11\DeviceWin32DX11DebugLinker.vsprops;..\Heart\DebugCommon.vsprops;..\Heart\HeartBuildOutputDirProps.vsprops;..\Heart\HeartCommonDefinesProps.vsprops;..\Heart\HeartPostBuildCmd.vsprops"
 			CharacterSet="0"
@@ -179,7 +180,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;"
+				CommandLine="IF NOT EXIST &quot;$(SolutionDir)../bin/game/&quot; MKDIR &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;copy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)../bin/game/&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

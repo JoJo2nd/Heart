@@ -30,6 +30,18 @@
 
 namespace GameData
 {
+    class gdBuildError
+    {
+    public:
+        gdBuildError(const hChar* msg)
+            : erroMsg(msg)
+        {
+
+        }
+
+        gdString erroMsg;
+    };
+
     class gdDLL_EXPORT gdTimestampInfo
     {
     public:

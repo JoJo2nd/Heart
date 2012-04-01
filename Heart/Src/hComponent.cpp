@@ -24,8 +24,6 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hComponent.h"
 
 namespace Heart
 {

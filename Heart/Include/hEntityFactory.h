@@ -27,22 +27,9 @@
 #ifndef HENTITYFACTORY_H__
 #define HENTITYFACTORY_H__
 
-#include "hTypes.h"
-#include "hComponent.h"
-#include "hEntity.h"
-#include "hEntityDataDefinition.h"
-#include "hString.h"
-
 namespace Heart
 {
     class hIFileSystem;
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    
-    typedef huFunctor< hComponent*(*)( hEntity* ) >::type	ComponentCreateCallback;
-    typedef huFunctor< void (*)(hComponent*) >::type	    ComponentDestroyCallback;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -62,7 +49,7 @@ namespace Heart
 
         }
 
-        void Initialise( hIFileSystem* fileSystem );
+        void                    Initialise( hIFileSystem* fileSystem );
         void RegisterComponent( 
             const hChar* componentName, 
             hUint32* outComponentID, 
@@ -70,24 +57,15 @@ namespace Heart
             hUint32 propCount, 
             ComponentCreateCallback createFunc, 
             ComponentDestroyCallback destroyFunc );
-        void DumpComponentDefintions();
+        void                       DumpComponentDefintions();
+        const hComponentFactory*   GetCompontFactory(const hString& name) const;
+        hResourceClassBase*        OnWorldObjectScriptLoad(const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager);
+        hUint32                    OnWorldObjectScriptUnload(const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager);
 
     private:
 
-        void LoadEntityDefinitions();
-
         hEntityFactory( const hEntityFactory& rhs );
         hEntityFactory& operator = ( const hEntityFactory& rhs );
-
-        struct hComponentFactory : public hMapElement< hString, hComponentFactory >
-        {
-            hUint32                   componentID_;
-            const hChar*              componentName_;
-            hUint32                   componentPropCount_;
-            const hComponentProperty* componentProperties_;
-            ComponentCreateCallback   createFunc_;
-            ComponentDestroyCallback  destroyFunc_;
-        };
 
         typedef hMap< hString, hComponentFactory > ComponentFactoryMapType;
 

@@ -28,43 +28,8 @@
 #ifndef hcMutex_h__
 #define hcMutex_h__
 
-#include "hTypes.h"
-#include "DeviceMutex.h"
-
 namespace Heart
 {
-	class hMutex : public Device::Mutex
-	{
-	public:
-
-		hMutex()
-		{
-			Device::Mutex::Create();
-		}
-		~hMutex()
-		{
-			Device::Mutex::Destroy();
-		}
-
-		void Lock()
-		{
-			Device::Mutex::Lock();
-		}
-		void TryLock()
-		{
-			Device::Mutex::TryLock();
-		}
-		void Unlock()
-		{
-			Device::Mutex::Unlock();
-		}
-	private:
-		hMutex( const hMutex& c )
-		{
-			//non copyable 
-		}
-	};
-
     class hMutexAutoScope
     {
     public:

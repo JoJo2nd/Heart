@@ -27,11 +27,6 @@
 #ifndef HRENDERSUBMISSIONCONTEXT_H__
 #define HRENDERSUBMISSIONCONTEXT_H__
 
-#include "hTypes.h"
-#include "hMemory.h"
-#include "hMath.h"
-#include "hMaterial.h"
-
 namespace Heart
 {
     struct hViewport;

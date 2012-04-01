@@ -27,58 +27,116 @@
 #ifndef HENTITYDATADEFINITION_H__
 #define HENTITYDATADEFINITION_H__
 
-#include "hTypes.h"
-#include "hComponent.h"
 
 namespace Heart
 {
-    struct hComponentPropertyDefinition
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    typedef huFunctor< hComponent*(*)( hEntity* ) >::type	ComponentCreateCallback;
+    typedef huFunctor< void (*)(hComponent*) >::type	    ComponentDestroyCallback;
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    class hComponentFactory : public hMapElement< hString, hComponentFactory >
     {
-        const hChar*            name_;
-        hComponentPropertyType  type_;
+    public:
+
+        hUint32                   componentID_;
+        const hChar*              componentName_;
+        hUint32                   componentPropCount_;
+        const hComponentProperty* componentProperties_;
+        ComponentCreateCallback   createFunc_;
+        ComponentDestroyCallback  destroyFunc_;
+
+        const hComponentProperty*       GetProperty(const hChar* name) const
+        {
+            for (hUint32 i = 0; i< componentPropCount_; ++i)
+            {
+                if (hStrCmp(componentProperties_[i].name_,name) == 0)
+                {
+                    return &componentProperties_[i];
+                }
+            }
+
+            return NULL;
+        }
+    };
+
+    class hComponentPropertyValue
+    {
+    public:
+        hComponentPropertyValue()
+            : type_(NULL)
+        {
+
+        }
+
+        const hComponentProperty*   type_;
         union
         {
-            hUint32             uintValue_;
-            hInt32              intValue_;
-            hUint16             uint16Value_;
-            hInt16              int16Value_;
-            hFloat              floatValue_;
-            hChar*              stringValue_;
-            hUint32             resourceIDValue_;
+            hBool                   boolValue_;
+            hUint32                 uintValue_;
+            hInt32                  intValue_;
+            hFloat                  floatValue_;
+            hChar*                  stringValue_;
+            hUint32                 resourceIDValue_;
+            hResourceClassBase*     resourcePointer_;
         }values_;
     };
 
     class hComponentDataDefinition
     {
     public:
-        hComponentDataDefinition();
-        ~hComponentDataDefinition();
+        hComponentDataDefinition()
+            : baseFactory_(NULL)
+        {
+        }
+        ~hComponentDataDefinition()
+        {}
+
+        void SetComponent(const hComponentFactory* base) { baseFactory_ = base; }
+        void SetPropertyCount(hUint32 count){ properties_.Resize(count); }
+        hComponentPropertyValue* GetComponentPropertyDefinition(hUint32 idx) { return &properties_[idx]; }
 
     private:
 
         hComponentDataDefinition( const hComponentDataDefinition& rhs );
         hComponentDataDefinition& operator = ( const hComponentDataDefinition& rhs );
 
-        hVector< hComponentPropertyDefinition > properties_;
-        hChar*                                  name_;
+        hVector< hComponentPropertyValue >      properties_;
+        const hComponentFactory*                baseFactory_;
     };
 
-    class hEntityDataDefinition : public hMapElement< hUint32, hEntityDataDefinition >
+    class hWorldObjectDefinition : public hMapElement< hUint32, hWorldObjectDefinition >
     {
     public:
-        hEntityDataDefinition();
-        ~hEntityDataDefinition();
+        hWorldObjectDefinition()
+        {
+
+        }
+        ~hWorldObjectDefinition()
+        {
+
+        }
+
+        void                        SetName(const hChar* name) { entityTypeName_ = name; }
+        const hChar*                GetName() const { return entityTypeName_.c_str(); }
+        void                        SetComponentCount(hUint32 count) { componentDefinitions_.Resize(count); }
+        hComponentDataDefinition*   GetComponentDefinition(hUint32 idx) { return &componentDefinitions_[idx]; }
 
     private:
 
-        hEntityDataDefinition( const hEntityDataDefinition& rhs );
-        hEntityDataDefinition& operator = ( const hEntityDataDefinition& rhs );
+        hWorldObjectDefinition( const hWorldObjectDefinition& rhs );
+        hWorldObjectDefinition& operator = ( const hWorldObjectDefinition& rhs );
 
-        hChar*                              entityTypeName_;
-        hChar*                              parentEntityName_;
-        hEntityDataDefinition*              parentEntity_;
-        hVector< hComponentDataDefinition > componentDefinitions_;
+        hString                                 entityTypeName_;
+        hVector< hComponentDataDefinition >     componentDefinitions_;
     };
+
 }
 
 #endif // HENTITYDATADEFINITION_H__

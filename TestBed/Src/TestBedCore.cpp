@@ -87,7 +87,7 @@ namespace Game
 
 			if ( !currentTest_->IsActive() )
 			{
-				delete currentTest_;
+				hDELETE(hGeneralHeap, currentTest_);
 				currentTest_ = NULL;
 			}
 		}

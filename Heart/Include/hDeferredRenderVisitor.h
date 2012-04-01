@@ -28,13 +28,6 @@
 #ifndef DEFERREDRENDERVISITOR_H__
 #define DEFERREDRENDERVISITOR_H__
 
-#include "hSceneGraphVisitorBase.h"
-#include "hShadowMapVisitor.h"
-#include "hResource.h"
-#include "hSceneNodeBase.h"
-#include "hMatrix.h"
-#include "hMesh.h"
-
 namespace Heart
 {
 	class hRenderer;

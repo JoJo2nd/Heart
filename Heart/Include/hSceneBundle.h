@@ -28,8 +28,6 @@
 #ifndef SCENEBUNDLE_H__
 #define SCENEBUNDLE_H__
 
-#include "hSceneNodeBase.h"
-
 namespace Heart
 {
 	class hMesh;

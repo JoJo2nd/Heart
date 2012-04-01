@@ -25,9 +25,6 @@
 
 *********************************************************************/
 
-
-#include "hTypes.h"
-
 namespace Heart
 {
 namespace hUTF8

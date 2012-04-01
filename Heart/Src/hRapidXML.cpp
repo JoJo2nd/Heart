@@ -25,9 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hRapidXML.h"
-
 namespace rapidxml
 {
     //! When exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, 

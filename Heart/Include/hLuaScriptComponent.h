@@ -27,9 +27,6 @@
 #ifndef HLUASCRIPTCOMPONENT_H__
 #define HLUASCRIPTCOMPONENT_H__
 
-#include "hComponent.h"
-#include "hLuaStateManager.h"
-
 namespace Heart
 {
     class hEntity;

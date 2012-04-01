@@ -28,9 +28,6 @@
 #ifndef __HMCOMMON_H__
 #define __HMCOMMON_H__
 
-#include "NumericalLimits.h"
-#include <math.h>
-
 #define hmPI						(3.14159265358979323846f)// long winded PI
 
 #define hmDegToRad( deg )			( deg * ( hmPI / 180.0f )) 

@@ -294,7 +294,7 @@ namespace GameData
 
         errorMsg_ += totalMsg;
 
-        throw std::exception( totalMsg );
+        throw gdBuildError( totalMsg );
     }
 
     //////////////////////////////////////////////////////////////////////////

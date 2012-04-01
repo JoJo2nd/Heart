@@ -27,10 +27,6 @@
 #ifndef HSOUNDMANAGER_H__
 #define HSOUNDMANAGER_H__
 
-#include "hTypes.h"
-#include "hSoundSource.h"
-#include "hResourceManager.h"
-
 namespace Heart
 {
     class hSoundManager

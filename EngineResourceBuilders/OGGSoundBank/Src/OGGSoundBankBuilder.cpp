@@ -68,13 +68,17 @@ void OGGSoundBankBuilder::BuildResource()
     soundBank.namePoolSize_ = 0;
 
     xmlsize_ = (hUint32)GetInputFile()->GetFileSize();
-    xmlDocStr_ = new hChar[xmlsize_+1];
+    xmlDocStr_ = (hChar*)hMalloc(xmlsize_+1);
     GetInputFile()->Read( xmlDocStr_, xmlsize_ );
     xmlDocStr_[xmlsize_] = 0;
 
-    if ( !inputxml.ParseSafe<rapidxml::parse_default>( xmlDocStr_ ) )
+    try
     {
-        ThrowFatalError( "Failed to Parse sound bank xml" );
+        inputxml.parse<rapidxml::parse_default>( xmlDocStr_ );
+    }
+    catch (...)
+    {
+    	ThrowFatalError("Failed to parse sound bank xml");
     }
 
     soundBank.namePoolSize_ = 0;
@@ -104,7 +108,7 @@ void OGGSoundBankBuilder::BuildResource()
             ThrowFatalError( "Couldn't open sound file %s", banks[i].input_.c_str() );
         }
         banks[i].datasize_ = (hUint32)file->GetFileSize();
-        banks[i].data_ = new hByte[banks[i].datasize_];
+        banks[i].data_ = hNEW_ARRAY(hGeneralHeap, hByte, banks[i].datasize_);
         file->Read( banks[i].data_, banks[i].datasize_ );
 
         soundBank.sourceDataSize_ += banks[i].datasize_;
@@ -142,5 +146,5 @@ void OGGSoundBankBuilder::BuildResource()
 
 void OGGSoundBankBuilder::CleanUpFromBuild()
 {
-
+    hFreeSafe(xmlDocStr_);
 }

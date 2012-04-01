@@ -27,9 +27,6 @@
 #ifndef HENTITY_H__
 #define HENTITY_H__
 
-#include "hTypes.h"
-#include "hComponent.h"
-
 namespace Heart
 {
     //////////////////////////////////////////////////////////////////////////

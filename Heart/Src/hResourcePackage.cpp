@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hResourcePackage.h"
-#include "hResourceManager.h"
-
 namespace Heart
 {
 

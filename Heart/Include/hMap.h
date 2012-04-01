@@ -1,17 +1,32 @@
 /********************************************************************
-	created:	2008/06/21
-	created:	21:6:2008   18:20
-	filename: 	huMap.h
-	author:		James Moran
+
+	filename: 	hMap.h	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
+
 #ifndef huMap_h__
 #define huMap_h__
-
-#include "hTypes.h"
-#include "hArray.h"
-
 
 namespace Heart
 {
@@ -117,16 +132,26 @@ namespace Heart
 		typedef TypePtr								MapElementPtr;
 
 		hMap() 
-			: size_( 0 )
-			, rbTreeRoot_( NULL )
-			, deleteOnDestroy_( hTrue )
+			: size_(0)
+			, rbTreeRoot_(NULL)
+			, deleteOnDestroy_(hTrue)
+            , heap_(&hGeneralHeap)
 		{
 		}
+        hMap(hMemoryHeap* heap)
+            : size_(0)
+            , rbTreeRoot_(NULL)
+            , deleteOnDestroy_(hTrue)
+            , heap_(heap)
+        {
+            
+        }
 		~hMap() 
 		{
 			Clear( deleteOnDestroy_ );
 		}
 
+        void            SetHeap(hMemoryHeap* heap) { heap_ = heap }
 		void			Insert( KeyType key, MapElementPtr val )
 		{
 			hcAssertMsg( !val->leftRight_[0] && !val->leftRight_[1] && !val->parent_, "Node belongs to another Map" );
@@ -291,7 +316,7 @@ namespace Heart
 
 			BreakNodeLinks( root );
 
-			delete root;
+			hDELETE((*heap_), root);
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -533,6 +558,7 @@ namespace Heart
 		hUint32			size_;
 		MapElementPtr	rbTreeRoot_;
 		hBool			deleteOnDestroy_;
+        hMemoryHeap*    heap_;
 	};
 
 }

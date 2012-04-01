@@ -27,8 +27,6 @@
 #ifndef HRENDERTECHNIQUEMANAGER_H__
 #define HRENDERTECHNIQUEMANAGER_H__
 
-#include "hResourceManager.h"
-
 namespace Heart
 {
     class hMaterial;

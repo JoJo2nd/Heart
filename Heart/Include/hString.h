@@ -27,8 +27,6 @@
 #ifndef HSTRING_H__
 #define HSTRING_H__
 
-#include <string>
-
 namespace Heart
 {
     /*

@@ -28,9 +28,6 @@
 #ifndef PROFILER_H__
 #define PROFILER_H__
 
-#include "hTypes.h"
-#include "hClock.h"
-
 namespace Heart
 {
 	class ProfilerManager

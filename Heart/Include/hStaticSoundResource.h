@@ -27,12 +27,6 @@
 #ifndef HSTATICSOUNDRESOURCE_H__
 #define HSTATICSOUNDRESOURCE_H__
 
-#include "hTypes.h"
-#include "hResource.h"
-#include "vorbis/codec.h"
-#include "hSoundSourceBuffer.h"
-#include "vorbis/vorbisfile.h"
-
 namespace Heart
 {
     struct hStaticSoundSource : public hISoundSourceBuffer

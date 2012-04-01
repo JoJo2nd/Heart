@@ -27,12 +27,6 @@
 #ifndef HSOUNDRESOURCE_H__
 #define HSOUNDRESOURCE_H__
 
-
-#include "hTypes.h"
-#include "hResource.h"
-#include "vorbis/codec.h"
-#include "hSoundSourceBuffer.h"
-
 namespace Heart
 {
 

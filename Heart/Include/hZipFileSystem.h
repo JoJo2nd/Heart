@@ -28,11 +28,6 @@
 #ifndef ZIPFILESYSTEM_H__
 #define ZIPFILESYSTEM_H__
 
-#include "hIFileSystem.h"
-#include "hSemaphore.h"
-#include "unzip.h"
-#include "HeartSTL.h"
-
 namespace Heart
 {
 namespace Device

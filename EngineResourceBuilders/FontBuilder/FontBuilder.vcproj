@@ -62,7 +62,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="freetype248MT_D.lib"
-				ShowProgress="2"
+				ShowProgress="0"
 				OutputFile="$(OutDir)\$(ProjectName)_$(BUILD_TYPE_NAME).dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(Outdir)&quot;;&quot;$(Outdir)\..\PackerDebug&quot;;..\..\external\boost\stage\lib;&quot;..\..\freetype-2.4.8\objs\win32\vc2008\&quot;;&quot;$(ProjectDir)\..\..\bin\tools\&quot;"

@@ -25,20 +25,12 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hResourceManager.h"
-#include "hTexture.h"
-#include "hCRC32.h"
-#include "hRenderer.h"
-#include "hIReferenceCounted.h"
-#include <stdio.h>
-#include <algorithm>
-#include "hIFile.h"
-
 namespace Heart
 {
 
 	hResourceManager* hResourceManager::pInstance_ = NULL;
+    void*             hResourceManager::resourceThreadID_ = NULL;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -214,6 +206,7 @@ namespace Heart
 
 	hUint32 hResourceManager::ProcessDataFixup( void* )
 	{
+        resourceThreadID_ = hThreading::GetCurrentThreadID();
 		//process the requests
 		while( !exitSignal_ )
 		{
@@ -331,8 +324,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::LoadResourceFromPath( const hChar* path )
+    hResourceClassBase* hResourceManager::LoadResourceFromPath( const hChar* path )
     {
+        hcAssert(hThreading::GetCurrentThreadID() == resourceThreadID_);
         hChar* depPath;
         hcAssert( path );
 
@@ -415,6 +409,8 @@ namespace Heart
 
         // increment the resource count
         resource->AddRef();
+
+        return resource;
     }
 
     //////////////////////////////////////////////////////////////////////////

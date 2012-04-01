@@ -80,4 +80,8 @@
 
 #define RAPIDXML_NO_EXCEPTIONS
 
+#ifdef HEART_PACKER
+    #define HEART_USE_DEFAULT_MEM_ALLOC
+#endif
+
 #endif // _HHEARTCONFIG_H__

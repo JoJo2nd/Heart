@@ -10,6 +10,6 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		AdditionalDependencies="Heart_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib Device_$(PLAT_NAME)_$(BUILD_TYPE_NAME).lib DeviceRenderer_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib crypto_$(BUILD_TYPE_NAME).lib lua_$(BUILD_TYPE_NAME).lib zlib_$(BUILD_TYPE_NAME).lib minizip_$(BUILD_TYPE_NAME).lib libogg_static_$(BUILD_TYPE_NAME).lib libvorbis_static_$(BUILD_TYPE_NAME).lib libvorbisfile_$(BUILD_TYPE_NAME).lib"
+		AdditionalDependencies="Heart_$(PLAT_NAME)$(PLAT_RENDERER_NAME)_$(BUILD_TYPE_NAME).lib crypto_$(BUILD_TYPE_NAME).lib lua_$(BUILD_TYPE_NAME).lib zlib_$(BUILD_TYPE_NAME).lib minizip_$(BUILD_TYPE_NAME).lib libogg_static_$(BUILD_TYPE_NAME).lib libvorbis_static_$(BUILD_TYPE_NAME).lib libvorbisfile_$(BUILD_TYPE_NAME).lib"
 	/>
 </VisualStudioPropertySheet>

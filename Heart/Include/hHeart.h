@@ -28,17 +28,6 @@ distribution.
 #ifndef HEART_ENGINE_H__
 #define HEART_ENGINE_H__
 
-
-#include "hHeartConfig.h"
-#include "hDebugMacros.h"
-#include "Common.h"
-#include "hTypes.h"
-#include "hMemory.h"
-#include "huFunctor.h"
-#include "hConfigOptions.h"
-#include "hEntity.h"
-#include "hComponent.h"
-
 namespace Heart
 {
 
@@ -138,7 +127,6 @@ namespace Heart
 
         static const hChar* VersionString()         { return HEART_VERSION_STRING; }
         static hFloat       Version()               { return HEART_VERSION; }
-        static hUint32      GetMemoryUsage()        { return hVMHeap.BytesAllocated(); }
         static HeartEngine* Instance()              { return pInstance_; }
 
     private:

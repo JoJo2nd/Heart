@@ -27,11 +27,6 @@
 #ifndef _SERIALISER_H__
 #define _SERIALISER_H__
 
-#include "hTypes.h"
-#include "hReflection.h"
-#include "hCRC32.h"
-#include "hDebugMacros.h"
-
 #define CREATE_SERIALISE_CLASS( x ) \
     typedef struct IDGetter_local \
     { \
@@ -289,10 +284,10 @@ namespace Heart
                 data = NULL;
                 return;
             case 1:
-                data = new _Ty();//need placement_new( malloc_func() )
+                data = hNEW(hGeneralHeap, _Ty);//need placement_new( malloc_func() )
                 break;
             default:
-                data = new _Ty[ header.count_ ];//need placement_new( malloc_func() )
+                data = hNEW_ARRAY(hGeneralHeap, _Ty, header.count_);//need placement_new( malloc_func() )
                 break;
             }
 
