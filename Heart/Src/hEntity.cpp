@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hLuaScriptComponent.cpp	
+	filename: 	hEntity.cpp	
 	
-	Copyright (c) 23:1:2012 James Moran
+	Copyright (c) 4:4:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -27,29 +27,34 @@
 
 namespace Heart
 {
-    HEART_DEFINE_COMPONENT_TYPE( hLuaScriptComponent , "ScriptComponent", "A Component to link a script to an entity." );
-    HEART_COMPONET_PROPERTIES_BEGIN( hLuaScriptComponent )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Auto Run",      autoLoadScript_,    Bool,           "Automatically run script when object is created." )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Asset",  resource_,       ResourceAsset,  "Script asset to use." )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Name",   scriptName_,        String,         "Name of script in debugger." )
-    HEART_COMPONET_PROPERTIES_END( hLuaScriptComponent );
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hComponent* hLuaScriptComponent::hLuaComponentCreate( hEntity* owner )
+    hComponent* hEntity::FindComponentByID(hUint32 id)
     {
-        return hNEW(hGeneralHeap,hLuaScriptComponent)(owner, NULL);
+        for (hUint32 i = 0; i < components_.GetSize(); ++i)
+        {
+            if(components_[i].componentID_ == id)
+                return components_[i].component_;
+        }
+
+        return NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hLuaScriptComponent::hLuaComponentDestroy( hComponent* comp )
+    void hEntity::AddComponent(hComponent* component)
     {
-        hDELETE_SAFE(hGeneralHeap, comp);
+        hcAssert(FindComponentByID(component->GetID()) == NULL);
+
+        hComponentContainer c;
+        c.component_ = component;
+        c.componentID_ = component->GetID();
+        components_.PushBack(c);
     }
 
 }

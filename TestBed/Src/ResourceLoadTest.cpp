@@ -57,6 +57,9 @@ hUint32 ResourceLoadTest::Enter()
         tex2_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/NARUTO_TEST.TEX" );
         stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/CAFO_S48.OGG" );
         soundBank_ = (Heart::hSoundBankResource*)resPack_.GetResource( "SFX/SNDBANK.SBK" );
+        Heart::hWorldScriptObject* script = (Heart::hWorldScriptObject*)resPack_.GetResource("WORLD_OBJECTS.WOD");
+
+        engine_->GetEntityFactory()->ActivateWorldScriptObject(script);
 
         //Start playing a sound
         soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );

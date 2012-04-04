@@ -37,8 +37,11 @@ namespace Heart
     public:
 
         hLuaScriptComponent( hEntity* owner, hLuaThreadState* luaThread )
-            : hComponent( owner )
+            : hComponent( owner, GetComponentID() )
             , luaThread_( luaThread )
+            , autoLoadScript_(hFalse)
+            , resource_(NULL)
+            , scriptName_(NULL)
         {
 
         }
@@ -51,7 +54,7 @@ namespace Heart
         hLuaThreadState*    luaThread_;
         //Component properties
         hBool               autoLoadScript_;
-        hUint32             resourceCRC_;
+        hResourceClassBase* resource_;
         const hChar*        scriptName_;
     };
 

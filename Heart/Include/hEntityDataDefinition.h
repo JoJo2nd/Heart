@@ -76,6 +76,7 @@ namespace Heart
         }
 
         const hComponentProperty*   type_;
+        hUint32                     size_;
         union
         {
             hBool                   boolValue_;
@@ -83,9 +84,21 @@ namespace Heart
             hInt32                  intValue_;
             hFloat                  floatValue_;
             hChar*                  stringValue_;
-            hUint32                 resourceIDValue_;
             hResourceClassBase*     resourcePointer_;
         }values_;
+    };
+
+    class hComponentPropertyValueOverride : public hComponentPropertyValue
+    {
+    public:
+        hComponentPropertyValueOverride()
+            : hComponentPropertyValue()
+            , compFactory_(NULL)
+        {
+
+        }
+
+        hComponentFactory*  compFactory_;
     };
 
     class hComponentDataDefinition
@@ -98,8 +111,10 @@ namespace Heart
         ~hComponentDataDefinition()
         {}
 
-        void SetComponent(const hComponentFactory* base) { baseFactory_ = base; }
+        void SetComponent(hComponentFactory* base) { baseFactory_ = base; }
+        hComponentFactory* GetComponentFactory() const { return baseFactory_; }
         void SetPropertyCount(hUint32 count){ properties_.Resize(count); }
+        hUint32 GetPropertyCount() const { return properties_.GetSize(); }
         hComponentPropertyValue* GetComponentPropertyDefinition(hUint32 idx) { return &properties_[idx]; }
 
     private:
@@ -108,7 +123,7 @@ namespace Heart
         hComponentDataDefinition& operator = ( const hComponentDataDefinition& rhs );
 
         hVector< hComponentPropertyValue >      properties_;
-        const hComponentFactory*                baseFactory_;
+        hComponentFactory*                      baseFactory_;
     };
 
     class hWorldObjectDefinition : public hMapElement< hUint32, hWorldObjectDefinition >
@@ -126,6 +141,7 @@ namespace Heart
         void                        SetName(const hChar* name) { entityTypeName_ = name; }
         const hChar*                GetName() const { return entityTypeName_.c_str(); }
         void                        SetComponentCount(hUint32 count) { componentDefinitions_.Resize(count); }
+        hUint32                     GetComponentCount() const { return componentDefinitions_.GetSize(); }
         hComponentDataDefinition*   GetComponentDefinition(hUint32 idx) { return &componentDefinitions_[idx]; }
 
     private:
@@ -135,6 +151,17 @@ namespace Heart
 
         hString                                 entityTypeName_;
         hVector< hComponentDataDefinition >     componentDefinitions_;
+    };
+
+    class hEntityInstanceDefinition
+    {
+    public:
+        
+        hString                                     name_;
+        hString                                     worldType_;
+        hUint32                                     id_;                     // will be hErrorCode if not given
+        hVector< hComponentPropertyValueOverride >  propertyOverrides;   // array of overrides
+
     };
 
 }

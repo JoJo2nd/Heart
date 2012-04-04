@@ -53,12 +53,13 @@ namespace Heart
                 for (; componentnodes.ToNode(); componentnodes = componentnodes.NextSibling(), ++componentIdx)
                 {
                     hComponentDataDefinition& compDef = *wob.GetComponentDefinition(componentIdx);
-                    const hComponentFactory* compFact = entityFactory->GetCompontFactory(componentnodes.GetAttributeString("type"));
+                    hComponentFactory* compFact = entityFactory->GetCompontFactory(componentnodes.GetAttributeString("type"));
                     hUint32 propertyIdx = 0;
                     hXMLGetter defaultnode(componentnodes.FirstChild("default"));
 
                     hcAssert(compFact);
 
+                    compDef.SetComponent(compFact);
                     compDef.SetPropertyCount(componentnodes.GetAttributeInt("defaults"));
                     for(; defaultnode.ToNode(); defaultnode = defaultnode.NextSibling(), ++propertyIdx)
                     {
@@ -85,7 +86,9 @@ namespace Heart
                                 propvalue.values_.floatValue_ = hAtoF(defaultnode.ToNode()->value());
                                 break;
                             case eComponentPropertyType_String:
-                                propvalue.values_.stringValue_ = 0;//TODO....
+                                propvalue.size_ = defaultnode.ToNode()->value_size();
+                                propvalue.values_.stringValue_ = (hChar*)hHeapMalloc(hResourceHeap,propvalue.size_+1);
+                                hStrCopy(propvalue.values_.stringValue_,propvalue.size_+1,defaultnode.ToNode()->value());
                                 break;
                             case eComponentPropertyType_ResourceAsset:
                                 propvalue.values_.resourcePointer_ = resManager->LoadResourceFromPath(defaultnode.ToNode()->value());
@@ -105,7 +108,52 @@ namespace Heart
 
         for(hXMLGetter node(xml.first_node("worldobjects")); node.ToNode(); node = node.NextSibling())
         {
-            hcPrintf(node.ToNode()->name());
+            for (hXMLGetter object(node.FirstChild("object")); object.ToNode(); object = object.NextSibling())
+            {
+                worldObjectInstances_.Resize(worldObjectInstances_.GetSize()+1);
+                hEntityInstanceDefinition* entityDef = &worldObjectInstances_[worldObjectInstances_.GetSize()-1];
+                hUint32 overrideIdx = 0;
+                hUint32 overrides = object.GetAttributeInt("overrides");
+                entityDef->name_ = object.GetAttributeString("name");
+                entityDef->worldType_ = object.GetAttributeString("type");
+                entityDef->id_ = object.GetAttribute("id") ? object.GetAttributeInt("id") : hErrorCode;
+                entityDef->propertyOverrides.Resize(overrides);
+                for (hXMLGetter overrider(object.FirstChild("override")); overrider.ToNode(); overrider = overrider.NextSibling(), ++overrideIdx)
+                {
+                    hComponentPropertyValueOverride* val = &entityDef->propertyOverrides[overrideIdx];
+                    hComponentFactory* factory = entityFactory->GetCompontFactory(overrider.GetAttributeString("component"));
+
+                    hcAssert(factory);
+
+                    val->compFactory_ = factory;
+                    val->type_ = factory->GetProperty(overrider.GetAttributeString("parameter"));
+                    hcAssert(val->type_);
+
+                    switch(val->type_->type_)
+                    {
+                    case eComponentPropertyType_Bool: 
+                        val->values_.boolValue_ = hStrCmp(overrider.ToNode()->value(), "true") == 0; 
+                        break;
+                    case eComponentPropertyType_Int:
+                        val->values_.intValue_ = hAtoI(overrider.ToNode()->value()); 
+                        break;
+                    case eComponentPropertyType_UInt:
+                        val->values_.uintValue_ = hAtoI(overrider.ToNode()->value());
+                        break;
+                    case eComponentPropertyType_Float:
+                        val->values_.floatValue_ = hAtoF(overrider.ToNode()->value());
+                        break;
+                    case eComponentPropertyType_String:
+                        val->size_ = overrider.ToNode()->value_size();
+                        val->values_.stringValue_ = (hChar*)hHeapMalloc(hResourceHeap,val->size_+1);
+                        hStrCopy(val->values_.stringValue_,val->size_+1,overrider.ToNode()->value());
+                        break;
+                    case eComponentPropertyType_ResourceAsset:
+                        val->values_.resourcePointer_ = resManager->LoadResourceFromPath(overrider.ToNode()->value());
+                        break;
+                    }
+                }
+            }
         }
     }
 

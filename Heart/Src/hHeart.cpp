@@ -220,7 +220,7 @@ namespace Heart
 
         luaVM_->Initialise( luaFilesystems );
 
-        entityFactory_->Initialise( fileMananger_ );
+        entityFactory_->Initialise( fileMananger_, resourceMananger_ );
 
         //////////////////////////////////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
@@ -235,8 +235,6 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
         RegisterDefaultComponents();
-
-        entityFactory_->DumpComponentDefintions();
 
     }
 

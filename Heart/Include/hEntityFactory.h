@@ -49,7 +49,7 @@ namespace Heart
 
         }
 
-        void                    Initialise( hIFileSystem* fileSystem );
+        void                    Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager);
         void RegisterComponent( 
             const hChar* componentName, 
             hUint32* outComponentID, 
@@ -57,8 +57,13 @@ namespace Heart
             hUint32 propCount, 
             ComponentCreateCallback createFunc, 
             ComponentDestroyCallback destroyFunc );
-        void                       DumpComponentDefintions();
-        const hComponentFactory*   GetCompontFactory(const hString& name) const;
+        hComponentFactory*         GetCompontFactory(const hString& name) const;
+        hBool                      ActivateWorldScriptObject(hWorldScriptObject* script);
+        hWorldScriptObject*        DeactivateWorldScriptObject();
+        hEntity*                   CreateWorldObject(const hChar* worldTypeName, const hChar* objectName, hUint32 id=hErrorCode);
+        hEntity*                   CreateWorldObject(hEntityInstanceDefinition* entityDef);
+        hEntity*                   FindWorldObjectByID(hUint32 id);
+        hEntity*                   FindWorldObjectByName(const hChar* name);
         hResourceClassBase*        OnWorldObjectScriptLoad(const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager);
         hUint32                    OnWorldObjectScriptUnload(const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager);
 
@@ -68,9 +73,13 @@ namespace Heart
         hEntityFactory& operator = ( const hEntityFactory& rhs );
 
         typedef hMap< hString, hComponentFactory > ComponentFactoryMapType;
+        typedef hVector< hEntity >                 EntityArray;
 
+        hResourceManager*           resourceManager_;
         hIFileSystem*               fileSystem_;
         ComponentFactoryMapType     factoryMap_;
+        hWorldScriptObject*         activeScript_;
+        EntityArray                 entityArray_;
     };
 
 #define HEART_REGISTER_COMPONENT_FACTORY( ef, c, createFunc, destroyFunc ) \

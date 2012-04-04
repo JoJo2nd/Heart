@@ -71,8 +71,9 @@ namespace Heart
     class hComponent
     {
     public:
-        hComponent( hEntity* entity )
+        hComponent( hEntity* entity, hUint32 id )
             : entity_(entity)
+            , id_(id)
         {
 
         }
@@ -82,16 +83,22 @@ namespace Heart
         }
 
         hEntity*                            GetEntity() const { return entity_; }
+        hUint32                             GetID() const { return id_; }
+        virtual void                        OnCreate() {};
+        virtual void                        OnActivate() {};
+        virtual void                        OnDeactivate() {};
+        virtual void                        OnDestroy() {};
 
     private:
 
         hEntity* entity_;
+        const hUint32 id_;
     };
 
 #define HEART_COMPONENT_TYPE() \
     public: \
         static const hChar*                 GetComponentName() { return componentName_; }\
-        static hUint32                      GetComponentID() { return componentID_; }\
+        static hUint32                      GetComponentID() { return (hUint32)&componentID_; }\
         static hUint32*                     GetComponentIDAddress() { return &componentID_; }\
         static hUint32                      GetComponentHash() { return componentHash_; }\
         static hUint32                      GetPropertyCount();\

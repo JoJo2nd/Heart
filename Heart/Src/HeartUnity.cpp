@@ -81,6 +81,7 @@
 
 #include "hWorldObjectScript.cpp"
 #include "hComponent.cpp"
+#include "hEntity.cpp"
 #include "hEntityFactory.cpp"
 #include "hStateBase.cpp"
 #include "hLuaHeartLib.cpp"

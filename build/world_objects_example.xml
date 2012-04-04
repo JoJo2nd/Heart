@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!--componentdefs>
+</componentdef-->
+<include input="../../HeartGit/bin/game/COMPONETS.XML"/>
+<worldobjecttypes>
+    <objecttype name="Game Script">
+        <components count="1">
+            <component type="ScriptComponent" defaults="2">
+                <default name="Script Name" type="ResourceAsset">LUA/NOP.LUA</default>
+                <default name="Auto Run" type="Bool">true</default>
+            </component>
+        </components>
+    </objecttype>
+</worldobjecttypes>
+<worldobjects>
+    <object name="Post Load Script" id="0" type="Game Script" overrides="1"><!--id is optional, if not here then object is given an automatic id-->
+        <override component="ScriptComponent" parameter="Script Name">LUA/LEVELLOAD.LUA</override>
+    </object>
+</worldobjects>

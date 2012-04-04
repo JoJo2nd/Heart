@@ -29,6 +29,8 @@
 
 namespace Heart
 {
+    class hEntityFactory;
+
     class hWorldScriptObject : public hResourceClassBase
     {
     public:
@@ -41,14 +43,19 @@ namespace Heart
 
         }
 
-        void ParseFromXML(const hXMLDocument& xml, const hEntityFactory* entityFactory, hResourceManager* resManager);
+        void                       ParseFromXML(const hXMLDocument& xml, const hEntityFactory* entityFactory, hResourceManager* resManager);
+        hUint32                    GetObjectInstanceCount() const { return worldObjectInstances_.GetSize(); }
+        hEntityInstanceDefinition* GetEntityInstanceDefinition( hUint32 idx ) { return &worldObjectInstances_[idx]; };
+        hWorldObjectDefinition*    GetWorldObjectType(const hChar* typenamestr ) const { return objectDefMap_.Find(hCRC32::StringCRC(typenamestr)); }
     private:
 
         typedef hVector< hWorldObjectDefinition >           ObjectDefinitionArray;
         typedef hMap< hUint32, hWorldObjectDefinition >     ObjectDefinitionMap;
+        typedef hVector< hEntityInstanceDefinition >        EntityDefinitionArray;
 
         ObjectDefinitionArray   objectDefs_;
         ObjectDefinitionMap     objectDefMap_;
+        EntityDefinitionArray   worldObjectInstances_;
     };
 }
 
