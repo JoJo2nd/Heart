@@ -25,16 +25,8 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hConfigOptions.h"
-#include "hIFileSystem.h"
-#include "hIFile.h"
-#include "tinyxml\tinyxml.h"
-#include "DeviceKernel.h"
-
 namespace Heart
 {
-
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,33 +36,33 @@ namespace Heart
 	{
 		hBool readDefaults = hTrue;
 
-		hIFile* file = filesystem->OpenFile( filename, FILEMODE_READ );
+		hIFile* file = filesystem->OpenFileRoot( filename, FILEMODE_READ );
 		if ( file )
 		{
 			hUint32 read;
-			char* data = hNEW ( hGeneralHeap ) char[(hUint32)file->Length()];
+			char* data = hNEW_ARRAY(hGeneralHeap, char, (hUint32)file->Length());
 			read = file->Read( data, (hUint32)file->Length() ) ;
 
 			if ( read == file->Length() )
 			{
 				
-				doc_.Parse( data );
-			
-				TiXmlHandle docHandle( &doc_ );
-				TiXmlElement* fullscreen = docHandle.FirstChild( "renderer" ).FirstChild( "fullscreen" ).ToElement();
-				TiXmlElement* vsync = docHandle.FirstChild( "renderer" ).FirstChild( "vsync" ).ToElement();
-				TiXmlElement* width = docHandle.FirstChild( "renderer" ).FirstChild( "width" ).ToElement();
-				TiXmlElement* height = docHandle.FirstChild( "renderer" ).FirstChild( "height" ).ToElement();
-				
-				fullscreen_ = fullscreen && fullscreen->GetText() ? strcmp( fullscreen->GetText(), "true" ) == 0 : Device::DefaultFullscreenSetting();
-				width_ = width && width->GetText() ? atoi( width->GetText() ) : Device::DefaultScreenWidth();
-				height_ = height && height->GetText() ? atoi( height->GetText() ) : Device::DefaultScreenHeight();
-				vsync_ = vsync && vsync->GetText() ? strcmp( vsync->GetText(), "true" ) == 0 : Device::DefaultVsyncSetting();
+                if ( doc_.ParseSafe< rapidxml::parse_default >(data, &hGeneralHeap) )
+                {
+                    hXMLGetter getter( &doc_ );
+                    rapidxml::xml_node<>* fullscreen = getter.FirstChild("renderer").FirstChild("fullscreen").ToNode();
+                    rapidxml::xml_node<>* vsync = getter.FirstChild("renderer").FirstChild( "vsync" ).ToNode();
+                    rapidxml::xml_node<>* width = getter.FirstChild("renderer").FirstChild( "width" ).ToNode();
+                    rapidxml::xml_node<>* height = getter.FirstChild("renderer").FirstChild( "height" ).ToNode();
 
-				readDefaults = hFalse;
+                    fullscreen_ = fullscreen && fullscreen->value() ? strcmp( fullscreen->value(), "true" ) == 0 : Device::DefaultFullscreenSetting();
+                    width_ = width && width->value() ? atoi( width->value() ) : Device::DefaultScreenWidth();
+                    height_ = height && height->value() ? atoi( height->value() ) : Device::DefaultScreenHeight();
+                    vsync_ = vsync && vsync->value() ? strcmp( vsync->value(), "true" ) == 0 : Device::DefaultVsyncSetting();
+
+                    readDefaults = hFalse;
+                }
 			}
 
-			delete[] data;
 			filesystem->CloseFile( file );
 		}
 

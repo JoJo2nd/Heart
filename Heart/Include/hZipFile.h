@@ -28,9 +28,6 @@
 #ifndef ZIPFILE_H__
 #define ZIPFILE_H__
 
-#include "hIFile.h"
-#include "unzip.h"
-
 namespace Heart
 {
 	class hZipFile : public hIFile

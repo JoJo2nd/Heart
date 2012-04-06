@@ -52,17 +52,6 @@
     #define XM_NO_OPERATOR_OVERLOADS
 #endif
 
-#ifndef HEART_ALLOW_NEW
-    #ifdef HEART_DEBUG
-        #define hNEW( heap ) new ( heap, __FILE__, __LINE__ )
-    #else
-        #define hNEW( heap ) new ( heap )
-    #endif
-    #define hDELETE   delete 
-#else
-	#define TIXML_OVERRIDENEW
-#endif 
-
 #ifndef _CRT_SECURE_NO_WARNINGS
 	#define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -87,6 +76,12 @@
 
 #ifndef HEART_USE_REFLECTION
     #define HEART_USE_REFLECTION
+#endif
+
+#define RAPIDXML_NO_EXCEPTIONS
+
+#ifdef HEART_PACKER
+    #define HEART_USE_DEFAULT_MEM_ALLOC
 #endif
 
 #endif // _HHEARTCONFIG_H__

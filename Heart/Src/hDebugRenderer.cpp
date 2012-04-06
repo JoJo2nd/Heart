@@ -25,19 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hDebugRenderer.h"
-#include "hVector.h"
-#include "hAABB.h"
-#include "hRendererConstants.h"
-#include "hRenderer.h"
-#include "hRenderUtility.h"
-#include "hResourceManager.h"
-#include "hSceneNodeCamera.h"
-#include "hMatrix.h"
-#include "hVertexBuffer.h"
-#include "hIndexBuffer.h"
-
 namespace Heart
 {
 namespace DebugRenderer

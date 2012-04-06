@@ -28,11 +28,6 @@
 #ifndef ZIPFILESYSTEM_H__
 #define ZIPFILESYSTEM_H__
 
-#include "hIFileSystem.h"
-#include "hSemaphore.h"
-#include "HeartSTL.h"
-#include "unzip.h"
-
 namespace Heart
 {
 namespace Device
@@ -68,6 +63,7 @@ namespace Device
 		* @return   hIFile*
 		*/
 		virtual hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
+        virtual hIFile* OpenFileRoot( const hChar* /*filename*/, FileMode /*mode*/ ) const { return NULL; }
 		
 		/**
 		* CloseFile 

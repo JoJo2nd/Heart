@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hRenderMaterialManager.h"
-#include "hMaterial.h"
-
 namespace Heart
 {
     //////////////////////////////////////////////////////////////////////////
@@ -40,7 +36,7 @@ namespace Heart
         hUint32 count = techniques_.GetSize();
         for ( hUint32 i = 0; i < count; ++i )
         {
-            delete techniques_[i].name_;
+            hDELETE(hGeneralHeap, techniques_[i].name_);
             techniques_[i].name_ = NULL;
         }
     }
@@ -57,7 +53,7 @@ namespace Heart
 
         if ( !m )
         {
-            hLoadedMaterial* lm = hNEW( hGeneralHeap ) hLoadedMaterial;
+            hLoadedMaterial* lm = hNEW(hGeneralHeap, hLoadedMaterial);
 
             mat->AddRef();
             lm->material_ = mat;
@@ -145,7 +141,7 @@ namespace Heart
         hUint32 maskC = techniques_.GetSize();
         hRenderTechniqueInfo newInfo;
         newInfo.mask_ = 1 << maskC;
-        newInfo.name_ = hNEW( hGeneralHeap ) hChar[hStrLen(name)+1];
+        newInfo.name_ = hNEW_ARRAY(hGeneralHeap, hChar, hStrLen(name)+1);
         hStrCopy( newInfo.name_, hStrLen(name)+1, name );
 
         techniques_.PushBack( newInfo );

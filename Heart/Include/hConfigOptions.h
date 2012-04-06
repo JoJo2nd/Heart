@@ -24,9 +24,6 @@
 	distribution.
 
 *********************************************************************/
-#pragma once
-#include "tinyxml\tinyxml.h"
-
 #ifndef _CONFIGOPTIONS_H__
 #define _CONFIGOPTIONS_H__
 
@@ -50,11 +47,11 @@ namespace Heart
 
 	private:
 		
-		hBool			fullscreen_;
-		hUint32			width_;
-		hUint32			height_;
-		hBool			vsync_;
-		TiXmlDocument	doc_;
+		hBool		 fullscreen_;
+		hUint32		 width_;
+		hUint32		 height_;
+		hBool		 vsync_;
+        hXMLDocument doc_;
 
 	};
 }

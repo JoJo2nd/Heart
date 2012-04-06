@@ -70,6 +70,7 @@ typedef gdUint32        gdError;
 #define gdERROR_DUPLICATE_PLUGIN            (0x80000008)
 #define gdERROR_NOT_RESOURCE_TYPE_INFO      (0x80000009)
 #define gdERROR_BUILD_CANCELLED             (0x8000000A)
+#define gdERROR_PLUGIN_NOT_FOUND            (0x8000000B)
 
 #define gdPREVENT_COPY( klass ) \
     private:\

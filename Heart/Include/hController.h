@@ -1,16 +1,32 @@
 /********************************************************************
-	created:	2009/11/28
-	created:	28:11:2009   23:42
-	filename: 	Controller.h	
-	author:		James
+
+	filename: 	hController.h	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
+
 #ifndef HOCONTROLLER_H__
 #define HOCONTROLLER_H__
-
-#include "hTypes.h"
-#include "hVec2.h"
 
 class hSystem;
 
@@ -61,8 +77,8 @@ namespace Private
 
 	private:
 
-		typedef vector< Device::InputDeviceTypes >	ITypesVector;
-		typedef vector< Private::Button >							ButtonsVector;
+		typedef hVector< Device::InputDeviceTypes >	ITypesVector;
+		typedef hVector< Private::Button >          ButtonsVector;
 
 		ITypesVector			devices_;
 		ButtonsVector			buttonMappings_;	
@@ -179,16 +195,11 @@ namespace Private
 		}
 #endif // 0
 
-		typedef list< Device::IInput* > DeviceList;
-
 		hUint32						padPort_;
 		hUint32						nButtonMappings_;//to remove
 		Private::Button				buttonMappings_[ MAX_BUTTON_MAPPINGS ];//to remove
 
 		ControllerConfig			padConfig_;
-
-		hUint32						nDevices_;//to remove
-		DeviceList					deviceList_;//to remove
 		
 	};
 }

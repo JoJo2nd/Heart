@@ -24,7 +24,9 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hSceneNodeCamera > CameraNode;
+#endif
 
 		hSceneGraphRenderVisitorCulling() {}
 
@@ -34,6 +36,7 @@ namespace Heart
 		virtual void	Visit( hSceneNodeLocator& visit );
 		virtual void	Visit( hSceneNodeMesh& visit );
 
+#if 0
 		void			SetCamera( const CameraNode& camera )
 		{
 			if ( cameraNode_.HasData() )
@@ -43,10 +46,13 @@ namespace Heart
 			camera.Acquire();
 			cameraNode_ = camera;
 		}
+#endif
 
 	private:
 
+#if 0
 		CameraNode		cameraNode_;
+#endif
 		//Camera* camera_;
 	};
 }

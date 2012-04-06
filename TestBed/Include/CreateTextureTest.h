@@ -50,10 +50,7 @@ public:
 
 private:
 
-	typedef Heart::hResourceHandle< Heart::hTexture > TextureRes;
-
 	Heart::HeartEngine*						engine_;
-	TextureRes								texture_;
 };
 
 #endif // CREATETEXTURETEST_H__

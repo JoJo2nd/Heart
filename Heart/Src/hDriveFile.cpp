@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hDriveFile.h"
-#include "DeviceFileSystem.h"
-
 namespace Heart
 {
 
@@ -57,7 +53,7 @@ namespace Heart
     hUint32 hDriveFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( Device::FileSystem::Fread( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_PENDING )
+        if ( Device::FileSystem::Fread( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_NONE )
             return 0;
         return ret;
     }
@@ -69,7 +65,7 @@ namespace Heart
     hUint32 hDriveFile::Write( const void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( Device::FileSystem::Fwrite( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_PENDING )
+        if ( Device::FileSystem::Fwrite( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_NONE )
             return 0;
         return ret;
     }

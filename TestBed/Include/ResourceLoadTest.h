@@ -52,13 +52,15 @@ public:
 
 private:
 
-    typedef Heart::hResourceHandle< Heart::hTexture > TextureRes;
-
     Heart::HeartEngine*						engine_;
     Heart::hResourcePackage                 resPack_;
     Heart::hTexture*                        tex1_;
     Heart::hTexture*                        tex2_;
     Heart::hFont*                           font1_;
+    Heart::hSoundResource*                  stream_;
+    Heart::hSoundBankResource*              soundBank_;
+    Heart::hSoundSource*                    soundSource_;
+    Heart::hSoundSource*                    staticSource_[11];
     Heart::hIndexBuffer*                    ib_;
     Heart::hVertexBuffer*                   vb_;
     Heart::hMaterialInstance*               material_;

@@ -70,7 +70,7 @@ void TextureBuilder::BuildResource()
     }
 
     texture.nLevels_ = MipMaps_.size();
-    texture.levelDescs_ = new Heart::hTexture::LevelDesc[texture.nLevels_];
+    texture.levelDescs_ = hNEW_ARRAY(hGeneralHeap, Heart::hTexture::LevelDesc, texture.nLevels_);
 
     hBool isCompressed = GetParameter( ParameterName_Compression ).GetAsEnumValue().value_ != 0;
     hUint32 w = ImageWidth_;
@@ -84,7 +84,7 @@ void TextureBuilder::BuildResource()
         texture.totalDataSize_ += sizeArray[i];
     }
 
-    texture.textureData_ = new hByte[texture.totalDataSize_];
+    texture.textureData_ = hNEW_ARRAY(hGeneralHeap, hByte,texture.totalDataSize_);
     for ( hUint32 i = 0; i < texture.nLevels_; ++i )
     {
         texture.levelDescs_[i].width_ = w;

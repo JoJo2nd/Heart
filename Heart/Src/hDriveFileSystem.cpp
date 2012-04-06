@@ -25,11 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hDriveFileSystem.h"
-#include "DeviceFileSystem.h"
-#include "hDriveFile.h"
-
 namespace Heart
 {
 namespace 
@@ -58,36 +53,46 @@ namespace
 
 	hIFile* hDriveFileSystem::OpenFile( const hChar* filename, FileMode mode ) const
 	{
-		Device::FileSystem::FileHandle* fh;
-		const hChar* devMode;
         hUint32 len = hStrLen( filename )+hStrLen( FILE_PREFIX )+1;
         hChar* fullFilename = (hChar*)hAlloca( len );
         hStrCopy( fullFilename, len, FILE_PREFIX );
         hStrCat( fullFilename, len, filename );
 
-		if ( mode == FILEMODE_WRITE )
-		{
-			devMode = "w";
-		}
-		else if ( mode == FILEMODE_READ )
-		{
-			devMode = "r";
-		}
-		else 
-		{
-			return NULL;
-		}
-
-		if ( !Device::FileSystem::Fopen( fullFilename, devMode, &fh ) )
-		{
-			return NULL;
-		}
-		
-		hDriveFile* pFile = hNEW ( hGeneralHeap ) hDriveFile();
-		pFile->fileHandle_ = fh;
-
-		return pFile;
+		return OpenFileRoot( fullFilename, mode );
 	}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, FileMode mode ) const
+    {
+        Device::FileSystem::FileHandle* fh;
+        const hChar* devMode;
+
+        if ( mode == FILEMODE_WRITE )
+        {
+            devMode = "w";
+        }
+        else if ( mode == FILEMODE_READ )
+        {
+            devMode = "r";
+        }
+        else 
+        {
+            return NULL;
+        }
+
+        if ( !Device::FileSystem::Fopen( filename, devMode, &fh ) )
+        {
+            return NULL;
+        }
+
+        hDriveFile* pFile = hNEW(hGeneralHeap, hDriveFile);
+        pFile->fileHandle_ = fh;
+
+        return pFile;
+    }
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -102,7 +107,7 @@ namespace
 
 		Device::FileSystem::Fclose( ((hDriveFile*)pFile)->fileHandle_ );
 
-		delete pFile;
+		hDELETE(hGeneralHeap, pFile);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

@@ -1,20 +1,30 @@
 /********************************************************************
-	created:	2010/12/15
-	created:	15:12:2010   17:34
-	filename: 	GameShadowRenderVisitor.cpp	
-	author:		James
+
+	filename: 	hShadowMapVisitor.cpp	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
 
-#include "Common.h"
-#include "hShadowMapVisitor.h"
-#include "hSceneNodeBase.h"
-#include "hSceneNodeCamera.h"
-#include "hSceneNodeLocator.h"
-#include "hSceneNodeMesh.h"
-#include "hRenderTargetTexture.h"
-#include "hResourceManager.h"
 
 namespace Heart
 {
@@ -62,10 +72,12 @@ namespace Heart
 
 	void hShadowMapVisitor::Destroy()
 	{
+#if 0
 		if ( shadowMaterial_.HasData() )
 		{
 			shadowMaterial_.Release();
 		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -97,7 +109,6 @@ namespace Heart
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
-#endif // HEART_OLD_RENDER_SUBMISSION
 
         hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 	 	hMatrix lv;
@@ -127,7 +138,6 @@ namespace Heart
  	 	//hMatrixFunc::mult( &tmp, &lproj, &shadowMatrix_ );
  	 	shadowMatrix_ = iv * lv * lproj;
  	
-#ifdef HEART_OLD_RENDER_SUBMISSION
         renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
  	 	renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );
@@ -175,9 +185,17 @@ namespace Heart
 				for ( hUint32 i = 0; i < c; ++i )
 				{
 					shadowCasters_[nShadowCasters_].aabb_ = *visit.GetGlobalAABB();
+#if 0
 					shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#else
+                    shadowCasters_[nShadowCasters_].meshData_ = NULL;
+#endif
 					shadowCasters_[nShadowCasters_].matrix_ = *visit.GetGlobalMatrix();
+#if 0
 					shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#else
+                    shadowCasters_[nShadowCasters_].castShadows_ = false;
+#endif
 					++nShadowCasters_;
 				}
 			}
@@ -227,9 +245,17 @@ namespace Heart
 				for ( hUint32 i = 0; i < c; ++i )
 				{
 					shadowCasters_[nShadowCasters_].aabb_ = *visit.GetLocalAABB();
-					shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#if 0
+                    shadowCasters_[nShadowCasters_].meshData_ = visit.GetMesh(i);
+#else
+                    shadowCasters_[nShadowCasters_].meshData_ = NULL;
+#endif
 					shadowCasters_[nShadowCasters_].matrix_ = *visit.GetGlobalMatrix();
-					shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#if 0
+                    shadowCasters_[nShadowCasters_].castShadows_ = visit.GetCastShadows();
+#else
+                    shadowCasters_[nShadowCasters_].castShadows_ = false;
+#endif
 					++nShadowCasters_;
 				}
 			}
@@ -294,7 +320,6 @@ namespace Heart
 
 #ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::BeginDebuggerEvent >( "Shadow Map Render" );
-#endif // HEART_OLD_RENDER_SUBMISSION
 
 		hViewport vp( 0, 0, shadowTarget_->Width(), shadowTarget_->Height() );
 		hMatrix lv;
@@ -398,7 +423,6 @@ namespace Heart
 		tmp = hMatrixFunc::mult( iv, lv );
 		shadowMatrix_ = hMatrixFunc::mult( tmp, lproj );
 
-#ifdef HEART_OLD_RENDER_SUBMISSION
 		renderer_->NewRenderCommand< Cmd::SetRenderTarget >( 0, shadowTarget_ );
 		renderer_->NewRenderCommand< Cmd::SetDepthBuffer >( depthTarget_ );
 		renderer_->NewRenderCommand< Cmd::ClearScreen >( hColour( 1.0f, 1.0f, 1.0f, 1.0f ) );

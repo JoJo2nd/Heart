@@ -25,19 +25,9 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hDeferredRenderVisitor.h"
-#include "hRenderTargetTexture.h"
-#include "hSceneGraph.h"
-#include "hSceneNodeMesh.h"
-#include "hSceneNodeLocator.h"
-#include "hSceneNodeCamera.h"
-#include "hSceneNodeLight.h"
-#include "hRenderUtility.h"
-
 namespace Heart
 {
-
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -663,5 +653,5 @@ namespace Heart
 		out->right_		= maxX;
 		out->bottom_	= maxY;
 	}
-
+#endif
 }

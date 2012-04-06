@@ -1,19 +1,29 @@
 /********************************************************************
-	created:	2010/10/03
-	created:	3:10:2010   11:49
-	filename: 	LuaStateManager.cpp	
-	author:		James
-	
-	purpose:	
-*********************************************************************/
 
-#include "Common.h"
-#include "hLuaStateManager.h"
-#include "hIFileSystem.h"
-//#include <algorithm>
-#include "hIFile.h"
-#include "hThread.h"
-#include "hLuaHeartLib.h"
+	filename: 	hLuaStateManager.cpp	
+	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
+*********************************************************************/
 
 static Heart::hIFileSystem* gLuaFileSystems[MAX_LUA_FILESYSTEMS] = {NULL};
 
@@ -78,16 +88,16 @@ namespace Heart
 
 	void hLuaStateManager::Update()
 	{
-		for ( ThreadList::iterator i = luaThreads_.begin(), e = luaThreads_.end(); i != e; )
+		for ( hLuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
 		{
-			if ( RunLuaThread( &i ) )
+            hLuaThreadState* next = i->GetNext();
+			if ( RunLuaThread( i ) )
 			{
-				i = luaThreads_.erase( i );
+				hLuaThreadState* removed = luaThreads_.Remove( i );
+                hDELETE(hGeneralHeap, removed);
 			}
-			else 
-			{
-				++i;
-			}
+
+            i = next;
 		}
 	}
 
@@ -97,7 +107,7 @@ namespace Heart
 
 	void hLuaStateManager::ExecuteBuffer( const hChar* buff, hUint32 size )
 	{
-		LuaThreadState newthread;
+		hLuaThreadState newthread;
 		newthread.lua_ = NewLuaState( mainLuaState_ );
 		newthread.status_ = HLUA_NEWTHREAD;
 		newthread.yieldRet_ = 0;
@@ -109,7 +119,9 @@ namespace Heart
 		if ( newthread.status_ == LUA_YIELD )
 		{
 			newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-			luaThreads_.push_back( newthread );
+            hLuaThreadState* listState = hNEW(hGeneralHeap, hLuaThreadState);
+            *listState = newthread;
+			luaThreads_.PushBack( listState );
 		}
 		else if ( newthread.status_ > LUA_YIELD )
 		{
@@ -140,11 +152,11 @@ namespace Heart
 		}
 		else if ( !ptr )
 		{
-			return hVMHeap.alloc( nsize, __FILE__, __LINE__ );
+			return hHeapMalloc(hVMHeap, nsize);
 		}
 		else 
 		{
-			return hVMHeap.realloc( ptr, nsize, __FILE__, __LINE__ );
+			return hHeapRealloc(hVMHeap, ptr, nsize);
 		}
 	}
 
@@ -163,9 +175,9 @@ namespace Heart
 	// 23:25:22 ////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hLuaStateManager::RunLuaThread( ThreadList::iterator* i )
+	hBool hLuaStateManager::RunLuaThread( hLuaThreadState* luaTState )
 	{
-		LuaThreadState* ts = &(*(*i));
+		hLuaThreadState* ts = luaTState;
 		if ( ts->status_ == LUA_YIELD )
 		{
 			int status = HLUA_WAKEUP;
@@ -303,6 +315,30 @@ namespace Heart
 	{
 		luaL_register( mainLuaState_, "Heart", libfunc );
 	}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hComponent* hLuaStateManager::LuaScriptComponentCreate( hEntity* owner )
+    {
+        hLuaThreadState* newthread = hNEW(hGeneralHeap, hLuaThreadState);
+        newthread->lua_ = NewLuaState( mainLuaState_ );
+        newthread->status_ = HLUA_NEWTHREAD;
+        newthread->yieldRet_ = 0;
+
+        return hNEW(hVMHeap, hLuaScriptComponent(owner, newthread));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLuaStateManager::LuaScriptComponentDestroy( hComponent* luaComp )
+    {
+        hDELETE(hGeneralHeap, luaComp);
+    }
+
 }
 
 extern "C"
@@ -343,7 +379,7 @@ extern "C"
 			Heart::hIFile* file = gLuaFileSystems[i]->OpenFile( filename, Heart::FILEMODE_READ );
 			if ( file )
 			{
-				File* ff = hNEW ( hVMHeap ) File;
+				File* ff = hNEW(hVMHeap, File);
 				ff->file_ = file;
 				ff->fileSystem_ = gLuaFileSystems[i];
 				return ff;
@@ -472,7 +508,7 @@ extern "C"
 // 		{	
 // 			return NULL;
 // 		}
-		lf->buff = hNEW ( hVMHeap ) char[hLuaflen(lf->f)];
+		lf->buff = hNEW_ARRAY(hVMHeap, char, hLuaflen(lf->f));
 		lf->extraline = 1;
 		*size = hLuafread(lf->buff, 1, hLuaflen(lf->f), lf->f);
 		return (*size > 0) ? lf->buff : NULL;

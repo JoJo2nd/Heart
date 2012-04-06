@@ -33,11 +33,13 @@
 
 void ResourceLoadTest::PreEnter()
 {
-    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX", tex1_ );
-    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX", tex2_ );
+    resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
+    resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
     resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
-
+    resPack_.AddResourceToPackage( "MUSIC/CAFO_S48.OGG" );
+    resPack_.AddResourceToPackage( "SFX/SNDBANK.SBK" );
+    resPack_.AddResourceToPackage( "WORLD_OBJECTS.WOD" );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 
@@ -50,6 +52,29 @@ hUint32 ResourceLoadTest::Enter()
     if ( resPack_.IsPackageLoaded() )
     {
         resPack_.GetResourcePointers();
+
+        tex1_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
+        tex2_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/NARUTO_TEST.TEX" );
+        stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/CAFO_S48.OGG" );
+        soundBank_ = (Heart::hSoundBankResource*)resPack_.GetResource( "SFX/SNDBANK.SBK" );
+        Heart::hWorldScriptObject* script = (Heart::hWorldScriptObject*)resPack_.GetResource("WORLD_OBJECTS.WOD");
+
+        engine_->GetEntityFactory()->ActivateWorldScriptObject(script);
+
+        //Start playing a sound
+        soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
+        soundSource_->SetSoundResource( stream_ );
+        soundSource_->SetLooping( hTrue );
+        soundSource_->Start();
+
+        for ( hUint32 i = 0; i < 11; ++i )
+        {
+            staticSource_[i] = engine_->GetSoundManager()->CreateSoundSource(0);
+            staticSource_[i]->SetSoundResource( soundBank_->GetSoundSource(i) );
+            staticSource_[i]->SetLooping( hTrue );
+            //staticSource_[i]->Start();
+            staticSource_[i]->SetVolume( 0.0f );
+        }
 
         //Setup a view port for rendering
         Heart::hRenderViewportTargetSetup rtDesc;
@@ -146,7 +171,7 @@ void ResourceLoadTest::MainRender()
     }
 
 
-    hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
+    Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
 
     engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
 }

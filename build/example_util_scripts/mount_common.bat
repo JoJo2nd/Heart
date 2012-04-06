@@ -1,0 +1,1 @@
+RMDIR /Q plug_ins\plugins

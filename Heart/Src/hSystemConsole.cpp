@@ -1,22 +1,29 @@
 /********************************************************************
-	created:	2010/09/21
-	created:	21:9:2010   20:57
-	filename: 	hSystemConsole.cpp	
-	author:		James
-	
-	purpose:	
-*********************************************************************/
 
-#include "Common.h"
-#include "hSystemConsole.h"
-#include "hControllerManager.h"
-#include "hResource.h"
-#include "hResourceManager.h"
-#include "hRenderer.h"
-#include "hTexture.h"
-#include "hVertexBuffer.h"
-#include "hIndexBuffer.h"
-#include "hLuaStateManager.h"
+	filename: 	hSystemConsole.cpp	
+	
+	Copyright (c) 22:1:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
+*********************************************************************/
 
 namespace Heart
 {
@@ -28,7 +35,7 @@ namespace Heart
     const hUint32		hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceCRC( "ENGINE/FONTS/CONSOLE.FNT" );
 	const hUint32		hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceCRC( "ENGINE/EFFECTS/SIMPLECOLOUR.CFX" );
 	hMutex				hSystemConsole::messagesMutex_;
-	string				hSystemConsole::awaitingMessages_;
+	hString				hSystemConsole::awaitingMessages_;
 	hBool				hSystemConsole::alive_ = hTrue;
 
 
@@ -50,7 +57,7 @@ namespace Heart
 		screenHeight_ = renderer_->GetHeight();
  
         //////////////////////////////////////////////////////////////////////////
-        // Greate resources for displaying the console //////////////////////////////
+        // Greate resources for displaying the console ///////////////////////////
         //////////////////////////////////////////////////////////////////////////
 
 		hUint16 idx[] =
@@ -131,7 +138,7 @@ namespace Heart
 		messagesMutex_.Lock();
 		alive_ = hFalse;
 		awaitingMessages_.clear();
-		awaitingMessages_.~string();
+		awaitingMessages_.~hString();
 		messagesMutex_.Unlock();
 	}
 
@@ -221,7 +228,7 @@ namespace Heart
 
 				//Render Log
 				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_BOTTOM;
-				style.Colour_ = hColour( 0.7f, 0.7f, 0.7f, 0.7f );;
+				style.Colour_ = hColour( 0.7f, 0.7f, 0.7f, 0.7f );
 
 				fontResource_->SetFontStyle( style );
 

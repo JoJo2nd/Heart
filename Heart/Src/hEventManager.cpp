@@ -1,14 +1,30 @@
 /********************************************************************
-	created:	2010/08/21
-	created:	21:8:2010   13:49
-	filename: 	Event.cpp	
-	author:		James
+
+	filename: 	hEventManager.cpp	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
 
-#include "Common.h"
-#include "hEventManager.h"
 
 namespace Heart
 {
@@ -16,11 +32,12 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	Channel::Channel( hUint32 channelId ) :
-		channelID_( channelId )
-		,eventBytes_( 0 )
+	Channel::Channel( hUint32 channelId ) 
+        : channelID_(channelId)
+		, eventBytes_(0)
+        , listenerCount_(0)
 	{
-		postedEvents_.reserve( DEFAULT_CHANNEL_SIZE );
+		postedEvents_.Resize( DEFAULT_CHANNEL_SIZE );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -38,7 +55,15 @@ namespace Heart
 
 	void Channel::AddListener( BaseListener* listener )
 	{
-		listeners_.push_front( listener );
+        if ( listenerCount_ >= listeners_.GetSize() )
+        {
+            listeners_.PushBack( listener );
+            listenerCount_ = listeners_.GetSize();
+        }
+        else
+        {
+            listeners_[listenerCount_++] = listener;
+        }
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -47,7 +72,14 @@ namespace Heart
 
 	void Channel::RemoveListener( BaseListener* listener )
 	{
-		listeners_.remove( listener );
+		for ( hUint32 i = 0; i < listenerCount_; ++i )
+        {
+            if ( listeners_[i] == listener )
+            {
+                listeners_[i] = listeners_[--listenerCount_];
+                return;
+            }
+        }
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -58,19 +90,18 @@ namespace Heart
 	{
 		if ( eventBytes_ )
 		{
-			hByte* pStart = &(*postedEvents_.begin());
-			hByte* pEnd = &postedEvents_[ eventBytes_ ];
+			hByte* pStart = postedEvents_;
+			hByte* pEnd = &postedEvents_[eventBytes_];
 
 			while( pStart < pEnd )
 			{
 				BaseEvent* pEvent = (BaseEvent*)pStart;
 
-				Listeners::const_iterator iend = listeners_.end();
-				for ( Listeners::iterator i = listeners_.begin(); i != iend; ++i )
+				for ( hUint32 i = 0; i != listenerCount_; ++i )
 				{
-					if ( (*i)->EventID() == pEvent->EventID() )
+					if ( listeners_[i]->EventID() == pEvent->EventID() )
 					{
-						(*i)->PostEvent( pEvent );
+						listeners_[i]->PostEvent( pEvent );
 					}
 				}
 
@@ -106,19 +137,18 @@ namespace Heart
 
 	void EventManager::AddChannel( hUint32 channelId )
 	{
-		Channels::const_iterator iend = channels_.end();
-		Channels::iterator i = channels_.begin();
-		for ( ; i != iend; ++i )
-		{
-			hcAssertMsg( (*i)->ChannelID() != channelId, "Trying to add a channel id twice, this is not allowed" );
-			if ( (*i)->ChannelID() < channelId )
+        Channel* i = NULL;
+        for ( i = channels_.GetHead(); i != NULL; i = i->GetNext() )
+        {
+			hcAssertMsg( i->ChannelID() != channelId, "Trying to add a channel id twice, this is not allowed" );
+			if ( i->ChannelID() < channelId )
 			{
 				break;
 			}
 		}
 
 		// insert before i
-		channels_.insert( i, hNEW ( hGeneralHeap ) Channel( channelId ) );
+		channels_.InsertBefore( i, hNEW(hGeneralHeap, Channel(channelId)) );
 
 	}
 
@@ -128,16 +158,17 @@ namespace Heart
 
 	void EventManager::RemoveChannel( hUint32 channelId )
 	{
-		Channels::const_iterator iend = channels_.end();
-		for ( Channels::iterator i = channels_.begin(); i != iend; ++i )
-		{
-			if ( (*i)->ChannelID() == channelId )
+        Channel* i = NULL;
+        for ( i = channels_.GetHead(); i != NULL; i = i->GetNext() )
+        {
+			if ( i->ChannelID() == channelId )
 			{
-				delete *i;
-				channels_.erase( i );
 				break;
 			}
 		}
+
+        Channel* removed = channels_.Remove( i );
+        hDELETE(hGeneralHeap, removed);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -146,12 +177,11 @@ namespace Heart
 
 	void EventManager::AddListener( hUint32 channelId, BaseListener* listener )
 	{
-		Channels::const_iterator iend = channels_.end();
-		for ( Channels::iterator i = channels_.begin(); i != iend; ++i )
-		{
-			if ( (*i)->ChannelID() == channelId )
+        for ( Channel* i = channels_.GetHead(); i != NULL; i = i->GetNext() )
+        {
+			if ( i->ChannelID() == channelId )
 			{
-				(*i)->AddListener( listener );
+				i->AddListener( listener );
 				break;
 			}
 		}
@@ -163,12 +193,11 @@ namespace Heart
 
 	void EventManager::RemoveListener( hUint32 channelId, BaseListener* listener )
 	{
-		Channels::const_iterator iend = channels_.end();
-		for ( Channels::iterator i = channels_.begin(); i != iend; ++i )
-		{
-			if ( (*i)->ChannelID() == channelId )
+        for ( Channel* i = channels_.GetHead(); i != NULL; i = i->GetNext() )
+        {
+			if ( i->ChannelID() == channelId )
 			{
-				(*i)->RemoveListener( listener );
+				i->RemoveListener( listener );
 				break;
 			}
 		}
@@ -180,10 +209,9 @@ namespace Heart
 
 	void EventManager::DispatchEvents()
 	{
-		Channels::const_iterator iend = channels_.end();
-		for ( Channels::iterator i = channels_.begin(); i != iend; ++i )
-		{
-			(*i)->DispatchEvents();
+        for ( Channel* i = channels_.GetHead(); i != NULL; i = i->GetNext() )
+        {
+			i->DispatchEvents();
 		}
 	}
 

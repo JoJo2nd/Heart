@@ -25,19 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hLuaHeartLib.h"
-#include "hClock.h"
-
-extern "C"
-{
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
-
-#include "hDebugRenderer.h"
-
 namespace Heart
 {
 /*

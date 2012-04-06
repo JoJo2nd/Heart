@@ -28,9 +28,6 @@
 #ifndef SCENENODELIGHT_H__
 #define SCENENODELIGHT_H__
 
-#include "hSceneNodeBase.h"
-#include "hSceneGraphVisitorBase.h"
-
 
 namespace Heart
 {

@@ -28,9 +28,6 @@
 #ifndef DRIVEFILE_H__
 #define DRIVEFILE_H__
 
-#include "hIFile.h"
-#include "DeviceFileSystem.h"
-
 namespace Heart
 {
 	class hDriveFile : public hIFile

@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hRenderState.h"
-#include "hTexture.h"
-
 namespace Heart
 {
 

@@ -25,16 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hRenderSubmissionContext.h"
-#include "hIndexBuffer.h"
-#include "hVertexBuffer.h"
-#include "hVertexDeclarations.h"
-#include "hTexture.h"
-#include "hMaterial.h"
-#include "hRendererCamera.h"
-#include "hRenderer.h"
-
 namespace Heart
 {
 

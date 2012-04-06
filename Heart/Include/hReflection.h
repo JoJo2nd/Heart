@@ -28,9 +28,6 @@
 #ifndef HREFLECTION_H__
 #define HREFLECTION_H__
 
-#include "hTypeList.h"
-#include "hCRC32.h"
-
 namespace Heart
 {
 	typedef hNullType hMetaNull;

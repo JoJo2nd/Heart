@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hSceneNodeLight.h"
-#include "hSceneGraphVisitorBase.h"
-
 
 namespace Heart
 {

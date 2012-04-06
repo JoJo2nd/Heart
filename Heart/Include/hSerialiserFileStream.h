@@ -28,10 +28,6 @@
 #ifndef HSERIALISERFILESTREAM_H__
 #define HSERIALISERFILESTREAM_H__
 
-#include "hSerialiser.h"
-#include "hIFileSystem.h"
-#include "hIFile.h"
-
 namespace Heart
 {
     class hSerialiserFileStream : public hISerialiseStream
@@ -75,6 +71,8 @@ namespace Heart
             return fileHandle_->Tell();
         }
         void                SetEnableMD5Gen( hBool /*val*/ ){}
+        hBool               IsOpen() const { return fileHandle_ != NULL; }
+        hUint32             GetTotalSize() const { return (hUint32)fileHandle_->Length(); }
 
     private:
 

@@ -25,9 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hViewFrustum.h"
-
 namespace Heart
 {
 

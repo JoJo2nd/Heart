@@ -1,8 +1,6 @@
 #ifndef hcDebugMacros_h__
 #define hcDebugMacros_h__
 
-#include "hTypes.h"
-
 #define WARNING_NONE ( 0 )
 #define WARNING_HIGH ( 1 )
 #define WARNING_MED ( 2 )
@@ -10,7 +8,7 @@
 
 //#define HEART_DO_ASSERTS
 
-#if defined HEART_DEBUG || defined _DEBUG || defined HEART_DO_ASSERTS
+#if defined HEART_DEBUG || defined HEART_DO_ASSERTS
 
 #define MAX_WARNING_LEVEL ( WARNING_HIGH )
 
@@ -30,7 +28,7 @@ extern "C" void hcOutputString( const hChar* msg, ... );
 
 #define hcBreak					__asm { int 3 } 
 
-#elif defined HEART_RELEASE || defined NDEBUG
+#elif defined HEART_RELEASE
 //#else
 
 #define MAX_WARNING_LEVEL ( WARNING_NONE )

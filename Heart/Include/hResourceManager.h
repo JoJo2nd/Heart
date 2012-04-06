@@ -28,19 +28,6 @@
 #ifndef RESOURCEMANAGER_H__
 #define RESOURCEMANAGER_H__
 
-#include "hTypes.h"
-#include "hResource.h"
-#include "hIFileSystem.h"
-#include "huFunctor.h"
-#include "HeartSTL.h"
-#include "hMutex.h"
-#include "hDeferredReturn.h"
-#include "hThread.h"
-#include "hThreadEvent.h"
-#include "hSemaphore.h"
-#include "hSerialiserFileStream.h"
-#include "hResourcePackage.h"
-
 namespace Heart
 {
 
@@ -131,9 +118,9 @@ namespace Heart
 		void							GetResources( const hChar** resourceKeys, hResourceClassBase** outPtrs, hUint32 count );
         hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
         void                            LockResourceDatabase() { resourceDatabaseMutex_.Lock(); resourceDatabaseLocked_ = hTrue; }
-        hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( crc ); }
+        hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( GetResourceKeyRemapping( crc ) ); }
         void                            UnlockResourceDatabase() { resourceDatabaseLocked_ = hFalse; resourceDatabaseMutex_.Unlock(); }
-
+        hResourceClassBase*             LoadResourceFromPath( const hChar* path );
 		/**
 		* QueueResourceSweep - Requestes the resource manager to search for unused resources and
 		* unload them
@@ -142,7 +129,7 @@ namespace Heart
 		*/
 		void							QueueResourceSweep()
 		{
-			hAtomic::Increment( &resourceSweepCount_ );
+			hAtomic::Increment( resourceSweepCount_ );
 			loaderSemaphone_.Post();
 		}
 
@@ -151,10 +138,11 @@ namespace Heart
 		*
 		* @return   void
 		*/
-		void							ForceResourceSweep()
-		{
-			loaderSemaphone_.Post();
-		}
+        void							ForceResourceSweep() { Post(); }
+        void                            Post()
+        {
+            loaderSemaphone_.Post();
+        }
 
 		/**
 		* Shutdown 
@@ -165,7 +153,7 @@ namespace Heart
 
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }
-
+        
 
 
 	private:
@@ -178,6 +166,10 @@ namespace Heart
 			{
 				return strcmp( ext, b.ext ) == 0;
 			}
+            hBool						operator != ( const ResourceType& b ) const 
+            {
+                return strcmp( ext, b.ext ) != 0;
+            }
 			hBool						operator < ( const ResourceType& b ) const
 			{
 				return strcmp( ext, b.ext ) < 0;
@@ -195,8 +187,14 @@ namespace Heart
             hUint32 mapToPath;
         };
 
+        struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
+        {
+            hStreamingResourceBase*     stream_;
+        };
+
 		typedef hMap< ResourceType, ResourceHandler >		ResourceHandlerMap;
 		typedef hMap< hUint32, hResourceClassBase >			ResourceMap;
+        typedef hMap< hUint32, StreamingResouce >           StreamingResourceMap;
 		typedef hMap< hUint32, hResourceLoadRequest >		ResourceLoadRequestMap;
         typedef hMap< hUint32, ResourceRemap >              ResourceRemappingMapType;
 
@@ -212,11 +210,11 @@ namespace Heart
 
 		void							DoResourceSweep();
         void                            CompleteLoadRequest( hResourceLoadRequest* request );
-        void                            LoadResourceFromPath( const hChar* path );
         hBool							EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
         void                            LoadResourceRemapTable();
 
 		static hResourceManager*		pInstance_;
+        static void*                    resourceThreadID_;
 
 		//NEW
 		hIFileSystem*					filesystem_;
@@ -232,15 +230,16 @@ namespace Heart
 		hSemaphore						loaderSemaphone_;
 		hMutex							resourceDatabaseMutex_;
         hBool                           resourceDatabaseLocked_;
+        hMutex                          loadQueueMutex_;
 
 		hBool							exitSignal_;
 		hBool							canQuit_;
-		mutable hUint32					resourceSweepCount_;
+		mutable hUint32*    			resourceSweepCount_;
 
 		ResourceLoadRequestMap			loadRequests_;
 		ResourceLoadRequestMap			loadRequestsProcessed_;
 		ResourceMap						loadedResources_;
-
+        StreamingResourceMap            streamingResources_;
 		hVector< hUint32 >				requiredResourceKeys_;
 		hVector< hResourceClassBase* >	requiredResources_;
         hResourcePackage                requiredResourcesPackage_;

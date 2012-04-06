@@ -1,22 +1,32 @@
 /********************************************************************
-created:	2008/12/22
 
-filename: 	SceneNodeBase.h
+	filename: 	hSceneNodeBase.h	
+	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
 
-author:		James Moran
-
-purpose:	
 *********************************************************************/
+
 #ifndef __HRSCENEGRAPHNODE_H__
 #define __HRSCENEGRAPHNODE_H__
-
-#include "hTypes.h"
-#include "Common.h"
-#include "hMath.h"
-#include "hUtility.h"
-#include "hRenderer.h"
-#include "hResource.h"
-
 class hiEffect;
 class hiAnimation;
 
@@ -46,13 +56,17 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hSceneNodeBase > SceneNodeRes;
+#endif
 
 		// to allow class use in linked list [12/24/2008 James]
 		class ChildListNode : public hLinkedListElement< ChildListNode >
 		{
 		public:
+#if 0
 			SceneNodeRes			child_;
+#endif
 		};
 
 		struct TransformData
@@ -237,10 +251,12 @@ namespace Heart
 		void										SetGlobalMatrix( const hMatrix* m ) { xf_[1].globalMatrix_ = *m; }
 		const hAABB*								GetLocalAABB() const { return &localAABB_; }
 		const hAABB*								GetGlobalAABB() const { return &globalAABB_; }
+#if 0
 		SceneNodeRes&								pParent() 
 		{ 
 			return parent_; 
 		}
+
 		hUint32											nChildren() const 
 		{ 
 			return nChildren_; 
@@ -249,6 +265,7 @@ namespace Heart
 		{ 
 			return children_; 
 		}
+#endif
 		void											MakeDirty() 
 		{ 
 			DirtyTransform_ = hTrue; 
@@ -257,12 +274,14 @@ namespace Heart
 		{ 
 			DirtyTransform_ = hFalse; 
 		}
+#if 0
 		hBool											GetCastShadows() const { return castsShadow_; }
 		void											SetCastShadows( hBool val ) { castsShadow_ = val; }
 		void											AttachChild( SceneNodeRes& pChild );
 		void											RemoveChild( SceneNodeRes& pChild );
 		SceneNodeRes*									FindChild( const hChar* name );
-		void											DetachFromParent();
+#endif
+        void											DetachFromParent();
 
 #ifndef HEART_RESOURCE_BUILDER
 	protected:
@@ -286,23 +305,29 @@ namespace Heart
 
 		void UpdateAABB()
 		{
+#if 0
 			for ( ChildListNode* i = children_.GetHead(); i; i = i->GetNext() )
 			{
 				hAABB::ExpandBy( globalAABB_, i->child_->globalAABB_ );
 			}
+#endif
 		}
 
 
 
 		// only scene graph can create scene graph nodes [12/24/2008 James]
+        public:
 														hSceneNodeBase( hUint32 typeId );
 		virtual											~hSceneNodeBase();
+        protected:
 
 		virtual void									UnloadCallback() {}
 
+#if 0
 		void											SetParent( const SceneNodeRes& parent );
 		SceneNodeRes&									GetResourceHandle() { return us_; }
 		void											SetResourceHandle( const SceneNodeRes& us ) { us_ = us; }
+#endif
 /*
 		hUint32											typeID_;
 		huArray< hChar, 32 >							name_;
@@ -344,19 +369,21 @@ namespace Heart
 		Heart::hAABB								orginAABB_;//< local unrotated aabb
 		Heart::hAABB								localAABB_;//< local aabb rotated from matrix_
 		Heart::hAABB								globalAABB_;//< global aabb in world space, includes child aabb
+#if 0
 		SceneNodeRes									us_;
 		SceneNodeRes									parent_;
+#endif
 		hUint32											nChildren_;
 		hLinkedList< ChildListNode >					children_;
 
 
-		BEGIN_FLAGS()
+		//BEGIN_FLAGS()
 
 		hBool DirtyTransform_ : 1;
 		hBool DoDebugRender_ : 1;
 		hBool castsShadow_ : 1;
 
-		END_FLAGS()
+		//END_FLAGS()
 
 	};
 }

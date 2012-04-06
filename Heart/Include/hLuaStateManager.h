@@ -1,31 +1,55 @@
 /********************************************************************
-	created:	2010/10/03
-	created:	3:10:2010   11:35
-	filename: 	LuaStateManager.h	
-	author:		James
+
+	filename: 	hLuaStateManager.h	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
+
 
 #ifndef LUASTATEMANAGER_H__
 #define LUASTATEMANAGER_H__
 
-#include "hTypes.h"
-#include "hMemory.h"
-#include "HeartSTL.h"
-extern "C"
-{
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
-
 namespace Heart
 {
 	class hIFileSystem;
+    class hEntity;
+    class hComponent;
+    class hLuaScriptComponent;
 
 	typedef huFunctor< hBool (*)( lua_State* ) >::type VMYieldCallback;
 	typedef huFunctor< void (*)( lua_State* ) >::type VMResumeCallback;
+
+    struct hLuaThreadState : hLinkedListElement< hLuaThreadState >
+    {
+        hLuaThreadState() 
+            : lua_(NULL)
+            , status_(0)
+            , yieldRet_(0)
+        {}
+        lua_State*			lua_;
+        hUint32				status_;				
+        hInt32				yieldRet_;
+    };
 
 	class hLuaStateManager
 	{
@@ -46,29 +70,19 @@ namespace Heart
 
 	private:
 
-		struct LuaThreadState
-		{
-			LuaThreadState() : 
-				lua_(NULL)
-				,status_(0)
-				,yieldRet_(0)
-			{}
-			lua_State*			lua_;
-			hUint32				status_;				
-			hInt32				yieldRet_;
-		};
+		typedef hLinkedList< hLuaThreadState > ThreadList;
 
-		typedef list< LuaThreadState > ThreadList;
+		hBool			            RunLuaThread( hLuaThreadState* i );
+		lua_State*		            NewLuaState( lua_State* parent );
+		static void*	            LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
+		static int		            LuaPanic (lua_State* L);
+		static void		            LuaHook( lua_State* L, lua_Debug* LD );
+        hComponent*                 LuaScriptComponentCreate( hEntity* owner );
+        void                        LuaScriptComponentDestroy( hComponent* luaComp );
 
-		hBool			RunLuaThread( ThreadList::iterator* i );
-		lua_State*		NewLuaState( lua_State* parent );
-		static void*	LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
-		static int		LuaPanic (lua_State* L);
-		static void		LuaHook( lua_State* L, lua_Debug* LD );
-
-		static hLuaStateManager* gLuaStateManagerInstance;
-		lua_State*		mainLuaState_;
-		ThreadList		luaThreads_;
+		static hLuaStateManager*    gLuaStateManagerInstance;
+		lua_State*		            mainLuaState_;
+		ThreadList		            luaThreads_;
 	};
 }
 

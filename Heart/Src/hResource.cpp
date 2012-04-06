@@ -24,9 +24,6 @@
 	distribution.
 
 *********************************************************************/
-#include "Common.h"
-#include "hResource.h"
-#include "hResourceManager.h"
 
 namespace Heart
 {
@@ -40,6 +37,84 @@ namespace Heart
         if ( manager_ )
         {
             manager_->QueueResourceSweep();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID )
+    {
+        //hMutexAutoScope am( &lock_ );
+        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
+        {
+            if ( !readOps_[i].active_ )
+            {
+                readOps_[i].dstBuf_ = dstBuf;
+                readOps_[i].size_ = size;
+                readOps_[i].offset_ = offset;
+                readOps_[i].done_ = hFalse;
+
+                hAtomic::LWMemoryBarrier();
+                readOps_[i].active_ = hTrue;
+
+                *opID = i;
+                manager_->Post();
+                return ResourceFlags_OK;
+            }
+        }
+
+        *opID = ~0U;
+        return ResourceFlags_BUSY;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hStreamingResourceBase::UpdateFileOps()
+    {
+        //hMutexAutoScope am( &lock_ );
+        for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
+        {
+            if ( readOps_[i].active_ && !readOps_[i].done_ )
+            {
+                fileStream_.Seek( readOps_[i].offset_ );
+                readOps_[i].read_ = fileStream_.Read( readOps_[i].dstBuf_, readOps_[i].size_ );
+                hAtomic::LWMemoryBarrier();
+                readOps_[i].done_ = hTrue;
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase::ResourceFlags hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
+    {
+        //hMutexAutoScope am( &lock_ );
+        hcAssert( opID < MAX_READ_OPS );
+
+        if ( readOps_[opID].active_ && readOps_[opID].done_ )
+        {
+            *read = readOps_[opID].read_;
+            readOps_[opID].active_ = hFalse;
+            return ResourceFlags_OK;
+        }
+        return ResourceFlags_BUSY;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hStreamingResourceBase::~hStreamingResourceBase()
+    {
+        if ( fileStream_.IsOpen() )
+        {
+            fileStream_.Close();
         }
     }
 

@@ -28,8 +28,6 @@
 #ifndef HMEMORYUTIL_H__
 #define HMEMORYUTIL_H__
 
-#include <memory.h>
-
 namespace Heart
 {
     hFORCEINLINE void hMemCpy( void* dest, const void* src, hUint32 size )

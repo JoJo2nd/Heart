@@ -8,13 +8,12 @@
 *********************************************************************/
 
 #include "TestBedCore.h"
-#include "SimpleRoomAddedLights.h"
 #include <time.h>
 #include "CreateTextureTest.h"
 #include "MapTest.h"
-#include "..\Include\ListTest.h"
-#include "ReflectionTest.h"
+#include "ListTest.h"
 #include "ResourceLoadTest.h"
+#include "JobManagerTest.h"
 
 namespace Game
 {
@@ -31,8 +30,8 @@ namespace Game
 
 	TestBedCore::TestBedCore() 
 		: pEngine_( NULL )
-		,currentTest_( NULL )
-		,nextTest_( 0 )
+		, currentTest_( NULL )
+		, nextTest_( 0 )
 	{
 		pInstance_ = this;
 	}
@@ -62,8 +61,8 @@ namespace Game
 
 		nextTest_ = 0;
 
+        //unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateJobTest >(this) );
         unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateResourceLoadTest >(this) );
-        unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateReflectionTestState >(this) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateMapTestsState >( this ) );
 		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateListTestState >( this ) );
 
@@ -88,7 +87,7 @@ namespace Game
 
 			if ( !currentTest_->IsActive() )
 			{
-				delete currentTest_;
+				hDELETE(hGeneralHeap, currentTest_);
 				currentTest_ = NULL;
 			}
 		}
@@ -142,15 +141,6 @@ namespace Game
 		currentTest_ = NULL;
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	Heart::hStateBase* TestBedCore::CreateSimpleLightRoom()
-	{
-		return hNEW ( hGeneralHeap ) SimpleRoomAddedLights( "testassets/simpleroom.scn", pEngine_ );
-	}
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -188,7 +178,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateTextureTestState()
 	{
-		return hNEW( hGeneralHeap ) CreateTextureTest( pEngine_ );
+		return hNEW(hGeneralHeap, CreateTextureTest(pEngine_));
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -197,7 +187,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateMapTestsState()
 	{
-		return hNEW ( hGeneralHeap ) MapTest( pEngine_ );
+		return hNEW(hGeneralHeap, MapTest(pEngine_));
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -206,17 +196,8 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateListTestState()
 	{
-		return hNEW ( hGeneralHeap ) ListTest( pEngine_ );
+		return hNEW(hGeneralHeap, ListTest(pEngine_));
 	}
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    Heart::hStateBase* TestBedCore::CreateReflectionTestState()
-    {
-        return hNEW ( hGeneralHeap ) ReflectionTest( pEngine_ );
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -224,7 +205,16 @@ namespace Game
 
     Heart::hStateBase* TestBedCore::CreateResourceLoadTest()
     {
-        return hNEW ( hGeneralHeap ) ResourceLoadTest( pEngine_ );
+        return hNEW(hGeneralHeap, ResourceLoadTest(pEngine_));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    Heart::hStateBase* TestBedCore::CreateJobTest()
+    {
+        return hNEW(hGeneralHeap, JobManagerTest(pEngine_));
     }
 
 }

@@ -1,6 +1,31 @@
+/********************************************************************
+
+	filename: 	hTypes.h	
+	
+	Copyright (c) 31:3:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
+*********************************************************************/
 #ifndef hcTypes_h__
 #define hcTypes_h__
-
 
 typedef	char				hChar;
 typedef unsigned char		hByte;
@@ -18,13 +43,14 @@ typedef bool				hBool;
 class hNullType {};
 struct hcEmptyType {};
 
-#define HEART_ALIGN( align ) __declspec( align(align) )
-#define HEART_ALIGNMENT( x, align ) __declspec( align(align) ) x
+#define HEART_ALIGN_VAR( alignment, type, name ) type __declspec( align(alignment) ) name
+#define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
+#define HEART_ALIGNMENT_END( x )
 
 #ifdef HEART_DEBUG
-#ifndef HEART_TRACK_MEMORY_ALLOCS
-#define HEART_TRACK_MEMORY_ALLOCS
-#endif
+    #ifndef HEART_TRACK_MEMORY_ALLOCS
+        #define HEART_TRACK_MEMORY_ALLOCS
+    #endif
 #endif
 
 namespace Heart
@@ -61,6 +87,7 @@ namespace Heart
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )
 #define hAlign( x, align ) ( x + align - (x % align) )
 #define hAlloca( x ) alloca( x )
+#define hOffsetOf( s, m ) (hUint32)(&(((s*)0)->m))
 #define MAX_LUA_FILESYSTEMS  (6)
 #define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 
@@ -83,9 +110,5 @@ namespace Heart
 #define hFORCEINLINE __forceinline
 
 #endif
-
-#include "hReflection.h"
-#include "hSerialiser.h"
-//#include "hMemory.h"
 
 #endif // hcTypes_h__

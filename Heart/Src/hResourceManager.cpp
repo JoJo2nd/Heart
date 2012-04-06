@@ -25,20 +25,12 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hResourceManager.h"
-#include "hTexture.h"
-#include "hCRC32.h"
-#include "hRenderer.h"
-#include "hIReferenceCounted.h"
-#include <stdio.h>
-#include <algorithm>
-#include "hIFile.h"
-
 namespace Heart
 {
 
 	hResourceManager* hResourceManager::pInstance_ = NULL;
+    void*             hResourceManager::resourceThreadID_ = NULL;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -50,6 +42,7 @@ namespace Heart
         , gotRequiredResources_( hFalse )
         , remappingNames_(NULL)
         , remappingNamesSize_(0)
+        , resourceSweepCount_(hNEW_ALIGN(hGeneralHeap, 32, hUint32))
 	{
 		hcAssert( pInstance_ == NULL );
 
@@ -62,6 +55,8 @@ namespace Heart
 
 	hResourceManager::~hResourceManager()
 	{
+        hDELETE(hGeneralHeap, resourceSweepCount_);
+        resourceSweepCount_ = NULL;
 		pInstance_ = NULL;
 	}
 
@@ -104,7 +99,7 @@ namespace Heart
 
         for ( hUint32 i = 0; i < nRequiredResources; ++i )
         {    
-            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i], requiredResources_[i] );
+            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i] );
         }
 
 		//Begin loading the required resources
@@ -135,32 +130,14 @@ namespace Heart
 		{
 			prenderer->ReleasePendingRenderResources();
 			ForceResourceSweep();
-			Threading::ThreadSleep(1);
+			hThreading::ThreadSleep(1);
 			++exitBail;
 		}
 
-#ifdef HEART_DEBUG
-// 		if ( loadedResources_.size() > 0 )
-// 		{
-// 			hcPrintf( "Unreleased Resources..." );
-// 			for ( ResourceMap::iterator i = loadedResources_.begin(); i != loadedResources_.end(); ++i )
-// 			{
-// 				hcPrintf( "hResource \"%s\"(ext: %s): 0x%08X", i->second.name_, i->second.ext_, i->second.pOutputData_ );
-// 			}
-// 		}
-// 		if ( createdResources_.size() > 0 )
-// 		{
-// 			hcPrintf( "Unreleased Runtime Resources..." );
-// 			for ( ResourceList::iterator i = createdResources_.begin(); i != createdResources_.end(); ++i )
-// 			{
-// 				hcPrintf( "hResource \"%s\"(ext: %s): 0x%08X", i->name_, i->ext_, i->pOutputData_ );
-// 			}
-// 		}
-#endif
-
-		hcAssert( resourceSweepCount_ == 0 );
+		hcAssert( *resourceSweepCount_ == 0 );
 		requiredResources_.Clear();
 		requiredResourceKeys_.Clear();
+        streamingResources_.Clear( hTrue );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -170,7 +147,7 @@ namespace Heart
     void hResourceManager::SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData )
     {
         ResourceType type;
-        ResourceHandler* handler = hNEW ( hGeneralHeap ) ResourceHandler();
+        ResourceHandler* handler = hNEW(hGeneralHeap, ResourceHandler);
 
         strcpy_s( type.ext, 4, typeExt );
 
@@ -229,40 +206,44 @@ namespace Heart
 
 	hUint32 hResourceManager::ProcessDataFixup( void* )
 	{
+        resourceThreadID_ = hThreading::GetCurrentThreadID();
 		//process the requests
-		while( !exitSignal_ /*|| !canQuit_*/ )
+		while( !exitSignal_ )
 		{
 			loaderSemaphone_.Wait();
 
-			if ( exitSignal_ )
-			{
-				hAtomic::Increment( &resourceSweepCount_ );
-			}
-
-			while ( resourceSweepCount_ > 0 )
+			while ( *resourceSweepCount_ > 0 )
 			{
 				DoResourceSweep();
-				hAtomic::Decrement( &resourceSweepCount_ );
+				hAtomic::Decrement( resourceSweepCount_ );
 			}
+
+            loadQueueMutex_.Lock();
+
+            while ( hResourceLoadRequest* i = loadRequests_.GetHead() )
+            {
+                loadRequests_.Remove( i );
+                loadRequestsProcessed_.Insert( i->GetKey(), i );
+            }
+
+            loadQueueMutex_.Unlock();
+
+            //Process and file read requests
+            for ( StreamingResouce* i = streamingResources_.GetHead(); i; i = i->GetNext() )
+            {
+                i->stream_->UpdateFileOps();
+            }
 
 			// get the all pushed requests and move them in to the processed load request
 			// along with dependencies. 
-			for ( hResourceLoadRequest* i = loadRequests_.GetHead(); i; i = i->GetNext() )
+			for ( hResourceLoadRequest* i = loadRequestsProcessed_.GetHead(); i; i = i->GetNext() )
 			{
                 CompleteLoadRequest( i );
                 hAtomic::Increment( i->loadCounter_ );
-                delete i->path_;
+                hDELETE(hGeneralHeap, i->path_);
 			}
 
-            loadRequests_.Clear( hTrue );
-
-// 			if ( loadRequestsProcessed_.GetSize() > 0 )
-// 			{
-// 				//signal the thread to continue processing
-// 				//but yield some cpu time
-// 				loaderSemaphone_.Post();
-// 				Threading::ThreadSleep( 1 );
-// 			}
+            loadRequestsProcessed_.Clear( hTrue );
 		}
 
 		return 0;
@@ -289,21 +270,17 @@ namespace Heart
 			return;
 		}
 
-		//JM TODO: check the cache
-		//pRet = QueryResourceCache( rescrc32 );
-
 		//not found in cache
-
 		// Request already open?
+		hMutexAutoScope loadQueueLock( &loadQueueMutex_ );
 		hResourceLoadRequest* request;
 
-
 		//create a load request.
-		request = hNEW ( hGeneralHeap ) hResourceLoadRequest();
+		request = hNEW(hGeneralHeap, hResourceLoadRequest);
 		//create space in the request in the loadedResources
 		request->crc32_ = rescrc32;
         request->loadCounter_ = loadCounter;
-		request->path_ = hNEW ( hGeneralHeap ) hChar[strlen(resourceName)+1];
+		request->path_ = hNEW_ARRAY(hGeneralHeap, hChar, strlen(resourceName)+1);
         strcpy( request->path_, resourceName );
 
 		loadRequests_.Insert( rescrc32, request );
@@ -347,10 +324,22 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::LoadResourceFromPath( const hChar* path )
+    hResourceClassBase* hResourceManager::LoadResourceFromPath( const hChar* path )
     {
+        hcAssert(hThreading::GetCurrentThreadID() == resourceThreadID_);
         hChar* depPath;
         hcAssert( path );
+
+        hUint32 crc = BuildResourceCRC( path );
+
+        //Check the remappings
+        ResourceRemap* remap = remappings_.Find( crc );
+
+        if ( remap )
+        {
+            path = remappingNames_+remap->mapToPath;
+            crc = BuildResourceCRC( path );
+        }
 
         // must load all the dependency folder first
         hUint32 extLen = strlen( path );
@@ -378,17 +367,6 @@ namespace Heart
         ResourceHandler* handler = resHandlers_.Find( resType );
         hcAssertMsg( handler, "Can't find resource handler data for extention %s", ext );
 
-        hUint32 crc = BuildResourceCRC( path );
-
-        //Check the remappings
-        ResourceRemap* remap = remappings_.Find( crc );
-
-        if ( remap )
-        {
-            path = remappingNames_+remap->mapToPath;
-            crc = BuildResourceCRC( path );
-        }
-
         resourceDatabaseMutex_.Lock();
         hResourceClassBase* resource = loadedResources_.Find( crc );
         resourceDatabaseMutex_.Unlock();
@@ -404,7 +382,20 @@ namespace Heart
                 crc, 
                 &loaderStream, 
                 this );
-            loaderStream.Close();
+
+            if ( resource->GetFlags() & hResourceClassBase::ResourceFlags_STREAMING )
+            {
+                hStreamingResourceBase* stres = static_cast< hStreamingResourceBase* >( resource );
+                StreamingResouce* sr = hNEW(hGeneralHeap, StreamingResouce);
+                sr->stream_ = stres;
+
+                stres->SetFileStream( loaderStream );
+                streamingResources_.Insert( crc, sr );
+            }
+            else
+            { 
+                loaderStream.Close();
+            }
 
             hcAssert( resource );
             resource->SetResID( crc );
@@ -418,6 +409,8 @@ namespace Heart
 
         // increment the resource count
         resource->AddRef();
+
+        return resource;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -495,7 +488,7 @@ namespace Heart
 
                 if ( remapCRC )
                 {
-                    ResourceRemap* remap = hNEW( hGeneralHeap ) ResourceRemap();
+                    ResourceRemap* remap = hNEW(hGeneralHeap, ResourceRemap);
                     remap->mapToPath = pathOffset;
 
                     remappings_.Insert( remapCRC, remap );
@@ -506,6 +499,8 @@ namespace Heart
                 }
             }
         }
+
+        filesystem_->CloseFile( rrt );
 
     }
 

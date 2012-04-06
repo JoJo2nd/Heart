@@ -28,13 +28,6 @@
 #ifndef DEFERREDRENDERVISITOR_H__
 #define DEFERREDRENDERVISITOR_H__
 
-#include "hSceneGraphVisitorBase.h"
-#include "hShadowMapVisitor.h"
-#include "hResource.h"
-#include "hSceneNodeBase.h"
-#include "hMatrix.h"
-#include "hMesh.h"
-
 namespace Heart
 {
 	class hRenderer;
@@ -46,24 +39,22 @@ namespace Heart
 	{
 	public:
 
+#if 0
 		typedef hResourceHandle< hRenderTargetTexture > RenderTargetRes;
 		typedef hResourceHandle< hMaterial >			MaterialRes;
 		typedef hResourceHandle< hIndexBuffer >			IndexBufferRes;
 		typedef hResourceHandle< hVertexBuffer >		VertexBufferRes;
 		typedef hResourceHandle< hMesh >				MeshRes;
+#endif
 
-		hDeferredRenderVisitor() 
-			: meshLimit_( DEFAULT_RENDER_INSTANCES )
-			, meshes_( NULL )
-		{
-		}
+		hDeferredRenderVisitor();
 		virtual ~hDeferredRenderVisitor();
 
 		ENGINE_DEFINE_VISITOR();
 
 		void Initialise( hRenderer* renderer, hResourceManager* manager );
 		void Destroy();
-		void SetCamera( hSceneNodeCamera* camera ) { camera_ = camera; }
+		void SetCamera( hSceneNodeCamera* camera );
 		void PreVisit( hSceneGraph* pSceneGraph );
 		void PostVisit( hSceneGraph*	pSceneGraph );
 		void Visit( hSceneNodeMesh& visit );
@@ -75,6 +66,7 @@ namespace Heart
 
 	protected:
 
+#if 0
 		struct LightNodeData
 		{
 			hMatrix			matrix_;//in world space
@@ -137,6 +129,7 @@ namespace Heart
 		RenderTargetRes				shadowTarget_;
 		RenderTargetRes				shadowDepthTarget_;
 		RenderTargetRes				depthTarget_;
+#endif
 
 	};
 }

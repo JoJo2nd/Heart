@@ -23,7 +23,9 @@ namespace Heart
 
 	void hSceneGraphRenderVisitorCulling::PreVisit( hSceneGraph* )
 	{
+#if 0
 		hcAssert( cameraNode_.HasData() );
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -32,6 +34,7 @@ namespace Heart
 
 	void hSceneGraphRenderVisitorCulling::Visit( hSceneNodeMesh& visit )
 	{
+#if 0
 		if ( !cameraNode_->GetViewFrustum()->TestAABB( *visit.GetGlobalAABB() ) )
 		{
 			AbortChildVisit( hTrue );
@@ -40,6 +43,7 @@ namespace Heart
 		{
 
 		}
+#endif
 	}
 
 // 	void SceneGraphRenderVisitorCulling::Visit( SceneGraphNodeLight& visit )
@@ -56,9 +60,11 @@ namespace Heart
 
 	void hSceneGraphRenderVisitorCulling::Visit( hSceneNodeLocator& visit )
 	{
+#if 0
 		if ( !cameraNode_->GetViewFrustum()->TestAABB( *visit.GetGlobalAABB() ) )
 		{
 			AbortChildVisit( hTrue );
 		}
+#endif
 	}
 }

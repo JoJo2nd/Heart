@@ -28,9 +28,6 @@
 #ifndef HSTRINGUTIL_H__
 #define HSTRINGUTIL_H__
 
-#include <string.h>
-#include <stdio.h>
-
 namespace Heart
 {
     inline hUint32  hStrLen( const hChar* s1 )
@@ -71,6 +68,16 @@ namespace Heart
         va_end( marker );
 
         return r;
+    }
+
+    inline hInt32 hAtoI(const hChar* str)
+    {
+        return atoi(str);
+    }
+
+    inline hFloat hAtoF(const hChar* str)
+    {
+        return (hFloat)atof(str);
     }
 }
 

@@ -1,0 +1,85 @@
+/********************************************************************
+
+	filename: 	DeviceDX11RenderStateBlock.h	
+	
+	Copyright (c) 18:12:2011 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
+*********************************************************************/
+
+namespace Heart
+{
+    struct hdDX11BlendState : public hIReferenceCounted,
+                              public hMapElement< hUint32, hdDX11BlendState >
+    {
+        hdDX11BlendState() 
+            : stateObj_(NULL)
+        {
+
+        }
+        ID3D11BlendState*       stateObj_;
+    };
+
+    struct hdDX11RasterizerState : public hIReferenceCounted,
+                                   public hMapElement< hUint32, hdDX11RasterizerState >
+    {
+        hdDX11RasterizerState()
+            : stateObj_(NULL)
+        {
+
+        }
+        ID3D11RasterizerState*   stateObj_;
+    };
+
+    struct hdDX11DepthStencilState : public hIReferenceCounted,
+                                     public hMapElement< hUint32, hdDX11DepthStencilState >
+    {
+        hdDX11DepthStencilState()
+            : stateObj_(NULL)
+        {
+
+        }
+        ID3D11DepthStencilState* stateObj_;
+        hUint32                  stencilRef_;
+    };
+
+    struct hdDX11InputState : public hIReferenceCounted,
+                              public hMapElement< hUint32, hdDX11InputState >
+    {
+        hdDX11InputState()
+            : stateObj_(NULL)
+        {
+
+        }
+        ID3D11InputLayout*       stateObj_;
+    };
+
+    struct hdDX11SamplerState : public hIReferenceCounted,
+                                public hMapElement< hUint32, hdDX11SamplerState >
+    {
+        hdDX11SamplerState()
+            : stateObj_(NULL)
+        {
+
+        }
+        ID3D11SamplerState*      stateObj_;
+    };
+}

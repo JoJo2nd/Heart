@@ -28,8 +28,6 @@
 #ifndef __HMCOMMON_H__
 #define __HMCOMMON_H__
 
-#include "NumericalLimits.h"
-
 #define hmPI						(3.14159265358979323846f)// long winded PI
 
 #define hmDegToRad( deg )			( deg * ( hmPI / 180.0f )) 
@@ -91,5 +89,6 @@ namespace Util
 #define hMax( x, y ) ( x > y ) ? x : y
 
 #define hFabs( x ) (fabs( x ))
+#define hFloor( x ) (floor(x))
 
 #endif //__HMCOMMON_H__

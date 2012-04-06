@@ -28,8 +28,6 @@
 #ifndef DEBUGRENDERER_H__
 #define DEBUGRENDERER_H__
 
-#include "hMatrix.h"
-
 namespace Heart
 {
 	class hResourceManager;

@@ -34,17 +34,17 @@ namespace GameData
     /*
         VAssist suggests using __declspec(selectany) here?
     */
-//     static const gdWchar plugInsFolderName_[]  = L"plug_ins";
-//     static const gdWchar cacheFolderName_[]    = L"cache";
-//     static const gdWchar outputFolderName_[]   = L"GAMEDATA";
-//     static const gdWchar remapTableName_[]     = L"RRT";
-//     static const gdWchar databaseFilename_[]   = L"gamedata.db";
+    static const gdWchar plugInsFolderName_[]  = L"plug_ins";
+    static const gdWchar cacheFolderName_[]    = L"cache";
+    static const gdWchar outputFolderName_[]   = L"GAMEDATA";
+    static const gdWchar remapTableName_[]     = L"RRT";
+    static const gdWchar databaseFilename_[]   = L"gamedata.db";
 
-#define plugInsFolderName_ (L"plug_ins")
-#define cacheFolderName_ (L"cache")
-#define outputFolderName_ (L"GAMEDATA")
-#define remapTableName_ (L"RRT")
-#define databaseFilename_ (L"gamedata.db")
+// #define plugInsFolderName_ (L"plug_ins")
+// #define cacheFolderName_ (L"cache")
+// #define outputFolderName_ (L"GAMEDATA")
+// #define remapTableName_ (L"RRT")
+// #define databaseFilename_ (L"gamedata.db")
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -194,22 +194,22 @@ namespace GameData
 
         if ( !exists( databaseFolderPath_ ) )
         {
-            create_directory( databaseFolderPath_ );
+            create_directories( databaseFolderPath_ );
         }
 
         if ( !exists( plugInsPath_ ) )
         {
-            create_directory( plugInsPath_ );
+            create_directories( plugInsPath_ );
         }
 
         if ( !exists( cachePath_ ) )
         {
-            create_directory( cachePath_ );
+            create_directories( cachePath_ );
         }
 
         if ( !exists( outputPath_ ) )
         {
-            create_directory( outputPath_ );
+            create_directories( outputPath_ );
         }
 
         err = LoadPlugInsDirectory();
@@ -543,9 +543,14 @@ namespace GameData
             if ( !boost::filesystem::is_regular_file( i->path() ) )
                 continue;
 
+            DWORD err;
             boost::filesystem::path dllPath = i->path();
             gdTime_t lastModify = boost::filesystem::last_write_time( dllPath );
-            HMODULE dll = LoadLibraryEx( dllPath.generic_wstring().c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+            HMODULE dll = LoadLibraryEx( dllPath.generic_wstring().c_str(), NULL, /*DONT_RESOLVE_DLL_REFERENCES | LOAD_WITH_ALTERED_SEARCH_PATH*/0 );
+            if ( !dll )
+            {
+                err = GetLastError();
+            }
             if ( newPlugIn->Initialise( dll, lastModify ) )
             {
                 //Found a dll that can build resources, add it
@@ -713,8 +718,14 @@ namespace GameData
             return gdERROR_NOT_RESOURCE_TYPE_INFO;
         }
 
-        const gdPlugInInformation* plugin;
+        const gdPlugInInformation* plugin = NULL;
         GetPlugInInfo( resInfo->GetResourceTypeName(), &plugin );
+
+        if ( !plugin )
+        {
+            //No Plugins?
+            return gdERROR_PLUGIN_NOT_FOUND;
+        }
 
         boost::filesystem::path localCachePath = cachePath_ / CRCString;
         gdString resourceOutputName = resID.GetResourceName();
@@ -768,9 +779,15 @@ namespace GameData
                 builder->CleanUpFromBuild();
                 buildSuccess = true;
             }
-            catch( ... )
+            catch(gdBuildError be)
             {
                 AppendErrorMessages( resID, builder->GetErrorMessage() );
+                builder->CleanUpFromBuild();
+                retCode = gdERROR_GENERIC;
+            }
+            catch(...)
+            {
+                AppendErrorMessages( resID, "Unknown Exception Thrown" );
                 builder->CleanUpFromBuild();
                 retCode = gdERROR_GENERIC;
             }

@@ -1,15 +1,32 @@
 /********************************************************************
-	created:	2008/10/11
-	filename: 	Event.h
-	author:		James Moran
+
+	filename: 	hEventManager.h	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
+
 #ifndef EVENT_H__
 #define EVENT_H__
-
-#include "huFunctor.h"
-#include "HeartSTL.h"
 
 namespace Heart
 {
@@ -118,7 +135,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	class Channel
+    class Channel : public hLinkedListElement< Channel >
 	{
 	public:
 
@@ -134,14 +151,14 @@ namespace Heart
 		void				PostEvent( const Event< id, _Ty >& pEvent )
 		{
 			hUint32 newEventBytes_ = eventBytes_ + pEvent.Size();
-			while ( newEventBytes_ > postedEvents_.size() )
+			while ( newEventBytes_ > postedEvents_.GetSize() )
 			{
 				//grab another 1k
-				postedEvents_.resize( postedEvents_.size() + 1024 );
+				postedEvents_.Resize( postedEvents_.GetSize() + 1024 );
 			}
 
-			hByte* pDst = &postedEvents_[ eventBytes_ ];
-			memcpy( pDst, &pEvent, pEvent.Size() );
+			hByte* pDst = &postedEvents_[eventBytes_];
+			hMemCpy( pDst, &pEvent, pEvent.Size() );
 
 			eventBytes_ = newEventBytes_;
 		}
@@ -149,11 +166,12 @@ namespace Heart
 
 	private:
 
-		typedef list< BaseListener* > Listeners;
+		typedef hVector< BaseListener* > Listeners;
 
 		hUint32					eventBytes_;
+        hUint32                 listenerCount_;
 		Listeners				listeners_;
-		vector< hByte >			postedEvents_;//will prob need to swap this for a lockless queue
+		hVector< hByte >	    postedEvents_;//will prob need to swap this for a lockless queue
 		hUint32					channelID_;
 	};
 
@@ -175,17 +193,16 @@ namespace Heart
 		void				PostEvent( hUint32 channelId, const Event< id, _Ty >& pEvent )
 		{
 			//for the moment do just a quick linear search
-			Channels::const_iterator iend = channels_.end();
-			for ( Channels::iterator i = channels_.begin(); i != iend; ++i )
+			for ( Channel* i = channels_.GetHead(); i != NULL; i = i->GetNext() )
 			{
-				if ( channelId > (*i)->ChannelID() )
+				if ( channelId > i->ChannelID() )
 				{
 					hcWarningHigh( hTrue, "Channel ID %d not found", channelId );
 					return;//not found the channel!
 				}
-				else if ( channelId == (*i)->ChannelID() )
+				else if ( channelId == i->ChannelID() )
 				{
-					(*i)->PostEvent( pEvent );
+					i->PostEvent( pEvent );
 					return;
 				}
 			}
@@ -194,7 +211,7 @@ namespace Heart
 
 	private:
 
-		typedef list< Channel* > Channels;
+		typedef hLinkedList< Channel > Channels;
 
 		Channels				channels_;//< sorted list of channels by id
 	};

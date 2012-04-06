@@ -28,8 +28,6 @@
 #ifndef DRIVEFILESYSTEM_H__
 #define DRIVEFILESYSTEM_H__
 
-#include "hIFileSystem.h"
-
 namespace Heart
 {
 	class hDriveFileSystem : public hIFileSystem
@@ -50,6 +48,7 @@ namespace Heart
 		* @return   hIFile*
 		*/
 		hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
+        hIFile* OpenFileRoot( const hChar* filename, FileMode mode ) const;
 		
 		/**
 		* CloseFile 

@@ -1,27 +1,30 @@
 /********************************************************************
-	created:	2008/06/22
-	created:	22:6:2008   12:01
-	filename: 	Renderer.cpp
-	author:		James Moran
+
+	filename: 	hRenderer.cpp	
 	
-	purpose:	
+	Copyright (c) 1:4:2012 James Moran
+	
+	This software is provided 'as-is', without any express or implied
+	warranty. In no event will the authors be held liable for any damages
+	arising from the use of this software.
+	
+	Permission is granted to anyone to use this software for any purpose,
+	including commercial applications, and to alter it and redistribute it
+	freely, subject to the following restrictions:
+	
+	1. The origin of this software must not be misrepresented; you must not
+	claim that you wrote the original software. If you use this software
+	in a product, an acknowledgment in the product documentation would be
+	appreciated but is not required.
+	
+	2. Altered source versions must be plainly marked as such, and must not be
+	misrepresented as being the original software.
+	
+	3. This notice may not be removed or altered from any source
+	distribution.
+
 *********************************************************************/
 
-#include "Common.h"
-#include "hRenderer.h"
-#include "hStack.h"
-#include "hClock.h"
-#include "hVertexDeclarations.h"
-#include "hResourceManager.h"
-#include "hRenderState.h"
-#include "hTexture.h"
-#include "hIndexBuffer.h"
-#include "hVertexBuffer.h"
-#include "hMesh.h"
-#include "hSystem.h"
-#include "hRenderTargetTexture.h"
-#include "hSerialiserFileStream.h"
-#include "hRenderUtility.h"
 
 
 namespace Heart
@@ -60,7 +63,7 @@ namespace Heart
 		, pThreadFrameStats_( NULL )
 		, statPass_( 0 )
 	{
-		SetImpl( hNEW ( hGeneralHeap ) hdRenderDevice );
+		SetImpl( hNEW(hGeneralHeap, hdRenderDevice) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -131,7 +134,7 @@ namespace Heart
 		hUint32 ret = 0;
 		while( !texturesToRelease_.IsEmpty() )
 		{
-			hTextureBase* ptex = texturesToRelease_.peek();
+			hTexture* ptex = texturesToRelease_.peek();
 			texturesToRelease_.pop();
 			ptex->Release();
 			++ret;
@@ -221,7 +224,7 @@ namespace Heart
 		{
 			while ( !renderCmdPipe_.IsEmpty() )
 			{
-				Threading::ThreadYield();
+				hThreading::ThreadYield();
 			}
 		}
 
@@ -281,7 +284,7 @@ namespace Heart
 
 	hUint32 hRenderer::RenderThread( void* pParam )
 	{
-		pRenderThreadID_ = Threading::GetCurrentThreadID();
+		pRenderThreadID_ = hThreading::GetCurrentThreadID();
 		hFloat frameCounter = 0.0f;
 		hUint32 frames = 0;
 
@@ -379,7 +382,7 @@ namespace Heart
 			else
 			{
 				//Yield to another thread
-				Threading::ThreadYield();
+				hThreading::ThreadYield();
 			}
 
 			// Check for the kill command
@@ -410,7 +413,7 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hTexture* resource = hNEW ( hGeneralHeap ) hTexture( this );
+        hTexture* resource = hNEW(hGeneralHeap, hTexture(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
         for ( hUint32 i = 0; i < resource->nLevels_; ++i )
@@ -437,7 +440,7 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hMaterial* resource = hNEW ( hGeneralHeap ) hMaterial( this );
+        hMaterial* resource = hNEW(hGeneralHeap, hMaterial(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
@@ -548,11 +551,11 @@ namespace Heart
 
     hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
-        hShaderProgram* resource = hNEW ( hGeneralHeap ) hShaderProgram;
+        hShaderProgram* resource = hNEW(hGeneralHeap, hShaderProgram);
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
-        resource->SetImpl( pImpl()->CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ) );
+        resource->SetImpl( pImpl()->CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ), &hRendererHeap );
      
         return resource;
     }
@@ -599,7 +602,7 @@ namespace Heart
 // 		hIndexBuffer* pIB = (hIndexBuffer*)pLoadedData;
 // 		while( indexBuffersToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		indexBuffersToRelease_.push( pIB );
 		return 1;
@@ -645,7 +648,7 @@ namespace Heart
 // 		hVertexBuffer* pVB = (hVertexBuffer*)pLoadedData;
 // 		while( vertexBuffersToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		vertexBuffersToRelease_.push( pVB );
 		return 1;
@@ -695,7 +698,7 @@ namespace Heart
 // 
 // 		while( meshesToRelease_.IsFull() )
 // 		{
-// 			Threading::ThreadSleep( 1 );
+// 			hThreading::ThreadSleep( 1 );
 // 		}
 // 		meshesToRelease_.push( pmesh );
 		return 1;
@@ -768,11 +771,11 @@ namespace Heart
 
 	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
-		(*outTex) = hNEW ( hGeneralHeap ) hTexture( this );
+        (*outTex) = hNEW(hGeneralHeap, hTexture(this));
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
-        (*outTex)->levelDescs_ = levels ? hNEW ( hRendererHeap ) hTexture::LevelDesc[ levels ] : NULL;
+        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(hRendererHeap, hTexture::LevelDesc, levels) : NULL;
 		(*outTex)->textureData_ = NULL;
 
 		hUint32 tw = width;
@@ -805,7 +808,7 @@ namespace Heart
 
 	void hRenderer::CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB )
 	{
-		hIndexBuffer* pdata = hNEW ( hRendererHeap ) hIndexBuffer( this );
+		hIndexBuffer* pdata = hNEW(hRendererHeap, hIndexBuffer(this));
 		pdata->pIndices_ = NULL;
 		pdata->nIndices_ = nIndices;
 		pdata->primitiveType_ = primType;
@@ -833,7 +836,7 @@ namespace Heart
 
 	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
 	{
-        hVertexBuffer* pdata = hNEW ( hRendererHeap ) hVertexBuffer( this );
+        hVertexBuffer* pdata = hNEW(hRendererHeap, hVertexBuffer(this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = pImpl()->ComputeVertexLayoutStride( layout );
 
@@ -878,7 +881,7 @@ namespace Heart
 
     hRenderSubmissionCtx* hRenderer::CreateRenderSubmissionCtx()
     {
-        hRenderSubmissionCtx* ret = hNEW( hRendererHeap ) hRenderSubmissionCtx();
+        hRenderSubmissionCtx* ret = hNEW(hRendererHeap, hRenderSubmissionCtx);
         ret->Initialise( this );
         pImpl()->InitialiseRenderSubmissionCtx( &ret->impl_ );
         pImpl()->InitialiseRenderSubmissionCtx( &ret->debug_ );

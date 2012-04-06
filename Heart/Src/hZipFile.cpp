@@ -25,10 +25,6 @@
 
 *********************************************************************/
 
-#include "Common.h"
-#include "hZipFile.h"
-#include "hZipFileSystem.h"
-
 namespace Heart
 {
 
@@ -214,7 +210,7 @@ namespace Heart
         hUint32 ret;
         if ( !ReadAsync( pBuffer, size ) )
             return 0;
-        while ( !IsDone( &ret ) ) { Heart::Threading::ThreadSleep( 1 ); }
+        while ( !IsDone( &ret ) ) { Heart::hThreading::ThreadSleep( 1 ); }
         return ret;
     }
 
@@ -227,7 +223,7 @@ namespace Heart
         hUint32 ret;
         if ( !WriteAsync( pBuffer, size ) )
             return 0;
-        while ( !IsDone( &ret ) ) { Heart::Threading::ThreadSleep( 1 ); }
+        while ( !IsDone( &ret ) ) { Heart::hThreading::ThreadSleep( 1 ); }
         return ret;
     }
 
@@ -240,7 +236,7 @@ namespace Heart
         hUint32 ret;
         if ( !SeekAsync( offset, from ) )
             return 0;
-        while ( !IsDone( &ret ) ) { Heart::Threading::ThreadSleep( 1 ); }
+        while ( !IsDone( &ret ) ) { Heart::hThreading::ThreadSleep( 1 ); }
         return ret;
     }
 }
