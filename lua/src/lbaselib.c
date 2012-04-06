@@ -28,7 +28,7 @@
 ** model but changing `fputs' to put the strings at a proper place
 ** (a console window or a log file, for instance).
 */
-#ifdef HEART_ENGINE
+#ifdef HEART_ENGINE_LIB
 
 extern void hcOutputStringRaw( const char* msg, ... );
 
@@ -78,7 +78,7 @@ static int luaB_print (lua_State *L) {
   return 0;
 }
 
-#endif // HEART_ENGINE
+#endif // HEART_ENGINE_LIB
 
 
 

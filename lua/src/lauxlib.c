@@ -549,7 +549,7 @@ static int errfile (lua_State *L, const char *what, int fnameindex) {
 }
 
 // Redefined in LuaStateManager.cpp
-#ifndef HEART_ENGINE
+#ifndef HEART_ENGINE_LIB
 
 LUALIB_API int luaL_loadfile (lua_State *L, const char *filename) {
   LoadF lf;
@@ -590,7 +590,7 @@ LUALIB_API int luaL_loadfile (lua_State *L, const char *filename) {
   lua_remove(L, fnameindex);
   return status;
 }
-#endif // HEART_ENGINE
+#endif // HEART_ENGINE_LIB
 
 
 

@@ -1,0 +1,23 @@
+project "worldobjectbuilder"
+	location (ProjectDir)
+	kind "SharedLib"
+	language "C++"
+	files {"../engineresourcebuilders/worldobjectbuilder/include/**.h","../engineresourcebuilders/worldobjectbuilder/src/**.cpp"}
+	defines {CommonDefines}
+	includedirs {"../engineresourcebuilders/worldobjectbuilder/include"}
+	includedirs {ResourceBuilderIncludeDirs}
+	libdirs {ExternalLibDirs}
+	links {ResourceBuilderLibs}
+	
+configuration (DebugCfgName)
+	postbuildcommands (DebugPluginPostBuildStr)
+	targetsuffix "_d"
+	targetdir (TargetDir..DebugCfgName)
+	defines {{DebugDefines}}
+	flags {"Symbols"}
+configuration (ReleaseCfgName)
+	postbuildcommands (ReleasePluginPostBuildStr)
+	targetsuffix "_r"
+	targetdir (TargetDir..ReleaseCfgName)
+	defines {{ReleaseDefines}}
+	flags {"Optimize"}

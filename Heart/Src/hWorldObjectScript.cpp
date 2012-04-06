@@ -38,7 +38,7 @@ namespace Heart
         //Get all resources to load them, holding pointers 
         //to them as we need to release them later
 
-        for(hXMLGetter node(xml.first_node("worldobjecttypes")); node.ToNode(); node = node.NextSibling())
+        for(hXMLGetter node(hXMLGetter(xml.first_node("objectscript")).FirstChild("worldobjecttypes")); node.ToNode(); node = node.NextSibling())
         {
             for (hXMLGetter wobnode(node.FirstChild("objecttype").ToNode()); wobnode.ToNode(); wobnode = wobnode.NextSibling())
             {
@@ -106,7 +106,7 @@ namespace Heart
             objectDefMap_.Insert( hCRC32::StringCRC(objectDefs_[i].GetName()), &objectDefs_[i]);
         }
 
-        for(hXMLGetter node(xml.first_node("worldobjects")); node.ToNode(); node = node.NextSibling())
+        for(hXMLGetter node(hXMLGetter(xml.first_node("objectscript")).FirstChild("worldobjects")); node.ToNode(); node = node.NextSibling())
         {
             for (hXMLGetter object(node.FirstChild("object")); object.ToNode(); object = object.NextSibling())
             {

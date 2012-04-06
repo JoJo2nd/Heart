@@ -108,7 +108,7 @@ void WorldObjectBuilder::ParseFile( XMLDoc& doc, GameData::gdFileHandle* file )
         doc.xml_->parse<rapidxml::parse_default>((char*)doc.data_);
     }
 
-    Heart::hXMLGetter includes = Heart::hXMLGetter(doc.xml_).FirstChild("include");
+    Heart::hXMLGetter includes = Heart::hXMLGetter(doc.xml_).FirstChild("objectscript").FirstChild("include");
     for (; includes.ToNode(); includes = includes.NextSibling())
     {
         docs_.resize(docs_.size()+1);

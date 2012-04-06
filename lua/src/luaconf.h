@@ -85,7 +85,7 @@
 ** In Windows, any exclamation mark ('!') in the path is replaced by the
 ** path of the directory of the executable file of the current process.
 */
-#if defined (HEART_ENGINE)
+#if defined (HEART_ENGINE_LIB)
 	#define LUA_LDIR	"!\\lua\\"
 	#define LUA_CDIR	"!\\"
 	#define LUA_LUADIR  "lua\\"
@@ -101,7 +101,7 @@
 	#define LUA_CPATH_DEFAULT \
 		".\\?.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
 
-#endif // HEART_ENGINE
+#endif // HEART_ENGINE_LIB
 
 #else
 #define LUA_ROOT	"/usr/local/"
@@ -511,7 +511,7 @@
 ** ===================================================================
 */
 
-#ifdef HEART_ENGINE
+#ifdef HEART_ENGINE_LIB
 
 #define LUA_NUMBER	float
 
@@ -532,7 +532,7 @@
 */
 #define LUAI_UACNUMBER	double
 
-#endif // HEART_ENGINE
+#endif // HEART_ENGINE_LIB
 
 
 /*

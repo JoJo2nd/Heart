@@ -27,6 +27,8 @@
 #ifndef HSTATICSOUNDRESOURCE_H__
 #define HSTATICSOUNDRESOURCE_H__
 
+class OGGSoundBankBuilder;
+
 namespace Heart
 {
     struct hStaticSoundSource : public hISoundSourceBuffer
@@ -93,9 +95,10 @@ namespace Heart
         hStaticSoundSource*          GetSoundSource( hUint32 idx ) { return sources_+idx; }
         static hResourceClassBase*   OnSoundBankLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
         static hUint32               OnSoundBankUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
-#ifndef OGGSOUNDBANK_EXPORTS
+
     private:
-#endif
+
+        friend class ::OGGSoundBankBuilder;
 
         HEART_ALLOW_SERIALISE_FRIEND();
 

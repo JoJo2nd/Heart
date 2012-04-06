@@ -194,22 +194,22 @@ namespace GameData
 
         if ( !exists( databaseFolderPath_ ) )
         {
-            create_directory( databaseFolderPath_ );
+            create_directories( databaseFolderPath_ );
         }
 
         if ( !exists( plugInsPath_ ) )
         {
-            create_directory( plugInsPath_ );
+            create_directories( plugInsPath_ );
         }
 
         if ( !exists( cachePath_ ) )
         {
-            create_directory( cachePath_ );
+            create_directories( cachePath_ );
         }
 
         if ( !exists( outputPath_ ) )
         {
-            create_directory( outputPath_ );
+            create_directories( outputPath_ );
         }
 
         err = LoadPlugInsDirectory();

@@ -329,7 +329,7 @@ static int ll_loadlib (lua_State *L) {
 */
 
 
-#ifdef HEART_ENGINE
+#ifdef HEART_ENGINE_LIB
 extern int hlCheckReadable(const char *filename);
 static int readable (const char *filename) {
 	return hlCheckReadable( filename );
@@ -341,7 +341,7 @@ static int readable (const char *filename) {
   fclose(f);
   return 1;
 }
-#endif // HEART_ENGINE
+#endif // HEART_ENGINE_LIB
 
 
 static const char *pushnexttemplate (lua_State *L, const char *path) {
