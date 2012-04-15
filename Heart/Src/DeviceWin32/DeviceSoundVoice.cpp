@@ -242,8 +242,8 @@ namespace Heart
     {
         if ( voice_ )
         {
-            alSourceUnqueueBuffers( voice_, BUFFER_COUNT, buffers_ );
-            HEART_CHECK_OPENAL_ERRORS();
+            //alSourceUnqueueBuffers( voice_, BUFFER_COUNT, buffers_ );
+            //HEART_CHECK_OPENAL_ERRORS();
             alDeleteSources( 1, &voice_ );
             HEART_CHECK_OPENAL_ERRORS();
             voice_ = 0;

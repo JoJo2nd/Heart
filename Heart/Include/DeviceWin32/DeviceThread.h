@@ -46,7 +46,7 @@ namespace Device
 			{
 				priority_ = 2;
 			}
-			ThreadHand_ = CreateThread( NULL, 0, staticFunc, this, 0, NULL );
+			ThreadHand_ = CreateThread( NULL, (1024*1024)*2, staticFunc, this, 0, NULL );
 		}
 		/**
 		* HasFinished 
@@ -68,6 +68,12 @@ namespace Device
 		{
 			return returnCode_;
 		}
+
+        void            Join()
+        {
+            WaitForSingleObject(ThreadHand_, INFINITE);
+        }
+
 	private:
 
 		static const int THREAD_NAME_SIZE = 32;

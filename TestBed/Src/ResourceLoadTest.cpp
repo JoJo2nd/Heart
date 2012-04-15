@@ -35,11 +35,11 @@ void ResourceLoadTest::PreEnter()
 {
     resPack_.AddResourceToPackage( "TEXTURES/TEST_TEXTURE_MAP.TEX" );
     resPack_.AddResourceToPackage( "TEXTURES/NARUTO_TEST.TEX" );
-    resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
-    resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
+    //resPack_.AddResourceToPackage( "EFFECTS/SIMPLE.CFX" );
+    //resPack_.AddResourceToPackage( "EFFECTS/SIMPLE2.CFX" );
     resPack_.AddResourceToPackage( "MUSIC/CAFO_S48.OGG" );
     resPack_.AddResourceToPackage( "SFX/SNDBANK.SBK" );
-    resPack_.AddResourceToPackage( "WORLD_OBJECTS.WOD" );
+    //resPack_.AddResourceToPackage( "WORLD_OBJECTS.WOD" );
     resPack_.BeginPackageLoad( engine_->GetResourceManager() );
 }
 
@@ -57,17 +57,21 @@ hUint32 ResourceLoadTest::Enter()
         tex2_   = (Heart::hTexture*)resPack_.GetResource( "TEXTURES/NARUTO_TEST.TEX" );
         stream_ = (Heart::hSoundResource*)resPack_.GetResource( "MUSIC/CAFO_S48.OGG" );
         soundBank_ = (Heart::hSoundBankResource*)resPack_.GetResource( "SFX/SNDBANK.SBK" );
-        Heart::hWorldScriptObject* script = (Heart::hWorldScriptObject*)resPack_.GetResource("WORLD_OBJECTS.WOD");
+        //script_ = (Heart::hWorldScriptObject*)resPack_.GetResource("WORLD_OBJECTS.WOD");
 
-        engine_->GetEntityFactory()->ActivateWorldScriptObject(script);
+        if (script_)
+            engine_->GetEntityFactory()->ActivateWorldScriptObject(script_);
 
         //Start playing a sound
-        soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
-        soundSource_->SetSoundResource( stream_ );
-        soundSource_->SetLooping( hTrue );
-        soundSource_->Start();
+        if (stream_)
+        {
+            soundSource_ = engine_->GetSoundManager()->CreateSoundSource( 0 );
+            soundSource_->SetSoundResource( stream_ );
+            soundSource_->SetLooping( hTrue );
+            soundSource_->Start();
+        }
 
-        for ( hUint32 i = 0; i < 11; ++i )
+        for ( hUint32 i = 0; i < 11 && soundBank_; ++i )
         {
             staticSource_[i] = engine_->GetSoundManager()->CreateSoundSource(0);
             staticSource_[i]->SetSoundResource( soundBank_->GetSoundSource(i) );
@@ -75,7 +79,7 @@ hUint32 ResourceLoadTest::Enter()
             //staticSource_[i]->Start();
             staticSource_[i]->SetVolume( 0.0f );
         }
-
+/*
         //Setup a view port for rendering
         Heart::hRenderViewportTargetSetup rtDesc;
         rtDesc.nTargets_ = 0;
@@ -116,7 +120,7 @@ hUint32 ResourceLoadTest::Enter()
         tech_ = material_->GetTechniqueByName( "main" );
 
         rndCtx_ = engine_->GetRenderer()->CreateRenderSubmissionCtx();
-
+*/
         return Heart::hStateBase::FINISHED;
     }
     
@@ -138,12 +142,7 @@ hUint32 ResourceLoadTest::Main()
 
 void ResourceLoadTest::MainRender()
 {
-//    rndCtx_->BeginPIXDebugging();
-//     rndCtx_->SetRenderTarget( 0, NULL/*viewport_.GetRenderTarget(0)*/ );
-//     rndCtx_->SetDepthTarget( NULL/*viewport_.GetDepthTarget()*/ );
-//     rndCtx_->EnableDebugDrawing( hTrue );
-//     rndCtx_->SetRendererCamera( &viewport_ );
-//     rndCtx_->SetViewport( viewport_.GetViewport() );
+    /*
     rndCtx_->SetRendererCamera( &viewport_ );
     rndCtx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
     rndCtx_->ClearTarget( hTrue, Heart::BLACK, hTrue, 1.f );
@@ -174,6 +173,7 @@ void ResourceLoadTest::MainRender()
     Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
 
     engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
+    */
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -182,9 +182,16 @@ void ResourceLoadTest::MainRender()
 
 void ResourceLoadTest::PreLeave()
 {
-    HEART_RESOURCE_SAFE_RELEASE( tex1_ );
-    HEART_RESOURCE_SAFE_RELEASE( tex2_ );
-    HEART_RESOURCE_SAFE_RELEASE( font1_ );
+    if (soundSource_)
+    {
+        engine_->GetSoundManager()->DestroySoundSource(soundSource_);
+    }
+    HEART_RESOURCE_SAFE_RELEASE(tex1_);
+    HEART_RESOURCE_SAFE_RELEASE(tex2_);
+    HEART_RESOURCE_SAFE_RELEASE(font1_);
+    HEART_RESOURCE_SAFE_RELEASE(stream_);
+    HEART_RESOURCE_SAFE_RELEASE(soundBank_);
+    HEART_RESOURCE_SAFE_RELEASE(script_);
 }
 
 //////////////////////////////////////////////////////////////////////////

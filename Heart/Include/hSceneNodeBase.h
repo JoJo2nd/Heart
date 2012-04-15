@@ -85,11 +85,11 @@ namespace Heart
 		void											InitTransform();
 		void											Name( const hChar* name ) 
 		{ 
-			strcpy_s( &name_[ 0 ], MAX_NAME_LEN, name ); 
+			strcpy_s( name_, MAX_NAME_LEN, name ); 
 		}
 		const hChar*									Name() const 
 		{ 
-			return &name_[ 0 ]; 
+			return name_.GetBuffer(); 
 		}
 		hUint32											GetTypeID() const 
 		{

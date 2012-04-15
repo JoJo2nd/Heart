@@ -34,6 +34,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	hJobManager::hJobManager()
+        : killSignal_(hFalse)
 	{
 
 	}
@@ -82,7 +83,7 @@ namespace Heart
 
 	void hJobManager::Destory()
 	{
-        WaitOnFrameJobsToFinish();
+        WaitOnJobThreadsToFinish();
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -107,9 +108,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hJobManager::WaitOnFrameJobsToFinish()
+    void hJobManager::WaitOnJobThreadsToFinish()
     {
+        killSignal_ = hTrue;
 
+        jobChainSemaphore_.Post();
+        WakeSleepingJobThreads();
+
+        jobCoordinator_.Join();
+
+        for ( hUint32 i = 0; i < HEART_JOB_THREADS; ++i )
+        {
+            jobThreads_[i].Join();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -157,9 +168,9 @@ namespace Heart
 
     hUint32 hJobManager::JobCoordinator( void* param )
     {
-        while (1)
+        while (!killSignal_)
         {
-            //jobChainSemaphore_.Wait();
+            jobChainSemaphore_.Wait();
 
             jobChainMatrix_.Lock();
 
@@ -208,9 +219,6 @@ namespace Heart
                     }
                 }
             }
-
-            //TODO: Improve!
-            hThreading::ThreadSleep( 1 );
         }
 
         return 0;
@@ -222,7 +230,7 @@ namespace Heart
 
     hUint32 hJobManager::JobThread( void* param )
     {
-        while ( 1 )
+        while (!killSignal_)
         {
             hJob* job = GrabJob();
 

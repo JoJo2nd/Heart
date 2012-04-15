@@ -90,6 +90,7 @@ void TextureBuilder::BuildResource()
         texture.levelDescs_[i].width_ = w;
         texture.levelDescs_[i].height_ = h;
         texture.levelDescs_[i].mipdata_ = (void*)offset;
+        texture.levelDescs_[i].mipdataSize_ = sizeArray[i];
         memcpy( texture.textureData_+offset, mipData[i], sizeArray[i] );
 
         w >>= 1;

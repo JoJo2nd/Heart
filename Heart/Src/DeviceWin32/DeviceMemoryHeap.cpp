@@ -25,13 +25,16 @@
 
 *********************************************************************/
 
+extern Heart::hMemoryHeap hDebugHeap;
+
 namespace Heart
 {
 
+#define ALLOC_BREAK_NUM 0 //0 = off
+#define ALLOC_BREAK_HEAP (hGeneralHeap)
+
 hUint32 hMemoryHeap::nHeapsInUse_ = 0;
 hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = {NULL};
-
-extern hMemoryHeap hDebugHeap;
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -53,16 +56,12 @@ hMemoryHeap::hMemoryHeap( DWORD sizeInBytes, hBool threadLocal )
 
 	useLocks_ = !threadLocal;
 	lastThreadID_ = NULL;
-	pTrackingHeap_ = NULL;
+    trackedAllocs_ = NULL;
+
 #ifdef HEART_TRACK_MEMORY_ALLOCS
-	pTrackingHeap_ = &hDebugHeap;
-	if ( pTrackingHeap_ && pTrackingHeap_ != this )
+	if ( this != &hDebugHeap )
 	{
-		trackedAllocs_ = new ( pTrackingHeap_->alloc( sizeof( TackingMapType ) ) ) TackingMapType;
-	}
-	else 
-	{
-		pTrackingHeap_ = NULL;
+		trackedAllocs_ = hNEW(hDebugHeap, hTackingMapType)(&hDebugHeap);
 	}
 #endif // HEART_TRACK_MEMORY_ALLOCS
 }
@@ -263,6 +262,30 @@ hBool hMemoryHeap::pointerBelongsToMe( void* ptr )
     hBool r = mspace_valid_pointer( localMspace_, ptr ) == 1 ? hTrue : hFalse;
     POST_ACTION();
     return r;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hMemoryHeap::printLeaks(const hChar* heapname)
+{
+    PRE_ACTION();
+
+    if (trackedAllocs_)
+    {
+        hUint32 leaks = 0;
+        hcPrintf("Heap %s Report Start--------------------------", heapname);
+        for (hMemTrackingInfo* i = trackedAllocs_->GetHead(); i; i = i->GetNext(), ++leaks)
+        {
+            hcPrintf("//- Memory Leak Detected -------------------------------------------------------------");
+            hcPrintf("%s(%d) : Memory block of %d bytes (Address :: 0x%08X, Alloc # %d) was leaked from here", i->file_, i->line_, i->size_, i->GetKey(), i->allocNum_);
+            hcPrintf("------------------------------------------------------------------------------------//");
+        }
+        hcPrintf("Heap %s Report End (total leaks %d)-----------", heapname, leaks);
+    }
+
+    POST_ACTION();
 }
 
 #undef PRE_ACTION

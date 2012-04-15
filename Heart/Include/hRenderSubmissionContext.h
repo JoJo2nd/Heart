@@ -71,11 +71,11 @@ namespace Heart
     public:
 
         hRenderSubmissionCtx()
-            : viewportConstants_(NULL)
+            : renderer_(NULL)
+            , viewportConstants_(NULL)
             , debugEnabled_(hFalse)
         {}
-        ~hRenderSubmissionCtx() 
-        {}
+        ~hRenderSubmissionCtx();
 
         void    Initialise( hRenderer* renderer );
 
@@ -131,7 +131,8 @@ namespace Heart
 
         //Debug
         void	InitialiseDebugInterface( hIndexBuffer* sphereIB, hVertexBuffer* sphereVB, hMaterial* material );
-                          
+           
+        hRenderer*                      renderer_;
         hUint32                         techniqueMask_;
         hMaterialInstance*              currentMaterial_;
         hMaterialTechnique*             currentTechnique_;

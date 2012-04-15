@@ -90,6 +90,8 @@ namespace Heart
 
 		hBool							RequiredResourcesReady();
 
+        void                            MainThreadUpdate();
+
 		static hUint32					BuildResourceCRC( const hChar* resourceName );
 
 		/**
@@ -158,25 +160,7 @@ namespace Heart
 
 	private:
 
-		struct ResourceType
-		{
-			hChar						ext[4];
-
-			hBool						operator == ( const ResourceType& b ) const 
-			{
-				return strcmp( ext, b.ext ) == 0;
-			}
-            hBool						operator != ( const ResourceType& b ) const 
-            {
-                return strcmp( ext, b.ext ) != 0;
-            }
-			hBool						operator < ( const ResourceType& b ) const
-			{
-				return strcmp( ext, b.ext ) < 0;
-			}
-		};
-
-		struct ResourceHandler : public hMapElement< ResourceType, ResourceHandler >
+		struct ResourceHandler : public hMapElement< hResourceType, ResourceHandler >
 		{
 			ResourceLoadCallback		loadCallback;
 			ResourceUnloadCallback		unloadCallback;
@@ -192,7 +176,7 @@ namespace Heart
             hStreamingResourceBase*     stream_;
         };
 
-		typedef hMap< ResourceType, ResourceHandler >		ResourceHandlerMap;
+		typedef hMap< hResourceType, ResourceHandler >		ResourceHandlerMap;
 		typedef hMap< hUint32, hResourceClassBase >			ResourceMap;
         typedef hMap< hUint32, StreamingResouce >           StreamingResourceMap;
 		typedef hMap< hUint32, hResourceLoadRequest >		ResourceLoadRequestMap;
@@ -232,6 +216,7 @@ namespace Heart
         hBool                           resourceDatabaseLocked_;
         hMutex                          loadQueueMutex_;
 
+        hBool                           loaded_;
 		hBool							exitSignal_;
 		hBool							canQuit_;
 		mutable hUint32*    			resourceSweepCount_;
@@ -240,7 +225,7 @@ namespace Heart
 		ResourceLoadRequestMap			loadRequestsProcessed_;
 		ResourceMap						loadedResources_;
         StreamingResourceMap            streamingResources_;
-		hVector< hUint32 >				requiredResourceKeys_;
+		hVector< const hChar* >			requiredResourceKeys_;
 		hVector< hResourceClassBase* >	requiredResources_;
         hResourcePackage                requiredResourcesPackage_;
         hBool                           gotRequiredResources_;

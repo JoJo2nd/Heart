@@ -133,7 +133,7 @@ namespace Heart
 		void		Initialise();
 		void		Destory();
         void        PushJobChain( hJobChain* jobchain );
-        void        WaitOnFrameJobsToFinish();
+        void        WaitOnJobThreadsToFinish();
 
 	private:
 
@@ -163,6 +163,7 @@ namespace Heart
         //hUint32                 jobWriteIndex_;
         HEART_ALIGN_VAR( 32, hUint32, jobWriteIndex_ );
         hJob                    jobQueue_[JOB_QUEUE_SIZE];
+        volatile hBool          killSignal_;
 	};
 }
 

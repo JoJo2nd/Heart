@@ -38,6 +38,7 @@ namespace Heart
 
 	hResourceManager::hResourceManager() 
 		: exitSignal_( hFalse )
+        , loaded_(hFalse)
         , resourceDatabaseLocked_( hFalse )
         , gotRequiredResources_( hFalse )
         , remappingNames_(NULL)
@@ -47,6 +48,8 @@ namespace Heart
 		hcAssert( pInstance_ == NULL );
 
 		pInstance_ = this;
+
+        loadedResources_.SetAutoDelete(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -99,6 +102,7 @@ namespace Heart
 
         for ( hUint32 i = 0; i < nRequiredResources; ++i )
         {    
+            requiredResourceKeys_[i] = requiredResources[i];
             requiredResourcesPackage_.AddResourceToPackage( requiredResources[i] );
         }
 
@@ -114,9 +118,17 @@ namespace Heart
 
 	void hResourceManager::Shutdown( hRenderer* prenderer )
 	{
+        while (!requiredResourcesPackage_.IsPackageLoaded()) {hThreading::ThreadSleep(1);}
+
+        requiredResourcesPackage_.GetResourcePointers();
+
 		for ( hUint32 i = 0, c = requiredResources_.GetSize(); i < c; ++i )
 		{
-		
+            hResourceClassBase* res = requiredResourcesPackage_.GetResource(requiredResourceKeys_[i]);
+		    if (res)
+            {
+                res->DecRef();
+            }
 		}
 
 		ForceResourceSweep();
@@ -134,10 +146,18 @@ namespace Heart
 			++exitBail;
 		}
 
+        //
+        for (hResourceClassBase* i = loadedResources_.GetHead(); i; i = i->GetNext())
+        {
+            hcPrintf("Resource ID [0x%08X] still has reference count > 0 [ref count = %d]", i->GetResourceID(), i->GetRefCount());
+        }
+
 		hcAssert( *resourceSweepCount_ == 0 );
 		requiredResources_.Clear();
 		requiredResourceKeys_.Clear();
         streamingResources_.Clear( hTrue );
+
+        hFreeSafe(remappingNames_);
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -146,7 +166,7 @@ namespace Heart
 
     void hResourceManager::SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData )
     {
-        ResourceType type;
+        hResourceType type;
         ResourceHandler* handler = hNEW(hGeneralHeap, ResourceHandler);
 
         strcpy_s( type.ext, 4, typeExt );
@@ -240,7 +260,7 @@ namespace Heart
 			{
                 CompleteLoadRequest( i );
                 hAtomic::Increment( i->loadCounter_ );
-                hDELETE(hGeneralHeap, i->path_);
+                hDELETE_ARRAY_SAFE(hGeneralHeap, i->path_);
 			}
 
             loadRequestsProcessed_.Clear( hTrue );
@@ -358,7 +378,7 @@ namespace Heart
 
         // everything ready, init this resources data add remove from the 
         // list
-        ResourceType resType;
+        hResourceType resType;
         //ext is ALWAYS 4 bytes long ( e.g. '.tex' )
         const hChar* ext = path + (strlen( path ) - 4);
         hcAssert( *ext == '.' );
@@ -376,12 +396,14 @@ namespace Heart
         {
             hSerialiserFileStream loaderStream;
             loaderStream.Open( path, hFalse, filesystem_ );
-            hcPrintf( "Loading Resource %s (crc32: %u)", path, crc );
+            hcPrintf( "Loading Resource %s (crc32: 0x%08X)", path, crc );
             resource = handler->loadCallback( 
                 resType.ext, 
                 crc, 
                 &loaderStream, 
                 this );
+
+            resource->SetType(resType);
 
             if ( resource->GetFlags() & hResourceClassBase::ResourceFlags_STREAMING )
             {
@@ -428,7 +450,25 @@ namespace Heart
 
 	void hResourceManager::DoResourceSweep()
 	{
+        hMutexAutoScope mtx(&resourceDatabaseMutex_);
 
+        for (hResourceClassBase* i = loadedResources_.GetHead(); i;)
+        {
+            hResourceClassBase* del;
+            ResourceHandler* handler;
+            if (i->GetRefCount() == 0)
+            {
+                handler = resHandlers_.Find(i->GetType());
+                del = loadedResources_.Erase(i,&i);
+                hcAssert(handler->GetKey() == del->GetType());
+                hcPrintf( "Unloaded resource 0x%08X", del->GetResourceID());
+                handler->unloadCallback(del->GetType().ext, del, this);
+            }
+            else
+            {
+                i = i->GetNext();
+            }
+        }
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -516,6 +556,19 @@ namespace Heart
             return BuildResourceCRC( remappingNames_+remap->mapToPath );
         }
         return key;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::MainThreadUpdate()
+    {
+        if (!loaded_ && requiredResourcesPackage_.IsPackageLoaded())
+        {
+            requiredResourcesPackage_.GetResourcePointers();
+            loaded_ = hTrue;
+        }
     }
 
 }

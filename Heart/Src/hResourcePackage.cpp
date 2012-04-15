@@ -131,6 +131,7 @@ namespace Heart
             }
         }
 
+        hcAssertFailMsg("Can't find resource %s in package", resourcePath);
         return NULL;
     }
 

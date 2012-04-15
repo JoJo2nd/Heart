@@ -36,9 +36,18 @@ class ResourceLoadTest : public Heart::hStateBase
 public:
     ResourceLoadTest( Heart::HeartEngine* engine ) 
         : hStateBase( "ResourceLoadTest" )
-        ,engine_( engine )
+        , engine_( engine )
+        , tex1_(NULL)
+        , tex2_(NULL)
+        , font1_(NULL)
+        , stream_(NULL)
+        , soundBank_(NULL)
+        , soundSource_(NULL)
+        , script_(NULL)
+        , material_(NULL)
+        , tech_(NULL)
     {
-
+        hZeroMem(staticSource_,sizeof(staticSource_));
     }
     ~ResourceLoadTest() {}
 
@@ -61,6 +70,7 @@ private:
     Heart::hSoundBankResource*              soundBank_;
     Heart::hSoundSource*                    soundSource_;
     Heart::hSoundSource*                    staticSource_[11];
+    Heart::hWorldScriptObject*              script_;
     Heart::hIndexBuffer*                    ib_;
     Heart::hVertexBuffer*                   vb_;
     Heart::hMaterialInstance*               material_;

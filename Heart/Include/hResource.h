@@ -31,6 +31,24 @@
 
 namespace Heart
 {
+    struct hResourceType
+    {
+        hChar						ext[4];
+
+        hBool						operator == ( const hResourceType& b ) const 
+        {
+            return strcmp( ext, b.ext ) == 0;
+        }
+        hBool						operator != ( const hResourceType& b ) const 
+        {
+            return strcmp( ext, b.ext ) != 0;
+        }
+        hBool						operator < ( const hResourceType& b ) const
+        {
+            return strcmp( ext, b.ext ) < 0;
+        }
+    };
+
 
     class hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >,
                                public hIReferenceCounted
@@ -62,12 +80,15 @@ namespace Heart
 
         void    OnZeroRef() const;
         void    SetResID( hUint32 id ) { resourceID_ = id; }
+        void    SetType(const hResourceType& type) { type_ = type; }
+        hResourceType GetType() const { return type_; }
 
         friend class hResourceManager;
 
         hResourceManager*  manager_;
         hUint32            resourceID_;
         hUint32            flags_;
+        hResourceType       type_;
     };
 
     class hStreamingResourceBase : public hResourceClassBase 
@@ -112,8 +133,12 @@ namespace Heart
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define HEART_RESOURCE_SAFE_RELEASE( x ) { if (x) {x->DecRef(); x = NULL;} }
-#define HEART_RESOURCE_DATA_FIXUP( type, x, y ) y = (type*)((hByte*)x + (hUint32)y);
+#ifndef HEART_PACKER
+    #define HEART_RESOURCE_SAFE_RELEASE( x ) { if (x) {x->DecRef(); x = NULL;} }
+    #define HEART_RESOURCE_DATA_FIXUP( type, x, y ) y = (type*)((hByte*)x + (hUint32)y);
+#else
+    #define HEART_RESOURCE_SAFE_RELEASE( x ) x = NULL;
+    #define HEART_RESOURCE_DATA_FIXUP( type, x, y ) /*y = (type*)((hByte*)x + (hUint32)y);*/
+#endif
 
 #endif // RESOURCE_H__

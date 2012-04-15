@@ -79,8 +79,11 @@ namespace Private
 	{
 	public:
 
-		hFont() {}
-		virtual	~hFont() {}
+		hFont() 
+            : fontSourceData_(NULL)
+            , fontCharacters_(NULL)
+        {}
+		virtual	~hFont();
 
 		const hFontStyle&	GetFontStyle() const { return style_; }
 		void				SetFontStyle( const hFontStyle& fontStyle ) { style_ = fontStyle; }

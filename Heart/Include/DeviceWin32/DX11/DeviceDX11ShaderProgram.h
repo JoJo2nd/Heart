@@ -61,6 +61,16 @@ namespace Heart
                 shaderInfo_->Release();
                 shaderInfo_ = NULL;
             }
+            if (vertexShader_ && type_ == ShaderType_VERTEXPROG)
+            {
+                vertexShader_->Release();
+                vertexShader_ = NULL;
+            }
+            if (pixelShader_ && type_ == ShaderType_FRAGMENTPROG)
+            {
+                pixelShader_->Release();
+                pixelShader_ = NULL;
+            }
         }
 
         hBool           GetShaderParameter( hUint32 i, hShaderParameter* param );

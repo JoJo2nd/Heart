@@ -112,21 +112,21 @@ namespace Heart
         }
         hXMLGetter              NextSibling()
         {
-            if ( !node_ )
+            if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(node_->name()));
         }
         hXMLGetter              NextSiblingAny()
         {
-            if ( !node_ )
+            if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(NULL));
         }
         hXMLGetter              NextSibling( const hChar* name )
         {
-            if ( !node_ )
+            if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(name));

@@ -52,7 +52,8 @@ namespace Heart
                 var->GetDesc( &varDesc );
 
                 //lets be cheeky and nab the shader var name here!
-                param->name_    = (hChar*)varDesc.Name;
+                //param->name_    = (hChar*)varDesc.Name;
+                hStrCopy(param->name_.GetBuffer(), param->name_.GetMaxSize(), varDesc.Name);
                 param->size_    = varDesc.Size / sizeof(hFloat);
                 param->cBuffer_ = cBufferCRC;
                 param->cReg_    = varDesc.StartOffset / sizeof(hFloat);

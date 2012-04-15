@@ -36,13 +36,13 @@ namespace Heart
     struct hRenderTechniqueInfo
     {
         hRenderTechniqueInfo() 
-            : name_(NULL)
-            , mask_(0)
+            : mask_(0)
         {
-
+            hZeroMem(name_, name_.GetMaxSize());
         }
-        hChar*          name_;
-        hUint32         mask_;
+
+        hArray<hChar, 32>   name_;
+        hUint32             mask_;
     };
 
     class hRenderMaterialManager

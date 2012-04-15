@@ -355,7 +355,7 @@ namespace Heart
         hDELETE(hGeneralHeap, pEngine);
 
         // Check memory usage
-#define CHECK_HEAP( x ) hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
+#define CHECK_HEAP( x ) x.printLeaks(#x)//hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
 
         CHECK_HEAP( hGeneralHeap );
         CHECK_HEAP( hRendererHeap );
@@ -372,7 +372,7 @@ namespace Heart
         eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
 
         // job manager is destroyed by the quit logic
-        //jobManager_->Destory();
+        jobManager_->Destory();
 
         DebugRenderer::Destory();
 
@@ -391,6 +391,8 @@ namespace Heart
         luaVM_->Destroy();
 
         renderer_->Destroy();
+
+        hDELETE_SAFE(hGeneralHeap, entityFactory_);
 
         hDELETE(hGeneralHeap, luaVM_);
 

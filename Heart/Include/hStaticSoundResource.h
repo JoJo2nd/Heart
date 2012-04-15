@@ -83,10 +83,19 @@ namespace Heart
     {
     public:
         hSoundBankResource()
+            : sourceCount_(0)
+            , sources_(NULL)
+            , sourceDataSize_(0)
+            , sourcesData_(NULL)
+            , namePoolSize_(0)
+            , namePool_(NULL)
         {
         }
         ~hSoundBankResource()
         {
+            hDELETE_ARRAY_SAFE(hGeneralHeap, sources_);
+            hDELETE_ARRAY_SAFE(hGeneralHeap, sourcesData_);
+            hDELETE_ARRAY_SAFE(hGeneralHeap, namePool_);
         }
 
         hUint32                      GetSourceCount() { return sourceCount_; }

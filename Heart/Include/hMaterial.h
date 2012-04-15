@@ -53,8 +53,8 @@ namespace Heart
     };
 
     //Temp placement
-    class hShaderProgram : public hPtrImpl< hdShaderProgram >,
-                           public hResourceClassBase
+    class hShaderProgram : public hResourceClassBase,
+                           public hPtrImpl< hdShaderProgram >
     {
     public:
         hShaderProgram() 
@@ -66,7 +66,7 @@ namespace Heart
         }
         ~hShaderProgram()
         {
-            hDELETE_ARRAY_SAFE(hGeneralHeap, shaderProgram_, shaderProgramLength_);
+            hDELETE_ARRAY_SAFE(hGeneralHeap, shaderProgram_);
         }
 
         hUint32                 GetParameterCount() const { return parameterCount_; }
@@ -91,19 +91,24 @@ namespace Heart
     {
         hSamplerParameter()
             : nameLen_(0)
-            , name_(NULL)
             , samplerReg_(~0U)
         {
-
+            hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
         }
+        ~hSamplerParameter()
+        {
+        }
+
         void DefaultState();
 
         hUint32                             nameLen_;
-        hChar*                              name_;
+        hArray<hChar, 32>                   name_;
         hUint32                             samplerReg_;
         hTexture*                           boundTexture_;
         hSamplerStateDesc                   samplerDesc_;
         hdSamplerState*                     samplerState_;
+        
+        //HEART_PRIVATE_COPY(hSamplerParameter);
     };
 
     typedef hVector< hSamplerParameter >  hSamplerArrayType;
@@ -127,6 +132,7 @@ namespace Heart
         hdBlendState*           GetBlendState() { return blendState_; }
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
+        void                    ReleaseResources();
 
     private:
 
@@ -152,7 +158,7 @@ namespace Heart
         hMaterialTechnique()
             : mask_(0)
         {
-            hZeroMem( &name_[0], MAX_NAME_LEN );
+            hZeroMem( name_, MAX_NAME_LEN );
         }
         hMaterialTechnique&             operator = ( const hMaterialTechnique& rhs )
         {
@@ -160,6 +166,10 @@ namespace Heart
             rhs.passes_.CopyTo( &passes_ );
 
             return *this;
+        }
+        ~hMaterialTechnique()
+        {
+        
         }
 
         const hChar*            GetName() const { return &name_[0]; }
@@ -191,9 +201,7 @@ namespace Heart
 		{
 			
 		}
-		~hMaterial() 
-		{
-		}
+		~hMaterial();
 
         void                                FindOrAddShaderParameter( const hShaderParameter& newParam, const hFloat* defaultVal );
         void                                AddConstBufferDesc( const hChar* name, hUint32 reg, hUint32 size );
@@ -377,7 +385,7 @@ namespace Heart
     inline void SerialiseMethod< Heart::hSamplerParameter >( Heart::hSerialiser* ser, const Heart::hSamplerParameter& data )
     {
         SERIALISE_ELEMENT( data.nameLen_ );
-        SERIALISE_ELEMENT_COUNT( data.name_, data.nameLen_+1 );
+        SERIALISE_ELEMENT( data.name_ );
         SERIALISE_ELEMENT_RESOURCE_CRC( data.boundTexture_ );
         SERIALISE_ELEMENT( data.samplerDesc_ );
     }

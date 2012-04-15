@@ -122,6 +122,10 @@ namespace Heart
 
 	void hRenderer::Destroy()
 	{	
+        DestroyIndexBuffer(debugSphereIB_);
+        DestoryVertexBuffer(debugSphereVB_);
+        debugSphereIB_ = NULL;
+        debugSphereVB_ = NULL;
 		hcAssert( renderThread_.IsComplete() );
 	}
 
@@ -413,13 +417,33 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hTexture* resource = hNEW(hGeneralHeap, hTexture(this));
+        hTexture* resource = hNEW(hRendererHeap, hTexture(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
         for ( hUint32 i = 0; i < resource->nLevels_; ++i )
         {
             HEART_RESOURCE_DATA_FIXUP( void*, resource->textureData_, resource->levelDescs_[i].mipdata_ );
         }
+
+        void**   dataPtrs = (void**)hAlloca(sizeof(void*)*resource->nLevels_);
+        hUint32* sizes = (hUint32*)hAlloca(sizeof(hUint32)*resource->nLevels_);
+
+        for (hUint32 i = 0; i < resource->nLevels_; ++i)
+        {
+            dataPtrs[i] = resource->levelDescs_[i].mipdata_;
+            sizes[i] = resource->levelDescs_[i].mipdataSize_;
+        }
+
+        hdTexture* dt = pImpl()->CreateTextrue( 
+            resource->levelDescs_[0].width_, 
+            resource->levelDescs_[0].height_, 
+            resource->nLevels_, 
+            resource->format_, 
+            dataPtrs,
+            sizes,
+            0 );
+        hcAssert(dt);
+        resource->SetImpl(dt);
 
  		return resource;
 	}
@@ -430,7 +454,8 @@ namespace Heart
 
 	hUint32 hRenderer::OnTextureUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 	{
-        delete resource;
+        DestroyTexture(static_cast<hTexture*>(resource));
+        //hDELETE_SAFE(hGeneralHeap, resource);
 		return 0;
 	}
 
@@ -440,7 +465,7 @@ namespace Heart
 
 	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
 	{
-        hMaterial* resource = hNEW(hGeneralHeap, hMaterial(this));
+        hMaterial* resource = hNEW(hRendererHeap, hMaterial(this));
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
@@ -462,7 +487,7 @@ namespace Heart
         for ( hUint32 tech = 0; tech < nTech; ++tech )
         {
             hUint32 nPasses = resource->techniques_[tech].passes_.GetSize();
-            resource->techniques_[tech].mask_ = techniqueManager_.AddRenderTechnique( &resource->techniques_[tech].name_[0] )->mask_;
+            resource->techniques_[tech].mask_ = techniqueManager_.AddRenderTechnique( resource->techniques_[tech].name_ )->mask_;
             for ( hUint32 pass = 0; pass < nPasses; ++pass )
             {
                 hUint32 vpid = (hUint32)resource->techniques_[tech].passes_[pass].vertexProgram_;
@@ -539,9 +564,10 @@ namespace Heart
 
 	hUint32 hRenderer::OnMaterialUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 	{
-        techniqueManager_.OnMaterialUnload( static_cast< hMaterial* >( resource ) );
+        hMaterial* mat = static_cast< hMaterial* >( resource );
+        techniqueManager_.OnMaterialUnload( mat );
 
-		delete resource;
+		hDELETE(hRendererHeap,mat);
 		return 0;
 	}
 
@@ -551,7 +577,7 @@ namespace Heart
 
     hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
-        hShaderProgram* resource = hNEW(hGeneralHeap, hShaderProgram);
+        hShaderProgram* resource = hNEW(hRendererHeap, hShaderProgram);
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
@@ -566,7 +592,10 @@ namespace Heart
 
     hUint32 hRenderer::OnShaderProgramUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
-        delete resource;
+        hShaderProgram* shader = static_cast<hShaderProgram*>(resource);
+        pImpl()->DestroyShader(shader->pImpl());
+        shader->SetImpl(NULL);
+        hDELETE(hRendererHeap, shader);
         return 0;
     }
 
@@ -769,13 +798,16 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
+	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void** initialData, hUint32* initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
-        (*outTex) = hNEW(hGeneralHeap, hTexture(this));
+        hcAssert((initialData && initDataSize) || (initialData == NULL && initDataSize == NULL));
+        hcAssert(levels > 0);
+
+        (*outTex) = hNEW(hRendererHeap, hTexture(this));
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
-        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(hRendererHeap, hTexture::LevelDesc, levels) : NULL;
+        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(hGeneralHeap, hTexture::LevelDesc, levels) : NULL;
 		(*outTex)->textureData_ = NULL;
 
 		hUint32 tw = width;
@@ -784,9 +816,12 @@ namespace Heart
 		{
 			(*outTex)->levelDescs_[ i ].width_ = tw;
 			(*outTex)->levelDescs_[ i ].height_ = th;
+            (*outTex)->levelDescs_[ i ].mipdata_ = 0;
+            (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;
 		}
 
 		hdTexture* dt = pImpl()->CreateTextrue( width, height, levels, format, initialData, initDataSize, flags );
+        hcAssert(dt);
         (*outTex)->SetImpl( dt );
 	}
 
@@ -796,10 +831,11 @@ namespace Heart
 
 	void hRenderer::DestroyTexture( hTexture* pOut )
 	{
-		hcAssert( IsRenderThread() );
+		//hcAssert( IsRenderThread() );
 
-		pImpl()->DestroyTexture( pOut->pImpl() );
-		delete pOut;
+		pImpl()->DestroyTexture(pOut->pImpl());
+        pOut->SetImpl(NULL);
+		hDELETE_SAFE(hRendererHeap, pOut);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -824,10 +860,11 @@ namespace Heart
 
 	void hRenderer::DestroyIndexBuffer( hIndexBuffer* pOut )
 	{
-// 		hcAssert( IsRenderThread() );
-// 
-// 		pImpl()->DestoryIndexBuffer( pOut->pImpl() );
-// 		delete pOut;
+		//hcAssert( IsRenderThread() );
+
+		pImpl()->DestroyIndexBuffer( pOut->pImpl() );
+        pOut->SetImpl(NULL);
+		hDELETE_SAFE(hRendererHeap, pOut);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -852,9 +889,10 @@ namespace Heart
 	void hRenderer::DestoryVertexBuffer( hVertexBuffer* pOut )
 	{
 // 		hcAssert( IsRenderThread() );
-// 
-// 		pImpl()->DestoryVertexBuffer( pOut->pImpl() );
-// 		delete pOut;
+
+		pImpl()->DestroyVertexBuffer(pOut->pImpl());
+        pOut->SetImpl(NULL);
+		hDELETE_SAFE(hRendererHeap, pOut);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -904,7 +942,7 @@ namespace Heart
         hcAssert( ctx );
         pImpl()->DestroyRenderSubmissionCtx( &ctx->impl_ );
         pImpl()->DestroyRenderSubmissionCtx( &ctx->debug_ );
-        delete ctx;
+        hDELETE_SAFE(hRendererHeap, ctx);
     }
 
 }

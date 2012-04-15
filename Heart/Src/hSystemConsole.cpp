@@ -103,25 +103,40 @@ namespace Heart
 
 	void hSystemConsole::Destroy()
 	{
+        if (material_)
+        {
+            renderer_->GetMaterialManager()->DestroyMaterialInstance(material_);
+        }
+        HEART_RESOURCE_SAFE_RELEASE(fontResource_);
+		if ( indexBuffer_ )
+		{
+			renderer_->DestroyIndexBuffer(indexBuffer_);
+            indexBuffer_ = NULL;
+		}
+		if ( vertexBuffer_ )
+		{
+            renderer_->DestoryVertexBuffer(vertexBuffer_);
+            vertexBuffer_ = NULL;
+		}
+		if ( IBInput_ )
+		{
+            renderer_->DestroyIndexBuffer(IBInput_);
+            IBInput_ = NULL;
+		}
+		if ( VBInput_ )
+		{
+            renderer_->DestoryVertexBuffer(VBInput_);
+            VBInput_ = NULL;
+		}
+        if (rndCtx_)
+        {
+            renderer_->DestroyRenderSubmissionCtx(rndCtx_);
+            rndCtx_ = NULL;
+        }
+
 // 		if ( pRenderCmdBuffer_ )
 // 		{
 // 			delete pRenderCmdBuffer_;
-// 		}
-// 		if ( indexBuffer_.HasData() )
-// 		{
-// 			indexBuffer_.Release();
-// 		}
-// 		if ( vertexBuffer_.HasData() )
-// 		{
-// 			vertexBuffer_.Release();
-// 		}
-// 		if ( IBInput_.HasData() )
-// 		{
-// 			IBInput_.Release();
-// 		}
-// 		if ( VBInput_.HasData() )
-// 		{
-// 			VBInput_.Release();
 // 		}
 // 		if ( fontResource_.HasData() )
 // 		{
@@ -158,6 +173,7 @@ namespace Heart
 
                 pResourceManager_->LockResourceDatabase();
                 fontResource_ = static_cast< hFont* >( pResourceManager_->GetResource( FONT_RESOURCE_NAME ) );
+                fontResource_->AddRef();
                 material_     = renderer_->GetMaterialManager()->CreateMaterialInstance( CONSOLE_MATERIAL_NAME );
                 pResourceManager_->UnlockResourceDatabase();
 
