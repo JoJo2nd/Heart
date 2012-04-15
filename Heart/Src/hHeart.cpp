@@ -121,17 +121,6 @@ namespace Heart
             "ENGINE/EFFECTS/DEBUG.CFX",
             "ENGINE/FONTS/CONSOLE.FNT",
             "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
-            //             "engine/materials/basic2dtex.mat",
-            //             "engine/materials/consoleback.mat",
-            //             "engine/materials/directionlight.mat",
-            //             "engine/materials/directionlightshadow.mat",
-            //             "engine/materials/shadowwrite.mat",
-            //             "engine/materials/pointlight1st.mat",
-            //             "engine/materials/pointlight2nd.mat",
-            //             "engine/materials/pointlightinside.mat",
-            //             "engine/materials/spotlight1st.mat",
-            //             "engine/materials/spotlight2nd.mat",
-            //             "engine/materials/spotlightshadow2nd.mat",
             NULL
         };
 

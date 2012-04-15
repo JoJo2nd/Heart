@@ -18,7 +18,7 @@ project "heart_testbed"
 		targetsuffix "_d"
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        flags {"Symbols"}
+        flags {"Symbols","Optimize"}
     configuration (ReleaseCfgName)
 		targetsuffix "_r"
         targetdir (TargetDir..ReleaseCfgName)

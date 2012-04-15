@@ -38,6 +38,7 @@ namespace Heart
        hSoundSourceBufferInfo bufInfo;
        playbackHandle_ = soundBuffer_->CreatePlaybackHandle();
        soundBuffer_->GetBufferInfo( &bufInfo );
+       nextPCMSize_ = 0;
 
        hZeroMem( &info, sizeof(info) );
        info.audioFormat_ = bufInfo.format_;
@@ -64,7 +65,7 @@ namespace Heart
 
     void hSoundSource::Update()
     {
-        if ( playbackHandle_ != ~0U && soundBuffer_ && !nextPCMSize_ && !nextPCMSize_ )
+        if ( playbackHandle_ != ~0U && soundBuffer_ && !nextPCMSize_ )
         {
             nextPCMSize_ = 0;
             hUint32 res = soundBuffer_->DecodeAudioBlock( playbackHandle_, &nextPCMData_, &nextPCMSize_ );

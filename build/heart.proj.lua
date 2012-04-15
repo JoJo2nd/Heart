@@ -10,7 +10,7 @@ project "heart"
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        flags {"Symbols"}
+        flags {"Symbols","Optimize"}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}

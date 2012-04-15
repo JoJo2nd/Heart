@@ -444,11 +444,7 @@ namespace Heart
 				}
 				else 
 				{
-					MapElementPtr next = root->GetPrev();
-					//MapElementPtr p=root->parent_,l=root->leftRight_[0],r=root->leftRight_[1];
-					//MapElement::TreeColour tc = root->colour_;
-					//hcAssert( !next->leftRight_[0] || next->leftRight_[1] );
-					
+					MapElementPtr next = root->GetPrev();		
                     direct = root->GetKey() < next->GetKey();
 
 					// Copy next to root position in the graph, and put root into nexts position (a swap)
@@ -458,27 +454,13 @@ namespace Heart
 					// one child at most.
 					SwapNodes(root, next);
                     root->key_ = next->GetKey();
-// 				    *root = *next;
-// 					root->colour_		= tc;	
-// 					root->parent_		= p;
-// 					root->leftRight_[0] = l;
-// 					root->leftRight_[1] = r;
-// 					
-                    hcAssert(next->colour_ < 2);
-                    hcAssert(root->colour_ < 2);
-
-					// we need to go right find the next again.
-					//direct = 1;
+	
 					rkey = root->GetKey();
                     root = next;
 				}
 			}
 
 			root->leftRight_[direct] = TreeRemove( root->leftRight_[direct], rkey, comp, removed );
-
-            hcAssert(root->leftRight_[0] != *removed);
-            hcAssert(root->leftRight_[1] != *removed);
-            hcAssert(root->parent_ != *removed);
 
 			if ( !*comp )
 			{
@@ -571,9 +553,6 @@ namespace Heart
                 b->leftRight_[0] = l;
                 b->leftRight_[1] = r;
                 b->colour_ = tc;
-
-                hcAssert(a->leftRight_[0] != a && a->leftRight_[1] != a);
-                hcAssert(b->leftRight_[0] != b && b->leftRight_[1] != b);
             }
             else if (b->parent_ == a)
             {
@@ -588,14 +567,9 @@ namespace Heart
                 b->leftRight_[1] = r;
                 b->leftRight_[a->key_<b->key_] = a;
                 b->colour_ = tc;
-
-                hcAssert(a->leftRight_[0] != a && a->leftRight_[1] != a);
-                hcAssert(b->leftRight_[0] != b && b->leftRight_[1] != b);
             }
             else
             {
-                hcAssert( !a->parent_ || a->parent_->colour_ < 2);
-                hcAssert( !b->parent_ || b->parent_->colour_ < 2);
                 //swap node pointers
                 a->parent_ = b->parent_;
                 a->leftRight_[0] = b->leftRight_[0];
@@ -606,9 +580,6 @@ namespace Heart
                 b->leftRight_[0] = l;
                 b->leftRight_[1] = r;
                 b->colour_ = tc;
-
-                hcAssert(a->leftRight_[0] != a && a->leftRight_[1] != a);
-                hcAssert(b->leftRight_[0] != b && b->leftRight_[1] != b);
             }
 
             //update parent pointers
@@ -654,8 +625,6 @@ namespace Heart
 		{
 			if ( !root )
 				return 1;
-
-            hcAssert( root->colour_ < 2);
 
             if (root->leftRight_[0] && root->key_ < root->leftRight_[0]->key_)
             {
