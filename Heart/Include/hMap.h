@@ -151,7 +151,7 @@ namespace Heart
 			Clear( deleteOnDestroy_ );
 		}
 
-        void            SetHeap(hMemoryHeap* heap) { heap_ = heap }
+        void            SetHeap(hMemoryHeap* heap) { heap_ = heap; }
 		void			Insert( KeyType key, MapElementPtr val )
 		{
 			hcAssertMsg( !val->leftRight_[0] && !val->leftRight_[1] && !val->parent_, "Node belongs to another Map" );
@@ -164,6 +164,7 @@ namespace Heart
 			//Root is always black
 			rbTreeRoot_->colour_ = MapElement::TreeColour_BLACK;
 
+            hcAssert(Validate());
 			++size_;
 		}
 		MapElementPtr	Remove( KeyType key )
@@ -175,9 +176,12 @@ namespace Heart
 			if ( rbTreeRoot_ )
 				rbTreeRoot_->colour_ = MapElement::TreeColour_BLACK;
 
-			hcAssert( rem );
+			hcAssert(rem);
 
 			BreakNodeLinks(rem);
+
+            hcAssert(Validate());
+            hcAssert(!Find(key));
 
 			--size_;
 
@@ -188,15 +192,19 @@ namespace Heart
 		{
 			hBool done = hFalse;
 			MapElementPtr rem = NULL;
+            KeyType key = i->GetKey();
 
 			//TODO: test that I can pass i instead of rbTreeRoot_
 			rbTreeRoot_ = TreeRemove( rbTreeRoot_, i->GetKey(), &done, &rem );
 			if ( rbTreeRoot_ )
 				rbTreeRoot_->colour_ = MapElement::TreeColour_BLACK;
 
-			hcAssert( rem );
+			hcAssert(rem && i == rem);
+            
+            BreakNodeLinks(rem);
 
-			BreakNodeLinks(rem);
+            hcAssert(Validate());
+            hcAssert(!Find(key));
 
 			--size_;
 
@@ -209,23 +217,29 @@ namespace Heart
 			MapElementPtr rem = NULL;
 			KeyType nk;
 			hBool getnext = hFalse;
+            KeyType key = i->GetKey();
 			
 			if ( i->GetNext() )
 			{
-				nk = i->GetKey();
-				getnext = hFalse;
+				nk = i->GetNext()->GetKey();
+				getnext = hTrue;
 			}
 
 			rbTreeRoot_ = TreeRemove( rbTreeRoot_, i->GetKey(), &done, &rem );
 			if ( rbTreeRoot_ )
 				rbTreeRoot_->colour_ = MapElement::TreeColour_BLACK;
 
-			hcAssert( rem );
+			hcAssert(rem && i == rem);
 
 			BreakNodeLinks(rem);
 
+            hcAssert(Validate());
+            hcAssert(!Find(key));
+
 			if ( getnext )
 				*n = Find( nk );
+            else
+                *n = NULL;
 
 			--size_;
 
@@ -422,30 +436,27 @@ namespace Heart
 						*comp = hTrue; 
 					}
 
-					*removed = root;
+                    *removed = root;
+
 					if ( str )
 						str->parent_ = root->parent_;
 					return str;
 				}
 				else 
 				{
-					MapElementPtr next = root->GetNext();
-					MapElementPtr p=root->parent_,l=root->leftRight_[0],r=root->leftRight_[1];
-					MapElement::TreeColour tc = root->colour_;
-					hcAssert( !next->leftRight_[0] || next->leftRight_[1] );
-					
-					// Copy next to root, we then search for next and delete that
+					MapElementPtr next = root->GetPrev();		
+                    direct = root->GetKey() < next->GetKey();
+
+					// Copy next to root position in the graph, and put root into nexts position (a swap)
+					// we then overwrite next's(that was root) key with new key, we then search for that new
+					// new key id and delete that instead
 					// This delete will result in the case above as next will only have
 					// one child at most.
-					*root = *next;
-					root->colour_		= tc;	
-					root->parent_		= p;
-					root->leftRight_[0] = l;
-					root->leftRight_[1] = r;
-
-					// we need to go right find the next again.
-					direct = 1;
+					SwapNodes(root, next);
+                    root->key_ = next->GetKey();
+	
 					rkey = root->GetKey();
+                    root = next;
 				}
 			}
 
@@ -519,6 +530,93 @@ namespace Heart
 			return root;
 		}
 
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        
+        void SwapNodes( MapElementPtr a, MapElementPtr b )
+        {
+            MapElementPtr p=a->parent_,l=a->leftRight_[0],r=a->leftRight_[1];
+            MapElement::TreeColour tc = a->colour_;
+
+            //special cases
+            if (a->parent_ == b)
+            {
+                //swap node pointers
+                a->parent_ = b->parent_;
+                a->leftRight_[0] = b->leftRight_[0];
+                a->leftRight_[1] = b->leftRight_[1];
+                a->leftRight_[b->key_<a->key_] = b;
+                a->colour_ = b->colour_;
+
+                b->parent_ = a;
+                b->leftRight_[0] = l;
+                b->leftRight_[1] = r;
+                b->colour_ = tc;
+            }
+            else if (b->parent_ == a)
+            {
+                //swap node pointers
+                a->parent_ = b;
+                a->leftRight_[0] = b->leftRight_[0];
+                a->leftRight_[1] = b->leftRight_[1];
+                a->colour_ = b->colour_;
+
+                b->parent_ = p;
+                b->leftRight_[0] = l;
+                b->leftRight_[1] = r;
+                b->leftRight_[a->key_<b->key_] = a;
+                b->colour_ = tc;
+            }
+            else
+            {
+                //swap node pointers
+                a->parent_ = b->parent_;
+                a->leftRight_[0] = b->leftRight_[0];
+                a->leftRight_[1] = b->leftRight_[1];
+                a->colour_ = b->colour_;
+
+                b->parent_ = p;
+                b->leftRight_[0] = l;
+                b->leftRight_[1] = r;
+                b->colour_ = tc;
+            }
+
+            //update parent pointers
+            if (a->parent_)
+            {
+                a->parent_->leftRight_[b->key_>a->parent_->key_] = a;
+            }
+
+            if (b->parent_)
+            {
+                b->parent_->leftRight_[a->key_>b->parent_->key_] = b;
+            }
+
+            if (a->leftRight_[0])
+            {
+                a->leftRight_[0]->parent_ = a;
+            }
+            if (a->leftRight_[1])
+            {
+                a->leftRight_[1]->parent_ = a;
+            }
+
+            if (b->leftRight_[0])
+            {
+                b->leftRight_[0]->parent_ = b;
+            }
+            if (b->leftRight_[1])
+            {
+                b->leftRight_[1]->parent_ = b;
+            }
+
+            hcAssert(a->leftRight_[0] != a && a->leftRight_[1] != a);
+            hcAssert(b->leftRight_[0] != b && b->leftRight_[1] != b);
+            hcAssert(a->parent_ != a);
+            hcAssert(b->parent_ != b);
+        }
+
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -528,6 +626,15 @@ namespace Heart
 			if ( !root )
 				return 1;
 
+            if (root->leftRight_[0] && root->key_ < root->leftRight_[0]->key_)
+            {
+                hcBreak;//"Tree node order is malformed. Parent key is less than left child key");
+            }
+            if (root->leftRight_[1] && !(root->key_ < root->leftRight_[1]->key_))
+            {
+                hcBreak;//"Tree node order is malformed. Parent key is greater than right child key");
+            }
+
 			MapElementPtr ln = root->leftRight_[0];
 			MapElementPtr rn = root->leftRight_[1];
 
@@ -535,7 +642,7 @@ namespace Heart
 			{
 				if ( (ln && ln->colour_ == MapElement::TreeColour_RED) || (rn && rn->colour_ == MapElement::TreeColour_RED) )
 				{
-					hcPrintf( "Red-Black Tree: Red Violation!" );
+					hcBreak;//"Red-Black Tree: Red Violation!" );
 					return 0;
 				}
 			}
@@ -545,7 +652,7 @@ namespace Heart
 
 			if ( lh > 0 && rh > 0 && lh != rh )
 			{
-				hcPrintf( "Red-Black Tree: Black Violation!" ); 
+				hcBreak;//"Red-Black Tree: Black Violation!" ); 
 				return 0;
 			}
 

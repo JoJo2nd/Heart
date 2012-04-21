@@ -255,7 +255,7 @@ namespace
 
 		while ( !zipIOThread_.IsComplete() ) { hThreading::ThreadSleep( 1 ); }
 
-		hDELETE_ARRAY(hGeneralHeap, pStringPool_, stringPoolSize_);
+		hDELETE_ARRAY(hGeneralHeap, pStringPool_);
 
 		// delete zip entries
 		RemoveEntry( pRootEntry_ );
@@ -487,7 +487,7 @@ namespace
 
 			ZipFileEntry* ptmp = hNEW_ARRAY(hGeneralHeap, ZipFileEntry, pParent->nReserve_);
 			memcpy( ptmp, pParent->pEntries_, pParent->nEntries_*sizeof(ZipFileEntry) );
-			hDELETE_ARRAY(hGeneralHeap, pParent->pEntries_, pParent->nEntries_);
+			hDELETE_ARRAY(hGeneralHeap, pParent->pEntries_);
 			pParent->pEntries_ = ptmp;
 		}
 

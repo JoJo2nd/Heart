@@ -36,8 +36,8 @@ namespace Heart
         hUint32 count = techniques_.GetSize();
         for ( hUint32 i = 0; i < count; ++i )
         {
-            hDELETE(hGeneralHeap, techniques_[i].name_);
-            techniques_[i].name_ = NULL;
+//             hDELETE(hGeneralHeap, techniques_[i].name_);
+//             techniques_[i].name_ = NULL;
         }
     }
 
@@ -55,7 +55,7 @@ namespace Heart
         {
             hLoadedMaterial* lm = hNEW(hGeneralHeap, hLoadedMaterial);
 
-            mat->AddRef();
+            //mat->AddRef();
             lm->material_ = mat;
             lm->instanceCount_ = 0;
             lm->firstUse_ = hTrue;
@@ -76,8 +76,8 @@ namespace Heart
         hcAssert( m );
         hcAssert( m->instanceCount_ == 0 && m->material_->GetRefCount() == 0 );
 
-        loadedMaterials_.Remove( m );
-        delete m;
+        m = loadedMaterials_.Remove( m );
+        hDELETE(hGeneralHeap, m);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -141,8 +141,7 @@ namespace Heart
         hUint32 maskC = techniques_.GetSize();
         hRenderTechniqueInfo newInfo;
         newInfo.mask_ = 1 << maskC;
-        newInfo.name_ = hNEW_ARRAY(hGeneralHeap, hChar, hStrLen(name)+1);
-        hStrCopy( newInfo.name_, hStrLen(name)+1, name );
+        hStrCopy( newInfo.name_, newInfo.name_.GetMaxSize(), name );
 
         techniques_.PushBack( newInfo );
         return &techniques_[techniques_.GetSize()-1];

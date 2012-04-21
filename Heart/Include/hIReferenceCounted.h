@@ -36,7 +36,9 @@ namespace Heart
 	public:
 		hIReferenceCounted() 
 			: reference_( hNEW_ALIGN(hGeneralHeap,32,hUint32) )
-		{}
+		{
+            *reference_ = 0;
+        }
 		virtual ~hIReferenceCounted() 
         {
             hDELETE_SAFE( hGeneralHeap, reference_ );

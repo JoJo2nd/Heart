@@ -33,6 +33,17 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+hFont::~hFont()
+{
+    hDELETE_ARRAY_SAFE(hGeneralHeap, fontSourceData_);
+    hDELETE_ARRAY_SAFE(hGeneralHeap, fontCharacters_);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 hUint32 hFont::RenderString( hIndexBuffer& iBuffer, 
 							hVertexBuffer& vBuffer, 
 							const hCPUVec2& topleft, 
@@ -399,9 +410,9 @@ hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSeriali
     resManager->GetRederer()->CreateTexture( 
         resource->fontSourceWidth_, 
         resource->fontSourceHeight_, 
-        0, 
-        (void*)resource->fontSourceData_, 
-        resource->fontSourceSize_, 
+        1, 
+        (void**)&resource->fontSourceData_, 
+        &resource->fontSourceSize_, 
         TFORMAT_ARGB8, 
         RESOURCEFLAG_RENDERTARGET, 
         &resource->texturePages_ );
@@ -419,7 +430,19 @@ hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSeriali
 
 hUint32	 hFont::OnFontUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 {
-    delete resource;
+    hFont* font = static_cast<hFont*>(resource);
+    if (font->fontMaterial_)
+    {
+        resManager->GetMaterialManager()->DestroyMaterialInstance(font->fontMaterial_);
+        font->fontMaterial_ = NULL;
+    }
+    if (font->texturePages_)
+    {
+        resManager->GetRederer()->DestroyTexture(font->texturePages_);
+        font->texturePages_ = NULL;
+    }
+
+    hDELETE_SAFE(hGeneralHeap, font);
  	return 0;
 }
 

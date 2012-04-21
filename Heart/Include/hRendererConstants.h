@@ -85,15 +85,14 @@ namespace Heart
     struct hShaderParameter
     {
         hShaderParameter() 
-            : name_(NULL)
-            , size_(0)
+            : size_(0)
             , cReg_(0)
             , cBuffer_(0)
         {
-
+            hZeroMem(name_,sizeof(name_));
         }
 
-        hChar*						        name_; 
+        hArray< hChar, 32 >                 name_; 
         hUint32                             size_;
         hUint32                             cReg_;
         hUint32                             cBuffer_;

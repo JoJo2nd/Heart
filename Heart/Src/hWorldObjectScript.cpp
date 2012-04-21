@@ -37,6 +37,8 @@ namespace Heart
         //Get all world object types and pack into list/array
         //Get all resources to load them, holding pointers 
         //to them as we need to release them later
+        // The object vector owns this memory
+        objectDefMap_.SetAutoDelete(false);
 
         for(hXMLGetter node(hXMLGetter(xml.first_node("objectscript")).FirstChild("worldobjecttypes")); node.ToNode(); node = node.NextSibling())
         {

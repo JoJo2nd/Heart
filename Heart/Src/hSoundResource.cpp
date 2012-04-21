@@ -49,7 +49,7 @@ namespace Heart
 
     hUint32 hSoundResource::OnSoundUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
-        hSoundResource* sound = (hSoundResource*)resource;
+        hSoundResource* sound = static_cast<hSoundResource*>(resource);
 
         hDELETE(hGeneralHeap, sound);
         return 0;

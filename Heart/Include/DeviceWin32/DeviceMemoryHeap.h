@@ -10,16 +10,14 @@
 #define HCMEMORY_H__
 
 #ifdef HEART_TRACK_MEMORY_ALLOCS
-    #undef HEART_TRACK_MEMORY_ALLOCS
+    //#undef HEART_TRACK_MEMORY_ALLOCS
 #endif
 
 #ifdef HEART_DEBUG
 
-#define ALLOC_BREAK_NUM 0
-
 #define THREAD_CHECK()	{ hcAssert( lastThreadID_ == NULL || lastThreadID_ == Heart::Device::GetCurrentThreadID() ); lastThreadID_ = Heart::Device::GetCurrentThreadID(); }
 #define PRE_ACTION()	if ( useLocks_ ) lock_.Lock(); else THREAD_CHECK();
-#define POST_ACTION()	if ( ALLOC_BREAK_NUM && debugAlloc_ == ALLOC_BREAK_NUM ) hcBreak; if ( useLocks_ ) lock_.Unlock()
+#define POST_ACTION()	if ( ALLOC_BREAK_NUM && debugAlloc_ == ALLOC_BREAK_NUM && this == &ALLOC_BREAK_HEAP ) hcBreak; if ( useLocks_ ) lock_.Unlock()
 
 #else
 
@@ -31,9 +29,9 @@
 
 #ifdef HEART_TRACK_MEMORY_ALLOCS
 
-#define TRACK_ALLOC( ptr, file, line, size, allocnum ) ++debugAlloc_; if ( pTrackingHeap_ ) (*trackedAllocs_)[ ptr ] = TrackingInfo( file, line, size, allocnum )
-#define TRACK_ALLOC_UNKNOWN( ptr, size, allocnum ) ++debugAlloc_; if ( pTrackingHeap_ ) (*trackedAllocs_)[ ptr ] = TrackingInfo( size, allocnum )
-#define RELEASE_TRACK_INFO( ptr, size ) if ( pTrackingHeap_ && ptr ) { TackingMapType::iterator i = (*trackedAllocs_).find( ptr );  hcAssert( i->second.size_ == size ); (*trackedAllocs_).erase( i ); }
+#define TRACK_ALLOC( ptr, file, line, size, allocnum ) ++debugAlloc_; if ( trackedAllocs_ ) trackedAllocs_->Insert(ptr, hNEW(hDebugHeap, hMemTrackingInfo)(file, line, size, allocnum))
+#define TRACK_ALLOC_UNKNOWN( ptr, size, allocnum ) ++debugAlloc_; if ( trackedAllocs_ ) trackedAllocs_->Insert(ptr, hNEW(hDebugHeap, hMemTrackingInfo)(size, allocnum))
+#define RELEASE_TRACK_INFO( ptr, size ) if ( trackedAllocs_ && ptr ) { hMemTrackingInfo* i = trackedAllocs_->Find( ptr ); hcAssertMsg(i, "Can't Find tracking info for 0x%08X", ptr); if (i) {hcAssert( i->size_ == size ); trackedAllocs_->Remove(i);} }
 
 #else
 
@@ -56,17 +54,17 @@
 namespace Heart
 {
 
-struct TrackingInfo
+struct hMemTrackingInfo : public hMapElement< void*, hMemTrackingInfo >
 {
-	TrackingInfo() :
+	hMemTrackingInfo() :
 		file_( NULL ), line_( 0 ), size_( 0 ), allocNum_( 0 )
 	{
 	}
-	TrackingInfo( size_t size, size_t n ) :
+	hMemTrackingInfo( size_t size, size_t n ) :
 		file_( UNKNOWN_FILE ), line_( UNKNOWN_LINE ), size_( size ), allocNum_( n )
 	{
 	}
-	TrackingInfo( const char* file, size_t line, size_t size, size_t n ) :
+	hMemTrackingInfo( const char* file, size_t line, size_t size, size_t n ) :
 		file_( file ), line_( line ), size_( size ), allocNum_( n )
 	{
 	}
@@ -76,6 +74,8 @@ struct TrackingInfo
 	size_t		size_;
 	size_t		allocNum_;
 };
+
+typedef hMap< void*, hMemTrackingInfo > hTackingMapType;
 
 // class hMemoryHeap;
 // extern hMemoryHeap hDebugHeap;
@@ -110,6 +110,7 @@ public:
 	mallinfo	info();
     hUint32     bytesAllocated() const;
 	hBool		pointerBelongsToMe( void* ptr );
+    void        printLeaks(const hChar* heapname);
 
 	static const hUint32	MAX_HEAPS = 16;
 	static hUint32			nHeapsInUse_;
@@ -125,8 +126,7 @@ private:
 	hBool									useLocks_;
 	hdW32Mutex							    lock_;
 	void*									lastThreadID_;
-	hMemoryHeap*							pTrackingHeap_;
-	//TackingMapType*							trackedAllocs_;
+	hTackingMapType*					    trackedAllocs_;
 	size_t									allocNum_;
 	size_t									debugAlloc_;
 

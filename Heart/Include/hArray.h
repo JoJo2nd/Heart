@@ -36,6 +36,7 @@ namespace Heart
 	public: 
 
         typedef _Ty* TypePtr;
+        typedef const _Ty* ConstTypePtr;
 
 		_Ty& operator [] ( hUint32 i )
 		{
@@ -54,7 +55,19 @@ namespace Heart
             return values_;
         }
 
-        const TypePtr GetBuffer() const
+        ConstTypePtr GetBuffer() const
+        {
+            return values_;
+        }
+
+        hUint32 GetMaxSize() const { return ArraySize; }
+
+        operator TypePtr ()
+        {
+            return values_;
+        }
+
+        operator ConstTypePtr ()
         {
             return values_;
         }
@@ -186,7 +199,7 @@ namespace Heart
 		void Shrink( hUint32 size )
 		{
 			//Destruct
-			for ( hUint32 i = size-1; i < size_; --i )
+			for ( hUint32 i = size; i < size_; --i )
 				(values_+i)->~_Ty();
 			size_ = size;
 		}

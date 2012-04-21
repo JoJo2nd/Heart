@@ -137,7 +137,7 @@ namespace Heart
         void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
         void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }
 		void													DestroyMaterial( hMaterial* pMat );
-		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void* initialData, hUint32 initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex );
+		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void** initialData, hUint32* initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex );
 		void													DestroyTexture( hTexture* pOut );
 		void													CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB );
 		void													DestroyIndexBuffer( hIndexBuffer* pOut );

@@ -79,6 +79,12 @@ namespace hThreading
 			return Device::Thread::ReturnCode();
 		}
 
+        hUint32         Join()
+        {
+            Device::Thread::Join();
+            return ReturnCode();
+        }
+
 	private:
 	};
 }

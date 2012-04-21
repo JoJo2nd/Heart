@@ -181,8 +181,8 @@ void MaterialEffectBuilder::BuildResource()
 
                                 samplerParameter.samplerReg_ = ~0U;
                                 samplerParameter.nameLen_ = Heart::hStrLen( ps );
-                                samplerParameter.name_ = new hChar[Heart::hStrLen(ps)+1];
-                                Heart::hStrCopy( samplerParameter.name_, Heart::hStrLen(ps)+1, ps );
+                                //samplerParameter.name_ = new hChar[Heart::hStrLen(ps)+1];
+                                Heart::hStrCopy( samplerParameter.name_, samplerParameter.name_.GetMaxSize(), ps );
                                 hMat.samplers_.PushBack( samplerParameter );
                                 sharedSamplerNames.insert( ps );
                             }

@@ -34,7 +34,7 @@ namespace Heart
     hdDX11RenderDevice::hdDX11RenderDevice() 
         : kernel_(NULL)
     {
-
+        vertexLayoutMap_.SetHeap(&hRendererHeap);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -392,16 +392,26 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void* initialData, hUint32 initDataSize, hUint32 flags )
+    void hdDX11RenderDevice::DestroyShader( hdDX11ShaderProgram* shaderProg )
+    {
+        hDELETE(hRendererHeap, shaderProg);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void** initialData, hUint32* initDataSize, hUint32 flags )
     {
         HRESULT hr;
-        hdDX11Texture* texture = hNEW ( hRendererHeap, hdDX11Texture );
+        hdDX11Texture* texture = hNEW(hRendererHeap, hdDX11Texture);
+        hBool compressedFormat = hFalse;
 
         D3D11_TEXTURE2D_DESC desc;
         hZeroMem( &desc, sizeof(desc) );
         desc.Height             = height;
         desc.Width              = width;
-        desc.MipLevels          = 1;//levels;
+        desc.MipLevels          = levels;//levels;
         desc.ArraySize          = 1;
         desc.SampleDesc.Count   = 1;
         switch ( format )
@@ -416,26 +426,44 @@ namespace Heart
         case TFORMAT_D32F:      desc.Format = DXGI_FORMAT_R32_FLOAT; break;
         case TFORMAT_D24S8F:    desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
         case TFORMAT_L8:        desc.Format = DXGI_FORMAT_A8_UNORM; break;
-        case TFORMAT_DXT5:      desc.Format = DXGI_FORMAT_BC5_UNORM; break;
-        case TFORMAT_DXT3:      desc.Format = DXGI_FORMAT_BC3_UNORM; break;
-        case TFORMAT_DXT1:      desc.Format = DXGI_FORMAT_BC1_UNORM; break; 
+        case TFORMAT_DXT5:      desc.Format = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT3:      desc.Format = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT1:      desc.Format = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
         }
         desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         desc.BindFlags |= (flags & RESOURCEFLAG_RENDERTARGET) ? D3D11_BIND_RENDER_TARGET : 0; 
         desc.BindFlags |= (flags & RESOURCEFLAG_DEPTHTARGET) ? D3D11_BIND_DEPTH_STENCIL : 0;
         desc.CPUAccessFlags  = (flags & RESOURCEFLAG_DYNAMIC) ? (D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE) : 0;
-        desc.MiscFlags = (flags & RESOURCEFLAG_DEPTHTARGET) ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        desc.MiscFlags = 0;//(flags & RESOURCEFLAG_DEPTHTARGET) ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
-        D3D11_SUBRESOURCE_DATA data;
-        D3D11_SUBRESOURCE_DATA* dataptr = NULL;
+        D3D11_SUBRESOURCE_DATA* dataptr = (D3D11_SUBRESOURCE_DATA*)hAlloca(sizeof(D3D11_SUBRESOURCE_DATA)*desc.MipLevels+2);
         
         if ( initialData )
         {
-            data.pSysMem          = initialData;
-            data.SysMemPitch      = initDataSize / height;
-            data.SysMemSlicePitch = 0;
-            dataptr = &data;
+            hUint32 mipwidth = width;
+            for (hUint32 i = 0; i < desc.MipLevels; ++i, mipwidth = hMax(4,mipwidth >> 1))
+            {
+                D3D11_SUBRESOURCE_DATA& data = dataptr[i];
+                data.pSysMem          = initialData[i];
+                if ( compressedFormat )
+                {
+                    //D3D want the number of 4x4 blocks in the first row of the texture
+                    if ( desc.Format == DXGI_FORMAT_BC1_UNORM )
+                    {
+                        data.SysMemPitch = (mipwidth/4)*8;
+                    }
+                    else
+                    {
+                        data.SysMemPitch = (mipwidth/4)*16;
+                    }
+                }
+                else
+                {
+                    data.SysMemPitch      = initDataSize[i] / height;
+                }
+                data.SysMemSlicePitch = 0;
+            }
         }
 
         hr = d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );
@@ -493,9 +521,12 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyTexture( hdDX11Texture* texture )
     {
-        texture->dx11Texture_->Release();
-        texture->dx11Texture_ = NULL;
-        delete texture;
+        if (texture->dx11Texture_)
+        {
+            texture->dx11Texture_->Release();
+            texture->dx11Texture_ = NULL;
+        }
+        hDELETE_SAFE(hRendererHeap, texture);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -504,7 +535,7 @@ namespace Heart
 
     hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBuffer( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
-        hdDX11IndexBuffer* idxBuf = hNEW( hGeneralHeap, hdDX11IndexBuffer );
+        hdDX11IndexBuffer* idxBuf = hNEW( hRendererHeap, hdDX11IndexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -535,7 +566,7 @@ namespace Heart
     {
         indexBuffer->buffer_->Release();
         indexBuffer->buffer_ = NULL;
-        delete indexBuffer;
+        hDELETE(hRendererHeap, indexBuffer);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -545,7 +576,7 @@ namespace Heart
     hdDX11VertexLayout* hdDX11RenderDevice::CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen )
     {
         HRESULT hr;
-        hdDX11VertexLayout* layout = hNEW( hGeneralHeap, hdDX11VertexLayout );
+        hdDX11VertexLayout* layout = hNEW( hRendererHeap, hdDX11VertexLayout );
         D3D11_INPUT_ELEMENT_DESC elements[32];
         hUint32 stride;
         hUint32 elementCount = BuildVertexFormatArray( vertexFormat, &stride, elements );
@@ -562,7 +593,7 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyVertexLayout( hdDX11VertexLayout* layout )
     {
-
+        //TODO:
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -571,7 +602,7 @@ namespace Heart
 
     hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
-        hdDX11VertexBuffer* vtxBuf = hNEW( hGeneralHeap, hdDX11VertexBuffer );
+        hdDX11VertexBuffer* vtxBuf = hNEW( hRendererHeap, hdDX11VertexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -598,9 +629,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyVertexBuffer( hdDX11VertexBuffer* indexBuffer )
+    void hdDX11RenderDevice::DestroyVertexBuffer( hdDX11VertexBuffer* vtxBuf )
     {
-
+        vtxBuf->buffer_->Release();
+        vtxBuf->buffer_ = NULL;
+        hDELETE(hRendererHeap, vtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1314,7 +1347,7 @@ namespace Heart
 
     hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count )
     {
-        hdDX11ParameterConstantBlock* constBlocks = hNEW_ARRAY(hGeneralHeap, hdDX11ParameterConstantBlock, count);
+        hdDX11ParameterConstantBlock* constBlocks = hNEW_ARRAY(hRendererHeap, hdDX11ParameterConstantBlock, count);
         for ( hUint32 i = 0; i < count; ++i )
         {
             HRESULT hr;
@@ -1328,7 +1361,7 @@ namespace Heart
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].slot_ = regs[i];
             constBlocks[i].size_ = sizes[i];
-            constBlocks[i].cpuIntermediateData_ = hNEW_ARRAY(hGeneralHeap, hFloat, sizes[i]);
+            constBlocks[i].cpuIntermediateData_ = (hFloat*)hHeapAlignMalloc(hRendererHeap, sizeof(hFloat)*sizes[i], 16);
         }
 
         return constBlocks;
@@ -1353,11 +1386,10 @@ namespace Heart
         {
             constBlocks[i].constBuffer_->Release();
             constBlocks[i].constBuffer_ = NULL;
-            delete constBlocks[i].cpuIntermediateData_;
-            constBlocks[i].cpuIntermediateData_ = NULL;
+            hHeapFreeSafe(hRendererHeap, constBlocks[i].cpuIntermediateData_);
         }
 
-        delete constBlocks;
+        hDELETE_ARRAY_SAFE(hRendererHeap, constBlocks);
     }
 
     //////////////////////////////////////////////////////////////////////////

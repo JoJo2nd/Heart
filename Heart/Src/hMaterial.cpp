@@ -41,7 +41,7 @@ namespace Heart
         hUint32 count = constParameters_.GetSize();
 	    for ( hUint32 i = 0; i < count; ++i )
 	    {
-		    if ( strcmp( name, constParameters_[i].name_ ) == 0 )
+		    if ( hStrCmp( name, constParameters_[i].name_.GetBuffer() ) == 0 )
 		    {
 			    return &constParameters_[i];
 		    }
@@ -64,6 +64,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hMaterial::~hMaterial()
+    {
+        for (hUint32 i = 0, c = techniques_.GetSize(); i < c; ++i)
+        {
+            for (hUint32 i2 = 0, c2 = techniques_[i].GetPassCount(); i2 < c2; ++i2)
+            {
+                techniques_[i].GetPass(i2)->ReleaseResources();
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hMaterial::FindOrAddShaderParameter( const hShaderParameter& newParam, const hFloat* defaultVal )
     {
         if ( newParam.cBuffer_ == VIEWPORT_CONST_BUFFER_ID || newParam.cBuffer_ == INSTANCE_CONST_BUFFER_ID )
@@ -73,7 +88,7 @@ namespace Heart
         hUint32 size = constParameters_.GetSize();
         for ( hUint32 i = 0; i < size; ++i )
         {
-            if ( Heart::hStrCmp( constParameters_[i].name_, newParam.name_ ) == 0 )
+            if ( Heart::hStrCmp( constParameters_[i].name_.GetBuffer(), newParam.name_.GetBuffer() ) == 0 )
             {
                 hcAssertMsg( constParameters_[i].cBuffer_ == constBufIdx && 
                              constParameters_[i].cReg_ == newParam.cReg_,
@@ -235,7 +250,7 @@ namespace Heart
 
     hMaterialInstance::~hMaterialInstance()
     {
-        
+        renderer_->DestroyConstantBuffers(constBuffers_, parentMaterial_->GetConstantBufferCount());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -290,6 +305,16 @@ namespace Heart
             tex->AddRef();
         }
         p->boundTexture_ = tex;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterialTechniquePass::ReleaseResources()
+    {
+        HEART_RESOURCE_SAFE_RELEASE(vertexProgram_);
+        HEART_RESOURCE_SAFE_RELEASE(fragmentProgram_);
     }
 
 }//Heart

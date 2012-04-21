@@ -27,6 +27,8 @@
 #ifndef hcTypes_h__
 #define hcTypes_h__
 
+#include <type_traits>
+
 typedef	char				hChar;
 typedef unsigned char		hByte;
 typedef unsigned short		hUint16;
@@ -91,8 +93,16 @@ namespace Heart
 #define MAX_LUA_FILESYSTEMS  (6)
 #define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 
+#define HEART_PRIVATE_COPY(x) private: x(const x&); x& operator = (const x&)
+
 #ifndef NULL
 	#define NULL 0
+#endif
+
+#ifdef HEART_PLAT_WINDOWS
+    #define hAlignOf(x) __alignof(x)
+#else
+    #define hAlignOf(x) std::alignment_of<double>::value>
 #endif
 
 #ifdef HEART_DLL

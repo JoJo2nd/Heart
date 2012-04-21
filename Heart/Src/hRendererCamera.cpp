@@ -47,7 +47,11 @@ namespace Heart
 
 	hRendererCamera::~hRendererCamera()
 	{
-
+        if (sharedConstantParamters_)
+        {
+            renderer_->DestroyConstantBuffers(sharedConstantParamters_, 2);
+            sharedConstantParamters_ = NULL;
+        }
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -169,12 +173,12 @@ namespace Heart
 
         for ( hUint32 i = 0; i < setup_.nTargets_; ++i )
         {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 0, NULL, 0, setup_.targetFormat_, RESOURCEFLAG_RENDERTARGET, &renderTargets_[i] );
+            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, NULL, setup_.targetFormat_, RESOURCEFLAG_RENDERTARGET, &renderTargets_[i] );
         }
 
         if ( setup_.hasDepthStencil_ )
         {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 0, NULL, 0, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, &depthTarget_ );
+            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, NULL, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, &depthTarget_ );
         }
     }
 

@@ -48,7 +48,7 @@ namespace Heart
             hUint32 size = resourceNames_.GetSize();
             for ( hUint32 i = 0; i < size; ++i )
             {
-                hDELETE(hGeneralHeap, resourceNames_[i]);
+                hDELETE_ARRAY_SAFE(hGeneralHeap, resourceNames_[i]);
             }
 
             hDELETE(hGeneralHeap, completedLoads_);

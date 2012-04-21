@@ -46,7 +46,7 @@ namespace FileSystem
 		DWORD creation = 0;
 		DWORD flags = FILE_ATTRIBUTE_NORMAL;
 
-		hcAssert( *pOut != NULL );
+		hcAssert( pOut != NULL );
 
 		if ( mode[ 0 ] == 'r' || mode[ 0 ] == 'R' )
 		{

@@ -52,7 +52,8 @@ namespace Cmd
 		{}
 		virtual ~hTexture()
 		{
-			hDELETE_ARRAY_SAFE(hGeneralHeap, levelDescs_, nLevels_);
+			hDELETE_ARRAY_SAFE(hGeneralHeap, levelDescs_);
+            hDELETE_ARRAY_SAFE(hGeneralHeap, textureData_);
 		}
 
         struct LevelDesc
@@ -60,6 +61,7 @@ namespace Cmd
             hUint32 width_;
             hUint32 height_;
             void*   mipdata_;
+            hUint32 mipdataSize_;
         };
 
 		virtual hUint32			Width( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].width_; }
@@ -117,6 +119,7 @@ namespace Cmd
         SERIALISE_ELEMENT( data.width_ );
         SERIALISE_ELEMENT( data.height_ );
         SERIALISE_ELEMENT_PTR_AS_INT( data.mipdata_ );
+        SERIALISE_ELEMENT( data.mipdataSize_ );
     }
 
     template<>
@@ -125,6 +128,7 @@ namespace Cmd
         DESERIALISE_ELEMENT( data.width_ );
         DESERIALISE_ELEMENT( data.height_ );
         DESERIALISE_ELEMENT_INT_AS_PTR( data.mipdata_ );
+        DESERIALISE_ELEMENT( data.mipdataSize_ );
     }
 
 }

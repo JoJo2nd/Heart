@@ -31,6 +31,8 @@
 #include <exception>
 #include <new>
 
+#define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+
 namespace Heart
 {
 
@@ -42,6 +44,39 @@ namespace Heart
             ptr[i].~_Ty();
     }
 
+    template< typename _Ty >
+    inline hUint32 hCalcArrayAllocHeader()
+    {
+        //TODO: check is _Ty is pod (see boost) and return zero is this case
+        hUint32 align = hAlignOf(_Ty);
+        return align > 4 ? align : 4;
+    }
+
+    template< typename _Ty >
+    inline hUint32 hCalcArrayAllocCount(_Ty* ptr)
+    {
+        if (!ptr) return 0;
+        return *((hUint32*)(((hByte*)ptr)-hCalcArrayAllocHeader<_Ty>()));
+    }
+
+    template< typename _Ty >
+    inline _Ty* hCalcArrayAllocCorrectPointer(_Ty* ptr)
+    {
+        if (!ptr) return NULL;
+        return (_Ty*)(((hByte*)ptr)-hCalcArrayAllocHeader<_Ty>());
+    }
+
+    template< typename _Ty >
+    inline _Ty* hConstructArray(_Ty* ptr, hUint32 count)
+    {
+        _Ty* newptr = (_Ty*)((hByte*)ptr+hCalcArrayAllocHeader< _Ty >());
+        *((hUint32*)ptr) = count;
+
+        for (hUint32 i = 0; i < count; ++i)
+            hPLACEMENT_NEW((void*)(newptr+i)) _Ty;
+
+        return newptr;
+    }
 }
 
 #define hPRIVATE_DESTRUCTOR()\
@@ -73,15 +108,20 @@ namespace Heart
     #define hHeapFreeSafe( h, p ) h.release( p ); p = NULL
 #endif
 
-    #define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+    /*
+        worth noting that placement new (with vs2008, may be different on other compilers) 
+        stores the array size in the first 4 bytes of allocation. So delete array will
+        grab that header
+    */
+
     #define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
     #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
-    #define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
-    #define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
-    #define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
-    #define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
-    #define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
-    #define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
+    #define hNEW_ARRAY(heap, type, ele)         Heart::hConstructArray< type >( (type*)hHeapMalloc(heap,(sizeof(type)*ele)+Heart::hCalcArrayAllocHeader<type>()), ele )
+    //#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
+    #define hDELETE(heap, ptr)                  Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
+    #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
+    #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
+    #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
 
     inline void* operator new ( size_t size )
     {
@@ -118,15 +158,14 @@ namespace Heart
 #define hHeapFree( h, p ) hFree( p )
 #define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
 
-    #define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
     #define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
     #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
-    #define hNEW_ARRAY(heap, type, ele)         hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type)*ele)) type[ele]
-    #define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
-    #define hDELETE(heap, ptr )                 hDestroyObjects(ptr,1); hHeapFree(heap,ptr);
-    #define hDELETE_ARRAY(heap, ptr, ele)       hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); 
-    #define hDELETE_SAFE(heap, ptr)             hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL;
-    #define hDELETE_ARRAY_SAFE(heap, ptr, ele)  hDestroyObjects(ptr,ele); hHeapFree(heap,ptr); ptr = NULL;
+    #define hNEW_ARRAY(heap, type, ele)         Heart::hConstructArray< type >( (type*)hHeapMalloc(heap,(sizeof(type)*ele)+Heart::hCalcArrayAllocHeader<type>()), ele )
+    //#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
+    #define hDELETE(heap, ptr)                  Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
+    #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
+    #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
+    #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
 
 //     inline __declspec(nothrow) void* operator new ( size_t size )
 //     {

@@ -121,17 +121,6 @@ namespace Heart
             "ENGINE/EFFECTS/DEBUG.CFX",
             "ENGINE/FONTS/CONSOLE.FNT",
             "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
-            //             "engine/materials/basic2dtex.mat",
-            //             "engine/materials/consoleback.mat",
-            //             "engine/materials/directionlight.mat",
-            //             "engine/materials/directionlightshadow.mat",
-            //             "engine/materials/shadowwrite.mat",
-            //             "engine/materials/pointlight1st.mat",
-            //             "engine/materials/pointlight2nd.mat",
-            //             "engine/materials/pointlightinside.mat",
-            //             "engine/materials/spotlight1st.mat",
-            //             "engine/materials/spotlight2nd.mat",
-            //             "engine/materials/spotlightshadow2nd.mat",
             NULL
         };
 
@@ -355,7 +344,7 @@ namespace Heart
         hDELETE(hGeneralHeap, pEngine);
 
         // Check memory usage
-#define CHECK_HEAP( x ) hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
+#define CHECK_HEAP( x ) x.printLeaks(#x)//hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
 
         CHECK_HEAP( hGeneralHeap );
         CHECK_HEAP( hRendererHeap );
@@ -372,7 +361,7 @@ namespace Heart
         eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
 
         // job manager is destroyed by the quit logic
-        //jobManager_->Destory();
+        jobManager_->Destory();
 
         DebugRenderer::Destory();
 
@@ -391,6 +380,8 @@ namespace Heart
         luaVM_->Destroy();
 
         renderer_->Destroy();
+
+        hDELETE_SAFE(hGeneralHeap, entityFactory_);
 
         hDELETE(hGeneralHeap, luaVM_);
 

@@ -371,8 +371,21 @@ namespace Heart
     {
         hUint32 size = sizeof( hInstanceConstants );
         hUint32 reg = HEART_INSTANCE_CONSTANTS_REGISTIER;
+        renderer_ = renderer;
         instanceConstantsBlock_ = renderer->CreateConstantBuffers( &size, &reg, 1 );
         instanceConstants_ = (hInstanceConstants*)instanceConstantsBlock_->GetBufferAddress();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hRenderSubmissionCtx::~hRenderSubmissionCtx()
+    {
+        if (renderer_ && instanceConstantsBlock_)
+        {
+            renderer_->DestroyConstantBuffers(instanceConstantsBlock_, 1);
+        }
     }
 
 }
