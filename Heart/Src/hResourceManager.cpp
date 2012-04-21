@@ -466,6 +466,9 @@ namespace Heart
         hChar* currentPath = NULL;
         hUint32 pathOffset = 0;
 
+        if (rrt->Length() == 0)
+            return;
+
         for ( hUint64 i = rrt->Length(); i <= rrt->Length(); )
         {
             if ( !currentPath )

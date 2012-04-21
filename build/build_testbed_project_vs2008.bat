@@ -1,1 +1,1 @@
-call ..\external\premake4.4\bin\premake4.exe --file="HeartTestbed.sln.lua" vs2008
+call ..\external\premake4.4\bin\premake4.exe --file="game.sln.lua" vs2008
