@@ -40,13 +40,18 @@ namespace Heart
         }
         ~hWorldScriptObject()
         {
-
+            objectDefMap_.Clear(hFalse);
+            objectDefs_.Clear();
+            worldObjectInstances_.Clear();
         }
 
         void                       ParseFromXML(const hXMLDocument& xml, const hEntityFactory* entityFactory, hResourceManager* resManager);
         hUint32                    GetObjectInstanceCount() const { return worldObjectInstances_.GetSize(); }
         hEntityInstanceDefinition* GetEntityInstanceDefinition( hUint32 idx ) { return &worldObjectInstances_[idx]; };
         hWorldObjectDefinition*    GetWorldObjectType(const hChar* typenamestr ) const { return objectDefMap_.Find(hCRC32::StringCRC(typenamestr)); }
+        hUint32                    GetWorldObjectTypeCount() const { return objectDefs_.GetSize(); }
+        hWorldObjectDefinition*    GetWorldObjectType(hUint32 idx) { return &objectDefs_[idx]; }
+
     private:
 
         typedef hVector< hWorldObjectDefinition >           ObjectDefinitionArray;

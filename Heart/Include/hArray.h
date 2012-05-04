@@ -199,7 +199,7 @@ namespace Heart
 		void Shrink( hUint32 size )
 		{
 			//Destruct
-			for ( hUint32 i = size; i < size_; --i )
+			for ( hUint32 i = size; i < size_; ++i )
 				(values_+i)->~_Ty();
 			size_ = size;
 		}

@@ -103,10 +103,11 @@ namespace Heart
 
 	void hSystemConsole::Destroy()
 	{
-        if (material_)
+        if (material_ && materialResource_)
         {
-            renderer_->GetMaterialManager()->DestroyMaterialInstance(material_);
+            materialResource_->DestroyMaterialInstance(material_);
         }
+        HEART_RESOURCE_SAFE_RELEASE(materialResource_);
         HEART_RESOURCE_SAFE_RELEASE(fontResource_);
 		if ( indexBuffer_ )
 		{
@@ -171,12 +172,9 @@ namespace Heart
                 // Get resources for displaying the console //////////////////////////////
                 //////////////////////////////////////////////////////////////////////////
 
-                pResourceManager_->LockResourceDatabase();
-                fontResource_ = static_cast< hFont* >( pResourceManager_->GetResource( FONT_RESOURCE_NAME ) );
-                fontResource_->AddRef();
-                material_     = renderer_->GetMaterialManager()->CreateMaterialInstance( CONSOLE_MATERIAL_NAME );
-                pResourceManager_->UnlockResourceDatabase();
-
+                fontResource_ = static_cast< hFont* >( pResourceManager_->mtGetResourceAddRef(FONT_RESOURCE_NAME) );
+                materialResource_ = static_cast< hMaterial* >(pResourceManager_->mtGetResourceAddRef(CONSOLE_MATERIAL_NAME));
+                material_     = materialResource_->CreateMaterialInstance();
                 renderCamera_.SetTechniquePass( renderer_->GetMaterialManager()->GetRenderTechniqueInfo( "main" ) );
 
 				loaded_ = hTrue;

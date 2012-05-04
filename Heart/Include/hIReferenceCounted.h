@@ -41,10 +41,22 @@ namespace Heart
         }
 		virtual ~hIReferenceCounted() 
         {
+            hcAssert(*reference_ == 0);
             hDELETE_SAFE( hGeneralHeap, reference_ );
         }
-		void			AddRef() const { hAtomic::Increment( reference_ ); }
-		void			DecRef() const { hcAssert( reference_ > 0 ); hAtomic::Decrement( reference_ ); if ( *reference_ == 0 ) { OnZeroRef(); } }
+		void			AddRef() const 
+        {
+            hAtomic::Increment( reference_ );
+        }
+		void			DecRef() const 
+        { 
+            hcAssert(*reference_ > 0); 
+            hAtomic::Decrement( reference_ ); 
+            if ( *reference_ == 0 ) 
+            { 
+                OnZeroRef(); 
+            } 
+        }
 		hUint32			GetRefCount() const { return *reference_; }
 		
 	protected:

@@ -32,10 +32,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hEntityFactory::Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager)
+    void hEntityFactory::Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, HeartEngine* engine)
     {
         fileSystem_ = fileSystem;
         resourceManager_ = resourceManager;
+        engine_ = engine;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -102,7 +103,29 @@ namespace Heart
 
     hUint32 hEntityFactory::OnWorldObjectScriptUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
-        hDELETE(hGeneralHeap, resource);
+        hWorldScriptObject* wos = static_cast< hWorldScriptObject* >(resource);
+
+        for (hUint32 i = 0, c = wos->GetWorldObjectTypeCount(); i < c; ++i)
+        {
+            hWorldObjectDefinition* wso = wos->GetWorldObjectType(i);
+            for (hUint32 comp = 0, components = wso->GetComponentCount(); comp < components; ++comp)
+            {
+                hComponentDataDefinition* cdd = wso->GetComponentDefinition(comp);
+                for (hUint32 prop = 0, propCount = cdd->GetPropertyCount(); prop < propCount; ++prop)
+                {
+                    hComponentPropertyValue* cpv = cdd->GetComponentPropertyDefinition(prop);
+                    if (cpv->type_->type_ == eComponentPropertyType_ResourceAsset)
+                    {
+                        cpv->values_.resourcePointer_->DecRef();
+                    }
+                    else if (cpv->type_->type_ == eComponentPropertyType_String)
+                    {
+                        hHeapFree(hResourceHeap, cpv->values_.stringValue_);
+                    }
+                }
+            }
+        }
+        hDELETE(hGeneralHeap, wos);
         return 0;
     }
 
@@ -143,6 +166,26 @@ namespace Heart
     hWorldScriptObject* hEntityFactory::DeactivateWorldScriptObject()
     {
         //TODO: deactivate all objects.
+        for (hUint32 i = 0, c = entityArray_.GetSize(); i < c; ++i)
+        {
+            for (hUint32 i2 = 0, c2 = entityArray_[i].GetComponentCount(); i2 < c2; ++i2)
+            {
+                entityArray_[i].GetComponent(i2)->OnDeactivate();
+            }
+        }
+
+        //Gave Warning now destroy
+        for (hUint32 i = 0, c = entityArray_.GetSize(); i < c; ++i)
+        {
+            for (hUint32 i2 = 0, c2 = entityArray_[i].GetComponentCount(); i2 < c2; ++i2)
+            {
+                entityArray_[i].GetComponent(i2)->OnDestroy();
+                hComponent* comp = entityArray_[i].GetComponent(i2);
+                hComponentFactory* fact = comp->GetFactory();
+                entityArray_[i].RemoveComponent(comp);
+                fact->destroyFunc_(comp);
+            }
+        }
 
         hWorldScriptObject* ret = activeScript_;
         if (activeScript_)
@@ -193,6 +236,7 @@ namespace Heart
             hComponentFactory* compFact = compDef->GetComponentFactory();
             hComponent* comp = compFact->createFunc_(entry);
 
+            comp->SetFactory(compFact);
             entry->AddComponent(comp);
 
             for(hUint32 i2 = 0; i2 < compDef->GetPropertyCount(); ++i2)
@@ -244,6 +288,7 @@ namespace Heart
             {
                 //Component not created, so make it now;
                 comp = entityDef->propertyOverrides[i].compFactory_->createFunc_(entry);
+                comp->SetFactory(entityDef->propertyOverrides[i].compFactory_);
                 entry->AddComponent(comp);
             }
 
@@ -274,7 +319,7 @@ namespace Heart
 
         for (hUint32 i = 0; i < entry->GetComponentCount(); ++i)
         {
-            entry->GetComponent(i)->OnCreate();
+            entry->GetComponent(i)->OnCreate(engine_);
         }
 
         return entry;

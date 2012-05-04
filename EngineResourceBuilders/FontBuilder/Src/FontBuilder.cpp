@@ -106,10 +106,13 @@ void FontBuilder::BuildResource()
 		font.fontCharacters_[i].CharCode_ = fontCharacterData_[ i ].Char_;
 	}
 
-    font.fontMaterial_ = (Heart::hMaterialInstance*)AddBuildDependency( "Cg Effect", "FNTMAT", GetParameter( FONT_MATERIAL_PARAM ).GetAsFilepath() );
+    font.fontMaterial_ = (Heart::hMaterial*)AddBuildDependency( "Cg Effect", "FNTMAT", GetParameter( FONT_MATERIAL_PARAM ).GetAsFilepath() );
 
     GetSerilaiseObject()->Serialise( GetOutputFile(), font );
 
+    font.fontSourceData_ = NULL;
+    delete[] font.fontCharacters_;
+    font.fontCharacters_ = NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////

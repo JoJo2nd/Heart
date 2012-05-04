@@ -162,7 +162,7 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
     rnCtx->Unmap( &ibMap );
     rnCtx->Unmap( &vbMap );
 
-    rnCtx->SetMaterialInstance( fontMaterial_ );
+    rnCtx->SetMaterialInstance( fontMaterialInstance_ );
     hUint32 passes = rnCtx->GetMaterialInstancePasses();
     for ( hUint32 i = 0; i < passes; ++i )
     {
@@ -417,9 +417,11 @@ hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSeriali
         RESOURCEFLAG_RENDERTARGET, 
         &resource->texturePages_ );
 
-    resource->fontMaterial_ = resManager->GetMaterialManager()->CreateMaterialInstance( (hUint32)resource->fontMaterial_ );
-    const hSamplerParameter* samp = resource->fontMaterial_->GetSamplerParameterByName( "ColorSampler" );
-    resource->fontMaterial_->SetSamplerParameter( samp, resource->texturePages_ );
+
+    resource->fontMaterial_ = static_cast< hMaterial* >(resManager->ltGetResourceWeak((hUint32)resource->fontMaterial_));
+    resource->fontMaterialInstance_ = resource->fontMaterial_->CreateMaterialInstance();
+    const hSamplerParameter* samp = resource->fontMaterialInstance_->GetSamplerParameterByName( "ColorSampler" );
+    resource->fontMaterialInstance_->SetSamplerParameter( samp, resource->texturePages_ );
 
  	return resource;
 }
@@ -431,16 +433,20 @@ hResourceClassBase* hFont::OnFontLoad( const hChar* ext, hUint32 resID, hSeriali
 hUint32	 hFont::OnFontUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 {
     hFont* font = static_cast<hFont*>(resource);
-    if (font->fontMaterial_)
-    {
-        resManager->GetMaterialManager()->DestroyMaterialInstance(font->fontMaterial_);
-        font->fontMaterial_ = NULL;
-    }
     if (font->texturePages_)
     {
+        const hSamplerParameter* samp = font->fontMaterialInstance_->GetSamplerParameterByName( "ColorSampler" );
+        font->fontMaterialInstance_->SetSamplerParameter( samp, NULL );
         resManager->GetRederer()->DestroyTexture(font->texturePages_);
         font->texturePages_ = NULL;
     }
+    if (font->fontMaterialInstance_ && font->fontMaterial_)
+    {
+        font->fontMaterial_->DestroyMaterialInstance(font->fontMaterialInstance_);
+        font->fontMaterialInstance_ = NULL;
+    }
+
+    HEART_RESOURCE_SAFE_RELEASE(font->fontMaterial_);
 
     hDELETE_SAFE(hGeneralHeap, font);
  	return 0;

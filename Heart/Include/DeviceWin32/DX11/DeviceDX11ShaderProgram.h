@@ -80,6 +80,7 @@ namespace Heart
         hUint32         GetConstantBufferSize( hUint32 idx ) const;
         hUint32         GetConstantBufferReg( hUint32 idx ) const;
         hUint32         GetSamplerRegister( const hChar* name ) const;
+        hUint32         GetInputLayout() const { return inputLayoutFlags_; }
 
     private:
 

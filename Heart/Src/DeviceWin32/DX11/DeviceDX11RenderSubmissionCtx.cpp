@@ -44,6 +44,7 @@ namespace Heart
     {
         UINT offsets = 0;
         UINT strideui = stride;
+        vbufferInputLayout_ = vtxBuf->vertexLayoutFlags_;
         device_->IASetVertexBuffers( stream, 1, &vtxBuf->buffer_, &strideui, &offsets );
     }
 
@@ -102,6 +103,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::SetVertexShader( hdDX11ShaderProgram* prog )
     {
         hcAssert( prog->type_ == ShaderType_VERTEXPROG );
+        shaderInputLayout_ = prog->GetInputLayout();
         device_->IASetInputLayout( prog->inputLayout_->layout_ );
         device_->VSSetShader( prog->vertexShader_, NULL, 0 );
     }
@@ -225,6 +227,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 start )
     {
+        hcAssert( vbufferInputLayout_ == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {
@@ -244,6 +247,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 start )
     {
+        hcAssert( vbufferInputLayout_ == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {

@@ -72,6 +72,7 @@ namespace Heart
         hUint32                 GetParameterCount() const { return parameterCount_; }
         hUint32                 GetTotalParameterSize() const { return totalParameterSize_; }
 
+
     private:
 
         HEART_ALLOW_SERIALISE_FRIEND();
@@ -132,7 +133,7 @@ namespace Heart
         hdBlendState*           GetBlendState() { return blendState_; }
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
-        void                    ReleaseResources();
+        void                    ReleaseResources(hRenderer* renderer);
 
     private:
 
@@ -197,7 +198,7 @@ namespace Heart
 	public:
 
 		hMaterial( hRenderer* prenderer ) 
-			: pRenderer_( prenderer )
+			: renderer_( prenderer )
 		{
 			
 		}
@@ -217,6 +218,10 @@ namespace Heart
         hMaterialTechnique*                 GetTechniqueByName( const hChar* name );
         hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask );
         const hSamplerArrayType&            GetSamplerArray() const { return samplers_; }
+        hRenderMaterialManager*             GetManager() const { return manager_; }
+        void                                SetManager(hRenderMaterialManager* val) { manager_ = val; }
+        hMaterialInstance*                  CreateMaterialInstance();
+        void                                DestroyMaterialInstance(hMaterialInstance* inst);
 
 	private:
 
@@ -243,10 +248,9 @@ namespace Heart
         typedef hVector< hConstBufferDesc >   ConstBufferDescArrayType;
 
         hUint32                             FindConstBufferIndexFromID( hUint32 id );
-        hMaterialInstance*                  CreateMaterialInstance();
-        void                                DestroyMaterialInstance( hMaterialInstance* inst );
 
-		hRenderer*							pRenderer_;
+		hRenderer*							renderer_;
+        hRenderMaterialManager*             manager_;
         TechniqueArrayType                  techniques_;
         hSamplerArrayType                   samplers_;
         ParameterArrayType                  constParameters_;

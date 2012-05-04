@@ -54,27 +54,15 @@ namespace Heart
         void                        Initialise( hResourceManager* resourceManager ) { resourceManager_ = resourceManager; }
         void                        OnMaterialLoad( hMaterial* mat, hUint32 resId );
         void                        OnMaterialUnload( hMaterial* mat );
-        hMaterialInstance*          CreateMaterialInstance( const hChar* matName ) { return CreateMaterialInstance( hResourceManager::BuildResourceCRC( matName ) ); }
-        hMaterialInstance*          CreateMaterialInstance( hUint32 matCRC );
-        void                        DestroyMaterialInstance( hMaterialInstance* instance );
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
         const hRenderTechniqueInfo* GetRenderTechniqueInfo( const hChar* name );
 
     private:
 
-        struct hLoadedMaterial : hMapElement< hUint32, hLoadedMaterial >
-        {
-            hMaterial*      material_;
-            hUint32         instanceCount_;
-            hBool           firstUse_;
-        };
-
         typedef hVector< hRenderTechniqueInfo > TechniqueArrayType;
-        typedef hMap< hUint32, hLoadedMaterial > LoadedMaterialMapType;
 
         hMutex                  accessMutex_;
         hResourceManager*       resourceManager_;
-        LoadedMaterialMapType   loadedMaterials_;
         TechniqueArrayType      techniques_;
     };
 }

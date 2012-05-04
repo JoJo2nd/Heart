@@ -247,7 +247,7 @@ namespace Device
 
 	hUint32 DefaultScreenWidth()
 	{
-		return 1024;
+		return 640;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ namespace Device
 
 	hUint32 DefaultScreenHeight()
 	{
-		return 768;
+		return 480;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

@@ -70,8 +70,14 @@ namespace Heart
         {
             for (hUint32 i2 = 0, c2 = techniques_[i].GetPassCount(); i2 < c2; ++i2)
             {
-                techniques_[i].GetPass(i2)->ReleaseResources();
+                techniques_[i].GetPass(i2)->ReleaseResources(renderer_);
             }
+        }
+
+        for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
+        {
+            renderer_->DestroySamplerState(samplers_[i].samplerState_);
+            samplers_[i].samplerState_ = NULL;
         }
     }
 
@@ -201,7 +207,7 @@ namespace Heart
 
     hMaterialInstance* hMaterial::CreateMaterialInstance()
     {
-        return hNEW(hGeneralHeap, hMaterialInstance(this, pRenderer_));
+        return hNEW(hGeneralHeap, hMaterialInstance(this, renderer_));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -311,10 +317,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterialTechniquePass::ReleaseResources()
+    void hMaterialTechniquePass::ReleaseResources(hRenderer* renderer)
     {
         HEART_RESOURCE_SAFE_RELEASE(vertexProgram_);
         HEART_RESOURCE_SAFE_RELEASE(fragmentProgram_);
+        renderer->DestroyBlendState(blendState_);
+        blendState_ = NULL;
+        renderer->DestroyDepthStencilState(depthStencilState_);
+        depthStencilState_ = NULL;
+        renderer->DestroyRasterizerState(rasterizerState_);
+        rasterizerState_ = NULL;
     }
 
 }//Heart

@@ -36,11 +36,9 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hResourceManager::hResourceManager() 
-		: exitSignal_( hFalse )
-        , loaded_(hFalse)
-        , resourceDatabaseLocked_( hFalse )
-        , gotRequiredResources_( hFalse )
+    hResourceManager::hResourceManager() 
+        : exitSignal_(hFalse)
+        , gotRequiredResources_(hFalse)
         , remappingNames_(NULL)
         , remappingNamesSize_(0)
         , resourceSweepCount_(hNEW_ALIGN(hGeneralHeap, 32, hUint32))
@@ -91,7 +89,7 @@ namespace Heart
 		resourceLoaderThread_.Begin(
 			"hResource Loader hThread",
 			hThread::PRIORITY_ABOVENORMAL,
-			Device::Thread::ThreadFunc::bind< hResourceManager, &hResourceManager::ProcessDataFixup >( this ), NULL );
+			Device::Thread::ThreadFunc::bind< hResourceManager, &hResourceManager::LoadedThreadFunc >( this ), NULL );
 
 		for ( const char** c = requiredResources; *c; ++c )
         {    
@@ -103,11 +101,8 @@ namespace Heart
         for ( hUint32 i = 0; i < nRequiredResources; ++i )
         {    
             requiredResourceKeys_[i] = requiredResources[i];
-            requiredResourcesPackage_.AddResourceToPackage( requiredResources[i] );
+            requiredResourcesPackage_.AddResourceToPackage(requiredResources[i], this);
         }
-
-		//Begin loading the required resources
-		requiredResourcesPackage_.BeginPackageLoad( this );
 
 		return hTrue;
 	}
@@ -120,28 +115,24 @@ namespace Heart
 	{
         while (!requiredResourcesPackage_.IsPackageLoaded()) {hThreading::ThreadSleep(1);}
 
-        requiredResourcesPackage_.GetResourcePointers();
-
 		for ( hUint32 i = 0, c = requiredResources_.GetSize(); i < c; ++i )
 		{
-            hResourceClassBase* res = requiredResourcesPackage_.GetResource(requiredResourceKeys_[i]);
+            hResourceClassBase* res = requiredResourcesPackage_.GetResource(i);
 		    if (res)
             {
                 res->DecRef();
             }
 		}
 
-		ForceResourceSweep();
-
 		exitSignal_ = hTrue;
 		loaderSemaphone_.Post();
 
 		hUint32 exitBail = 0;
 
-		while ( !resourceLoaderThread_.IsComplete() && exitBail < 2000 ) 
+		while ( !resourceLoaderThread_.IsComplete() && exitBail < 1000 ) 
 		{
 			prenderer->ReleasePendingRenderResources();
-			ForceResourceSweep();
+			MainThreadUpdate();
 			hThreading::ThreadSleep(1);
 			++exitBail;
 		}
@@ -178,75 +169,29 @@ namespace Heart
     }
 
     //////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourceManager::BeginResourceLoads( const hChar** resourceKeys, hUint32 count, hUint32* loadCounter )
-	{
-		hcAssert( (resourceKeys && count) || (!resourceKeys && !count) );
-
-		resourceDatabaseMutex_.Lock();
-		for ( hUint32 i = 0; i < count; ++i )
-		{
-			LoadResource( resourceKeys[i], loadCounter );
-		}
-		resourceDatabaseMutex_.Unlock();
-
-		loaderSemaphone_.Post();
-	}
-
-    //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourceManager::ResourceLoadsComplete( const hUint32* resourceKeys, hUint32 count )
+    hUint32 hResourceManager::LoadedThreadFunc( void* )
     {
-        return hFalse;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::GetResources( const hChar** resourceKeys, hResourceClassBase** outPtrs, hUint32 count )
-    {
-        resourceDatabaseMutex_.Lock();
-
-        for ( hUint32 i = 0; i < count; ++i )
-        {
-            outPtrs[i] = loadedResources_.Find( BuildResourceCRC( resourceKeys[i] ) );
-        }
-
-        resourceDatabaseMutex_.Unlock();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hResourceManager::ProcessDataFixup( void* )
-	{
         resourceThreadID_ = hThreading::GetCurrentThreadID();
-		//process the requests
-		while( !exitSignal_ )
-		{
-			loaderSemaphone_.Wait();
-
-			while ( *resourceSweepCount_ > 0 )
-			{
-				DoResourceSweep();
-				hAtomic::Decrement( resourceSweepCount_ );
-			}
-
-            loadQueueMutex_.Lock();
-
-            while ( hResourceLoadRequest* i = loadRequests_.GetHead() )
+        //process the requests
+        while( !exitSignal_ || loadedResources_.GetSize() > 0 )
+        {
+            loaderSemaphone_.Wait();
             {
-                loadRequests_.Remove( i );
-                loadRequestsProcessed_.Insert( i->GetKey(), i );
-            }
+                hMutexAutoScope autolock(&ivAccessMutex_);
 
-            loadQueueMutex_.Unlock();
+                while (!ivLoadRequests_.isEmpty())
+                {
+                    loadRequests_.push(ivLoadRequests_.pop());
+                }
+
+                while (!ivResourceUnloadedQueue_.isEmpty())
+                {
+                    unloadRequests_.push(ivResourceUnloadedQueue_.pop());
+                }
+            }
 
             //Process and file read requests
             for ( StreamingResouce* i = streamingResources_.GetHead(); i; i = i->GetNext() )
@@ -254,68 +199,49 @@ namespace Heart
                 i->stream_->UpdateFileOps();
             }
 
-			// get the all pushed requests and move them in to the processed load request
-			// along with dependencies. 
-			for ( hResourceLoadRequest* i = loadRequestsProcessed_.GetHead(); i; i = i->GetNext() )
-			{
-                CompleteLoadRequest( i );
-                hAtomic::Increment( i->loadCounter_ );
-                hDELETE_ARRAY_SAFE(hGeneralHeap, i->path_);
-			}
+            // Process the load requests
+            while (!loadRequests_.isEmpty())
+            {
+                hResourceLoadRequest request = loadRequests_.pop();
+                CompleteLoadRequest(&request);
+               
+                hDELETE_ARRAY_SAFE(hGeneralHeap, request.path_);
+            }
 
-            loadRequestsProcessed_.Clear( hTrue );
+            while (!unloadRequests_.isEmpty())
+            {
+                MainThreadResourceHandle unload = unloadRequests_.pop();
+                hResourceClassBase* del = unload.resource_;
+                ResourceHandler* handler = resHandlers_.Find(del->GetType());
+
+                loadedResources_.Remove(del);
+                hcAssert(del->GetRefCount() == 0);
+                hcAssert(handler->GetKey() == del->GetType());
+                hcPrintf("Unloaded resource 0x%08X", del->GetResourceID());
+                handler->unloadCallback(del->GetType().ext, del, this);
+            }
+
+            {
+                hMutexAutoScope autolock(&ivAccessMutex_);
+
+                while (!completedLoads_.isEmpty())
+                {
+                    ivResourceLoadedQueue_.push(completedLoads_.pop());
+                }
+            }
 		}
 
 		return 0;
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourceManager::LoadResource( const hChar* resourceName, hUint32* loadCounter )
-	{
-        hUint32 rescrc32 = BuildResourceCRC( resourceName );
-        resourceDatabaseMutex_.Lock();
-		//is the resource loaded?
-		hResourceClassBase* resInfo = loadedResources_.Find( rescrc32 );
-        resourceDatabaseMutex_.Unlock();
-
-		if ( resInfo )
-		{
-			// The resource is already loaded in memory increase its ref count
-			// then return
-            hAtomic::Increment( loadCounter );
-			resInfo->AddRef();
-			return;
-		}
-
-		//not found in cache
-		// Request already open?
-		hMutexAutoScope loadQueueLock( &loadQueueMutex_ );
-		hResourceLoadRequest* request;
-
-		//create a load request.
-		request = hNEW(hGeneralHeap, hResourceLoadRequest);
-		//create space in the request in the loadedResources
-		request->crc32_ = rescrc32;
-        request->loadCounter_ = loadCounter;
-		request->path_ = hNEW_ARRAY(hGeneralHeap, hChar, strlen(resourceName)+1);
-        strcpy( request->path_, resourceName );
-
-		loadRequests_.Insert( rescrc32, request );
-	}
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::CompleteLoadRequest( hResourceLoadRequest* request )
+    hResourceClassBase* hResourceManager::CompleteLoadRequest( hResourceLoadRequest* request )
     {
         hUint32 crc = BuildResourceCRC( request->path_ );
-
-        LoadResourceFromPath( request->path_ );
-
+        return LoadResourceFromPath( request->path_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -361,21 +287,6 @@ namespace Heart
             crc = BuildResourceCRC( path );
         }
 
-        // must load all the dependency folder first
-        hUint32 extLen = strlen( path );
-        hcAssertMsg( path[ extLen-4 ] == '.', "resource %s doesn't seem to have a valid extention", path );
-
-        depPath = (hChar*)alloca( extLen + 1 );
-
-        strcpy_s( depPath, extLen+1, path );
-
-        depPath[ extLen - 4 ] = '_';
-        depPath[ extLen - 3 ] = 'D';
-        depPath[ extLen - 2 ] = 'E';
-        depPath[ extLen - 1 ] = 'P';
-
-        filesystem_->EnumerateFiles( depPath, EnumerateFilesCallback::bind< hResourceManager, &hResourceManager::EnumerateAndLoadDepFiles >( this ) );
-
         // everything ready, init this resources data add remove from the 
         // list
         hResourceType resType;
@@ -387,13 +298,29 @@ namespace Heart
         ResourceHandler* handler = resHandlers_.Find( resType );
         hcAssertMsg( handler, "Can't find resource handler data for extention %s", ext );
 
-        resourceDatabaseMutex_.Lock();
         hResourceClassBase* resource = loadedResources_.Find( crc );
-        resourceDatabaseMutex_.Unlock();
 
         // The resource isn't loaded, so grab it
         if ( !resource )
         {
+            // must load all the dependency folder first
+            // if the resource is already loaded, it's safe to assume that the 
+            // dependencies are loaded along side it
+            hUint32 extLen = strlen( path );
+            hcAssertMsg( path[ extLen-4 ] == '.', "resource %s doesn't seem to have a valid extention", path );
+
+            depPath = (hChar*)alloca( extLen + 1 );
+
+            strcpy_s( depPath, extLen+1, path );
+
+            depPath[ extLen - 4 ] = '_';
+            depPath[ extLen - 3 ] = 'D';
+            depPath[ extLen - 2 ] = 'E';
+            depPath[ extLen - 1 ] = 'P';
+
+            filesystem_->EnumerateFiles( depPath, EnumerateFilesCallback::bind< hResourceManager, &hResourceManager::EnumerateAndLoadDepFiles >( this ) );
+
+            //Load the actual resource
             hSerialiserFileStream loaderStream;
             loaderStream.Open( path, hFalse, filesystem_ );
             hcPrintf( "Loading Resource %s (crc32: 0x%08X)", path, crc );
@@ -423,10 +350,16 @@ namespace Heart
             resource->SetResID( crc );
             resource->IsDiskResource( hTrue );
             resource->manager_ = this;
-            resourceDatabaseMutex_.Lock();
+
             // Push the new resource into loaded resource map
             loadedResources_.Insert( crc, resource );
-            resourceDatabaseMutex_.Unlock();
+
+            MainThreadResourceHandle loaded;
+            loaded.resource_ = resource;
+            loaded.resourceKey_ = resource->GetResourceID();
+
+            // In queue to be pushed back
+            completedLoads_.push(loaded);
         }
 
         // increment the resource count
@@ -435,58 +368,17 @@ namespace Heart
         return resource;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourceManager::OptimiseReads()
-	{
-		//TODO:
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourceManager::DoResourceSweep()
-	{
-        hMutexAutoScope mtx(&resourceDatabaseMutex_);
-
-        for (hResourceClassBase* i = loadedResources_.GetHead(); i;)
-        {
-            hResourceClassBase* del;
-            ResourceHandler* handler;
-            if (i->GetRefCount() == 0)
-            {
-                handler = resHandlers_.Find(i->GetType());
-                del = loadedResources_.Erase(i,&i);
-                hcAssert(handler->GetKey() == del->GetType());
-                hcPrintf( "Unloaded resource 0x%08X", del->GetResourceID());
-                handler->unloadCallback(del->GetType().ext, del, this);
-            }
-            else
-            {
-                i = i->GetNext();
-            }
-        }
-	}
-
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	hBool hResourceManager::RequiredResourcesReady()
 	{
-        if ( requiredResourcesPackage_.IsPackageLoaded() )
+        if ( !gotRequiredResources_ && requiredResourcesPackage_.IsPackageLoaded() )
         {
-            if ( !gotRequiredResources_ )
-            {
-                requiredResourcesPackage_.GetResourcePointers();
-                gotRequiredResources_ = hTrue;
-            }
-            return hTrue;
+            gotRequiredResources_ = hTrue;
         }
-		return hFalse;
+		return gotRequiredResources_;
 	}
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -567,11 +459,140 @@ namespace Heart
 
     void hResourceManager::MainThreadUpdate()
     {
-        if (!loaded_ && requiredResourcesPackage_.IsPackageLoaded())
+        hMutexAutoScope autoLock(&ivAccessMutex_);
+        hBool pushedSomething = hFalse;
+
+        //Push reqeusts
+        while (!mtLoadRequests_.isEmpty())
         {
-            requiredResourcesPackage_.GetResourcePointers();
-            loaded_ = hTrue;
+            hResourceLoadRequest req = mtLoadRequests_.pop();
+            ivLoadRequests_.push(req);
+            pushedSomething = hTrue;
         }
+
+        //Get Loaded Resources
+        while (!ivResourceLoadedQueue_.isEmpty())
+        {
+            MainThreadResourceHandle* loadedResource = hNEW(hGeneralHeap, MainThreadResourceHandle);
+            *loadedResource = ivResourceLoadedQueue_.pop();
+            mtResourceMap_.Insert(loadedResource->resourceKey_, loadedResource);
+        }
+
+        //Push Unloaded Resources
+        hAtomic::LWMemoryBarrier();
+        if (*resourceSweepCount_ > 0)
+        {
+            for (MainThreadResourceHandle* i = mtResourceMap_.GetHead(); i; )
+            {
+                if (i->resource_->GetRefCount() == 0)
+                {
+                    MainThreadResourceHandle* rem = i;
+                    mtResourceMap_.Erase(i,&i);
+                    ivResourceUnloadedQueue_.push(*rem);
+                    hDELETE(hGeneralHeap, rem);
+                    pushedSomething = hTrue;
+                    hAtomic::Decrement(resourceSweepCount_);
+                }
+                else
+                {
+                    i = i->GetNext();
+                }
+            }
+
+            
+        }
+
+        if (pushedSomething)
+        {
+            loaderSemaphone_.Post();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::mtLoadResource( const hChar* path )
+    {
+        hUint32 rescrc32 = BuildResourceCRC( path );
+        hUint32 len = hStrLen(path)+1;
+        hResourceLoadRequest request;
+        request.crc32_ = rescrc32;
+        request.loadCounter_ = NULL;
+        request.path_ = hNEW_ARRAY(hGeneralHeap, hChar, len);
+        hStrCopy(request.path_, len, path);
+        mtLoadRequests_.push(request);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::mtGetResourceAddRef( hUint32 crc )
+    {
+        hUint32 rescrc32 = GetResourceKeyRemapping(crc);
+        MainThreadResourceHandle* resource = mtResourceMap_.Find(rescrc32);
+        if (resource)
+        {
+            resource->resource_->AddRef();
+            return resource->resource_;
+        }
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::mtGetResourceAddRef( const hChar* path )
+    {
+        return mtGetResourceAddRef(BuildResourceCRC(path));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::mtGetResourceWeak( hUint32 crc )
+    {
+        hUint32 rescrc32 = GetResourceKeyRemapping(crc);
+        MainThreadResourceHandle* resource = mtResourceMap_.Find(rescrc32);
+        if (resource)
+        {
+            return resource->resource_;
+        }
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::mtGetResourceWeak( const hChar* path )
+    {
+        return mtGetResourceWeak(BuildResourceCRC(path));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::ltGetResourceAddRef(hUint32 crc)
+    {
+        hcAssert(hThreading::GetCurrentThreadID() == resourceThreadID_);
+        hResourceClassBase* res = loadedResources_.Find(GetResourceKeyRemapping(crc));
+        res->AddRef();
+        return res;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hResourceManager::ltGetResourceWeak(hUint32 crc)
+    {
+        hcAssert(hThreading::GetCurrentThreadID() == resourceThreadID_);
+        return loadedResources_.Find(GetResourceKeyRemapping(crc));
     }
 
 }

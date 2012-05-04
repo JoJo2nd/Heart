@@ -470,7 +470,6 @@ namespace Heart
         ser.Deserialise( dataStream, *resource );
 
         //Fixup dependencies
-        resManager->LockResourceDatabase();
 
         hUint32 nSamp = resource->samplers_.GetSize();
         for ( hUint32 samp = 0; samp < nSamp; ++samp )
@@ -478,7 +477,7 @@ namespace Heart
             if ( resource->samplers_[samp].boundTexture_ )
             {
                 hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
-                resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->GetResource( sid ) );
+                resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->ltGetResourceWeak( sid ) );
             }
             CreateSamplerState( resource->samplers_[samp].samplerDesc_, &resource->samplers_[samp].samplerState_ );
         }
@@ -492,8 +491,8 @@ namespace Heart
             {
                 hUint32 vpid = (hUint32)resource->techniques_[tech].passes_[pass].vertexProgram_;
                 hUint32 fpid = (hUint32)resource->techniques_[tech].passes_[pass].fragmentProgram_;
-                hShaderProgram* vp = static_cast< hShaderProgram* >( resManager->GetResource( vpid ) );
-                hShaderProgram* fp = static_cast< hShaderProgram* >( resManager->GetResource( fpid ) );
+                hShaderProgram* vp = static_cast< hShaderProgram* >( resManager->ltGetResourceWeak( vpid ) );
+                hShaderProgram* fp = static_cast< hShaderProgram* >( resManager->ltGetResourceWeak( fpid ) );
 
                 resource->techniques_[tech].passes_[pass].vertexProgram_   = vp;
                 resource->techniques_[tech].passes_[pass].fragmentProgram_ = fp;
@@ -550,8 +549,6 @@ namespace Heart
                 CreateDepthStencilState( resource->techniques_[tech].passes_[pass].depthStencilStateDesc_, &resource->techniques_[tech].passes_[pass].depthStencilState_ );
             }
         }
-
-        resManager->UnlockResourceDatabase();
 
         techniqueManager_.OnMaterialLoad( resource, resID );
 
@@ -925,9 +922,7 @@ namespace Heart
         pImpl()->InitialiseRenderSubmissionCtx( &ret->debug_ );
         if ( !debugMaterial_ )
         {
-            resourceManager_->LockResourceDatabase();
-            debugMaterial_ = static_cast< hMaterial* >( resourceManager_->GetResource( hResourceManager::BuildResourceCRC( "ENGINE/EFFECTS/DEBUG.CFX" ) ) );
-            resourceManager_->UnlockResourceDatabase();
+            debugMaterial_ = static_cast< hMaterial* >( resourceManager_->mtGetResourceWeak(hResourceManager::BuildResourceCRC("ENGINE/EFFECTS/DEBUG.CFX")));
         }
         ret->InitialiseDebugInterface( debugSphereIB_, debugSphereVB_, debugMaterial_ );
         return ret;

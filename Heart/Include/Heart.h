@@ -100,6 +100,7 @@ extern "C"
 #include "hLinkedList.h"
 #include "hMap.h"
 #include "hStack.h"
+#include "hQueue.h"
 #include "hAtomic.h"
 #include "hLocklessComPipe.h"
 

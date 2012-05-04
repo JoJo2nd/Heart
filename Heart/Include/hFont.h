@@ -112,7 +112,8 @@ namespace Private
 	 	hFontStyle					style_;
 	 	hUint32						nTexturePages_;
 	 	hTexture*				    texturePages_;
-        hMaterialInstance*          fontMaterial_;
+        hMaterial*                  fontMaterial_;
+        hMaterialInstance*          fontMaterialInstance_;
 	 	hUint32						fontWidth_;
 	 	hUint32						fontHeight_;
 	 	hUint32						baseLine_;

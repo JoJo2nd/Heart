@@ -172,26 +172,26 @@ namespace Heart
 
 			if ( node == head_ )
 			{
-				head_ = (TypePtr)head_->lnext_;
+				head_ = static_cast<TypePtr>(head_->lnext_);
 			}
 
 			if ( node == tail_ )
 			{
-				tail_ = (TypePtr)tail_->lprev_;
+				tail_ = static_cast<TypePtr>(tail_->lprev_);
 			}
 
 			if ( node->lprev_ )
 			{
-				node->lprev_->lnext_ = (TypePtr)node->lnext_;
+				node->lprev_->lnext_ = static_cast<TypePtr>(node->lnext_);
 			}
 			if ( node->lnext_ )
 			{
-				node->lnext_->lprev_ = (TypePtr)node->lprev_;
+				node->lnext_->lprev_ = static_cast<TypePtr>(node->lprev_);
 			}
 
 			--size_;
 			BreakElementLinks(node);
-			return (TypePtr)node;
+            return static_cast<TypePtr>(node);
 		}
 		void					Clear( hBool deleteAll ) 
 		{ 

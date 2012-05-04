@@ -78,87 +78,36 @@ namespace Heart
 		typedef huFunctor< hResourceClassBase*(*)(const hChar*, hUint32 resId, hSerialiserFileStream*, hResourceManager* ) >::type			ResourceLoadCallback;
 		typedef huFunctor< hUint32(*)(const hChar*, hResourceClassBase*, hResourceManager* ) >::type			ResourceUnloadCallback;
 
-		hResourceManager();
-		~hResourceManager();
+        hResourceManager();
+        ~hResourceManager();
 
-		/**
-		* Initialise 
-		*
-		* @return   hBool
-		*/
-		hBool							Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
-
-		hBool							RequiredResourcesReady();
-
+        hBool                           Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
+        hBool                           RequiredResourcesReady();
         void                            MainThreadUpdate();
-
-		static hUint32					BuildResourceCRC( const hChar* resourceName );
-
-		/**
-		* SetResourceHandlers 
-		*
-		* @param 	const hChar * typeExt
-		* @param 	ResourceLoadCallback onLoad
-		* @param 	ResourceUnloadCallback onUnload
-		* @return   void
-		*/
-		void							SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData );
-
-		/**
-		* GetResource - Attempts to get a resource. 
-		*
-		* @param 	const hChar * resourceName
-		* @param 	hResource< _Ty > & resource
-		* @return   hBool
-		*/
-		void							BeginResourceLoads( const hChar** resourceKeys, hUint32 count, hUint32* loadCounter );
-
-		void							CancelResourceLoads( const hUint32* resourceKeys, hUint32 count );
-		
-		hBool							ResourceLoadsComplete( const hUint32* resourceKeys, hUint32 count );
-		
-		void							GetResources( const hChar** resourceKeys, hResourceClassBase** outPtrs, hUint32 count );
+        static hUint32                  BuildResourceCRC( const hChar* resourceName );
+        void                            SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData );
         hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
-        void                            LockResourceDatabase() { resourceDatabaseMutex_.Lock(); resourceDatabaseLocked_ = hTrue; }
-        hResourceClassBase*             GetResource( hUint32 crc ) { hcAssert( resourceDatabaseLocked_ ); return loadedResources_.Find( GetResourceKeyRemapping( crc ) ); }
-        void                            UnlockResourceDatabase() { resourceDatabaseLocked_ = hFalse; resourceDatabaseMutex_.Unlock(); }
         hResourceClassBase*             LoadResourceFromPath( const hChar* path );
-		/**
-		* QueueResourceSweep - Requestes the resource manager to search for unused resources and
-		* unload them
-		*
-		* @return   void
-		*/
-		void							QueueResourceSweep()
-		{
-			hAtomic::Increment( resourceSweepCount_ );
-			loaderSemaphone_.Post();
-		}
-
-		/**
-		* ForceResourceSweep - Forces a resource collect to happen
-		*
-		* @return   void
-		*/
-        void							ForceResourceSweep() { Post(); }
-        void                            Post()
-        {
-            loaderSemaphone_.Post();
-        }
-
-		/**
-		* Shutdown 
-		*
-		* @return   void
-		*/
-		void							Shutdown( hRenderer* prenderer );
-
+        void                            QueueResourceSweep() { hAtomic::Increment( resourceSweepCount_ ); }
+        void                            Post() { loaderSemaphone_.Post(); }
+        void                            Shutdown( hRenderer* prenderer );
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }
-        
 
+        //Resource Thread interface
+        hResourceClassBase*             ltGetResourceAddRef(hUint32 crc);
+        hResourceClassBase*             ltGetResourceWeak(hUint32 crc);
+
+        //Main Thread interface
+        void                            mtLoadResource(const hChar* path);
+        hResourceClassBase*             mtGetResourceAddRef(const hChar* path);
+        hResourceClassBase*             mtGetResourceAddRef(hUint32 crc);
+        hResourceClassBase*             mtGetResourceWeak(const hChar* path);
+        hResourceClassBase*             mtGetResourceWeak(hUint32 crc);
 
 	private:
+
+        static const hUint32 QUEUE_MAX_SIZE = 64;
 
 		struct ResourceHandler : public hMapElement< hResourceType, ResourceHandler >
 		{
@@ -176,25 +125,24 @@ namespace Heart
             hStreamingResourceBase*     stream_;
         };
 
-		typedef hMap< hResourceType, ResourceHandler >		ResourceHandlerMap;
-		typedef hMap< hUint32, hResourceClassBase >			ResourceMap;
-        typedef hMap< hUint32, StreamingResouce >           StreamingResourceMap;
-		typedef hMap< hUint32, hResourceLoadRequest >		ResourceLoadRequestMap;
-        typedef hMap< hUint32, ResourceRemap >              ResourceRemappingMapType;
+        struct MainThreadResourceHandle : public hMapElement< hUint32, MainThreadResourceHandle >
+        {
+            hUint32                     resourceKey_;
+            hResourceClassBase*         resource_;
+        };
 
-		/**
-		* LoadResource - Attempts to get a resource. If resource is not yet IsLoaded, It begins the load process.
-		*
-		* @param 	const hChar * resourceName
-		*/
-		void							LoadResource( const hChar* resourceName, hUint32* loadCounter );
- 		hUint32							ProcessDataFixup( void* );
-		hResourceClassBase*				QueryResourceCache( hUint32 crc ) { return NULL; }//< TODO
-		void							OptimiseReads();
+        typedef hMap< hResourceType, ResourceHandler >              ResourceHandlerMap;
+        typedef hMap< hUint32, hResourceClassBase >                 ResourceMap;
+        typedef hMap< hUint32, MainThreadResourceHandle >           MainThreadResourceMap;
+        typedef hMap< hUint32, StreamingResouce >                   StreamingResourceMap;
+        typedef hMap< hUint32, hResourceLoadRequest >               ResourceLoadRequestMap;
+        typedef hMap< hUint32, ResourceRemap >                      ResourceRemappingMapType;
+        typedef hQueue< hResourceLoadRequest, QUEUE_MAX_SIZE >      ResourceLoadRequestQueue;
+        typedef hQueue< MainThreadResourceHandle, QUEUE_MAX_SIZE >  ResourceHandleQueue;
 
-		void							DoResourceSweep();
-        void                            CompleteLoadRequest( hResourceLoadRequest* request );
-        hBool							EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
+        hUint32                         LoadedThreadFunc( void* );
+        hResourceClassBase*             CompleteLoadRequest( hResourceLoadRequest* request );
+        hBool                           EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
         void                            LoadResourceRemapTable();
 
 		static hResourceManager*		pInstance_;
@@ -207,29 +155,35 @@ namespace Heart
 		ResourceHandlerMap				resHandlers_;
         hUint32                         remappingNamesSize_;
         hChar*                          remappingNames_;
-        ResourceRemappingMapType        remappings_;
+        ResourceRemappingMapType        remappings_;//this is const, so read accross threads are safe
 
 		//
 		hThread							resourceLoaderThread_;
 		hSemaphore						loaderSemaphone_;
-		hMutex							resourceDatabaseMutex_;
-        hBool                           resourceDatabaseLocked_;
-        hMutex                          loadQueueMutex_;
-
-        hBool                           loaded_;
 		hBool							exitSignal_;
-		hBool							canQuit_;
-		mutable hUint32*    			resourceSweepCount_;
+		hUint32* volatile    			resourceSweepCount_;
 
-		ResourceLoadRequestMap			loadRequests_;
-		ResourceLoadRequestMap			loadRequestsProcessed_;
-		ResourceMap						loadedResources_;
+        //Loader Thread var
+        ResourceLoadRequestQueue        loadRequests_;
+        ResourceHandleQueue             completedLoads_;
+        ResourceHandleQueue             unloadRequests_;
+		ResourceMap                     loadedResources_;
         StreamingResourceMap            streamingResources_;
 		hVector< const hChar* >			requiredResourceKeys_;
 		hVector< hResourceClassBase* >	requiredResources_;
         hResourcePackage                requiredResourcesPackage_;
         hBool                           gotRequiredResources_;
-		hResourceLoadRequest*			pVolatileDepResource_;
+
+        //Main Thread vars
+        MainThreadResourceMap           mtResourceMap_;
+        ResourceLoadRequestQueue        mtLoadRequests_;
+        ResourceHandleQueue             mtResourceLoadedQueue_;
+
+        //Intermediate Vars
+        hMutex                          ivAccessMutex_;
+        ResourceLoadRequestQueue        ivLoadRequests_;
+        ResourceHandleQueue             ivResourceLoadedQueue_;
+        ResourceHandleQueue             ivResourceUnloadedQueue_;
 	};
 
 }

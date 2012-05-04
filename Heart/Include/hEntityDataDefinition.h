@@ -75,6 +75,11 @@ namespace Heart
 
         }
 
+        ~hComponentPropertyValue()
+        {
+
+        }
+
         const hComponentProperty*   type_;
         hUint32                     size_;
         union

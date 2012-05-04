@@ -263,10 +263,7 @@ namespace Heart
 
 		void			Clear( hBool deleteAll )
 		{
-			if ( deleteAll )
-			{
-				TreeClear( rbTreeRoot_ );
-			}
+			TreeClear(rbTreeRoot_, deleteAll);
 			rbTreeRoot_ = NULL;
 			size_ = 0; 
 		}
@@ -320,17 +317,20 @@ namespace Heart
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 
-		void TreeClear( MapElementPtr root )
+		void TreeClear( MapElementPtr root, hBool deleteAll )
 		{
 			if ( !root )
 				return;
 
-			TreeClear( root->leftRight_[0] );
-			TreeClear( root->leftRight_[1] );
+			TreeClear(root->leftRight_[0], deleteAll);
+			TreeClear(root->leftRight_[1], deleteAll);
 
 			BreakNodeLinks( root );
 
-			hDELETE((*heap_), root);
+            if (deleteAll)
+            {
+                hDELETE((*heap_), root);
+            }
 		}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////

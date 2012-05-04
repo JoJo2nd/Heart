@@ -40,39 +40,23 @@ namespace Heart
 	{
 	public:
 		hResourcePackage()
-			: completedLoads_( hNEW_ALIGN(hGeneralHeap, 32, hUint32) )
-		{}	
+            : resourceManager_(NULL)
+		{
+        }	
 		~hResourcePackage()
 		{
-		    CancelPackageLoad();
-            hUint32 size = resourceNames_.GetSize();
-            for ( hUint32 i = 0; i < size; ++i )
-            {
-                hDELETE_ARRAY_SAFE(hGeneralHeap, resourceNames_[i]);
-            }
-
-            hDELETE(hGeneralHeap, completedLoads_);
-            completedLoads_ = NULL;
 		}
 
-        void                AddResourceToPackage( const hChar* resourcePath );
-		void	            BeginPackageLoad( hResourceManager* resourceManager );
-        hBool	            IsPackageLoaded() const;
-        void                GetResourcePointers();
-        hResourceClassBase* GetResource( const hChar* resourcePath ) const;
-		void	            CancelPackageLoad();
+        hUint32             AddResourceToPackage(const hChar* resourcePath, hResourceManager* resourceManager);
+        hBool               IsPackageLoaded();
+        hUint32             GetPackageSize() const { return resourceDests_.GetSize(); }
+        hResourceClassBase* GetResource(hUint32 id) { hcAssert(IsPackageLoaded()); return resourceDests_[id]; }
 
-	private:
+    private:
 
-        void	AddResourceToPackageInternal( const hChar* resourcePath, hResourceClassBase*& dest );
-        void    BeingResourceFind();
-        void    EndResourceFind();
-
-        hVector< hChar* >               resourceNames_;
         hVector< hUint32 >              resourcecCRC_;
         hVector< hResourceClassBase* >  resourceDests_;
 		hResourceManager*				resourceManager_;
-        hUint32*                        completedLoads_;
 	};
 }
 

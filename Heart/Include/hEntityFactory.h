@@ -27,9 +27,11 @@
 #ifndef HENTITYFACTORY_H__
 #define HENTITYFACTORY_H__
 
+
 namespace Heart
 {
     class hIFileSystem;
+    class HeartEngine;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -41,6 +43,7 @@ namespace Heart
 
         hEntityFactory()
             : fileSystem_(NULL)
+            , activeScript_(NULL)
         {
 
         }
@@ -49,7 +52,7 @@ namespace Heart
 
         }
 
-        void                    Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager);
+        void                    Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, HeartEngine* engine);
         void RegisterComponent( 
             const hChar* componentName, 
             hUint32* outComponentID, 
@@ -75,6 +78,7 @@ namespace Heart
         typedef hMap< hString, hComponentFactory > ComponentFactoryMapType;
         typedef hVector< hEntity >                 EntityArray;
 
+        HeartEngine*                engine_;
         hResourceManager*           resourceManager_;
         hIFileSystem*               fileSystem_;
         ComponentFactoryMapType     factoryMap_;

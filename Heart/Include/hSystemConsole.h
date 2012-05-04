@@ -90,6 +90,7 @@ namespace Heart
         hRenderSubmissionCtx*                               rndCtx_;
 		hFont*						                        fontResource_;
 		//Background rendering 
+        hMaterial*                                          materialResource_;
 		hMaterialInstance* 					                material_;
 		hIndexBuffer*				                        indexBuffer_;
 		hVertexBuffer* 				                        vertexBuffer_;

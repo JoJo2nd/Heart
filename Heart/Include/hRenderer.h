@@ -128,11 +128,11 @@ namespace Heart
         void                                                    CreateBlendState( const hBlendStateDesc& desc, hdBlendState** state ) { *state = pImpl()->CreateBlendState( desc ); }
         void                                                    DestroyBlendState( hdBlendState* state ) { pImpl()->DestroyBlendState( state ); } 
         void                                                    CreateRasterizerState( const hRasterizerStateDesc& desc, hdRasterizerState** state ) { *state = pImpl()->CreateRasterizerState( desc ); }
-        void                                                    DestoryRasterizerState( hdRasterizerState* state ) { pImpl()->DestoryRasterizerState( state ); } 
+        void                                                    DestroyRasterizerState( hdRasterizerState* state ) { pImpl()->DestoryRasterizerState( state ); } 
         void                                                    CreateDepthStencilState( const hDepthStencilStateDesc& desc, hdDepthStencilState** state ) { *state = pImpl()->CreateDepthStencilState( desc ); }
-        void                                                    DestoryDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
+        void                                                    DestroyDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
         void                                                    CreateSamplerState( const hSamplerStateDesc& desc, hdSamplerState** state ) { *state = pImpl()->CreateSamplerState( desc ); }
-        void                                                    DestorySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
+        void                                                    DestroySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
         hdParameterConstantBlock*                               CreateConstantBuffers( const hUint32* sizes, const hUint32* regs, hUint32 count ) { return pImpl()->CreateConstantBlocks( sizes, regs, count ); }
         void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
         void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }

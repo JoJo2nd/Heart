@@ -38,6 +38,7 @@ namespace Heart
     public:
         hdDX11RenderSubmissionCtx() 
             : depthStencilView_(NULL)
+            , vbufferInputLayout_(0)
 #ifdef HEART_ALLOW_PIX_MT_DEBUGGING
             , debugMode_( hFalse )
 #endif
@@ -97,6 +98,8 @@ namespace Heart
         ID3D11RenderTargetView* renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView* depthStencilView_;
         ID3D11DeviceContext*    device_;
+        hUint32                 vbufferInputLayout_;
+        hUint32                 shaderInputLayout_;
 #ifdef HEART_ALLOW_PIX_MT_DEBUGGING
         hMutex*                 debugMutex_;
         ID3D11DeviceContext*    mainDeviceCtx_;

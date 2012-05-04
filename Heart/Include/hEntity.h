@@ -67,19 +67,20 @@ namespace Heart
         template< typename _Ty >
         _Ty* FindComponentByType()
         {
-            FindComponentByID(_Ty::GetComponentID());
-            return NULL;
+            _Ty* r = FindComponentByID(_Ty::GetComponentID());
+            return r;
         }
-        hUint32      GetComponentCount() const { return components_.GetSize(); }
-        hComponent*  GetComponent(hUint32 idx) { return components_[idx].component_; }
-        hComponent*  FindComponentByID(hUint32 id);
-        void         AddComponent(hComponent* component);
-        hBool        GetCreated() const { return created_; }
-        void         SetCreated(hBool val) { created_ = val; }
-        void         SetReserved(hBool val) { reserved_ = val; }
-        hBool        GetReserved() const { return reserved_; }
-        const hChar* GetName() { return name_; }
-        void         SetName(const hChar* name) {hStrCopy(name_,ENTITY_NAME_MEX_LEN,name);}
+        hUint32          GetComponentCount() const { return components_.GetSize(); }
+        hComponent*      GetComponent(hUint32 idx) { return components_[idx].component_; }
+        hComponent*      FindComponentByID(hUint32 id);
+        void             AddComponent(hComponent* component);
+        void             RemoveComponent(hComponent* component);
+        hBool            GetCreated() const { return created_; }
+        void             SetCreated(hBool val) { created_ = val; }
+        void             SetReserved(hBool val) { reserved_ = val; }
+        hBool            GetReserved() const { return reserved_; }
+        const hChar*     GetName() { return name_; }
+        void             SetName(const hChar* name) {hStrCopy(name_,ENTITY_NAME_MEX_LEN,name);}
 
     private:
 

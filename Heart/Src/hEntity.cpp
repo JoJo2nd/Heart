@@ -57,4 +57,19 @@ namespace Heart
         components_.PushBack(c);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hEntity::RemoveComponent( hComponent* component )
+    {
+        for (hUint32 i = 0; i < components_.GetSize(); ++i)
+        {
+            if(components_[i].component_ == component)
+                components_[i].component_ = NULL;
+        }
+    }
+
+
+
 }

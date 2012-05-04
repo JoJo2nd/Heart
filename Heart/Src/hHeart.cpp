@@ -31,6 +31,7 @@ Engine Memory Heap allocations
 */
 /************************************************************************/
 #define MB                ( 1024 * 1024 )
+
 Heart::hMemoryHeap hDebugHeap(       0 * MB, false );
 Heart::hMemoryHeap hRendererHeap(    2 * MB, false );
 Heart::hMemoryHeap hResourceHeap(   10 * MB, false );
@@ -209,7 +210,7 @@ namespace Heart
 
         luaVM_->Initialise( luaFilesystems );
 
-        entityFactory_->Initialise( fileMananger_, resourceMananger_ );
+        entityFactory_->Initialise( fileMananger_, resourceMananger_, pInstance_ );
 
         //////////////////////////////////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
@@ -254,6 +255,8 @@ namespace Heart
         {
             pEngine->GetSystem()->Update();
 
+            pEngine->GetResourceManager()->MainThreadUpdate();
+
             //before calling Update dispatch the last frames messages
             pEngine->GetEventManager()->DispatchEvents();
 
@@ -296,6 +299,8 @@ namespace Heart
             for(;;)
             {
                 pEngine->GetSystem()->Update();
+
+                pEngine->GetResourceManager()->MainThreadUpdate();
 
                 //before calling Update dispatch the last frames messages
                 pEngine->GetEventManager()->DispatchEvents();

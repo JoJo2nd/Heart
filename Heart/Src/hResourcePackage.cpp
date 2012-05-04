@@ -32,107 +32,34 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::AddResourceToPackage( const hChar* resourcePath )
+    hUint32 hResourcePackage::AddResourceToPackage(const hChar* resourcePath, hResourceManager* resourceManager)
     {
-        hUint32 crc = hResourceManager::BuildResourceCRC( resourcePath );
-        hChar* path = hNEW_ARRAY(hGeneralHeap, hChar, hStrLen( resourcePath )+1);
-        hStrCopy( path, hStrLen( resourcePath )+1, resourcePath );
-        resourceNames_.PushBack( path );
-        resourcecCRC_.PushBack( crc );
-        resourceDests_.PushBack( (hResourceClassBase*)NULL );
+        hUint32 ret = resourceDests_.GetSize();
+        resourceManager_ = resourceManager;
+        hUint32 crc = hResourceManager::BuildResourceCRC(resourcePath);
+        resourcecCRC_.PushBack(crc);
+        resourceDests_.PushBack(NULL);
+
+        resourceManager_->mtLoadResource(resourcePath);
+
+        return ret;
     }
 
     //////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourcePackage::AddResourceToPackageInternal( const hChar* resourcePath, hResourceClassBase*& dest )
-	{
-        hChar* path = hNEW_ARRAY(hGeneralHeap, hChar, strlen( resourcePath )+1);
-        strcpy( path, resourcePath );
-        resourceNames_.PushBack( path );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourcePackage::BeginPackageLoad( hResourceManager* resourceManager )
-	{
-		resourceManager_ = resourceManager;
-        *completedLoads_ = 0;
-        //The Compiler Sucks BALLS!
-        const hChar** names = (const hChar**)resourceNames_.GetBuffer();
-		resourceManager_->BeginResourceLoads( names, resourceNames_.GetSize(), completedLoads_ );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hResourcePackage::CancelPackageLoad()
-	{
-
-	}
-
-    //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackage::IsPackageLoaded() const
+    hBool hResourcePackage::IsPackageLoaded()
     {
-        hBool loaded = *completedLoads_ == resourceNames_.GetSize();
+        hBool loaded = hTrue;
+
+        for (hUint32 i = 0, c = resourceDests_.GetSize(); i < c; ++i)
+        {
+            resourceDests_[i] = resourceManager_->mtGetResourceWeak(resourcecCRC_[i]);
+            loaded &= resourceDests_[i] != NULL;
+        }
+
         return loaded;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::BeingResourceFind()
-    {
-        resourceManager_->LockResourceDatabase();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::EndResourceFind()
-    {
-        resourceManager_->UnlockResourceDatabase();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::GetResourcePointers()
-    {
-        hcAssert( IsPackageLoaded() );
-        BeingResourceFind();
-        for ( hUint32 i = 0; i < *completedLoads_; ++i )
-        {
-            resourceDests_[i] = resourceManager_->GetResource( resourcecCRC_[i] );
-        }
-        EndResourceFind();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourcePackage::GetResource( const hChar* resourcePath ) const
-    {
-        for ( hUint32 i = 0; i < *completedLoads_; ++i )
-        {
-            if ( hStrCmp( resourcePath, resourceNames_[i] ) == 0 )
-            {
-                return resourceDests_[i];
-            }
-        }
-
-        hcAssertFailMsg("Can't find resource %s in package", resourcePath);
-        return NULL;
     }
 
 }

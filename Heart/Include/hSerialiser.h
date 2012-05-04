@@ -150,10 +150,10 @@ namespace Heart
             Type_User   = 1 << 6,
             Type_Mask   = Type_1byte | Type_2byte | Type_4byte | Type_8byte | Type_User,
         };
-        hByte      typeID_ : 6;
-        hByte      flags_ : 2; 
         hUint32    count_;
         hUint32    crcID_;
+        hByte      typeID_;
+        hByte      flags_; 
     };
 
 #pragma pack ( pop )
@@ -342,6 +342,7 @@ namespace Heart
             hSerialisedElementHeader header;
 
             file_->Read( &header, sizeof(header) );
+
             return header;
     //         hUint32 stackcount = 0;
     //         

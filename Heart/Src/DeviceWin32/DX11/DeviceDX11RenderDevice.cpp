@@ -622,6 +622,7 @@ namespace Heart
 
         vtxBuf->flags_ = flags;
         vtxBuf->dataSize_ = sizeInBytes;
+        vtxBuf->vertexLayoutFlags_ = vertexLayout;
         return vtxBuf;
     }
 
@@ -779,7 +780,7 @@ namespace Heart
 
             blendStates_.Remove( state->GetKey() );
 
-            delete state; 
+            hDELETE(hGeneralHeap, state);
 
             resourceMutex_.Unlock();
         }
@@ -860,7 +861,19 @@ namespace Heart
 
     void hdDX11RenderDevice::DestoryRasterizerState( hdDX11RasterizerState* state )
     {
+        hcAssert( state );
+        state->DecRef();
 
+        if ( state->GetRefCount() == 0 )
+        {
+            resourceMutex_.Lock();
+
+            rasterizerStates_.Remove( state->GetKey() );
+
+            hDELETE(hGeneralHeap, state);
+
+            resourceMutex_.Unlock();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1036,7 +1049,19 @@ namespace Heart
 
     void hdDX11RenderDevice::DestoryDepthStencilState( hdDX11DepthStencilState* state )
     {
+        hcAssert( state );
+        state->DecRef();
 
+        if ( state->GetRefCount() == 0 )
+        {
+            resourceMutex_.Lock();
+
+            depthStencilStates_.Remove( state->GetKey() );
+
+            hDELETE(hGeneralHeap, state);
+
+            resourceMutex_.Unlock();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1124,7 +1149,19 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroySamplerState( hdDX11SamplerState* state )
     {
+        hcAssert( state );
+        state->DecRef();
 
+        if ( state->GetRefCount() == 0 )
+        {
+            resourceMutex_.Lock();
+
+            samplerStateMap_.Remove( state->GetKey() );
+
+            hDELETE(hGeneralHeap, state);
+
+            resourceMutex_.Unlock();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

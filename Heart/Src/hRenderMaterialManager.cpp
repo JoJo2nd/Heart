@@ -49,19 +49,6 @@ namespace Heart
     {
         hMutexAutoScope autoMtx( &accessMutex_ );
 
-        hLoadedMaterial* m = loadedMaterials_.Find( resId );
-
-        if ( !m )
-        {
-            hLoadedMaterial* lm = hNEW(hGeneralHeap, hLoadedMaterial);
-
-            //mat->AddRef();
-            lm->material_ = mat;
-            lm->instanceCount_ = 0;
-            lm->firstUse_ = hTrue;
-
-            loadedMaterials_.Insert( resId, lm );
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -71,53 +58,6 @@ namespace Heart
     void hRenderMaterialManager::OnMaterialUnload( hMaterial* mat )
     {
         hMutexAutoScope autoMtx( &accessMutex_ );
-
-        hLoadedMaterial* m = loadedMaterials_.Find( mat->GetResourceID() );
-        hcAssert( m );
-        hcAssert( m->instanceCount_ == 0 && m->material_->GetRefCount() == 0 );
-
-        m = loadedMaterials_.Remove( m );
-        hDELETE(hGeneralHeap, m);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hMaterialInstance* hRenderMaterialManager::CreateMaterialInstance( hUint32 matCRC )
-    {
-        hMutexAutoScope autoMtx( &accessMutex_ );
-
-        matCRC = resourceManager_->GetResourceKeyRemapping( matCRC );
-
-        hLoadedMaterial* m = loadedMaterials_.Find( matCRC );
-        hcAssert( m );
-        if ( !m )
-            return NULL;
-
-        ++m->instanceCount_;
-        m->firstUse_ = hFalse;
-        return m->material_->CreateMaterialInstance();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderMaterialManager::DestroyMaterialInstance( hMaterialInstance* instance )
-    {
-        hMutexAutoScope autoMtx( &accessMutex_ );
-
-        hLoadedMaterial* m = loadedMaterials_.Find( instance->GetParentMaterial()->GetResourceID() );
-        hcAssert( m );
-        --m->instanceCount_;
-
-        m->material_->DestroyMaterialInstance( instance );
-
-        if ( m->instanceCount_ == 0 )
-        {
-            m->material_->DecRef();
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
