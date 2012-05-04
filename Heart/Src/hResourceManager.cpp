@@ -56,7 +56,7 @@ namespace Heart
 
 	hResourceManager::~hResourceManager()
 	{
-        hDELETE(hGeneralHeap, resourceSweepCount_);
+        hDELETE_ALIGNED(hGeneralHeap, resourceSweepCount_);
         resourceSweepCount_ = NULL;
 		pInstance_ = NULL;
 	}

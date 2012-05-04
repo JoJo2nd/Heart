@@ -119,6 +119,7 @@ namespace Heart
     #define hNEW_ARRAY(heap, type, ele)         Heart::hConstructArray< type >( (type*)hHeapMalloc(heap,(sizeof(type)*ele)+Heart::hCalcArrayAllocHeader<type>()), ele )
     //#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
     #define hDELETE(heap, ptr)                  Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
+    #define hDELETE_ALIGNED(heap, ptr)          Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
     #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
     #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
     #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
@@ -158,34 +159,36 @@ namespace Heart
 #define hHeapFree( h, p ) hFree( p )
 #define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
 
-    #define hNEW(heap, type)                    hPLACEMENT_NEW(hHeapMalloc(heap,sizeof(type))) type
-    #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type),align)) type
-    #define hNEW_ARRAY(heap, type, ele)         Heart::hConstructArray< type >( (type*)hHeapMalloc(heap,(sizeof(type)*ele)+Heart::hCalcArrayAllocHeader<type>()), ele )
+    #define hNEW(heap, type)                    new type
+    #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
+    #define hNEW_ARRAY(heap, type, ele)         new type [ele]
     //#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
-    #define hDELETE(heap, ptr)                  Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
-    #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
-    #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
-    #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
+    #define hDELETE(heap, ptr)                  delete ptr
+    #define hDELETE_ALIGNED(heap, ptr)          hFree(ptr)
+    #define hDELETE_ARRAY(heap, ptr)            delete[] ptr
+    #define hDELETE_SAFE(heap, ptr)             delete ptr; ptr = NULL
+    #define hDELETE_ARRAY_SAFE(heap, ptr)       delete[] ptr; ptr = NULL
+/*
+    inline void* operator new ( size_t size )
+    {
+        return hMalloc(size);
+    }
 
-//     inline __declspec(nothrow) void* operator new ( size_t size )
-//     {
-//         return hMalloc(size);
-//     }
-// 
-//     inline __declspec(nothrow) void* operator new[] ( size_t size )
-//     {
-//         return hMalloc(size);
-//     }
-// 
-//     inline __declspec(nothrow) void operator delete ( void* mem ) 
-//     {
-//         hFree(mem);
-//     }
-// 
-//     inline __declspec(nothrow) void operator delete[] ( void* mem )
-//     {
-//         hFree(mem);
-//     }
+    inline void* operator new[] ( size_t size )
+    {
+        return hMalloc(size);
+    }
+
+    inline void operator delete ( void* mem ) 
+    {
+        hFree(mem);
+    }
+
+    inline void operator delete[] ( void* mem )
+    {
+        hFree(mem);
+    }
+*/
 #endif
 namespace Heart
 {

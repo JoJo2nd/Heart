@@ -116,7 +116,7 @@ namespace Heart
 		}
 		if ( vertexBuffer_ )
 		{
-            renderer_->DestoryVertexBuffer(vertexBuffer_);
+            renderer_->DestroyVertexBuffer(vertexBuffer_);
             vertexBuffer_ = NULL;
 		}
 		if ( IBInput_ )
@@ -126,7 +126,7 @@ namespace Heart
 		}
 		if ( VBInput_ )
 		{
-            renderer_->DestoryVertexBuffer(VBInput_);
+            renderer_->DestroyVertexBuffer(VBInput_);
             VBInput_ = NULL;
 		}
         if (rndCtx_)

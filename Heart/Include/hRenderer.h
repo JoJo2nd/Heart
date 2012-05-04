@@ -142,7 +142,7 @@ namespace Heart
 		void													CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB );
 		void													DestroyIndexBuffer( hIndexBuffer* pOut );
 		void													CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB );
-		void													DestoryVertexBuffer( hVertexBuffer* pOut );
+		void													DestroyVertexBuffer( hVertexBuffer* pOut );
 
 		void*													AquireTempRenderMemory( hUint32 size );
 		void													ReleaseTempRenderMemory( void* ptr );

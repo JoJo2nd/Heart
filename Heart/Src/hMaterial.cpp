@@ -74,10 +74,13 @@ namespace Heart
             }
         }
 
-        for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
+        if (renderer_)
         {
-            renderer_->DestroySamplerState(samplers_[i].samplerState_);
-            samplers_[i].samplerState_ = NULL;
+            for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
+            {
+                renderer_->DestroySamplerState(samplers_[i].samplerState_);
+                samplers_[i].samplerState_ = NULL;
+            }
         }
     }
 
@@ -321,11 +324,14 @@ namespace Heart
     {
         HEART_RESOURCE_SAFE_RELEASE(vertexProgram_);
         HEART_RESOURCE_SAFE_RELEASE(fragmentProgram_);
-        renderer->DestroyBlendState(blendState_);
+        if (blendState_)
+            renderer->DestroyBlendState(blendState_);
         blendState_ = NULL;
-        renderer->DestroyDepthStencilState(depthStencilState_);
+        if (depthStencilState_)
+            renderer->DestroyDepthStencilState(depthStencilState_);
         depthStencilState_ = NULL;
-        renderer->DestroyRasterizerState(rasterizerState_);
+        if (rasterizerState_)
+            renderer->DestroyRasterizerState(rasterizerState_);
         rasterizerState_ = NULL;
     }
 

@@ -125,6 +125,23 @@ namespace Heart
                 }
             }
         }
+
+        for (hUint32 i = 0, c = wos->GetObjectInstanceCount(); i < c; ++i)
+        {
+            hEntityInstanceDefinition* eid = wos->GetEntityInstanceDefinition(i);
+            for (hUint32 overrideIdx = 0, overrides = eid->propertyOverrides.GetSize(); overrideIdx < overrides; ++overrideIdx)
+            {
+                hComponentPropertyValueOverride* cpvo = &eid->propertyOverrides[overrideIdx];
+                if (cpvo->type_->type_ == eComponentPropertyType_ResourceAsset)
+                {
+                    cpvo->values_.resourcePointer_->DecRef();
+                }
+                else if (cpvo->type_->type_ == eComponentPropertyType_String)
+                {
+                    hHeapFree(hResourceHeap, cpvo->values_.stringValue_);
+                }
+            }
+        }
         hDELETE(hGeneralHeap, wos);
         return 0;
     }

@@ -42,7 +42,8 @@ namespace Heart
 		virtual ~hIReferenceCounted() 
         {
             hcAssert(*reference_ == 0);
-            hDELETE_SAFE( hGeneralHeap, reference_ );
+            hDELETE_ALIGNED( hGeneralHeap, reference_ );
+            reference_ = NULL;
         }
 		void			AddRef() const 
         {

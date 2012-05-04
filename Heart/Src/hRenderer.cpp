@@ -123,7 +123,7 @@ namespace Heart
 	void hRenderer::Destroy()
 	{	
         DestroyIndexBuffer(debugSphereIB_);
-        DestoryVertexBuffer(debugSphereVB_);
+        DestroyVertexBuffer(debugSphereVB_);
         debugSphereIB_ = NULL;
         debugSphereVB_ = NULL;
 		hcAssert( renderThread_.IsComplete() );
@@ -883,7 +883,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::DestoryVertexBuffer( hVertexBuffer* pOut )
+	void hRenderer::DestroyVertexBuffer( hVertexBuffer* pOut )
 	{
 // 		hcAssert( IsRenderThread() );
 

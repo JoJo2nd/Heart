@@ -406,7 +406,7 @@ namespace Heart
 
         hDELETE(hGeneralHeap, fileMananger_);
 
-        hDELETE(hGeneralHeap, jobManager_);
+        hDELETE_ALIGNED(hGeneralHeap, jobManager_);
 
         hDELETE(hGeneralHeap, eventManager_);
 
