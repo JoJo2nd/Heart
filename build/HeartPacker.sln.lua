@@ -5,7 +5,7 @@ SlnDir = "built_projects/".._ACTION.."/"..SlnName.."/"
 ProjectDir = SlnDir.."projects/"
 TargetDir = SlnDir.."bin/"
 BinDir = "../bin/game/"
-HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include"}
+HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include","../gwen/include"}
 ResourceBuilderIncludeDirs = {"../gamedatabaselib/include","../external/boost",{HeartIncludeDirs}}
 wxWidgetsIncludes={"../external/wxWidgets-2.9.2/include","../external/wxWidgets-2.9.2/include/msvc"}
 
@@ -37,6 +37,7 @@ solution (SlnName)
     dofile "libvorbis.proj.lua"
     dofile "libvorbisfile.proj.lua"
     dofile "libogg.proj.lua"
+	dofile "gwen.proj.lua"
     dofile "heart.proj.lua"
 	dofile "libpng.proj.lua"
 	dofile "squish.proj.lua"

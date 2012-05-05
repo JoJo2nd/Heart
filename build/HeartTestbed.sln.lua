@@ -6,7 +6,7 @@ SlnDir = "built_projects/".._ACTION.."/"..SlnName.."/"
 ProjectDir = SlnDir.."projects/"
 TargetDir = SlnDir.."bin/"
 DebugDir="../bin/game"
-HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include"}
+HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include","../gwen/include"}
 
 HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES"}
 PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS"}
@@ -30,5 +30,6 @@ solution (SlnName)
     dofile "libvorbis.proj.lua"
     dofile "libvorbisfile.proj.lua"
     dofile "libogg.proj.lua"
+	dofile "gwen.proj.lua"
     dofile "heart.proj.lua"
 

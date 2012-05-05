@@ -18,7 +18,7 @@ project "heart_packer"
 		"../gamedatabaselib/include"}
 	libdirs {ExternalLibDirs}
 	links {PlatformLibs}
-	links {"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip"}
+	links {"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip","gwen_static"}
 	links {"gamedatabaselib"}
 	flags {
 		"WinMain",
