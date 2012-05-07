@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #include "ResourceLoadTest.h"
+#include "Gwen/UnitTest/UnitTest.h"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -51,7 +52,7 @@ hUint32 ResourceLoadTest::Enter()
     {
 
         tex1_   = (Heart::hTexture*)resPack_.GetResource(0);
-        tex2_   = (Heart::hTexture*)resPack_.GetResource(1);
+        tex2_   = (Heart::hTexture*)resPack_.GetResource(1);    
         materialResource_ = (Heart::hMaterial*)resPack_.GetResource(2);
         stream_ = (Heart::hSoundResource*)resPack_.GetResource(3);
         soundBank_ = (Heart::hSoundBankResource*)resPack_.GetResource(4);
@@ -93,7 +94,10 @@ hUint32 ResourceLoadTest::Enter()
         viewport_.SetRenderTargetSetup( rtDesc );
         viewport_.SetFieldOfView( 45.f );
         viewport_.SetProjectionParams( engine_->GetRenderer()->GetRatio(), 1.f, 1000.f );
+        //viewport_.SetOrthoParams(2.f, 2.f, 0.f, 20.f);
+        viewport_.SetViewMatrix( Heart::hMatrixFunc::identity() );
         viewport_.SetViewport( vp );
+        viewport_.SetTechniquePass(engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
         hUint16 idx[] = 
         {
@@ -111,9 +115,23 @@ hUint32 ResourceLoadTest::Enter()
         engine_->GetRenderer()->CreateVertexBuffer( vtx, 3, Heart::hrVF_XYZ, 0, &vb_ );
 
         material_ = materialResource_->CreateMaterialInstance();
-        tech_ = material_->GetTechniqueByName("main");
-
         rndCtx_ = engine_->GetRenderer()->CreateRenderSubmissionCtx();
+
+        //UI test setup
+        gwenInput_ = hNEW(hUIHeap,Heart::hGwenInputBinder);
+        gwenSkin_ = hNEW(hUIHeap,Gwen::Skin::TexturedBase);
+        gwenSkin_->SetRender(engine_->GetUIRenderer());
+        gwenSkin_->Init("ENGINE/TEXTURES/UI_SKIN.TEX");
+        gwenSkin_->SetDefaultFont(Gwen::Utility::StringToUnicode("ENGINE/FONTS/UI.FNT"));
+        canvas_ = hNEW(hUIHeap,Gwen::Controls::Canvas)(gwenSkin_);
+        canvas_->SetBackgroundColor(Gwen::Color(0, 255, 255, 64));
+        canvas_->SetDrawBackground(true);
+        canvas_->SetSize( engine_->GetRenderer()->GetWidth(), engine_->GetRenderer()->GetHeight() );
+
+        UnitTest* pUnit = hNEW(hUIHeap, UnitTest)(canvas_);
+        pUnit->SetPos( 10, 10 );
+
+        gwenInput_->SetCanvas(engine_->GetControllerManager(),canvas_);
 
         return Heart::hStateBase::FINISHED;
     }
@@ -127,6 +145,10 @@ hUint32 ResourceLoadTest::Enter()
 
 hUint32 ResourceLoadTest::Main()
 {
+    if (gwenInput_)
+    {
+        gwenInput_->Update();
+    }
     return Heart::hStateBase::CONTINUE;
 }
 
@@ -136,42 +158,37 @@ hUint32 ResourceLoadTest::Main()
 
 void ResourceLoadTest::MainRender()
 {
+
 //    rndCtx_->BeginPIXDebugging();
 //     rndCtx_->SetRenderTarget( 0, NULL/*viewport_.GetRenderTarget(0)*/ );
 //     rndCtx_->SetDepthTarget( NULL/*viewport_.GetDepthTarget()*/ );
 //     rndCtx_->EnableDebugDrawing( hTrue );
 //     rndCtx_->SetRendererCamera( &viewport_ );
 //     rndCtx_->SetViewport( viewport_.GetViewport() );
+
     rndCtx_->SetRendererCamera( &viewport_ );
+    rndCtx_->SetMaterialInstance(material_);
     rndCtx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
-    rndCtx_->ClearTarget( hTrue, Heart::BLACK, hTrue, 1.f );
+    rndCtx_->ClearTarget( hTrue, Heart::hColour(.2f,.1f,.5f,1.f), hTrue, 1.f );
     rndCtx_->SetPrimitiveType( Heart::PRIMITIVETYPE_TRILIST );
     rndCtx_->SetVertexStream( 0, vb_ );
     rndCtx_->SetIndexStream( ib_ );
 
-    hUint32 passes = tech_->GetPassCount();
-
+    hUint32 passes = rndCtx_->GetMaterialInstancePasses();
     for ( hUint32 i = 0; i < passes; ++i )
     {
-        Heart::hMaterialTechniquePass* pass = tech_->GetPass( i );
-        rndCtx_->SetVertexShader( pass->GetVertexShader() );
-        rndCtx_->SetPixelShader( pass->GetPixelShader() );
-        rndCtx_->SetRenderStateBlock( pass->GetBlendState() );
-        rndCtx_->SetRenderStateBlock( pass->GetDepthStencilState() );
-        rndCtx_->SetRenderStateBlock( pass->GetRasterizerState() );
-
-        for ( hUint32 i = 0; i < material_->GetConstantBufferCount(); ++i )
-        {
-            rndCtx_->SetConstantBuffer( material_->GetConstantBlock(i) );
-        }
-
+        rndCtx_->BeingMaterialInstancePass( i );
         rndCtx_->DrawIndexedPrimitive( 1, 0 );
+        rndCtx_->EndMaterialInstancePass();
     }
-
 
     Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
 
     engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
+
+    canvas_->RenderCanvas();
+
+    engine_->GetUIRenderer()->SubmitCommandsToRenderer();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -180,6 +197,12 @@ void ResourceLoadTest::MainRender()
 
 void ResourceLoadTest::PreLeave()
 {
+    //UI Delete
+ 
+    hDELETE_SAFE(hUIHeap, gwenInput_);
+    hDELETE_SAFE(hUIHeap, canvas_);
+    hDELETE_SAFE(hUIHeap, gwenSkin_);
+
     engine_->GetRenderer()->DestroyIndexBuffer(ib_);
     engine_->GetRenderer()->DestroyVertexBuffer(vb_);
     engine_->GetRenderer()->DestroyRenderSubmissionCtx(rndCtx_);

@@ -8,7 +8,7 @@
 #ifndef GWEN_CONTROLS_CANVAS_H
 #define GWEN_CONTROLS_CANVAS_H
 
-#include <set>
+#include "Gwen/GwenSet.h"
 #include "Gwen/Controls/Base.h"
 #include "Gwen/InputHandler.h"
 
@@ -93,7 +93,7 @@ namespace Gwen
 				float	m_fScale;
 
 				Controls::Base::List	m_DeleteList;
-				std::set< Controls::Base* > m_DeleteSet;
+                set_t< Controls::Base* >::type m_DeleteSet;
 				friend class Controls::Base;
 				void PreDelete( Controls::Base * );
 

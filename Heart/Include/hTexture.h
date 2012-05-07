@@ -52,7 +52,7 @@ namespace Cmd
 		{}
 		virtual ~hTexture()
 		{
-			hDELETE_ARRAY_SAFE(hGeneralHeap, levelDescs_);
+            ReleaseCPUTextureData();
             hDELETE_ARRAY_SAFE(hGeneralHeap, textureData_);
 		}
 
@@ -66,6 +66,8 @@ namespace Cmd
 
 		virtual hUint32			Width( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].width_; }
 		virtual hUint32			Height( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].height_; }
+        void                    ReleaseCPUTextureData();
+        hColour                 ReadPixel(hUint32 x, hUint32 y);
 		//void					Lock( hUint16 level, hTextureMapInfo* info );
 		//void					Unlock( hTextureMapInfo* info );
         void                    Serialise( hSerialiser* ser ) const;

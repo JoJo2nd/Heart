@@ -49,6 +49,7 @@ namespace Heart
 		FONT_ALIGN_TOP		= 1 << 3,
 		FONT_ALIGN_BOTTOM	= 1 << 4,
 		FONT_ALIGN_HCENTRE	= 1 << 5, // alogn x axis
+        FONT_ALIGN_FLIP	    = 1 << 6, // alogn x axis
 	};
 
 namespace Private
@@ -88,6 +89,7 @@ namespace Private
 		const hFontStyle&	GetFontStyle() const { return style_; }
 		void				SetFontStyle( const hFontStyle& fontStyle ) { style_ = fontStyle; }
 		hUint32				FontHeight() const { return fontHeight_; };
+        hUint32             FontBaseLine() const { return baseLine_; }
 		hUint32				FontWidth() const { return fontWidth_; };
 		hUint32				RenderString( hIndexBuffer& iBuffer, 
 										  hVertexBuffer& vBuffer, 
@@ -95,6 +97,13 @@ namespace Private
 										  const hCPUVec2& bottomright, 
 										  const hChar* str, 
 										  hRenderSubmissionCtx* rnCtx );
+        hUint32             RenderStringSingleLine(
+            hIndexBuffer& iBuffer, 
+            hVertexBuffer& vBuffer, 
+            const hCPUVec2& topleft, 
+            const hChar* str, 
+            hRenderSubmissionCtx* rnCtx);
+        hCPUVec2            CalcRenderSize(const hChar* str);
 
 		static hResourceClassBase*		OnFontLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
 		static hUint32		            OnFontUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );

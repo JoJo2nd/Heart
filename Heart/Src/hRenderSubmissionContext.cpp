@@ -311,6 +311,9 @@ namespace Heart
         currentMaterial_ = instance;
         currentTechnique_ = instance->GetTechniqueByMask( techniqueMask_ );
         hcAssert( currentTechnique_ );
+
+//         impl_.SetConstantBlock( viewportConstantsBlock_ );
+//         impl_.SetConstantBlock( instanceConstantsBlock_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -337,7 +340,9 @@ namespace Heart
         for ( hUint32 i = 0; i < currentMaterial_->GetSamplerCount(); ++i )
         {
             const hSamplerParameter* samp = currentMaterial_->GetSamplerParameter( i );
-            SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
+            hcWarningHigh( samp->boundTexture_ == NULL, "Sampler has no texture bound" );
+            if (samp->boundTexture_)
+                SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
         }
     }
 

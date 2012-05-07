@@ -161,6 +161,41 @@ namespace Device
 				pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( wParam, hFalse, hFalse ) ); 
 			}
 			break;
+        case WM_MOUSEWHEEL:
+            {
+                wheelMove_ = (hInt16)HIWORD( wParam );
+            }
+            break;
+        case WM_LBUTTONDOWN:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hTrue, hFalse ) ); 
+            }
+            break;
+        case WM_LBUTTONUP:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hFalse, hFalse ) ); 
+            }
+            break;
+        case WM_RBUTTONDOWN:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hTrue, hFalse ) ); 
+            }
+            break;
+        case WM_RBUTTONUP:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hFalse, hFalse ) ); 
+            }
+            break;
+        case WM_MBUTTONDOWN:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hTrue, hFalse ) ); 
+            }
+            break;
+        case WM_MBUTTONUP:
+            {
+                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hFalse, hFalse ) ); 
+            }
+            break;
 		case WM_CHAR:
 			{
 				hChar charcode = ( wParam & 0x7F );
@@ -192,18 +227,19 @@ namespace Device
 
 			GetCursorPos( &mouse );
 
-			//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::MouseMoveEvent( prevMousePos_.x - mouse.x, prevMousePos_.y - mouse.y ) );
+			pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::MouseMoveEvent(prevMousePos_.x - mouse.x, prevMousePos_.y - mouse.y, wheelMove_) );
 
 			prevMousePos_.x = w.left + (r.right/2);
 			prevMousePos_.y = w.top + (r.bottom/2);
+            wheelMove_ = 0;
 
-			SetCursorPos( prevMousePos_.x, prevMousePos_.y );
+		    SetCursorPos( prevMousePos_.x, prevMousePos_.y );
 
-			//ShowCursor( false );
+			ShowCursor( false );
 		}
 		else
 		{
-			//ShowCursor( true );
+			ShowCursor( true );
 		}
 
 		PumpMessages();

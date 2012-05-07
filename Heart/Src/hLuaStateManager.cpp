@@ -70,7 +70,6 @@ namespace Heart
 		}
 
 		mainLuaState_ = NewLuaState( NULL );
-		OpenHeartLib( mainLuaState_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

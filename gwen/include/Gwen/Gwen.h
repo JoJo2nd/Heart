@@ -29,6 +29,7 @@
 #define GWEN_GWEN_H
 
 #include "Gwen/Macros.h"
+#include "Gwen/GwenMemory.h"
 #include "Gwen/Config.h"
 #include "Gwen/Exports.h"
 #include "Gwen/Structures.h"

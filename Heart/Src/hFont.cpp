@@ -29,6 +29,13 @@
 namespace Heart
 {
 
+    struct Vex
+    {
+        hCPUVec3	pos_;
+        hColour		colour_;
+        hCPUVec2	uv_;
+    };
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -176,6 +183,98 @@ hUint32 hFont::RenderString( hIndexBuffer& iBuffer,
     }
 	
 	return charsWritten * 2;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint32 hFont::RenderStringSingleLine(hIndexBuffer& iBuffer, hVertexBuffer& vBuffer, const hCPUVec2& topleft, const hChar* str, hRenderSubmissionCtx* rnCtx)
+{
+    hUint32 nLines = 0;
+    hFloat startx;
+    hFloat starty;
+    hUint32 charsWritten = 0;
+    const hChar* pforstr = str;
+    hUint16 iOffset = 0;//iBuffer.GetIndexCount(); 
+    hUint16 vOffset = 0;//vBuffer.VertexCount();
+    hIndexBufferMapInfo  ibMap;
+    hVertexBufferMapInfo vbMap;
+
+
+    rnCtx->Map( &iBuffer, &ibMap );
+    rnCtx->Map( &vBuffer, &vbMap );
+
+    hUint16* idx = (hUint16*)ibMap.ptr_;
+    Vex* vtx = (Vex*)vbMap.ptr_;
+
+    startx = topleft.x;
+    starty = topleft.y;
+
+    for (;*str;++str)
+    {
+        if (isspace(*str))
+        {
+            startx += spaceWidth_;
+            continue;
+        }
+        const Private::hFontCharacter& c = *GetFontCharacter( *str );
+
+        // ordered top left, top right, bottom left, bottom right
+        hFloat h1 = (style_.Alignment_ & FONT_ALIGN_FLIP) ? (hFloat)fontHeight_ -(hFloat)c.Height_ -(hFloat)c.BaseLine_   : (hFloat)c.Height_ + (hFloat)c.BaseLine_;
+        hFloat h2 = (style_.Alignment_ & FONT_ALIGN_FLIP) ? (hFloat)fontHeight_ -(hFloat)c.BaseLine_                      : (hFloat)c.BaseLine_;
+        Vex quad[ 4 ] = 
+        {
+            { hCPUVec3( startx			    , starty+h1, 0.0f ), style_.Colour_, c.UV1_ },
+            { hCPUVec3( startx + c.Width_	, starty+h1, 0.0f ), style_.Colour_, hCPUVec2( c.UV2_.x, c.UV1_.y ) },
+            { hCPUVec3( startx			    , starty+h2, 0.0f ), style_.Colour_, hCPUVec2( c.UV1_.x, c.UV2_.y ) },
+            { hCPUVec3( startx + c.Width_	, starty+h2, 0.0f ), style_.Colour_, c.UV2_ },
+        };
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        // Draw as a quad /////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        //hUint16* idx = *idx;
+        //Vex* vtx = (Vex*)*vBuffer;
+        *idx = vOffset;   ++idx;
+        *idx = vOffset+2; ++idx;
+        *idx = vOffset+1; ++idx;
+
+        *idx = vOffset+2; ++idx;
+        *idx = vOffset+3; ++idx;
+        *idx = vOffset+1; ++idx;
+
+        vOffset += 4;
+
+        for ( hUint32 i = 0; i < 4; ++i )
+        {
+            *vtx = quad[ i ]; ++vtx;
+        }
+
+        startx += c.xAdvan_;
+
+        ++charsWritten;
+
+    }
+
+    rnCtx->Unmap( &ibMap );
+    rnCtx->Unmap( &vbMap );
+
+    rnCtx->SetMaterialInstance( fontMaterialInstance_ );
+    hUint32 passes = rnCtx->GetMaterialInstancePasses();
+    for ( hUint32 i = 0; i < passes; ++i )
+    {
+        rnCtx->BeingMaterialInstancePass( i );
+
+        rnCtx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+        rnCtx->SetVertexStream( 0, &vBuffer );
+        rnCtx->SetIndexStream( &iBuffer );
+
+        rnCtx->DrawIndexedPrimitive( charsWritten * 2, 0 );
+        rnCtx->EndMaterialInstancePass();
+    }
+
+    return charsWritten * 2;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -357,23 +456,6 @@ void hFont::RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Pri
         *iBuffer = idx;
         *vBuffer = vtx;
 
-/*
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset   );
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+2 );
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+1 );
-
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+2 );
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+3 );
-		iBuffer.SetIndex( iOffset++, (hUint16)vOffset+1 );
-
-		for ( hUint32 i = 0; i < 4; ++i )
-		{
-			vBuffer.SetElement( vOffset, hrVE_XYZ, quad[ i ].pos_ );
-			vBuffer.SetElement( vOffset, hrVE_COLOR, quad[ i ].colour_ );
-			vBuffer.SetElement( vOffset, hrVE_1UV, quad[ i ].uv_ );
-			++vOffset;
-		}
-*/
 		startx += c.xAdvan_;
 
 		++charsWritten;
@@ -443,13 +525,13 @@ hUint32	 hFont::OnFontUnload( const hChar* ext, hResourceClassBase* resource, hR
 Private::hFontCharacter* hFont::GetFontCharacter( hUint32 charcode )
 {
 	//binary search for the character
-	hUint32 top = nFontCharacters_-1;
-	hUint32 bottom = 0;
-	hUint32 mid;
+	hInt32 top = nFontCharacters_;
+	hInt32 bottom = 0;
+	hInt32 mid;
 
-	do
+	while ( top >= bottom )
 	{
-		mid = bottom + ( (top - bottom) / 2 );
+		mid = (bottom + top)/ 2;
 		if ( fontCharacters_[ mid ].CharCode_ > charcode )
 		{
 			top = mid-1;
@@ -463,9 +545,30 @@ Private::hFontCharacter* hFont::GetFontCharacter( hUint32 charcode )
 			return &fontCharacters_[ mid ];
 		}
 	}
-	while( bottom <= top );
 
 	return &fontCharacters_[ 0 ];
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hCPUVec2 hFont::CalcRenderSize( const hChar* str )
+{
+    hCPUVec2 ret(0.f,0.f);
+    for (;*str;++str)
+    {
+        if (isspace(*str))
+        {
+            ret.x  += spaceWidth_;
+            continue;
+        }
+        const Private::hFontCharacter& fchar = *GetFontCharacter(*str);
+        ret.x += fchar.xAdvan_;
+        ret.y = hMax(ret.y, fontHeight_+baseLine_);
+    }
+
+    return ret;
 }
 
 }

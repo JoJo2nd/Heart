@@ -33,6 +33,7 @@ extern Heart::hMemoryHeap hGeneralHeap;
 extern Heart::hMemoryHeap hVMHeap;
 
 
+
 namespace Heart
 {
 
@@ -40,15 +41,7 @@ namespace Heart
 #define ALLOC_BREAK_HEAP (hGeneralHeap)
 
 hUint32 hMemoryHeap::nHeapsInUse_ = 0;
-hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = 
-{
-    &hDebugHeap,
-    &hRendererHeap,
-    &hResourceHeap,
-    &hSceneGraphHeap,
-    &hGeneralHeap,
-    &hVMHeap,
-};
+hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = {0};
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

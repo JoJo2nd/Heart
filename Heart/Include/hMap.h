@@ -164,7 +164,9 @@ namespace Heart
 			//Root is always black
 			rbTreeRoot_->colour_ = MapElement::TreeColour_BLACK;
 
+#ifdef HEART_MAP_CHECKS
             hcAssert(Validate());
+#endif // HEART_MAP_CHECKS
 			++size_;
 		}
 		MapElementPtr	Remove( KeyType key )
@@ -180,8 +182,10 @@ namespace Heart
 
 			BreakNodeLinks(rem);
 
+#ifdef HEART_MAP_CHECKS
             hcAssert(Validate());
             hcAssert(!Find(key));
+#endif // HEART_MAP_CHECKS
 
 			--size_;
 
@@ -203,8 +207,10 @@ namespace Heart
             
             BreakNodeLinks(rem);
 
+#ifdef HEART_MAP_CHECKS
             hcAssert(Validate());
             hcAssert(!Find(key));
+#endif // HEART_MAP_CHECKS
 
 			--size_;
 
@@ -233,8 +239,10 @@ namespace Heart
 
 			BreakNodeLinks(rem);
 
+#ifdef HEART_MAP_CHECKS
             hcAssert(Validate());
             hcAssert(!Find(key));
+#endif // HEART_MAP_CHECKS
 
 			if ( getnext )
 				*n = Find( nk );

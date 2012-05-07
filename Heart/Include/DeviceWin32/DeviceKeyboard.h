@@ -74,8 +74,11 @@ namespace Device
 
 		InputAxis								nextMouseX_;
 		InputAxis								nextMouseY_;
+        InputAxis                               wheel_;
 		InputAxis								mouseX_;
 		InputAxis								mouseY_;
+
+        InputButton                             mouseButtons_[3];
 
 		EventManager*							pEventManager_;
 		KeyListener								keyListener_;

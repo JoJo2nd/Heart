@@ -9,7 +9,7 @@
 #define GWEN_FONT_H
 
 #include <string>
-#include <list>
+#include "Gwen/GwenList.h"
 
 #include "Gwen/BaseRender.h"
 
@@ -18,7 +18,8 @@ namespace Gwen
 
 	struct Font
 	{
-		typedef std::list<Font*>	List;
+        GWEN_OverrideNew();
+        typedef list_t<Font*>::type	List;
 
 		Font()
 		{

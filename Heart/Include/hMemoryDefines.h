@@ -31,7 +31,7 @@
 #include <exception>
 #include <new>
 
-#define hPLACEMENT_NEW(ptr)                 new ((void*)ptr) 
+#define hPLACEMENT_NEW(ptr)                 ::new ((void*)ptr) 
 
 namespace Heart
 {
@@ -204,5 +204,6 @@ extern Heart::hMemoryHeap hResourceHeap;
 extern Heart::hMemoryHeap hSceneGraphHeap;
 extern Heart::hMemoryHeap hGeneralHeap;
 extern Heart::hMemoryHeap hVMHeap;
+extern Heart::hMemoryHeap hUIHeap;
 
 #endif // HMEMORYDEFINES_H__

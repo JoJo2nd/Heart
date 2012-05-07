@@ -70,6 +70,7 @@ namespace Device
 		IID_MIDDLEMOUSEBUTTON,
 		IID_MOUSEYAXIS,
 		IID_MOUSEXAXIS,
+        IID_MOUSEWHEEL,
 
 		//////////////////////////////////////////////////////////////////////////
 		// Keyboard ID's /////////////////////////////////////////////////////////
@@ -123,6 +124,10 @@ namespace Device
 		IID_DOWNARROW,
 		IID_LEFTARROW,
 		IID_RIGHTARROW,
+        IID_DELETE,
+        IID_BACKSPACE,
+        IID_ESCAPE,
+
 	};
 
 	//////////////////////////////////////////////////////////////////////////

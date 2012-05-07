@@ -56,6 +56,14 @@ void Canvas::RenderCanvas()
 
 		render->EndClip();
 
+        Gwen::Rect cursor;
+        cursor.x = Input::GetMousePosition().x;
+        cursor.y = Input::GetMousePosition().y;
+        cursor.w = 5;
+        cursor.h = 5;
+        render->SetDrawColor(Color(255,0,0,255));
+        render->DrawFilledRect(cursor);
+
 	render->End();
 
 	ProcessDelayedDeletes();
@@ -127,7 +135,7 @@ void Canvas::PreDelete( Controls::Base * pControl )
 {
 	if ( m_bAnyDelete )
 	{
-		std::set< Controls::Base * >::iterator itFind;
+        set_t< Controls::Base * >::type::iterator itFind;
 		if ( ( itFind = m_DeleteSet.find( pControl ) ) != m_DeleteSet.end() )
 		{
 			m_DeleteList.remove( pControl );

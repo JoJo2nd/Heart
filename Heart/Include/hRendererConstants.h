@@ -49,8 +49,9 @@ namespace Heart
 	struct hColour
 	{
 		hColour() {}
+        hColour( hByte r, hByte g, hByte b, hByte a ){ r_ = r/255.f;	b_ = b/255.f;	g_ = g/255.f;	a_ = a/255.f; }
 		hColour( hFloat r, hFloat g, hFloat b, hFloat a ){ r_ = r;	b_ = b;	g_ = g;	a_ = a; }
-		hFloat r_,g_,b_,a_;
+        hFloat r_,g_,b_,a_;
 
 		operator hUint32 () const
 		{
@@ -66,6 +67,11 @@ namespace Heart
 		{
 			return hColour( r_+c.r_, g_+c.g_, b_+c.b_, a_+c.a_ );
 		}
+
+        hColour operator - ( hColour c ) const
+        {
+            return hColour( r_-c.r_, g_-c.g_, b_-c.b_, a_-c.a_ );
+        }
 
 		hColour operator * ( hColour c ) const
 		{

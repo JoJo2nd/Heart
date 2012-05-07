@@ -22,6 +22,7 @@ namespace Gwen
 	*/
 	class TextObject
 	{
+        GWEN_OverrideNew();
 		public:
 
 			TextObject(){}

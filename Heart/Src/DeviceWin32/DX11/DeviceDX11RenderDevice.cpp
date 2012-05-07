@@ -140,6 +140,8 @@ namespace Heart
         mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
         //mainRenderCtx_.renderTargetViews_[0] = renderTargetView_;
         //mainRenderCtx_.depthStencilView_ = depthStencilView_;
+        // 
+        //ShowCursor(FALSE);
     }
 
     //////////////////////////////////////////////////////////////////////////

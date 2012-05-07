@@ -18,7 +18,7 @@ ReleaseDefines={"NDEBUG","RELEASE"}
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32"}
 
 ExternalLibDirs={"../external/boost/stage/lib","../external/wxWidgets-2.9.2/lib/vc_lib"}
-HeartLibs={"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip",{PlatformLibs}}
+HeartLibs={"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip","gwen_static",{PlatformLibs}}
 ResourceBuilderLibs={"gamedatabaselib",{HeartLibs}}
 
 ToolPostBuildStr="IF NOT EXIST ..\\..\\..\\..\\..\\bin\\tools\\ MKDIR ..\\..\\..\\..\\..\\bin\\tools\\ \ncopy /Y $(TargetPath) ..\\..\\..\\..\\..\\bin\\tools\\"

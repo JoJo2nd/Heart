@@ -13,6 +13,7 @@
 #define GWEN_STRUCTURES_H
 
 #include "Gwen/Exports.h"
+#include "Gwen/GwenMemory.h"
 #include <string>
 
 namespace Gwen
@@ -39,8 +40,8 @@ namespace Gwen
 		static const unsigned char Count	= 10;
 	}
 
-	typedef std::wstring UnicodeString;
-	typedef std::string String;
+    typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, GwenSTLAllocator<wchar_t> > UnicodeString;
+	typedef std::basic_string<char, std::char_traits<char>, GwenSTLAllocator<char> > String;
 	typedef wchar_t UnicodeChar; // Portability??
 
 	struct GWEN_EXPORT Margin
@@ -203,6 +204,7 @@ namespace Gwen
 	{
 		struct GWEN_EXPORT Package
 		{
+            GWEN_OverrideNew();
 			Package()
 			{
 				userdata = NULL;

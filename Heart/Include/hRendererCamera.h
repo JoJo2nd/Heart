@@ -57,6 +57,7 @@ namespace Heart
 		void					    SetFieldOfView( hFloat fovDegrees ) { fov = hmDegToRad( fovDegrees ); }
 		void					    SetProjectionParams( hFloat Ratio, hFloat Near, hFloat Far );
 		void					    SetOrthoParams( hFloat width, hFloat height, hFloat znear, hFloat zfar );
+        void					    SetOrthoParams( hFloat left, hFloat top, hFloat right, hFloat bottom, hFloat znear, hFloat zfar );
 		void					    SetViewMatrix( const hMatrix& m );
         const hMatrix&			    GetViewMatrix() { return viewMatrix_; }
 		const hMatrix&			    GetProjectionMatrix() { return projectionMatrix_; }

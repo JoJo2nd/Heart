@@ -9,7 +9,7 @@
 #define GWEN_HOOK_H
 
 #include "Gwen/Gwen.h"
-#include <list>
+#include "Gwen/GwenList.h"
 
 #ifdef GWEN_HOOKSYSTEM
 
@@ -24,7 +24,7 @@ namespace Gwen
 				virtual bool OnControlClicked( Gwen::Controls::Base*, int /*iMouseX*/, int /*iMouseY*/ ){ return false; };
 		};
 
-		typedef std::list<BaseHook*> HookList;
+        typedef list_t<BaseHook*>::type HookList;
 
 		GWEN_EXPORT HookList& GetHookList();
 

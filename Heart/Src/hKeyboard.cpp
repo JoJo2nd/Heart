@@ -32,9 +32,9 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hKeyboard::hKeyboard() :
-		pKeyboard_( NULL )
-		,pButtonKeyboard_( NULL )
+	hKeyboard::hKeyboard()
+        : pKeyboard_( NULL )
+		, pButtonKeyboard_( NULL )
 	{
 
 	}
@@ -52,10 +52,11 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hKeyboard::Initialise( Device::ICharacterInput* pKbImpl, Device::IInput* pButtonKeyboard )
+	hBool hKeyboard::Initialise( Device::ICharacterInput* pKbImpl, Device::IInput* pButtonKeyboard, Device::IBufferedInput* bufferKeyb)
 	{
 		pKeyboard_ = pKbImpl;
 		pButtonKeyboard_ = pButtonKeyboard;
+        bufferInput_ = bufferKeyb;
 
 		return hTrue;
 	}

@@ -8,6 +8,7 @@
 #ifndef GWEN_BASERENDER_H
 #define GWEN_BASERENDER_H
 
+#include "Gwen/GwenMemory.h"
 #include "Gwen/Structures.h"
 
 namespace Gwen 
@@ -36,6 +37,7 @@ namespace Gwen
 
 		class GWEN_EXPORT Base
 		{
+            GWEN_OverrideNew();
 			public:
 
 				Base();

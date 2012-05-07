@@ -25,7 +25,7 @@ namespace Gwen
 				
 				GWEN_CONTROL( ListBox, ScrollControl );
 
-				typedef std::list<Layout::TableRow*> Rows;
+                typedef list_t<Layout::TableRow*>::type Rows;
 
 				Layout::TableRow* AddItem( const String& strLabel, const String& strName = "" );
 				Layout::TableRow* AddItem( const UnicodeString& strLabel, const String& strName = "" );

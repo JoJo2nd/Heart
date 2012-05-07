@@ -202,6 +202,14 @@ namespace Device
 			return keys_[ VK_LEFT ];
 		case IID_RIGHTARROW:
 			return keys_[ VK_RIGHT ];
+        case IID_ESCAPE:
+            return keys_[VK_ESCAPE];
+        case IID_LEFTMOUSEBUTTON:
+            return mouseButtons_[0];
+        case IID_RIGHTMOUSEBUTTON:
+            return mouseButtons_[1];
+        case IID_MIDDLEMOUSEBUTTON:
+            return mouseButtons_[2];
 		}
 
 		return Device::InputButton();
@@ -234,6 +242,8 @@ namespace Device
 			return mouseX_;
 		case IID_MOUSEYAXIS:
 			return mouseY_;
+        case IID_MOUSEWHEEL:
+            return wheel_;
 		}
 
 		return Device::InputAxis();
@@ -276,6 +286,21 @@ namespace Device
 				keys_[ i ].fallingEdge_ = hFalse;
 			}
 		}
+
+        for ( hUint32 i = 0; i < hStaticArraySize(mouseButtons_); ++i )
+        {
+            if ( mouseButtons_[ i ].raisingEdge_ )
+            {
+                mouseButtons_[ i ].buttonVal_ = hTrue;
+                mouseButtons_[ i ].raisingEdge_ = hFalse;
+            }
+
+            if ( mouseButtons_[ i ].fallingEdge_ )
+            {
+                mouseButtons_[ i ].buttonVal_ = hFalse;
+                mouseButtons_[ i ].fallingEdge_ = hFalse;
+            }
+        }
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -333,11 +358,14 @@ namespace Device
 		case VK_RSHIFT: id = IID_RIGHTSHIFT; break;
 		case VK_TAB: id = IID_TAB; break;
 		case VK_RETURN: id = IID_RETURN; break;
-		case VK_MENU: id = IID_ALT; break;
+		case VK_LMENU: id = IID_ALT; break;
 		case VK_UP: id = IID_UPARROW; break;
 		case VK_DOWN: id = IID_DOWNARROW; break;
 		case VK_LEFT: id = IID_LEFTARROW; break;
 		case VK_RIGHT: id = IID_RIGHTARROW; break;
+        case VK_DELETE: id = IID_DELETE; break;
+        case VK_BACK: id = IID_BACKSPACE; break;
+        case VK_ESCAPE: id = IID_ESCAPE; break;
 		default: return;
 		}
 
@@ -354,11 +382,25 @@ namespace Device
 	{
 		if ( event->down_ )
 		{
-			keys_[ event->key_ ].raisingEdge_ = hTrue;
+            if (event->key_ >= IID_LEFTMOUSEBUTTON && event->key_ <= IID_MIDDLEMOUSEBUTTON)
+            {
+                mouseButtons_[event->key_-IID_LEFTMOUSEBUTTON].raisingEdge_ = hTrue;
+            }
+            else
+            {
+			    keys_[ event->key_ ].raisingEdge_ = hTrue;
+            }
 		}
 		else //if ( !event->isRepeat_ )
 		{
-			keys_[ event->key_ ].fallingEdge_ = hTrue;
+            if (event->key_ >= IID_LEFTMOUSEBUTTON && event->key_ <= IID_MIDDLEMOUSEBUTTON)
+            {
+                mouseButtons_[event->key_-IID_LEFTMOUSEBUTTON].fallingEdge_ = hTrue;
+            }
+            else
+            {
+                keys_[ event->key_ ].fallingEdge_ = hTrue;
+            }
 		}
 
 		if ( event->isRepeat_ )
@@ -388,6 +430,7 @@ namespace Device
 	{
 		nextMouseX_.anologueVal_ += event->xDelta_;
 		nextMouseY_.anologueVal_ += event->yDelta_;
+        wheel_.anologueVal_ = event->wheel_;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

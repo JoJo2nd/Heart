@@ -76,10 +76,10 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         Vertex verts[] = 
         {
-            {hVec3( screenWidth_ / -2.0f, screenHeight_ / 2.0f, 0.0f ), hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
-            {hVec3( screenWidth_ / 2.0f, screenHeight_ / 2.0f, 0.0f ) , hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
-            {hVec3( screenWidth_ / -2.0f, 0.0f, 0.0f )                , hColour( 0.6f, 0.6f, 0.6f, 0.8f )},
-            {hVec3( screenWidth_ / 2.0f, 0.0f, 0.0f )                 , hColour( 0.6f, 0.6f, 0.6f, 0.8f )},
+            {hVec3( screenWidth_ / -2.0f, screenHeight_ / 2.0f, 0.1f ), hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
+            {hVec3( screenWidth_ / 2.0f, screenHeight_ / 2.0f, 0.1f ) , hColour( 0.0f, 0.0f, 0.0f, 0.8f )},
+            {hVec3( screenWidth_ / -2.0f, 0.0f, 0.1f )                , hColour( 0.9f, 0.9f, 0.9f, 1.0f )},
+            {hVec3( screenWidth_ / 2.0f, 0.0f, 0.1f )                 , hColour( 0.9f, 0.9f, 0.9f, 1.0f )},
         };
 		
 		renderer_->CreateIndexBuffer( idx, 6, 0, PRIMITIVETYPE_TRILIST, &indexBuffer_ );	
@@ -225,24 +225,23 @@ namespace Heart
 				//Render input
 				hFontStyle style;
 				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_TOP;
-				style.Colour_ = hColour( 1.0f, 1.0f, 1.0f, 1.0f );
+				style.Colour_ = BLACK;
 
 				fontResource_->SetFontStyle( style );
 
 				if ( nInputChars_ )
 				{
-					nInputPrims_ = fontResource_->RenderString( 
-													*IBInput_, 
-													*VBInput_, 
-													hVec2( screenWidth_ / -2.0f, (hFloat)fontResource_->FontHeight() ),
-													hVec2( screenWidth_ / 2.0f, 0.0f ),
-													inputBuffer_,
-													rndCtx_ );
+                    nInputPrims_ += fontResource_->RenderStringSingleLine( 
+                        *IBInput_, 
+                        *VBInput_, 
+                        hVec2( screenWidth_ / -2.0f, fontResource_->FontBaseLine() ),
+                        inputBuffer_,
+                        rndCtx_);
 				}
 
 				//Render Log
 				style.Alignment_ = FONT_ALIGN_LEFT | FONT_ALIGN_BOTTOM;
-				style.Colour_ = hColour( 0.7f, 0.7f, 0.7f, 0.7f );
+				style.Colour_ = BLACK;
 
 				fontResource_->SetFontStyle( style );
 
@@ -255,6 +254,7 @@ namespace Heart
 													hVec2( screenWidth_ / 2.0f,  (hFloat)fontResource_->FontHeight() ),
 													consoleLog_.c_str(),
                                                     rndCtx_ );
+
 				}
 
 
@@ -329,7 +329,7 @@ namespace Heart
 
 	void hSystemConsole::UpdateConsole()
 	{
-		if ( keyboard_->GetButtonDown( Device::IID_TAB, keyboardAccessKey_ ) )
+		if ( keyboard_->GetButtonDown( Device::IID_ESCAPE, keyboardAccessKey_ ) )
 		{
 			shown_ = !shown_;
 		}

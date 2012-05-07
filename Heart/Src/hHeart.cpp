@@ -38,6 +38,7 @@ Heart::hMemoryHeap hResourceHeap(   10 * MB, false );
 Heart::hMemoryHeap hSceneGraphHeap(  0 * MB, false );
 Heart::hMemoryHeap hGeneralHeap(     1 * MB, false );
 Heart::hMemoryHeap hVMHeap(          0 * MB, false );
+Heart::hMemoryHeap hUIHeap(          0 * MB, true  );
 
 /************************************************************************/
 /*    Engine Init                                                         */
@@ -47,7 +48,6 @@ namespace Heart
 {
     hChar            HeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
     const hFloat    HeartEngine::HEART_VERSION = 0.4f;
-    HeartEngine*    HeartEngine::pInstance_ = NULL;
 
     HeartEngine* InitHeartEngine( HeartConfig& Config, const char* configFile )
     {
@@ -62,8 +62,6 @@ namespace Heart
 
     HeartEngine::HeartEngine(  HeartConfig& config, const char* configFile )
     {
-        pInstance_ = this;
-
         //strcpy_s( pHomeDirectory_, HOME_DIRECTORY_MAX_LEN, config.pWorkingDir_ );
 
         //
@@ -90,6 +88,8 @@ namespace Heart
         soundManager_ = hNEW(hGeneralHeap, hSoundManager);
 
         console_ = hNEW(hGeneralHeap, hSystemConsole);
+
+        uiRenderer_ = hNEW(hGeneralHeap, hGwenRenderer);
 
         luaVM_ = hNEW(hGeneralHeap, hLuaStateManager);
 
@@ -121,7 +121,11 @@ namespace Heart
         {
             "ENGINE/EFFECTS/DEBUG.CFX",
             "ENGINE/FONTS/CONSOLE.FNT",
+            "ENGINE/FONTS/UI.FNT",
             "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
+            "ENGINE/EFFECTS/UI_COLOUR.CFX",
+            "ENGINE/EFFECTS/UI_COLOUR_TEX.CFX",
+            "ENGINE/TEXTURES/UI_SKIN.TEX",
             NULL
         };
 
@@ -210,13 +214,15 @@ namespace Heart
 
         luaVM_->Initialise( luaFilesystems );
 
-        entityFactory_->Initialise( fileMananger_, resourceMananger_, pInstance_ );
+        entityFactory_->Initialise( fileMananger_, resourceMananger_, this );
 
         //////////////////////////////////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
 
         console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_ );
+
+        uiRenderer_->Initialise(renderer_, resourceMananger_);
 
         DebugRenderer::Initialise( resourceMananger_, renderer_ );
 
@@ -225,6 +231,8 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
         RegisterDefaultComponents();
+
+        OpenHeartLuaLib(luaVM_->GetMainState(), this);
 
     }
 
@@ -257,14 +265,14 @@ namespace Heart
 
             pEngine->GetResourceManager()->MainThreadUpdate();
 
+            pEngine->GetControllerManager()->Update();
+
             //before calling Update dispatch the last frames messages
             pEngine->GetEventManager()->DispatchEvents();
 
             hClock::Update();
 
             pEngine->GetConsole()->Update();
-
-            pEngine->GetControllerManager()->Update();
 
             if ( (*quitFlag) )
             {
@@ -302,14 +310,14 @@ namespace Heart
 
                 pEngine->GetResourceManager()->MainThreadUpdate();
 
+                pEngine->GetControllerManager()->Update();
+
                 //before calling Update dispatch the last frames messages
                 pEngine->GetEventManager()->DispatchEvents();
 
                 hClock::Update();
 
                 pEngine->GetConsole()->Update();
-
-                pEngine->GetControllerManager()->Update();
 
                 if ( (*quitFlag) )
                 {
@@ -356,6 +364,7 @@ namespace Heart
         CHECK_HEAP( hResourceHeap );
         CHECK_HEAP( hSceneGraphHeap );
         CHECK_HEAP( hVMHeap );
+        CHECK_HEAP(hUIHeap);
 
 #undef CHECK_HEAP
 
@@ -369,6 +378,8 @@ namespace Heart
         jobManager_->Destory();
 
         DebugRenderer::Destory();
+
+        uiRenderer_->DestroyResources();
 
         console_->Destroy();
 
@@ -389,6 +400,8 @@ namespace Heart
         hDELETE_SAFE(hGeneralHeap, entityFactory_);
 
         hDELETE(hGeneralHeap, luaVM_);
+
+        hDELETE_SAFE(hGeneralHeap, uiRenderer_);
 
         hDELETE(hGeneralHeap, zipFileSystem_);
 

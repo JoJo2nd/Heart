@@ -45,7 +45,7 @@ namespace Heart
 
     void hEntityFactory::RegisterComponent( 
         const hChar* componentName, 
-        hUint32* outComponentID, 
+        hUint32 outComponentID, 
         const hComponentProperty* props, 
         hUint32 propCount, 
         ComponentCreateCallback createFunc, 
@@ -53,7 +53,7 @@ namespace Heart
     {
         hComponentFactory* fact = hNEW(hGeneralHeap, hComponentFactory);
         //TODO:
-        // fact->componentID_ = GetNewComponentID();
+         fact->componentID_ = outComponentID;
         // *outComponentID = fact->componentID_;
         fact->componentName_        = componentName;
         fact->componentPropCount_   = propCount;
@@ -300,7 +300,7 @@ namespace Heart
 
         for (hUint32 i = 0, c = entityDef->propertyOverrides.GetSize(); i < c; ++i)
         {
-            hComponent* comp = entry->GetComponent(entityDef->propertyOverrides[i].compFactory_->componentID_);
+            hComponent* comp = entry->FindComponentByID(entityDef->propertyOverrides[i].compFactory_->componentID_);
             if (!comp)
             {
                 //Component not created, so make it now;

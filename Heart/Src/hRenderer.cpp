@@ -445,6 +445,13 @@ namespace Heart
         hcAssert(dt);
         resource->SetImpl(dt);
 
+        if ( resource->format_ == TFORMAT_DXT1 ||
+             resource->format_ == TFORMAT_DXT3 ||
+             resource->format_ == TFORMAT_DXT5 )
+        {
+            resource->ReleaseCPUTextureData();
+        }
+
  		return resource;
 	}
 
@@ -454,8 +461,9 @@ namespace Heart
 
 	hUint32 hRenderer::OnTextureUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
 	{
+        hTexture* t =static_cast<hTexture*>(resource);
         DestroyTexture(static_cast<hTexture*>(resource));
-        //hDELETE_SAFE(hGeneralHeap, resource);
+        //hDELETE_SAFE(hGeneralHeap, t);
 		return 0;
 	}
 
@@ -832,7 +840,8 @@ namespace Heart
 
 		pImpl()->DestroyTexture(pOut->pImpl());
         pOut->SetImpl(NULL);
-		hDELETE_SAFE(hRendererHeap, pOut);
+
+        hDELETE_SAFE(hRendererHeap, pOut);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

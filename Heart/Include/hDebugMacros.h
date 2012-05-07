@@ -21,7 +21,7 @@
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
-#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!***************" ); hcPrintf( x, __VA_ARGS__ ); }
+#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!:"x, __VA_ARGS__ ); }
 
 extern "C" void hcOutputStringRaw( const hChar* msg, ... );
 extern "C" void hcOutputString( const hChar* msg, ... );

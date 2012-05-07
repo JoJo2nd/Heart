@@ -69,6 +69,9 @@ namespace Heart
 		viewport_.width_ = 800;
 		viewport_.height_ = 600;
 
+        hZeroMem( renderTargets_, sizeof(renderTargets_) );
+        depthTarget_ = NULL;
+
         hUint32 sizes[] = { sizeof(hViewportShaderConstants), sizeof(hInstanceConstants) };
         hUint32 regs[] = { HEART_VIEWPORT_CONSTANTS_REGISTIER, HEART_INSTANCE_CONSTANTS_REGISTIER };
         sharedConstantParamters_ = renderer_->CreateConstantBuffers( sizes, regs, 2 );
@@ -136,6 +139,22 @@ namespace Heart
 
         UpdateParameters();
 	}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRendererCamera::SetOrthoParams( hFloat left, hFloat top, hFloat right, hFloat bottom, hFloat znear, hFloat zfar )
+    {
+        aspect_ = (right-left) / (bottom-top);
+        near_ = znear;
+        far_ = zfar;
+        isOrtho_ = hTrue;
+
+        projectionMatrix_ = hMatrixFunc::orthoProjOffCentre( left, right, bottom, top, near_, far_ );
+
+        UpdateParameters();
+    }
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////

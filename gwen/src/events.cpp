@@ -24,7 +24,7 @@ Handler::~Handler()
 void Handler::CleanLinks()
 {
 	// Tell all the callers that we're dead
-	std::list<Caller*>::iterator iter = m_Callers.begin();
+    list_t<Caller*>::type::iterator iter = m_Callers.begin();
 	while ( iter != m_Callers.end() )
 	{
 		Caller* pCaller = *iter;
@@ -57,7 +57,7 @@ Caller::~Caller()
 
 void Caller::CleanLinks()
 {
-	std::list<handler>::iterator iter;
+    list_t<handler>::type::iterator iter;
 	for (iter = m_Handlers.begin(); iter != m_Handlers.end(); ++iter)
 	{
 		handler& h = *iter;
@@ -69,7 +69,7 @@ void Caller::CleanLinks()
 
 void Caller::Call( Controls::Base* pThis )
 {
-	std::list<handler>::iterator iter;
+    list_t<handler>::type::iterator iter;
 	for (iter = m_Handlers.begin(); iter != m_Handlers.end(); ++iter)
 	{
 		handler& h = *iter;
@@ -124,7 +124,7 @@ void Caller::RemoveHandler( Event::Handler* pObject )
 {
 	pObject->UnRegisterCaller( this );
 
-	std::list<handler>::iterator iter = m_Handlers.begin();
+    list_t<handler>::type::iterator iter = m_Handlers.begin();
 
 	while ( iter != m_Handlers.end() )
 	{

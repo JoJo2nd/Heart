@@ -134,5 +134,45 @@ namespace Heart
         DESERIALISE_ELEMENT( textureData_ );
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hTexture::ReleaseCPUTextureData()
+    {
+        if (nLevels_ > 1 || !IsDiskResource())
+        {
+            hDELETE_ARRAY_SAFE(hGeneralHeap, levelDescs_);
+        }
+        else
+        {
+            hDELETE_SAFE(hGeneralHeap, levelDescs_);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    Heart::hColour hTexture::ReadPixel(hUint32 x, hUint32 y)
+    {
+        hcAssert(x < Width() && y < Height());
+        if (!textureData_ ||
+            format_ != TFORMAT_ARGB8)
+        {
+            hcPrintf("Attempt was made to read a pixel from a texture where the CPU resource data"
+                     "has been released. This is automatically for DXT textures on load.");
+            return BLACK;
+        }
+
+        hColour ret(
+        textureData_[((y*levelDescs_[0].width_*4)+x*4)+0],
+        textureData_[((y*levelDescs_[0].width_*4)+x*4)+1],
+        textureData_[((y*levelDescs_[0].width_*4)+x*4)+2],
+        textureData_[((y*levelDescs_[0].width_*4)+x*4)+3] );
+
+        return ret;
+    }
+
 }
 

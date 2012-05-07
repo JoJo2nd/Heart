@@ -19,10 +19,11 @@ namespace Gwen
 	{
 		class GWEN_EXPORT Animation
 		{
+            GWEN_OverrideNew();
 			public:
 
-				typedef std::list<Animation*> ChildList;
-				typedef std::map< Gwen::Controls::Base *, ChildList > List;
+                typedef list_t<Animation*>::type ChildList;
+                typedef map_t< Gwen::Controls::Base *, ChildList >::type List;
 
 				virtual void Think() = 0;
 				virtual bool Finished() = 0;

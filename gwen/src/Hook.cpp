@@ -12,7 +12,7 @@
 using namespace Gwen;
 using namespace Gwen::Hook;
 
-std::list<BaseHook*>	g_HookList;
+list_t<BaseHook*>::type	g_HookList;
 
 void Gwen::Hook::AddHook( BaseHook* pHook )
 { 

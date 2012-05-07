@@ -33,7 +33,7 @@ namespace Gwen
 
 				struct DividedText
 				{
-					typedef std::list<DividedText> List;
+                    typedef list_t<DividedText>::type List;
 					DividedText()
 					{
 						type = 0;

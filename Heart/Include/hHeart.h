@@ -123,11 +123,12 @@ namespace Heart
         hJobManager*        GetJobManager()         { return jobManager_; }
         hEntityFactory*     GetEntityFactory()      { return entityFactory_; }
         hSoundManager*      GetSoundManager()       { return soundManager_; }
+        hGwenRenderer*      GetUIRenderer()         { return uiRenderer_; }
+        void*               GetUIMenuManager()      { return NULL; }
         const hChar*        GetHomeDirectory()      { return pHomeDirectory_; }
 
         static const hChar* VersionString()         { return HEART_VERSION_STRING; }
         static hFloat       Version()               { return HEART_VERSION; }
-        static HeartEngine* Instance()              { return pInstance_; }
 
     private:
 
@@ -135,7 +136,6 @@ namespace Heart
         static const hFloat  HEART_VERSION; 
         static const hUint32 HEART_VERSION_MAJOR = 0;
         static const hUint32 HEART_VERSION_MINOR = 4;
-        static HeartEngine*  pInstance_;
 
         void                            RegisterDefaultComponents();
 
@@ -152,6 +152,7 @@ namespace Heart
         hLuaStateManager*   luaVM_;
         hJobManager*        jobManager_;
         hEntityFactory*     entityFactory_;
+        hGwenRenderer*      uiRenderer_;
         hChar               pHomeDirectory_[ HOME_DIRECTORY_MAX_LEN ];
         hConfigOptions      configFile_;
     };

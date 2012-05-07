@@ -8,7 +8,7 @@
 #ifndef GWEN_UTILITY_H
 #define GWEN_UTILITY_H
 #include <sstream>
-#include <vector>
+#include "Gwen/GwenVector.h"
 #include "Gwen/Structures.h"
 
 namespace Gwen
@@ -42,8 +42,10 @@ namespace Gwen
 
 			String temp(strIn.length(), (char)0);
 
-			std::use_facet< std::ctype<wchar_t> >(std::locale()). \
-				narrow(&strIn[0], &strIn[0]+strIn.length(), ' ', &temp[0]);
+			//std::use_facet< std::ctype<wchar_t> >(std::locale()). \
+			//	narrow(&strIn[0], &strIn[0]+strIn.length(), ' ', &temp[0]);
+			temp.assign(strIn.begin(), strIn.end());
+
 
 			return temp;
 		}
@@ -54,8 +56,9 @@ namespace Gwen
 
 			UnicodeString temp(strIn.length(), (wchar_t)0);
 
-			std::use_facet< std::ctype<wchar_t> >(std::locale()). \
-				widen(&strIn[0], &strIn[0]+strIn.length(), &temp[0]);
+			//std::use_facet< std::ctype<wchar_t> >(std::locale()). \
+			//	widen(&strIn[0], &strIn[0]+strIn.length(), &temp[0]);
+			temp.assign(strIn.begin(), strIn.end());
 
 			return temp; 
 		}
@@ -67,7 +70,7 @@ namespace Gwen
 		template <class T>
 		String ToString( const T& object )
 		{
-			std::ostringstream os;
+            std::basic_ostringstream<char, std::char_traits<char>, GwenSTLAllocator<char> > os;
 			os << object;
 			return os.str();
 		}
@@ -102,8 +105,8 @@ namespace Gwen
 
 		namespace Strings
 		{
-			typedef std::vector<Gwen::String> List;
-			typedef std::vector<Gwen::UnicodeString> UnicodeList;
+            typedef vector_t<Gwen::String>::type List;
+			typedef vector_t<Gwen::UnicodeString>::type UnicodeList;
 
 			GWEN_EXPORT void Split( const Gwen::String& str, const Gwen::String& seperator, Strings::List& outbits, bool bLeaveSeperators = false );
 			GWEN_EXPORT void Split( const Gwen::UnicodeString& str, const Gwen::UnicodeString& seperator, Strings::UnicodeList& outbits, bool bLeaveSeperators = false );

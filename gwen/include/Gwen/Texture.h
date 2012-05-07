@@ -20,6 +20,7 @@ namespace Gwen
 	//
 	struct Texture
 	{
+        GWEN_OverrideNew();
 		TextObject	name;
 		void*	data;
 		bool	failed;

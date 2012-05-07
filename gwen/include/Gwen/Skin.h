@@ -30,6 +30,7 @@ namespace Gwen
 
 		class GWEN_EXPORT Base
 		{
+            GWEN_OverrideNew();
 			public:
 
 				Base()

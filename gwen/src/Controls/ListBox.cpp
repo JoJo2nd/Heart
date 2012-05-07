@@ -102,7 +102,7 @@ void ListBox::Render( Skin::Base* skin )
 
 void ListBox::UnselectAll()
 {
-	std::list<Layout::TableRow*>::iterator it = m_SelectedRows.begin();
+    list_t<Layout::TableRow*>::type::iterator it = m_SelectedRows.begin();
 	while ( it != m_SelectedRows.end() )
 	{
 		ListBoxRow* pRow = static_cast<ListBoxRow*>(*it);

@@ -80,6 +80,11 @@ namespace Heart
             {
                 renderer_->DestroySamplerState(samplers_[i].samplerState_);
                 samplers_[i].samplerState_ = NULL;
+
+                 if (samplers_[i].boundTexture_)
+                 {
+                     samplers_[i].boundTexture_->DecRef();
+                 }
             }
         }
     }
@@ -250,6 +255,15 @@ namespace Heart
             regs[i] = parentMat->GetConstantBufferRegister( i );
         }
         constBuffers_ = renderer->CreateConstantBuffers( sizes, regs, parentMat->GetConstantBufferCount() );
+
+//         for (hUint32 i = 0, c = parentMaterial_->GetSamplerArray().GetSize(); i < c; ++i)
+//         {
+//             if (parentMaterial_->GetSamplerArray()[i].boundTexture_)
+//             {
+//                 parentMaterial_->GetSamplerArray()[i].boundTexture_->AddRef();
+//             }
+//         }
+
         parentMaterial_->GetSamplerArray().CopyTo( &samplers_ );
     }
 
@@ -260,6 +274,13 @@ namespace Heart
     hMaterialInstance::~hMaterialInstance()
     {
         renderer_->DestroyConstantBuffers(constBuffers_, parentMaterial_->GetConstantBufferCount());
+//         for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
+//         {
+//             if (samplers_[i].boundTexture_)
+//             {
+//                 samplers_[i].boundTexture_->DecRef();
+//             }
+//         }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -305,13 +326,16 @@ namespace Heart
     void hMaterialInstance::SetSamplerParameter( const hSamplerParameter* param, hTexture* tex )
     {
         hSamplerParameter* p = const_cast< hSamplerParameter* >( param );
-        if ( p->boundTexture_ )
+        if ( tex != p->boundTexture_ )
         {
-            p->boundTexture_->DecRef();
-        }
-        if ( tex )
-        {
-            tex->AddRef();
+            if ( p->boundTexture_ )
+            {
+                //p->boundTexture_->DecRef();
+            }
+            if ( tex )
+            {
+                //tex->AddRef();
+            }
         }
         p->boundTexture_ = tex;
     }

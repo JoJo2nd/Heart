@@ -60,7 +60,8 @@ namespace Events
 			{
 				Device::IInput* pKb = pImpl()->GetInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
 				Device::ICharacterInput* pCKb = pImpl()->GetCharacterInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
-				keyboard_.Initialise( pCKb, pKb );
+                Device::IBufferedInput* pBKb = pImpl()->GetBufferInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
+				keyboard_.Initialise( pCKb, pKb, pBKb );
 			}
 
 			for ( hUint32 i = 0; i < 4; ++i )

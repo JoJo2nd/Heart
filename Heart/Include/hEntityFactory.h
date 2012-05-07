@@ -55,7 +55,7 @@ namespace Heart
         void                    Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, HeartEngine* engine);
         void RegisterComponent( 
             const hChar* componentName, 
-            hUint32* outComponentID, 
+            hUint32 outComponentID, 
             const hComponentProperty* props, 
             hUint32 propCount, 
             ComponentCreateCallback createFunc, 
@@ -87,7 +87,7 @@ namespace Heart
     };
 
 #define HEART_REGISTER_COMPONENT_FACTORY( ef, c, createFunc, destroyFunc ) \
-    ef->RegisterComponent( c::GetComponentName(), c::GetComponentIDAddress(), c::GetPropertyArray(), c::GetPropertyCount(), createFunc, destroyFunc );
+    ef->RegisterComponent( c::GetComponentName(), c::GetComponentID(), c::GetPropertyArray(), c::GetPropertyCount(), createFunc, destroyFunc );
 }
 
 #endif // HENTITYFACTORY_H__

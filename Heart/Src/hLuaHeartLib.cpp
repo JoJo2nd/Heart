@@ -43,6 +43,8 @@ by Lua can also return many results.
 
 */
 
+    static int g_luaEngineIdx;
+
 	int WaitCheck( lua_State* L )
 	{
 		float startTime = luaL_checknumber( L, 1 );
@@ -84,7 +86,9 @@ by Lua can also return many results.
 
 	int EnableDebugDraw( lua_State* L )
 	{
-		int enable = luaL_checkinteger( L, -1 );
+        HEART_LUA_GET_ENGINE(L);
+
+		int enable = luaL_checkinteger(L, -1);
 		
 		Heart::DebugRenderer::EnableDebugDrawing( enable > 0 );
 
@@ -92,15 +96,17 @@ by Lua can also return many results.
 	}
 
 	static const luaL_Reg heartlib[] = {
-		{"Elasped",			Elasped},
-		{"ElaspedHMS",		ElaspedHoursMinSecs},
-		{"Wait",			Wait},
-		{"EnableDebugDraw", EnableDebugDraw },
+		{"elasped",			Elasped},
+		{"elaspedHMS",		ElaspedHoursMinSecs},
+		{"wait",			Wait},
+		{"debugDraw", EnableDebugDraw },
 		{NULL, NULL}
 	};
 
-	void OpenHeartLib( lua_State* L )
+	void OpenHeartLuaLib( lua_State* L, HeartEngine* engine )
 	{
-		luaL_register( L, "Heart", heartlib );
+        lua_pushlightuserdata(L, engine);
+        g_luaEngineIdx = luaL_ref(L, LUA_REGISTRYINDEX);
+		luaI_openlib( L, "Heart", heartlib, 1 );
 	}
 }

@@ -323,6 +323,7 @@ void MaterialEffectBuilder::MapCgPassStateToRuntimeState( Heart::hMaterialTechni
     CONVERT_CG_BOOL_STATE( "ZEnable", lhs->depthStencilStateDesc_.depthEnable_, stas, foundState );
     CONVERT_CG_INT_ENUM_STATE( "FillMode", lhs->rasterizerStateDesc_.fillMode_, stas, fillModeEnum, foundState );
     CONVERT_CG_INT_ENUM_STATE( "CullMode", lhs->rasterizerStateDesc_.cullMode_, stas, cullModeEnum, foundState );
+    CONVERT_CG_BOOL_STATE( "ScissorTestEnable", lhs->rasterizerStateDesc_.scissorEnable_, stas, foundState );
     CONVERT_CG_BOOL_STATE( "StencilEnable", lhs->depthStencilStateDesc_.stencilEnable_, stas, foundState );
     CONVERT_CG_INT_ENUM_STATE( "StencilFunc", lhs->depthStencilStateDesc_.stencilFunc_, stas, stencilFuncEnum, foundState );
     CONVERT_CG_INT_ENUM_STATE( "StencilFail", lhs->depthStencilStateDesc_.stencilFailOp_, stas, stencilOpEnum, foundState );
@@ -366,7 +367,8 @@ void MaterialEffectBuilder::MapCgPassStateToRuntimeState( Heart::hMaterialTechni
         foundState );
 */
     // Warning on Unknown State Value...
-    if ( !foundState )
+    CGstate cgst = cgGetStateAssignmentState( stas );
+    if ( !foundState && Heart::hStrCmp(cgGetStateName( cgst ), "VertexShader") && Heart::hStrCmp(cgGetStateName( cgst ), "PixelShader"))
     {
         CGstate state = cgGetStateAssignmentState( stas );
         AppendWarning( "Unable to find match state for CG pass state \"%s\". Ignoring State", cgGetStateName( state ) );

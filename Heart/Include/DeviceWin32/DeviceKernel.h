@@ -87,15 +87,17 @@ namespace KernelEvents
 	typedef Event< KM_KEYBOARD_CHARACTER, KeyboardCharPayload >			KeyboardCharacterEvent;
 	struct MouseMovePayload
 	{
-		MouseMovePayload( hInt32 x, hInt32 y ) 
+		MouseMovePayload(hInt32 x, hInt32 y, hInt32 wheeldir) 
 			: xDelta_( x )
 			, yDelta_( y )
+            , wheel_(wheeldir)
 		{
 
 		}
 
 		hInt32 xDelta_;
 		hInt32 yDelta_;
+        hInt32 wheel_;
 	};
 	typedef Event< KM_MOUSE_MOVE, MouseMovePayload >					MouseMoveEvent;
 }
@@ -144,7 +146,7 @@ namespace KernelEvents
 		SystemHandle				systemHandle_;
 		EventManager*				pEventManager_;
 		POINT						prevMousePos_;
-
+        hInt16                      wheelMove_;
 	};
 }
 }

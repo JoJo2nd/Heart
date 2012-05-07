@@ -43,7 +43,7 @@ namespace Device
 		hKeyboard();
 		~hKeyboard();
 
-		hBool							Initialise( Device::ICharacterInput* pKbImpl, Device::IInput* pButtonKeyboard );
+		hBool							Initialise( Device::ICharacterInput* pKbImpl, Device::IInput* pButtonKeyboard, Device::IBufferedInput* bufferKeyb );
 		hUint32							AquireExclusiveAccess() const { return pButtonKeyboard_->AquireExclusiveAccess(); }
 		void							ReleaseExclusiveAccess( hUint32 accessKey ) const { pButtonKeyboard_->ReleaseExclusiveAccess( accessKey ); }
 		hBool							GetButtonDown( Device::InputID id ) const;
@@ -54,6 +54,8 @@ namespace Device
 		hBool							GetButtonUp( Device::InputID id, hUint32 accessKey ) const;
 		Device::InputAxis				GetAxis( Device::InputID id ) const;
 		const hChar*					GetBufferedText() const;
+        hUint32                         GetBufferKeysSize() const { return bufferInput_->BufferSize(); }
+        const Device::InputBufferData*  GetBufferedKeys() const { return bufferInput_->GetBufferedData(); }
 
 	private:
 
@@ -61,6 +63,8 @@ namespace Device
 
 		Device::IInput*					pButtonKeyboard_;
 		Device::ICharacterInput*		pKeyboard_;
+        Device::IBufferedInput*         bufferInput_;
+
 	};
 }
 

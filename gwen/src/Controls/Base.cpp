@@ -14,7 +14,7 @@
 #include "Gwen/DragAndDrop.h"
 #include "Gwen/ToolTip.h"
 #include "Gwen/Utility.h"
-#include <list>
+#include "Gwen/GwenList.h"
 
 #ifndef GWEN_NO_ANIMATION
 #include "Gwen/Anim.h"

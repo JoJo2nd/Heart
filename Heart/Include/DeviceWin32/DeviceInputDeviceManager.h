@@ -32,6 +32,7 @@ namespace Device
 		void				Update();
 		IInput*				GetInputDevice( InputDeviceTypes type, hUint32 port );
 		ICharacterInput*	GetCharacterInputDevice( InputDeviceTypes type, hUint32 port );
+        IBufferedInput*     GetBufferInputDevice( InputDeviceTypes type, hUint32 port );
 
 	private:
 

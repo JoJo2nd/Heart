@@ -8,12 +8,13 @@
 #ifndef GWEN_CONTROLS_BASE_H
 #define GWEN_CONTROLS_BASE_H
 
+#include "Gwen/Config.h"
 #include "Gwen/Exports.h"
 #include "Gwen/Structures.h"
 #include "Gwen/BaseRender.h"
 #include "Gwen/Events.h"
-#include <list>
-#include <map>
+#include "Gwen/GwenList.h"
+#include "Gwen/GwenMap.h"
 
 namespace Gwen 
 {
@@ -48,9 +49,9 @@ namespace Gwen
 		{
 			public:
 
-				typedef std::list<Base*> List;
+                typedef list_t<Base*>::type List;
 
-				typedef std::map<Gwen::UnicodeString, Gwen::Event::Caller*> AccelMap;
+                typedef map_t<Gwen::UnicodeString, Gwen::Event::Caller*>::type AccelMap;
 
 				Base( Base* pParent );
 				virtual ~Base();

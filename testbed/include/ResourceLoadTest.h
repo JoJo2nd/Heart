@@ -37,8 +37,22 @@ public:
     ResourceLoadTest( Heart::HeartEngine* engine ) 
         : hStateBase( "ResourceLoadTest" )
         ,engine_( engine )
+        ,tex1_(NULL)
+        ,tex2_(NULL)
+        ,font1_(NULL)
+        ,script_(NULL)
+        ,stream_(NULL)
+        ,soundBank_(NULL)
+        ,soundSource_(NULL)
+        ,ib_(NULL)
+        ,vb_(NULL)
+        ,materialResource_(NULL)
+        ,material_(NULL)
+        ,tech_(NULL)
+        ,rndCtx_(NULL)
+        ,gwenInput_(NULL)
     {
-
+        hZeroMem(staticSource_,sizeof(staticSource_));
     }
     ~ResourceLoadTest() {}
 
@@ -69,6 +83,11 @@ private:
     Heart::hMaterialTechnique*              tech_;
     Heart::hRenderSubmissionCtx*            rndCtx_;
     Heart::hRendererCamera                  viewport_;
+
+    //UI test
+    Heart::hGwenInputBinder* gwenInput_;
+    Gwen::Skin::TexturedBase* gwenSkin_;
+    Gwen::Controls::Canvas* canvas_;
 };
 
 #endif // RESOURCELOADTEST_H__

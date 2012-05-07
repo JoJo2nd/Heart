@@ -41,7 +41,7 @@
 	#else
 		#define GWEN_EXPORT __declspec(dllimport)
 	#endif
-#ifndef HEART_ENGINE
+#ifndef HEART_ENGINE_LIB
 	#ifdef _MSC_VER
 		#ifndef _DEBUG
 			#pragma comment ( lib, "gwen.lib" )
@@ -49,7 +49,7 @@
 			#pragma comment ( lib, "gwend.lib" )
 		#endif
 	#endif
-#endif//HEART_ENGINE
+#endif//HEART_ENGINE_LIB
 #endif
 
 //
@@ -58,7 +58,7 @@
 #else
 
 	#define GWEN_EXPORT
-#ifndef HEART_ENGINE
+#ifndef HEART_ENGINE_LIB
 #ifdef _WIN32
 	#ifdef _MSC_VER
 		#ifndef _DEBUG
@@ -68,7 +68,7 @@
 		#endif
 	#endif
 #endif
-#endif//HEART_ENGINE
+#endif//HEART_ENGINE_LIB
 
 #endif
 

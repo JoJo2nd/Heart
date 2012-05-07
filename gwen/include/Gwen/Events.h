@@ -8,7 +8,7 @@
 #ifndef GWEN_EVENTS_H
 #define GWEN_EVENTS_H
 
-#include <list>
+#include "Gwen/GwenList.h"
 #include "Gwen/Exports.h"
 #include "Gwen/Structures.h"
 
@@ -27,6 +27,7 @@ namespace Gwen
 		// A class must be derived from this 
 		class GWEN_EXPORT Handler
 		{
+            GWEN_OverrideNew();
 			public:
 
 				Handler();
@@ -38,7 +39,7 @@ namespace Gwen
 			protected:
 
 				void CleanLinks();
-				std::list<Caller*>	m_Callers;
+                list_t<Caller*>::type	m_Callers;
 
 			public:
 
@@ -56,6 +57,7 @@ namespace Gwen
 		//
 		class GWEN_EXPORT Caller
 		{
+            GWEN_OverrideNew();
 			public:
 
 				Caller();
@@ -113,7 +115,7 @@ namespace Gwen
 					Gwen::Controls::Base*	pControl;
 				};
 
-				std::list<handler> m_Handlers;
+                list_t<handler>::type m_Handlers;
 		};
 
 	}

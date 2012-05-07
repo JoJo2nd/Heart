@@ -31,7 +31,7 @@ struct lua_State;
 
 namespace Heart
 {
-	void OpenHeartLib( lua_State* L );
+	void OpenHeartLuaLib( lua_State* L, HeartEngine* engine );
 }
 
 #endif // LUAHEARTLIB_H__
