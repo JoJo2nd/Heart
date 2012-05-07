@@ -198,7 +198,7 @@ void ResourceLoadTest::MainRender()
 void ResourceLoadTest::PreLeave()
 {
     //UI Delete
- 
+    gwenSkin_->m_Texture.Release(gwenSkin_->GetRender());
     hDELETE_SAFE(hUIHeap, gwenInput_);
     hDELETE_SAFE(hUIHeap, canvas_);
     hDELETE_SAFE(hUIHeap, gwenSkin_);

@@ -37,16 +37,13 @@ namespace Heart
 #define HLUA_NEWTHREAD		(LUA_ERRERR+1)
 #define HLUA_WAKEUP			(LUA_ERRERR+2)
 
-	hLuaStateManager* hLuaStateManager::gLuaStateManagerInstance = NULL;
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hLuaStateManager::hLuaStateManager() :
-		mainLuaState_( NULL )
+	hLuaStateManager::hLuaStateManager() 
+        : mainLuaState_( NULL )
 	{
-		gLuaStateManagerInstance = this;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -55,7 +52,6 @@ namespace Heart
 
 	hLuaStateManager::~hLuaStateManager()
 	{
-		gLuaStateManagerInstance = NULL;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -93,7 +89,7 @@ namespace Heart
 			if ( RunLuaThread( i ) )
 			{
 				hLuaThreadState* removed = luaThreads_.Remove( i );
-                hDELETE(hGeneralHeap, removed);
+                hDELETE(hVMHeap, removed);
 			}
 
             i = next;
@@ -118,7 +114,7 @@ namespace Heart
 		if ( newthread.status_ == LUA_YIELD )
 		{
 			newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-            hLuaThreadState* listState = hNEW(hGeneralHeap, hLuaThreadState);
+            hLuaThreadState* listState = hNEW(hVMHeap, hLuaThreadState);
             *listState = newthread;
 			luaThreads_.PushBack( listState );
 		}
@@ -146,12 +142,8 @@ namespace Heart
 		(void)osize;
 		if (nsize == 0) 
 		{
-			hVMHeap.release( ptr );
+			hHeapFree(hVMHeap, ptr );
 			return NULL;
-		}
-		else if ( !ptr )
-		{
-			return hHeapMalloc(hVMHeap, nsize);
 		}
 		else 
 		{
@@ -321,7 +313,7 @@ namespace Heart
 
     hComponent* hLuaStateManager::LuaScriptComponentCreate( hEntity* owner )
     {
-        hLuaThreadState* newthread = hNEW(hGeneralHeap, hLuaThreadState);
+        hLuaThreadState* newthread = hNEW(hVMHeap, hLuaThreadState);
         newthread->lua_ = NewLuaState( mainLuaState_ );
         newthread->status_ = HLUA_NEWTHREAD;
         newthread->yieldRet_ = 0;
@@ -335,7 +327,7 @@ namespace Heart
 
     void hLuaStateManager::LuaScriptComponentDestroy( hComponent* luaComp )
     {
-        hDELETE(hGeneralHeap, luaComp);
+        hDELETE(hVMHeap, luaComp);
     }
 
 }

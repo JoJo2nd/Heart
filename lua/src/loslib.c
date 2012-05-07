@@ -34,12 +34,12 @@ static int os_pushresult (lua_State *L, int i, const char *filename) {
   }
 }
 
-
+#ifndef HEART_ENGINE_LIB
 static int os_execute (lua_State *L) {
   lua_pushinteger(L, system(luaL_optstring(L, 1, NULL)));
   return 1;
 }
-
+#endif
 
 static int os_remove (lua_State *L) {
   const char *filename = luaL_checkstring(L, 1);
@@ -212,17 +212,20 @@ static int os_setlocale (lua_State *L) {
   return 1;
 }
 
-
+#ifndef HEART_ENGINE_LIB
 static int os_exit (lua_State *L) {
   exit(luaL_optint(L, 1, EXIT_SUCCESS));
 }
+#endif
 
 static const luaL_Reg syslib[] = {
   {"clock",     os_clock},
   {"date",      os_date},
   {"difftime",  os_difftime},
+#ifndef HEART_ENGINE_LIB
   {"execute",   os_execute},
   {"exit",      os_exit},
+#endif
   {"getenv",    os_getenv},
   {"remove",    os_remove},
   {"rename",    os_rename},

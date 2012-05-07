@@ -32,11 +32,8 @@
 namespace Heart
 {
 #define HEART_LUA_GET_ENGINE(L) \
-    lua_rawgeti(L, LUA_REGISTRYINDEX, g_luaEngineIdx); \
-    luaL_checktype(L, -1, LUA_TLIGHTUSERDATA); \
-    HeartEngine* engine = (HeartEngine*)lua_topointer(L, -1); \
+    HeartEngine* engine = (HeartEngine*)lua_topointer(L, lua_upvalueindex(1)); \
     if (!engine) luaL_error(L, "Unable to grab engine pointer" ); \
-    lua_pop(L,1);
 
 	class hIFileSystem;
     class hEntity;
@@ -71,11 +68,6 @@ namespace Heart
 		void			RegisterLuaFunctions( luaL_Reg* );
         lua_State*      GetMainState() { return mainLuaState_; }
 
-		static hLuaStateManager*	GetInstance()
-		{
-			return gLuaStateManagerInstance;
-		}
-
 	private:
 
 		typedef hLinkedList< hLuaThreadState > ThreadList;
@@ -88,7 +80,6 @@ namespace Heart
         hComponent*                 LuaScriptComponentCreate( hEntity* owner );
         void                        LuaScriptComponentDestroy( hComponent* luaComp );
 
-		static hLuaStateManager*    gLuaStateManagerInstance;
 		lua_State*		            mainLuaState_;
 		ThreadList		            luaThreads_;
 	};

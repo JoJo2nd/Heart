@@ -43,9 +43,7 @@ by Lua can also return many results.
 
 */
 
-    static int g_luaEngineIdx;
-
-	int WaitCheck( lua_State* L )
+	int hLuaWaitCheck( lua_State* L )
 	{
 		float startTime = luaL_checknumber( L, 1 );
 		float waitTime = luaL_checknumber( L, 2 );
@@ -60,23 +58,23 @@ by Lua can also return many results.
 		return 1;
 	}
 
-	int Wait( lua_State* L )
+	int hLuaWait( lua_State* L )
 	{
 		float waitTime = luaL_checknumber( L, 1 );
 
-		lua_pushcfunction( L, WaitCheck );
+		lua_pushcfunction( L, hLuaWaitCheck );
 		lua_pushnumber( L, hClock::elapsed() );
 		lua_pushnumber( L, waitTime );
 		return lua_yield( L, 3 );
 	}
 
-	int Elasped( lua_State* L )
+	int hLuaElasped( lua_State* L )
 	{
 		lua_pushnumber( L, hClock::elapsed() );
 		return 1;
 	}
 
-	int ElaspedHoursMinSecs( lua_State* L )
+	int hLuaElaspedHoursMinSecs( lua_State* L )
 	{
 		lua_pushinteger( L, hClock::hours() );
 		lua_pushinteger( L, hClock::mins() );
@@ -84,7 +82,7 @@ by Lua can also return many results.
 		return 3;
 	}
 
-	int EnableDebugDraw( lua_State* L )
+	int hLuaEnableDebugDraw( lua_State* L )
 	{
         HEART_LUA_GET_ENGINE(L);
 
@@ -95,18 +93,41 @@ by Lua can also return many results.
 		return 0;
 	}
 
-	static const luaL_Reg heartlib[] = {
-		{"elasped",			Elasped},
-		{"elaspedHMS",		ElaspedHoursMinSecs},
-		{"wait",			Wait},
-		{"debugDraw", EnableDebugDraw },
+    int hLuaClearConsole(lua_State* L)
+    {
+        HEART_LUA_GET_ENGINE(L);
+        engine->GetConsole()->ClearLog();
+        return 0;
+    }
+
+	static const luaL_Reg libcore[] = {
+		{"elasped",			hLuaElasped},
+		{"elaspedHMS",		hLuaElaspedHoursMinSecs},
+		{"wait",			hLuaWait},
+		{"debugDraw",       hLuaEnableDebugDraw},
+        {"clear",           hLuaClearConsole},
 		{NULL, NULL}
 	};
 
+    int hLuaExit(lua_State* L)
+    {
+        HEART_LUA_GET_ENGINE(L);
+        engine->GetEventManager()->PostEvent( Heart::KERNEL_EVENT_CHANNEL, Heart::Device::KernelEvents::QuitRequestedEvent() );
+        return 0;
+    }
+
+    static const luaL_Reg libos[] = {
+        {"exit",           hLuaExit},
+        {NULL, NULL}
+    };
+
+#define HEART_OPEN_LIB(name) \
+    lua_pushlightuserdata(L, engine); \
+    luaI_openlib( L, "h"#name, lib##name, 1 ); \
+
 	void OpenHeartLuaLib( lua_State* L, HeartEngine* engine )
 	{
-        lua_pushlightuserdata(L, engine);
-        g_luaEngineIdx = luaL_ref(L, LUA_REGISTRYINDEX);
-		luaI_openlib( L, "Heart", heartlib, 1 );
+        HEART_OPEN_LIB(core);
+        HEART_OPEN_LIB(os);
 	}
 }

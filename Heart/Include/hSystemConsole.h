@@ -68,7 +68,7 @@ namespace Heart
 
 		void												Update();
 		void												Render( hRenderer* pRenderer );
-
+        void                                                ClearLog();
 		static void											PrintConsoleMessage( const hChar* string );
 
 	private:
