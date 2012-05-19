@@ -41,23 +41,48 @@ const hChar* ShaderProgramBuilder::ParameterName_DebugInfo = "Include Debug Info
 
 struct FXIncludeHandler : public ID3DInclude 
 {
+    typedef std::list< const void* > IncludedDataArray;
+    typedef std::list< boost::filesystem::path > IncludePathArray;
+
     STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) 
     //HRESULT Open( D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
     {
-        GameData::gdFileHandle* f = progameBuilder_->OpenFile( pFileName );
+        for (IncludePathArray::iterator i = includePaths_.begin(); i != includePaths_.end(); ++i)
+        {
+            boost::filesystem::path incpath = (*i);
+            incpath /= pFileName;
+            try
+            {
+                incpath = boost::filesystem::canonical(incpath);
+            }
+            catch (...)
+            {
+                //Eat any exceptions here, if path doesn't exists we handle it
+            }
+            GameData::gdFileHandle* f = progameBuilder_->OpenFile( incpath.generic_string().c_str() );
 
-        if ( !f->IsValid() )
-            return E_FAIL;
+            if ( !f->IsValid() )
+            {
+                progameBuilder_->CloseFile(f);
+                continue;
+            }
 
-        gdByte* buffer = new gdByte[(hUint32)f->GetFileSize()];
-        f->Read( buffer, (hUint32)f->GetFileSize() );
+            gdByte* buffer = new gdByte[(hUint32)f->GetFileSize()];
+            f->Read( buffer, (hUint32)f->GetFileSize() );
 
-        *ppData = buffer;
-        *pBytes = (UINT)f->GetFileSize();
+            *ppData = buffer;
+            *pBytes = (UINT)f->GetFileSize();
 
-        includes_.push_back( *ppData );
+            includes_.push_back( *ppData );
 
-        return S_OK;
+            includePaths_.push_back(incpath.remove_filename());
+            includePaths_.unique();
+            progameBuilder_->CloseFile(f);
+
+            return S_OK;
+        }
+
+        return E_FAIL;
     }
 
     STDMETHOD(Close)(THIS_ LPCVOID pData)
@@ -69,10 +94,9 @@ struct FXIncludeHandler : public ID3DInclude
         return S_OK;
     }
 
-    typedef std::list< const void* > IncludedDataArray;
-
     ShaderProgramBuilder*   progameBuilder_;
     IncludedDataArray       includes_;
+    IncludePathArray        includePaths_;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -105,14 +129,18 @@ void ShaderProgramBuilder::BuildResource()
     hUint32 compileFlags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
     compileFlags |= 0;//GetParameter( ParameterName_DebugInfo ).GetAsBool() ? D3DCOMPILE_DEBUG : 0;
     ID3DBlob* errors;
+    Heart::ShaderType progtype = (Heart::ShaderType)GetParameter( ParameterName_Type ).GetAsEnumValue().value_;
     D3D_SHADER_MACRO macros[] =
     {
         { "HEART_USING_HLSL", "1" },
         { "HEART_USING_HLSL_COMPILER", "1" },
+        { "HEART_COMPILE_PROGRAM", "1" },
+        { progtype == Heart::ShaderType_VERTEXPROG ? "HEART_COMPILE_VERT_PROGRAM" : "HEART_COMPILE_FRAG_PROGRAM", "1" },
         { NULL, NULL }
     };
     FXIncludeHandler include;
     include.progameBuilder_ = this;
+    include.includePaths_.push_back(GetWorkingDir());
     const char* entry = GetParameter( ParameterName_Entry ).GetAsString();
     const char* profile = GetParameter( ParameterName_Profile ).GetAsString();
     hr = D3DX11CompileFromFile( 
