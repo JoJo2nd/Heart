@@ -19,8 +19,19 @@ static MaterialEffectBuilder* g_matBuilder = NULL;
 
 void cgIncludeCallback( CGcontext context, const char *filename )
 {
-    cgSetCompilerIncludeFile( context, filename, filename+1 );
-    g_matBuilder->TouchFileIntoBuildCache( filename+1 );
+    gdString sourceTxt;
+    boost::filesystem::path fileid;
+    hBool found = g_matBuilder->GetCgIncludeSource(filename+1, sourceTxt, fileid);
+
+    if (!found)
+        g_matBuilder->ThrowFatalError("Could open include \"%s\"", filename+1);
+
+    //boost::filesystem::path incpath = g_matBuilder->GetWorkingDir();
+    //incpath /= filename+1;
+    //cgSetCompilerIncludeFile( context, incpath.generic_string().c_str(), incpath.generic_string().c_str() );
+    //g_matBuilder->TouchFileIntoBuildCache( incpath.generic_string().c_str() );
+    
+    cgSetCompilerIncludeFile(context, boost::filesystem::canonical(fileid).generic_string().c_str(), boost::filesystem::canonical(fileid).generic_string().c_str());
 }
 
 //void cgSetCompilerIncludeCallback( CGcontext context, CGIncludeCallbackFunc func );
@@ -32,8 +43,9 @@ void cgIncludeCallback( CGcontext context, const char *filename )
 
 MaterialEffectBuilder::MaterialEffectBuilder( const GameData::gdResourceBuilderConstructionInfo& resBuilderInfo )
     : gdResourceBuilderBase( resBuilderInfo )
-    , cgFXSource(NULL)
+    , cgFXSource_(NULL)
 {
+    incPaths_.push_back(GetWorkingDir());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,13 +71,13 @@ void MaterialEffectBuilder::BuildResource()
     cgD3D11RegisterStates( cgCtx );
     cgGLRegisterStates( cgCtx );
 
-    const char* cgDefines = "#define HEART_USING_HLSL (1)\r\n";
+    const char* cgDefines = "#define HEART_USING_HLSL (1)\r\n#define HEART_COMPILE_FX (1)\r\n";
 
     hUint32 len = (hUint32)GetInputFile()->GetFileSize();
-    cgFXSource = new hChar[len+1+strlen(cgDefines)];
-    strcpy( cgFXSource, cgDefines );
-    GetInputFile()->Read( cgFXSource+strlen(cgDefines), len );
-    cgFXSource[len+strlen(cgDefines)] = 0;
+    cgFXSource_ = new hChar[len+1+strlen(cgDefines)];
+    strcpy( cgFXSource_, cgDefines );
+    GetInputFile()->Read( cgFXSource_+strlen(cgDefines), len );
+    cgFXSource_[len+strlen(cgDefines)] = 0;
 
 //     for ( CGstate st = cgGetFirstState( cgCtx ); st != 0; st = cgGetNextState( st ) )
 //     {
@@ -96,7 +108,7 @@ void MaterialEffectBuilder::BuildResource()
     cgSetCompilerIncludeCallback( cgCtx, cgIncludeCallback );
     
     Heart::hMaterial hMat(NULL);
-    CGeffect cgFX = cgCreateEffect( cgCtx, cgFXSource, NULL );
+    CGeffect cgFX = cgCreateEffect( cgCtx, cgFXSource_, NULL );
     if ( !cgFX )
     {
         ThrowFatalError( "Failed to compile CgFX file. Cg Output:: \n%s", cgGetLastListing( cgCtx ) );
@@ -206,8 +218,6 @@ void MaterialEffectBuilder::BuildResource()
         hMat.techniques_.PushBack( hTech );
     }
 
-    AppendWarning( "The Material Builder is not complete yet!" );
-
     GetSerilaiseObject()->Serialise( GetOutputFile(), hMat );
 }
 
@@ -217,8 +227,8 @@ void MaterialEffectBuilder::BuildResource()
 
 void MaterialEffectBuilder::CleanUpFromBuild()
 {
-    delete cgFXSource;
-    cgFXSource = NULL;
+    delete cgFXSource_;
+    cgFXSource_ = NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -436,6 +446,47 @@ void MaterialEffectBuilder::MapCgSamplerStateToRuntimeState( Heart::hSamplerPara
         CGstate state = cgGetStateAssignmentState( rhs );
         AppendWarning( "Unable to find match state for CG pass state \"%s\". Ignoring State", cgGetStateName( state ) );
     }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool MaterialEffectBuilder::GetCgIncludeSource( const boost::filesystem::path& filename, gdString& outSource, boost::filesystem::path& fileid)
+{
+    for (IncSearchPathList::iterator i = incPaths_.begin(); i != incPaths_.end(); ++i)
+    {
+        boost::filesystem::path incpath;
+        incpath = (*i) / boost::filesystem::path(filename);
+        GameData::gdFileHandle* file = OpenFile(incpath.generic_string().c_str());
+        if (file->IsValid())
+        {
+            //read in source
+            hUint32 size = file->GetFileSize();
+            hChar* buf = new hChar[size+2];
+            
+            file->Read(buf, size);
+
+            buf[size] = EOF;
+            buf[size+1] = 0;
+            outSource = buf;
+
+            delete[] buf;
+
+            //add to search paths
+            fileid = incpath;
+            incPaths_.push_back(incpath.remove_filename());
+            incPaths_.unique();
+
+            CloseFile(file);
+
+            return hTrue;
+        }
+
+        CloseFile(file);
+    }
+
+    return hFalse;
 }
 
 

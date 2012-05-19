@@ -34,6 +34,7 @@ public:
     ~MaterialEffectBuilder();
     void    BuildResource();
     void    CleanUpFromBuild();
+    hBool   GetCgIncludeSource(const boost::filesystem::path& filename, gdString& outSource, boost::filesystem::path& fileid);
 
     static const hChar* ParameterName_DebugInfo;
 
@@ -42,7 +43,10 @@ private:
     void        MapCgPassStateToRuntimeState( Heart::hMaterialTechniquePass* lhs, CGstateassignment rhs );
     void        MapCgSamplerStateToRuntimeState( Heart::hSamplerParameter* lhs, CGstateassignment rhs );
 
-    hChar*      cgFXSource;
+    typedef std::list< boost::filesystem::path > IncSearchPathList;
+
+    hChar*              cgFXSource_;
+    IncSearchPathList   incPaths_;
 
 };
 
