@@ -64,6 +64,7 @@ namespace Heart
         hBool                      ActivateWorldScriptObject(hWorldScriptObject* script);
         hWorldScriptObject*        DeactivateWorldScriptObject();
         hEntity*                   CreateWorldObject(const hChar* worldTypeName, const hChar* objectName, hUint32 id=hErrorCode);
+        hEntity*                   CreateEmptyWorldObject(const hChar* objectName, hUint32 id=hErrorCode);
         hEntity*                   CreateWorldObject(hEntityInstanceDefinition* entityDef);
         hEntity*                   FindWorldObjectByID(hUint32 id);
         hEntity*                   FindWorldObjectByName(const hChar* name);

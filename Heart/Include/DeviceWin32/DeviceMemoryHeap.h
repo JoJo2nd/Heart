@@ -94,6 +94,7 @@ public:
 		size_t			totalBytesAllocated_;
 	};
 
+    hMemoryHeap() {};
 	hMemoryHeap( DWORD sizeInBytes, hBool threadLocal );
 
 	~hMemoryHeap();

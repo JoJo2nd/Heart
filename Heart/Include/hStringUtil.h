@@ -58,6 +58,15 @@ namespace Heart
         return strcmp( s1, s2 );
     }
 
+    inline hUint32  hStrICmp( const hChar* s1, const hChar* s2 )
+    {
+#ifdef WIN32
+        return _stricmp( s1, s2 );
+#else
+        return stricmp( s1, s2 );
+#endif
+    }
+
     inline hInt32 hStrPrintf( hChar* dest, hUint32 destlen, const hChar* format, ... )
     {
         va_list marker;

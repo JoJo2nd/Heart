@@ -228,7 +228,7 @@ extern "C"
 #include "hRenderer.h"
 #include "hRendererCamera.h"
 #include "hFont.h"
-#include "hMesh.h"
+//#include "hMesh.h"
 #include "hRenderUtility.h"
 
 /////////////////////////////////////////////////////////////////////////

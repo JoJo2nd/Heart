@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hMesh.cpp	
+	filename: 	hLODGroup.h	
 	
-	Copyright (c) 1:4:2012 James Moran
+	Copyright (c) 13:5:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,3 +24,33 @@
 	distribution.
 
 *********************************************************************/
+
+#ifndef HLODGROUP_H__
+#define HLODGROUP_H__
+
+namespace Heart
+{
+    struct hGeomLODLevel
+    {
+        hVector< hGeometryObject >  renderObjects_;
+        hFloat                      minRange_;
+    };
+
+    class hLODGroup
+    {
+    public:
+        static const hUint32 MAX_LOD_LEVEL = 9;
+
+        hLODGroup() {}
+        ~hLODGroup() {}
+    
+        hGeomLODLevel*  GetLODLevel( hFloat dist );
+        hAABB           GetBounds() const { return totalBounds_; }
+    private:
+
+        hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
+        hAABB                                       totalBounds_;
+    };
+}
+
+#endif // HLODGROUP_H__

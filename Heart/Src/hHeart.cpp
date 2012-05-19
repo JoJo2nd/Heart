@@ -32,13 +32,13 @@ Engine Memory Heap allocations
 /************************************************************************/
 #define MB                ( 1024 * 1024 )
 
-Heart::hMemoryHeap hDebugHeap(       0 * MB, false );
-Heart::hMemoryHeap hRendererHeap(    2 * MB, false );
-Heart::hMemoryHeap hResourceHeap(   10 * MB, false );
-Heart::hMemoryHeap hSceneGraphHeap(  0 * MB, false );
-Heart::hMemoryHeap hGeneralHeap(     1 * MB, false );
-Heart::hMemoryHeap hVMHeap(          0 * MB, false );
-Heart::hMemoryHeap hUIHeap(          0 * MB, true  );
+Heart::hMemoryHeap hDebugHeap;
+Heart::hMemoryHeap hRendererHeap;
+Heart::hMemoryHeap hResourceHeap;
+Heart::hMemoryHeap hSceneGraphHeap;
+Heart::hMemoryHeap hGeneralHeap;
+Heart::hMemoryHeap hVMHeap;
+Heart::hMemoryHeap hUIHeap;
 
 /************************************************************************/
 /*    Engine Init                                                         */
@@ -46,6 +46,24 @@ Heart::hMemoryHeap hUIHeap(          0 * MB, true  );
 
 namespace Heart
 {
+
+    void hInitMemoryHeaps()
+    {
+        static hBool initDone = hFalse;
+
+        if (!initDone)
+        {
+            initDone = hTrue;
+            hPLACEMENT_NEW(&hDebugHeap) hMemoryHeap(       0 * MB, false );
+            hPLACEMENT_NEW(&hRendererHeap) hMemoryHeap(    2 * MB, false );
+            hPLACEMENT_NEW(&hResourceHeap) hMemoryHeap(   10 * MB, false );
+            hPLACEMENT_NEW(&hSceneGraphHeap) hMemoryHeap(  0 * MB, false );
+            hPLACEMENT_NEW(&hGeneralHeap) hMemoryHeap(     1 * MB, false );
+            hPLACEMENT_NEW(&hVMHeap) hMemoryHeap(          0 * MB, false );
+            hPLACEMENT_NEW(&hUIHeap) hMemoryHeap(          0 * MB, true  );
+        }
+    }
+
     hChar            HeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
     const hFloat    HeartEngine::HEART_VERSION = 0.4f;
 

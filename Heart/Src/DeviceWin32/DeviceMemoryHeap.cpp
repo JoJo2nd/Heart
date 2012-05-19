@@ -43,6 +43,8 @@ namespace Heart
 hUint32 hMemoryHeap::nHeapsInUse_ = 0;
 hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = {0};
 
+extern void hInitMemoryHeaps();
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -115,6 +117,7 @@ void hMemoryHeap::destroy()
 
 void* hMemoryHeap::alloc( DWORD size )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
@@ -130,6 +133,7 @@ void* hMemoryHeap::alloc( DWORD size )
 
 void* hMemoryHeap::alloc( DWORD size, const char* file, size_t line )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
@@ -145,6 +149,7 @@ void* hMemoryHeap::alloc( DWORD size, const char* file, size_t line )
 
 void* hMemoryHeap::realloc( void* ptr, DWORD size )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
 	alloced_ -= s;
@@ -163,6 +168,7 @@ void* hMemoryHeap::realloc( void* ptr, DWORD size )
 
 void* hMemoryHeap::realloc( void* ptr, DWORD size, const char* file, size_t line )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
 	alloced_ -= s;
@@ -181,6 +187,7 @@ void* hMemoryHeap::realloc( void* ptr, DWORD size, const char* file, size_t line
 
 void* hMemoryHeap::alignAlloc( DWORD size, DWORD alignment )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
@@ -196,6 +203,7 @@ void* hMemoryHeap::alignAlloc( DWORD size, DWORD alignment )
 
 void* hMemoryHeap::alignAlloc( DWORD size, DWORD alignment, const char* file, size_t line )
 {
+    hInitMemoryHeaps();
 	PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
