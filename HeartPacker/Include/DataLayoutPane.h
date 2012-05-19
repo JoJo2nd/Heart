@@ -123,6 +123,7 @@ private:
     {
         UIID_ADD_FOLDER,
         UIID_BUILD_RESOURCE,
+        UIID_CLEAN_RESOURCE,
     };
 
     //
@@ -151,6 +152,7 @@ private:
     void OnContextMenuDelete( wxCommandEvent& ev );
     void OnContextMenuAddFolder( wxCommandEvent& ev );
     void OnContextMenuBuild( wxCommandEvent& ev );
+    void OnContextMenuClean( wxCommandEvent& ev );
     void OnPropertyGridChangingEvent( wxPropertyGridEvent& evt );
     void OnPropertyGridChangedEvent( wxPropertyGridEvent& evt );
 
