@@ -104,6 +104,7 @@ namespace GameData
         void CloseFile( gdFileHandle* handle ); //cloase mem mapped file.
         gdFileHandle* GetInputFile();
         gdFileHandle* GetOutputFile();
+        gdString GetWorkingDir();
         Heart::hSerialiser* GetSerilaiseObject(); //get object which does our serilaisation 
         const gdTimestampInfo& GetTimestampInfo() const; //includes: input params crc, opened files timestamps & sizes & dll timestamps
         const gdUniqueResourceID& GetResourceURI() const; //get gdResourceUniqueID struct for resource
@@ -133,6 +134,7 @@ namespace GameData
         gdTimestampInfo                 timestampInfo_;
         gdFileHandle*                   inputFile_;
         gdFileHandle*                   outputFile_;
+        boost::filesystem::path         workingDir_;
         Heart::hSerialiser              serialiserObject_;
         gdDependencyArrayType           dependencies_;
         const gdResorucePlugInMap&      plugInInfoMap_;

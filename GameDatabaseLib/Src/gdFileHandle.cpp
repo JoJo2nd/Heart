@@ -140,11 +140,13 @@ namespace GameData
 
         file_ = fopen( filename, write ? "wb" : "rb" );
 
-        timestamp_.SetPath( filename );
-        timestamp_.SetTimestamp( last_write_time( filename ) );
+        if (file_)
+        {
+            timestamp_.SetPath( filename );
+            timestamp_.SetTimestamp( last_write_time( filename ) );
+        }
 
         cyMD5Init( &writtenDataMD5_ );
-
     }
 
     //////////////////////////////////////////////////////////////////////////

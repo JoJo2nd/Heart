@@ -738,7 +738,7 @@ namespace GameData
 
         //set current directory to build path
         boost::filesystem::path workingDir(resInfo->GetInputFilePath());
-        workingDir = workingDir.parent_path();
+        workingDir = boost::filesystem::canonical(workingDir.parent_path());
         boost::filesystem::current_path( workingDir );
 
         // Check the cache!
@@ -894,6 +894,32 @@ namespace GameData
         }
 
         return retCode;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    gdError gdGameDatabaseObject::CleanSingleResourceCacheData( const gdUniqueResourceID& resID )
+    {
+        gdChar CRCString[64];
+        sprintf_s( CRCString, 64, "0x%08X", resID.GetResourceCRCID() );
+
+        boost::filesystem::path localCachePath = cachePath_ / CRCString;
+
+        try
+        {
+            if (boost::filesystem::exists(localCachePath))
+            {
+                boost::filesystem::remove_all(localCachePath);
+            }
+        }
+        catch(...) 
+        {
+            return gdERROR_GENERIC;
+        }
+
+        return gdERROR_OK;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1192,5 +1218,6 @@ namespace GameData
 
         rrt.Close();
     }
+
 
 }

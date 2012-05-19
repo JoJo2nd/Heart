@@ -181,6 +181,9 @@ namespace GameData
         timestampInfo_.SetParamCRC( builderInfo.resParamCRC_ );
         warningMsgs_ = "";
         errorMsg_ = "";
+
+        workingDir_ = boost::filesystem::path(inputFile_->GetPath());
+        workingDir_ = workingDir_.remove_filename();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -199,8 +202,21 @@ namespace GameData
     gdFileHandle* gdResourceBuilderBase::OpenFile( const gdChar* path )
     {
         gdFileHandle* handle = new gdFileHandle();
-        handle->Open( path );
-        timestampInfo_.AddFileTimestamp( handle->GetFileTimestamp() );
+        boost::filesystem::path fullpath(path);
+
+        if (fullpath.is_absolute())
+        {
+            handle->Open( fullpath.generic_string().c_str() );
+            if (handle->IsValid())
+                timestampInfo_.AddFileTimestamp( handle->GetFileTimestamp() );
+        }
+        else
+        {
+            fullpath = boost::filesystem::path(GetWorkingDir()) / fullpath;
+            handle->Open( fullpath.generic_string().c_str() );
+            if (handle->IsValid())
+                timestampInfo_.AddFileTimestamp( handle->GetFileTimestamp() );
+        }
 
         return handle;
     }
@@ -213,6 +229,15 @@ namespace GameData
     {
         handle->Close();
         delete handle;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    gdString gdResourceBuilderBase::GetWorkingDir()
+    {
+        return workingDir_.generic_string();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -349,6 +374,7 @@ namespace GameData
         hUint32 retCRC;
         gdResourceInfo* depInfo = new gdResourceInfo();
         gdUniqueResourceID depURI;
+        boost::filesystem::path fulldeppath = inputPath;
         hUint32 len = strlen( uri_.GetResourcePath() );
         len += strlen( uri_.GetResourceName() ) + strlen( "_DEP/" ) + 1;
         hChar* path = (hChar*)alloca( len );
@@ -358,7 +384,12 @@ namespace GameData
         depURI.SetResourcePath( path );
         depURI.SetResourceName( depName );
 
-        depInfo->SetInputFilePath( inputPath );
+        if (!fulldeppath.is_absolute())
+        {
+            fulldeppath = workingDir_ / fulldeppath;
+        }
+
+        depInfo->SetInputFilePath( boost::filesystem::canonical(fulldeppath).generic_string().c_str() );
         depInfo->SetResourceID( depURI );
 
         gdResorucePlugInMap::const_iterator resTypeInfo = plugInInfoMap_.find( resType );
