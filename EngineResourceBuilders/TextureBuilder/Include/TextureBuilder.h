@@ -28,9 +28,19 @@ public:
 
 private:
 
+    enum ImageColourType
+    {
+        COLOURTYPE_GREYSCALE = 1,
+        COLOURTYPE_GREYSCALEALPHA = 2,
+        COLOURTYPE_RGB = 3,
+        COLOURTYPE_RGBA = 4
+    };
+
 	static const int					MAX_MIPMAPS = 14;
 
+    hBool                               ReadFileData();
 	hBool								ReadPNGFileData();
+    hBool                               ReadTGAFileData();
 	void								GenerateMipMaps();
 	void								GenerateMipMapLevel( hByte* parentlevel, hUint32 level, hUint32 parentwidth, hUint32 parentheight );
 	void								CompressTextureMipLevels();

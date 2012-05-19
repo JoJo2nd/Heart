@@ -9,6 +9,7 @@
 
 #include "TextureBuilder.h"
 #include "png.h"
+#include "libtga/tga.h"
 #include "squish.h"
 #include "Heart.h"
 
@@ -42,7 +43,8 @@ void TextureBuilder::BuildResource()
 {
     Heart::hTexture texture(NULL);
 
-    ReadPNGFileData();
+    //ReadPNGFileData();
+    ReadFileData();
 
     GenerateMipMaps();
 
@@ -174,6 +176,14 @@ hBool TextureBuilder::ReadPNGFileData()
 		&ImageColourType_, 
 		NULL, NULL, NULL );
 
+    if ( ImageColourType_ == PNG_COLOR_TYPE_RGBA)
+        ImageColourType_ = COLOURTYPE_RGBA;
+    else if (ImageColourType_ == PNG_COLOR_TYPE_RGB)
+        ImageColourType_ = COLOURTYPE_RGB;
+    else if (ImageColourType_ == PNG_COLOR_TYPE_GRAY_ALPHA)
+        ImageColourType_ = COLOURTYPE_GREYSCALEALPHA;
+    else if (ImageColourType_ == PNG_COLOR_TYPE_GRAY)
+        ImageColourType_ = COLOURTYPE_GREYSCALE;
 
 	// check the image is RGB/RGBA [8/7/2008 James]
 	if ( ImageBitsPerPixel_ != 8 )
@@ -242,9 +252,9 @@ void TextureBuilder::GenerateMipMapLevel( hByte* parentlevel, hUint32 level, hUi
 
 	hUint32 parentwidth = width * 2;
 	hUint32 parentheight = height * 2;
-	hUint32 pixelWidth = ImageColourType_ == PNG_COLOR_TYPE_RGB ? 3 : 4;
+	hUint32 pixelWidth = ImageColourType_;
 	hUint32 destPixelWidth = 4;
-	const bool useAlpha = ImageColourType_ == PNG_COLOR_TYPE_RGBA;
+	const bool useAlpha = ImageColourType_ == 4;
 
 	//only the base pixel level will ever be 3 bytes wide
 	if ( level > 0 )
@@ -285,7 +295,7 @@ void TextureBuilder::GenerateMipMapLevel( hByte* parentlevel, hUint32 level, hUi
 			AverageColourElement(ppixel1, ppixel2, ppixel3, ppixel4, R);
 			AverageColourElement(ppixel1, ppixel2, ppixel3, ppixel4, G);
 			AverageColourElement(ppixel1, ppixel2, ppixel3, ppixel4, B);
-			if ( ImageColourType_ == PNG_COLOR_TYPE_RGBA )
+			if ( useAlpha )
 			{
 				AverageColourElement(ppixel1, ppixel2, ppixel3, ppixel4, A);
 			}
@@ -337,4 +347,92 @@ void TextureBuilder::pngRead( png_structp pngPtr, png_bytep pDst, png_size_t len
 {
     GameData::gdFileHandle* pFile = (GameData::gdFileHandle*)png_get_io_ptr(pngPtr);
 	pFile->Read( pDst, len );
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool TextureBuilder::ReadFileData()
+{
+    hUint32 len = Heart::hStrLen(GetInputFile()->GetPath());
+    if (Heart::hStrICmp(&GetInputFile()->GetPath()[len-4], ".tga") == 0)
+    {
+        ReadTGAFileData();
+    }
+    else
+    {
+        //Fall back to PNG data
+        ReadPNGFileData();
+    }
+
+    return hTrue;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// TGA helpers ///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+size_t LTGA_CALLBACK TGAReadBytes(void* dst, size_t read, void* user)
+{
+    GameData::gdFileHandle* f = static_cast<GameData::gdFileHandle*>(user);
+    return f->Read(dst, read);
+}
+size_t LTGA_CALLBACK TGASeekBytes(size_t offset, int from, void* user)
+{
+    GameData::gdFileHandle* f = static_cast<GameData::gdFileHandle*>(user);
+    hUint32 pos = from;
+    if (from == LTGA_SEEK_CUR)
+        pos = f->Tell()+offset;
+    else if (from == LTGA_SEEK_END)
+        pos = f->GetFileSize()+offset;
+    
+    return f->Seek(pos);
+}
+void* LTGA_CALLBACK TGAmalloc(size_t size, void* user)
+{
+    return new hByte[size];
+}
+void LTGA_CALLBACK TGAfree(void* ptr, void* user)
+{
+    delete[] ptr;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool TextureBuilder::ReadTGAFileData()
+{
+    TGADataReaderFuncs_t funcs;
+    TGAImage_t* tgaImage;
+    TGAImageInfo_t info;
+
+    funcs.mallocFunc_ = TGAmalloc;
+    funcs.freeFunc_ = TGAfree;
+    funcs.reader_ = TGAReadBytes;
+    funcs.seek_ = TGASeekBytes;
+    funcs.writer_ = NULL;
+
+    tgaImage = TGACreateImage(funcs, (void*)GetInputFile());
+
+    if (!tgaImage)
+        ThrowFatalError("Error creating TGA data");
+
+    TGAReadImage(tgaImage);
+    TGAGetImageInfo(tgaImage, &info);
+
+    hUint32 size = info.colourWidth_*info.width_*info.height_;
+    SourcePixelData_ = new hByte[size];
+    ImageHeight_ = info.height_;
+    ImageWidth_ = info.width_;
+    ImageBitsPerPixel_ = info.bbp_;
+    ImageColourType_ = info.colourWidth_;
+
+
+    Heart::hMemCpy(SourcePixelData_, TGAGetImageData(tgaImage), size);
+
+    TGADestroyImage(tgaImage);
+
+    return hTrue;
 }
