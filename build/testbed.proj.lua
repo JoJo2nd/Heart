@@ -9,7 +9,17 @@ project "heart_testbed"
     includedirs {HeartIncludeDirs}
     includedirs {"../testbed/include"}
 	links {PlatformLibs}
-	links {"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip","gwen_static"}
+	links {
+        "zlib",
+        "crypto",
+        "libogg",
+        "libvorbis",
+        "libvorbisfile",
+        "lua",
+        "minizip",
+        "libtga",
+        "gwen_static",
+        "heart" }
 	flags {"WinMain"}
 	
 	postbuildcommands (PostBuildStr)
