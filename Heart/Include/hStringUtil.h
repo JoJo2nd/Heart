@@ -88,6 +88,8 @@ namespace Heart
     {
         return (hFloat)atof(str);
     }
+
+    extern int hStrWildcardMatch(const hChar *wildcard, const hChar *target);
 }
 
 #endif // HSTRINGUTIL_H__

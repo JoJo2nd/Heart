@@ -51,8 +51,38 @@ extern "C" __declspec(dllexport) void __cdecl GetPlugInInformation( GameData::gd
     {
         gdParameterDefinition param;
         gdParameterValue val( gdParameterValue::Type_Filename );
-        val.Set( "" );
+        val.SetFile( "" );
         param.SetName( ModelBuilder::ParameterName_PropsXML );
+        param.SetDefaultValue( val );
+
+        info->AppendDefaultParameter( param );
+    }
+
+    {
+        gdParameterDefinition param;
+        gdParameterValue val( gdParameterValue::Type_Bool );
+        val.Set( true );
+        param.SetName( ModelBuilder::ParameterName_ExportLights );
+        param.SetDefaultValue( val );
+
+        info->AppendDefaultParameter( param );
+    }
+
+    {
+        gdParameterDefinition param;
+        gdParameterValue val( gdParameterValue::Type_Bool );
+        val.Set( true );
+        param.SetName( ModelBuilder::ParameterName_ExportCameras );
+        param.SetDefaultValue( val );
+
+        info->AppendDefaultParameter( param );
+    }
+
+    {
+        gdParameterDefinition param;
+        gdParameterValue val( gdParameterValue::Type_Bool );
+        val.Set( false );
+        param.SetName( ModelBuilder::ParameterName_SwapYZ );
         param.SetDefaultValue( val );
 
         info->AppendDefaultParameter( param );

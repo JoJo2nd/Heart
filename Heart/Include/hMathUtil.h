@@ -85,8 +85,8 @@ namespace Util
 }
 }
 
-#define hMin( x, y ) ( x < y ) ? x : y
-#define hMax( x, y ) ( x > y ) ? x : y
+#define hMin( x, y ) (( x < y ) ? x : y)
+#define hMax( x, y ) (( x > y ) ? x : y)
 
 #define hFabs( x ) (fabs( x ))
 #define hFloor( x ) (floor(x))

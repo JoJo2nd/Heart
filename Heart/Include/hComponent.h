@@ -93,11 +93,14 @@ namespace Heart
         void                                SetFactory(hComponentFactory* factory) { factory_ = factory; }
         hComponentFactory*                  GetFactory() const { return factory_; }
 
+    protected:
+        const hUint32           id_;
+
     private:
 
         hEntity*                entity_;
         hComponentFactory*      factory_;
-        const hUint32 id_;
+
     };
 
 #define HEART_COMPONENT_TYPE() \
@@ -112,7 +115,7 @@ namespace Heart
         static const hChar                  componentName_[];\
         static const hChar                  componentDoc_[];\
         static const hUint32                componentHash_;\
-        static hUint32                      componentID_;\
+        static hUint32                      componentID_; /*always componentID_ == thisID_*/\
         static const Heart::hComponentProperty     propertyArray_[];\
 
 #define HEART_DEFINE_COMPONENT_TYPE( klass, name, doc )\
@@ -122,7 +125,8 @@ namespace Heart
     const hChar     klass::componentDoc_[]  = { doc };\
 
 #define HEART_COMPONET_PROPERTIES_BEGIN( klass )\
-    const Heart::hComponentProperty klass::propertyArray_[] = {
+    const Heart::hComponentProperty klass::propertyArray_[] = { \
+        HEART_COMPONENT_PROPERTY(klass, "__id__", id_, UInt, "Component Type ID")
 
 #define HEART_COMPONET_PROPERTIES_END( klass ) \
     };\

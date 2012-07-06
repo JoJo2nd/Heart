@@ -59,15 +59,18 @@ namespace Heart
 		}
 
         hVertexBuffer*                          GetVertexBuffer();
-        void                                    SetVertexBuffer(hVertexBuffer* vtx);
+        void                                    SetVertexBuffer(hVertexBuffer* vtx) {vertexBuffer_ = vtx;}
         hIndexBuffer*                           GetIndexBuffer();
-        void                                    SetIndexBuffer(hIndexBuffer* idx);
+        void                                    SetIndexBuffer(hIndexBuffer* idx) {indexBuffer_ = idx;}
         PrimitiveType                           GetPrimativeType() const;
-        hUint32                                 GetStartIndex() const;
+        void                                    SetPrimativeType(PrimitiveType primtype) { primType_ = primtype; }
+        hUint32                                 GetStartIndex() const { return startIndex_; }
+        void                                    SetStartIndex(hUint32 startIdx) { startIndex_ = startIdx; }
 		hUint32									GetPrimativeCount() const { return nPrimatives_; }
-        void                                    SetMaterial(hMaterial* material);
+        void                                    SetPrimativeCount(hUint32 primCount) { nPrimatives_ = primCount; }
+        void                                    SetMaterial(hMaterial* material) { material_ = material; }
         hMaterialInstance*                      GetMaterialInstance();
-		hAABB						            GetAABB() const { return &aabb_; }
+		hAABB						            GetAABB() const { return aabb_; }
 		void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
 	
 	private:
@@ -75,6 +78,7 @@ namespace Heart
         hIndexBuffer*           indexBuffer_;
         hVertexBuffer*          vertexBuffer_;
         PrimitiveType           primType_;
+        hUint32                 startIndex_;
 		hUint32					nPrimatives_;
         hMaterial*              material_;
         hMaterialInstance*      materialInstance_;

@@ -54,6 +54,7 @@ namespace Heart
 
         const hComponentProperty*       GetProperty(const hChar* name) const
         {
+            hcAssertMsg( hStrCmp("__id__",name), "Property __id__ is read only");
             for (hUint32 i = 0; i< componentPropCount_; ++i)
             {
                 if (hStrCmp(componentProperties_[i].name_,name) == 0)

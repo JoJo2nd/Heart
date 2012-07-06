@@ -60,6 +60,18 @@ namespace Heart
             return values_;
         }
 
+        _Ty& At(hUint32 i)
+        {
+            hcAssert( i < ArraySize );
+            return values_[ i ];
+        }
+
+        const _Ty& At(hUint32 i) const
+        {
+            hcAssert( i < ArraySize );
+            return values_[ i ];
+        }
+
         hUint32 GetMaxSize() const { return ArraySize; }
 
         operator TypePtr ()

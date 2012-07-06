@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hLODGroup.h	
+	filename: 	hSceneNodeComponent.h	
 	
-	Copyright (c) 13:5:2012 James Moran
+	Copyright (c) 11:6:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,37 +24,32 @@
 	distribution.
 
 *********************************************************************/
-
-#ifndef HLODGROUP_H__
-#define HLODGROUP_H__
-
-class ModelBuilder;
+#ifndef HSCENENODECOMPONENT_H__
+#define HSCENENODECOMPONENT_H__
 
 namespace Heart
 {
-    struct hGeomLODLevel
+    class hSceneNodeComponent : public hComponent
     {
-        hVector< hRenderable >      renderObjects_;
-        hFloat                      minRange_;
-    };
+        HEART_COMPONENT_TYPE();
+    public: 
+        hSceneNodeComponent()
+            : hComponent(NULL, GetComponentID())
+        {}
+        hSceneNodeComponent(hEntity* entity)
+            : hComponent(entity, GetComponentID())
+        {
 
-    class hLODGroup
-    {
-    public:
-        static const hUint32 MAX_LOD_LEVEL = 9;
-
-        hLODGroup() {}
-        ~hLODGroup() {}
-    
-        hGeomLODLevel*  GetLODLevel( hFloat dist );
-        hAABB           GetBounds() const { return totalBounds_; }
+        }
     private:
 
-        friend class ::ModelBuilder;
+        friend class ModelBuilder;
 
-        hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
-        hAABB                                       totalBounds_;
+        hArray< hChar, 32 >     name_;
+        hMatrix                 nextLocalMatrix_;
+        hMatrix                 localMatrix_;
+
     };
 }
 
-#endif // HLODGROUP_H__
+#endif // HSCENENODECOMPONENT_H__

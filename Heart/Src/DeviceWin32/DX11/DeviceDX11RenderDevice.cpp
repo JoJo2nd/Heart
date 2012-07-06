@@ -1232,6 +1232,16 @@ namespace Heart
         WORD offset = 0;
         const hUint32 flags = vertexFormat;
 
+        /*
+         Vertex Buffer layout:
+            Position,
+            Normal,
+            Tangent,
+            Binormal,
+            Colour,
+            UV(1-8)
+        */
+
         // declaration doesn't exist so create it
         if ( flags & hrVF_XYZ )
         {

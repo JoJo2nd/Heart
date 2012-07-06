@@ -28,27 +28,17 @@
 #ifndef HSCENEDEFINITION_H__
 #define HSCENEDEFINITION_H__
 
+class ModelBuilder;
+
 namespace Heart
 {
-    class hSceneNodeComponent : public hComponent
-    {
-        HEART_COMPONENT_TYPE();
-    public: 
-        hSceneNodeComponent();
-        hSceneNodeComponent(hEntity* entity)
-            : hComponent(entity, GetComponentID());
-        {
-
-        }
-    private:
-
-        hMatrix         nextLocalMatrix_;
-        hMatrix         localMatrix_;
-
-    };
 
     class hRenderModelComponent 
     {
+    public:
+    private:
+        friend class ::ModelBuilder;
+
         hLODGroup       lodGroup_;
         hMatrix         transform_;
     };
@@ -63,11 +53,30 @@ namespace Heart
 
     };
 
-    struct hSharedBufferData
+    struct hIndexBufferInitData
     {
-        void* index_;
-        void* vertex_;
-        hUint32 vertexFormat_;//etc,etc
+        hByte*   index_;
+        hUint32  sizeBytes_;
+    };
+
+    struct hVertexBufferInitData
+    {
+        hByte*  vertex_;
+        hUint32 sizeBytes_;
+        hUint32 vertexFormat_;
+    };
+
+    struct hNodeLink
+    {
+        hNodeLink() 
+            : sceneNodeID(hErrorCode)
+            , renderNodeID(hErrorCode)
+            , physicsNodeID(hErrorCode)
+        {}
+
+        hUint32 sceneNodeID;
+        hUint32 renderNodeID;
+        hUint32 physicsNodeID;
     };
 
     class hSceneDefinition
@@ -76,6 +85,8 @@ namespace Heart
         hSceneDefinition() {}
         ~hSceneDefinition() {}
     private:
+
+        friend class ::ModelBuilder;
 
         // EntityMap 
         /*
@@ -86,13 +97,15 @@ namespace Heart
          }
         */
 
+        hVector< hNodeLink >                nodeLinks_;
         hVector< hEntity* >                 sceneEntities_;
         hVector< hSceneNodeComponent >      sceneNodeComponents_;
         //hLinearOctree...?
         hVector< hRenderModelComponent >    renderModels_;
         hVector< hIndexBuffer* >            sharedIndexBuffers_;
         hVector< hVertexBuffer* >           sharedVertexBuffers_;
-        hVector< hSharedBufferData >        sharedBufferInitData_;
+        hVector< hIndexBufferInitData >     indexBufferData_;
+        hVector< hVertexBufferInitData >    vertexBufferData_;
         hVector< hMaterial* >               materials_;
     };
 
