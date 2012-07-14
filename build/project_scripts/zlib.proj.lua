@@ -1,11 +1,13 @@
 
-project "libtga"
+project "zlib"
     location (ProjectDir)
-    kind "StaticLib"
+    kind "SharedLib"
     language "C"
-    files {"../libtga/Include/*.h","../libtga/Src/*.c"}
-    defines {CommonDefines}
-	includedirs {"../libtga/include"}
+    files {"../../zlib/Include/*.h","../../zlib/Src/*.c"}
+    excludes {"../../zlib/src/minigzip.c"}
+    defines {CommonDefines,SharedLibDefines,"ZLIB_DLL"}
+	defines {"NO_vsnprintf"}
+	includedirs {"../../zlib/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

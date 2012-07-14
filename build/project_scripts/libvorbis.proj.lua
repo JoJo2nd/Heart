@@ -1,12 +1,12 @@
 
-project "zlib"
+project "libvorbis"
     location (ProjectDir)
     kind "StaticLib"
     language "C"
-    files {"../zlib/Include/*.h","../zlib/Src/*.c"}
+    files {"../../libvorbis/include/**.h","../../libvorbis/lib/**.c"}
+    excludes {"../../libvorbis/lib/vorbisfile.c","../../libvorbis/lib/vorbisenc.c","../../libvorbis/include/vorbisfile.h","../../libvorbis/include/vorbisenc.h","../../libvorbis/lib/psytune.c","../../libvorbis/lib/tone.c"}
     defines {CommonDefines}
-	defines {"NO_vsnprintf"}
-	includedirs {"../zlib/include"}
+	includedirs {"../../libvorbis/include","../../libogg/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

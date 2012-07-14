@@ -1,10 +1,10 @@
 
-project "gwen_static"
+project "gwen"
 	location (ProjectDir)
 	defines { "GWEN_COMPILE_STATIC" }
 	defines {CommonDefines}
-	includedirs {"../gwen/include"}
-	files { "../gwen/src/**.*", "../gwen/include/gwen/**.*" }
+	includedirs {"../../gwen/include","../../heartbase/include"}
+	files { "../../gwen/src/**.*", "../../gwen/include/gwen/**.*" }
 	flags { "Unicode", "NoMinimalRebuild", "NoEditAndContinue", "NoPCH", "No64BitChecks", "NoRTTI" }
 	kind "StaticLib"
 	language "C++"

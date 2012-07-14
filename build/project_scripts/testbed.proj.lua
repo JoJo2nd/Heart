@@ -1,12 +1,17 @@
-project "heart"
+project "heart_testbed"
     location (ProjectDir)
-    kind "StaticLib"
+	debugdir (DebugDir) --only in Premake 4.4
+    kind "SharedLib"
     language "C++"
-    files {"../heart/include/**.h","../heart/src/HeartUnity.cpp"}
+    files {"../../testbed/include/**.h","../../testbed/src/**.cpp"}
     defines {HeartDefines}
-    defines {CommonDefines}
+    defines {"GWEN_DLL"}
+    defines {CommonDefines,SharedLibDefines}
     includedirs {HeartIncludeDirs}
-    
+    includedirs {"../../testbed/include"}
+	links {PlatformLibs}
+	links { "heartbase", "heartcore", "heartwin32", "crypto", "lua" }
+	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}

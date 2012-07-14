@@ -1,11 +1,11 @@
-    project "crypto"
-        location (ProjectDir)
-        kind "StaticLib"
-        language "C"
-        files {"../crypto/include/*.h","../crypto/src/*.c"}
-        defines {CommonDefines}
-		includedirs {"../crypto/include"}
-        
+project "libogg"
+    location (ProjectDir)
+    kind "StaticLib"
+    language "C"
+    files {"../../libogg/include/**.h","../../libogg/src/**.c"}
+    defines {CommonDefines}
+	includedirs {"../../libogg/include"}
+    
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {{DebugDefines}}

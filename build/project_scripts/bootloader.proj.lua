@@ -1,34 +1,21 @@
-project "heart_testbed"
+project "bootloader"
     location (ProjectDir)
 	debugdir (DebugDir) --only in Premake 4.4
     kind "WindowedApp"
     language "C++"
-    files {"../testbed/include/**.h","../testbed/src/**.cpp"}
+    files {"../../bootloader/include/**.h","../../bootloader/src/**.cpp"}
     defines {HeartDefines}
     defines {CommonDefines}
     includedirs {HeartIncludeDirs}
-    includedirs {"../testbed/include"}
+    includedirs {"../../bootloader/include"}
 	links {PlatformLibs}
-	links {
-        "zlib",
-        "crypto",
-        "libogg",
-        "libvorbis",
-        "libvorbisfile",
-        "lua",
-        "minizip",
-        "libtga",
-        "gwen_static",
-        "heart" }
 	flags {"WinMain"}
-	
-	postbuildcommands (PostBuildStr)
     
     configuration (DebugCfgName)
 		targetsuffix "_d"
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        flags {"Symbols","Optimize"}
+        flags {"Symbols"}
     configuration (ReleaseCfgName)
 		targetsuffix "_r"
         targetdir (TargetDir..ReleaseCfgName)

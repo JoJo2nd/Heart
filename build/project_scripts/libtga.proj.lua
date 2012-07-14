@@ -1,10 +1,11 @@
-project "libogg"
+
+project "libtga"
     location (ProjectDir)
-    kind "StaticLib"
+    kind "SharedLib"
     language "C"
-    files {"../libogg/include/**.h","../libogg/src/**.c"}
-    defines {CommonDefines}
-	includedirs {"../libogg/include"}
+    files {"../../libtga/include/*.h","../../libtga/Src/*.c"}
+    defines {CommonDefines,SharedLibDefine}
+	includedirs {"../../libtga/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
