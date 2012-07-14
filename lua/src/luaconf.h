@@ -85,23 +85,14 @@
 ** In Windows, any exclamation mark ('!') in the path is replaced by the
 ** path of the directory of the executable file of the current process.
 */
-#if defined (HEART_ENGINE_LIB)
-	#define LUA_LDIR	"!\\lua\\"
-	#define LUA_CDIR	"!\\"
-	#define LUA_LUADIR  "lua\\"
-	#define LUA_PATH_DEFAULT  \
-		".\\?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" LUA_LUADIR"?.lua;" LUA_LUADIR"?\\init.lua;" LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua"
-	#define LUA_CPATH_DEFAULT ""
-#else
-	#define LUA_LDIR	"!\\lua\\"
-	#define LUA_CDIR	"!\\"
-	#define LUA_PATH_DEFAULT  \
-			".\\?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" \
-						 LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua"
-	#define LUA_CPATH_DEFAULT \
-		".\\?.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
+#define LUA_LDIR	"!\\lua\\"
+#define LUA_CDIR	"!\\"
+#define LUA_PATH_DEFAULT  \
+		".\\?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" \
+					 LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua"
+#define LUA_CPATH_DEFAULT \
+	".\\?.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
 
-#endif // HEART_ENGINE_LIB
 
 #else
 #define LUA_ROOT	"/usr/local/"
