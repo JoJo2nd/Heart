@@ -88,12 +88,12 @@ static cyUint32    crc_table[256] = // CRC lookup table array.
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-static void cyPartialCRC32( cyUint32* incrc, const cyByte* buf, cyUint32 len );
+static void CY_API cyPartialCRC32( cyUint32* incrc, const cyByte* buf, cyUint32 len );
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
+CY_DLLEXPORT 
 cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len )
 {
      cyUint32 crc;
@@ -137,7 +137,7 @@ static void cyPartialCRC32( cyUint32* crc, const cyByte* buf, cyUint32 len )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
+CY_DLLEXPORT void CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
 {
     *incrc = 0xffffffff;
 
@@ -147,7 +147,7 @@ void CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
+CY_DLLEXPORT void CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
 {
     cyPartialCRC32( incrc, data, len );
 }
@@ -156,7 +156,7 @@ void CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc )
+CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc )
 {
     return *incrc ^ 0xffffffff;
 }

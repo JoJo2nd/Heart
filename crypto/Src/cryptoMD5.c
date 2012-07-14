@@ -125,6 +125,7 @@ static const cyByte md5_paddat[cyMD5_BUFLEN] = {
 
 static void CY_API cy_md5_calc(cyByte*, cy_md5_ctxt*);
 
+CY_DLLEXPORT
 void CY_API __cyInitMD5( cy_md5_ctxt* ctxt )
 {
     ctxt->md5_n = 0;
@@ -136,6 +137,7 @@ void CY_API __cyInitMD5( cy_md5_ctxt* ctxt )
     memset( ctxt->md5_buf, 0, sizeof(ctxt->md5_buf) );
 }
 
+CY_DLLEXPORT
 void CY_API __cyLoopMD5(cy_md5_ctxt* ctxt, const cyByte* input, cyUint len /* number of bytes */)
 {
     cyUint gap, i;
@@ -161,6 +163,7 @@ void CY_API __cyLoopMD5(cy_md5_ctxt* ctxt, const cyByte* input, cyUint len /* nu
     }
 }
 
+CY_DLLEXPORT
 void CY_API __cyPadMD5( cy_md5_ctxt* ctxt )
 {
     cyUint gap;
@@ -199,6 +202,7 @@ void CY_API __cyPadMD5( cy_md5_ctxt* ctxt )
     cy_md5_calc(ctxt->md5_buf, ctxt);
 }
 
+CY_DLLEXPORT
 void CY_API __cyResultMD5( cyByte *digest, cy_md5_ctxt *ctxt )
 {
     /* 4 byte words */
@@ -298,6 +302,7 @@ static void CY_API cy_md5_calc( cyByte *b64, cy_md5_ctxt *ctxt )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+CY_DLLEXPORT
 void CY_API __cyMD5ToString( const cyByte* digest, cyChar* str )
 {
     cyUint i;

@@ -36,6 +36,10 @@ typedef long                cyInt32;
 typedef unsigned char       cyByte;
 typedef char                cyChar;
 
+#ifdef _DLL
+    #define CY_DLLEXPORT __declspec(dllexport)
+#endif
+
 #define CY_API          __cdecl
 
 #define CY_OK           (0)
