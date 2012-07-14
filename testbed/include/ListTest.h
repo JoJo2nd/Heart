@@ -112,7 +112,7 @@ public:
 	{
 		for ( hUint32 i = 0; i < tc; ++i )
 		{
-			TestListElement* p = hNEW(hGeneralHeap, TestListElement);
+			TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
 			p->value_ = t[i];
 			list_.PushBack( p );
 		}
@@ -136,7 +136,7 @@ public:
 	{
 		for ( hUint32 i = 0; i < tc; ++i )
 		{
-			TestListElement* p = hNEW(hGeneralHeap, TestListElement);
+			TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
 			p->value_ = t[i];
 			if ( i % 2 )
 				list_.PushFront( p );
@@ -163,7 +163,7 @@ public:
 	{
 		for ( hUint32 i = 0; i < tc; ++i )
 		{
-			TestListElement* p = hNEW(hGeneralHeap, TestListElement);
+			TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
 			p->value_ = t[i];
 			list_.PushBack( p );
 		}

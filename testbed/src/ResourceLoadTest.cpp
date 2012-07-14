@@ -118,17 +118,17 @@ hUint32 ResourceLoadTest::Enter()
         rndCtx_ = engine_->GetRenderer()->CreateRenderSubmissionCtx();
 
         //UI test setup
-        gwenInput_ = hNEW(hUIHeap,Heart::hGwenInputBinder);
-        gwenSkin_ = hNEW(hUIHeap,Gwen::Skin::TexturedBase);
+        gwenInput_ = hNEW(Heart::GetGlobalHeap(),Heart::hGwenInputBinder);
+        gwenSkin_ = hNEW(Heart::GetGlobalHeap(),Gwen::Skin::TexturedBase);
         gwenSkin_->SetRender(engine_->GetUIRenderer());
         gwenSkin_->Init("ENGINE/TEXTURES/UI_SKIN.TEX");
         gwenSkin_->SetDefaultFont(Gwen::Utility::StringToUnicode("ENGINE/FONTS/UI.FNT"));
-        canvas_ = hNEW(hUIHeap,Gwen::Controls::Canvas)(gwenSkin_);
+        canvas_ = hNEW(Heart::GetGlobalHeap(),Gwen::Controls::Canvas)(gwenSkin_);
         canvas_->SetBackgroundColor(Gwen::Color(0, 255, 255, 64));
         canvas_->SetDrawBackground(true);
         canvas_->SetSize( engine_->GetRenderer()->GetWidth(), engine_->GetRenderer()->GetHeight() );
 
-        UnitTest* pUnit = hNEW(hUIHeap, UnitTest)(canvas_);
+        UnitTest* pUnit = hNEW(Heart::GetGlobalHeap(), UnitTest)(canvas_);
         pUnit->SetPos( 10, 10 );
 
         gwenInput_->SetCanvas(engine_->GetControllerManager(),canvas_);
@@ -199,9 +199,9 @@ void ResourceLoadTest::PreLeave()
 {
     //UI Delete
     gwenSkin_->m_Texture.Release(gwenSkin_->GetRender());
-    hDELETE_SAFE(hUIHeap, gwenInput_);
-    hDELETE_SAFE(hUIHeap, canvas_);
-    hDELETE_SAFE(hUIHeap, gwenSkin_);
+    hDELETE_SAFE(Heart::GetGlobalHeap(), gwenInput_);
+    hDELETE_SAFE(Heart::GetGlobalHeap(), canvas_);
+    hDELETE_SAFE(Heart::GetGlobalHeap(), gwenSkin_);
 
     engine_->GetRenderer()->DestroyIndexBuffer(ib_);
     engine_->GetRenderer()->DestroyVertexBuffer(vb_);

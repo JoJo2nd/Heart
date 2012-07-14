@@ -29,7 +29,6 @@
 #define RESOURCELOADTEST_H__
 
 #include "Heart.h"
-#include "hTexture.h"
 
 class ResourceLoadTest : public Heart::hStateBase
 {

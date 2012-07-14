@@ -52,12 +52,11 @@ namespace Game
 	void TestBedCore::Initialise( const hChar* pCmdLine, Heart::HeartEngine* pEngine )
 	{
 		hcPrintf( "cmd line: %s\n", pCmdLine );
-		hcPrintf( "Home Directory: %s\n", pEngine->GetHomeDirectory() );
 		hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
 		pEngine_ = pEngine;
 
-		pEngine_->GetSystem()->SetWindowTitle( pEngine->GetHomeDirectory() );
+		//pEngine_->GetSystem()->SetWindowTitle( pEngine->GetHomeDirectory() );
 
 		nextTest_ = 0;
 
@@ -87,7 +86,7 @@ namespace Game
 
 			if ( !currentTest_->IsActive() )
 			{
-				hDELETE(hGeneralHeap, currentTest_);
+                hDELETE(Heart::GetGlobalHeap(), currentTest_);
 				currentTest_ = NULL;
 			}
 		}
@@ -178,7 +177,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateTextureTestState()
 	{
-		return hNEW(hGeneralHeap, CreateTextureTest(pEngine_));
+		return hNEW(Heart::GetGlobalHeap(), CreateTextureTest)(pEngine_);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -187,7 +186,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateMapTestsState()
 	{
-		return hNEW(hGeneralHeap, MapTest(pEngine_));
+		return hNEW(Heart::GetGlobalHeap(), MapTest)(pEngine_);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -196,7 +195,7 @@ namespace Game
 
 	Heart::hStateBase* TestBedCore::CreateListTestState()
 	{
-		return hNEW(hGeneralHeap, ListTest(pEngine_));
+		return hNEW(Heart::GetGlobalHeap(), ListTest)(pEngine_);
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -205,7 +204,7 @@ namespace Game
 
     Heart::hStateBase* TestBedCore::CreateResourceLoadTest()
     {
-        return hNEW(hGeneralHeap, ResourceLoadTest(pEngine_));
+        return hNEW(Heart::GetGlobalHeap(), ResourceLoadTest)(pEngine_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -214,7 +213,7 @@ namespace Game
 
     Heart::hStateBase* TestBedCore::CreateJobTest()
     {
-        return hNEW(hGeneralHeap, JobManagerTest(pEngine_));
+        return hNEW(Heart::GetGlobalHeap(), JobManagerTest)(pEngine_);
     }
 
 }
