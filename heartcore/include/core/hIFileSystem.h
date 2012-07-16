@@ -32,7 +32,7 @@ namespace Heart
 {
 	class hIFile;
 
-	enum FileMode
+	enum hFileMode
 	{
 		FILEMODE_READ,
 		FILEMODE_WRITE,
@@ -40,14 +40,14 @@ namespace Heart
 		FILEMODE_MAX
 	};
 
-	struct FileInfo
+	struct hFileInfo
 	{
 		const hChar*	path_;
 		const hChar*	name_;
 		hByte			directory_;
 	};
 
-	typedef huFunctor< hBool(*)(const FileInfo*) >::type		EnumerateFilesCallback;
+	typedef huFunctor< hBool(*)(const hFileInfo*) >::type		hEnumerateFilesCallback;
 
 	class hIFileSystem
 	{
@@ -61,8 +61,8 @@ namespace Heart
 		* @param 	FileMode mode
 		* @return   hIFile*
 		*/
-		virtual hIFile*	OpenFile( const hChar* filename, FileMode mode ) const = 0;
-        virtual hIFile* OpenFileRoot( const hChar* filename, FileMode mode ) const = 0;
+		virtual hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const = 0;
+        virtual hIFile* OpenFileRoot( const hChar* filename, hFileMode mode ) const = 0;
 		
 		/**
 		* CloseFile 
@@ -78,7 +78,7 @@ namespace Heart
 		* @param 	EnumerateFilesCallback fn
 		* @return   void
 		*/
-		virtual void	EnumerateFiles( const hChar* path, EnumerateFilesCallback fn ) const = 0;
+		virtual void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const = 0;
 
 	};
 }

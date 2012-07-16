@@ -47,8 +47,8 @@ namespace Heart
 		* @param 	FileMode mode
 		* @return   hIFile*
 		*/
-		hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
-        hIFile* OpenFileRoot( const hChar* filename, FileMode mode ) const;
+		hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const;
+        hIFile* OpenFileRoot( const hChar* filename, hFileMode mode ) const;
 		
 		/**
 		* CloseFile 
@@ -64,7 +64,7 @@ namespace Heart
 		* @param 	EnumerateFilesCallback fn
 		* @return   void
 		*/
-		void	EnumerateFiles( const hChar* path, EnumerateFilesCallback fn ) const;
+		void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const;
 	};
 }
 

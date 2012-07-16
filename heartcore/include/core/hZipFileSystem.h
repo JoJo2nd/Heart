@@ -30,10 +30,7 @@
 
 namespace Heart
 {
-namespace Device
-{
-	class FileHandle;
-}
+	class hFileHandle;
 
 	typedef huFunctor< void(*)(unzFile) >::type		ZipIOJobCallback;
 	
@@ -62,8 +59,8 @@ namespace Device
 		* @param 	FileMode mode
 		* @return   hIFile*
 		*/
-		virtual hIFile*	OpenFile( const hChar* filename, FileMode mode ) const;
-        virtual hIFile* OpenFileRoot( const hChar* /*filename*/, FileMode /*mode*/ ) const { return NULL; }
+		virtual hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const;
+        virtual hIFile* OpenFileRoot( const hChar* /*filename*/, hFileMode /*mode*/ ) const { return NULL; }
 		
 		/**
 		* CloseFile 
@@ -79,7 +76,7 @@ namespace Device
 		* @param 	EnumerateFilesCallback fn
 		* @return   void
 		*/
-		virtual void	EnumerateFiles( const hChar* path, EnumerateFilesCallback fn ) const;
+		virtual void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const;
 
 		void			PushFileIOJob( ZipIOJobCallback fn ) const;
 

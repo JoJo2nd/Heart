@@ -31,13 +31,13 @@ namespace
 {
     static const hChar FILE_PREFIX[] = {"GAMEDATA/"};
 
-	struct EnumerateFilesCallbackInfo
+	struct hEnumerateFilesCallbackInfo
 	{
-		EnumerateFilesCallback fn_;
+		hEnumerateFilesCallback fn_;
 
-		hBool Callback(const Device::FileSystem::FileHandleInfo* pInfo )
+		hBool Callback(const hFileHandleInfo* pInfo )
 		{
-			FileInfo fi;
+			hFileInfo fi;
 			fi.name_ = pInfo->name_;
 			fi.directory_ = pInfo->directory_;
 			fi.path_ = pInfo->path_+(sizeof(FILE_PREFIX)-1);
@@ -51,7 +51,7 @@ namespace
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hIFile* hDriveFileSystem::OpenFile( const hChar* filename, FileMode mode ) const
+	hIFile* hDriveFileSystem::OpenFile( const hChar* filename, hFileMode mode ) const
 	{
         hUint32 len = hStrLen( filename )+hStrLen( FILE_PREFIX )+1;
         hChar* fullFilename = (hChar*)hAlloca( len );
@@ -65,9 +65,9 @@ namespace
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, FileMode mode ) const
+    hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, hFileMode mode ) const
     {
-        Device::FileSystem::FileHandle* fh;
+        hFileHandle* fh;
         const hChar* devMode;
 
         if ( mode == FILEMODE_WRITE )
@@ -83,7 +83,7 @@ namespace
             return NULL;
         }
 
-        if ( !Device::FileSystem::Fopen( filename, devMode, &fh ) )
+        if ( !Fopen( filename, devMode, &fh ) )
         {
             return NULL;
         }
@@ -105,7 +105,7 @@ namespace
 			return;
 		}
 
-		Device::FileSystem::Fclose( ((hDriveFile*)pFile)->fileHandle_ );
+		Fclose( ((hDriveFile*)pFile)->fileHandle_ );
 
 		hDELETE(GetGlobalHeap(), pFile);
 	}
@@ -114,9 +114,9 @@ namespace
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hDriveFileSystem::EnumerateFiles( const hChar* path, EnumerateFilesCallback fn ) const
+	void hDriveFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
 	{
-		EnumerateFilesCallbackInfo cbInfo;
+		hEnumerateFilesCallbackInfo cbInfo;
         cbInfo.fn_ = fn;
 
         hUint32 len = hStrLen( path )+hStrLen( FILE_PREFIX )+1;
@@ -124,7 +124,7 @@ namespace
         hStrCopy( fullFilename, len, FILE_PREFIX );
         hStrCat( fullFilename, len, path );
 
-		Device::FileSystem::EnumerateFiles( fullFilename, Device::FileSystem::EnumerateFilesCallback::bind< EnumerateFilesCallbackInfo, &EnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
+		EnumerateFiles( fullFilename, hEnumerateDeviceFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
 	}
 
 }

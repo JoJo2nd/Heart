@@ -41,6 +41,28 @@ namespace Heart
 
 	static const hUint32			RESOURCE_PATH_SIZE = 1024;
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    typedef hResourceClassBase* (*OnResourceDataLoad)       (hIDataCacheFile*, hIBuiltDataCache*);
+    typedef hResourceClassBase* (*OnResourceDataLoadRaw)    (hIDataCacheFile*, hIBuiltDataCache*);
+    typedef void                (*OnPackageLoadComplete)    (hResourceClassBase*);
+    typedef void                (*OnResourceDataUnload)     (hResourceClassBase*);
+    typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*);
+
+    struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
+    {
+        hResourceType           type_;
+        const hChar*            libPath_;
+        hSharedLibAddress       loaderLib_;
+        OnResourceDataLoad      binLoader_;
+        OnResourceDataLoadRaw   rawLoader_;
+        OnPackageLoadComplete   packageLinkComplete_;
+        OnResourceDataUnload    resourceDataUnload_;
+        OnPackageUnloadComplete packageUnload_;
+    };
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -65,7 +87,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	class hResourceManager
+	class HEARTCORE_SLIBEXPORT hResourceManager
 	{
 	public:
 
@@ -105,6 +127,16 @@ namespace Heart
         hResourceClassBase*             mtGetResourceWeak(const hChar* path);
         hResourceClassBase*             mtGetResourceWeak(hUint32 crc);
 
+        // New interface
+        hUint32                         mtLoadPackage(const hChar* name);
+        void                            mtUnloadPackage();
+        hBool                           mtIsPackageLoaded(const hChar* name);
+        hResourceClassBase*             mtGetResoruce(const hChar* resourceName);
+
+    private:
+        // New Private calls
+        void                            LoadGamedataDesc();
+
 	private:
 
         static const hUint32 QUEUE_MAX_SIZE = 64;
@@ -142,10 +174,9 @@ namespace Heart
 
         hUint32                         LoadedThreadFunc( void* );
         hResourceClassBase*             CompleteLoadRequest( hResourceLoadRequest* request );
-        hBool                           EnumerateAndLoadDepFiles( const FileInfo* fileInfo );
+        hBool                           EnumerateAndLoadDepFiles( const hFileInfo* fileInfo );
         void                            LoadResourceRemapTable();
 
-		static hResourceManager*		pInstance_;
         static void*                    resourceThreadID_;
 
 		//NEW
@@ -184,6 +215,12 @@ namespace Heart
         ResourceLoadRequestQueue        ivLoadRequests_;
         ResourceHandleQueue             ivResourceLoadedQueue_;
         ResourceHandleQueue             ivResourceUnloadedQueue_;
+
+        //New vars
+        typedef hMap< hResourceType, hResourceHandler > NewResourceHandlerMap;
+
+        hXMLDocument                    gamedataDescXML_;
+        NewResourceHandlerMap           resourceHandlers_;
 	};
 
 }

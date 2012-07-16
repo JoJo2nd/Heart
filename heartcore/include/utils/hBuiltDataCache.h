@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	cryptoCommon.h	
+	filename: 	hBuiltDataCache.h	
 	
-	Copyright (c) 13:10:2011 James Moran
+	Copyright (c) 16:7:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,28 +24,39 @@
 	distribution.
 
 *********************************************************************/
+#ifndef HBUILTDATACACHE_H__
+#define HBUILTDATACACHE_H__
 
-#ifndef CRYPTOCOMMON_H__
-#define CRYPTOCOMMON_H__
+namespace Heart
+{
+    class hDataCacheFile
+    {
+    public:
+        hDataCacheFile()
+        {
 
-typedef unsigned int        cyUint;
-typedef int                 cyInt;
-typedef unsigned long       cyUint32;
-typedef unsigned long long  cyUint64;
-typedef long                cyInt32;
-typedef unsigned char       cyByte;
-typedef char                cyChar;
+        }
 
-#ifdef CRYPTO_COMPILE_DLL
-    #define CY_DLLEXPORT __declspec(dllexport)
-#else
-    #define CY_DLLEXPORT __declspec(dllimport)
-#endif
+        ~hDataCacheFile()
+        {
 
-#define CY_API          __cdecl
+        }
 
-#define CY_OK           (0)
+        hUint32 Read(void* dst, hUint32 size);
+        hUint32 Lenght();
 
-#define CY_MD5_LEN      (16)
+    private:
 
-#endif // CRYPTOCOMMON_H__
+        friend class hBuiltDataCache;
+
+        Heart::Device::FileSystem::hFileHandle handle_;
+    };
+
+    class hBuiltDataCache
+    {
+    public:
+
+    };
+}
+
+#endif // HBUILTDATACACHE_H__

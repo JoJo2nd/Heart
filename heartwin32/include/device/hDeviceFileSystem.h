@@ -30,34 +30,37 @@
 
 namespace Heart
 {
-namespace Device
-{
-namespace FileSystem
-{
-	class FileHandle;
+	class hFileHandle;
 
-	enum SeekOffset
-	{
-		SEEKOFFSET_BEGIN,
-		SEEKOFFSET_CURRENT,
-		SEEKOFFSET_END
-	};
+    enum hSeekOffset
+    {
+        SEEKOFFSET_BEGIN,
+        SEEKOFFSET_CURRENT,
+        SEEKOFFSET_END
+    };
 
-	enum FileError
+	enum hFileError
 	{
 		FILEERROR_NONE		= 0,
 		FILEERROR_PENDING	= -1,
 		FILEERROR_FAILED	= -2,
 	};
 
-	struct HEARTDEV_SLIBEXPORT FileHandleInfo
+	struct HEARTDEV_SLIBEXPORT hFileHandleInfo
 	{
 		const hChar*	path_;
 		const hChar*	name_;
 		hBool			directory_;
 	};
 
-	typedef huFunctor< hBool(*)(const FileHandleInfo*) >::type		EnumerateFilesCallback;
+    struct HEARTDEV_SLIBEXPORT hFileStat
+    {
+        hTime   createTime_;
+        hTime   lastModTime_;
+        hTime   lastAccessTime_;
+    };
+
+	typedef huFunctor< hBool(*)(const hFileHandleInfo*) >::type		hEnumerateDeviceFilesCallback;
 
 	/**
 	* Fopen 
@@ -68,7 +71,7 @@ namespace FileSystem
 	* @return   hBool
 	*/
     HEARTDEV_SLIBEXPORT
-	hBool		HEART_API Fopen( const hChar* filename, const hChar* mode, FileHandle** pOut );
+	hBool		HEART_API Fopen( const hChar* filename, const hChar* mode, hFileHandle** pOut );
 	/**
 	* Fclose 
 	*
@@ -76,7 +79,7 @@ namespace FileSystem
 	* @return   hBool
 	*/
     HEARTDEV_SLIBEXPORT
-	hBool		HEART_API Fclose( FileHandle* pHandle );
+	hBool		HEART_API Fclose( hFileHandle* pHandle );
 	/**
 	* Fread 
 	*
@@ -86,7 +89,7 @@ namespace FileSystem
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	FileError	HEART_API Fread( FileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read );
+	hFileError	HEART_API Fread( hFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read );
 	/**
 	* Fseek 
 	*
@@ -96,7 +99,7 @@ namespace FileSystem
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	FileError	HEART_API Fseek( FileHandle* pHandle, hUint64 offset, SeekOffset from );
+	hFileError	HEART_API Fseek( hFileHandle* pHandle, hUint64 offset, hSeekOffset from );
 	/**
 	* Ftell 
 	*
@@ -104,7 +107,7 @@ namespace FileSystem
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hUint64		HEART_API Ftell( FileHandle* pHandle );
+	hUint64		HEART_API Ftell( hFileHandle* pHandle );
 	/**
 	* Fsize 
 	*
@@ -112,7 +115,7 @@ namespace FileSystem
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hUint64		HEART_API Fsize( FileHandle* pHandle );
+	hUint64		HEART_API Fsize( hFileHandle* pHandle );
 	/**
 	* Fwrite 
 	*
@@ -122,7 +125,7 @@ namespace FileSystem
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	FileError	HEART_API Fwrite( FileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written );
+	hFileError	HEART_API Fwrite( hFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written );
 
 	/**
 	* EnumerateFiles 
@@ -132,9 +135,10 @@ namespace FileSystem
 	* @return   void
 	*/
     HEARTDEV_SLIBEXPORT
-	void		HEART_API EnumerateFiles( const hChar* path, EnumerateFilesCallback fn );
-}
-}
+	void		HEART_API EnumerateFiles( const hChar* path, hEnumerateDeviceFilesCallback fn );
+
+    HEARTDEV_SLIBEXPORT
+    hFileStat   HEART_API Fstat(hFileHandle* handle);
 }
 
 #endif // FILESYSTEM_H__

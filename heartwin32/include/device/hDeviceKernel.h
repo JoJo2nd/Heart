@@ -118,7 +118,7 @@ namespace Device
 	HEARTDEV_SLIBEXPORT hBool HEART_API                DefaultVsyncSetting();
 }
     HEARTDEV_SLIBEXPORT hSharedLibAddress HEART_API    OpenSharedLib(const hChar* libname);
-    HEARTDEV_SLIBEXPORT void                           CloseSharedLib(hSharedLibAddress lib);
+    HEARTDEV_SLIBEXPORT void HEART_API                 CloseSharedLib(hSharedLibAddress lib);
     HEARTDEV_SLIBEXPORT void* HEART_API                GetFunctionAddress(hSharedLibAddress lib, const char* symbolName);
 
 namespace Device

@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	cryptoCommon.h	
+	filename: 	hIBuiltDataCache.h	
 	
-	Copyright (c) 13:10:2011 James Moran
+	Copyright (c) 16:7:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,28 +24,31 @@
 	distribution.
 
 *********************************************************************/
+#ifndef HIBUILTDATACACHE_H__
+#define HIBUILTDATACACHE_H__
 
-#ifndef CRYPTOCOMMON_H__
-#define CRYPTOCOMMON_H__
+namespace Heart
+{
+    class hIDataCacheFile
+    {
+    public:
+        virtual ~hIDataCacheFile() {}
 
-typedef unsigned int        cyUint;
-typedef int                 cyInt;
-typedef unsigned long       cyUint32;
-typedef unsigned long long  cyUint64;
-typedef long                cyInt32;
-typedef unsigned char       cyByte;
-typedef char                cyChar;
+        virtual hUint32 Read(void* dst, hUint32 size) = 0;
+        virtual hUint32 Lenght() = 0;
+    };
 
-#ifdef CRYPTO_COMPILE_DLL
-    #define CY_DLLEXPORT __declspec(dllexport)
-#else
-    #define CY_DLLEXPORT __declspec(dllimport)
-#endif
+    class hIBuiltDataCache
+    {
+    public:
+        virtual ~hIBuiltDataCache() {}
 
-#define CY_API          __cdecl
+        virtual hIDataCacheFile* OpenFile(const hChar* filename) = 0;
+        virtual void             CloseFile(hIBuiltDataCache* file) = 0;
+        virtual void             LoadCacheData(const hChar* resorucePath) = 0;
+        virtual void             SaveCacheData() = 0;
+        virtual hBool            IsCacheValid() const = 0;
+    };
+}
 
-#define CY_OK           (0)
-
-#define CY_MD5_LEN      (16)
-
-#endif // CRYPTOCOMMON_H__
+#endif // HIBUILTDATACACHE_H__

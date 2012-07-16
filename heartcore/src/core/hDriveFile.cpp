@@ -34,7 +34,7 @@ namespace Heart
 
 	hUint64 hDriveFile::Tell()
 	{
-		return Device::FileSystem::Ftell( fileHandle_ );
+		return Ftell( fileHandle_ );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ namespace Heart
 
 	hUint64 hDriveFile::Length()
 	{
-		return Device::FileSystem::Fsize( fileHandle_ );
+		return Fsize( fileHandle_ );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ namespace Heart
     hUint32 hDriveFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( Device::FileSystem::Fread( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_NONE )
+        if ( Fread( fileHandle_, pBuffer, size, &ret ) != FILEERROR_NONE )
             return 0;
         return ret;
     }
@@ -65,7 +65,7 @@ namespace Heart
     hUint32 hDriveFile::Write( const void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( Device::FileSystem::Fwrite( fileHandle_, pBuffer, size, &ret ) != Device::FileSystem::FILEERROR_NONE )
+        if ( Fwrite( fileHandle_, pBuffer, size, &ret ) != FILEERROR_NONE )
             return 0;
         return ret;
     }
@@ -74,10 +74,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hDriveFile::Seek( hUint64 offset, SeekOffset from )
+    hUint32 hDriveFile::Seek( hUint64 offset, hSeekOffset from )
     {
-        Device::FileSystem::SeekOffset devFrom = (Device::FileSystem::SeekOffset)from;
-        Device::FileSystem::Fseek( fileHandle_, offset, devFrom );
+        hSeekOffset devFrom = (hSeekOffset)from;
+        Fseek( fileHandle_, offset, devFrom );
         return 0;
     }
 

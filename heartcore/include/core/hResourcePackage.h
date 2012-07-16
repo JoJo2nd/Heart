@@ -58,6 +58,44 @@ namespace Heart
         hVector< hResourceClassBase* >  resourceDests_;
 		hResourceManager*				resourceManager_;
 	};
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    struct hResourceDesc
+    {
+        const hChar* name_;
+        const hChar* ext_;//
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    class hResourcePackageV2 : public hIReferenceCounted
+    {
+    public:
+        hResourcePackageV2();
+        ~hResourcePackageV2();
+
+        hUint32                 LoadPackageDescription(const hChar* );
+        hUint32                 GetPackageDependancyCount() const;
+        const hChar*            GetPackageDependancy(hUint32 i) const;
+        void                    LoadResourceDescriptions();
+        hUint32                 GetResourceCount() const;
+        const hResourceDesc*    GetResourceDesc(hUint32 i) const;
+        void                    Unload();
+
+    private:
+
+        static const hUint32    MAX_PACKAGE_NAME = 128;
+
+        hChar                   packageName_[MAX_PACKAGE_NAME];
+        hXMLDocument            descXML_;
+    };
+
 }
+
 
 #endif // HRESOURCEPACKAGE_H__

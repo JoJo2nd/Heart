@@ -83,5 +83,6 @@
 #include "base/hStringUtil.h"
 #include "base/hUTF8.h"
 #include "base/hRendererConstants.h"
+#include "base/hIBuiltDataCache.h"
 
 #endif // HEARTBASE_H__

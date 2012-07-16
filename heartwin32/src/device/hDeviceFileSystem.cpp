@@ -10,10 +10,6 @@
 
 namespace Heart
 {
-namespace Device
-{
-namespace FileSystem
-{
 	enum FileOp
 	{
 		FILEOP_NONE,
@@ -24,7 +20,7 @@ namespace FileSystem
 		FILEOP_MAX
 	};
 
-	class FileHandle
+	class hFileHandle
 	{
 	public:
 
@@ -39,7 +35,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	hBool HEART_API Fopen( const hChar* filename, const hChar* mode, FileHandle** pOut )
+	hBool HEART_API Fopen( const hChar* filename, const hChar* mode, hFileHandle** pOut )
 	{
 		DWORD access = 0;
 		DWORD share = 0;// < always ZERO, dont let things happen to file in use!
@@ -60,7 +56,7 @@ namespace FileSystem
 			creation = CREATE_ALWAYS;
 		}
 
-        (*pOut) = hNEW( GetGlobalHeap(), FileHandle );
+        (*pOut) = hNEW( GetGlobalHeap(), hFileHandle );
 		(*pOut)->fileHandle_ = CreateFile( filename, access, share, secatt, creation, flags, NULL );
 
 		if ( (*pOut)->fileHandle_ == INVALID_HANDLE_VALUE )
@@ -80,7 +76,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	hBool HEART_API Fclose( FileHandle* pHandle )
+	hBool HEART_API Fclose( hFileHandle* pHandle )
 	{
 		CloseHandle( pHandle->fileHandle_ );
 
@@ -93,7 +89,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	FileError HEART_API Fread( FileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read )
+	hFileError HEART_API Fread( hFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read )
 	{
 		pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
 		pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
@@ -118,7 +114,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	FileError HEART_API Fseek( FileHandle* pHandle, hUint64 offset, FileSystem::SeekOffset from )
+	hFileError HEART_API Fseek( hFileHandle* pHandle, hUint64 offset, hSeekOffset from )
 	{
 		hUint64 size = Fsize( pHandle );
 		switch ( from )
@@ -158,7 +154,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	hUint64 HEART_API Ftell( FileHandle* pHandle )
+	hUint64 HEART_API Ftell( hFileHandle* pHandle )
 	{
 		return pHandle->filePos_;
 	}
@@ -168,7 +164,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	hUint64 HEART_API Fsize( FileHandle* pHandle )
+	hUint64 HEART_API Fsize( hFileHandle* pHandle )
 	{
 		return GetFileSize( pHandle->fileHandle_, NULL );
 	}
@@ -178,7 +174,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	FileError HEART_API Fwrite( FileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written )
+	hFileError HEART_API Fwrite( hFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written )
 	{
 		pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
 		pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
@@ -203,7 +199,7 @@ namespace FileSystem
 	//////////////////////////////////////////////////////////////////////////
 
     HEARTDEV_SLIBEXPORT
-	void HEART_API EnumerateFiles( const hChar* path, EnumerateFilesCallback fn )
+	void HEART_API EnumerateFiles( const hChar* path, hEnumerateDeviceFilesCallback fn )
 	{
 		WIN32_FIND_DATA found;
 		hUint32 searchPathLen = strlen(path) + 3;
@@ -219,7 +215,7 @@ namespace FileSystem
 
 		do 
 		{
-			FileHandleInfo info;
+			hFileHandleInfo info;
 			info.path_ = path;
 			info.name_ = found.cFileName;
 			info.directory_ = ( found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
@@ -235,6 +231,23 @@ namespace FileSystem
 		FindClose( searchHandle );
 	}
 
-}
-}
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTDEV_SLIBEXPORT
+    hFileStat HEART_API Fstat( hFileHandle* handle )
+    {
+        hFileStat stat;
+        BY_HANDLE_FILE_INFORMATION fileInfo;
+
+        GetFileInformationByHandle(handle->fileHandle_, &fileInfo);
+
+        stat.createTime_     = (((hUint64)fileInfo.ftCreationTime.dwHighDateTime) << 32)   | fileInfo.ftCreationTime.dwLowDateTime;
+        stat.lastModTime_    = (((hUint64)fileInfo.ftLastWriteTime.dwHighDateTime) << 32)  | fileInfo.ftLastWriteTime.dwLowDateTime;
+        stat.lastAccessTime_ = (((hUint64)fileInfo.ftLastAccessTime.dwHighDateTime) << 32) | fileInfo.ftLastAccessTime.dwLowDateTime;
+
+        return stat;
+    }
+
 }

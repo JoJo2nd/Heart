@@ -41,6 +41,7 @@ typedef int					hInt;
 typedef float				hFloat;
 typedef double				hDouble;
 typedef bool				hBool;
+typedef time_t              hTime;
 
 class hNullType {};
 struct hcEmptyType {};

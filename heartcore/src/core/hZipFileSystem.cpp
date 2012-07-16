@@ -67,19 +67,19 @@ namespace
 		return hTrue;
 	}
 
-	void UpdateCache( CacheBlock* block, Device::FileSystem::FileHandle* fh )
+	void UpdateCache( CacheBlock* block, hFileHandle* fh )
 	{
 		block->valid_ = false;
 
-		block->cacheStartAddress_ = Device::FileSystem::Ftell( fh );
-		hUint64 spaceLeft = Device::FileSystem::Fsize( fh ) - block->cacheStartAddress_;
+		block->cacheStartAddress_ = Ftell( fh );
+		hUint64 spaceLeft = Fsize( fh ) - block->cacheStartAddress_;
 		if ( spaceLeft < CacheBlock::ZIP_CACHE_BLOCK_SIZE )
 		{
 			return;
 		}
 
         hUint32 read;
-		if ( Device::FileSystem::Fread( fh, block->zipCacheBlock_, CacheBlock::ZIP_CACHE_BLOCK_SIZE, &read ) != Device::FileSystem::FILEERROR_NONE )
+		if ( Fread( fh, block->zipCacheBlock_, CacheBlock::ZIP_CACHE_BLOCK_SIZE, &read ) != FILEERROR_NONE )
 		{
 			return;
 		}
@@ -103,8 +103,8 @@ namespace
 	{
 		(void)opaque;
 		(void)mode;
-		Device::FileSystem::FileHandle* fh;
-		if ( !Device::FileSystem::Fopen( (const hChar*)filename, "r", &fh ) )
+		hFileHandle* fh;
+		if ( !Fopen( (const hChar*)filename, "r", &fh ) )
 			return NULL;
 
 #ifdef USE_ZIP_CACHE
@@ -117,9 +117,9 @@ namespace
 	int ZipClose( voidpf opaque, voidpf stream )
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
+		hFileHandle* fh = (hFileHandle*)stream;
 
-		Device::FileSystem::Fclose( fh );
+		Fclose( fh );
 
 		return 0;
 	}
@@ -127,9 +127,9 @@ namespace
 	int ZipError(voidpf opaque, voidpf stream)
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
+		hFileHandle* fh = (hFileHandle*)stream;
 
-		if ( Device::FileSystem::Ftell( fh ) >= Device::FileSystem::Fsize( fh ) )
+		if ( Ftell( fh ) >= Fsize( fh ) )
 		{
 			return 0;
 		}
@@ -140,7 +140,7 @@ namespace
 	uLong ZipRead( voidpf opaque, voidpf stream, void* buf, uLong size )
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
+		hFileHandle* fh = (hFileHandle*)stream;
 
 #ifdef USE_ZIP_CACHE
 		if ( FileBlockInCache( &gZipCache, size ) )
@@ -161,7 +161,7 @@ namespace
 #endif // USE_ZIP_CACHE
 
         hUint32 bytesRead;
-		if ( Device::FileSystem::Fread( fh, buf, size, &bytesRead ) != Device::FileSystem::FILEERROR_NONE )
+		if ( Fread( fh, buf, size, &bytesRead ) != FILEERROR_NONE )
 		{
 			return 0;
 		}
@@ -171,10 +171,10 @@ namespace
 	uLong ZipWrite( voidpf opaque, voidpf stream, const void* buf, uLong size )
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
+		hFileHandle* fh = (hFileHandle*)stream;
 
         hUint32 bytesWritten;
-		if ( Device::FileSystem::Fwrite( fh, buf, size, &bytesWritten ) != Device::FileSystem::FILEERROR_NONE )
+		if ( Fwrite( fh, buf, size, &bytesWritten ) != FILEERROR_NONE )
 		{
 			return 0;
 		}
@@ -185,16 +185,16 @@ namespace
 	ZPOS64_T ZipTell( voidpf opaque, voidpf stream )
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
+		hFileHandle* fh = (hFileHandle*)stream;
 
-		return Device::FileSystem::Ftell( fh );
+		return Ftell( fh );
 	}
 
 	long ZipSeek( voidpf opaque, voidpf stream, ZPOS64_T offset, int origin )
 	{
 		(void)opaque;
-		Device::FileSystem::FileHandle* fh = (Device::FileSystem::FileHandle*)stream;
-		Device::FileSystem::SeekOffset devOrigin;
+		hFileHandle* fh = (hFileHandle*)stream;
+		hSeekOffset devOrigin;
 
 #ifdef USE_ZIP_CACHE
 		InvalidateCache( &gZipCache );
@@ -203,12 +203,12 @@ namespace
 		switch ( origin )
 		{
 		default:
-		case ZLIB_FILEFUNC_SEEK_CUR: devOrigin = Device::FileSystem::SEEKOFFSET_CURRENT; break;
-		case ZLIB_FILEFUNC_SEEK_SET: devOrigin = Device::FileSystem::SEEKOFFSET_BEGIN; break;
-		case ZLIB_FILEFUNC_SEEK_END: devOrigin = Device::FileSystem::SEEKOFFSET_END; break;
+		case ZLIB_FILEFUNC_SEEK_CUR: devOrigin = SEEKOFFSET_CURRENT; break;
+		case ZLIB_FILEFUNC_SEEK_SET: devOrigin = SEEKOFFSET_BEGIN; break;
+		case ZLIB_FILEFUNC_SEEK_END: devOrigin = SEEKOFFSET_END; break;
 		}
 
-		Device::FileSystem::Fseek( fh, offset, devOrigin );
+		Fseek( fh, offset, devOrigin );
 
 		return 0;
 	}
@@ -268,7 +268,7 @@ namespace
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hIFile* hZipFileSystem::OpenFile( const hChar* filename, FileMode mode ) const
+	hIFile* hZipFileSystem::OpenFile( const hChar* filename, hFileMode mode ) const
 	{
 		if ( mode != FILEMODE_READ )
 			return NULL;
@@ -306,7 +306,7 @@ namespace
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hZipFileSystem::EnumerateFiles( const hChar* path, EnumerateFilesCallback fn ) const
+	void hZipFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
 	{
 		ZipFileEntry* pEnt = FindPath( path );
 
@@ -317,7 +317,7 @@ namespace
 
 		for ( hUint32 i = 0; i < pEnt->nEntries_; ++i )
 		{
-			FileInfo inf;
+			hFileInfo inf;
 			inf.directory_ = pEnt->pEntries_[i].directory_;
 			inf.name_ = pEnt->pEntries_[i].name_;
 			inf.path_ = path;

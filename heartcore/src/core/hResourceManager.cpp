@@ -28,9 +28,7 @@
 namespace Heart
 {
 
-	hResourceManager* hResourceManager::pInstance_ = NULL;
     void*             hResourceManager::resourceThreadID_ = NULL;
-
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -42,10 +40,6 @@ namespace Heart
         , remappingNames_(NULL)
         , remappingNamesSize_(0)
 	{
-		hcAssert( pInstance_ == NULL );
-
-		pInstance_ = this;
-
         loadedResources_.SetAutoDelete(false);
 	}
 
@@ -55,7 +49,6 @@ namespace Heart
 
 	hResourceManager::~hResourceManager()
 	{
-		pInstance_ = NULL;
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -77,7 +70,7 @@ namespace Heart
 		filesystem_ = pFileSystem;
         renderer_ = renderer;
         materialManager_ = renderer->GetMaterialManager();
-
+#if 0
         //Load up the Resource Remap Table
         LoadResourceRemapTable();
 
@@ -100,6 +93,7 @@ namespace Heart
             requiredResourceKeys_[i] = requiredResources[i];
             requiredResourcesPackage_.AddResourceToPackage(requiredResources[i], this);
         }
+#endif
 
 		return hTrue;
 	}
@@ -110,6 +104,7 @@ namespace Heart
 
 	void hResourceManager::Shutdown( hRenderer* prenderer )
 	{
+#if 0
         while (!requiredResourcesPackage_.IsPackageLoaded()) {Device::ThreadSleep(1);}
 
 		for ( hUint32 i = 0, c = requiredResources_.GetSize(); i < c; ++i )
@@ -145,24 +140,8 @@ namespace Heart
         streamingResources_.Clear( hTrue );
 
         hFreeSafe(remappingNames_);
+#endif
 	}
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData )
-    {
-        hResourceType type;
-        ResourceHandler* handler = hNEW(GetGlobalHeap(), ResourceHandler);
-
-        strcpy_s( type.ext, 4, typeExt );
-
-        handler->loadCallback	= onLoad;
-        handler->unloadCallback	= onUnload;
-
-        resHandlers_.Insert( type, handler );
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -171,6 +150,7 @@ namespace Heart
     hUint32 hResourceManager::LoadedThreadFunc( void* )
     {
         resourceThreadID_ = Device::GetCurrentThreadID();
+#if 0
         //process the requests
         while( !exitSignal_ || loadedResources_.GetSize() > 0 )
         {
@@ -226,6 +206,7 @@ namespace Heart
                 }
             }
 		}
+#endif
 
 		return 0;
 	}
@@ -234,17 +215,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hResourceManager::CompleteLoadRequest( hResourceLoadRequest* request )
-    {
-        hUint32 crc = BuildResourceCRC( request->path_ );
-        return LoadResourceFromPath( request->path_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourceManager::EnumerateAndLoadDepFiles( const FileInfo* fileInfo )
+    hBool hResourceManager::EnumerateAndLoadDepFiles( const hFileInfo* fileInfo )
     {
         if ( fileInfo->directory_ )
             return hTrue;
@@ -262,192 +233,6 @@ namespace Heart
 
         return hTrue;
     }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::LoadResourceFromPath( const hChar* path )
-    {
-        hcAssert(Device::GetCurrentThreadID() == resourceThreadID_);
-        hChar* depPath;
-        hcAssert( path );
-
-        hUint32 crc = BuildResourceCRC( path );
-
-        //Check the remappings
-        ResourceRemap* remap = remappings_.Find( crc );
-
-        if ( remap )
-        {
-            path = remappingNames_+remap->mapToPath;
-            crc = BuildResourceCRC( path );
-        }
-
-        // everything ready, init this resources data add remove from the 
-        // list
-        hResourceType resType;
-        //ext is ALWAYS 4 bytes long ( e.g. '.tex' )
-        const hChar* ext = path + (strlen( path ) - 4);
-        hcAssert( *ext == '.' );
-        strcpy_s( resType.ext, 4, ext+1 );
-
-        ResourceHandler* handler = resHandlers_.Find( resType );
-        hcAssertMsg( handler, "Can't find resource handler data for extention %s", ext );
-
-        hResourceClassBase* resource = loadedResources_.Find( crc );
-
-        // The resource isn't loaded, so grab it
-        if ( !resource )
-        {
-            // must load all the dependency folder first
-            // if the resource is already loaded, it's safe to assume that the 
-            // dependencies are loaded along side it
-            hUint32 extLen = strlen( path );
-            hcAssertMsg( path[ extLen-4 ] == '.', "resource %s doesn't seem to have a valid extention", path );
-
-            depPath = (hChar*)alloca( extLen + 1 );
-
-            strcpy_s( depPath, extLen+1, path );
-
-            depPath[ extLen - 4 ] = '_';
-            depPath[ extLen - 3 ] = 'D';
-            depPath[ extLen - 2 ] = 'E';
-            depPath[ extLen - 1 ] = 'P';
-
-            filesystem_->EnumerateFiles( depPath, EnumerateFilesCallback::bind< hResourceManager, &hResourceManager::EnumerateAndLoadDepFiles >( this ) );
-
-            //Load the actual resource
-            hSerialiserFileStream loaderStream;
-            loaderStream.Open( path, hFalse, filesystem_ );
-            hcPrintf( "Loading Resource %s (crc32: 0x%08X)", path, crc );
-            resource = handler->loadCallback( 
-                resType.ext, 
-                crc, 
-                &loaderStream, 
-                this );
-
-            resource->SetType(resType);
-
-            if ( resource->GetFlags() & hResourceClassBase::ResourceFlags_STREAMING )
-            {
-                hStreamingResourceBase* stres = static_cast< hStreamingResourceBase* >( resource );
-                StreamingResouce* sr = hNEW(GetGlobalHeap(), StreamingResouce);
-                sr->stream_ = stres;
-
-                stres->SetFileStream( loaderStream );
-                streamingResources_.Insert( crc, sr );
-            }
-            else
-            { 
-                loaderStream.Close();
-            }
-
-            hcAssert( resource );
-            resource->SetResID( crc );
-            resource->IsDiskResource( hTrue );
-            resource->manager_ = this;
-
-            // Push the new resource into loaded resource map
-            loadedResources_.Insert( crc, resource );
-
-            MainThreadResourceHandle loaded;
-            loaded.resource_ = resource;
-            loaded.resourceKey_ = resource->GetResourceID();
-
-            // In queue to be pushed back
-            completedLoads_.push(loaded);
-        }
-
-        // increment the resource count
-        resource->AddRef();
-
-        return resource;
-    }
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hBool hResourceManager::RequiredResourcesReady()
-	{
-        if ( !gotRequiredResources_ && requiredResourcesPackage_.IsPackageLoaded() )
-        {
-            gotRequiredResources_ = hTrue;
-        }
-		return gotRequiredResources_;
-	}
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::LoadResourceRemapTable()
-    {
-        /* 
-         * The remap table follows this format.
-         * (4 bytes) CRC of valid resource, (4 bytes) CRC of remapped resource (xN), (4 bytes) 0 null terminator
-         * (Repeat)...
-         */
-        hIFile* rrt = filesystem_->OpenFile( "RRT", FILEMODE_READ );
-        remappingNames_ = 0;
-        remappingNamesSize_ = 0;
-        hUint32 remapCRC = 0;
-        hChar* currentPath = NULL;
-        hUint32 pathOffset = 0;
-
-        if (!rrt || rrt->Length() == 0)
-            return;
-
-        for ( hUint64 i = rrt->Length(); i <= rrt->Length(); )
-        {
-            if ( !currentPath )
-            {
-                hUint32 len;
-                rrt->Read( &len, sizeof(len) );
-                remappingNames_ = (hChar*)hRealloc( remappingNames_, remappingNamesSize_+len+1 );
-                rrt->Read( remappingNames_+remappingNamesSize_, len );
-                remappingNames_[remappingNamesSize_+len] = 0;
-                currentPath = remappingNames_+remappingNamesSize_;
-                pathOffset = remappingNamesSize_;
-                remappingNamesSize_ += len+1;
-
-                i -= (sizeof(len)+len);
-            }
-            else
-            {
-                rrt->Read( &remapCRC, sizeof(remapCRC) );
-                i -= sizeof(remapCRC);
-
-                if ( remapCRC )
-                {
-                    ResourceRemap* remap = hNEW(GetGlobalHeap(), ResourceRemap);
-                    remap->mapToPath = pathOffset;
-
-                    remappings_.Insert( remapCRC, remap );
-                }
-                else
-                {
-                    currentPath = NULL;
-                }
-            }
-        }
-
-        filesystem_->CloseFile( rrt );
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint32 hResourceManager::GetResourceKeyRemapping( hUint32 key ) const
-    {
-        ResourceRemap* remap = remappings_.Find( key );
-        if ( remap )
-        {
-            return BuildResourceCRC( remappingNames_+remap->mapToPath );
-        }
-        return key;
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -455,6 +240,7 @@ namespace Heart
 
     void hResourceManager::MainThreadUpdate()
     {
+#if 0
         hMutexAutoScope autoLock(&ivAccessMutex_);
         hBool pushedSomething = hFalse;
 
@@ -502,93 +288,48 @@ namespace Heart
         {
             loaderSemaphone_.Post();
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::mtLoadResource( const hChar* path )
+    void hResourceManager::LoadGamedataDesc()
     {
-        hUint32 rescrc32 = BuildResourceCRC( path );
-        hUint32 len = hStrLen(path)+1;
-        hResourceLoadRequest request;
-        request.crc32_ = rescrc32;
-        request.loadCounter_ = NULL;
-        request.path_ = hNEW_ARRAY(GetGlobalHeap(), hChar, len);
-        hStrCopy(request.path_, len, path);
-        mtLoadRequests_.push(request);
-    }
+        hIFile* f = filesystem_->OpenFile("gamedatadesc", FILEMODE_READ);
+        void* xmldata = hHeapMalloc(GetGlobalHeap(), f->Length());
+        f->Read(xmldata, f->Length());
+        gamedataDescXML_.ParseSafe< rapidxml::parse_default >((hChar*)xmldata,GetGlobalHeap());
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::mtGetResourceAddRef( hUint32 crc )
-    {
-        hUint32 rescrc32 = GetResourceKeyRemapping(crc);
-        MainThreadResourceHandle* resource = mtResourceMap_.Find(rescrc32);
-        if (resource)
+        for (hXMLGetter e = hXMLGetter(&gamedataDescXML_).FirstChild("gamedata").FirstChild("loaders"); e.ToNode() != NULL; e = e.NextSibling())
         {
-            resource->resource_->AddRef();
-            return resource->resource_;
+            hResourceHandler handler;
+            hStrCopy(handler.type_.ext, 4, e.GetAttributeString("ext") );
+            handler.libPath_ = e.GetAttributeString("libpath");
+
+            handler.loaderLib_ = OpenSharedLib(handler.libPath_);
+            if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
+            {
+                handler.binLoader_              = (OnResourceDataLoad)      GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
+                handler.rawLoader_              = (OnResourceDataLoadRaw)   GetFunctionAddress(handler.loaderLib_,"HeartRawLoader");
+                handler.packageLinkComplete_    = (OnPackageLoadComplete)   GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
+                handler.resourceDataUnload_     = (OnResourceDataUnload)    GetFunctionAddress(handler.loaderLib_,"HeartDataUnload");
+                handler.packageUnload_          = (OnPackageUnloadComplete) GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
+
+                if ( handler.binLoader_           &&
+                     handler.rawLoader_           &&   
+                     handler.packageLinkComplete_ &&   
+                     handler.resourceDataUnload_  &&   
+                     handler.packageUnload_       )
+                {
+                    //Add
+                    hResourceHandler* toadd = hNEW(GetGlobalHeap(), hResourceHandler)();
+                    *toadd = handler;
+                    resourceHandlers_.Insert(handler.type_, toadd);
+                }
+            }
         }
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::mtGetResourceAddRef( const hChar* path )
-    {
-        return mtGetResourceAddRef(BuildResourceCRC(path));
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::mtGetResourceWeak( hUint32 crc )
-    {
-        hUint32 rescrc32 = GetResourceKeyRemapping(crc);
-        MainThreadResourceHandle* resource = mtResourceMap_.Find(rescrc32);
-        if (resource)
-        {
-            return resource->resource_;
-        }
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::mtGetResourceWeak( const hChar* path )
-    {
-        return mtGetResourceWeak(BuildResourceCRC(path));
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::ltGetResourceAddRef(hUint32 crc)
-    {
-        hcAssert(Device::GetCurrentThreadID() == resourceThreadID_);
-        hResourceClassBase* res = loadedResources_.Find(GetResourceKeyRemapping(crc));
-        res->AddRef();
-        return res;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::ltGetResourceWeak(hUint32 crc)
-    {
-        hcAssert(Device::GetCurrentThreadID() == resourceThreadID_);
-        return loadedResources_.Find(GetResourceKeyRemapping(crc));
     }
 
 }

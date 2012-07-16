@@ -44,11 +44,11 @@ typedef struct
         cyByte  	md5_state8[16];
     } cy_md5_st;
 
-    #define md5_sta		cy_md5_st.md5_state32[0]
-    #define md5_stb		cy_md5_st.md5_state32[1]
-    #define md5_stc		cy_md5_st.md5_state32[2]
-    #define md5_std		cy_md5_st.md5_state32[3]
-    #define md5_st8		cy_md5_st.md5_state8
+#define md5_sta		cy_md5_st.md5_state32[0]
+#define md5_stb		cy_md5_st.md5_state32[1]
+#define md5_stc		cy_md5_st.md5_state32[2]
+#define md5_std		cy_md5_st.md5_state32[3]
+#define md5_st8		cy_md5_st.md5_state8
 
     union 
     {
@@ -56,8 +56,8 @@ typedef struct
         cyByte      md5_count8[8];
     } cy_md5_count;
 
-    #define md5_n	cy_md5_count.md5_count64
-    #define md5_n8	cy_md5_count.md5_count8
+#define md5_n	cy_md5_count.md5_count64
+#define md5_n8	cy_md5_count.md5_count8
 
     cyInt	    md5_i;
     cyByte  	md5_buf[cyMD5_BUFLEN];
