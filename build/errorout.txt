@@ -1,0 +1,116 @@
+Building configurations...
+Running action 'vs2008'...
+Generating ../built_projects/vs2008/NewTestBed/NewTestBed.sln...
+Generating ../built_projects/vs2008/NewTestBed/projects/bootloader.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/bootloader.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/zlib.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/zlib.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/libtga.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/libtga.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/lua.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/lua.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/minizip.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/minizip.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/crypto.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/crypto.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/libvorbis.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/libvorbis.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/libvorbisfile.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/libvorbisfile.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/libogg.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/libogg.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartbase.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartbase.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartwin32.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartwin32.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartcore.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/heartcore.vcproj.user...
+Generating ../built_projects/vs2008/NewTestBed/projects/heart_testbed.vcproj...
+Generating ../built_projects/vs2008/NewTestBed/projects/heart_testbed.vcproj.user...
+Done.
+['(.*?)heartbase\\\\src\\\\(.*?)\\.cpp', '(.*?)heartwin32\\\\src\\\\(.*?)\\.cpp', '(.*?)heartcore\\\\src\\\\(.*?)\\.cpp']
+['Release|Win32', 'Debug|Win32']
+Starting fixup....
+
+fixing up project built_projects\vs2008\NewTestBed\projects\heartbase.vcproj
+	..\..\..\..\..\heartbase\src\base\hAtomic.cpp
+	..\..\..\..\..\heartbase\src\base\hDebugMacros.cpp
+	..\..\..\..\..\heartbase\src\base\hMemoryHeapBase.cpp
+	..\..\..\..\..\heartbase\src\base\hUTF8.cpp
+	..\..\..\..\..\heartbase\src\base\hWildcard.cpp
+['(.*?)heartbase\\\\src\\\\(.*?)\\.cpp', '(.*?)heartwin32\\\\src\\\\(.*?)\\.cpp', '(.*?)heartcore\\\\src\\\\(.*?)\\.cpp']
+['Release|Win32', 'Debug|Win32']
+Starting fixup....
+
+fixing up project built_projects\vs2008\NewTestBed\projects\heartwin32.vcproj
+	..\..\..\..\..\heartwin32\src\device\dx11\hDX11RenderDevice.cpp
+	..\..\..\..\..\heartwin32\src\device\dx11\hDX11RenderSubmissionCtx.cpp
+	..\..\..\..\..\heartwin32\src\device\dx11\hDX11ShaderProgram.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceFileSystem.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceInputDeviceManager.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceKernel.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceKeyboard.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceSoundCore.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceSoundUtil.cpp
+	..\..\..\..\..\heartwin32\src\device\hDeviceSoundVoice.cpp
+	..\..\..\..\..\heartwin32\src\device\hKernel.cpp
+	..\..\..\..\..\heartwin32\src\device\hMiniDumper.cpp
+['(.*?)heartbase\\\\src\\\\(.*?)\\.cpp', '(.*?)heartwin32\\\\src\\\\(.*?)\\.cpp', '(.*?)heartcore\\\\src\\\\(.*?)\\.cpp']
+['Release|Win32', 'Debug|Win32']
+Starting fixup....
+
+fixing up project built_projects\vs2008\NewTestBed\projects\heartcore.vcproj
+	..\..\..\..\..\heartcore\src\audio\hSoundManager.cpp
+	..\..\..\..\..\heartcore\src\audio\hSoundResource.cpp
+	..\..\..\..\..\heartcore\src\audio\hSoundSource.cpp
+	..\..\..\..\..\heartcore\src\audio\hStaticSoundResource.cpp
+	..\..\..\..\..\heartcore\src\components\hComponent.cpp
+	..\..\..\..\..\heartcore\src\components\hEntity.cpp
+	..\..\..\..\..\heartcore\src\components\hEntityFactory.cpp
+	..\..\..\..\..\heartcore\src\components\hLuaScriptComponent.cpp
+	..\..\..\..\..\heartcore\src\components\hSceneNodeComponent.cpp
+	..\..\..\..\..\heartcore\src\components\hWorldObjectScript.cpp
+	..\..\..\..\..\heartcore\src\core\hClock.cpp
+	..\..\..\..\..\heartcore\src\core\hConfigOptions.cpp
+	..\..\..\..\..\heartcore\src\core\hDriveFile.cpp
+	..\..\..\..\..\heartcore\src\core\hDriveFileSystem.cpp
+	..\..\..\..\..\heartcore\src\core\hHeart.cpp
+	..\..\..\..\..\heartcore\src\core\hMemoryHeap.cpp
+	..\..\..\..\..\heartcore\src\core\hResource.cpp
+	..\..\..\..\..\heartcore\src\core\hResourceManager.cpp
+	..\..\..\..\..\heartcore\src\core\hResourcePackage.cpp
+	..\..\..\..\..\heartcore\src\core\hStateBase.cpp
+	..\..\..\..\..\heartcore\src\core\hSystem.cpp
+	..\..\..\..\..\heartcore\src\core\hSystemConsole.cpp
+	..\..\..\..\..\heartcore\src\core\hWildcard.cpp
+	..\..\..\..\..\heartcore\src\core\hZipFile.cpp
+	..\..\..\..\..\heartcore\src\core\hZipFileSystem.cpp
+	..\..\..\..\..\heartcore\src\events\hEventManager.cpp
+	..\..\..\..\..\heartcore\src\input\hController.cpp
+	..\..\..\..\..\heartcore\src\input\hControllerManager.cpp
+	..\..\..\..\..\heartcore\src\input\hKeyboard.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaHeartLib.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaReader.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaState.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaStateManager.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaString.cpp
+	..\..\..\..\..\heartcore\src\lua\hLuaTable.cpp
+	..\..\..\..\..\heartcore\src\math\hCollision.cpp
+	..\..\..\..\..\heartcore\src\math\hViewFrustum.cpp
+	..\..\..\..\..\heartcore\src\render\hFont.cpp
+	..\..\..\..\..\heartcore\src\render\hIndexBuffer.cpp
+	..\..\..\..\..\heartcore\src\render\hMaterial.cpp
+	..\..\..\..\..\heartcore\src\render\hRenderMaterialManager.cpp
+	..\..\..\..\..\heartcore\src\render\hRenderState.cpp
+	..\..\..\..\..\heartcore\src\render\hRenderSubmissionContext.cpp
+	..\..\..\..\..\heartcore\src\render\hRenderUtility.cpp
+	..\..\..\..\..\heartcore\src\render\hRenderer.cpp
+	..\..\..\..\..\heartcore\src\render\hRendererCamera.cpp
+	..\..\..\..\..\heartcore\src\render\hRendererConstants.cpp
+	..\..\..\..\..\heartcore\src\render\hTexture.cpp
+	..\..\..\..\..\heartcore\src\render\hVertexBuffer.cpp
+	..\..\..\..\..\heartcore\src\threading\hJobManager.cpp
+	..\..\..\..\..\heartcore\src\ui\hGwenInputBinder.cpp
+	..\..\..\..\..\heartcore\src\ui\hGwenRenderer.cpp
+	..\..\..\..\..\heartcore\src\utils\hProfiler.cpp
+	..\..\..\..\..\heartcore\src\utils\hRapidXML.cpp

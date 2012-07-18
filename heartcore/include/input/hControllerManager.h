@@ -35,14 +35,14 @@ namespace Events
 	class EventManager;
 }
 
-	class hControllerManager : public hPtrImpl< Device::InputDeviceManager >
+	class hControllerManager : public hPtrImpl< Device::hdInputDeviceManager >
 	{
 	public:
 
 		hControllerManager();
 		~hControllerManager();
 
-		hBool						Initialise( EventManager* pEvManager ) { return pImpl()->Initialise( pEvManager ); }
+		hBool						Initialise() { return pImpl()->Initialise(); }
 		void						InitPad( hUint32 port, const ControllerConfig* config )
 		{
 			controllers_[ port ].SetPadPort( port );
@@ -54,27 +54,26 @@ namespace Events
 		const hKeyboard*				GetSystemKeyboard() const { return &keyboard_; }
 		void						Update()
 		{
-			pImpl()->Update();
-
-			if ( !keyboard_.pKeyboard_ )
-			{
-				Device::IInput* pKb = pImpl()->GetInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
-				Device::ICharacterInput* pCKb = pImpl()->GetCharacterInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
-                Device::IBufferedInput* pBKb = pImpl()->GetBufferInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
-				keyboard_.Initialise( pCKb, pKb, pBKb );
-			}
-
-			for ( hUint32 i = 0; i < 4; ++i )
-			{
-				controllers_[ i ].Update();
-			}
+ 			pImpl()->Update();
+// 
+// 			if ( !keyboard_.pKeyboard_ )
+// 			{
+// 				Device::IInput* pKb = pImpl()->GetInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
+// 				Device::ICharacterInput* pCKb = pImpl()->GetCharacterInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
+//                 Device::IBufferedInput* pBKb = pImpl()->GetBufferInputDevice( Device::IDT_KEYBOARD, HEART_INPUT_ANY_PORT );
+// 				keyboard_.Initialise( pCKb, pKb, pBKb );
+// 			}
+// 
+// 			for ( hUint32 i = 0; i < 4; ++i )
+// 			{
+// 				controllers_[ i ].Update();
+// 			}
 		}
 
 	private:
 		
 		hUint32						nControllers_;
 		hController					controllers_[ 4 ];
-		hKeyboard					keyboard_;
 
 	};
 }

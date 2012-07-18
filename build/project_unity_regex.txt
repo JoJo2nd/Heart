@@ -1,0 +1,3 @@
+(.*?)heartbase\\src\\(.*?)\.cpp
+(.*?)heartwin32\\src\\(.*?)\.cpp
+(.*?)heartcore\\src\\(.*?)\.cpp

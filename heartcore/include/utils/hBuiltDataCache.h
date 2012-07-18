@@ -49,7 +49,7 @@ namespace Heart
 
         friend class hBuiltDataCache;
 
-        Heart::Device::FileSystem::hFileHandle handle_;
+        hdFileHandle handle_;
     };
 
     class hBuiltDataCache

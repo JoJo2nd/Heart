@@ -13,14 +13,11 @@
 
 namespace Heart
 {
-namespace Device
-{
-	class HEARTDEV_SLIBEXPORT Mouse : public IInput
+	class HEARTDEV_SLIBEXPORT hdMouse
 	{
 	public:
 	private:
 	};
-}
 }
 
 #endif // DEVICEMOUSE_H__

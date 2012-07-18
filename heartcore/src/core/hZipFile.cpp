@@ -90,7 +90,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hZipFile::SeekAsync( hUint64 offset, hSeekOffset from )
+	hBool hZipFile::SeekAsync( hUint64 offset, hdSeekOffset from )
 	{
 		if ( !pFileSystem_ )
 			return hFalse;
@@ -231,7 +231,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hZipFile::Seek( hUint64 offset, hSeekOffset from )
+    hUint32 hZipFile::Seek( hUint64 offset, hdSeekOffset from )
     {
         hUint32 ret;
         if ( !SeekAsync( offset, from ) )

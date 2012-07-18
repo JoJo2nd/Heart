@@ -36,10 +36,10 @@ namespace Heart
 
 		hBool				ReadAsync( void* pBuffer, hUint32 size );
 		hBool				WriteAsync( const void* pBuffer, hUint32 size );
-		hBool				SeekAsync( hUint64 offset, hSeekOffset from );
+		hBool				SeekAsync( hUint64 offset, hdSeekOffset from );
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
-        hUint32     		Seek( hUint64 offset, hSeekOffset from );
+        hUint32     		Seek( hUint64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
 		
@@ -71,7 +71,7 @@ namespace Heart
 			struct 
 			{
 				hUint64				seek_;
-				hSeekOffset			where_;
+				hdSeekOffset			where_;
 			};
 		}							opData_;
 		const hZipFileSystem*		pFileSystem_;

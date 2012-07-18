@@ -4,6 +4,7 @@ project "heartcore"
     language "C++"
     files {"../../heartcore/include/**.h","../../heartcore/src/heartCoreUnity.cpp"}
     files { "../../heartcore/gwen/src/**.*", "../../heartcore/gwen/include/**.*" }
+    files {"../../heartcore/src/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
     defines {"HEART_CORE_DLL","GWEN_COMPILE_DLL"}
     defines {CommonDefines,SharedLibDefines}

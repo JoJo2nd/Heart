@@ -30,7 +30,7 @@
 
 namespace Heart
 {
-	class hFileHandle;
+	class hdFileHandle;
 
 	typedef huFunctor< void(*)(unzFile) >::type		ZipIOJobCallback;
 	

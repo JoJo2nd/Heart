@@ -34,7 +34,7 @@ namespace Heart
 
 	hControllerManager::hControllerManager()
 	{
-        SetImpl( hNEW(GetGlobalHeap(), Device::InputDeviceManager) );
+        SetImpl( hNEW(GetGlobalHeap(), Device::hdInputDeviceManager) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////

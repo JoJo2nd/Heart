@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hDriveFile.h	
+	filename: 	hGamepad.h	
 	
-	Copyright (c) 20:3:2011 James Moran
+	Copyright (c) 18:7:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,33 +24,16 @@
 	distribution.
 
 *********************************************************************/
-
-#ifndef DRIVEFILE_H__
-#define DRIVEFILE_H__
+#ifndef HGAMEPAD_H__
+#define HGAMEPAD_H__
 
 namespace Heart
 {
-	class hDriveFile : public hIFile
-	{
-	public:
-
-        hUint32				Read( void* pBuffer, hUint32 size );
-        hUint32				Write( const void* pBuffer, hUint32 size );
-        hUint32     		Seek( hUint64 offset, hdSeekOffset from );
-		hUint64				Tell();
-		hUint64				Length();
-
-	private:
-
-		friend class		hDriveFileSystem;
-
-		hDriveFile()
-		{}
-		~hDriveFile()
-		{}
-
-		hdFileHandle*	fileHandle_;
-	};
+    class hdGamepad
+    {
+    public:
+    private:
+    };
 }
 
-#endif // DRIVEFILE_H__
+#endif // HGAMEPAD_H__

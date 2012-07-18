@@ -10,10 +10,6 @@
 #ifndef DEVICEINPUTDEVICEMANAGER_H__
 #define DEVICEINPUTDEVICEMANAGER_H__
 
-// #include "DeviceIInputDeviceManager.h"
-// #include "DeviceKeyboard.h"
-// #include "DeviceMouse.h"
-
 namespace Heart
 {
 namespace Device
@@ -21,22 +17,19 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-	class HEARTDEV_SLIBEXPORT InputDeviceManager// : public IInputDeviceManager
+	class HEARTDEV_SLIBEXPORT hdInputDeviceManager// : public IInputDeviceManager
 	{
 	public:
-		InputDeviceManager();
-		virtual ~InputDeviceManager();
+		hdInputDeviceManager();
+		virtual ~hdInputDeviceManager();
 
-		hBool				Initialise( EventManager* pEvManager );
+		hBool				Initialise();
 		void				Destory();
 		void				Update();
-		IInput*				GetInputDevice( InputDeviceTypes type, hUint32 port );
-		ICharacterInput*	GetCharacterInputDevice( InputDeviceTypes type, hUint32 port );
-        IBufferedInput*     GetBufferInputDevice( InputDeviceTypes type, hUint32 port );
 
 	private:
 
-		Keyboard		keyboard_;
+		hdKeyboard		keyboard_;
 		//Mouse			mouse_;
 		//TODO add game pad
 	};

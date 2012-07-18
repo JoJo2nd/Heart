@@ -3,6 +3,7 @@ project "heartbase"
     kind "SharedLib"
     language "C++"
     files {"../../heartbase/include/**.h","../../heartbase/src/heartBaseUnity.cpp"}
+    files {"../../heartbase/src/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
     defines {"HEART_BASE_DLL"}
     defines {CommonDefines,SharedLibDefines}

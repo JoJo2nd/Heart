@@ -3,6 +3,7 @@ project "heartwin32"
     kind "SharedLib"
     language "C++"
     files {"../../heartwin32/include/**.h","../../heartwin32/src/heartWin32Unity.cpp"}
+    files {"../../heartwin32/src/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
     defines {"HEART_WIN32_DLL"}
     defines {CommonDefines,SharedLibDefines}

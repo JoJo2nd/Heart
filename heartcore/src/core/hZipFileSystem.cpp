@@ -67,19 +67,19 @@ namespace
 		return hTrue;
 	}
 
-	void UpdateCache( CacheBlock* block, hFileHandle* fh )
+	void UpdateCache( CacheBlock* block, hdFileHandle* fh )
 	{
 		block->valid_ = false;
 
-		block->cacheStartAddress_ = Ftell( fh );
-		hUint64 spaceLeft = Fsize( fh ) - block->cacheStartAddress_;
+		block->cacheStartAddress_ = hdFtell( fh );
+		hUint64 spaceLeft = hdFsize( fh ) - block->cacheStartAddress_;
 		if ( spaceLeft < CacheBlock::ZIP_CACHE_BLOCK_SIZE )
 		{
 			return;
 		}
 
         hUint32 read;
-		if ( Fread( fh, block->zipCacheBlock_, CacheBlock::ZIP_CACHE_BLOCK_SIZE, &read ) != FILEERROR_NONE )
+		if ( hdFread( fh, block->zipCacheBlock_, CacheBlock::ZIP_CACHE_BLOCK_SIZE, &read ) != FILEERROR_NONE )
 		{
 			return;
 		}
@@ -103,8 +103,8 @@ namespace
 	{
 		(void)opaque;
 		(void)mode;
-		hFileHandle* fh;
-		if ( !Fopen( (const hChar*)filename, "r", &fh ) )
+		hdFileHandle* fh;
+		if ( !hdFopen( (const hChar*)filename, "r", &fh ) )
 			return NULL;
 
 #ifdef USE_ZIP_CACHE
@@ -117,9 +117,9 @@ namespace
 	int ZipClose( voidpf opaque, voidpf stream )
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
+		hdFileHandle* fh = (hdFileHandle*)stream;
 
-		Fclose( fh );
+		hdFclose( fh );
 
 		return 0;
 	}
@@ -127,9 +127,9 @@ namespace
 	int ZipError(voidpf opaque, voidpf stream)
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
+		hdFileHandle* fh = (hdFileHandle*)stream;
 
-		if ( Ftell( fh ) >= Fsize( fh ) )
+		if ( hdFtell( fh ) >= hdFsize( fh ) )
 		{
 			return 0;
 		}
@@ -140,7 +140,7 @@ namespace
 	uLong ZipRead( voidpf opaque, voidpf stream, void* buf, uLong size )
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
+		hdFileHandle* fh = (hdFileHandle*)stream;
 
 #ifdef USE_ZIP_CACHE
 		if ( FileBlockInCache( &gZipCache, size ) )
@@ -161,7 +161,7 @@ namespace
 #endif // USE_ZIP_CACHE
 
         hUint32 bytesRead;
-		if ( Fread( fh, buf, size, &bytesRead ) != FILEERROR_NONE )
+		if ( hdFread( fh, buf, size, &bytesRead ) != FILEERROR_NONE )
 		{
 			return 0;
 		}
@@ -171,10 +171,10 @@ namespace
 	uLong ZipWrite( voidpf opaque, voidpf stream, const void* buf, uLong size )
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
+		hdFileHandle* fh = (hdFileHandle*)stream;
 
         hUint32 bytesWritten;
-		if ( Fwrite( fh, buf, size, &bytesWritten ) != FILEERROR_NONE )
+		if ( hdFwrite( fh, buf, size, &bytesWritten ) != FILEERROR_NONE )
 		{
 			return 0;
 		}
@@ -185,16 +185,16 @@ namespace
 	ZPOS64_T ZipTell( voidpf opaque, voidpf stream )
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
+		hdFileHandle* fh = (hdFileHandle*)stream;
 
-		return Ftell( fh );
+		return hdFtell( fh );
 	}
 
 	long ZipSeek( voidpf opaque, voidpf stream, ZPOS64_T offset, int origin )
 	{
 		(void)opaque;
-		hFileHandle* fh = (hFileHandle*)stream;
-		hSeekOffset devOrigin;
+		hdFileHandle* fh = (hdFileHandle*)stream;
+		hdSeekOffset devOrigin;
 
 #ifdef USE_ZIP_CACHE
 		InvalidateCache( &gZipCache );
@@ -208,7 +208,7 @@ namespace
 		case ZLIB_FILEFUNC_SEEK_END: devOrigin = SEEKOFFSET_END; break;
 		}
 
-		Fseek( fh, offset, devOrigin );
+		hdFseek( fh, offset, devOrigin );
 
 		return 0;
 	}

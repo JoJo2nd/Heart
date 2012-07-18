@@ -30,37 +30,37 @@
 
 namespace Heart
 {
-	class hFileHandle;
+	class hdFileHandle;
 
-    enum hSeekOffset
+    enum hdSeekOffset
     {
         SEEKOFFSET_BEGIN,
         SEEKOFFSET_CURRENT,
         SEEKOFFSET_END
     };
 
-	enum hFileError
+	enum hdFileError
 	{
 		FILEERROR_NONE		= 0,
 		FILEERROR_PENDING	= -1,
 		FILEERROR_FAILED	= -2,
 	};
 
-	struct HEARTDEV_SLIBEXPORT hFileHandleInfo
+	struct HEARTDEV_SLIBEXPORT hdFileHandleInfo
 	{
 		const hChar*	path_;
 		const hChar*	name_;
 		hBool			directory_;
 	};
 
-    struct HEARTDEV_SLIBEXPORT hFileStat
+    struct HEARTDEV_SLIBEXPORT hdFileStat
     {
         hTime   createTime_;
         hTime   lastModTime_;
         hTime   lastAccessTime_;
     };
 
-	typedef huFunctor< hBool(*)(const hFileHandleInfo*) >::type		hEnumerateDeviceFilesCallback;
+	typedef huFunctor< hBool(*)(const hdFileHandleInfo*) >::type		hdEnumerateFilesCallback;
 
 	/**
 	* Fopen 
@@ -71,7 +71,7 @@ namespace Heart
 	* @return   hBool
 	*/
     HEARTDEV_SLIBEXPORT
-	hBool		HEART_API Fopen( const hChar* filename, const hChar* mode, hFileHandle** pOut );
+	hBool		HEART_API hdFopen( const hChar* filename, const hChar* mode, hdFileHandle** pOut );
 	/**
 	* Fclose 
 	*
@@ -79,7 +79,7 @@ namespace Heart
 	* @return   hBool
 	*/
     HEARTDEV_SLIBEXPORT
-	hBool		HEART_API Fclose( hFileHandle* pHandle );
+	hBool		HEART_API hdFclose( hdFileHandle* pHandle );
 	/**
 	* Fread 
 	*
@@ -89,7 +89,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hFileError	HEART_API Fread( hFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read );
+	hdFileError	HEART_API hdFread( hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read );
 	/**
 	* Fseek 
 	*
@@ -99,7 +99,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hFileError	HEART_API Fseek( hFileHandle* pHandle, hUint64 offset, hSeekOffset from );
+	hdFileError	HEART_API hdFseek( hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from );
 	/**
 	* Ftell 
 	*
@@ -107,7 +107,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hUint64		HEART_API Ftell( hFileHandle* pHandle );
+	hUint64		HEART_API hdFtell( hdFileHandle* pHandle );
 	/**
 	* Fsize 
 	*
@@ -115,7 +115,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hUint64		HEART_API Fsize( hFileHandle* pHandle );
+	hUint64		HEART_API hdFsize( hdFileHandle* pHandle );
 	/**
 	* Fwrite 
 	*
@@ -125,7 +125,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEARTDEV_SLIBEXPORT
-	hFileError	HEART_API Fwrite( hFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written );
+	hdFileError	HEART_API hdFwrite( hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written );
 
 	/**
 	* EnumerateFiles 
@@ -135,10 +135,10 @@ namespace Heart
 	* @return   void
 	*/
     HEARTDEV_SLIBEXPORT
-	void		HEART_API EnumerateFiles( const hChar* path, hEnumerateDeviceFilesCallback fn );
+	void		HEART_API hdEnumerateFiles( const hChar* path, hdEnumerateFilesCallback fn );
 
     HEARTDEV_SLIBEXPORT
-    hFileStat   HEART_API Fstat(hFileHandle* handle);
+    hdFileStat   HEART_API hdFstat(hdFileHandle* handle);
 }
 
 #endif // FILESYSTEM_H__

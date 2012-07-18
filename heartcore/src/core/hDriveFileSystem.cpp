@@ -35,7 +35,7 @@ namespace
 	{
 		hEnumerateFilesCallback fn_;
 
-		hBool Callback(const hFileHandleInfo* pInfo )
+		hBool Callback(const hdFileHandleInfo* pInfo )
 		{
 			hFileInfo fi;
 			fi.name_ = pInfo->name_;
@@ -67,7 +67,7 @@ namespace
 
     hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, hFileMode mode ) const
     {
-        hFileHandle* fh;
+        hdFileHandle* fh;
         const hChar* devMode;
 
         if ( mode == FILEMODE_WRITE )
@@ -83,7 +83,7 @@ namespace
             return NULL;
         }
 
-        if ( !Fopen( filename, devMode, &fh ) )
+        if ( !hdFopen( filename, devMode, &fh ) )
         {
             return NULL;
         }
@@ -105,7 +105,7 @@ namespace
 			return;
 		}
 
-		Fclose( ((hDriveFile*)pFile)->fileHandle_ );
+		hdFclose( ((hDriveFile*)pFile)->fileHandle_ );
 
 		hDELETE(GetGlobalHeap(), pFile);
 	}
@@ -124,7 +124,7 @@ namespace
         hStrCopy( fullFilename, len, FILE_PREFIX );
         hStrCat( fullFilename, len, path );
 
-		EnumerateFiles( fullFilename, hEnumerateDeviceFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
+		hdEnumerateFiles( fullFilename, hdEnumerateFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
 	}
 
 }
