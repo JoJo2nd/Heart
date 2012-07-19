@@ -308,14 +308,14 @@ namespace Heart
             hStrCopy(handler.type_.ext, 4, e.GetAttributeString("ext") );
             handler.libPath_ = e.GetAttributeString("libpath");
 
-            handler.loaderLib_ = OpenSharedLib(handler.libPath_);
+            handler.loaderLib_ = hd_OpenSharedLib(handler.libPath_);
             if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
             {
-                handler.binLoader_              = (OnResourceDataLoad)      GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
-                handler.rawLoader_              = (OnResourceDataLoadRaw)   GetFunctionAddress(handler.loaderLib_,"HeartRawLoader");
-                handler.packageLinkComplete_    = (OnPackageLoadComplete)   GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
-                handler.resourceDataUnload_     = (OnResourceDataUnload)    GetFunctionAddress(handler.loaderLib_,"HeartDataUnload");
-                handler.packageUnload_          = (OnPackageUnloadComplete) GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
+                handler.binLoader_              = (OnResourceDataLoad)      hd_GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
+                handler.rawLoader_              = (OnResourceDataLoadRaw)   hd_GetFunctionAddress(handler.loaderLib_,"HeartRawLoader");
+                handler.packageLinkComplete_    = (OnPackageLoadComplete)   hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
+                handler.resourceDataUnload_     = (OnResourceDataUnload)    hd_GetFunctionAddress(handler.loaderLib_,"HeartDataUnload");
+                handler.packageUnload_          = (OnPackageUnloadComplete) hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
 
                 if ( handler.binLoader_           &&
                      handler.rawLoader_           &&   

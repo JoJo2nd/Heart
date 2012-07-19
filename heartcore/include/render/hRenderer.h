@@ -79,9 +79,11 @@ namespace Heart
         };
     };
 
-	class HEARTCORE_SLIBEXPORT hRenderer : public hPtrImpl< hdRenderDevice >
+	class HEARTCORE_SLIBEXPORT hRenderer : public hdRenderDevice
 	{
 	public:
+
+        HEART_BASECLASS(hdRenderDevice);
 
 		static const hUint32									DEFAULT_CMD_BUF_SIZE = 1024 * 1024;
 		static const hUint32									DEFAULT_MODIFY_BUFFER_SIZE = 1024*1024*8;
@@ -94,8 +96,8 @@ namespace Heart
 		hRenderer();
 		void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
 		void													Destroy();
-        hUint32                                                 GetWidth() const { return pImpl()->Width(); }
-        hUint32                                                 GetHeight() const { return pImpl()->Height(); }
+//         hUint32                                                 GetWidth() const { return pImpl()->Width(); }
+//         hUint32                                                 GetHeight() const { return pImpl()->Height(); }
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
 		///////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,17 +127,17 @@ namespace Heart
 		/*
 			pimpl methods
 		*/
-        void                                                    CreateBlendState( const hBlendStateDesc& desc, hdBlendState** state ) { *state = pImpl()->CreateBlendState( desc ); }
-        void                                                    DestroyBlendState( hdBlendState* state ) { pImpl()->DestroyBlendState( state ); } 
-        void                                                    CreateRasterizerState( const hRasterizerStateDesc& desc, hdRasterizerState** state ) { *state = pImpl()->CreateRasterizerState( desc ); }
-        void                                                    DestroyRasterizerState( hdRasterizerState* state ) { pImpl()->DestoryRasterizerState( state ); } 
-        void                                                    CreateDepthStencilState( const hDepthStencilStateDesc& desc, hdDepthStencilState** state ) { *state = pImpl()->CreateDepthStencilState( desc ); }
-        void                                                    DestroyDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
-        void                                                    CreateSamplerState( const hSamplerStateDesc& desc, hdSamplerState** state ) { *state = pImpl()->CreateSamplerState( desc ); }
-        void                                                    DestroySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
-        hdParameterConstantBlock*                               CreateConstantBuffers( const hUint32* sizes, const hUint32* regs, hUint32 count ) { return pImpl()->CreateConstantBlocks( sizes, regs, count ); }
-        void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
-        void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }
+        //void                                                    CreateBlendState( const hBlendStateDesc& desc, hdBlendState** state ) { *state = pImpl()->CreateBlendState( desc ); }
+        //void                                                    DestroyBlendState( hdBlendState* state ) { pImpl()->DestroyBlendState( state ); } 
+        //void                                                    CreateRasterizerState( const hRasterizerStateDesc& desc, hdRasterizerState** state ) { *state = pImpl()->CreateRasterizerState( desc ); }
+        //void                                                    DestroyRasterizerState( hdRasterizerState* state ) { pImpl()->DestoryRasterizerState( state ); } 
+        //void                                                    CreateDepthStencilState( const hDepthStencilStateDesc& desc, hdDepthStencilState** state ) { *state = pImpl()->CreateDepthStencilState( desc ); }
+        //void                                                    DestroyDepthStencilState( hdDepthStencilState* state ) { pImpl()->DestoryDepthStencilState( state ); } 
+        //void                                                    CreateSamplerState( const hSamplerStateDesc& desc, hdSamplerState** state ) { *state = pImpl()->CreateSamplerState( desc ); }
+        //void                                                    DestroySamplerState( hdSamplerState* state ) { pImpl()->DestroySamplerState( state ); } 
+        //hdParameterConstantBlock*                               CreateConstantBuffers( const hUint32* sizes, const hUint32* regs, hUint32 count ) { return pImpl()->CreateConstantBlocks( sizes, regs, count ); }
+        //void                                                    UpdateConstantBlockParameters( hdParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters ) { pImpl()->UpdateConstantBlockParameters( constBlock, params, parameters ); }
+        //void                                                    DestroyConstantBuffers( hdParameterConstantBlock* blocks, hUint32 count ) { pImpl()->DestroyConstantBlocks( blocks, count ); }
 		void													DestroyMaterial( hMaterial* pMat );
 		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void** initialData, hUint32* initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex );
 		void													DestroyTexture( hTexture* pOut );

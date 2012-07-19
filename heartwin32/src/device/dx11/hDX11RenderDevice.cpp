@@ -32,7 +32,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11RenderDevice::hdDX11RenderDevice() 
-        : kernel_(NULL)
+        : sysWindow_(NULL)
     {
         vertexLayoutMap_.SetHeap(GetGlobalHeap()/*!heap*/);
     }
@@ -50,11 +50,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup )
+    void hdDX11RenderDevice::Create( hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup )
     {
         HRESULT hr;
 
-        kernel_ = sysHandle;
+        sysWindow_ = sysHandle;
         width_ = width;
         height_ = height;
         alloc_ = setup.alloc_;

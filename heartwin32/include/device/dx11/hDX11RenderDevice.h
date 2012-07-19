@@ -48,7 +48,7 @@ namespace Heart
         hdDX11RenderDevice();
         ~hdDX11RenderDevice();
 
-        void                            Create( Device::Kernel* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup );
+        void                            Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup );
         void                            Destroy();
         void                            ActiveContext() {}
         void                            BeginRender();
@@ -59,8 +59,8 @@ namespace Heart
         void                            InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         hdDX11RenderSubmissionCtx*      GetMainSubmissionCtx() { return &mainRenderCtx_; };
         
-        hUint32                         Width() const { return width_; }
-        hUint32                         Height() const { return height_; }
+        hUint32                         GetWidth() const { return width_; }
+        hUint32                         GetHeight() const { return height_; }
 
         hUint32                         ComputeVertexLayoutStride( hUint32 vertexlayout );
         //Resource Create Calls
@@ -101,7 +101,7 @@ namespace Heart
 
         hUint32                     BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements );
 
-        Device::Kernel*             kernel_;
+        hdSystemWindow*             sysWindow_;
         hUint32                     width_;
         hUint32                     height_;
         hTempRenderMemAlloc         alloc_;

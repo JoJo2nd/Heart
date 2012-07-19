@@ -63,7 +63,7 @@ namespace Heart
 		, pThreadFrameStats_( NULL )
 		, statPass_( 0 )
 	{
-        SetImpl( hNEW(GetGlobalHeap(), hdRenderDevice) );
+        //SetImpl( hNEW(GetGlobalHeap(), hdRenderDevice) );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -95,9 +95,9 @@ namespace Heart
         hRenderDeviceSetup setup;
         setup.alloc_ = RnTmpMalloc;
         setup.free_ = RnTmpFree;
-        pImpl()->Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
+        ParentClass::Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
 
-        pImpl()->InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
+        ParentClass::InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
         mainSubmissionCtx_.EnableDebugDrawing( false );
 
         CreateIndexBuffer( NULL, RenderUtility::GetSphereMeshIndexCount( 16, 8 ), 0, PRIMITIVETYPE_TRILIST, &debugSphereIB_ );
@@ -105,7 +105,7 @@ namespace Heart
         RenderUtility::BuildSphereMesh( 16, 8, 1.f, &mainSubmissionCtx_,debugSphereIB_, debugSphereVB_ );
 
 #ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        pImpl()->SetPIXDebuggingMutex( &pixMutex_ );
+        ParentClass::SetPIXDebuggingMutex( &pixMutex_ );
 #endif
 
 		renderThread_.Create( 
@@ -292,7 +292,7 @@ namespace Heart
 		hFloat frameCounter = 0.0f;
 		hUint32 frames = 0;
 
-        pImpl()->BeginRender();
+        ParentClass::BeginRender();
 
         do {
             if ( !renderCmdPipe_.IsEmpty()  )
@@ -309,12 +309,12 @@ namespace Heart
                     break;
                 case RENDERCMD_CMD_BUFFER_RELEASE:
                     mainSubmissionCtx_.RunCommandBuffer( cmd.commandBuffer_ );
-                    pImpl()->ReleaseCommandBuffer( cmd.commandBuffer_ );
+                    ParentClass::ReleaseCommandBuffer( cmd.commandBuffer_ );
                     break;
                 case RENDERCMD_SWAP:
-                    pImpl()->EndRender();
-                    pImpl()->SwapBuffers();
-                    pImpl()->BeginRender();
+                    ParentClass::EndRender();
+                    ParentClass::SwapBuffers();
+                    ParentClass::BeginRender();
                     break;
                 }
 
@@ -434,7 +434,7 @@ namespace Heart
             sizes[i] = resource->levelDescs_[i].mipdataSize_;
         }
 
-        hdTexture* dt = pImpl()->CreateTextrue( 
+        hdTexture* dt = ParentClass::CreateTextrue( 
             resource->levelDescs_[0].width_, 
             resource->levelDescs_[0].height_, 
             resource->nLevels_, 
@@ -487,7 +487,7 @@ namespace Heart
                 hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
                 resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->ltGetResourceWeak( sid ) );
             }
-            CreateSamplerState( resource->samplers_[samp].samplerDesc_, &resource->samplers_[samp].samplerState_ );
+            resource->samplers_[samp].samplerState_ = CreateSamplerState( resource->samplers_[samp].samplerDesc_ );
         }
 
         hUint32 nTech = resource->techniques_.GetSize();
@@ -552,9 +552,9 @@ namespace Heart
                     }
                 }
 
-                CreateBlendState( resource->techniques_[tech].passes_[pass].blendStateDesc_, &resource->techniques_[tech].passes_[pass].blendState_ );
-                CreateRasterizerState( resource->techniques_[tech].passes_[pass].rasterizerStateDesc_, &resource->techniques_[tech].passes_[pass].rasterizerState_ );
-                CreateDepthStencilState( resource->techniques_[tech].passes_[pass].depthStencilStateDesc_, &resource->techniques_[tech].passes_[pass].depthStencilState_ );
+                resource->techniques_[tech].passes_[pass].blendState_        = CreateBlendState(resource->techniques_[tech].passes_[pass].blendStateDesc_);
+                resource->techniques_[tech].passes_[pass].rasterizerState_   = CreateRasterizerState(resource->techniques_[tech].passes_[pass].rasterizerStateDesc_);
+                resource->techniques_[tech].passes_[pass].depthStencilState_ = CreateDepthStencilState(resource->techniques_[tech].passes_[pass].depthStencilStateDesc_);
             }
         }
 
@@ -586,7 +586,7 @@ namespace Heart
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
 
-        resource->SetImpl( pImpl()->CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ), GetGlobalHeap()/*!heap*/ );
+        resource->SetImpl( ParentClass::CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ), GetGlobalHeap()/*!heap*/ );
      
         return resource;
     }
@@ -598,7 +598,7 @@ namespace Heart
     hUint32 hRenderer::OnShaderProgramUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
         hShaderProgram* shader = static_cast<hShaderProgram*>(resource);
-        pImpl()->DestroyShader(shader->pImpl());
+        ParentClass::DestroyShader(shader->pImpl());
         shader->SetImpl(NULL);
         hDELETE(GetGlobalHeap()/*!heap*/, shader);
         return 0;
@@ -825,7 +825,7 @@ namespace Heart
             (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;
 		}
 
-		hdTexture* dt = pImpl()->CreateTextrue( width, height, levels, format, initialData, initDataSize, flags );
+		hdTexture* dt = ParentClass::CreateTextrue( width, height, levels, format, initialData, initDataSize, flags );
         hcAssert(dt);
         (*outTex)->SetImpl( dt );
 	}
@@ -838,7 +838,7 @@ namespace Heart
 	{
 		//hcAssert( IsRenderThread() );
 
-		pImpl()->DestroyTexture(pOut->pImpl());
+		ParentClass::DestroyTexture(pOut->pImpl());
         pOut->SetImpl(NULL);
 
         hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
@@ -855,7 +855,7 @@ namespace Heart
 		pdata->nIndices_ = nIndices;
 		pdata->primitiveType_ = primType;
 
-		pdata->SetImpl( pImpl()->CreateIndexBuffer( nIndices*sizeof(hUint16), pIndices, flags ) );
+		pdata->SetImpl( ParentClass::CreateIndexBuffer( nIndices*sizeof(hUint16), pIndices, flags ) );
 
         *outIB = pdata;
 	}
@@ -868,7 +868,7 @@ namespace Heart
 	{
 		//hcAssert( IsRenderThread() );
 
-		pImpl()->DestroyIndexBuffer( pOut->pImpl() );
+		ParentClass::DestroyIndexBuffer( pOut->pImpl() );
         pOut->SetImpl(NULL);
 		hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
 	}
@@ -881,9 +881,9 @@ namespace Heart
 	{
         hVertexBuffer* pdata = hNEW(GetGlobalHeap()/*!heap*/, hVertexBuffer)(this);
         pdata->vtxCount_ = nElements;
-        pdata->stride_ = pImpl()->ComputeVertexLayoutStride( layout );
+        pdata->stride_ = ParentClass::ComputeVertexLayoutStride( layout );
 
-        pdata->SetImpl( pImpl()->CreateVertexBuffer( layout, nElements*pdata->stride_, initData, flags ) );
+        pdata->SetImpl( ParentClass::CreateVertexBuffer( layout, nElements*pdata->stride_, initData, flags ) );
 
         *outVB = pdata;
 	}
@@ -896,7 +896,7 @@ namespace Heart
 	{
 // 		hcAssert( IsRenderThread() );
 
-		pImpl()->DestroyVertexBuffer(pOut->pImpl());
+		ParentClass::DestroyVertexBuffer(pOut->pImpl());
         pOut->SetImpl(NULL);
 		hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
 	}
@@ -927,8 +927,8 @@ namespace Heart
     {
         hRenderSubmissionCtx* ret = hNEW(GetGlobalHeap()/*!heap*/, hRenderSubmissionCtx);
         ret->Initialise( this );
-        pImpl()->InitialiseRenderSubmissionCtx( &ret->impl_ );
-        pImpl()->InitialiseRenderSubmissionCtx( &ret->debug_ );
+        ParentClass::InitialiseRenderSubmissionCtx( &ret->impl_ );
+        ParentClass::InitialiseRenderSubmissionCtx( &ret->debug_ );
         if ( !debugMaterial_ )
         {
             debugMaterial_ = static_cast< hMaterial* >( resourceManager_->mtGetResourceWeak(hResourceManager::BuildResourceCRC("ENGINE/EFFECTS/DEBUG.CFX")));
@@ -944,8 +944,8 @@ namespace Heart
     void hRenderer::DestroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx )
     {
         hcAssert( ctx );
-        pImpl()->DestroyRenderSubmissionCtx( &ctx->impl_ );
-        pImpl()->DestroyRenderSubmissionCtx( &ctx->debug_ );
+        ParentClass::DestroyRenderSubmissionCtx( &ctx->impl_ );
+        ParentClass::DestroyRenderSubmissionCtx( &ctx->debug_ );
         hDELETE_SAFE(GetGlobalHeap()/*!heap*/, ctx);
     }
 

@@ -104,12 +104,12 @@ namespace Heart
         ~hResourceManager();
 
         hBool                           Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
-        hBool                           RequiredResourcesReady();
+        hBool                           RequiredResourcesReady() { return hFalse; }
         void                            MainThreadUpdate();
         static hUint32                  BuildResourceCRC( const hChar* resourceName );
-        void                            SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData );
+        void                            SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData ) {}
         hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
-        hResourceClassBase*             LoadResourceFromPath( const hChar* path );
+        hResourceClassBase*             LoadResourceFromPath( const hChar* path ) { return NULL; }
         void                            QueueResourceSweep() { hAtomic::Increment( resourceSweepCount_ ); }
         void                            Post() { loaderSemaphone_.Post(); }
         void                            Shutdown( hRenderer* prenderer );
@@ -117,15 +117,15 @@ namespace Heart
         hRenderer*                      GetRederer() { return renderer_; }
 
         //Resource Thread interface
-        hResourceClassBase*             ltGetResourceAddRef(hUint32 crc);
-        hResourceClassBase*             ltGetResourceWeak(hUint32 crc);
+        hResourceClassBase*             ltGetResourceAddRef(hUint32 crc) { return NULL; }
+        hResourceClassBase*             ltGetResourceWeak(hUint32 crc) { return NULL; }
 
         //Main Thread interface
-        void                            mtLoadResource(const hChar* path);
-        hResourceClassBase*             mtGetResourceAddRef(const hChar* path);
-        hResourceClassBase*             mtGetResourceAddRef(hUint32 crc);
-        hResourceClassBase*             mtGetResourceWeak(const hChar* path);
-        hResourceClassBase*             mtGetResourceWeak(hUint32 crc);
+        void                            mtLoadResource(const hChar* path){}
+        hResourceClassBase*             mtGetResourceAddRef(const hChar* path){ return NULL; }
+        hResourceClassBase*             mtGetResourceAddRef(hUint32 crc){ return NULL; }
+        hResourceClassBase*             mtGetResourceWeak(const hChar* path){ return NULL; }
+        hResourceClassBase*             mtGetResourceWeak(hUint32 crc){ return NULL; }
 
         // New interface
         hUint32                         mtLoadPackage(const hChar* name);

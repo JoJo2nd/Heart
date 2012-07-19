@@ -75,47 +75,41 @@ namespace Heart
             return hdInputButton();
 	}
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdKeyboard::PushCharacterEvent( hChar ch )
+    {
+        hcWarningHigh( nCharacters_ == MAX_BUFFER_SIZE, "Keyboard buffer overflow" );
+        charBuffer_[nCharacters_] = ch;
+        charBuffer_[nCharacters_+1] = 0;
+        nCharacters_ = (nCharacters_+1) % MAX_BUFFER_SIZE;
+    }
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
 	void hdKeyboard::Update()
 	{
-		FlushCharBufferData();
-
-		for ( hUint32 i = 0; i < KEYBOARD_KEYS; ++i )
-		{
-			if ( keys_[ i ].raisingEdge_ )
-			{
-				keys_[ i ].buttonVal_ = hTrue;
-				PushBufferEvent( i, true );
-			}
-			if ( keys_[ i ].raisingEdge_ )
-			{
-				keys_[ i ].raisingEdge_ = hFalse;
-			}
-
-			if ( keys_[ i ].fallingEdge_ )
-			{
-				keys_[ i ].buttonVal_ = hFalse;
-				PushBufferEvent( i, false );
-			}
-			if ( keys_[ i ].fallingEdge_ )
-			{
-				keys_[ i ].fallingEdge_ = hFalse;
-			}
-		}
 
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hdKeyboard::PushBufferEvent( hUint32 vKey, bool state )
-	{
-		hcWarningHigh( nBufferData_ == MAX_BUFFER_SIZE, "Keyboard buffer overflow" );
-	}
+    void hdKeyboard::EndOfFrameUpdate()
+    {
+        FlushCharBufferData();
+        for ( hUint32 i = 0; i < KEYBOARD_KEYS; ++i )
+        {
+            keys_[i].raisingEdge_ = hFalse;
+            keys_[i].fallingEdge_ = hFalse;
+            keys_[i].isRepeat_    = hFalse;
+        }
+    }
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -137,5 +131,18 @@ namespace Heart
 			accessKey_ = 0;
 		}
 	}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdKeyboard::SetButton( hdInputID buttonID, hdInputButtonState state )
+    {
+        hcAssert(buttonID < KEYBOARD_KEYS);
+        keys_[buttonID].isRepeat_    = keys_[buttonID].buttonVal_;
+        keys_[buttonID].raisingEdge_ = state == hButtonState_IS_DOWN;
+        keys_[buttonID].fallingEdge_ = state == hButtonState_IS_UP;
+        keys_[buttonID].buttonVal_   = state == hButtonState_IS_DOWN;
+    }
 
 }

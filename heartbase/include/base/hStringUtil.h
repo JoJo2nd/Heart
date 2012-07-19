@@ -30,35 +30,53 @@
 
 namespace Heart
 {
-    inline hUint32  hStrLen( const hChar* s1 )
+    HEARTBASE_SLIBEXPORT
+    inline hUint32 HEART_API hStrLen( const hChar* s1 )
     {
         return strlen( s1 );
     }
 
-    inline void     hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
+    HEARTBASE_SLIBEXPORT
+    inline void HEART_API hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
         hcAssert( hStrLen( src ) < destlen );
         strcpy( dest, src );
     }
 
-    inline void     hStrNCopy( hChar* dest, hUint32 destlen, const hChar* src )
+    HEARTBASE_SLIBEXPORT
+    inline void HEART_API hStrNCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
         strncpy( dest, src, destlen-1 );
         dest[destlen-1] = 0;
     }
 
-    inline void     hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
+    HEARTBASE_SLIBEXPORT
+    inline void HEART_API hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
     {
         hcAssert( destlen - hStrLen( dest ) < destlen );
         strcat( dest, src );
     }
 
-    inline hUint32  hStrCmp( const hChar* s1, const hChar* s2 )
+    HEARTBASE_SLIBEXPORT
+    inline hUint32 HEART_API hStrCmp( const hChar* s1, const hChar* s2 )
     {
         return strcmp( s1, s2 );
     }
 
-    inline hUint32  hStrICmp( const hChar* s1, const hChar* s2 )
+    HEARTBASE_SLIBEXPORT
+    inline hChar* HEART_API hStrChr( const hChar* s1, hChar ch)
+    {
+        return strchr(s1,(hInt)ch);
+    }
+
+    HEARTBASE_SLIBEXPORT
+    inline hChar* HEART_API hStrRChr( const hChar* s1, hChar ch)
+    {
+        return strrchr(s1,(hInt)ch);
+    }
+
+    HEARTBASE_SLIBEXPORT
+    inline hUint32 HEART_API hStrICmp( const hChar* s1, const hChar* s2 )
     {
 #ifdef WIN32
         return _stricmp( s1, s2 );
@@ -67,7 +85,8 @@ namespace Heart
 #endif
     }
 
-    inline hInt32 hStrPrintf( hChar* dest, hUint32 destlen, const hChar* format, ... )
+    HEARTBASE_SLIBEXPORT
+    inline hInt32 HEART_API hStrPrintf( hChar* dest, hUint32 destlen, const hChar* format, ... )
     {
         va_list marker;
         va_start( marker, format );
@@ -79,17 +98,20 @@ namespace Heart
         return r;
     }
 
-    inline hInt32 hAtoI(const hChar* str)
+    HEARTBASE_SLIBEXPORT
+    inline hInt32 HEART_API hAtoI(const hChar* str)
     {
         return atoi(str);
     }
 
-    inline hFloat hAtoF(const hChar* str)
+    HEARTBASE_SLIBEXPORT
+    inline hFloat HEART_API hAtoF(const hChar* str)
     {
         return (hFloat)atof(str);
     }
 
-    extern int hStrWildcardMatch(const hChar *wildcard, const hChar *target);
+    HEARTBASE_SLIBEXPORT
+    int HEART_API hStrWildcardMatch(const hChar *wildcard, const hChar *target);
 }
 
 #endif // HSTRINGUTIL_H__

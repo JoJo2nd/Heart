@@ -329,7 +329,7 @@ namespace Heart
 
 	void hSystemConsole::UpdateConsole()
 	{
-		if ( keyboard_->GetButtonDown( Device::IID_ESCAPE, keyboardAccessKey_ ) )
+		if ( keyboard_->GetButton( VK_ESCAPE, keyboardAccessKey_ ).raisingEdge_ )
 		{
 			shown_ = !shown_;
 		}
@@ -349,7 +349,7 @@ namespace Heart
 		{
 			hUint32 nIC = nInputChars_;
 
-			const hChar* input = keyboard_->GetBufferedText();
+			const hChar* input = keyboard_->GetCharBufferData();
 			for ( ; *input != '\0'; ++input )
 			{
 				if ( nInputChars_ > 0 && iscntrl( *input ) )
@@ -387,25 +387,25 @@ namespace Heart
 			//check for going back thru history
 			if ( !inputHistroy_.empty() )
 			{
-				if ( keyboard_->GetButtonDown( Device::IID_UPARROW, keyboardAccessKey_ ) )
+				if ( keyboard_->GetButton( VK_UP, keyboardAccessKey_ ).raisingEdge_ )
 				{
 					++inputHistoryEntry_;
 					if ( (hUint32)inputHistoryEntry_ >= inputHistroy_.size() )
 					{
 						inputHistoryEntry_ = inputHistroy_.size() - 1;
 					}
- 					strcpy_s( inputBuffer_, INPUT_BUFFER_LEN - 1, inputHistroy_.at( inputHistoryEntry_ ).c_str() );
+ 					hStrCopy( inputBuffer_, INPUT_BUFFER_LEN - 1, inputHistroy_.at( inputHistoryEntry_ ).c_str() );
 					nInputChars_ = inputHistroy_.at( inputHistoryEntry_ ).length();
 					inputDirty_ = hTrue;
 				}
-				else if ( keyboard_->GetButtonDown( Device::IID_DOWNARROW, keyboardAccessKey_ ) )
+				else if ( keyboard_->GetButton( VK_UP, keyboardAccessKey_ ).raisingEdge_ )
 				{
 					--inputHistoryEntry_;
 					if ( inputHistoryEntry_ < 0 )
 					{
 						inputHistoryEntry_ = 0;
 					}
-					strcpy_s( inputBuffer_, INPUT_BUFFER_LEN - 1, inputHistroy_.at( inputHistoryEntry_ ).c_str() );
+					hStrCopy( inputBuffer_, INPUT_BUFFER_LEN - 1, inputHistroy_.at( inputHistoryEntry_ ).c_str() );
 					nInputChars_ = inputHistroy_.at( inputHistoryEntry_ ).length();
 					inputDirty_ = hTrue;
 				}

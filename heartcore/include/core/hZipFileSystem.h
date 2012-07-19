@@ -30,27 +30,22 @@
 
 namespace Heart
 {
-	class hdFileHandle;
-
-	typedef huFunctor< void(*)(unzFile) >::type		ZipIOJobCallback;
 	
-	class hZipFileSystem : public hIFileSystem
+	class HEARTCORE_SLIBEXPORT hZipFileSystem : public hIFileSystem
 	{
 	public:
 
-		hZipFileSystem() :
-			zipFileHandle_( NULL )
+		hZipFileSystem(const hChar* zipFile) 
+            : zipFileHandle_( NULL )
+            , openHandles_(0)
 		{
-			requestSemaphore_.Create( 0, 4096 );
+            Initialise(zipFile);
 		}
 
 		~hZipFileSystem()
 		{
+            Destory();
 		}
-
-		hBool			Initialise( const hChar* zipFile );
-
-		void			Destory();
 
 		/**
 		* OpenFile 
@@ -78,56 +73,14 @@ namespace Heart
 		*/
 		virtual void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const;
 
-		void			PushFileIOJob( ZipIOJobCallback fn ) const;
-
 	private:
 
-		struct ZipFileEntry
-		{
-			hChar*				name_;
-			union
-			{
-				struct
-				{
-					hUint16				nReserve_;
-					hUint16				nEntries_;
-					ZipFileEntry*		pEntries_;
-				};
-				struct 
-				{
-					unz64_file_pos		zipEntry_;
-					hUint64				size_;
-				};
-			};
-			hByte				directory_;
-		};
-
-		hUint32					FileIO( void* );
-		hChar*					GetStringMem( hUint32 size )
-		{
-			hChar* pRet = pStringOfffset_;
-			pStringOfffset_ += size;
-			hcAssert( pStringOfffset_ < (pStringPool_+stringPoolSize_) );
-			return pRet;
-		}
-		ZipFileEntry*			AddEntry( ZipFileEntry* pParent, const hChar* name, hUint32 len, hBool isDir, unz64_file_pos zipEntry, const unz_file_info64& info );
-		void					RemoveEntry( ZipFileEntry* toremove );
-		ZipFileEntry*			FindEntry( ZipFileEntry* pParent, const hChar* name, hUint32 len ) const;
-		ZipFileEntry*			FindPath( const hChar* name ) const;
-
+        void			Initialise( const hChar* zipFile );
+        void			Destory();
 
 		zlib_filefunc64_def					zipFileIODefs_;
 		unzFile								zipFileHandle_;
-		hThread								zipIOThread_;
-		hUint32								stringPoolSize_;
-		hChar*								pStringPool_;
-		hChar*								pStringOfffset_;
-		ZipFileEntry*						pRootEntry_;
-		mutable hSemaphore					requestSemaphore_;
-		mutable hMutex						requestQueueMutex_;
-		mutable deque< ZipIOJobCallback >	requestQueue_;
-		hBool								complete_;
-		volatile hBool						doneFileSystemRead_;
+        hUint32                             openHandles_;
 	};
 
 }

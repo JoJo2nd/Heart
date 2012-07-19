@@ -97,7 +97,7 @@ namespace Heart
 		//
 		hUint32												screenWidth_;
 		hUint32												screenHeight_;
-		const hKeyboard*									keyboard_;			
+		const hdKeyboard*									keyboard_;			
 		hBool												shown_;
 		hUint32												keyboardAccessKey_;
 		hUint32												nInputChars_;

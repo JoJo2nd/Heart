@@ -32,9 +32,9 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hSystem::Create( const HeartConfig& config, const hdDeviceConfig& deviceconfig, EventManager* pEventManager )
+	hBool hSystem::Create( const HeartConfig& config, const hdDeviceConfig& deviceconfig )
 	{
-		return Device::Kernel::Create( deviceconfig, pEventManager );
+		return hdSystemWindow::Create( deviceconfig );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ namespace Heart
 
 	void hSystem::Update()
 	{
-		Device::Kernel::Update();
+		hdSystemWindow::Update();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ namespace Heart
 
 	void hSystem::Destroy()
 	{
-		Device::Kernel::Destroy();
+		hdSystemWindow::Destroy();
 	}
 
 }

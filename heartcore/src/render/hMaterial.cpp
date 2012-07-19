@@ -254,7 +254,7 @@ namespace Heart
             sizes[i] = parentMat->GetConstantBufferSize( i );
             regs[i] = parentMat->GetConstantBufferRegister( i );
         }
-        constBuffers_ = renderer->CreateConstantBuffers( sizes, regs, parentMat->GetConstantBufferCount() );
+        constBuffers_ = renderer->CreateConstantBlocks( sizes, regs, parentMat->GetConstantBufferCount() );
 
 //         for (hUint32 i = 0, c = parentMaterial_->GetSamplerArray().GetSize(); i < c; ++i)
 //         {
@@ -273,7 +273,7 @@ namespace Heart
 
     hMaterialInstance::~hMaterialInstance()
     {
-        renderer_->DestroyConstantBuffers(constBuffers_, parentMaterial_->GetConstantBufferCount());
+        renderer_->DestroyConstantBlocks(constBuffers_, parentMaterial_->GetConstantBufferCount());
 //         for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
 //         {
 //             if (samplers_[i].boundTexture_)
@@ -352,10 +352,10 @@ namespace Heart
             renderer->DestroyBlendState(blendState_);
         blendState_ = NULL;
         if (depthStencilState_)
-            renderer->DestroyDepthStencilState(depthStencilState_);
+            renderer->DestoryDepthStencilState(depthStencilState_);
         depthStencilState_ = NULL;
         if (rasterizerState_)
-            renderer->DestroyRasterizerState(rasterizerState_);
+            renderer->DestoryRasterizerState(rasterizerState_);
         rasterizerState_ = NULL;
     }
 

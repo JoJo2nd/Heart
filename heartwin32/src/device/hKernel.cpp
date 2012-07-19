@@ -21,7 +21,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool Kernel::Create( const hdDeviceConfig& config, EventManager* pEventManager )
+	hBool hdSystemWindow::Create( const hdDeviceConfig& config, EventManager* pEventManager )
 	{
 		hInstance_ = config.instance_;
 		wndWidth_ = config.Width_;
@@ -69,7 +69,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::Destroy()
+	void hdSystemWindow::Destroy()
 	{
 		DestroyWindow( hWnd_ );
 		UnregisterClass( &wndClassName_[ 0 ], hInstance_ );
@@ -79,14 +79,14 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool Kernel::CreateWndClassEx( HINSTANCE hinstance, const hChar* classname )
+	hBool hdSystemWindow::CreateWndClassEx( HINSTANCE hinstance, const hChar* classname )
 	{
 		// Fill in the window class structure with parameters 
 		// that describe the main window. 
 		ZeroMemory( &wndClassEx_, sizeof( wndClassEx_ ) );
 		wndClassEx_.cbSize = sizeof( wndClassEx_ );				// size of structure 
 		wndClassEx_.style = CS_HREDRAW | CS_VREDRAW;            // redraw if size changes 
-		wndClassEx_.lpfnWndProc = &Kernel::WindowProc;			// points to window procedure 
+		wndClassEx_.lpfnWndProc = &hdSystemWindow::WindowProc;			// points to window procedure 
 		wndClassEx_.cbClsExtra = 0;								// no extra class memory 
 		wndClassEx_.cbWndExtra = sizeof( void* );				// no extra window memory 
 		wndClassEx_.hInstance = hinstance;						// handle to instance 
@@ -105,9 +105,9 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	LRESULT CALLBACK Kernel::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+	LRESULT CALLBACK hdSystemWindow::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	{
-		Kernel* wnd = NULL;
+		hdSystemWindow* wnd = NULL;
 		// i wont have to do this if it was defined right!!! :@ [6/21/2008 James]
 #pragma warning ( push )
 #pragma warning ( disable : 4244 )
@@ -115,13 +115,13 @@ namespace Device
 		if( uMsg == WM_NCCREATE )
 		{
 			// retrieve Window instance from window creation data and associate
-			wnd = reinterpret_cast< Kernel* >( ( ( LPCREATESTRUCT ) lParam )->lpCreateParams );
+			wnd = reinterpret_cast< hdSystemWindow* >( ( ( LPCREATESTRUCT ) lParam )->lpCreateParams );
 			SetWindowLongPtr( hwnd, 0, reinterpret_cast< LONG_PTR >( wnd ) );
 		}
 		else
 		{
 			// retrieve associated Window instance
-			wnd = reinterpret_cast< Kernel* >( GetWindowLongPtr( hwnd, 0 ) );
+			wnd = reinterpret_cast< hdSystemWindow* >( GetWindowLongPtr( hwnd, 0 ) );
 		}
 #pragma warning ( pop )
 		// call the windows message handler
@@ -137,12 +137,11 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	LRESULT Kernel::WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+	LRESULT hdSystemWindow::WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	{
 		switch (uMsg) 
 		{ 
 		case WM_CLOSE:
-			pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::QuitRequestedEvent() );
 			PostQuitMessage( 0 );
 			return 0;
 		case WM_ACTIVATE:
@@ -152,13 +151,13 @@ namespace Device
 			return 0;
 		case WM_KEYDOWN:
 			{
-				hBool repeat = (lParam & 0x40000000) == 0x40000000;
-				pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( wParam, hTrue, repeat ) );
+				//hBool repeat = (lParam & 0x40000000) == 0x40000000;
+                keyboard_.SetButton(wParam, hButtonState_IS_DOWN);
 			}
 			break;
 		case WM_KEYUP:
 			{
-				pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( wParam, hFalse, hFalse ) ); 
+                keyboard_.SetButton(wParam, hButtonState_IS_UP);
 			}
 			break;
         case WM_MOUSEWHEEL:
@@ -168,32 +167,32 @@ namespace Device
             break;
         case WM_LBUTTONDOWN:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hTrue, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hTrue, hFalse ) ); 
             }
             break;
         case WM_LBUTTONUP:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hFalse, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hFalse, hFalse ) ); 
             }
             break;
         case WM_RBUTTONDOWN:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hTrue, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hTrue, hFalse ) ); 
             }
             break;
         case WM_RBUTTONUP:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hFalse, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hFalse, hFalse ) ); 
             }
             break;
         case WM_MBUTTONDOWN:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hTrue, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hTrue, hFalse ) ); 
             }
             break;
         case WM_MBUTTONUP:
             {
-                pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hFalse, hFalse ) ); 
+                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hFalse, hFalse ) ); 
             }
             break;
 		case WM_CHAR:
@@ -201,7 +200,7 @@ namespace Device
 				hChar charcode = ( wParam & 0x7F );
 				if ( charcode > 0 )
 				{
-					pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardCharacterEvent( charcode ) );
+                    keyboard_->PushCharacterEvent(charcode);
 				}
 			}
 			break;
@@ -215,7 +214,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::Update()
+	void hdSystemWindow::Update()
 	{
 		if ( GetActiveWindow() == hWnd_ )
 		{
@@ -249,7 +248,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::SetWindowTitle( const hChar* titleStr )
+	void hdSystemWindow::SetWindowTitle( const hChar* titleStr )
 	{
 		SetWindowText( hWnd_, titleStr );
 	}
@@ -258,7 +257,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::PumpMessages()
+	void hdSystemWindow::PumpMessages()
 	{
 		MSG msg;
 		while ( PeekMessage( &msg, hWnd_, 0, 0, PM_REMOVE ) != 0 )
@@ -273,7 +272,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 
     HEART_SLIBEXPORT 
-	hBool HEART_API DefaultFullscreenSetting()
+	hBool HEART_API hd_DefaultFullscreenSetting()
 	{
 		return hFalse;
 	}
@@ -283,7 +282,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 
     HEART_SLIBEXPORT 
-	hUint32 HEART_API DefaultScreenWidth()
+	hUint32 HEART_API hd_DefaultScreenWidth()
 	{
 		return 640;
 	}
@@ -293,7 +292,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 
     HEART_SLIBEXPORT 
-	hUint32 HEART_API DefaultScreenHeight()
+	hUint32 HEART_API hd_DefaultScreenHeight()
 	{
 		return 480;
 	}
@@ -303,7 +302,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 
     HEART_SLIBEXPORT 
-	hBool HEART_API DefaultVsyncSetting()
+	hBool HEART_API hd_DefaultVsyncSetting()
 	{
 		return hFalse;
 	}

@@ -54,10 +54,10 @@ namespace Heart
                     rapidxml::xml_node<>* width = getter.FirstChild("renderer").FirstChild( "width" ).ToNode();
                     rapidxml::xml_node<>* height = getter.FirstChild("renderer").FirstChild( "height" ).ToNode();
 
-                    fullscreen_ = fullscreen && fullscreen->value() ? strcmp( fullscreen->value(), "true" ) == 0 : Device::DefaultFullscreenSetting();
-                    width_ = width && width->value() ? atoi( width->value() ) : Device::DefaultScreenWidth();
-                    height_ = height && height->value() ? atoi( height->value() ) : Device::DefaultScreenHeight();
-                    vsync_ = vsync && vsync->value() ? strcmp( vsync->value(), "true" ) == 0 : Device::DefaultVsyncSetting();
+                    fullscreen_ = fullscreen && fullscreen->value() ? strcmp( fullscreen->value(), "true" ) == 0 : hd_DefaultFullscreenSetting();
+                    width_ = width && width->value() ? atoi( width->value() ) : hd_DefaultScreenWidth();
+                    height_ = height && height->value() ? atoi( height->value() ) : hd_DefaultScreenHeight();
+                    vsync_ = vsync && vsync->value() ? strcmp( vsync->value(), "true" ) == 0 : hd_DefaultVsyncSetting();
 
                     readDefaults = hFalse;
                 }
@@ -69,10 +69,10 @@ namespace Heart
 		//
 		if ( readDefaults )
 		{
-			fullscreen_ = Device::DefaultFullscreenSetting();
-			width_		= Device::DefaultScreenWidth();
-			height_		= Device::DefaultScreenHeight();
-			vsync_		= Device::DefaultVsyncSetting();
+			fullscreen_ = hd_DefaultFullscreenSetting();
+			width_		= hd_DefaultScreenWidth();
+			height_		= hd_DefaultScreenHeight();
+			vsync_		= hd_DefaultVsyncSetting();
 		}
 	}
 

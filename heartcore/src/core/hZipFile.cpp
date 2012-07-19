@@ -32,11 +32,10 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	
-	hZipFile::hZipFile() :
-		size_( 0 )
-		,filePos_( 0 )
-		,nextOP_( 0 )
-		,pFileSystem_( NULL )
+	hZipFile::hZipFile(unzFile zip, unz_file_info64 info) 
+        : zipPak_(zip)
+        , zipFileInfo_(info)
+		, filePos_( 0 )
 	{
 
 	}
@@ -54,59 +53,6 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hZipFile::ReadAsync( void* pBuffer, hUint32 size )
-	{
-		if ( !pFileSystem_ )
-			return hFalse;
-
-		opData_.pReadBuffer_ = pBuffer;
-		opData_.readSize_ = size;
-		nextOP_ = 1;
-		prevOpRes_ = 0;
-		pFileSystem_->PushFileIOJob( ZipIOJobCallback::bind< hZipFile, &hZipFile::ReadInternal >( this ) );
-
-		return hTrue;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hBool hZipFile::WriteAsync( const void* pBuffer, hUint32 size )
-	{
-		if ( !pFileSystem_ )
-			return hFalse;
-
-		opData_.pWriteBuffer_ = pBuffer;
-		opData_.writeSize_ = size;
-		nextOP_ = 2;
-		prevOpRes_ = 0;
-		pFileSystem_->PushFileIOJob( ZipIOJobCallback::bind< hZipFile, &hZipFile::WriteInternal >( this ) );
-
-		return hTrue;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hBool hZipFile::SeekAsync( hUint64 offset, hdSeekOffset from )
-	{
-		if ( !pFileSystem_ )
-			return hFalse;
-
-		opData_.seek_ = offset;
-		opData_.where_ = from;
-		nextOP_ = 3;
-		pFileSystem_->PushFileIOJob( ZipIOJobCallback::bind< hZipFile, &hZipFile::SeekInternal >( this ) );
-
-		return hTrue;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
 	hUint64 hZipFile::Tell()
 	{
 		return filePos_;
@@ -118,87 +64,7 @@ namespace Heart
 
 	hUint64 hZipFile::Length()
 	{
-		return size_;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hBool hZipFile::IsDone( hUint32* bytes ) const
-	{
-		if ( bytes )
-		{
-			*bytes = prevOpRes_;
-		}
-		return nextOP_ == 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hZipFile::ReadInternal( unzFile zip )
-	{
-		unzGoToFilePos64( zip, &zipFilePos_ );
-		unzOpenCurrentFile( zip );
-		//unzSetOffset64( zip, zipFilePos_->pos_in_zip_directory + filePos_ );
-		prevOpRes_ = unzReadCurrentFile( zip, opData_.pReadBuffer_, opData_.readSize_ );
-		filePos_ = prevOpRes_;
-		unzCloseCurrentFile( zip );
-
-		nextOP_ = 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hZipFile::WriteInternal( unzFile zip )
-	{
-		//TODO:
-// 		unzGoToFilePos64( zip, &zipFilePos_ );
-// 		unzOpenCurrentFile( zip );
-// 		//unzSetOffset64( zip, 0 );
-// 		unzWriteCurrentFile( zip, opData_.pWriteBuffer_, opData_.writeSize_ );
-// 		unzCloseCurrentFile( zip );
-
-		nextOP_ = 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hZipFile::SeekInternal( unzFile zip )
-	{
-		hUint64 size = size_;
-		switch ( opData_.where_ )
-		{
-		case SEEKOFFSET_BEGIN:
-			{
-				filePos_ = opData_.seek_;
-			}
-			break;
-		case SEEKOFFSET_CURRENT:	
-			{
-				filePos_ += opData_.seek_;
-			}
-			break;
-		case SEEKOFFSET_END:
-			{
-				filePos_ = size;
-				filePos_ += opData_.seek_;
-			}
-			break;
-		}
-
-		if ( filePos_ > size )
-		{
-			filePos_ = size;
-		}
-
-		nextOP_ = 0;
+		return zipFileInfo_.uncompressed_size;
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -208,9 +74,12 @@ namespace Heart
     hUint32 hZipFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( !ReadAsync( pBuffer, size ) )
-            return 0;
-        while ( !IsDone( &ret ) ) { Device::ThreadSleep( 1 ); }
+        unzGoToFilePos64( zipPak_, &zipFileInfo_ );
+        unzOpenCurrentFile( zipPak_ );
+        
+        unzSetOffset64(filePos_);
+        ret = unzReadCurrentFile( zipPak_, pBuffer, size );
+        unzCloseCurrentFile( zipPak_ );
         return ret;
     }
 
@@ -220,11 +89,7 @@ namespace Heart
 
     hUint32 hZipFile::Write( const void* pBuffer, hUint32 size )
     {
-        hUint32 ret;
-        if ( !WriteAsync( pBuffer, size ) )
-            return 0;
-        while ( !IsDone( &ret ) ) { Device::ThreadSleep( 1 ); }
-        return ret;
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -233,10 +98,31 @@ namespace Heart
 
     hUint32 hZipFile::Seek( hUint64 offset, hdSeekOffset from )
     {
-        hUint32 ret;
-        if ( !SeekAsync( offset, from ) )
-            return 0;
-        while ( !IsDone( &ret ) ) { Device::ThreadSleep( 1 ); }
-        return ret;
+        hUint64 size = Length();
+        switch ( from )
+        {
+        case SEEKOFFSET_BEGIN:
+            {
+                filePos_ = offset;
+            }
+            break;
+        case SEEKOFFSET_CURRENT:	
+            {
+                filePos_ += offset;
+            }
+            break;
+        case SEEKOFFSET_END:
+            {
+                filePos_ = size;
+                filePos_ += offset;
+            }
+            break;
+        }
+
+        if ( filePos_ > size )
+        {
+            filePos_ = size;
+        }
+        return offset;
     }
 }

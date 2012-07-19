@@ -28,77 +28,6 @@
 
 namespace Heart
 {
-	struct CacheBlock
-	{
-		static const hUint32 ZIP_CACHE_BLOCK_SIZE = 1024;
-		hByte	zipCacheBlock_[ZIP_CACHE_BLOCK_SIZE];
-		hUint64 cacheStartAddress_;
-		hUint32 offsetInCache_;
-		hUint32 cacheSize_;
-		hBool	valid_;
-	};
-
-	static CacheBlock gZipCache;
-
-namespace 
-{
-	void InvalidateCache( CacheBlock* block )
-	{
-		block->offsetInCache_ = 0;
-		block->cacheStartAddress_ = ~0UL;
-		block->cacheSize_ = 0;
-		block->valid_ = hFalse;
-	}
-
-	hBool FileBlockInCache( CacheBlock* block, hUint32 size )
-	{
-		if ( !block->valid_ || size >= CacheBlock::ZIP_CACHE_BLOCK_SIZE )
-		{
-			InvalidateCache( block );
-			return hFalse;
-		}
-
-		if ( block->offsetInCache_ + size > block->cacheSize_ )
-		{
-			InvalidateCache( block );
-			return hFalse;
-		}
-
-		return hTrue;
-	}
-
-	void UpdateCache( CacheBlock* block, hdFileHandle* fh )
-	{
-		block->valid_ = false;
-
-		block->cacheStartAddress_ = hdFtell( fh );
-		hUint64 spaceLeft = hdFsize( fh ) - block->cacheStartAddress_;
-		if ( spaceLeft < CacheBlock::ZIP_CACHE_BLOCK_SIZE )
-		{
-			return;
-		}
-
-        hUint32 read;
-		if ( hdFread( fh, block->zipCacheBlock_, CacheBlock::ZIP_CACHE_BLOCK_SIZE, &read ) != FILEERROR_NONE )
-		{
-			return;
-		}
-
-		block->valid_ = true;
-		block->offsetInCache_ = 0;
-	}
-
-	void GetDataFromCache( CacheBlock* block, void* buf, hUint32 size )
-	{
-		if ( block->valid_ )
-		{
-			return;
-		}
-		
-		memcpy( buf, block->zipCacheBlock_+block->offsetInCache_, size );
-		block->offsetInCache_ += size;
-	}
-
 	voidpf ZipOpen( voidpf opaque, const void* filename, int mode )
 	{
 		(void)opaque;
@@ -106,10 +35,6 @@ namespace
 		hdFileHandle* fh;
 		if ( !hdFopen( (const hChar*)filename, "r", &fh ) )
 			return NULL;
-
-#ifdef USE_ZIP_CACHE
-		InvalidateCache( &gZipCache );
-#endif // USE_ZIP_CACHE
 
 		return fh;
 	}
@@ -141,24 +66,6 @@ namespace
 	{
 		(void)opaque;
 		hdFileHandle* fh = (hdFileHandle*)stream;
-
-#ifdef USE_ZIP_CACHE
-		if ( FileBlockInCache( &gZipCache, size ) )
-		{
-			GetDataFromCache( &gZipCache, buf, size );
-			return size;
-		}
-
-		if ( size < CacheBlock::ZIP_CACHE_BLOCK_SIZE )
-		{
-			UpdateCache( &gZipCache, fh );
-			if ( FileBlockInCache( &gZipCache, size ) )
-			{
-				GetDataFromCache( &gZipCache, buf, size );
-				return size;
-			}
-		}
-#endif // USE_ZIP_CACHE
 
         hUint32 bytesRead;
 		if ( hdFread( fh, buf, size, &bytesRead ) != FILEERROR_NONE )
@@ -196,10 +103,6 @@ namespace
 		hdFileHandle* fh = (hdFileHandle*)stream;
 		hdSeekOffset devOrigin;
 
-#ifdef USE_ZIP_CACHE
-		InvalidateCache( &gZipCache );
-#endif // USE_ZIP_CACHE
-
 		switch ( origin )
 		{
 		default:
@@ -217,7 +120,7 @@ namespace
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hZipFileSystem::Initialise( const hChar* zipFile )
+	void hZipFileSystem::Initialise( const hChar* zipFile )
 	{
 		zipFileIODefs_.zopen64_file = ZipOpen;
 		zipFileIODefs_.zclose_file	= ZipClose;
@@ -229,19 +132,6 @@ namespace
 		zipFileIODefs_.opaque		= NULL;
 
 		zipFileHandle_ = unzOpen2_64( zipFile, &zipFileIODefs_ );
-
-		if ( !zipFileHandle_ )
-			return hFalse;
-
-		doneFileSystemRead_ = hFalse;
-		complete_ = hFalse;
-
-		zipIOThread_.Create(
-			"ZipIO",
-			hThread::PRIORITY_ABOVENORMAL,
-			hThread::ThreadFunc::bind< hZipFileSystem, &hZipFileSystem::FileIO >( this ), NULL );
-
-		return hTrue;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -250,17 +140,6 @@ namespace
 
 	void hZipFileSystem::Destory()
 	{
-		complete_ = true;
-		requestSemaphore_.Post();
-
-		while ( !zipIOThread_.IsComplete() ) { Device::ThreadSleep( 1 ); }
-
-		hDELETE_ARRAY(GetGlobalHeap(), pStringPool_);
-
-		// delete zip entries
-		RemoveEntry( pRootEntry_ );
-		hDELETE(GetGlobalHeap(), pRootEntry_);
-
 		unzClose( zipFileHandle_ );
 	}
 
@@ -270,24 +149,29 @@ namespace
 
 	hIFile* hZipFileSystem::OpenFile( const hChar* filename, hFileMode mode ) const
 	{
-		if ( mode != FILEMODE_READ )
+		if ( mode != FILEMODE_READ || zipFileHandle_ == 0)
 			return NULL;
 
-		ZipFileEntry* pZip = FindPath( filename );
+		int fileFound = unzLocateFile(zipFileHandle_, filename, 1);
 
-		if ( !pZip )
-			return NULL;
-		if ( pZip->directory_ )
+		if ( fileFound == UNZ_END_OF_LIST_OF_FILE )
 			return NULL;
 
-		hZipFile* pZipFile = hNEW(GetGlobalHeap(), hZipFile);
-		//setup the zipfile
-		pZipFile->pFileSystem_ = this;
-		pZipFile->filePos_ = 0;
-		pZipFile->size_ = pZip->size_;
-		pZipFile->zipFilePos_ = pZip->zipEntry_;
+        unz_file_info64 file_info;
 
-		return pZipFile;
+        unzGetCurrentFileInfo64( 
+            zipFileHandle_,
+            &file_info,
+            NULL,
+            0,
+            NULL, 
+            0,
+            NULL,
+            0);
+
+        ++openHandles_;
+
+		return hNEW(GetGlobalHeap(), hZipFile)(zipFileHandle_,file_info);;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -299,7 +183,9 @@ namespace
 		if ( !pFile )
 			return;
 
-		delete pFile;
+        --openHandles_;
+
+		hDELETE(GetGlobalHeap(), pFile);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -308,280 +194,33 @@ namespace
 
 	void hZipFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
 	{
-		ZipFileEntry* pEnt = FindPath( path );
+        if (zipFileHandle_ == 0)
+            return;
 
-		if ( !pEnt || !pEnt->directory_ )
-		{
-			return;
-		}
+        for ( hInt ret = unzGoToFirstFile( zipFileHandle_ ); ret == UNZ_OK; ret = unzGoToNextFile( zipFileHandle_ ) )
+        {
+            unz_file_info64 file_info;
+            char filepath[1024];
 
-		for ( hUint32 i = 0; i < pEnt->nEntries_; ++i )
-		{
-			hFileInfo inf;
-			inf.directory_ = pEnt->pEntries_[i].directory_;
-			inf.name_ = pEnt->pEntries_[i].name_;
-			inf.path_ = path;
+            unzGetCurrentFileInfo64( 
+                zipFileHandle_,
+                &file_info,
+                filepath,
+                1024,
+                NULL, 
+                0,
+                NULL,
+                0);
 
-			fn( &inf );
-		}
+            hFileInfo inf;
+            inf.directory_ = NULL;
+            inf.name_ = hStrRChr(filepath, '/');
+            if (!inf.name_) inf.name_ = filepath;
+            inf.path_ = filepath;
+
+            fn( &inf );    
+        }
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hZipFileSystem::FileIO( void* )
-	{
-		stringPoolSize_ = 0;
-
-		for ( hInt32 ret = unzGoToFirstFile( zipFileHandle_ ); ret == UNZ_OK; ret = unzGoToNextFile( zipFileHandle_ ) )
-		{
-			unz_file_info64 pfile_info;
-			char pFileName[ 1024 ];
-
-			unzGetCurrentFileInfo64( 
-				zipFileHandle_,
-				&pfile_info,
-				pFileName,
-				1024,
-				NULL, 
-				0,
-				NULL,
-				0);
-
-			stringPoolSize_ += strlen( pFileName ) + 1;
-		}
-
-		pStringPool_ = hNEW_ARRAY(GetGlobalHeap(), hChar, stringPoolSize_);
-		pStringOfffset_ = pStringPool_;
-		pRootEntry_ = hNEW(GetGlobalHeap(), ZipFileEntry);
-		pRootEntry_->name_ = NULL;
-		pRootEntry_->nEntries_ = 0;
-		pRootEntry_->pEntries_ = NULL;
-		pRootEntry_->nReserve_ = 0;
-		pRootEntry_->directory_ = hTrue;
-
-		for ( hInt32 ret = unzGoToFirstFile( zipFileHandle_ ); ret == UNZ_OK; ret = unzGoToNextFile( zipFileHandle_ ) )
-		{
-			unz64_file_pos file_pos;
-			unz_file_info64 pfile_info;
-			char pFileName[ 1024 ];
-
-			unzGetFilePos64( zipFileHandle_, &file_pos );
-			unzGetCurrentFileInfo64( 
-				zipFileHandle_,
-				&pfile_info,
-				pFileName,
-				1024,
-				NULL, 
-				0,
-				NULL,
-				0);
-	
-			ZipFileEntry* pEntry = pRootEntry_;
-			const hChar* pstr = pFileName;
-
-			do
-			{
-				const hChar* pend = strpbrk( pstr, "\\/" );
-
-				if ( pend )
-				{
-					ZipFileEntry* pFound;
-					pFound = FindEntry( pEntry, pstr, (hUint32)(pend - pstr) );
-					if ( !pFound )
-					{
-						pFound = AddEntry( pEntry, pstr, (hUint32)(pend - pstr), hTrue, file_pos, pfile_info );
-					}
-					pEntry = pFound;
-					pstr = pend + 1;
-				}
-				else 
-				{
-					AddEntry( pEntry, pstr, strlen(pstr), hFalse, file_pos, pfile_info );
-					pEntry = NULL;
-				}
-			}
-			while ( pEntry );
-		}
-
-		hAtomic::LWMemoryBarrier();
-		doneFileSystemRead_ = hTrue;
-
-		do
-		{
-			requestSemaphore_.Wait();
-	
-			requestQueueMutex_.Lock();
-			if ( !requestQueue_.empty() )
-			{
-				ZipIOJobCallback todofn = *requestQueue_.begin();
-				requestQueue_.pop_front();
-				requestQueueMutex_.Unlock();
-
-				todofn( zipFileHandle_ );
-			}
-			else
-			{
-				requestQueueMutex_.Unlock();
-			}
-
-		}
-		while( !complete_ );
-
-		return 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hZipFileSystem::PushFileIOJob( ZipIOJobCallback fn ) const
-	{
-		requestQueueMutex_.Lock();
-		requestQueue_.push_back( fn );
-		requestQueueMutex_.Unlock();
-
-		requestSemaphore_.Post();
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hZipFileSystem::ZipFileEntry* hZipFileSystem::FindEntry( hZipFileSystem::ZipFileEntry* pParent, const hChar* name, hUint32 len ) const
-	{
-		if ( !pParent )
-		{
-			return NULL;
-		}
-
-		//TODO: binary search
-		for ( hUint32 i = 0; i < pParent->nEntries_; ++i )
-		{
-			if ( strncmp( name, pParent->pEntries_[i].name_, len ) == 0 )
-			{
-				return &pParent->pEntries_[i];
-			}
-		}
-
-		return NULL;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hZipFileSystem::ZipFileEntry* hZipFileSystem::AddEntry( ZipFileEntry* pParent, const hChar* name, hUint32 len, hBool isDir, unz64_file_pos zipEntry, const unz_file_info64& info )
-	{
-		if ( pParent->nEntries_ >= pParent->nReserve_ )
-		{
-			if ( pParent->nReserve_ > 0 )
-			{
-				pParent->nReserve_ *= 2;
-			}
-			else
-			{
-				pParent->nReserve_ = 8;
-			}
-
-			ZipFileEntry* ptmp = hNEW_ARRAY(GetGlobalHeap(), ZipFileEntry, pParent->nReserve_);
-			memcpy( ptmp, pParent->pEntries_, pParent->nEntries_*sizeof(ZipFileEntry) );
-			hDELETE_ARRAY(GetGlobalHeap(), pParent->pEntries_);
-			pParent->pEntries_ = ptmp;
-		}
-
-		ZipFileEntry* pnew = &pParent->pEntries_[pParent->nEntries_];
-		
-		pnew->name_ = GetStringMem( len + 1 );
-		strncpy( pnew->name_, name, len );
-		pnew->name_[len] = '\0';
-
-		pnew->directory_ = isDir;
-
-		if ( !pnew->directory_ )
-		{
-			pnew->zipEntry_ = zipEntry;
-			pnew->size_ = info.uncompressed_size;
-		}
-		else
-		{
-			pnew->nEntries_ = 0;
-			pnew->pEntries_ = NULL;
-			pnew->nReserve_ = 0;
-		}
-
-		++pParent->nEntries_;
-
-		return pnew;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hZipFileSystem::ZipFileEntry* hZipFileSystem::FindPath( const hChar* name ) const 
-	{
-		if ( !doneFileSystemRead_ )
-		{
-			do 
-			{
-				Device::ThreadSleep( 1 );
-			}
-			while ( !doneFileSystemRead_ );
-		}
-
-		ZipFileEntry* pEntry = pRootEntry_;
-		const hChar* pstr = name;
-
-		if ( strlen(pstr) == 0 )
-		{
-			return pRootEntry_;
-		}
-
-		do
-		{
-			const hChar* pend = strpbrk( pstr, "\\/" );
-
-			if ( pend )
-			{
-				ZipFileEntry* pFound;
-				pFound = FindEntry( pEntry, pstr, (hUint32)(pend - pstr) );
-				if ( !pFound )
-				{
-					return NULL;
-				}
-				pEntry = pFound;
-				pstr = pend + 1;
-			}
-			else 
-			{
-				return FindEntry( pEntry, pstr, strlen(pstr) );
-			}
-		}
-		while ( pEntry );
-
-		return NULL;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// 21:33:40 ////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hZipFileSystem::RemoveEntry( ZipFileEntry* toremove )
-	{
-		if ( !toremove )
-			return;
-
-		if ( toremove->directory_ && toremove->pEntries_ )
-		{
-			for ( hUint32 i = 0; i < toremove->nEntries_; ++i )
-			{
-				RemoveEntry( &toremove->pEntries_[i] );
-			}
-			delete toremove->pEntries_;
-			toremove->pEntries_ = NULL;
-		}
-	}
 
 }

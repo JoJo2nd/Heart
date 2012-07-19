@@ -95,6 +95,8 @@
     #define HEARTBASE_SLIBEXPORT
 #endif
 
+#define HEART_BASECLASS(x) typedef x ParentClass;
+
 #ifdef WIN32
     #define HEART_API   __cdecl
 #else

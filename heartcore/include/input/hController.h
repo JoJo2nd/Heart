@@ -77,11 +77,11 @@ namespace Private
 
 	private:
 
-		typedef hVector< Device::InputDeviceTypes >	ITypesVector;
-		typedef hVector< Private::Button >          ButtonsVector;
+		//typedef hVector< hdInputDeviceTypes >	ITypesVector;
+		//typedef hVector< Private::Button >          ButtonsVector;
 
-		ITypesVector			devices_;
-		ButtonsVector			buttonMappings_;	
+		//ITypesVector			devices_;
+		//ButtonsVector			buttonMappings_;	
 		//config
 	};
 

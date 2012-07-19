@@ -49,7 +49,7 @@ namespace Heart
 	{
         if (sharedConstantParamters_)
         {
-            renderer_->DestroyConstantBuffers(sharedConstantParamters_, 2);
+            renderer_->DestroyConstantBlocks(sharedConstantParamters_, 2);
             sharedConstantParamters_ = NULL;
         }
 	}
@@ -74,7 +74,7 @@ namespace Heart
 
         hUint32 sizes[] = { sizeof(hViewportShaderConstants), sizeof(hInstanceConstants) };
         hUint32 regs[] = { HEART_VIEWPORT_CONSTANTS_REGISTIER, HEART_INSTANCE_CONSTANTS_REGISTIER };
-        sharedConstantParamters_ = renderer_->CreateConstantBuffers( sizes, regs, 2 );
+        sharedConstantParamters_ = renderer_->CreateConstantBlocks( sizes, regs, 2 );
 
         viewportConstants_ = (hViewportShaderConstants*)sharedConstantParamters_[0].GetBufferAddress();
         instanceConstants_ = (hInstanceConstants*)sharedConstantParamters_[1].GetBufferAddress();

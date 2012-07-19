@@ -37,8 +37,8 @@ namespace Heart
         if ( !canvas_ || !keyboard_ )
             return;
 
-        hFloat newX = keyboard_->GetAxis(Device::IID_MOUSEXAXIS).anologueVal_;
-        hFloat newY = keyboard_->GetAxis(Device::IID_MOUSEYAXIS).anologueVal_;
+        hFloat newX = 0;//TODO:FIX keyboard_->GetAxis(Device::IID_MOUSEXAXIS).anologueVal_;
+        hFloat newY = 0;//TODO:FIX keyboard_->GetAxis(Device::IID_MOUSEYAXIS).anologueVal_;
 
         //if (newX != mouseX_ || newY != mouseY_)
         {
@@ -47,6 +47,7 @@ namespace Heart
             canvas_->InputMouseMoved(mouseX_, mouseY_, -newX, -newY);
         }
 
+#if 0
         canvas_->InputMouseWheel(keyboard_->GetAxis(Device::IID_MOUSEWHEEL).anologueVal_);
 
         if (keyboard_->GetButtonDown(Device::IID_LEFTMOUSEBUTTON))
@@ -74,13 +75,15 @@ namespace Heart
         {
             canvas_->InputMouseButton(2,false);
         }
+#endif
 
-        const hChar* str = keyboard_->GetBufferedText();
+        const hChar* str = keyboard_->GetCharBufferData();
         for(; *str; ++str)
         {
             canvas_->InputCharacter(*str);
         }
 
+#if 0
         for (hUint32 i = 0; i < keyboard_->GetBufferKeysSize(); ++i)
         {
             switch(keyboard_->GetBufferedKeys()[i].buttonID_)
@@ -102,6 +105,7 @@ namespace Heart
                 break;
             }
         }
+#endif
     }
 
 }

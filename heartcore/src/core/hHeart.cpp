@@ -160,16 +160,16 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Register Engine Level Event Channels //////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        eventManager_->AddChannel( KERNEL_EVENT_CHANNEL );
+        //eventManager_->AddChannel( KERNEL_EVENT_CHANNEL );
 
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        system_->Create( config_, deviceConfig_, eventManager_ );
+        system_->Create( config_, deviceConfig_ );
 
         jobManager_->Initialise();
 
-        controllerManager_->Initialise( eventManager_ );
+        controllerManager_->Initialise(system_);
 
         hClock::Initialise();
 
@@ -276,6 +276,8 @@ namespace Heart
         GetConsole()->Render( GetRenderer() );
 
         GetRenderer()->EndRenderFrame();
+
+        GetControllerManager()->EndOfFrameUpdate();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -314,12 +316,14 @@ namespace Heart
         GetConsole()->Render( GetRenderer() );
 
         GetRenderer()->EndRenderFrame();
+
+        GetControllerManager()->EndOfFrameUpdate();
     }
 
 
     HeartEngine::~HeartEngine()
     {
-        eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
+        //eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
 
         // job manager is destroyed by the quit logic
         jobManager_->Destory();
@@ -434,16 +438,16 @@ namespace Heart
 
     Heart::HeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::HeartEngine) (NULL, &deviceConfig);
 
-    engine->sharedLib_ = Heart::OpenSharedLib(appLib);
+    engine->sharedLib_ = Heart::hd_OpenSharedLib(appLib);
 
     if ( engine->sharedLib_ != HEART_SHAREDLIB_INVALIDADDRESS )
     {
-        engine->firstLoaded_        = (Heart::FirstLoaded)Heart::GetFunctionAddress(engine->sharedLib_,      "HeartAppFirstLoaded"      );
-        engine->coreAssetsLoaded_   = (Heart::CoreAssetsLoaded)Heart::GetFunctionAddress(engine->sharedLib_, "HeartAppCoreAssetsLoaded" );
-        engine->mainUpdate_         = (Heart::MainUpdate)Heart::GetFunctionAddress(engine->sharedLib_,       "HeartAppMainUpate"        );
-        engine->mainRender_         = (Heart::MainRender)Heart::GetFunctionAddress(engine->sharedLib_,       "HeartAppMainRender"       );
-        engine->shutdownUpdate_     = (Heart::ShutdownUpdate)Heart::GetFunctionAddress(engine->sharedLib_,   "HeartAppShutdownUpdate"   );
-        engine->onShutdown_         = (Heart::OnShutdown)Heart::GetFunctionAddress(engine->sharedLib_,       "HeartAppOnShutdown"       );
+        engine->firstLoaded_        = (Heart::FirstLoaded)Heart::hd_GetFunctionAddress(engine->sharedLib_,      "HeartAppFirstLoaded"      );
+        engine->coreAssetsLoaded_   = (Heart::CoreAssetsLoaded)Heart::hd_GetFunctionAddress(engine->sharedLib_, "HeartAppCoreAssetsLoaded" );
+        engine->mainUpdate_         = (Heart::MainUpdate)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppMainUpate"        );
+        engine->mainRender_         = (Heart::MainRender)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppMainRender"       );
+        engine->shutdownUpdate_     = (Heart::ShutdownUpdate)Heart::hd_GetFunctionAddress(engine->sharedLib_,   "HeartAppShutdownUpdate"   );
+        engine->onShutdown_         = (Heart::OnShutdown)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppOnShutdown"       );
 
         if ( 
             !engine->firstLoaded_        ||
@@ -486,7 +490,7 @@ hUint32 HEART_API hHeartDoMainUpdate( Heart::HeartEngine* engine )
 HEARTCORE_SLIBEXPORT 
 void HEART_API hHeartShutdownEngine( Heart::HeartEngine* engine )
 {
-    Heart::CloseSharedLib(engine->sharedLib_);
+    Heart::hd_CloseSharedLib(engine->sharedLib_);
 
     hDELETE(Heart::GetGlobalHeap(), engine);
 

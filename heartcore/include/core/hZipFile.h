@@ -34,52 +34,22 @@ namespace Heart
 	{
 	public:
 
-		hBool				ReadAsync( void* pBuffer, hUint32 size );
-		hBool				WriteAsync( const void* pBuffer, hUint32 size );
-		hBool				SeekAsync( hUint64 offset, hdSeekOffset from );
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
         hUint32     		Seek( hUint64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
-		
-		hBool				IsDone( hUint32* bytes ) const;
 
 	private:
 
 		friend class				hZipFileSystem;
 
-		hZipFile();
+		hZipFile(unzFile zip, unz_file_info64 info);
 		~hZipFile();
 
-		void						ReadInternal( unzFile zip );
-		void						WriteInternal( unzFile zip );
-		void						SeekInternal( unzFile zip );
-		
-		union 
-		{
-			struct
-			{
-				void*				pReadBuffer_;
-				hUint32				readSize_;
-			};
-			struct
-			{
-				const void*		    pWriteBuffer_;
-				hUint32				writeSize_;
-			};
-			struct 
-			{
-				hUint64				seek_;
-				hdSeekOffset			where_;
-			};
-		}							opData_;
-		const hZipFileSystem*		pFileSystem_;
-		unz64_file_pos				zipFilePos_;
+		unzFile                     zipPak_;
+		unz64_file_pos				zipFileInfo_;
 		hUint64						filePos_;
-		hUint64						size_;
-		volatile hUint32			prevOpRes_;
-		volatile hUint32			nextOP_;
 	};
 }
 

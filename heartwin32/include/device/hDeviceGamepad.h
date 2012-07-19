@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hSystem.h	
+	filename: 	hDeviceGamepad.h	
 	
-	Copyright (c) 1:4:2012 James Moran
+	Copyright (c) 19:7:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -25,29 +25,7 @@
 
 *********************************************************************/
 
-#ifndef hoWindow_h__
-#define hoWindow_h__
-
 namespace Heart
 {
 
-    class hSystem : public hdSystemWindow
-    {
-    public:
-    	
-	    hSystem() 
-	    {
-	    }
-
-	    hBool										Create(const HeartConfig& config, const hdDeviceConfig& deviceconfig);
-	    void										Update();
-	    void										Destroy();
-
-    private:
-
-    };
-
 }
-
-
-#endif // hoWindow_h__

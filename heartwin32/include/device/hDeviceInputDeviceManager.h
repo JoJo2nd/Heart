@@ -12,28 +12,36 @@
 
 namespace Heart
 {
-namespace Device
-{
+    class hdSystemWindow;
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
-	class HEARTDEV_SLIBEXPORT hdInputDeviceManager// : public IInputDeviceManager
+	class HEARTDEV_SLIBEXPORT hdInputDeviceManager
 	{
 	public:
 		hdInputDeviceManager();
 		virtual ~hdInputDeviceManager();
 
-		hBool				Initialise();
-		void				Destory();
-		void				Update();
+		hBool				            Initialise(hdSystemWindow* window);
+		void				            Destory();
+		void				            Update();
+        void                            EndOfFrameUpdate();
+        hdKeyboard*                     GetSystemKeyboard() const { return keyboard_; }
+
+        static hUint32                  GetInputIDPairCount();
+        static const hdInputIDPair*     GetInputIDPairArray();
 
 	private:
 
-		hdKeyboard		keyboard_;
-		//Mouse			mouse_;
+        static const hdInputIDPair      s_deviceInputPairs[];
+
+        hdSystemWindow* systemWindow_;
+		hdKeyboard*		keyboard_;
+        hdMouse*        mouse_;
 		//TODO add game pad
 	};
-}
+
 }
 
 #endif // DEVICEINPUTDEVICEMANAGER_H__

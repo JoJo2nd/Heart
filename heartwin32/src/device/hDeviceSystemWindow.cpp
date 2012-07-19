@@ -28,19 +28,15 @@
 
 namespace Heart
 {
-namespace Device
-{
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool Kernel::Create( const hdDeviceConfig& deviceconfig, EventManager* pEventManager )
+	hBool hdSystemWindow::Create( const hdDeviceConfig& deviceconfig )
 	{
 		hInstance_ = deviceconfig.instance_;
 		wndWidth_ = deviceconfig.width_;
 		wndHeight_ = deviceconfig.height_;
-		pEventManager_ = pEventManager;
 
 		//hcAssert( ( strlen( deviceconfig.classname_ ) + 1 ) < hdDeviceConfig::WNDCLASSNAMELEN );
 		strcpy( &wndClassName_[ 0 ], "hWindow"/*deviceconfig.classname_*/ );
@@ -83,7 +79,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::Destroy()
+	void hdSystemWindow::Destroy()
 	{
 		DestroyWindow( hWnd_ );
 		UnregisterClass( &wndClassName_[ 0 ], hInstance_ );
@@ -93,14 +89,14 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool Kernel::CreateWndClassEx( HINSTANCE hinstance, const hChar* classname )
+	hBool hdSystemWindow::CreateWndClassEx( HINSTANCE hinstance, const hChar* classname )
 	{
 		// Fill in the window class structure with parameters 
 		// that describe the main window. 
 		ZeroMemory( &wndClassEx_, sizeof( wndClassEx_ ) );
 		wndClassEx_.cbSize = sizeof( wndClassEx_ );				// size of structure 
 		wndClassEx_.style = CS_HREDRAW | CS_VREDRAW;            // redraw if size changes 
-		wndClassEx_.lpfnWndProc = &Kernel::WindowProc;			// points to window procedure 
+		wndClassEx_.lpfnWndProc = &hdSystemWindow::WindowProc;			// points to window procedure 
 		wndClassEx_.cbClsExtra = 0;								// no extra class memory 
 		wndClassEx_.cbWndExtra = sizeof( void* );				// no extra window memory 
 		wndClassEx_.hInstance = hinstance;						// handle to instance 
@@ -119,9 +115,9 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	LRESULT CALLBACK Kernel::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+	LRESULT CALLBACK hdSystemWindow::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	{
-		Kernel* wnd = NULL;
+		hdSystemWindow* wnd = NULL;
 		// i wont have to do this if it was defined right!!! :@ [6/21/2008 James]
 #pragma warning ( push )
 #pragma warning ( disable : 4244 )
@@ -129,13 +125,13 @@ namespace Device
 		if( uMsg == WM_NCCREATE )
 		{
 			// retrieve Window instance from window creation data and associate
-			wnd = reinterpret_cast< Kernel* >( ( ( LPCREATESTRUCT ) lParam )->lpCreateParams );
+			wnd = reinterpret_cast< hdSystemWindow* >( ( ( LPCREATESTRUCT ) lParam )->lpCreateParams );
 			SetWindowLongPtr( hwnd, 0, reinterpret_cast< LONG_PTR >( wnd ) );
 		}
 		else
 		{
 			// retrieve associated Window instance
-			wnd = reinterpret_cast< Kernel* >( GetWindowLongPtr( hwnd, 0 ) );
+			wnd = reinterpret_cast< hdSystemWindow* >( GetWindowLongPtr( hwnd, 0 ) );
 		}
 #pragma warning ( pop )
 		// call the windows message handler
@@ -151,7 +147,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	LRESULT Kernel::WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+	LRESULT hdSystemWindow::WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	{
 		switch (uMsg) 
 		{ 
@@ -229,7 +225,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::Update()
+	void hdSystemWindow::Update()
 	{
 		if ( GetActiveWindow() == hWnd_ )
 		{
@@ -263,7 +259,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::SetWindowTitle( const hChar* titleStr )
+	void hdSystemWindow::SetWindowTitle( const hChar* titleStr )
 	{
 		SetWindowText( hWnd_, titleStr );
 	}
@@ -272,7 +268,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void Kernel::PumpMessages()
+	void hdSystemWindow::PumpMessages()
 	{
 		MSG msg;
 		while ( PeekMessage( &msg, hWnd_, 0, 0, PM_REMOVE ) != 0 )
@@ -286,7 +282,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	HEARTDEV_SLIBEXPORT hBool HEART_API DefaultFullscreenSetting()
+	HEARTDEV_SLIBEXPORT hBool HEART_API hd_DefaultFullscreenSetting()
 	{
 		return hFalse;
 	}
@@ -295,7 +291,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	HEARTDEV_SLIBEXPORT hUint32 HEART_API DefaultScreenWidth()
+	HEARTDEV_SLIBEXPORT hUint32 HEART_API hd_DefaultScreenWidth()
 	{
 		return 640;
 	}
@@ -304,7 +300,7 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	HEARTDEV_SLIBEXPORT hUint32 HEART_API DefaultScreenHeight()
+	HEARTDEV_SLIBEXPORT hUint32 HEART_API hd_DefaultScreenHeight()
 	{
 		return 480;
 	}
@@ -313,17 +309,16 @@ namespace Device
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	HEARTDEV_SLIBEXPORT hBool HEART_API DefaultVsyncSetting()
+	HEARTDEV_SLIBEXPORT hBool HEART_API hd_DefaultVsyncSetting()
 	{
 		return hFalse;
     }
-}
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEARTDEV_SLIBEXPORT hSharedLibAddress HEART_API OpenSharedLib( const hChar* libname )
+    HEARTDEV_SLIBEXPORT hSharedLibAddress HEART_API hd_OpenSharedLib( const hChar* libname )
     {
         return LoadLibrary(libname);
     }
@@ -332,7 +327,7 @@ namespace Device
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEARTDEV_SLIBEXPORT void* HEART_API GetFunctionAddress( hSharedLibAddress lib, const char* symbolName )
+    HEARTDEV_SLIBEXPORT void* HEART_API hd_GetFunctionAddress( hSharedLibAddress lib, const char* symbolName )
     {
         return (void*)GetProcAddress(lib, symbolName);
     }
@@ -341,7 +336,7 @@ namespace Device
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEARTDEV_SLIBEXPORT void HEART_API CloseSharedLib( hSharedLibAddress lib )
+    HEARTDEV_SLIBEXPORT void HEART_API hd_CloseSharedLib( hSharedLibAddress lib )
     {
         FreeLibrary(lib);
     }

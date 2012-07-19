@@ -34,13 +34,29 @@ namespace Heart
 
     typedef hUint32 hdInputID;
 
+#define HEART_MOUSE_LBUTTON (0x10000001)
+#define HEART_MOUSE_MBUTTON (0x10000002)
+#define HEART_MOUSE_RBUTTON (0x10000003)
+#define HEART_MOUSE_BUTTON1 (0x10000004)
+#define HEART_MOUSE_BUTTON2 (0x10000005)
+#define HEART_MOUSE_BUTTON3 (0x10000006)
+#define HEART_MOUSE_BUTTON4 (0x10000007)
+#define HEART_MOUSE_BUTTON5 (0x10000008)
+
+#define XINPUT_GAMEPAD_LEFT_TRIGGER  (0x01000000)
+#define XINPUT_GAMEPAD_RIGHT_TRIGGER (0x02000000)
+#define XINPUT_GAMEPAD_LEFT_STICKX   (0x03000000)
+#define XINPUT_GAMEPAD_LEFT_STICKY   (0x04000000)
+#define XINPUT_GAMEPAD_RIGHT_STICKX  (0x05000000)
+#define XINPUT_GAMEPAD_RIGHT_STICKY  (0x06000000)
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	enum hdInputButtonState
 	{
-		IS_UP,
-		IS_DOWN = 1,
+		hButtonState_IS_UP,
+		hButtonState_IS_DOWN = 1,
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -71,6 +87,16 @@ namespace Heart
 		{}
 		hFloat			anologueVal_;
 	};
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    struct HEARTDEV_SLIBEXPORT hdInputIDPair
+    {
+        const hChar*    stringName_;
+        hdInputID       inputID_;
+    };
 }
 
 #endif // DEVICEIINPUT_H__
