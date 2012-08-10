@@ -39,6 +39,7 @@ namespace Heart
         hUint32     		Seek( hUint64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
+        hTime               GetTimestamp();
 
 	private:
 

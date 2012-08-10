@@ -2,16 +2,18 @@ project "libpng"
 	location (ProjectDir)
 	kind "StaticLib"
 	language "C"
-	files {"../libpng/include/*.h","../libpng/src/*.c"}
-	excludes {"../minizip/src/minizip.c", "../minizip/src/miniunz.c"}
+	files {"../../libpng/include/*.h","../../libpng/src/*.c"}
 	defines {CommonDefines}
-	includedirs {"../libpng/include","../zlib/include"}
+	includedirs {"../../libpng/include","../../zlib/include"}
+    links {"zlib"}
 	
 configuration (DebugCfgName)
 	targetdir (TargetDir..DebugCfgName)
 	defines {{DebugDefines}}
+    libdirs {TargetDir..DebugCfgName}
 	flags {"Symbols"}
 configuration (ReleaseCfgName)
 	targetdir (TargetDir..ReleaseCfgName)
 	defines {{ReleaseDefines}}
+    libdirs {TargetDir..ReleaseCfgName}
 	flags {"Optimize"}

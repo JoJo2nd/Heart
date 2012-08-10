@@ -49,7 +49,7 @@ namespace Heart
 
 	typedef huFunctor< hBool(*)(const hFileInfo*) >::type		hEnumerateFilesCallback;
 
-	class hIFileSystem
+	class HEARTCORE_SLIBEXPORT hIFileSystem
 	{
 	public:
 		virtual ~hIFileSystem() {}
@@ -79,6 +79,8 @@ namespace Heart
 		* @return   void
 		*/
 		virtual void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const = 0;
+        virtual void    CreateDirectory(const hChar* path) = 0;
+        virtual hBool   WriteableSystem() const { return hTrue; }
 
 	};
 }

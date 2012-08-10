@@ -104,6 +104,15 @@ namespace Heart
         hUint32                             cBuffer_;
     };
 
+
+    struct hMipDesc
+    {
+        hUint32     width;
+        hUint32     height;
+        hByte*      data;
+        hUint32     size;
+    };
+
     enum ShaderType
     {
         ShaderType_VERTEXPROG,
@@ -118,7 +127,6 @@ namespace Heart
 	{
 		TFORMAT_ARGB8,
 		TFORMAT_XRGB8,
-		TFORMAT_RGB8,
 		TFORMAT_R16F,
 		TFORMAT_GR16F,
 		TFORMAT_ABGR16F,
@@ -129,6 +137,14 @@ namespace Heart
 		TFORMAT_DXT5,
         TFORMAT_DXT3,
         TFORMAT_DXT1,
+
+        TFORMAT_GAMMA_sRGB      = 0x80000000,
+        TFORMAT_ARGB8_sRGB      = TFORMAT_ARGB8     | TFORMAT_GAMMA_sRGB,
+        TFORMAT_XRGB8_sRGB      = TFORMAT_XRGB8     | TFORMAT_GAMMA_sRGB,
+        TFORMAT_ABGR16F_sRGB    = TFORMAT_ABGR16F   | TFORMAT_GAMMA_sRGB,
+        TFORMAT_DXT5_sRGB       = TFORMAT_DXT5      | TFORMAT_GAMMA_sRGB,
+        TFORMAT_DXT3_sRGB       = TFORMAT_DXT3      | TFORMAT_GAMMA_sRGB,
+        TFORMAT_DXT1_sRGB       = TFORMAT_DXT1      | TFORMAT_GAMMA_sRGB,
 
         TFORMAT_FORCE_DWORD = ~0U
 	};
@@ -309,6 +325,7 @@ namespace Heart
 		RESOURCEFLAG_DYNAMIC				= 1 << 1,
         RESOURCEFLAG_RENDERTARGET   		= 1 << 2,
         RESOURCEFLAG_DEPTHTARGET    		= 1 << 3,
+        RESOURCEFLAG_KEEPCPUDATA            = 1 << 4,
 	};
 
 	enum PrimitiveType

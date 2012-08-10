@@ -32,9 +32,10 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	
-	hZipFile::hZipFile(unzFile zip, unz_file_info64 info) 
+	hZipFile::hZipFile(unzFile zip, unz_file_info64 info, unz64_file_pos pos) 
         : zipPak_(zip)
         , zipFileInfo_(info)
+        , zipFilePos_(pos)
 		, filePos_( 0 )
 	{
 
@@ -74,10 +75,10 @@ namespace Heart
     hUint32 hZipFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        unzGoToFilePos64( zipPak_, &zipFileInfo_ );
+        unzGoToFilePos64( zipPak_, &zipFilePos_ );
         unzOpenCurrentFile( zipPak_ );
         
-        unzSetOffset64(filePos_);
+        unzSetOffset64( zipPak_, filePos_);
         ret = unzReadCurrentFile( zipPak_, pBuffer, size );
         unzCloseCurrentFile( zipPak_ );
         return ret;
@@ -125,4 +126,14 @@ namespace Heart
         }
         return offset;
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hTime hZipFile::GetTimestamp()
+    {
+        return (hTime)zipFileInfo_.dosDate;
+    }
+
 }

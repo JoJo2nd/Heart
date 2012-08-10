@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	Serialiser.h
+	filename: 	SerialiserV2.h
 	
 	Copyright (c) 2011/09/27 James Moran
 	
@@ -24,6 +24,17 @@
 	distribution.
 
 *********************************************************************/
+/************************************************************************
+
+    this is the old version of the serialiser here for reference, because
+    its quite good (IMO) but requires more space than I'd like and doesn't
+    support versioning (however, it wouldn't be too hard to add). The 
+    next serialiser will support versioning from the start but should
+    require less overhead (but better programmer management)
+
+*************************************************************************/
+
+#if 0
 #ifndef _SERIALISER_H__
 #define _SERIALISER_H__
 
@@ -134,6 +145,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
 #pragma pack ( push, 1 )
+
+    struct hSerialiserBlockHeader
+    {
+        enum Flags
+        {
+            Flag_RuntimeVerionBlock     = 1 << 0,
+            Flag_BinaryBlob             = 1 << 1,
+        };
+        hUint16     type_;
+        hUint16     version_;
+        hUint32     size_;
+    };
 
     struct hSerialisedElementHeader
     {
@@ -520,3 +543,5 @@ namespace Heart
 }
 
 #endif // _SERIALISER_H__
+
+#endif//0

@@ -64,6 +64,56 @@ namespace hAtomic
     {
         MemoryBarrier();
     }
+
+    HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val )
+    {
+        /*
+         * 'cos I always forget how to do this. 
+         **/
+        hUint32 old;
+        do 
+        {
+            old = i.value_;
+        } while (CompareAndSwap(i, old, val ) != old);
+
+        //return the value we set
+        return val;
+    }
+
+    HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount)
+    {
+        /*
+         * 'cos I always forget how to do this. 
+         **/
+        hUint32 old, newv;
+        do 
+        {
+            old = i.value_;
+            newv = old+amount;
+        } while (CompareAndSwap(i, old, newv ) != old);
+
+        //return the value we set
+        return newv;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicAddWithPrev( hAtomicInt& i, hUint32 amount, hUint32* prev )
+    {
+        hUint32 old, newv;
+        do 
+        {
+            old = i.value_;
+            newv = old+amount;
+        } while (CompareAndSwap(i, old, newv ) != old);
+
+        //return the value we set, and the prev value of i
+        *prev = old;
+        return newv;
+    }
+
 #else 
     #error ("platform not supported")
 #endif

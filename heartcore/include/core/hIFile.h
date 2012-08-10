@@ -28,8 +28,6 @@
 #ifndef hcFile_h__
 #define hcFile_h__
 
-class HeartEngine;
-
 namespace Heart
 {
 	class hIFile
@@ -43,6 +41,7 @@ namespace Heart
         virtual hUint32				Seek( hUint64 offset, hdSeekOffset from ) = 0;
 		virtual hUint64				Tell() = 0;
 		virtual hUint64				Length() = 0;
+        virtual hTime               GetTimestamp() = 0;
 	};
 }
 

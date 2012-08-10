@@ -160,35 +160,34 @@ void ResourceLoadTest::MainRender()
 {
 
 //    rndCtx_->BeginPIXDebugging();
-//     rndCtx_->SetRenderTarget( 0, NULL/*viewport_.GetRenderTarget(0)*/ );
-//     rndCtx_->SetDepthTarget( NULL/*viewport_.GetDepthTarget()*/ );
-//     rndCtx_->EnableDebugDrawing( hTrue );
-//     rndCtx_->SetRendererCamera( &viewport_ );
-//     rndCtx_->SetViewport( viewport_.GetViewport() );
-
-    rndCtx_->SetRendererCamera( &viewport_ );
-    rndCtx_->SetMaterialInstance(material_);
-    rndCtx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
-    rndCtx_->ClearTarget( hTrue, Heart::hColour(.2f,.1f,.5f,1.f), hTrue, 1.f );
-    rndCtx_->SetPrimitiveType( Heart::PRIMITIVETYPE_TRILIST );
-    rndCtx_->SetVertexStream( 0, vb_ );
-    rndCtx_->SetIndexStream( ib_ );
-
-    hUint32 passes = rndCtx_->GetMaterialInstancePasses();
-    for ( hUint32 i = 0; i < passes; ++i )
-    {
-        rndCtx_->BeingMaterialInstancePass( i );
-        rndCtx_->DrawIndexedPrimitive( 1, 0 );
-        rndCtx_->EndMaterialInstancePass();
-    }
-
-    Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
-
-    engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
+//         rndCtx_->SetRenderTarget( 0, NULL/*viewport_.GetRenderTarget(0)*/ );
+//         rndCtx_->SetDepthTarget( NULL/*viewport_.GetDepthTarget()*/ );
+//         rndCtx_->EnableDebugDrawing( hTrue );
+//         rndCtx_->SetRendererCamera( &viewport_ );
+//         rndCtx_->SetViewport( viewport_.GetViewport() );
+//     
+//         rndCtx_->SetRendererCamera( &viewport_ );
+//         rndCtx_->SetMaterialInstance(material_);
+//         rndCtx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
+//         rndCtx_->ClearTarget( hTrue, Heart::hColour(.2f,.1f,.5f,1.f), hTrue, 1.f );
+//         rndCtx_->SetPrimitiveType( Heart::PRIMITIVETYPE_TRILIST );
+//         rndCtx_->SetVertexStream( 0, vb_ );
+//         rndCtx_->SetIndexStream( ib_ );
+//     
+//         hUint32 passes = rndCtx_->GetMaterialInstancePasses();
+//         for ( hUint32 i = 0; i < passes; ++i )
+//         {
+//             rndCtx_->BeingMaterialInstancePass( i );
+//             rndCtx_->DrawIndexedPrimitive( 1, 0 );
+//             rndCtx_->EndMaterialInstancePass();
+//         }
+//     
+//         Heart::hdRenderCommandBuffer cmdBuf = rndCtx_->SaveToCommandBuffer();
+//     
+//         engine_->GetRenderer()->SubmitRenderCommandBuffer( cmdBuf, hTrue );
 
     canvas_->RenderCanvas();
 
-    engine_->GetUIRenderer()->SubmitCommandsToRenderer();
 }
 
 //////////////////////////////////////////////////////////////////////////

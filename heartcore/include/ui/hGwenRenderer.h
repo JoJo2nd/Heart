@@ -49,9 +49,6 @@ namespace Heart
         void StartClip();
         void EndClip();
 
-        //Extra
-        void SubmitCommandsToRenderer();
-
         //You can ignore these if you just want to use the simple skin (rectangle based) and don't want to draw images on the GUI
         void LoadTexture( Gwen::Texture* pTexture );
         void FreeTexture( Gwen::Texture* pTexture );
@@ -94,25 +91,29 @@ namespace Heart
         void                    SwitchDrawMode(DrawMode newMode);
         void                    BeginDrawMode();
         void                    Flush();
+        void                    BeginTextDraw(hFont* font, hUint32 nChars);
+        void                    EndTextDraw(hUint32 nChars);
 
         hRenderer*                  renderer_;
+        hDrawCallContext            dcCtx_;
         hResourceManager*           resourceManager_;
-        hRenderSubmissionCtx*       ctx_;
         hRendererCamera             renderCamera_;
         hMaterial*                  defaultMaterialResource_;
         hMaterialInstance*          defaultMaterial_;
         hMaterial*                  uvMaterialResource_;
         hMaterialInstance*          uvMaterial_;
         const hSamplerParameter*    uvSampler_;
-        hVertexBuffer*              colourVtxBuffer_;
-        hVertexBuffer*              colourUVVtxBuffer_;
-        hIndexBuffer*               textIdxBuffer_;
-        hVertexBuffer*              textVtxBuffer_;
+        hByte*                      inlineVtxMem_;
+        hUint16*                    inlinePrimCount_;
+        hByte*                      inlineTxtVtxMem_;
+        hByte*                      inlineTxtIdxMem_;
+        hUint16*                    inlineTxtPC_;
+        hUint32                     textVtxStride_;
+        hFont*                      activeFont_;
+        hUint32                     charactersLeft_;
         ScissorRect                 screenRect_;
         Gwen::Texture*              currentTexture_;
 
-        //
-        hVertexBufferMapInfo    vbMap_;
         hUint32                 primCount_;
         hColour                 currentColour_;
         hUint32                 currectColourUint_;

@@ -46,9 +46,6 @@ namespace Heart
 			: keyboard_( NULL )
 			,shown_( hFalse )
 			,nInputChars_( 0 )
-			,screenWidth_( 0 )
-			,screenHeight_( 0 )
-			,nInputPrims_( 0 )
 			,keyboardAccessKey_( 0 )
 			,inputDirty_( hFalse )
 			,logDirty_( hFalse )
@@ -76,8 +73,8 @@ namespace Heart
 		static const hUint32								MAX_CONSOLE_LOG_SIZE = 4086;
 		static const hUint32								INPUT_BUFFER_LEN = 128;
 		static const hUint32								MAX_PREV_COMMAND_LOGS = 32;
-		static const hUint32								FONT_RESOURCE_NAME;
-		static const hUint32								CONSOLE_MATERIAL_NAME;
+		static const hResourceID           					FONT_RESOURCE_NAME;
+		static const hResourceID           					CONSOLE_MATERIAL_NAME;
 
 		void												UpdateConsole();
 		void 												ClearConsoleBuffer();
@@ -85,18 +82,9 @@ namespace Heart
 		void												LogString( const hChar* inputStr );
 
         hRenderer*                                          renderer_;
-		hResourceManager*									pResourceManager_;
-        hRendererCamera                                     renderCamera_;
-        hRenderSubmissionCtx*                               rndCtx_;
-		hFont*						                        fontResource_;
-		//Background rendering 
-        hMaterial*                                          materialResource_;
-		hMaterialInstance* 					                material_;
-		hIndexBuffer*				                        indexBuffer_;
-		hVertexBuffer* 				                        vertexBuffer_;
+		hResourceManager*									resourceManager_;
+        hDrawCallContext                                    ctx_;
 		//
-		hUint32												screenWidth_;
-		hUint32												screenHeight_;
 		const hdKeyboard*									keyboard_;			
 		hBool												shown_;
 		hUint32												keyboardAccessKey_;
@@ -109,10 +97,6 @@ namespace Heart
 		bool												logDirty_;
 		//command processing
 		hLuaStateManager*									vm_;
-		//input rendering vars
-		hUint32												nInputPrims_;
-		hIndexBuffer*				                        IBInput_;
-		hVertexBuffer* 				                        VBInput_;
 
 		//console print mutex
 		static hMutex										messagesMutex_;

@@ -227,7 +227,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 start )
     {
-        hcAssert( vbufferInputLayout_ == shaderInputLayout_ );
+        hcAssert( (vbufferInputLayout_&shaderInputLayout_) == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {
@@ -247,7 +247,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 start )
     {
-        hcAssert( vbufferInputLayout_ == shaderInputLayout_ );
+        hcAssert( (vbufferInputLayout_&shaderInputLayout_) == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {
@@ -267,29 +267,11 @@ namespace Heart
 
     Heart::hdDX11CommandBuffer hdDX11RenderSubmissionCtx::SaveToCommandBuffer()
     {
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        if ( debugMode_ )
-        {
-            device_ = tempCtx_;
-            debugMutex_->Unlock();
-            debugMode_ = hFalse;
-            return NULL;
-        }
-        else
-        {
-            hdDX11CommandBuffer ret;
-            //We never save/restore state
-            HRESULT hr = device_->FinishCommandList( FALSE, &ret );
-            hcAssert( SUCCEEDED( hr ) );
-            return ret;
-        }
-#else
         hdDX11CommandBuffer ret;
         //We never save/restore state
         HRESULT hr = device_->FinishCommandList( FALSE, &ret );
         hcAssert( SUCCEEDED( hr ) );
         return ret;
-#endif //HEART_ALLOW_PIX_MT_DEBUGGING
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -434,30 +416,5 @@ namespace Heart
         renderTargetViews_[0] = defaultRenderView_;
         depthStencilView_ = defaultDepthView_;
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::BeginPIXDebugging()
-    {
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        debugMutex_->Lock();
-        debugMode_ = hTrue;
-        tempCtx_ = device_;
-        device_ = mainDeviceCtx_;
-#endif
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-    void hdDX11RenderSubmissionCtx::SetPIXDebuggingOptions( ID3D11DeviceContext* mainCtx, hMutex* mutex )
-    {
-        mainDeviceCtx_ = mainCtx;
-        debugMutex_ = mutex;
-    }
-#endif
 
 }

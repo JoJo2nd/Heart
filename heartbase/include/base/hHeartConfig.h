@@ -103,10 +103,6 @@
     #error "Platform not supported"
 #endif
 
-#ifdef HEART_DEBUG
-    //#define HEART_ALLOW_PIX_MT_DEBUGGING
-#endif
-
 #if defined (HEART_DEBUG)
 	#ifdef HEART_PLAT_WINDOWS
 		#ifndef D3D_DEBUG_INFO

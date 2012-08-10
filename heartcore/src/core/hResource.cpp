@@ -34,10 +34,10 @@ namespace Heart
 
     void hResourceClassBase::OnZeroRef() const
     {
-        if ( manager_ )
-        {
-            manager_->QueueResourceSweep();
-        }
+//         if ( manager_ )
+//         {
+//             manager_->QueueResourceSweep();
+//         }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ namespace Heart
                 readOps_[i].active_ = hTrue;
 
                 *opID = i;
-                manager_->Post();
+                //manager_->Post();
                 return ResourceFlags_OK;
             }
         }

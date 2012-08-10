@@ -115,6 +115,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetSampler( hUint32 idx, hTexture* tex, hdSamplerState* samplerState )
     {
+        hcAssertMsg(idx <= 8, "Invalid sampler index");
         impl_.SetSampler( idx, tex->pImpl(), samplerState );
     }
 
@@ -234,58 +235,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::RenderDebugSphere( const hVec3& centre, hFloat radius, const hColour& colour )
-    {
-        if ( !debugEnabled_ )
-            return;
-
-        hMatrix m = hMatrixFunc::scale( radius, radius, radius ) * hMatrixFunc::Translation( centre );
-        SetWorldMatrix( m );
-//         instanceConstants_->world_ = m;
-//         instanceConstants_->worldView_ = m * viewportConstants_->view_;
-//         instanceConstants_->worldViewProj_ = m * viewportConstants_->view_ * viewportConstants_->projection_;
-
-        debugMaterial_->SetShaderParameter( debugColourParameter_, (hFloat*)&colour, 4 );
-        debug_.SetPrimitiveType( PRIMITIVETYPE_TRILIST );
-
-        hUint32 passes = debugTechnique_->GetPassCount();
-        for ( hUint32 i = 0; i < passes; ++i )
-        {
-            hMaterialTechniquePass* pass = debugTechnique_->GetPass( i );
-            debug_.SetVertexShader( pass->GetVertexShader()->pImpl() );
-            debug_.SetPixelShader( pass->GetPixelShader()->pImpl() );
-            debug_.SetRenderStateBlock( pass->GetBlendState() );
-            debug_.SetRenderStateBlock( pass->GetDepthStencilState() );
-            debug_.SetRenderStateBlock( pass->GetRasterizerState() );
-
-            for ( hUint32 i = 0; i < debugMaterial_->GetConstantBufferCount(); ++i )
-            {
-                debug_.SetConstantBlock( debugMaterial_->GetConstantBlock(i) );
-            }
-
-            debug_.SetIndexStream( debugIB_->pImpl() );
-            debug_.SetVertexStream( 0, debugVB_->pImpl(), debugVB_->GetStride() );
-            debug_.DrawIndexedPrimitive( debugIB_->GetIndexCount() / 3, 0 );
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderSubmissionCtx::InitialiseDebugInterface( hIndexBuffer* sphereIB, hVertexBuffer* sphereVB, hMaterial* material )
-    {
-        debugIB_ = sphereIB;
-        debugVB_ = sphereVB;
-        //debugMaterial_ = material->CreateMaterialInstance();
-        //debugTechnique_ = debugMaterial_->GetTechniqueByName( "main" );
-        //debugColourParameter_ = debugMaterial_->GetShaderParameter( "debugColour" );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hRenderSubmissionCtx::SetRendererCamera( hRendererCamera* camera )
     {
         viewportConstants_ = camera->GetViewportConstants();
@@ -311,9 +260,6 @@ namespace Heart
         currentMaterial_ = instance;
         currentTechnique_ = instance->GetTechniqueByMask( techniqueMask_ );
         hcAssert( currentTechnique_ );
-
-//         impl_.SetConstantBlock( viewportConstantsBlock_ );
-//         impl_.SetConstantBlock( instanceConstantsBlock_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -327,7 +273,7 @@ namespace Heart
 
         hMaterialTechniquePass* pass = currentTechnique_->GetPass( i );
         SetVertexShader( pass->GetVertexShader() );
-        SetPixelShader( pass->GetPixelShader() );
+        SetPixelShader( pass->GetFragmentShader() );
         SetRenderStateBlock( pass->GetBlendState() );
         SetRenderStateBlock( pass->GetDepthStencilState() );
         SetRenderStateBlock( pass->GetRasterizerState() );

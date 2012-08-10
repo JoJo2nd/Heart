@@ -31,33 +31,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hRenderMaterialManager::hRenderMaterialManager() : matKeys_(NULL)
+    {
+        maxKeys_ = 64;
+        nMatKeys_ = 0;
+        matKeys_ = (hMaterialKeyContainer*)hHeapRealloc(GetGlobalHeap(), matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hRenderMaterialManager::~hRenderMaterialManager()
     {
-        hUint32 count = techniques_.GetSize();
-        for ( hUint32 i = 0; i < count; ++i )
-        {
-//             hDELETE(hGeneralHeap, techniques_[i].name_);
-//             techniques_[i].name_ = NULL;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderMaterialManager::OnMaterialLoad( hMaterial* mat, hUint32 resId )
-    {
-        hMutexAutoScope autoMtx( &accessMutex_ );
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderMaterialManager::OnMaterialUnload( hMaterial* mat )
-    {
-        hMutexAutoScope autoMtx( &accessMutex_ );
+        hHeapFreeSafe(GetGlobalHeap(), matKeys_);
+        nMatKeys_ = maxKeys_ = 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -107,5 +95,70 @@ namespace Heart
         return NULL;
     }
 
+    int keyCompare(const void* lhs, const void* rhs)
+    {
+        return *((hMaterialKeyContainer*)lhs) < *((hMaterialKeyContainer*)rhs) ? -1 : 1;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderMaterialManager::GetUniqueKey( hMaterial* mat )
+    {
+        hMutexAutoScope autoMtx( &accessMutex_ );
+
+        if (nMatKeys_+1 >= maxKeys_)
+        {
+            maxKeys_ *= 2;
+            matKeys_ = (hMaterialKeyContainer*)hHeapRealloc(GetGlobalHeap(), matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
+        }
+
+        //Walk the keys looking for a gap inbetween keys
+        hUint32 key = 0;
+        for (hUint32 i = 0; i < nMatKeys_; ++i)
+        {
+            if (matKeys_[i].key_ > key+1)
+                break;
+        }
+        key += 1;
+        hcAssertMsg((key&0x3FFFF)==key, "Run out of material keys, the max number of unique materials is %u", 0x3FFFF);
+        matKeys_[nMatKeys_].mat_ = mat;
+        matKeys_[nMatKeys_].key_ = (key&0x3FFFF);
+
+        ++nMatKeys_;
+        mat->uniqueKey_ = key;
+
+        qsort(matKeys_, nMatKeys_, sizeof(hMaterialKeyContainer), keyCompare);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderMaterialManager::RemoveKey( hMaterial* mat )
+    {
+        hMutexAutoScope autoMtx( &accessMutex_ );
+
+        //Walk the keys looking for our key
+        hUint32 key = mat->GetMatKey();
+        for (hUint32 i = 0; i < nMatKeys_; ++i)
+        {
+            if (matKeys_[i].key_ == key)
+            {
+                --nMatKeys_;
+                matKeys_[i] = matKeys_[nMatKeys_];
+#ifdef HEART_DEBUG
+                matKeys_[nMatKeys_].key_ = 0;
+                matKeys_[nMatKeys_].mat_ = NULL;
+#endif // HEART_DEBUG
+                break;
+            }
+        }
+
+        --nMatKeys_;
+
+        qsort(matKeys_, nMatKeys_, sizeof(hMaterialKeyContainer), keyCompare);
+    }
 
 }

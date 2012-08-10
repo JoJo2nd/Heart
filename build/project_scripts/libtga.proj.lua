@@ -1,9 +1,9 @@
 
 project "libtga"
     location (ProjectDir)
-    kind "SharedLib"
+    kind "StaticLib"
     language "C"
-    files {"../../libtga/include/*.h","../../libtga/Src/*.c"}
+    files {"../../libtga/include/**.h","../../libtga/Src/**.c"}
     defines {CommonDefines,SharedLibDefine}
 	includedirs {"../../libtga/include"}
     

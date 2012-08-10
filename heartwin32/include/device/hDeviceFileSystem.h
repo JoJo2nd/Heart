@@ -139,6 +139,9 @@ namespace Heart
 
     HEARTDEV_SLIBEXPORT
     hdFileStat   HEART_API hdFstat(hdFileHandle* handle);
+
+    HEARTDEV_SLIBEXPORT
+    void        HEART_API hdCreateDirectory(const hChar* path);
 }
 
 #endif // FILESYSTEM_H__

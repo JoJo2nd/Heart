@@ -141,7 +141,6 @@ namespace Heart
         hHeartState                     engineState_;
         
         hDriveFileSystem*               fileMananger_;
-        hZipFileSystem*                 zipFileSystem_;
         hResourceManager*               resourceMananger_;
         hSystem*                        system_;
         hRenderer*                      renderer_;

@@ -39,16 +39,18 @@ namespace Heart
         hUint32     		Seek( hUint64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
+        hTime               GetTimestamp();
 
 	private:
 
 		friend class				hZipFileSystem;
 
-		hZipFile(unzFile zip, unz_file_info64 info);
+		hZipFile(unzFile zip, unz_file_info64 info, unz64_file_pos pos);
 		~hZipFile();
 
 		unzFile                     zipPak_;
-		unz64_file_pos				zipFileInfo_;
+        unz_file_info64             zipFileInfo_;
+		unz64_file_pos				zipFilePos_;
 		hUint64						filePos_;
 	};
 }

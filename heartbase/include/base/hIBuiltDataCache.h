@@ -29,25 +29,42 @@
 
 namespace Heart
 {
-    class hIDataCacheFile
+    class HEARTCORE_SLIBEXPORT hIDataParameterSet
     {
     public:
+        virtual ~hIDataParameterSet() {}
+
+        virtual const hChar* GetResourceName() const = 0;
+        virtual const hChar* GetInputFilePath() const = 0;
+        virtual const hChar* GetBuildParameter(const hChar* name, const hChar* defaultValue) const = 0;
+        virtual hUint32      GetParameterHash() const = 0;
+    };
+
+    class HEARTCORE_SLIBEXPORT hIDataCacheFile
+    {
+    public:
+        enum SeekOffset
+        {
+            BEGIN,
+            CURRENT,
+            END
+        };
+
         virtual ~hIDataCacheFile() {}
 
         virtual hUint32 Read(void* dst, hUint32 size) = 0;
+        virtual hUint32 Seek(hUint32 offset, SeekOffset from) = 0;
         virtual hUint32 Lenght() = 0;
     };
 
-    class hIBuiltDataCache
+    class HEARTCORE_SLIBEXPORT hIBuiltDataCache
     {
     public:
         virtual ~hIBuiltDataCache() {}
 
         virtual hIDataCacheFile* OpenFile(const hChar* filename) = 0;
-        virtual void             CloseFile(hIBuiltDataCache* file) = 0;
-        virtual void             LoadCacheData(const hChar* resorucePath) = 0;
-        virtual void             SaveCacheData() = 0;
-        virtual hBool            IsCacheValid() const = 0;
+        virtual void             CloseFile(hIDataCacheFile* file) = 0;
+        virtual hBool            IsCacheValid() = 0;
     };
 }
 

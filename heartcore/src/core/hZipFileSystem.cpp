@@ -33,7 +33,12 @@ namespace Heart
 		(void)opaque;
 		(void)mode;
 		hdFileHandle* fh;
-		if ( !hdFopen( (const hChar*)filename, "r", &fh ) )
+        static hChar rootDir[] = "GAMEDATA/";
+        hUint32 maxlen = sizeof(rootDir)+hStrLen((const hChar*)filename)+1;
+        hChar* fullpath = (hChar*)hAlloca(maxlen);
+        hStrCopy(fullpath, maxlen, rootDir);
+        hStrCat(fullpath, maxlen, (const hChar*)filename);
+		if ( !hdFopen( (const hChar*)fullpath, "r", &fh ) )
 			return NULL;
 
 		return fh;
@@ -115,7 +120,7 @@ namespace Heart
 
 		return 0;
 	}
-}
+
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -132,6 +137,9 @@ namespace Heart
 		zipFileIODefs_.opaque		= NULL;
 
 		zipFileHandle_ = unzOpen2_64( zipFile, &zipFileIODefs_ );
+
+        pkgNameLen_ = (hUint32)hStrChr(zipFile,'.') - (hUint32)zipFile;
+        ++pkgNameLen_;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -149,15 +157,19 @@ namespace Heart
 
 	hIFile* hZipFileSystem::OpenFile( const hChar* filename, hFileMode mode ) const
 	{
-		if ( mode != FILEMODE_READ || zipFileHandle_ == 0)
+		if ( mode != FILEMODE_READ || !IsOpen() || hStrLen(filename) < pkgNameLen_+1)
 			return NULL;
 
-		int fileFound = unzLocateFile(zipFileHandle_, filename, 1);
+		int fileFound = unzLocateFile(zipFileHandle_, filename+pkgNameLen_, 1);
 
 		if ( fileFound == UNZ_END_OF_LIST_OF_FILE )
+        {
+            unzGoToFirstFile(zipFileHandle_);
 			return NULL;
+        }
 
         unz_file_info64 file_info;
+        unz64_file_pos file_pos;
 
         unzGetCurrentFileInfo64( 
             zipFileHandle_,
@@ -168,10 +180,11 @@ namespace Heart
             0,
             NULL,
             0);
+        unzGetFilePos64(zipFileHandle_, &file_pos);
 
         ++openHandles_;
 
-		return hNEW(GetGlobalHeap(), hZipFile)(zipFileHandle_,file_info);;
+		return hNEW(GetGlobalHeap(), hZipFile)(zipFileHandle_,file_info, file_pos);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -194,7 +207,7 @@ namespace Heart
 
 	void hZipFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
 	{
-        if (zipFileHandle_ == 0)
+        if (!IsOpen())
             return;
 
         for ( hInt ret = unzGoToFirstFile( zipFileHandle_ ); ret == UNZ_OK; ret = unzGoToNextFile( zipFileHandle_ ) )
@@ -221,6 +234,5 @@ namespace Heart
             fn( &inf );    
         }
 	}
-
 
 }

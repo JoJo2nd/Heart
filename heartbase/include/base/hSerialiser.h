@@ -139,9 +139,9 @@ namespace Heart
     {
         enum Info
         {
-            Flag_Ptr    = 1 << 0,
-            Flag_Array  = 1 << 1,
-            Flag_Mask   = Flag_Ptr | Flag_Array,
+            Flag_Ptr        = 1 << 0,
+            Flag_Array      = 1 << 1,
+            Flag_Mask       = Flag_Ptr | Flag_Array,
 
             Type_1byte  = 1 << 2,
             Type_2byte  = 1 << 3,

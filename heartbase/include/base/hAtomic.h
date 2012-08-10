@@ -45,6 +45,9 @@ namespace hAtomic
 HEARTBASE_SLIBEXPORT void HEART_API Increment( hAtomicInt& i );
 HEARTBASE_SLIBEXPORT void HEART_API Decrement( hAtomicInt& i );
 HEARTBASE_SLIBEXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
+HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
+HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
+HEARTBASE_SLIBEXPORT hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
 HEARTBASE_SLIBEXPORT void HEART_API LWMemoryBarrier();
 HEARTBASE_SLIBEXPORT void HEART_API HWMemoryBarrier();
 

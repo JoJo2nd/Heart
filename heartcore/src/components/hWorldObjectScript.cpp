@@ -93,7 +93,7 @@ namespace Heart
                                 hStrCopy(propvalue.values_.stringValue_,propvalue.size_+1,defaultnode.ToNode()->value());
                                 break;
                             case eComponentPropertyType_ResourceAsset:
-                                propvalue.values_.resourcePointer_ = resManager->LoadResourceFromPath(defaultnode.ToNode()->value());
+                                propvalue.values_.resourcePointer_ = 0;//resManager->LoadResourceFromPath(defaultnode.ToNode()->value());
                                 break;
                             }
                         }
@@ -151,7 +151,7 @@ namespace Heart
                         hStrCopy(val->values_.stringValue_,val->size_+1,overrider.ToNode()->value());
                         break;
                     case eComponentPropertyType_ResourceAsset:
-                        val->values_.resourcePointer_ = resManager->LoadResourceFromPath(overrider.ToNode()->value());
+                        val->values_.resourcePointer_ = 0;//resManager->LoadResourceFromPath(overrider.ToNode()->value());
                         break;
                     }
                 }

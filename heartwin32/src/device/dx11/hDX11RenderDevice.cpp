@@ -75,7 +75,7 @@ namespace Heart
         sd.BufferCount = 2;
         sd.BufferDesc.Width = width;
         sd.BufferDesc.Height = height;
-        sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         sd.BufferDesc.RefreshRate.Numerator = 60;
         sd.BufferDesc.RefreshRate.Denominator = 1;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -84,11 +84,16 @@ namespace Heart
         sd.SampleDesc.Quality = 0;
         sd.Windowed = !fullscreen;
 
+        hcPrintf("Creating DirectX 11 Device");
         if( hr = D3D11CreateDeviceAndSwapChain( 
                 NULL, 
                 D3D_DRIVER_TYPE_HARDWARE, 
                 NULL, 
-                0, 
+#if !defined (HEART_DEBUG)
+                D3D11_CREATE_DEVICE_DEBUG, 
+#else
+                D3D11_CREATE_DEVICE_DEBUG,
+#endif
                 featureLevels, 
                 numFeatureLevels,
                 D3D11_SDK_VERSION, 
@@ -223,9 +228,6 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
         ctx->SetDeviceCtx( rsc, alloc_, free_ );
         ctx->SetDefaultTargets( renderTargetView_, depthStencilView_ );
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        ctx->SetPIXDebuggingOptions( mainDeviceCtx_, pixMutex_ );
-#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -254,65 +256,6 @@ namespace Heart
     hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type )
     {
         HRESULT hr;
-/*
-        const hChar* profile;
-        if ( type == ShaderType_VERTEXPROG )
-        {
-            switch ( featureLevel_ )
-            {
-            case D3D_FEATURE_LEVEL_11_0:
-                profile = "vs_5_0"; break;
-            case D3D_FEATURE_LEVEL_10_1:
-                profile = "vs_4_0"; break;
-            case D3D_FEATURE_LEVEL_10_0:
-                profile = "vs_4_0"; break;
-            case D3D_FEATURE_LEVEL_9_3:
-            default:
-                profile = "vs_3_0";//Won't work
-            }
-        }
-
-        if ( type == ShaderType_FRAGMENTPROG )
-        {
-            switch ( featureLevel_ )
-            {
-            case D3D_FEATURE_LEVEL_11_0:
-                profile = "ps_5_0"; break;
-            case D3D_FEATURE_LEVEL_10_1:
-                profile = "ps_4_0"; break;
-            case D3D_FEATURE_LEVEL_10_0:
-                profile = "ps_4_0"; break;
-            case D3D_FEATURE_LEVEL_9_3:
-            default:
-                profile = "ps_3_0";//Won't work
-            }
-        }
-
-        hUint32 compileFlags = D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY | D3DCOMPILE_DEBUG;
-        ID3DBlob* result;
-        ID3DBlob* errors;
-
-        hr = D3DX11CompileFromMemory( 
-            shaderProg, 
-            len, 
-            "Memory", 
-            NULL, 
-            NULL, 
-            "mainPS", 
-            profile, 
-            compileFlags, 
-            0, 
-            NULL, 
-            &result, 
-            &errors, 
-            NULL );
-
-        if ( FAILED( hr ) )
-        {
-            hcAssertMsg( SUCCEEDED( hr ), "Shader Compile Failed: %s", errors->GetBufferPointer() );
-            return NULL;
-        }
-*/
         hdDX11ShaderProgram* shader = hNEW ( GetGlobalHeap()/*!heap*/, hdDX11ShaderProgram );
         shader->type_ = type;
 
@@ -347,46 +290,6 @@ namespace Heart
             resourceMutex_.Unlock();
         }
 
-//HOW TO:
-//         D3D11_SHADER_DESC desc;
-//         shader->shaderInfo_->GetDesc( &desc );
-// 
-//         //VERTEX/PIXEL INPUT
-//         for ( hUint32 i = 0; i < desc.InputParameters; ++i )
-//         {
-//             D3D11_SIGNATURE_PARAMETER_DESC ipDesc;
-//             shader->shaderInfo_->GetInputParameterDesc( i, &ipDesc );
-// 
-//             hcPrintf( ipDesc.SemanticName );
-//         }
-// 
-//         //SAMPLERS/CONSTANT BUFFERS/ETC
-//         for ( hUint32 i = 0; i < desc.BoundResources; ++i )
-//         {
-//             D3D11_SHADER_INPUT_BIND_DESC brDesc;
-//             shader->shaderInfo_->GetResourceBindingDesc( i, &brDesc );
-// 
-//             hcPrintf( brDesc.Name );
-//         }
-// 
-//         //CONSTANT BUFFERS
-//         for ( hUint32 i = 0; i < desc.ConstantBuffers; ++i )
-//         {
-//             ID3D11ShaderReflectionConstantBuffer* constInfo = shader->shaderInfo_->GetConstantBufferByIndex( i );
-//             D3D11_SHADER_BUFFER_DESC bufInfo;
-//             constInfo->GetDesc( &bufInfo );
-// 
-//             //TODO: Get Parameters...
-//             for ( hUint32 i = 0; i < bufInfo.Variables; ++i )
-//             {
-//                 ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( i );
-//                 D3D11_SHADER_VARIABLE_DESC varDesc;
-//                 var->GetDesc(&varDesc);
-// 
-//                 hcPrintf( varDesc.Name );
-//             }
-//         }
-
         return shader;
     }
 
@@ -403,7 +306,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void** initialData, hUint32* initDataSize, hUint32 flags )
+    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
     {
         HRESULT hr;
         hdDX11Texture* texture = hNEW(GetGlobalHeap()/*!heap*/, hdDX11Texture);
@@ -413,24 +316,28 @@ namespace Heart
         hZeroMem( &desc, sizeof(desc) );
         desc.Height             = height;
         desc.Width              = width;
-        desc.MipLevels          = levels;//levels;
+        desc.MipLevels          = levels;
         desc.ArraySize          = 1;
         desc.SampleDesc.Count   = 1;
         switch ( format )
         {
-        case TFORMAT_ARGB8:     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_XRGB8:     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_RGB8:      desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_R16F:      desc.Format = DXGI_FORMAT_R16_FLOAT; break;
-        case TFORMAT_GR16F:     desc.Format = DXGI_FORMAT_R16G16_FLOAT; break;
-        case TFORMAT_ABGR16F:   desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-        case TFORMAT_R32F:      desc.Format = DXGI_FORMAT_R32_FLOAT; break;
-        case TFORMAT_D32F:      desc.Format = DXGI_FORMAT_R32_FLOAT; break;
-        case TFORMAT_D24S8F:    desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
-        case TFORMAT_L8:        desc.Format = DXGI_FORMAT_A8_UNORM; break;
-        case TFORMAT_DXT5:      desc.Format = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT3:      desc.Format = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT1:      desc.Format = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
+        case TFORMAT_ARGB8:         desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case TFORMAT_ARGB8_sRGB:    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case TFORMAT_XRGB8:         desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case TFORMAT_XRGB8_sRGB:    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case TFORMAT_R16F:          desc.Format = DXGI_FORMAT_R16_FLOAT; break;
+        case TFORMAT_GR16F:         desc.Format = DXGI_FORMAT_R16G16_FLOAT; break;
+        case TFORMAT_ABGR16F:       desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+        case TFORMAT_R32F:          desc.Format = DXGI_FORMAT_R32_FLOAT; break;
+        case TFORMAT_D32F:          desc.Format = DXGI_FORMAT_R32_FLOAT; break;
+        case TFORMAT_D24S8F:        desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
+        case TFORMAT_L8:            desc.Format = DXGI_FORMAT_A8_UNORM; break;
+        case TFORMAT_DXT5:          desc.Format = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT3:          desc.Format = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT1:          desc.Format = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
+        case TFORMAT_DXT5_sRGB:     desc.Format = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
+        case TFORMAT_DXT3_sRGB:     desc.Format = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
+        case TFORMAT_DXT1_sRGB:     desc.Format = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
         }
         desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -443,26 +350,25 @@ namespace Heart
         
         if ( initialData )
         {
-            hUint32 mipwidth = width;
-            for (hUint32 i = 0; i < desc.MipLevels; ++i, mipwidth = hMax(4,mipwidth >> 1))
+            for (hUint32 i = 0; i < desc.MipLevels; ++i)
             {
                 D3D11_SUBRESOURCE_DATA& data = dataptr[i];
-                data.pSysMem          = initialData[i];
+                data.pSysMem          = initialData[i].data;
                 if ( compressedFormat )
                 {
                     //D3D want the number of 4x4 blocks in the first row of the texture
                     if ( desc.Format == DXGI_FORMAT_BC1_UNORM )
                     {
-                        data.SysMemPitch = (mipwidth/4)*8;
+                        data.SysMemPitch = (hMax(initialData[i].width/4, 4))*8;
                     }
                     else
                     {
-                        data.SysMemPitch = (mipwidth/4)*16;
+                        data.SysMemPitch = (hMax(initialData[i].width/4, 4))*16;
                     }
                 }
                 else
                 {
-                    data.SysMemPitch      = initDataSize[i] / height;
+                    data.SysMemPitch      = initialData[i].size / initialData[i].height;
                 }
                 data.SysMemSlicePitch = 0;
             }
@@ -535,7 +441,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBuffer( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
         hdDX11IndexBuffer* idxBuf = hNEW( GetGlobalHeap()/*!heap*/, hdDX11IndexBuffer );
         HRESULT hr;
@@ -564,7 +470,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyIndexBuffer( hdDX11IndexBuffer* indexBuffer )
+    void hdDX11RenderDevice::DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer )
     {
         indexBuffer->buffer_->Release();
         indexBuffer->buffer_ = NULL;
@@ -602,7 +508,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBufferDevice( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
     {
         hdDX11VertexBuffer* vtxBuf = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexBuffer );
         HRESULT hr;
@@ -632,7 +538,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyVertexBuffer( hdDX11VertexBuffer* vtxBuf )
+    void hdDX11RenderDevice::DestroyVertexBufferDevice( hdDX11VertexBuffer* vtxBuf )
     {
         vtxBuf->buffer_->Release();
         vtxBuf->buffer_ = NULL;

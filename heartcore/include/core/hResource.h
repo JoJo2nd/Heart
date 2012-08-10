@@ -69,26 +69,31 @@ namespace Heart
             : flags_( 0 )
             , manager_( NULL )
             , resourceID_( 0 )
+            , linked_(hFalse)
         {}
         virtual ~hResourceClassBase() {}
         hBool                   IsDiskResource() const { return (flags_ & ResourceFlags_DISKRESOURCE) == ResourceFlags_DISKRESOURCE; }
         void                    IsDiskResource( hBool val ) { flags_ = val ? (flags_ | ResourceFlags_DISKRESOURCE) : (flags_ & ~ResourceFlags_DISKRESOURCE); }
         hUint32                 GetResourceID() const { return resourceID_; }
         hUint32                 GetFlags() const { return flags_; }
+        void                    SetType(const hResourceType& type) { type_ = type; }
+        hResourceType           GetType() const { return type_; }
+        void                    SetIsLinked(hBool val){ linked_ = val; }
+        hBool                   GetIsLinked() const { return linked_; }
 
     protected:
 
         void    OnZeroRef() const;
         void    SetResID( hUint32 id ) { resourceID_ = id; }
-        void    SetType(const hResourceType& type) { type_ = type; }
-        hResourceType GetType() const { return type_; }
 
         friend class hResourceManager;
+        friend class hResoucePackageV2;
 
         hResourceManager*  manager_;
         hUint32            resourceID_;
         hUint32            flags_;
-        hResourceType       type_;
+        hBool              linked_;
+        hResourceType      type_;
     };
 
     class hStreamingResourceBase : public hResourceClassBase 

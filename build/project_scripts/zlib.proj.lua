@@ -4,7 +4,7 @@ project "zlib"
     kind "SharedLib"
     language "C"
     files {"../../zlib/Include/*.h","../../zlib/Src/*.c"}
-    excludes {"../../zlib/src/minigzip.c"}
+    excludes {"../../zlib/Src/minigzip.c"}
     defines {CommonDefines,SharedLibDefines,"ZLIB_DLL"}
 	defines {"NO_vsnprintf"}
 	includedirs {"../../zlib/include"}

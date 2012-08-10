@@ -60,7 +60,6 @@ namespace Heart
 
 	hRenderer::hRenderer()
 		: currentRenderStatFrame_( 0 )
-		, pThreadFrameStats_( NULL )
 		, statPass_( 0 )
 	{
         //SetImpl( hNEW(GetGlobalHeap(), hdRenderDevice) );
@@ -90,7 +89,8 @@ namespace Heart
 		resourceManager_ = pResourceManager;
 		system_			=  pSystem;
 
-        techniqueManager_.Initialise( resourceManager_ );
+        hAtomic::AtomicSet(scratchPtrOffset_, 0);
+        hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 
         hRenderDeviceSetup setup;
         setup.alloc_ = RnTmpMalloc;
@@ -98,21 +98,13 @@ namespace Heart
         ParentClass::Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
 
         ParentClass::InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
-        mainSubmissionCtx_.EnableDebugDrawing( false );
 
         CreateIndexBuffer( NULL, RenderUtility::GetSphereMeshIndexCount( 16, 8 ), 0, PRIMITIVETYPE_TRILIST, &debugSphereIB_ );
         CreateVertexBuffer( NULL, RenderUtility::GetSphereMeshVertexCount( 16, 8 ), hrVF_XYZ, 0, &debugSphereVB_ );
         RenderUtility::BuildSphereMesh( 16, 8, 1.f, &mainSubmissionCtx_,debugSphereIB_, debugSphereVB_ );
 
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        ParentClass::SetPIXDebuggingMutex( &pixMutex_ );
-#endif
-
-		renderThread_.Create( 
-			"Rendering hThread",
-			hThread::PRIORITY_NORMAL,
-			hThread::ThreadFunc::bind< hRenderer, &hRenderer::RenderThread >( this ), 
-			NULL );
+        CreateIndexBuffer(NULL, 65535, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &volatileIBuffer_ );
+        CreateVertexBuffer(NULL, 65535, ~0U, RESOURCEFLAG_DYNAMIC, &volatileVBuffer_ );
 
 	}
 
@@ -126,134 +118,24 @@ namespace Heart
         DestroyVertexBuffer(debugSphereVB_);
         debugSphereIB_ = NULL;
         debugSphereVB_ = NULL;
-		hcAssert( renderThread_.IsComplete() );
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::ReleasePendingTexturesResources()
-	{
-		hUint32 ret = 0;
-		while( !texturesToRelease_.IsEmpty() )
-		{
-			hTexture* ptex = texturesToRelease_.peek();
-			texturesToRelease_.pop();
-			ptex->Release();
-			++ret;
-		}
-
-		return ret;
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::ReleasePendingIndexBufferResources()
-	{
-		hUint32 ret = 0;
-		while( !indexBuffersToRelease_.IsEmpty() )
-		{
-			hIndexBuffer* pib = indexBuffersToRelease_.peek();
-			indexBuffersToRelease_.pop();
-			pib->Release();
-			++ret;
-		}
-		return ret;
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::ReleasePendingVertexBufferResources()
-	{
-		hUint32 ret = 0;
-		while( !vertexBuffersToRelease_.IsEmpty() )
-		{
-			hVertexBuffer* pvb = vertexBuffersToRelease_.peek();
-			vertexBuffersToRelease_.pop();
-			pvb->Release();
-			++ret;
-		}
-		return ret;
-	}
-
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::ReleasePendingMeshResources()
-	{
-		hUint32 ret = 0;
-		while ( !meshesToRelease_.IsEmpty() )
-		{
-			hMesh* pmesh = meshesToRelease_.peek();
-			meshesToRelease_.pop();
-#ifdef HEART_OLD_RENDER_SUBMISSION
-			NewRenderCommand< Cmd::ReleaseMesh >( pmesh );
-#endif // HEART_OLD_RENDER_SUBMISSION
-			++ret;
-		}
-		return ret;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hUint32 hRenderer::ReleasePendingMaterialResources()
+	void hRenderer::BeginRenderFrame()
 	{
-		hUint32 ret = 0;
-		while( !materialsToRelease_.IsEmpty() )
-		{
-			hMaterial* pmat = materialsToRelease_.peek();
-			materialsToRelease_.pop();
-			//pmat->Release();
-			++ret;
-		}
-		return ret;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::BeginRenderFrame( hBool wait )
-	{
-		if ( wait )
-		{
-			while ( !renderCmdPipe_.IsEmpty() )
-			{
-				Device::ThreadYield();
-			}
-		}
-
-		ReleasePendingRenderResources();
+		//ReleasePendingRenderResources();
+        //Start new frame
 
 		// clear the render buffer
 		++currentRenderStatFrame_;
+
+        //Free last frame draw calls and temporary memory
+        hAtomic::AtomicSet(scratchPtrOffset_, 0);
+        hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 	}
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::SubmitRenderCommandBuffer( hdRenderCommandBuffer cmdBuf, hBool releaseBuf )
-    {
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        if ( !cmdBuf )
-            return;
-#endif
-        hRendererCmd newCmd;
-        newCmd.type_ = releaseBuf ? RENDERCMD_CMD_BUFFER_RELEASE : RENDERCMD_CMD_BUFFER;
-        newCmd.commandBuffer_ = cmdBuf;
-
-        renderCmdPipe_.push( newCmd );
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -261,177 +143,33 @@ namespace Heart
     
 	void hRenderer::EndRenderFrame()
 	{
-        hRendererCmd newCmd;
-        newCmd.type_ = RENDERCMD_SWAP;
-
-        renderCmdPipe_.push( newCmd );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::ReleasePendingRenderResources()
-	{
-		hUint32 released = 0;
-		released += ReleasePendingTexturesResources();
-		released += ReleasePendingIndexBufferResources();
-		released += ReleasePendingVertexBufferResources();
-		released += ReleasePendingMeshResources();
-		released += ReleasePendingMaterialResources();
-		return released;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::RenderThread( void* pParam )
-	{
-		pRenderThreadID_ = Device::GetCurrentThreadID();
-		hFloat frameCounter = 0.0f;
-		hUint32 frames = 0;
-
+        ParentClass::SwapBuffers();
         ParentClass::BeginRender();
+    
+        CollectAndSortDrawCalls();
+        SubmitDrawCallsMT();
 
-        do {
-            if ( !renderCmdPipe_.IsEmpty()  )
-            {
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-                pixMutex_.Lock();
-#endif
-                hRendererCmd& cmd = renderCmdPipe_.peek();
-
-                switch ( cmd.type_ )
-                {
-                case RENDERCMD_CMD_BUFFER:
-                    mainSubmissionCtx_.RunCommandBuffer( cmd.commandBuffer_ );
-                    break;
-                case RENDERCMD_CMD_BUFFER_RELEASE:
-                    mainSubmissionCtx_.RunCommandBuffer( cmd.commandBuffer_ );
-                    ParentClass::ReleaseCommandBuffer( cmd.commandBuffer_ );
-                    break;
-                case RENDERCMD_SWAP:
-                    ParentClass::EndRender();
-                    ParentClass::SwapBuffers();
-                    ParentClass::BeginRender();
-                    break;
-                }
-
-                renderCmdPipe_.pop();
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-                pixMutex_.Unlock();
-#endif
-            }
-        } while( !renderThreadKill_.TryWait() );
-/*
-		renderStateCache_->defaultRenderState();
-
-		//pImpl()->ActivateContext();
-
-		hBool quitWaiting = hFalse;
-		for(;;)
-		{
-			CreatePendingResources();
-
-			if ( !renderCmdBuffer_.IsEmpty() )
-			{
-				Cmd::RenderCmdBase* pCmd = (Cmd::RenderCmdBase*)renderCmdBuffer_.Peek();
-				//check for invalid size, not definite but normally happens when
-				//size_ is not set correctly
-				hcAssert( pCmd->size_ < ( DEFAULT_CMD_BUF_SIZE / 4) );
-				hUint32 sizetopop = pCmd->size_;
-
-				if ( pCmd->size_ == 0 )
-				{
-					//end of frame
-					++frames;
-					frameCounter += hClock::deltams();
-
-					if ( frameCounter > 1000.0f )
-					{
-						FPS_ = frames;
-						frameCounter -= 1000.0f;
-						frames = 0;
-					}
-
-					sizetopop = sizeof( Cmd::EndFrame );
-				}
-				else 
-				{
-					hcAssert( pCmd->breakMe_ == hFalse );
-
-					pCmd->Execute( this );
-
-#ifdef HEART_COLLECT_RENDER_STATS
-					//Do This After execute, as the first command  in a frame
-					//should set the correct framestats pointer
-					hRenderFrameStats* stats = pFrameStats();
-					if ( stats )
-					{
-						++stats->nRenderCmds_;
-					}
-#endif
-
-
-					//clean up
-					if ( pCmd->DestroyCommand() )
-					{
-						pCmd->~RenderCmdBase();
-					}
-				}
-
-				renderCmdBuffer_.Pop( sizetopop );
-			}
-			else
-			{
-				//Yield to another thread
-				hThreading::ThreadYield();
-			}
-
-			// Check for the kill command
-			// We cannot leave until the last render commands have been push
-			// as the renderer my have to clean up resources
-			if ( renderThreadKill_.TryWait() == hTrue) 
-			{
-				quitWaiting = hTrue;
-			}
-
-			if ( quitWaiting && renderCmdBuffer_.IsEmpty() )
-			{
-				break;
-			}
-		}
-
-		vertexDeclManager_->Destroy();
-
-		pImpl()->Destroy();
-        */
-
-		return 0;
+        ParentClass::EndRender();
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hResourceClassBase* hRenderer::OnTextureLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+	hTexture* hRenderer::OnTextureLoad(hISerialiseStream* dataStream)
 	{
         hTexture* resource = hNEW(GetGlobalHeap()/*!heap*/, hTexture)(this);
         hSerialiser ser;
         ser.Deserialise( dataStream, *resource );
-        for ( hUint32 i = 0; i < resource->nLevels_; ++i )
-        {
-            HEART_RESOURCE_DATA_FIXUP( void*, resource->textureData_, resource->levelDescs_[i].mipdata_ );
-        }
 
-        void**   dataPtrs = (void**)hAlloca(sizeof(void*)*resource->nLevels_);
-        hUint32* sizes = (hUint32*)hAlloca(sizeof(hUint32)*resource->nLevels_);
+        hMipDesc* dataPtrs = (hMipDesc*)hAlloca(sizeof(hMipDesc)*resource->nLevels_);
 
         for (hUint32 i = 0; i < resource->nLevels_; ++i)
         {
-            dataPtrs[i] = resource->levelDescs_[i].mipdata_;
-            sizes[i] = resource->levelDescs_[i].mipdataSize_;
+            dataPtrs[i].data   = resource->levelDescs_[i].mipdata_;
+            dataPtrs[i].size   = resource->levelDescs_[i].mipdataSize_;
+            dataPtrs[i].width  = resource->levelDescs_[i].width_;
+            dataPtrs[i].height = resource->levelDescs_[i].height_;
         }
 
         hdTexture* dt = ParentClass::CreateTextrue( 
@@ -440,302 +178,13 @@ namespace Heart
             resource->nLevels_, 
             resource->format_, 
             dataPtrs,
-            sizes,
             0 );
         hcAssert(dt);
         resource->SetImpl(dt);
 
-        if ( resource->format_ == TFORMAT_DXT1 ||
-             resource->format_ == TFORMAT_DXT3 ||
-             resource->format_ == TFORMAT_DXT5 )
-        {
-            resource->ReleaseCPUTextureData();
-        }
+        resource->ReleaseCPUTextureData();
 
  		return resource;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnTextureUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
-	{
-        hTexture* t =static_cast<hTexture*>(resource);
-        DestroyTexture(static_cast<hTexture*>(resource));
-        //hDELETE_SAFE(hGeneralHeap, t);
-		return 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hResourceClassBase* hRenderer::OnMaterialLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
-	{
-        hMaterial* resource = hNEW(GetGlobalHeap()/*!heap*/, hMaterial)(this);
-        hSerialiser ser;
-        ser.Deserialise( dataStream, *resource );
-
-        //Fixup dependencies
-
-        hUint32 nSamp = resource->samplers_.GetSize();
-        for ( hUint32 samp = 0; samp < nSamp; ++samp )
-        {
-            if ( resource->samplers_[samp].boundTexture_ )
-            {
-                hUint32 sid = (hUint32)resource->samplers_[samp].boundTexture_;
-                resource->samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->ltGetResourceWeak( sid ) );
-            }
-            resource->samplers_[samp].samplerState_ = CreateSamplerState( resource->samplers_[samp].samplerDesc_ );
-        }
-
-        hUint32 nTech = resource->techniques_.GetSize();
-        for ( hUint32 tech = 0; tech < nTech; ++tech )
-        {
-            hUint32 nPasses = resource->techniques_[tech].passes_.GetSize();
-            resource->techniques_[tech].mask_ = techniqueManager_.AddRenderTechnique( resource->techniques_[tech].name_ )->mask_;
-            for ( hUint32 pass = 0; pass < nPasses; ++pass )
-            {
-                hUint32 vpid = (hUint32)resource->techniques_[tech].passes_[pass].vertexProgram_;
-                hUint32 fpid = (hUint32)resource->techniques_[tech].passes_[pass].fragmentProgram_;
-                hShaderProgram* vp = static_cast< hShaderProgram* >( resManager->ltGetResourceWeak( vpid ) );
-                hShaderProgram* fp = static_cast< hShaderProgram* >( resManager->ltGetResourceWeak( fpid ) );
-
-                resource->techniques_[tech].passes_[pass].vertexProgram_   = vp;
-                resource->techniques_[tech].passes_[pass].fragmentProgram_ = fp;
-
-                hdShaderProgram* prog = vp->pImpl();
-                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
-                {
-                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
-                }
-                hUint32 parameterCount = vp->GetParameterCount();
-                for ( hUint32 i = 0; i < parameterCount; ++i )
-                {
-                    hShaderParameter param;
-                    hBool ok = prog->GetShaderParameter( i, &param );
-                    hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
-                }
-                for ( hUint32 samp = 0; samp < nSamp; ++samp )
-                {
-                    hUint32 reg = prog->GetSamplerRegister( resource->samplers_[samp].name_ );
-                    if ( reg != ~0U )
-                    {
-                        hcAssert( reg == resource->samplers_[samp].samplerReg_ || ~0U == resource->samplers_[samp].samplerReg_ );
-                        resource->samplers_[samp].samplerReg_ = reg;
-                    }
-                }
-
-                prog = fp->pImpl();
-                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
-                {
-                    resource->AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
-                }
-                parameterCount = fp->GetParameterCount();
-                for ( hUint32 i = 0; i < parameterCount; ++i )
-                {
-
-                    hShaderParameter param;
-                    hBool ok = prog->GetShaderParameter( i, &param );
-                    hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    resource->FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
-                }
-                for ( hUint32 samp = 0; samp < nSamp; ++samp )
-                {
-                    hUint32 reg = prog->GetSamplerRegister( resource->samplers_[samp].name_ );
-                    if ( reg != ~0U )
-                    {
-                        hcAssert( reg == resource->samplers_[samp].samplerReg_ || ~0U == resource->samplers_[samp].samplerReg_ );
-                        resource->samplers_[samp].samplerReg_ = reg;
-                    }
-                }
-
-                resource->techniques_[tech].passes_[pass].blendState_        = CreateBlendState(resource->techniques_[tech].passes_[pass].blendStateDesc_);
-                resource->techniques_[tech].passes_[pass].rasterizerState_   = CreateRasterizerState(resource->techniques_[tech].passes_[pass].rasterizerStateDesc_);
-                resource->techniques_[tech].passes_[pass].depthStencilState_ = CreateDepthStencilState(resource->techniques_[tech].passes_[pass].depthStencilStateDesc_);
-            }
-        }
-
-        techniqueManager_.OnMaterialLoad( resource, resID );
-
-		return resource;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnMaterialUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
-	{
-        hMaterial* mat = static_cast< hMaterial* >( resource );
-        techniqueManager_.OnMaterialUnload( mat );
-
-		hDELETE(GetGlobalHeap()/*!heap*/,mat);
-		return 0;
-	}
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hRenderer::OnShaderProgramLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
-    {
-        hShaderProgram* resource = hNEW(GetGlobalHeap()/*!heap*/, hShaderProgram);
-        hSerialiser ser;
-        ser.Deserialise( dataStream, *resource );
-
-        resource->SetImpl( ParentClass::CompileShader( (hChar*)resource->shaderProgram_, resource->shaderProgramLength_, resource->vertexInputLayoutFlags_, resource->shaderType_ ), GetGlobalHeap()/*!heap*/ );
-     
-        return resource;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint32 hRenderer::OnShaderProgramUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
-    {
-        hShaderProgram* shader = static_cast<hShaderProgram*>(resource);
-        ParentClass::DestroyShader(shader->pImpl());
-        shader->SetImpl(NULL);
-        hDELETE(GetGlobalHeap()/*!heap*/, shader);
-        return 0;
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnIndexBufferLoad( const hChar* pExt, void* pLoadedData, void* pUserData, Heart::hResourceManager* pResourceManager )
-	{
-// 		hIndexBuffer* pIB = new (pLoadedData) hIndexBuffer( this );
-// 		hByte* pData = (hByte*)pLoadedData;
-// 
-// 		pIB->SetImpl( (hdIndexBuffer*)( pIB + 1 ) );
-// 		new ( pImpl() ) hdIndexBuffer();
-// 
-// 		hcAssert( pIB->pIndices_ );
-// 		HEART_RESOURCE_DATA_FIXUP( hUint16, pData, pIB->pIndices_ );
-// 		pIB->renderer_ = this;
-// 
-// 		pImpl()->CreateIndexBuffer( pIB->pImpl(), pIB->pIndices_, pIB->nIndices_, pIB->primitiveType_, 0 );
-// 
-// 		pIB->IsDiskResource( true );
-
-		return 0;
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnIndexBufferUnload( const hChar* pExt, void* pLoadedData, void* pUserData, Heart::hResourceManager* pResourceManager )
-	{
-// 		hIndexBuffer* pIB = (hIndexBuffer*)pLoadedData;
-// 		while( indexBuffersToRelease_.IsFull() )
-// 		{
-// 			hThreading::ThreadSleep( 1 );
-// 		}
-// 		indexBuffersToRelease_.push( pIB );
-		return 1;
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnVertexBufferLoad( const hChar* pExt, void* pLoadedData, void* pUserData, Heart::hResourceManager* pResourceManager )
-	{
-// 		hVertexBuffer* pVB = new ( pLoadedData ) hVertexBuffer( this );
-// 		hByte* pData = (hByte*)pLoadedData;
-// 
-// 		pVB->SetImpl( (hdVtxBuffer*)( pVB + 1 ) );
-// 		new ( pImpl() ) hdVtxBuffer();
-// 
-// 		hcAssert( pVB->pVtxBuffer_ );
-// 
-// 		pVB->renderer_ = this;
-// 		GetVertexDeclaration( pVB->pVtxDecl_, (hUint32)pVB->pVtxDecl_ );
-// 		HEART_RESOURCE_DATA_FIXUP( void, pData, pVB->pVtxBuffer_ );
-// 
-// 		pImpl()->CreateVertexBuffer( pVB->pImpl(), pVB->vtxBufferSize_ / pVB->pVtxDecl_->Stride(), pVB->pVtxDecl_->Stride(), 0 );
-// 
-// 		//pVB->Lock();
-// 		//pVB->SetData( 0, 0, 0, pVB->pVtxBuffer_, pVB->vtxBufferSize_ );
-// 		//pVB->Unlock();
-// 		//TODO: Use a unbound flag to get this applied on first render?
-// 		pVB->FlushVertexData( pVB->pVtxBuffer_, pVB->vtxBufferSize_ );
-// 
-// 		pVB->IsDiskResource( true );
-
-		return 0;
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnVertexBufferUnload( const hChar* pExt, void* pLoadedData, void* pUserData, Heart::hResourceManager* pResourceManager )
-	{
-// 		hVertexBuffer* pVB = (hVertexBuffer*)pLoadedData;
-// 		while( vertexBuffersToRelease_.IsFull() )
-// 		{
-// 			hThreading::ThreadSleep( 1 );
-// 		}
-// 		vertexBuffersToRelease_.push( pVB );
-		return 1;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnMeshLoad( const hChar* pExt, void* pLoadedData, void* pUserData, hResourceManager* pResourceManager_ )
-	{
-// 		hMesh* pmesh = (hMesh*)pLoadedData;
-// 		hByte* pData = (hByte*)pLoadedData;
-// 
-// 		//Build the vtable
-// 		new ( pmesh ) hMesh();
-// 
-// // 		pDepsList->GetDependency( pmesh->indices_ );
-// // 		pDepsList->GetDependency( pmesh->vertices_ );
-// // 		pDepsList->GetDependency( pmesh->material_ );
-// 
-// 		pmesh->nPrimatives_ = pmesh->indices_->IndexCount() / 3;
-
-		return 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hUint32 hRenderer::OnMeshUnload( const hChar* pExt, void* pLoadedData, void* pUserData, hResourceManager* pResourceManager_ )
-	{
-// 		hMesh* pmesh = (hMesh*)pLoadedData;
-// 
-// 		if ( pmesh->indices_.HasData() )
-// 		{
-// 			pmesh->indices_.Release();
-// 		}
-// 		if ( pmesh->vertices_.HasData() )
-// 		{
-// 			pmesh->vertices_.Release();
-// 		}
-// 		if ( pmesh->material_.HasData() )
-// 		{
-// 			pmesh->material_.Release();
-// 		}
-// 
-// 		while( meshesToRelease_.IsFull() )
-// 		{
-// 			hThreading::ThreadSleep( 1 );
-// 		}
-// 		meshesToRelease_.push( pmesh );
-		return 1;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -762,23 +211,6 @@ namespace Heart
 // 		pImpl()->DestroyVertexDeclaration( pVD->pImpl() );
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::CreatePendingResources()
-	{
-// 		while ( !textureToCreate_.IsEmpty() )
-// 		{
-// 			hTexture* tex = textureToCreate_.peek();
-// 			pImpl()->CreateTexture( tex->pImpl(), tex->levelDescs_[ 0 ].width_, tex->levelDescs_[ 0 ].height_, tex->nLevels_, tex->format_ );
-// 
-// 			hAtomic::LWMemoryBarrier();
-// 			tex->created_ = hTrue;
-// 			textureToCreate_.pop();
-// 		}
-	}
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -803,9 +235,8 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, void** initialData, hUint32* initDataSize, hTextureFormat format, hUint32 flags, hTexture** outTex )
+	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex )
 	{
-        hcAssert((initialData && initDataSize) || (initialData == NULL && initDataSize == NULL));
         hcAssert(levels > 0);
 
         (*outTex) = hNEW(GetGlobalHeap()/*!heap*/, hTexture)(this);
@@ -813,21 +244,26 @@ namespace Heart
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
         (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(GetGlobalHeap()/*!heap*/, hTexture::LevelDesc, levels) : NULL;
-		(*outTex)->textureData_ = NULL;
 
-		hUint32 tw = width;
-		hUint32 th = height;
-		for ( hUint32 i = 0; i < levels; ++i, tw >>= 1, th >>= 1 )
+		for (hUint32 i = 0; i < levels; ++i)
 		{
-			(*outTex)->levelDescs_[ i ].width_ = tw;
-			(*outTex)->levelDescs_[ i ].height_ = th;
-            (*outTex)->levelDescs_[ i ].mipdata_ = 0;
-            (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;
+			(*outTex)->levelDescs_[ i ].width_ = initialData[i].width;
+			(*outTex)->levelDescs_[ i ].height_ = initialData[i].height;
+            if (initialData)
+            {
+                (*outTex)->levelDescs_[ i ].mipdata_ = initialData[i].data;
+                (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
+            }
 		}
 
-		hdTexture* dt = ParentClass::CreateTextrue( width, height, levels, format, initialData, initDataSize, flags );
+		hdTexture* dt = ParentClass::CreateTextrue( width, height, levels, format, initialData, flags );
         hcAssert(dt);
         (*outTex)->SetImpl( dt );
+
+        if ((flags & RESOURCEFLAG_KEEPCPUDATA) == 0)
+        {
+            (*outTex)->ReleaseCPUTextureData();
+        }
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -855,7 +291,7 @@ namespace Heart
 		pdata->nIndices_ = nIndices;
 		pdata->primitiveType_ = primType;
 
-		pdata->SetImpl( ParentClass::CreateIndexBuffer( nIndices*sizeof(hUint16), pIndices, flags ) );
+		pdata->SetImpl( ParentClass::CreateIndexBufferDevice( nIndices*sizeof(hUint16), pIndices, flags ) );
 
         *outIB = pdata;
 	}
@@ -868,7 +304,7 @@ namespace Heart
 	{
 		//hcAssert( IsRenderThread() );
 
-		ParentClass::DestroyIndexBuffer( pOut->pImpl() );
+		ParentClass::DestroyIndexBufferDevice( pOut->pImpl() );
         pOut->SetImpl(NULL);
 		hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
 	}
@@ -883,7 +319,7 @@ namespace Heart
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::ComputeVertexLayoutStride( layout );
 
-        pdata->SetImpl( ParentClass::CreateVertexBuffer( layout, nElements*pdata->stride_, initData, flags ) );
+        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( layout, nElements*pdata->stride_, initData, flags ) );
 
         *outVB = pdata;
 	}
@@ -894,29 +330,9 @@ namespace Heart
 
 	void hRenderer::DestroyVertexBuffer( hVertexBuffer* pOut )
 	{
-// 		hcAssert( IsRenderThread() );
-
-		ParentClass::DestroyVertexBuffer(pOut->pImpl());
+		ParentClass::DestroyVertexBufferDevice(pOut->pImpl());
         pOut->SetImpl(NULL);
 		hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void* hRenderer::AquireTempRenderMemory( hUint32 size )
-	{
-		return RnTmpMalloc( size );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::ReleaseTempRenderMemory( void* ptr )
-	{
-		RnTmpFree( ptr );
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -928,12 +344,7 @@ namespace Heart
         hRenderSubmissionCtx* ret = hNEW(GetGlobalHeap()/*!heap*/, hRenderSubmissionCtx);
         ret->Initialise( this );
         ParentClass::InitialiseRenderSubmissionCtx( &ret->impl_ );
-        ParentClass::InitialiseRenderSubmissionCtx( &ret->debug_ );
-        if ( !debugMaterial_ )
-        {
-            debugMaterial_ = static_cast< hMaterial* >( resourceManager_->mtGetResourceWeak(hResourceManager::BuildResourceCRC("ENGINE/EFFECTS/DEBUG.CFX")));
-        }
-        ret->InitialiseDebugInterface( debugSphereIB_, debugSphereVB_, debugMaterial_ );
+
         return ret;
     }
 
@@ -945,7 +356,6 @@ namespace Heart
     {
         hcAssert( ctx );
         ParentClass::DestroyRenderSubmissionCtx( &ctx->impl_ );
-        ParentClass::DestroyRenderSubmissionCtx( &ctx->debug_ );
         hDELETE_SAFE(GetGlobalHeap()/*!heap*/, ctx);
     }
 
@@ -955,7 +365,187 @@ namespace Heart
 
     bool hRenderer::IsRenderThread()
     {
+        //means nothing now...
         return pRenderThreadID_ == Device::GetCurrentThreadID();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
+    {
+        hcAssertMsg(drawCallBlockIdx_.value_+count < MAX_DCBLOCKS, "Too many draw calls");
+        if (drawCallBlockIdx_.value_+count < MAX_DCBLOCKS)
+            return;
+
+        hUint32 wIdx;
+        hAtomic::AtomicAddWithPrev(drawCallBlockIdx_, count, &wIdx);
+
+        //copy calls
+        count += wIdx;
+        for (; wIdx < count; ++wIdx, ++block)
+        {
+            drawCallBlocks_[wIdx] = *block;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hRenderer::AllocTempRenderMemory( hUint32 size )
+    {
+        hUint32 ret;
+        hAtomic::AtomicAddWithPrev(scratchPtrOffset_, size, &ret);
+        return drawDataScratchBuffer_+ret;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hRenderer::BeginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID)
+    {
+        hRendererCamera* camera = GetRenderCamera(camID);
+        hUint32 retTechMask = camera->GetTechniqueMask();
+
+        ctx->SetRenderTarget(0, camera->GetRenderTarget(0));
+        ctx->SetRenderTarget(1, camera->GetRenderTarget(1));
+        ctx->SetRenderTarget(2, camera->GetRenderTarget(2));
+        ctx->SetRenderTarget(3, camera->GetRenderTarget(3));
+        ctx->SetDepthTarget(camera->GetDepthTarget());
+        ctx->SetViewport(camera->GetViewport());
+
+        ctx->SetConstantBuffer(camera->GetViewportConstantBlock());
+
+        return retTechMask;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    int drawCallCompare(const void* lhs, const void* rhs)
+    {
+        return ((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_ ? -1 : 1;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::CollectAndSortDrawCalls()
+    {
+        //TODO: wait on job chain
+        
+        // POSSIBLE TODO: parallel merge sort
+        qsort(drawCallBlocks_.GetBuffer(), drawCallBlockIdx_.value_, sizeof(hDrawCall), drawCallCompare);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::SubmitDrawCallsMT()
+    {
+        /* TODO: Multi-thread submit, but ST is debug-able */
+        SubmitDrawCallsST();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::SubmitDrawCallsST()
+    {
+        /*Single thread submit*/
+        hUint32 camera = ~0U;
+        const hMaterial* material = NULL;
+        hUint32 pass = ~0U;
+        hUint32 tmask = ~0U;
+        hUint32 dcs = drawCallBlockIdx_.value_;
+        for (hUint32 dc = 0; dc < dcs; ++dc)
+        {
+            hDrawCall* dcall = &drawCallBlocks_[dc];
+            hMaterialInstance* mat = dcall->matInstance_;
+            hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
+            hUint32 nPass = (dcall->sortKey_&0xF);
+            if (nCam != camera)
+            {
+                //Begin camera pass
+                tmask = BeginCameraRender(&mainSubmissionCtx_, nCam);
+                camera = nCam;
+            }
+
+            hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
+
+            if (material != mat->GetParentMaterial() || pass != nPass)
+            {
+                hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
+                hMaterialTechniquePass* techpass = tech->GetPass(pass);
+                mainSubmissionCtx_.SetVertexShader( techpass->GetVertexShader() );
+                mainSubmissionCtx_.SetPixelShader( techpass->GetFragmentShader() );
+                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetBlendState() );
+                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetDepthStencilState() );
+                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetRasterizerState() );
+
+                material = mat->GetParentMaterial();
+                pass = nPass;
+            }
+
+            for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
+            {
+                mainSubmissionCtx_.SetConstantBuffer( mat->GetConstantBlock(i) );
+            }
+
+            for ( hUint32 i = 0; i < mat->GetSamplerCount(); ++i )
+            {
+                const hSamplerParameter* samp = mat->GetSamplerParameter( i );
+                hcWarningHigh( samp->boundTexture_ == NULL, "Sampler has no texture bound" );
+                if (samp->boundTexture_)
+                    mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
+            }
+
+
+            hIndexBuffer* ib  = dcall->indexBuffer_;
+            hVertexBuffer* vb = dcall->vertexBuffer_;
+            if (dcall->immediate_)
+            {
+                hIndexBufferMapInfo ibmap;
+                hVertexBufferMapInfo vbmap;
+                mainSubmissionCtx_.Map(volatileIBuffer_, &ibmap);
+                mainSubmissionCtx_.Map(volatileVBuffer_, &vbmap);
+
+                //Copy
+                hMemCpy(ibmap.ptr_, dcall->imIBBuffer_, dcall->ibSize_);
+                hMemCpy(ibmap.ptr_, dcall->imVBBuffer_, dcall->vbSize_);
+
+                mainSubmissionCtx_.Unmap(&ibmap);
+                mainSubmissionCtx_.Unmap(&vbmap);
+
+                ib = volatileIBuffer_;
+                vb = volatileVBuffer_;
+            }
+
+            mainSubmissionCtx_.SetPrimitiveType(dcall->primType_);
+            mainSubmissionCtx_.SetIndexStream(ib);
+            mainSubmissionCtx_.SetVertexStream(0,vb);
+            if (dcall->indexBuffer_)
+                mainSubmissionCtx_.DrawPrimitive(dcall->primCount_, dcall->startVertex_);
+            else
+                mainSubmissionCtx_.DrawIndexedPrimitive(dcall->primCount_, dcall->startVertex_);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::InitRenderCamera( hUint32 id, const hRendererCamera& camera )
+    {
+        hcAssertMsg(id < 15, "Invalid camera id access");
+        renderCameras_[id] = camera;
     }
 
 }

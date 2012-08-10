@@ -73,7 +73,6 @@ namespace Heart
         hRenderSubmissionCtx()
             : renderer_(NULL)
             , viewportConstants_(NULL)
-            , debugEnabled_(hFalse)
         {}
         ~hRenderSubmissionCtx();
 
@@ -86,7 +85,6 @@ namespace Heart
         void    BeingMaterialInstancePass( hUint32 i );
         void    EndMaterialInstancePass();
 
-        void    BeginPIXDebugging() { impl_.BeginPIXDebugging(); }
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         //Raw Functions
         void	SetIndexStream( hIndexBuffer* pIIBuf );
@@ -116,21 +114,9 @@ namespace Heart
         void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
         void    Unmap( hTextureMapInfo* outInfo );
 
-        //Debug
-        void	EnableDebugDrawing( hBool val ) { debugEnabled_ = val; }
-        void	RenderDebugText( hFloat x, hFloat y, const char* fmt, ... );
-        void	RenderDebugSphere( const hVec3& centre, hFloat radius, const hColour& colour );
-        void	RenderDebugAABB( const hAABB& aabb, const hColour& colour );
-        void	RenderDebugScreenQuad( const hRect& rect, const hColour& colour );
-        void	RenderDebugCone( const hMatrix& transform, hFloat radius, hFloat len, const hColour& colour );
-        hdRenderCommandBuffer SaveDebugCallsToCommandBuffer();
-
     private:
 
         friend class hRenderer; 
-
-        //Debug
-        void	InitialiseDebugInterface( hIndexBuffer* sphereIB, hVertexBuffer* sphereVB, hMaterial* material );
            
         hRenderer*                      renderer_;
         hUint32                         techniqueMask_;
@@ -141,15 +127,6 @@ namespace Heart
         hInstanceConstants*             instanceConstants_;
         hdParameterConstantBlock*       instanceConstantsBlock_; 
         hdRenderSubmissionCtx           impl_;
-
-        //DEBUG
-        hdRenderSubmissionCtx           debug_;
-        hVertexBuffer*                  debugVB_;
-        hIndexBuffer*                   debugIB_;
-        hMaterialInstance*              debugMaterial_;
-        hMaterialTechnique*             debugTechnique_;
-        const hShaderParameter*         debugColourParameter_;
-        hUint32                         debugEnabled_;
     };
 
 }

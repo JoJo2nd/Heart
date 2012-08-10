@@ -62,8 +62,8 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     else
     {
-        strncpy_s(enginepath, cmdenginepath+1, (size_t)(cmdend-1)-(size_t)cmdenginepath);
-    }
+        strncpy_s(enginepath, cmdenginepath[0] == '\"' ? cmdenginepath+1 : cmdenginepath, (size_t)(cmdend)-(size_t)cmdenginepath);
+    } 
 
     cmdend = strchr(cmdapppath+1, cmdapppath[0] == '\"' ? '\"' : ' ');
     if (!cmdend)
@@ -72,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     else
     {
-        strncpy_s(apppath, cmdapppath+1, (size_t)(cmdend-1)-(size_t)cmdapppath);
+        strncpy_s(apppath, cmdapppath[0] == '\"' ? cmdapppath+1 : cmdapppath, (size_t)(cmdend)-(size_t)cmdapppath);
     }
 
     HMODULE engineModule = LoadLibrary(enginepath);

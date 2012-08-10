@@ -11,6 +11,7 @@ project "heart_testbed"
     includedirs {"../../testbed/include"}
 	links {PlatformLibs}
 	links { "heartbase", "heartcore", "heartwin32", "crypto", "lua" }
+    --links { "heartbase", "heartcore", "crypto", "lua" }
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

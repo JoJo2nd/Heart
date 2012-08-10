@@ -39,9 +39,6 @@ namespace Heart
         hdDX11RenderSubmissionCtx() 
             : depthStencilView_(NULL)
             , vbufferInputLayout_(0)
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-            , debugMode_( hFalse )
-#endif
         {
             for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i )
             {
@@ -51,7 +48,6 @@ namespace Heart
         ~hdDX11RenderSubmissionCtx() 
         {}
 
-        void    BeginPIXDebugging();
         hdDX11CommandBuffer     SaveToCommandBuffer();
         void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
@@ -82,9 +78,6 @@ namespace Heart
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
         void                    SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth );
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        void                    SetPIXDebuggingOptions( ID3D11DeviceContext* mainCtx, hMutex* mutex );
-#endif//HEART_ALLOW_PIX_MT_DEBUGGING
 
     private:
 
@@ -100,12 +93,6 @@ namespace Heart
         ID3D11DeviceContext*    device_;
         hUint32                 vbufferInputLayout_;
         hUint32                 shaderInputLayout_;
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        hMutex*                 debugMutex_;
-        ID3D11DeviceContext*    mainDeviceCtx_;
-        ID3D11DeviceContext*    tempCtx_;
-        hBool                   debugMode_;
-#endif //HEART_ALLOW_PIX_MT_DEBUGGING
     };
 }
 

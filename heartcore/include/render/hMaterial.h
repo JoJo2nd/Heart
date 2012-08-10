@@ -38,6 +38,25 @@ namespace Heart
 	class hTexture;
     class hMaterialInstance;
 
+    HEARTCORE_SLIBEXPORT
+    hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits);
+
+    /*
+     * See - http://realtimecollisiondetection.net/blog/?p=86/
+     * MSB is our leading sort priority, LSB is last sort priority.
+     * Our key is using 
+     * 63 - 60 = camera / viewport / render target (0-15) - 4 bits = 64
+     * 59 - 54 = sort layer (0-15) - 4 bits = 60
+     * 53      = transparent flag - force transparent bits to end - 1 bits = 56
+     * 52 - 29 = depth - 32 bits as 16:16 fixed point number - 32 bits = 55
+     * 28 - 4  = material ID            - 19 bits = 23
+     *  3 - 0  = material pass ID (0-15) - 4 bits = 4
+     */
+    typedef hUint64 hMaterialSortKey;
+
+    HEARTCORE_SLIBEXPORT
+    hMaterialSortKey HEART_API hBuildRenderSortKey(hByte cameraID, hByte sortLayer, hBool transparent, hFloat viewSpaceDepth, hUint32 materialID, hByte pass);
+
     static const hUint32                    hMAX_SEMANTIC_LEN = 32;
 
 
@@ -54,7 +73,7 @@ namespace Heart
 
     //Temp placement
     class HEARTCORE_SLIBEXPORT hShaderProgram : public hResourceClassBase,
-                                            public hPtrImpl< hdShaderProgram >
+                                                public hPtrImpl< hdShaderProgram >
     {
     public:
         hShaderProgram() 
@@ -69,8 +88,20 @@ namespace Heart
             hDELETE_ARRAY_SAFE(GetGlobalHeap(), shaderProgram_);
         }
 
+        void                    CopyShaderBlob(void* blob, hUint32 len);
+        void*                   GetShaderBlob() const { return (void*)shaderProgram_; }
+        hUint32                 GetShaderBlobLen() const { return shaderProgramLength_; }
+        void                    SetParameterData(hUint32 paramCount, hUint32 paramBufferSize)
+        {
+            parameterCount_ = paramCount;
+            totalParameterSize_ = paramBufferSize;
+        }
+        void                    SetVertexLayout(hUint32 layout) { vertexInputLayoutFlags_ = layout; }
+        hUint32                 GetVertexLayout() const { return vertexInputLayoutFlags_; }
         hUint32                 GetParameterCount() const { return parameterCount_; }
         hUint32                 GetTotalParameterSize() const { return totalParameterSize_; }
+        ShaderType              GetShaderType() const { return shaderType_; } 
+        void                    SetShaderType(ShaderType shadertype) { shaderType_ = shadertype; }
 
 
     private:
@@ -92,7 +123,10 @@ namespace Heart
     {
         hSamplerParameter()
             : nameLen_(0)
+            , boundTexture_(NULL)
+            , defaultTextureID_(0)
             , samplerReg_(~0U)
+            , samplerState_(NULL)
         {
             hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
         }
@@ -105,6 +139,7 @@ namespace Heart
         hUint32                             nameLen_;
         hArray<hChar, 32>                   name_;
         hUint32                             samplerReg_;
+        hResourceID                         defaultTextureID_;
         hTexture*                           boundTexture_;
         hSamplerStateDesc                   samplerDesc_;
         hdSamplerState*                     samplerState_;
@@ -129,10 +164,16 @@ namespace Heart
         }
 
         hShaderProgram*         GetVertexShader() { return vertexProgram_; }
-        hShaderProgram*         GetPixelShader() { return fragmentProgram_; }
+        void                    SetVertexShaderResID(hResourceID id) { vertexProgramID_ = id; }
+        hShaderProgram*         GetFragmentShader() { return fragmentProgram_; }
+        void                    SetFragmentShaderResID(hResourceID id) { fragmentProgramID_ = id; }
         hdBlendState*           GetBlendState() { return blendState_; }
+        void                    SetBlendStateDesc(const hBlendStateDesc& blendState) { blendStateDesc_ = blendState; }
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
+        void                    SetDepthStencilStateDesc(const hDepthStencilStateDesc& depthStencilStateDesc) { depthStencilStateDesc_ = depthStencilStateDesc; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
+        void                    SetRasterizerStateDesc(const hRasterizerStateDesc& rasterizerStateDesc) { rasterizerStateDesc_ = rasterizerStateDesc; }
+        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         void                    ReleaseResources(hRenderer* renderer);
 
     private:
@@ -142,7 +183,9 @@ namespace Heart
         friend class hRenderer;
         friend class ::MaterialEffectBuilder;
 
+        hResourceID                         vertexProgramID_;
         hShaderProgram*                     vertexProgram_;
+        hResourceID                         fragmentProgramID_;
         hShaderProgram*                     fragmentProgram_;
         hBlendStateDesc                     blendStateDesc_;
         hdBlendState*                       blendState_;
@@ -164,6 +207,8 @@ namespace Heart
         hMaterialTechnique&             operator = ( const hMaterialTechnique& rhs )
         {
             name_ = rhs.name_;
+            transparent_ = rhs.transparent_;
+            layer_ = rhs.layer_;
             rhs.passes_.CopyTo( &passes_ );
 
             return *this;
@@ -174,9 +219,16 @@ namespace Heart
         }
 
         const hChar*            GetName() const { return &name_[0]; }
+        void                    SetName(const hChar* name) { hStrCopy(name_.GetBuffer(), MAX_NAME_LEN, name); }
         hUint32                 GetMask() const { return mask_; }
         hUint32                 GetPassCount() const { return passes_.GetSize(); }
         hMaterialTechniquePass* GetPass( hUint32 idx ) { return &passes_[idx]; }
+        void                    SetSortAsTransparent(hBool val) { transparent_ = val; }
+        hBool                   GetSortAsTransparent() const { return transparent_; }
+        void                    SetLayer(hByte layer) { layer_ = layer; }
+        hByte                   GetLayer(hByte layer) { return layer_; }
+        void                    AppendPass(const hMaterialTechniquePass& pass);
+        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
 
     private:
 
@@ -191,14 +243,34 @@ namespace Heart
         hArray< hChar, MAX_NAME_LEN >   name_;
         PassArrayType                   passes_;
         hUint32                         mask_;//Set on load/create
+        hBool                           transparent_;
+        hByte                           layer_;
+    };
+
+    struct HEARTCORE_SLIBEXPORT hMaterialGroup
+    {
+        static const hUint32 MAX_NAME_LEN = 32;
+        typedef hVector< hMaterialTechnique > TechniqueArrayType;
+
+        hMaterialGroup& operator = ( const hMaterialGroup& rhs )
+        {
+            name_ = rhs.name_;
+            rhs.techniques_.CopyTo(&techniques_);
+            return *this;
+        }
+
+        hArray< hChar, MAX_NAME_LEN >   name_;
+        TechniqueArrayType              techniques_;
     };
 
 	class HEARTCORE_SLIBEXPORT hMaterial : public hResourceClassBase
 	{
 	public:
 
-		hMaterial( hRenderer* prenderer ) 
-			: renderer_( prenderer )
+		hMaterial() 
+			: renderer_(NULL)
+            , activeTechniques_(NULL)
+            , manager_(NULL)
 		{
 			
 		}
@@ -213,8 +285,8 @@ namespace Heart
         hUint32                             GetConstantBufferSize( hUint32 idx ) const { return constBufferDescs_[idx].size_; }
         hUint32                             GetConstantBufferRegister( hUint32 idx ) const { return constBufferDescs_[idx].reg_; }
         const hFloat*                       GetConstantBufferDefaultData() const;
-        hUint32                             GetTechniqueCount() const { return techniques_.GetSize(); }
-        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
+        hUint32                             GetTechniqueCount() const { return activeTechniques_->GetSize(); }
+        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert( activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
         hMaterialTechnique*                 GetTechniqueByName( const hChar* name );
         hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask );
         const hSamplerArrayType&            GetSamplerArray() const { return samplers_; }
@@ -222,6 +294,11 @@ namespace Heart
         void                                SetManager(hRenderMaterialManager* val) { manager_ = val; }
         hMaterialInstance*                  CreateMaterialInstance();
         void                                DestroyMaterialInstance(hMaterialInstance* inst);
+        hMaterialGroup*                     AddGroup(const hChar* name);
+        void                                SetActiveGroup(const hChar* name);
+        void                                AddSamplerParameter(const hSamplerParameter& sampler);
+        hBool                               Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
+        hUint32                             GetMatKey() const { return uniqueKey_; }
 
 	private:
 
@@ -243,15 +320,18 @@ namespace Heart
             hUint32     size_;
         };
 
+        typedef hVector< hMaterialGroup >     GroupArrayType;
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
         typedef hVector< hShaderParameter >   ParameterArrayType;
         typedef hVector< hConstBufferDesc >   ConstBufferDescArrayType;
 
         hUint32                             FindConstBufferIndexFromID( hUint32 id );
 
+        hUint32                             uniqueKey_;
 		hRenderer*							renderer_;
         hRenderMaterialManager*             manager_;
-        TechniqueArrayType                  techniques_;
+        GroupArrayType                      groups_;
+        TechniqueArrayType*                 activeTechniques_;
         hSamplerArrayType                   samplers_;
         ParameterArrayType                  constParameters_;
         ConstBufferDescArrayType            constBufferDescs_;
@@ -275,7 +355,8 @@ namespace Heart
         void                                SetSamplerParameter( const hSamplerParameter* param, hTexture* tex );
         hUint32                             GetConstantBufferCount() const { return parentMaterial_->GetConstantBufferCount(); }
         hdParameterConstantBlock*           GetConstantBlock( hUint32 idx ) { return constBuffers_ + idx; }
-        const hMaterial*                    GetParentMaterial() const { return parentMaterial_; };
+        const hMaterial*                    GetParentMaterial() const { return parentMaterial_; }
+        hUint32                             GetMatKey() const { return matKey_; }
 
     private:
 
@@ -290,6 +371,7 @@ namespace Heart
         hMaterialInstance& operator = ( const hMaterialInstance& rhs );
         
         hRenderer*                          renderer_;
+        hUint32                             matKey_;
         hMaterial*                          parentMaterial_;
         hdParameterConstantBlock*           constBuffers_;
         hSamplerArrayType                   samplers_;
@@ -302,15 +384,33 @@ namespace Heart
     template<>
     inline void SerialiseMethod< Heart::hMaterial >( Heart::hSerialiser* ser, const Heart::hMaterial& data )
     {
-        SERIALISE_ELEMENT( data.techniques_ );
+        SERIALISE_ELEMENT( data.groups_ );
         SERIALISE_ELEMENT( data.samplers_ );
     }
 
     template<>
     inline void DeserialiseMethod< Heart::hMaterial >( Heart::hSerialiser* ser, Heart::hMaterial& data )
     {
-        DESERIALISE_ELEMENT( data.techniques_ );
+        DESERIALISE_ELEMENT( data.groups_ );
         DESERIALISE_ELEMENT( data.samplers_ );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    template<>
+    inline void SerialiseMethod< Heart::hMaterialGroup >( Heart::hSerialiser* ser, const Heart::hMaterialGroup& data )
+    {
+        SERIALISE_ELEMENT( data.name_ );
+        SERIALISE_ELEMENT( data.techniques_ );
+    }
+
+    template<>
+    inline void DeserialiseMethod< Heart::hMaterialGroup >( Heart::hSerialiser* ser, Heart::hMaterialGroup& data )
+    {
+        DESERIALISE_ELEMENT( data.name_ );
+        DESERIALISE_ELEMENT( data.techniques_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -322,6 +422,8 @@ namespace Heart
     {
         SERIALISE_ELEMENT( data.name_ );
         SERIALISE_ELEMENT( data.passes_ );
+        SERIALISE_ELEMENT( data.layer_ );
+        SERIALISE_ELEMENT( data.transparent_ );
     }
 
     template<>
@@ -329,6 +431,8 @@ namespace Heart
     {
         DESERIALISE_ELEMENT( data.name_ );
         DESERIALISE_ELEMENT( data.passes_ );
+        DESERIALISE_ELEMENT( data.layer_ );
+        DESERIALISE_ELEMENT( data.transparent_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -338,8 +442,8 @@ namespace Heart
     template<>
     inline void SerialiseMethod< Heart::hMaterialTechniquePass >( Heart::hSerialiser* ser, const Heart::hMaterialTechniquePass& data )
     {
-        SERIALISE_ELEMENT_RESOURCE_CRC( data.vertexProgram_ );
-        SERIALISE_ELEMENT_RESOURCE_CRC( data.fragmentProgram_ );
+        SERIALISE_ELEMENT( data.vertexProgramID_ );
+        SERIALISE_ELEMENT( data.fragmentProgramID_ );
         SERIALISE_ELEMENT( data.blendStateDesc_ );
         SERIALISE_ELEMENT( data.depthStencilStateDesc_ );
         SERIALISE_ELEMENT( data.rasterizerStateDesc_ );
@@ -348,8 +452,8 @@ namespace Heart
     template<>
     inline void DeserialiseMethod< Heart::hMaterialTechniquePass >( Heart::hSerialiser* ser, Heart::hMaterialTechniquePass& data )
     {
-        DESERIALISE_ELEMENT_RESOURCE_CRC( data.vertexProgram_ );
-        DESERIALISE_ELEMENT_RESOURCE_CRC( data.fragmentProgram_ );
+        DESERIALISE_ELEMENT( data.vertexProgramID_ );
+        DESERIALISE_ELEMENT( data.fragmentProgramID_ );
         DESERIALISE_ELEMENT( data.blendStateDesc_ );
         DESERIALISE_ELEMENT( data.depthStencilStateDesc_ );
         DESERIALISE_ELEMENT( data.rasterizerStateDesc_ );
@@ -390,7 +494,7 @@ namespace Heart
     {
         SERIALISE_ELEMENT( data.nameLen_ );
         SERIALISE_ELEMENT( data.name_ );
-        SERIALISE_ELEMENT_RESOURCE_CRC( data.boundTexture_ );
+        SERIALISE_ELEMENT( data.defaultTextureID_ );
         SERIALISE_ELEMENT( data.samplerDesc_ );
     }
 
@@ -399,7 +503,7 @@ namespace Heart
     {
         DESERIALISE_ELEMENT( data.nameLen_ );
         DESERIALISE_ELEMENT( data.name_ );
-        DESERIALISE_ELEMENT_RESOURCE_CRC( data.boundTexture_ );
+        DESERIALISE_ELEMENT( data.defaultTextureID_ );
         DESERIALISE_ELEMENT( data.samplerDesc_ );
     }
 }

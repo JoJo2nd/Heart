@@ -69,8 +69,6 @@ namespace Heart
 
         fileMananger_ = hNEW(GetGlobalHeap(), hDriveFileSystem);
 
-        zipFileSystem_ = hNEW(GetGlobalHeap(), hZipFileSystem);
-
         resourceMananger_ = hNEW(GetGlobalHeap(), hResourceManager);
 
         renderer_ = hNEW(GetGlobalHeap(), hRenderer);
@@ -121,7 +119,7 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Register Engine side resource loaders //////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
         resourceMananger_->SetResourceHandlers( "TEX", 
             hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnTextureLoad >( renderer_ ), 
             hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnTextureUnload >( renderer_ ),
@@ -156,7 +154,7 @@ namespace Heart
             hResourceManager::ResourceLoadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptLoad >(entityFactory_),
             hResourceManager::ResourceUnloadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptUnload >(entityFactory_),
             NULL );
-
+*/
         //////////////////////////////////////////////////////////////////////////
         // Register Engine Level Event Channels //////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -165,6 +163,9 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
+        
+        hcSetOutputStringCallback(hSystemConsole::PrintConsoleMessage);
+
         system_->Create( config_, deviceConfig_ );
 
         jobManager_->Initialise();
@@ -172,8 +173,6 @@ namespace Heart
         controllerManager_->Initialise(system_);
 
         hClock::Initialise();
-
-        zipFileSystem_->Initialise( "pak0.pak" );
 
         renderer_->Create( 
             system_,
@@ -186,7 +185,7 @@ namespace Heart
             resourceMananger_
             );
 
-        resourceMananger_->Initialise( renderer_, fileMananger_, requiredResourcesList );
+        resourceMananger_->Initialise( this, renderer_, fileMananger_, requiredResourcesList );
 
         soundManager_->Initialise();
 
@@ -220,6 +219,8 @@ namespace Heart
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
 
         engineState_ = hHeartState_LoadingCore;
+
+        GetResourceManager()->mtLoadPackage("CORE");
 
     }
 
@@ -269,7 +270,7 @@ namespace Heart
 
         GetVM()->Update();
 
-        GetRenderer()->BeginRenderFrame( hTrue );
+        GetRenderer()->BeginRenderFrame();
 
         (*mainRender_)( this );
 
@@ -311,7 +312,7 @@ namespace Heart
 
         GetVM()->Update();
 
-        GetRenderer()->BeginRenderFrame( hTrue );
+        GetRenderer()->BeginRenderFrame();
 
         GetConsole()->Render( GetRenderer() );
 
@@ -336,10 +337,6 @@ namespace Heart
 
         resourceMananger_->Shutdown( renderer_ );
 
-        renderer_->StopRenderThread();
-
-        zipFileSystem_->Destory();
-
         luaVM_->Destroy();
 
         renderer_->Destroy();
@@ -349,8 +346,6 @@ namespace Heart
         hDELETE(GetGlobalHeap(), luaVM_);
 
         hDELETE_SAFE(GetGlobalHeap(), uiRenderer_);
-
-        hDELETE(GetGlobalHeap(), zipFileSystem_);
 
         hDELETE(GetGlobalHeap(), console_);
 
@@ -377,6 +372,7 @@ namespace Heart
 
     void HeartEngine::DoEngineTick()
     {
+        Device::ThreadSleep(1);
         switch(engineState_)
         {
         case hHeartState_LoadingCore:

@@ -37,21 +37,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    inline void* hXML_alloc_func(size_t size )
-    {
-        return hMalloc( size );
-    }
-    inline void hXML_free_func(void* ptr )
-    {
-        hFree( ptr );
-    }
+    HEARTCORE_SLIBEXPORT void* HEART_API hXML_alloc_func(size_t size );
+    HEARTCORE_SLIBEXPORT void HEART_API hXML_free_func(void* ptr );
 
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hXMLDocument : public rapidxml::xml_document<>
+    class HEARTCORE_SLIBEXPORT hXMLDocument : public rapidxml::xml_document<>
     {
     public:
         hXMLDocument()
@@ -94,13 +88,24 @@ namespace Heart
         hMemoryHeapBase* heap_;
     };
 
-    class hXMLGetter
+    struct hXMLEnumReamp
+    {
+        const hChar* enumStr_;
+        hUint32      enumValue_;
+    };
+
+    class HEARTCORE_SLIBEXPORT hXMLGetter
     {
     public:
-        hXMLGetter( rapidxml::xml_node<>* node )
+        explicit hXMLGetter( rapidxml::xml_node<>* node )
             : node_(node)
         {
             
+        }
+
+        void                    SetNode(rapidxml::xml_node<>* node)
+        {
+            node_ = node;
         }
 
         hXMLGetter              FirstChild( const hChar* name )
@@ -138,7 +143,7 @@ namespace Heart
 
             return node_->first_attribute( name );
         }
-        hUint32 GetAttributeInt(const hChar* name)
+        hInt32 GetAttributeInt(const hChar* name)
         {
             rapidxml::xml_attribute<>* att;
 
@@ -148,6 +153,19 @@ namespace Heart
             att = node_->first_attribute( name );
             if (!att)
                 return 0;
+            else
+                return hAtoI(att->value());
+        }
+        hInt32 GetAttributeInt(const hChar* name, hInt32 defVal)
+        {
+            rapidxml::xml_attribute<>* att;
+
+            if ( !node_ )
+                return defVal;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return defVal;
             else
                 return hAtoI(att->value());
         }
@@ -163,6 +181,18 @@ namespace Heart
             else
                 return hAtoF(att->value());
         }
+        hFloat GetAttributeFloat(const hChar* name, hFloat defVal)
+        {
+            rapidxml::xml_attribute<>* att;
+            if ( !node_ )
+                return defVal;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return defVal;
+            else
+                return hAtoF(att->value());
+        }
         const hChar* GetAttributeString(const hChar* name)
         {
             rapidxml::xml_attribute<>* att;
@@ -175,6 +205,85 @@ namespace Heart
             else
                 return att->value();
         }
+        const hChar* GetAttributeString(const hChar* name, const hChar* defVal)
+        {
+            rapidxml::xml_attribute<>* att;
+            if ( !node_ )
+                return defVal;
+
+            att = node_->first_attribute( name );
+            if (!att)
+                return defVal;
+            else
+                return att->value();
+        }
+        hInt32 GetValueInt(hInt32 defaultVal = 0)
+        {
+            if (!node_)
+                return defaultVal;
+            if (!node_->value())
+                return defaultVal;
+            return hAtoI(node_->value());
+        }
+        hFloat GetValueFloat(hFloat defaultVal = 0.f)
+        {
+            if (!node_)
+                return defaultVal;
+            if (!node_->value())
+                return defaultVal;
+            return hAtoF(node_->value());
+        }
+        const hChar* GetValueString(const hChar* defaultVal = NULL)
+        {
+            if (!node_)
+                return defaultVal;
+            if (!node_->value())
+                return defaultVal;
+            return node_->value();
+        }
+        template < typename t_type >
+        t_type GetValueEnum(hXMLEnumReamp* enums, t_type defaultVal = 0)
+        {
+            if (!node_)
+                return defaultVal;
+            if (!node_->value())
+                return defaultVal;
+            while(enums->enumStr_)
+            {
+                if (hStrICmp(enums->enumStr_, node_->value()) == 0)
+                {
+                    return (t_type)enums->enumValue_;
+                }
+                ++enums;
+            }
+
+            return defaultVal;
+        }
+        hUint32 GetValueHex(hUint32 hexVal)
+        {
+            hUint32 ret;
+            if (!node_)
+                return hexVal;
+            if (!node_->value())
+                return hexVal;
+            if (sscanf(node_->value(), "0x%x", &ret) == 1)
+                return ret;
+            else
+                return hexVal;
+        }
+        hColour GetValueColour(hColour defVal)
+        {
+            hFloat r,b,g,a;
+            if (!node_)
+                return defVal;
+            if (!node_->value())
+                return defVal;
+            if (sscanf(node_->value(), " %f , %f , %f , %f ", &r, &g, &b, &a) == 4)
+                return hColour(r, b, g, a);
+            else
+                return defVal;
+        }
+
         rapidxml::xml_node<>*       ToNode() { return node_; }
 
     private:

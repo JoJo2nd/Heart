@@ -29,10 +29,57 @@
 
 namespace Heart
 {
-    class hDataCacheFile
+    class HEARTCORE_SLIBEXPORT hDataParameterSet : public hIDataParameterSet
     {
     public:
-        hDataCacheFile()
+        hDataParameterSet(hXMLGetter* resourceRoot)
+            : root_(resourceRoot)
+        {
+            name_ = root_->GetAttributeString("name");
+            path_ = root_->GetAttributeString("input");
+        }
+        ~hDataParameterSet() 
+        {}
+
+        const hChar* GetResourceName() const { return name_; }
+        const hChar* GetInputFilePath() const { return path_; }
+        const hChar* GetBuildParameter(const hChar* name, const hChar* defaultValue) const
+        {
+            if (!root_->FirstChild(name).ToNode())
+                return defaultValue;
+            const hChar* ret = root_->FirstChild(name).ToNode()->value();
+            return ret != NULL ? ret : defaultValue;
+        }
+        hUint32      GetParameterHash() const
+        {
+            hUint32 ret;
+            hCRC32::StartCRC32(&ret, path_, hStrLen(path_));
+
+            for (hXMLGetter i(root_->FirstChild(NULL)); i.ToNode(); i = i.NextSiblingAny())
+            {
+                hCRC32::ContinueCRC32(&ret, i.ToNode()->name(), i.ToNode()->name_size());
+                if (i.ToNode()->value())
+                {
+                    hCRC32::ContinueCRC32(&ret, i.ToNode()->value(), i.ToNode()->value_size());
+                }
+            }
+
+            hCRC32::FinishCRC32(&ret);
+
+            return ret;
+        }
+    private:
+
+        hXMLGetter*     root_;
+        const hChar*    name_;
+        const hChar*    path_;
+    };
+
+    class HEARTCORE_SLIBEXPORT hDataCacheFile : public hIDataCacheFile
+    {
+    public:
+        hDataCacheFile(hIFile* handle)
+            : handle_(handle)
         {
 
         }
@@ -42,20 +89,66 @@ namespace Heart
 
         }
 
-        hUint32 Read(void* dst, hUint32 size);
-        hUint32 Lenght();
+        hUint32 Read(void* dst, hUint32 size)
+        {
+            return handle_->Read(dst, size);
+        }
+        hUint32 Seek(hUint32 offset, SeekOffset from)
+        {
+            if (from == BEGIN)
+                return handle_->Seek(offset, SEEKOFFSET_BEGIN);
+            else if (from == CURRENT)
+                return handle_->Seek(offset, SEEKOFFSET_CURRENT);
+            else
+                return handle_->Seek(offset, SEEKOFFSET_END);
+        }
+        hUint32 Lenght()
+        {
+            return handle_->Length();
+        }
 
     private:
 
         friend class hBuiltDataCache;
 
-        hdFileHandle handle_;
+        hIFile* handle_;
     };
 
-    class hBuiltDataCache
+    class HEARTCORE_SLIBEXPORT hBuiltDataCache : public hIBuiltDataCache
     {
     public:
+        hBuiltDataCache(hIFileSystem* fileSystem, 
+                        const hChar* packagePath, 
+                        const hChar* resName, 
+                        const hChar* resourcePath, 
+                        hUint32 parameterHash,
+                        hTime libTimeStamp);
 
+        ~hBuiltDataCache()
+        {
+            SaveCacheData();
+        }
+
+        hIDataCacheFile* OpenFile(const hChar* filename);
+        void             CloseFile(hIDataCacheFile* file);
+        void             LoadCacheData();
+        void             SaveCacheData();
+        hBool            IsCacheValid();
+
+    private:
+
+        void                AppendFileTimestampToCache( hIFile* file, const hChar* filepath );
+
+        hXMLDocument        doc_;
+        hTime               libTimestamp_;
+        hUint32             parameterHash_;
+        hIFileSystem*       fileSystem_;
+        const hChar*        packagePack_;
+        const hChar*        resName_;
+        const hChar*        resourcePath_;
+        hBool               checkedCache_;
+        hBool               validCache_;
+        hBool               useCache_;
     };
 }
 

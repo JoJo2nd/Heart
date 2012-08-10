@@ -65,6 +65,7 @@ namespace Heart
 		* @return   void
 		*/
 		void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const;
+        void    CreateDirectory(const hChar* path);
 	};
 }
 

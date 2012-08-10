@@ -108,31 +108,6 @@ namespace Heart
 		renderer_->ReleaseTempRenderMemory( data );
 	}
 */
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hTexture::Serialise( hSerialiser* ser ) const
-    {
-        SERIALISE_ELEMENT( (hUint32&)format_ );
-        SERIALISE_ELEMENT( nLevels_ );
-        SERIALISE_ELEMENT_COUNT( levelDescs_, nLevels_ );
-        SERIALISE_ELEMENT( totalDataSize_ );
-        SERIALISE_ELEMENT_COUNT( textureData_, totalDataSize_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hTexture::Deserialise( hSerialiser* ser )
-    {
-        DESERIALISE_ELEMENT( (hUint32&)format_ );
-        DESERIALISE_ELEMENT( nLevels_ );
-        DESERIALISE_ELEMENT( levelDescs_ );
-        DESERIALISE_ELEMENT( totalDataSize_ );
-        DESERIALISE_ELEMENT( textureData_ );
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -140,13 +115,9 @@ namespace Heart
 
     void hTexture::ReleaseCPUTextureData()
     {
-        if (nLevels_ > 1 || !IsDiskResource())
+        for (hUint32 i = 0; i < nLevels_; ++i)
         {
-            hDELETE_ARRAY_SAFE(GetGlobalHeap()/*!heap*/, levelDescs_);
-        }
-        else
-        {
-            hDELETE_SAFE(GetGlobalHeap()/*!heap*/, levelDescs_);
+            hDELETE_ARRAY_SAFE(GetGlobalHeap(), levelDescs_[i].mipdata_);
         }
     }
 
@@ -157,21 +128,32 @@ namespace Heart
     Heart::hColour hTexture::ReadPixel(hUint32 x, hUint32 y)
     {
         hcAssert(x < Width() && y < Height());
-        if (!textureData_ ||
-            format_ != TFORMAT_ARGB8)
+        if (!levelDescs_[0].mipdata_ || format_ != TFORMAT_ARGB8)
         {
             hcPrintf("Attempt was made to read a pixel from a texture where the CPU resource data"
-                     "has been released. This is automatically for DXT textures on load.");
+                     "has been released. This is done automatically for DXT textures on load.");
             return BLACK;
         }
 
         hColour ret(
-        textureData_[((y*levelDescs_[0].width_*4)+x*4)+0],
-        textureData_[((y*levelDescs_[0].width_*4)+x*4)+1],
-        textureData_[((y*levelDescs_[0].width_*4)+x*4)+2],
-        textureData_[((y*levelDescs_[0].width_*4)+x*4)+3] );
+        levelDescs_[0].mipdata_[((y*levelDescs_[0].width_*4)+x*4)+0],
+        levelDescs_[0].mipdata_[((y*levelDescs_[0].width_*4)+x*4)+1],
+        levelDescs_[0].mipdata_[((y*levelDescs_[0].width_*4)+x*4)+2],
+        levelDescs_[0].mipdata_[((y*levelDescs_[0].width_*4)+x*4)+3] );
 
         return ret;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hTexture::GetDXTTextureSize( hBool dxt1, hUint32 width, hUint32 height )
+    {
+        // compute the storage requirements
+        int blockcount = ( ( width + 3 )/4 ) * ( ( height + 3 )/4 );
+        int blocksize = (dxt1) ? 8 : 16;
+        return blockcount*blocksize;
     }
 
 }

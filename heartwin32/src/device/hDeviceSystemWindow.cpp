@@ -340,4 +340,36 @@ namespace Heart
     {
         FreeLibrary(lib);
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTDEV_SLIBEXPORT hTime HEART_API hd_GetSharedLibTimestamp( hSharedLibAddress lib )
+    {
+        hChar filename[MAX_PATH+1];
+        hUint32 count;
+        hTime modTime = 0;
+        HANDLE filehandle;
+        BY_HANDLE_FILE_INFORMATION fileInfo;
+        
+        count = GetModuleFileName(lib, filename, MAX_PATH );
+
+        if (count < 0)
+            return 0;
+
+        filename[count] = 0;
+        filehandle = CreateFile( filename, GENERIC_READ, TRUE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+        if (filehandle == INVALID_HANDLE_VALUE)
+            return 0;
+
+        GetFileInformationByHandle(filehandle, &fileInfo);
+
+        modTime = (((hUint64)fileInfo.ftLastWriteTime.dwHighDateTime) << 32)  | fileInfo.ftLastWriteTime.dwLowDateTime;
+
+        CloseHandle(filehandle);
+
+        return modTime;
+    }
+
 }

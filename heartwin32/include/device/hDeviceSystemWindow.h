@@ -47,6 +47,7 @@ namespace Heart
 	HEARTDEV_SLIBEXPORT hBool HEART_API                hd_DefaultVsyncSetting();
     HEARTDEV_SLIBEXPORT hSharedLibAddress HEART_API    hd_OpenSharedLib(const hChar* libname);
     HEARTDEV_SLIBEXPORT void HEART_API                 hd_CloseSharedLib(hSharedLibAddress lib);
+    HEARTDEV_SLIBEXPORT hTime HEART_API                hd_GetSharedLibTimestamp(hSharedLibAddress lib);
     HEARTDEV_SLIBEXPORT void* HEART_API                hd_GetFunctionAddress(hSharedLibAddress lib, const char* symbolName);
 
 	class HEARTDEV_SLIBEXPORT hdSystemWindow

@@ -45,24 +45,38 @@ namespace Heart
         hUint32             mask_;
     };
 
+    struct HEARTCORE_SLIBEXPORT hMaterialKeyContainer
+    {
+        hMaterial*  mat_;
+        hUint32     key_; // only 19bits bit, make sure this matches hBuildRenderSortKey()
+
+        hBool operator < (const hMaterialKeyContainer& rhs)
+        {
+            return key_ < rhs.key_;
+        }
+    };
+
     class HEARTCORE_SLIBEXPORT hRenderMaterialManager
     {
     public:
-        hRenderMaterialManager() {}
+        hRenderMaterialManager();
         ~hRenderMaterialManager();
-    
-        void                        Initialise( hResourceManager* resourceManager ) { resourceManager_ = resourceManager; }
-        void                        OnMaterialLoad( hMaterial* mat, hUint32 resId );
-        void                        OnMaterialUnload( hMaterial* mat );
+   
+
+        void                        GetUniqueKey(hMaterial* mat);
+        void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
         const hRenderTechniqueInfo* GetRenderTechniqueInfo( const hChar* name );
 
     private:
 
-        typedef hVector< hRenderTechniqueInfo > TechniqueArrayType;
+        typedef hVector< hRenderTechniqueInfo >     TechniqueArrayType;
+        typedef hVector< hMaterialKeyContainer >    MatKeyArrayType;
 
         hMutex                  accessMutex_;
-        hResourceManager*       resourceManager_;
+        hUint32                 nMatKeys_;
+        hUint32                 maxKeys_;
+        hMaterialKeyContainer*  matKeys_;
         TechniqueArrayType      techniques_;
     };
 }

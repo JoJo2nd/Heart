@@ -127,4 +127,18 @@ namespace
 		hdEnumerateFiles( fullFilename, hdEnumerateFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
 	}
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDriveFileSystem::CreateDirectory( const hChar* path )
+    {
+        hUint32 len = hStrLen( path )+hStrLen( FILE_PREFIX )+1;
+        hChar* fullFilename = (hChar*)hAlloca( len );
+        hStrCopy( fullFilename, len, FILE_PREFIX );
+        hStrCat( fullFilename, len, path );
+
+        hdCreateDirectory(fullFilename);
+    }
+
 }

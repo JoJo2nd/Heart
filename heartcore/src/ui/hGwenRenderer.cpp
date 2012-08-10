@@ -43,6 +43,8 @@ namespace Heart
 
 #define IDX_BUFFER_MAX_SIZE (1024)
 #define VTX_BUFFER_MAX_SIZE (IDX_BUFFER_MAX_SIZE*4)
+#define COLOUR_VTX_LAYOUT   (hrVF_XYZ | hrVF_COLOR)
+#define UV_VTX_LAYOUT       (hrVF_XYZ | hrVF_COLOR | hrVF_1UV)
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -69,8 +71,10 @@ namespace Heart
 
         hcAssert(defaultMaterial_);
 
-        ctx_->SetRendererCamera( &renderCamera_ );
-        ctx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
+        dcCtx_.Begin(renderer_);
+
+        //ctx_->SetRendererCamera( &renderCamera_ );
+        //ctx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -80,6 +84,7 @@ namespace Heart
     void hGwenRenderer::End()
     {
         Flush();
+        dcCtx_.End();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -112,7 +117,7 @@ namespace Heart
         a += GetRenderOffset().x;
         b += GetRenderOffset().y;
 
-        ColourVtx* vtx = (ColourVtx*)vbMap_.ptr_;
+        ColourVtx* vtx = (ColourVtx*)inlineVtxMem_;
         vtx += (primCount_*2);
         
         vtx->x = x;
@@ -146,7 +151,7 @@ namespace Heart
         rect.x += GetRenderOffset().x;
         rect.y += GetRenderOffset().y;
 
-        ColourVtx* vtx = (ColourVtx*)vbMap_.ptr_;
+        ColourVtx* vtx = (ColourVtx*)inlineVtxMem_;
         vtx += (primCount_*3);
 
         vtx->x = rect.x;
@@ -203,7 +208,8 @@ namespace Heart
         rect.top_       = ClipRegion().y;
         rect.right_     = ClipRegion().x+ClipRegion().w;
         rect.bottom_    = ClipRegion().y+ClipRegion().h;
-        ctx_->SetScissorRect(rect);
+        //TODO: support this
+        //ctx_->SetScissorRect(rect);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -215,7 +221,8 @@ namespace Heart
         Flush();
         BeginDrawMode();
 
-        ctx_->SetScissorRect(screenRect_);
+        //TODO: support this
+        //ctx_->SetScissorRect(screenRect_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -226,7 +233,7 @@ namespace Heart
     {
         if (!pTexture->data)
         {
-            hTexture* text = static_cast<hTexture*>(resourceManager_->mtGetResourceAddRef(pTexture->name.Get().c_str()));
+            hTexture* text = static_cast<hTexture*>(resourceManager_->mtGetResource(pTexture->name.Get().c_str()));
 
             if (text)
             {
@@ -241,10 +248,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hGwenRenderer::FreeTexture( Gwen::Texture* pTexture )
+    void hGwenRenderer::FreeTexture( Gwen::Texture* /*pTexture*/ )
     {
-        hTexture* text = static_cast<hTexture*>(pTexture->data);
-        HEART_RESOURCE_SAFE_RELEASE(text);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -267,7 +272,7 @@ namespace Heart
         rect.x += GetRenderOffset().x;
         rect.y += GetRenderOffset().y;
 
-        ColourUVVtx* vtx = (ColourUVVtx*)vbMap_.ptr_;
+        ColourUVVtx* vtx = (ColourUVVtx*)inlineVtxMem_;
         vtx += (primCount_*3);
 
         vtx->x = -0.5f + rect.x;
@@ -337,7 +342,7 @@ namespace Heart
     void hGwenRenderer::LoadFont( Gwen::Font* pFont )
     {
         Gwen::String uri = Gwen::Utility::UnicodeToString(pFont->facename.c_str());
-        pFont->data = resourceManager_->mtGetResourceAddRef(uri.c_str());
+        pFont->data = resourceManager_->mtGetResource(uri.c_str());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -346,8 +351,6 @@ namespace Heart
 
     void hGwenRenderer::FreeFont( Gwen::Font* pFont )
     {
-        hFont* font = static_cast<hFont*>(pFont->data);
-        HEART_RESOURCE_SAFE_RELEASE(font);
         pFont->data = NULL;
     }
 
@@ -363,12 +366,18 @@ namespace Heart
         pos.x += GetRenderOffset().x;
         pos.y += GetRenderOffset().y;
         Gwen::String ctext = Gwen::Utility::UnicodeToString(text);
+
         hFont* font = static_cast<hFont*>(pFont->data);
         hFontStyle style = font->GetFontStyle();
         style.Alignment_ |= FONT_ALIGN_FLIP;
         style.Colour_ = currentColour_;
+
+        BeginTextDraw(font, ctext.length());
+
         font->SetFontStyle(style);
-        font->RenderStringSingleLine( *textIdxBuffer_, *textVtxBuffer_, hCPUVec2((hFloat)pos.x, (hFloat)pos.y), ctext.c_str(), ctx_);
+        font->RenderStringSingleLine( inlineTxtIdxMem_, inlineTxtVtxMem_, hCPUVec2((hFloat)pos.x, (hFloat)pos.y), ctext.c_str());
+
+        EndTextDraw(ctext.length());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -412,70 +421,10 @@ namespace Heart
 
     void hGwenRenderer::Flush()
     {
-        switch (activeDrawMode_)
+        if (inlinePrimCount_ != NULL)
         {
-        case DrawMode_Lines:
-            {
-                ctx_->Unmap(&vbMap_);
-
-                if (primCount_)
-                {
-                    ctx_->SetMaterialInstance( defaultMaterial_ );
-                    hUint32 passes = ctx_->GetMaterialInstancePasses();
-                    for ( hUint32 i = 0; i < passes; ++i )
-                    {
-                        ctx_->BeingMaterialInstancePass( i );
-                        ctx_->SetVertexStream(0, colourVtxBuffer_);
-                        ctx_->SetPrimitiveType(PRIMITIVETYPE_LINELIST);
-                        ctx_->DrawPrimitive(primCount_, 0);
-                        ctx_->EndMaterialInstancePass();
-                    }
-                }
-                primCount_ = 0;
-            }
-            break;
-        case DrawMode_VertexColour:
-            {
-                ctx_->Unmap(&vbMap_);
-
-                if (primCount_)
-                {
-                    ctx_->SetMaterialInstance( defaultMaterial_ );
-                    hUint32 passes = ctx_->GetMaterialInstancePasses();
-                    for ( hUint32 i = 0; i < passes; ++i )
-                    {
-                        ctx_->BeingMaterialInstancePass( i );
-                        ctx_->SetVertexStream(0, colourVtxBuffer_);
-                        ctx_->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
-                        ctx_->DrawPrimitive(primCount_, 0);
-                        ctx_->EndMaterialInstancePass();
-                    }
-                }
-                primCount_ = 0;
-            }
-            break;
-        case DrawMode_Textured:
-            {
-                ctx_->Unmap(&vbMap_);
-
-                if (primCount_)
-                {
-                    ctx_->SetMaterialInstance( uvMaterial_ );
-                    hUint32 passes = ctx_->GetMaterialInstancePasses();
-                    for ( hUint32 i = 0; i < passes; ++i )
-                    {
-                        ctx_->BeingMaterialInstancePass( i );
-                        ctx_->SetVertexStream(0, colourUVVtxBuffer_);
-                        ctx_->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
-                        ctx_->DrawPrimitive(primCount_, 0);
-                        ctx_->EndMaterialInstancePass();
-                    }
-                }
-                primCount_ = 0;
-            }
-            break;
-        default:
-            break;
+            *inlinePrimCount_ = primCount_;
+            inlinePrimCount_ = NULL;
         }
     }
 
@@ -489,10 +438,18 @@ namespace Heart
         {
         case DrawMode_Lines:
         case DrawMode_VertexColour:
-            ctx_->Map(colourVtxBuffer_, &vbMap_);
+            dcCtx_.SubmitDrawCallInline(
+                defaultMaterial_, 
+                &inlineVtxMem_, 
+                VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT), 
+                &inlinePrimCount_, hTrue );
             break;
         case DrawMode_Textured:
-            ctx_->Map(colourUVVtxBuffer_, &vbMap_);
+            dcCtx_.SubmitDrawCallInline(
+                uvMaterial_, 
+                &inlineVtxMem_, 
+                VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT), 
+                &inlinePrimCount_, hTrue );
             break;
         default:
             break;
@@ -503,27 +460,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hGwenRenderer::SubmitCommandsToRenderer()
-    {
-        hdRenderCommandBuffer cb = ctx_->SaveToCommandBuffer();
-        renderer_->SubmitRenderCommandBuffer(cb, hTrue);
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hGwenRenderer::DestroyResources()
     {
-        if (renderer_)
-        {
-            renderer_->DestroyVertexBuffer(colourVtxBuffer_);
-            renderer_->DestroyVertexBuffer(colourUVVtxBuffer_);
-            renderer_->DestroyVertexBuffer(textVtxBuffer_);
-            renderer_->DestroyIndexBuffer(textIdxBuffer_);
+        if (defaultMaterialResource_)
             defaultMaterialResource_->DestroyMaterialInstance(defaultMaterial_);
+        if (uvMaterialResource_)
             uvMaterialResource_->DestroyMaterialInstance(uvMaterial_);
-            renderer_->DestroyRenderSubmissionCtx(ctx_);
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -553,18 +495,15 @@ namespace Heart
         screenRect_.right_  = renderer_->GetWidth();
         screenRect_.bottom_ = renderer_->GetHeight();
 
-        renderer_->CreateVertexBuffer(NULL, VTX_BUFFER_MAX_SIZE, hrVF_XYZ | hrVF_COLOR, RESOURCEFLAG_DYNAMIC, &colourVtxBuffer_);
-        renderer_->CreateVertexBuffer(NULL, VTX_BUFFER_MAX_SIZE, hrVF_XYZ | hrVF_COLOR | hrVF_1UV, RESOURCEFLAG_DYNAMIC, &colourUVVtxBuffer_ );
-
-        renderer_->CreateVertexBuffer(NULL, VTX_BUFFER_MAX_SIZE, hrVF_XYZ | hrVF_COLOR | hrVF_1UV, RESOURCEFLAG_DYNAMIC, &textVtxBuffer_);
-        renderer_->CreateIndexBuffer(NULL, IDX_BUFFER_MAX_SIZE, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &textIdxBuffer_);
-
-        defaultMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResourceWeak("ENGINE/EFFECTS/UI_COLOUR.CFX"));
+        defaultMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_COLOUR"));
         defaultMaterial_ = defaultMaterialResource_->CreateMaterialInstance();
 
-        uvMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResourceWeak("ENGINE/EFFECTS/UI_COLOUR_TEX.CFX"));
+        uvMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_UV"));
         uvMaterial_ = uvMaterialResource_->CreateMaterialInstance();
         uvSampler_ = uvMaterial_->GetSamplerParameterByName("diffuseSampler");
+
+        textVtxStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
+
         // 
         renderCamera_.Initialise( renderer_ );
         renderCamera_.SetOrthoParams( 0, 0, (hFloat)screenRect_.right_, (hFloat)screenRect_.bottom_, -0.0f, 2.0f );
@@ -572,9 +511,37 @@ namespace Heart
         renderCamera_.SetViewport( hViewport( 0, 0, screenRect_.right_, screenRect_.bottom_ ) );
         renderCamera_.SetTechniquePass(renderer_->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-        ctx_ = renderer_->CreateRenderSubmissionCtx();
-
         createdResources_ = hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hGwenRenderer::BeginTextDraw(hFont* font, hUint32 nChars)
+    {
+        if (font != activeFont_ || nChars > charactersLeft_)
+        {
+            activeFont_ = font;
+            charactersLeft_ = hMax(256, nChars);
+            dcCtx_.SubmitDrawCallInline(
+                activeFont_->GetMaterialInstance(),
+                &inlineTxtIdxMem_, charactersLeft_*6*sizeof(hUint16), 
+                &inlineTxtVtxMem_, charactersLeft_*4*textVtxStride_, 
+                &inlineTxtPC_, hTrue);
+        }
+        
+        charactersLeft_ -= nChars;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hGwenRenderer::EndTextDraw( hUint32 nChars )
+    {
+        inlineTxtIdxMem_ += sizeof(hUint16)*charactersLeft_;
+        inlineTxtVtxMem_ += textVtxStride_*charactersLeft_;
     }
 
 }

@@ -43,9 +43,20 @@ namespace rapidxml
     //! </pre>
     //! \param what Human readable description of the error.
     //! \param where Pointer to character data where error was detected.
-    void parse_error_handler(const char *what, void *where)
+    HEARTCORE_SLIBEXPORT void HEART_API parse_error_handler(const char *what, void *where)
     {
         hcPrintf( "XML Parse Error: %s", what );
         throw std::exception( what );
+    }
+}
+namespace Heart
+{
+    HEARTCORE_SLIBEXPORT void* HEART_API hXML_alloc_func(size_t size )
+    {
+        return hMalloc( size );
+    }
+    HEARTCORE_SLIBEXPORT void HEART_API hXML_free_func(void* ptr )
+    {
+        hFree( ptr );
     }
 }

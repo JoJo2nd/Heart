@@ -41,6 +41,23 @@ namespace Heart
         hString( const hChar* c ) 
             : std::basic_string< char, std::char_traits<char>, HeapAllocator< char > >( c )
         {}
+
+        void RemoveAfterLastEx(hChar ch)
+        {
+            size_t pos = find_last_of(ch);
+            if (pos != npos)
+                resize(pos+1);
+        }
+
+        void RemoveAfterLastInc(hChar ch)
+        {
+            size_t pos = find_last_of(ch);
+            if (pos != npos)
+            {
+                resize(pos);
+            }
+        }
+
     private:
     };
 }

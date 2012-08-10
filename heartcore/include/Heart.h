@@ -140,6 +140,7 @@ extern "C"
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "utils/hProfiler.h"
+#include "utils/hBuiltDataCache.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Input //////////////////////////////////////////////////////////////////////////////////////////
@@ -175,8 +176,9 @@ extern "C"
 #include "render/hRenderSubmissionContext.h"
 #include "render/hVertexDeclarations.h"
 #include "render/hRenderMaterialManager.h"
-#include "render/hRenderer.h"
 #include "render/hRendererCamera.h"
+#include "render/hRenderer.h"
+#include "render/hDrawCallContext.h"
 #include "render/hFont.h"
 //#include "hMesh.h"
 #include "render/hRenderUtility.h"

@@ -64,13 +64,25 @@ namespace Heart
     }
 
     HEARTBASE_SLIBEXPORT
-    inline hChar* HEART_API hStrChr( const hChar* s1, hChar ch)
+    inline hChar* HEART_API hStrChr( hChar* s1, hChar ch)
     {
         return strchr(s1,(hInt)ch);
     }
 
     HEARTBASE_SLIBEXPORT
-    inline hChar* HEART_API hStrRChr( const hChar* s1, hChar ch)
+    inline hChar* HEART_API hStrRChr( hChar* s1, hChar ch)
+    {
+        return strrchr(s1,(hInt)ch);
+    }
+
+    HEARTBASE_SLIBEXPORT
+    inline const hChar* HEART_API hStrChr( const hChar* s1, hChar ch)
+    {
+        return strchr(s1,(hInt)ch);
+    }
+
+    HEARTBASE_SLIBEXPORT
+    inline const hChar* HEART_API hStrRChr( const hChar* s1, hChar ch)
     {
         return strrchr(s1,(hInt)ch);
     }

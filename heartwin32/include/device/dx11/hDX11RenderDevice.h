@@ -69,14 +69,14 @@ namespace Heart
         hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count );
         void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
         void                            DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count );
-        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, void** initialData, hUint32* initDataSize, hUint32 flags );
+        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );
         void                            DestroyTexture( hdDX11Texture* texture );
-        hdDX11IndexBuffer*              CreateIndexBuffer( hUint32 sizeInBytes, void* initialData, hUint32 flags );
-        void                            DestroyIndexBuffer( hdDX11IndexBuffer* indexBuffer );
+        hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );
+        void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
         hdDX11VertexLayout*             CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen );
         void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
-        hdDX11VertexBuffer*             CreateVertexBuffer( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialData, hUint32 flags );
-        void                            DestroyVertexBuffer( hdDX11VertexBuffer* indexBuffer );
+        hdDX11VertexBuffer*             CreateVertexBufferDevice( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialData, hUint32 flags );
+        void                            DestroyVertexBufferDevice( hdDX11VertexBuffer* indexBuffer );
         hdDX11BlendState*               CreateBlendState( const hBlendStateDesc& desc );
         void                            DestroyBlendState( hdDX11BlendState* state );
         hdDX11RasterizerState*          CreateRasterizerState( const hRasterizerStateDesc& desc );
@@ -86,10 +86,6 @@ namespace Heart
         hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
         void                            DestroySamplerState( hdDX11SamplerState* state );
         void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
-
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        void                            SetPIXDebuggingMutex( hMutex* mutex ) { pixMutex_ = mutex; }
-#endif
 
     private:
 
@@ -121,9 +117,6 @@ namespace Heart
         SamplerStateMapType         samplerStateMap_;
         VertexLayoutMapType         vertexLayoutMap_;
 
-#ifdef HEART_ALLOW_PIX_MT_DEBUGGING
-        hMutex*                     pixMutex_;
-#endif
     };
 
 }

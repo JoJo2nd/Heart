@@ -34,53 +34,29 @@ namespace Heart
 	class hRenderer;
     class hRenderMaterialManager;
 	class hIFile;
+    class HeartEngine;
 
 	class hResourceManager;
 	struct hLoadedResourceInfo;
 	class hIReferenceCounted;
 
-	static const hUint32			RESOURCE_PATH_SIZE = 1024;
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    typedef hResourceClassBase* (*OnResourceDataLoad)       (hIDataCacheFile*, hIBuiltDataCache*);
-    typedef hResourceClassBase* (*OnResourceDataLoadRaw)    (hIDataCacheFile*, hIBuiltDataCache*);
-    typedef void                (*OnPackageLoadComplete)    (hResourceClassBase*);
-    typedef void                (*OnResourceDataUnload)     (hResourceClassBase*);
-    typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*);
-
-    struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
-    {
-        hResourceType           type_;
-        const hChar*            libPath_;
-        hSharedLibAddress       loaderLib_;
-        OnResourceDataLoad      binLoader_;
-        OnResourceDataLoadRaw   rawLoader_;
-        OnPackageLoadComplete   packageLinkComplete_;
-        OnResourceDataUnload    resourceDataUnload_;
-        OnPackageUnloadComplete packageUnload_;
-    };
-
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	struct hResourceLoadRequest : public hMapElement< hUint32, hResourceLoadRequest >
+	struct hLoadedResourcePackages : public hMapElement< hUint32, hLoadedResourcePackages >,
+                                     public hIReferenceCounted
 	{
-		hResourceLoadRequest() 
-			: path_( NULL )
-			, crc32_( 0 )
-            , loadCounter_(NULL)
-		{}
+        hLoadedResourcePackages() 
+            : loading_(hFalse)
+            , package_(NULL)
+		{
+            hZeroMem(path_, sizeof(HEART_RESOURCE_PATH_SIZE));
+        }
 
-	private:
-		friend class hResourceManager; 
-
-		hChar*					        path_;
-		hUint32							crc32_;
-        hUint32*                        loadCounter_;
+		hChar					        path_[HEART_RESOURCE_PATH_SIZE];
+        hBool                           loading_;
+        hResourcePackageV2*             package_;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -103,35 +79,27 @@ namespace Heart
         hResourceManager();
         ~hResourceManager();
 
-        hBool                           Initialise( hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
-        hBool                           RequiredResourcesReady() { return hFalse; }
+        hBool                           Initialise( HeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
+        hBool                           RequiredResourcesReady();
         void                            MainThreadUpdate();
         static hUint32                  BuildResourceCRC( const hChar* resourceName );
-        void                            SetResourceHandlers( const hChar* typeExt, ResourceLoadCallback onLoad, ResourceUnloadCallback onUnload, void* pUserData ) {}
-        hUint32                         GetResourceKeyRemapping( hUint32 key ) const;
-        hResourceClassBase*             LoadResourceFromPath( const hChar* path ) { return NULL; }
-        void                            QueueResourceSweep() { hAtomic::Increment( resourceSweepCount_ ); }
-        void                            Post() { loaderSemaphone_.Post(); }
+        static hResourceID              BuildResourceID(const hChar* fullPath);
+        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName);
         void                            Shutdown( hRenderer* prenderer );
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }
 
-        //Resource Thread interface
-        hResourceClassBase*             ltGetResourceAddRef(hUint32 crc) { return NULL; }
-        hResourceClassBase*             ltGetResourceWeak(hUint32 crc) { return NULL; }
-
         //Main Thread interface
-        void                            mtLoadResource(const hChar* path){}
-        hResourceClassBase*             mtGetResourceAddRef(const hChar* path){ return NULL; }
-        hResourceClassBase*             mtGetResourceAddRef(hUint32 crc){ return NULL; }
-        hResourceClassBase*             mtGetResourceWeak(const hChar* path){ return NULL; }
-        hResourceClassBase*             mtGetResourceWeak(hUint32 crc){ return NULL; }
+        hResourceClassBase*             mtGetResource(const hChar* path);
+        hResourceClassBase*             mtGetResource(hResourceID crc);
+
+        //Loader thread interface   
+        hResourceClassBase*             ltGetResource(hResourceID crc);
 
         // New interface
-        hUint32                         mtLoadPackage(const hChar* name);
-        void                            mtUnloadPackage();
+        void                            mtLoadPackage(const hChar* name);
+        void                            mtUnloadPackage(const hChar* name);
         hBool                           mtIsPackageLoaded(const hChar* name);
-        hResourceClassBase*             mtGetResoruce(const hChar* resourceName);
 
     private:
         // New Private calls
@@ -141,52 +109,35 @@ namespace Heart
 
         static const hUint32 QUEUE_MAX_SIZE = 64;
 
-		struct ResourceHandler : public hMapElement< hResourceType, ResourceHandler >
-		{
-			ResourceLoadCallback		loadCallback;
-			ResourceUnloadCallback		unloadCallback;
-		};
-
-        struct ResourceRemap : public hMapElement< hUint32, ResourceRemap >
-        {
-            hUint32 mapToPath;
-        };
-
         struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
         {
             hStreamingResourceBase*     stream_;
         };
 
-        struct MainThreadResourceHandle : public hMapElement< hUint32, MainThreadResourceHandle >
+        struct ResourcePackageQueueMsg
         {
-            hUint32                     resourceKey_;
-            hResourceClassBase*         resource_;
+            hResourcePackageV2*         package_;
         };
 
-        typedef hMap< hResourceType, ResourceHandler >              ResourceHandlerMap;
-        typedef hMap< hUint32, hResourceClassBase >                 ResourceMap;
-        typedef hMap< hUint32, MainThreadResourceHandle >           MainThreadResourceMap;
+        struct ResourcePackageLoadMsg
+        {
+            hChar					    path_[HEART_RESOURCE_PATH_SIZE];
+        };
+
         typedef hMap< hUint32, StreamingResouce >                   StreamingResourceMap;
-        typedef hMap< hUint32, hResourceLoadRequest >               ResourceLoadRequestMap;
-        typedef hMap< hUint32, ResourceRemap >                      ResourceRemappingMapType;
-        typedef hQueue< hResourceLoadRequest, QUEUE_MAX_SIZE >      ResourceLoadRequestQueue;
-        typedef hQueue< MainThreadResourceHandle, QUEUE_MAX_SIZE >  ResourceHandleQueue;
+        typedef hMap< hUint32, hResourcePackageV2 >                 ResourcePackageMap;
+        typedef hMap< hUint32, hLoadedResourcePackages >            LoadedResourcePackageMap;
+        typedef hQueue< ResourcePackageLoadMsg, QUEUE_MAX_SIZE >    ResourceLoadRequestQueue;
+        typedef hQueue< ResourcePackageQueueMsg, QUEUE_MAX_SIZE >   ResourceMsgQueue;
 
         hUint32                         LoadedThreadFunc( void* );
-        hResourceClassBase*             CompleteLoadRequest( hResourceLoadRequest* request );
-        hBool                           EnumerateAndLoadDepFiles( const hFileInfo* fileInfo );
-        void                            LoadResourceRemapTable();
 
         static void*                    resourceThreadID_;
 
 		//NEW
-		hIFileSystem*					filesystem_;
         hRenderer*                      renderer_;
         hRenderMaterialManager*         materialManager_;
-		ResourceHandlerMap				resHandlers_;
-        hUint32                         remappingNamesSize_;
-        hChar*                          remappingNames_;
-        ResourceRemappingMapType        remappings_;//this is const, so read accross threads are safe
+        hIFileSystem*                   filesystem_;
 
 		//
 		hThread							resourceLoaderThread_;
@@ -195,32 +146,28 @@ namespace Heart
 		hAtomicInt          			resourceSweepCount_;
 
         //Loader Thread var
-        ResourceLoadRequestQueue        loadRequests_;
-        ResourceHandleQueue             completedLoads_;
-        ResourceHandleQueue             unloadRequests_;
-		ResourceMap                     loadedResources_;
-        StreamingResourceMap            streamingResources_;
-		hVector< const hChar* >			requiredResourceKeys_;
-		hVector< hResourceClassBase* >	requiredResources_;
-        hResourcePackage                requiredResourcesPackage_;
-        hBool                           gotRequiredResources_;
+        ResourceLoadRequestQueue        ltLoadRequests_;
+        ResourceMsgQueue                ltUnloadRequest_;
+        ResourcePackageMap              ltLoadedPackages_;
 
+        //Intermediate-ish Vars
+        hMutex                          ltAccessMutex_;
+        ResourceMsgQueue                ltPackageLoadCompleteQueue_;
+        
         //Main Thread vars
-        MainThreadResourceMap           mtResourceMap_;
+        LoadedResourcePackageMap        mtLoadedPackages_;
         ResourceLoadRequestQueue        mtLoadRequests_;
-        ResourceHandleQueue             mtResourceLoadedQueue_;
+        ResourceMsgQueue                mtUnloadRequest_;
 
-        //Intermediate Vars
-        hMutex                          ivAccessMutex_;
-        ResourceLoadRequestQueue        ivLoadRequests_;
-        ResourceHandleQueue             ivResourceLoadedQueue_;
-        ResourceHandleQueue             ivResourceUnloadedQueue_;
+        
 
         //New vars
-        typedef hMap< hResourceType, hResourceHandler > NewResourceHandlerMap;
-
         hXMLDocument                    gamedataDescXML_;
-        NewResourceHandlerMap           resourceHandlers_;
+        hResourceHandlerMap             resourceHandlers_;
+
+        //main thread loaded packages
+
+        HeartEngine*                    engine_;
 	};
 
 }
