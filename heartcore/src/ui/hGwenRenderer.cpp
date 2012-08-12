@@ -54,6 +54,8 @@ namespace Heart
     {
         renderer_ = renderer;
         resourceManager_ = resourceManager;
+        tmpIB = (hUint16*)hHeapMalloc(GetGlobalHeap(), IDX_BUFFER_MAX_SIZE*sizeof(hUint16));
+        tmpVB = (hByte*)hHeapMalloc(GetGlobalHeap(), VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT));
     }
 
 
@@ -65,16 +67,16 @@ namespace Heart
     {
         currentTexture_ = NULL;
         activeDrawMode_ = DrawMode_None;
+        depth_ = 0.f;
 
         if (!createdResources_)
             CreateRenderResources();
 
         hcAssert(defaultMaterial_);
 
+        dcCtx_.SetCameraID(rndCameraID_);
+        dcCtx_.SetRenderLayer(0);
         dcCtx_.Begin(renderer_);
-
-        //ctx_->SetRendererCamera( &renderCamera_ );
-        //ctx_->SetWorldMatrix( Heart::hMatrixFunc::identity() );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -118,7 +120,7 @@ namespace Heart
         b += GetRenderOffset().y;
 
         ColourVtx* vtx = (ColourVtx*)inlineVtxMem_;
-        vtx += (primCount_*2);
+        inlineVtxMem_ += (primCount_*2);
         
         vtx->x = x;
         vtx->y = y;
@@ -152,7 +154,7 @@ namespace Heart
         rect.y += GetRenderOffset().y;
 
         ColourVtx* vtx = (ColourVtx*)inlineVtxMem_;
-        vtx += (primCount_*3);
+        inlineVtxMem_ += (primCount_*3);
 
         vtx->x = rect.x;
         vtx->y = rect.y;
@@ -369,7 +371,7 @@ namespace Heart
 
         hFont* font = static_cast<hFont*>(pFont->data);
         hFontStyle style = font->GetFontStyle();
-        style.Alignment_ |= FONT_ALIGN_FLIP;
+        style.Alignment_ |= 0;
         style.Colour_ = currentColour_;
 
         BeginTextDraw(font, ctext.length());
@@ -421,10 +423,31 @@ namespace Heart
 
     void hGwenRenderer::Flush()
     {
-        if (inlinePrimCount_ != NULL)
+        if (primCount_ != 0)
         {
-            *inlinePrimCount_ = primCount_;
-            inlinePrimCount_ = NULL;
+            switch(activeDrawMode_)
+            {
+            case DrawMode_Lines:
+            case DrawMode_VertexColour:
+                dcCtx_.SubmitDrawCallInline(
+                    defaultMaterial_, NULL, 0,
+                    tmpVB, primCount_*4*currentStride_,
+                    primCount_, currentStride_,
+                    hTrue, depth_ );
+                break;
+            case DrawMode_Textured:
+                dcCtx_.SubmitDrawCallInline(
+                    uvMaterial_, NULL, 0,
+                    tmpVB, primCount_*4*currentStride_,
+                    primCount_, currentStride_,
+                    hTrue, depth_ );
+                break;
+            default:
+                break;
+            }
+
+            primCount_ = 0;
+            depth_ += 1.f;
         }
     }
 
@@ -438,18 +461,12 @@ namespace Heart
         {
         case DrawMode_Lines:
         case DrawMode_VertexColour:
-            dcCtx_.SubmitDrawCallInline(
-                defaultMaterial_, 
-                &inlineVtxMem_, 
-                VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT), 
-                &inlinePrimCount_, hTrue );
+                currentStride_ = renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT);
+                inlineVtxMem_ = tmpVB;
             break;
         case DrawMode_Textured:
-            dcCtx_.SubmitDrawCallInline(
-                uvMaterial_, 
-                &inlineVtxMem_, 
-                VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT), 
-                &inlinePrimCount_, hTrue );
+                currentStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
+                inlineVtxMem_ = tmpVB;
             break;
         default:
             break;
@@ -496,20 +513,18 @@ namespace Heart
         screenRect_.bottom_ = renderer_->GetHeight();
 
         defaultMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_COLOUR"));
+        if (!defaultMaterialResource_)
+            return;
         defaultMaterial_ = defaultMaterialResource_->CreateMaterialInstance();
 
         uvMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_UV"));
+        if (!uvMaterialResource_)
+            return;
         uvMaterial_ = uvMaterialResource_->CreateMaterialInstance();
         uvSampler_ = uvMaterial_->GetSamplerParameterByName("diffuseSampler");
+        hcAssert(uvSampler_);
 
         textVtxStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
-
-        // 
-        renderCamera_.Initialise( renderer_ );
-        renderCamera_.SetOrthoParams( 0, 0, (hFloat)screenRect_.right_, (hFloat)screenRect_.bottom_, -0.0f, 2.0f );
-        renderCamera_.SetViewMatrix( hMatrixFunc::identity() );
-        renderCamera_.SetViewport( hViewport( 0, 0, screenRect_.right_, screenRect_.bottom_ ) );
-        renderCamera_.SetTechniquePass(renderer_->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
         createdResources_ = hTrue;
     }
@@ -520,18 +535,11 @@ namespace Heart
 
     void hGwenRenderer::BeginTextDraw(hFont* font, hUint32 nChars)
     {
-        if (font != activeFont_ || nChars > charactersLeft_)
-        {
-            activeFont_ = font;
-            charactersLeft_ = hMax(256, nChars);
-            dcCtx_.SubmitDrawCallInline(
-                activeFont_->GetMaterialInstance(),
-                &inlineTxtIdxMem_, charactersLeft_*6*sizeof(hUint16), 
-                &inlineTxtVtxMem_, charactersLeft_*4*textVtxStride_, 
-                &inlineTxtPC_, hTrue);
-        }
-        
-        charactersLeft_ -= nChars;
+        Flush();
+        activeFont_ = font;
+        charactersLeft_ = hMin(256, nChars);
+        inlineTxtIdxMem_ = (hByte*)tmpIB;
+        inlineTxtVtxMem_ = tmpVB;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -540,8 +548,14 @@ namespace Heart
 
     void hGwenRenderer::EndTextDraw( hUint32 nChars )
     {
-        inlineTxtIdxMem_ += sizeof(hUint16)*charactersLeft_;
-        inlineTxtVtxMem_ += textVtxStride_*charactersLeft_;
+        dcCtx_.SubmitDrawCallInline(
+            activeFont_->GetMaterialInstance(),
+            inlineTxtIdxMem_, nChars*6*sizeof(hUint16), 
+            inlineTxtVtxMem_, nChars*4*textVtxStride_, 
+            nChars*2, textVtxStride_,
+            hTrue, depth_);
+
+        depth_ += 1.f;
     }
 
 }

@@ -28,6 +28,7 @@ namespace Heart
 		void				            Update();
         void                            EndOfFrameUpdate();
         hdKeyboard*                     GetSystemKeyboard() const { return keyboard_; }
+        hdMouse*                        GetSystemMouse() const { return mouse_; }
 
         static hUint32                  GetInputIDPairCount();
         static const hdInputIDPair*     GetInputIDPairArray();

@@ -154,21 +154,22 @@ namespace Heart
 		case WM_CLOSE:
 			//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::QuitRequestedEvent() );
 			PostQuitMessage( 0 );
+            exit(0);
 			return 0;
 		case WM_ACTIVATE:
 			{
-				GetCursorPos( &prevMousePos_ );
+// 				GetCursorPos( &prevMousePos_ );
+//                 mouse_->SetMousePosition((hFloat)prevMousePos_.x, (hFloat)prevMousePos_.y);
 			}
 			return 0;
 		case WM_KEYDOWN:
 			{
-				hBool repeat = (lParam & 0x40000000) == 0x40000000;
-				//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( wParam, hTrue, repeat ) );
+				keyboard_.SetButton(wParam, hButtonState_IS_DOWN);
 			}
 			break;
 		case WM_KEYUP:
 			{
-				//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( wParam, hFalse, hFalse ) ); 
+				keyboard_.SetButton(wParam, hButtonState_IS_UP); 
 			}
 			break;
         case WM_MOUSEWHEEL:
@@ -178,41 +179,41 @@ namespace Heart
             break;
         case WM_LBUTTONDOWN:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hTrue, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON1, hButtonState_IS_DOWN);
             }
             break;
         case WM_LBUTTONUP:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_LEFTMOUSEBUTTON, hFalse, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON1, hButtonState_IS_UP);
             }
             break;
         case WM_RBUTTONDOWN:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hTrue, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON2, hButtonState_IS_DOWN);
             }
             break;
         case WM_RBUTTONUP:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_RIGHTMOUSEBUTTON, hFalse, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON2, hButtonState_IS_UP);
             }
             break;
         case WM_MBUTTONDOWN:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hTrue, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON3, hButtonState_IS_DOWN);
             }
             break;
         case WM_MBUTTONUP:
             {
-                //pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardInputEvent( Device::IID_MIDDLEMOUSEBUTTON, hFalse, hFalse ) ); 
+                mouse_.SetButton(HEART_MOUSE_BUTTON3, hButtonState_IS_UP);
             }
             break;
 		case WM_CHAR:
 			{
-				hChar charcode = ( wParam & 0x7F );
-				if ( charcode > 0 )
-				{
-					//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::KeyboardCharacterEvent( charcode ) );
-				}
+                hChar charcode = ( wParam & 0x7F );
+                if ( charcode > 0 )
+                {
+                    keyboard_.PushCharacterEvent(charcode);
+                }
 			}
 			break;
 		default:
@@ -234,22 +235,8 @@ namespace Heart
 
 			GetClientRect( hWnd_, &r );
 			GetWindowRect( hWnd_, &w );
-
 			GetCursorPos( &mouse );
-
-			//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::MouseMoveEvent(prevMousePos_.x - mouse.x, prevMousePos_.y - mouse.y, wheelMove_) );
-
-			prevMousePos_.x = w.left + (r.right/2);
-			prevMousePos_.y = w.top + (r.bottom/2);
-            wheelMove_ = 0;
-
-		    SetCursorPos( prevMousePos_.x, prevMousePos_.y );
-
-			ShowCursor( false );
-		}
-		else
-		{
-			ShowCursor( true );
+            mouse_.SetMousePosition((hFloat)(mouse.x-w.left), (hFloat)(mouse.y-w.top-(((w.bottom-w.top)-r.bottom))));
 		}
 
 		PumpMessages();

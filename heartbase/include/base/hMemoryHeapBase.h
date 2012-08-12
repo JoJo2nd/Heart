@@ -68,6 +68,8 @@ public:
 
 HEARTBASE_SLIBEXPORT void               HEART_API SetGlobalHeap(hMemoryHeapBase*);
 HEARTBASE_SLIBEXPORT hMemoryHeapBase*   HEART_API GetGlobalHeap();
+HEARTBASE_SLIBEXPORT void               HEART_API SetDebugHeap(hMemoryHeapBase*);
+HEARTBASE_SLIBEXPORT hMemoryHeapBase*   HEART_API GetDebugHeap();
 
 }
 

@@ -175,6 +175,7 @@ hUint32 hFont::RenderStringSingleLine(void* iBuffer, void* vBuffer, const hCPUVe
     const hChar* pforstr = str;
     hUint16 iOffset = 0;//iBuffer.GetIndexCount(); 
     hUint16 vOffset = 0;//vBuffer.VertexCount();
+    hFloat fh = (hFloat)fontHeight_;
 
     hUint16* idx = (hUint16*)iBuffer;
     Vex* vtx = (Vex*)vBuffer;
@@ -187,14 +188,14 @@ hUint32 hFont::RenderStringSingleLine(void* iBuffer, void* vBuffer, const hCPUVe
         const hFontCharacter& c = *GetFontCharacter( *str );
 
         // ordered top left, top right, bottom left, bottom right
-        hFloat h1 = (style_.Alignment_ & FONT_ALIGN_FLIP) ? (hFloat)fontHeight_ -c.height_ /*-(hFloat)c.BaseLine_*/   : (hFloat)c.height_ /*+ (hFloat)c.BaseLine_*/;
-        hFloat h2 = (style_.Alignment_ & FONT_ALIGN_FLIP) ? (hFloat)fontHeight_ /*-c.BaseLine_*/                      : /*(hFloat)c.BaseLine_*/0;
+        hFloat h1 = /*(style_.Alignment_ & FONT_ALIGN_FLIP) ?*/ (c.yOffset_+c.height_)            ;// : 0;
+        hFloat h2 = /*(style_.Alignment_ & FONT_ALIGN_FLIP) ?*/ (c.yOffset_)  ;// : c.height_;
         Vex quad[ 4 ] = 
         {
-            { hCPUVec3( startx			    , starty+h1, 0.0f ), style_.Colour_, c.UV1_ },
-            { hCPUVec3( startx + c.width_	, starty+h1, 0.0f ), style_.Colour_, hCPUVec2( c.UV2_.x, c.UV1_.y ) },
-            { hCPUVec3( startx			    , starty+h2, 0.0f ), style_.Colour_, hCPUVec2( c.UV1_.x, c.UV2_.y ) },
-            { hCPUVec3( startx + c.width_	, starty+h2, 0.0f ), style_.Colour_, c.UV2_ },
+            { hCPUVec3( startx + c.xOffset_			    , starty+h1, 0.0f ), style_.Colour_, c.UV1_ },
+            { hCPUVec3( startx + c.xOffset_ + c.width_	, starty+h1, 0.0f ), style_.Colour_, hCPUVec2( c.UV2_.x, c.UV1_.y ) },
+            { hCPUVec3( startx + c.xOffset_             , starty+h2, 0.0f ), style_.Colour_, hCPUVec2( c.UV1_.x, c.UV2_.y ) },
+            { hCPUVec3( startx + c.xOffset_ + c.width_	, starty+h2, 0.0f ), style_.Colour_, c.UV2_ },
         };
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////

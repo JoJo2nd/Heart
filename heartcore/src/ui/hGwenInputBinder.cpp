@@ -34,48 +34,17 @@ namespace Heart
 
     void hGwenInputBinder::Update()
     {
-        if ( !canvas_ || !keyboard_ )
+        if ( !canvas_ || !keyboard_ || !mouse_ )
             return;
 
-        hFloat newX = 0;//TODO:FIX keyboard_->GetAxis(Device::IID_MOUSEXAXIS).anologueVal_;
-        hFloat newY = 0;//TODO:FIX keyboard_->GetAxis(Device::IID_MOUSEYAXIS).anologueVal_;
+        canvas_->InputMouseMoved(mouse_->GetAbsoluteX(), mouse_->GetAbsoluteY(), 0, 0);
+        //canvas_->InputMouseMoved(mouse_->GetAbsoluteX(), mouse_->GetAbsoluteY(), -mouse_->GetDeltaX(), -mouse_->GetDeltaX());
 
-        //if (newX != mouseX_ || newY != mouseY_)
-        {
-            mouseX_ = Math::Util::Clamp(mouseX_-newX, (hFloat)canvas_->GetBounds().x, (hFloat)canvas_->GetBounds().w);
-            mouseY_ = Math::Util::Clamp(mouseY_-newY, (hFloat)canvas_->GetBounds().y, (hFloat)canvas_->GetBounds().h);
-            canvas_->InputMouseMoved(mouseX_, mouseY_, -newX, -newY);
-        }
+        //canvas_->InputMouseWheel(keyboard_->GetAxis(Device::IID_MOUSEWHEEL).anologueVal_);
 
-#if 0
-        canvas_->InputMouseWheel(keyboard_->GetAxis(Device::IID_MOUSEWHEEL).anologueVal_);
-
-        if (keyboard_->GetButtonDown(Device::IID_LEFTMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(0,true);
-        }
-        if (keyboard_->GetButtonDown(Device::IID_RIGHTMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(1,true);
-        }
-        if (keyboard_->GetButtonDown(Device::IID_MIDDLEMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(2,true);
-        }
-
-        if (keyboard_->GetButtonUp(Device::IID_LEFTMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(0,false);
-        }
-        if (keyboard_->GetButtonUp(Device::IID_RIGHTMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(1,false);
-        }
-        if (keyboard_->GetButtonUp(Device::IID_MIDDLEMOUSEBUTTON))
-        {
-            canvas_->InputMouseButton(2,false);
-        }
-#endif
+        canvas_->InputMouseButton(0,mouse_->GetButton(HEART_MOUSE_BUTTON1).buttonVal_);
+        canvas_->InputMouseButton(1,mouse_->GetButton(HEART_MOUSE_BUTTON2).buttonVal_);
+        canvas_->InputMouseButton(2,mouse_->GetButton(HEART_MOUSE_BUTTON3).buttonVal_);
 
         const hChar* str = keyboard_->GetCharBufferData();
         for(; *str; ++str)
@@ -83,29 +52,22 @@ namespace Heart
             canvas_->InputCharacter(*str);
         }
 
-#if 0
-        for (hUint32 i = 0; i < keyboard_->GetBufferKeysSize(); ++i)
-        {
-            switch(keyboard_->GetBufferedKeys()[i].buttonID_)
-            {
-            case Device::IID_LEFTCTRL: canvas_->InputKey(Gwen::Key::Control,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_RIGHTCTRL: canvas_->InputKey(Gwen::Key::Control,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_LEFTSHIFT: canvas_->InputKey(Gwen::Key::Shift,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_RIGHTSHIFT: canvas_->InputKey(Gwen::Key::Shift,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_TAB: canvas_->InputKey(Gwen::Key::Tab,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_RETURN: canvas_->InputKey(Gwen::Key::Return,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_ALT: canvas_->InputKey(Gwen::Key::Alt,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_UPARROW: canvas_->InputKey(Gwen::Key::Up,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_DOWNARROW: canvas_->InputKey(Gwen::Key::Down,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_LEFTARROW: canvas_->InputKey(Gwen::Key::Left,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_RIGHTARROW: canvas_->InputKey(Gwen::Key::Right,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_DELETE: canvas_->InputKey(Gwen::Key::Delete,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            case Device::IID_BACKSPACE: canvas_->InputKey(Gwen::Key::Backspace,keyboard_->GetBufferedKeys()[i].state_ == Device::IS_DOWN); break;
-            default:
-                break;
-            }
-        }
-#endif
+        canvas_->InputKey(Gwen::Key::Control,keyboard_->GetButton(VK_CONTROL).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Shift,keyboard_->GetButton(VK_LSHIFT).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Shift,keyboard_->GetButton(VK_RSHIFT).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Tab,keyboard_->GetButton(VK_TAB).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Return,keyboard_->GetButton(VK_RETURN).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Alt,keyboard_->GetButton(VK_RMENU).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Alt,keyboard_->GetButton(VK_LMENU).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Up,keyboard_->GetButton(VK_UP).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Down,keyboard_->GetButton(VK_DOWN).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Left,keyboard_->GetButton(VK_LEFT).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Right,keyboard_->GetButton(VK_RIGHT).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Delete,keyboard_->GetButton(VK_DELETE).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Backspace,keyboard_->GetButton(VK_BACK).buttonVal_);
+        canvas_->InputKey(Gwen::Key::Home,keyboard_->GetButton(VK_HOME).buttonVal_);
+        canvas_->InputKey(Gwen::Key::End,keyboard_->GetButton(VK_END).buttonVal_);
+
     }
 
 }

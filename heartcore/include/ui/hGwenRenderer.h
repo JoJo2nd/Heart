@@ -39,6 +39,8 @@ namespace Heart
         ~hGwenRenderer() 
         {}
 
+        void SetRenderCameraID(hByte layer) { rndCameraID_ = layer; }
+
         void Initialise(hRenderer* renderer, hResourceManager* resourceManager);
         void DestroyResources();
         void Begin();
@@ -105,6 +107,8 @@ namespace Heart
         const hSamplerParameter*    uvSampler_;
         hByte*                      inlineVtxMem_;
         hUint16*                    inlinePrimCount_;
+        hUint32*                    inlineVBSize_;
+        hUint32                     currentStride_;
         hByte*                      inlineTxtVtxMem_;
         hByte*                      inlineTxtIdxMem_;
         hUint16*                    inlineTxtPC_;
@@ -114,12 +118,17 @@ namespace Heart
         ScissorRect                 screenRect_;
         Gwen::Texture*              currentTexture_;
 
+        hUint16*                    tmpIB;
+        hByte*                      tmpVB;
+
         hUint32                 primCount_;
         hColour                 currentColour_;
         hUint32                 currectColourUint_;
         DrawMode                activeDrawMode_;
 
         hBool                   createdResources_;
+        hByte                   rndCameraID_;
+        hFloat                  depth_;
     };
 }
 

@@ -395,6 +395,7 @@ namespace Heart
     void hdInputDeviceManager::EndOfFrameUpdate()
     {
         keyboard_->EndOfFrameUpdate();
+        mouse_->EndOfFrameUpdate();
     }
 
 }

@@ -36,6 +36,7 @@ namespace Heart
 
     hResourceManager::hResourceManager() 
         : exitSignal_(hFalse)
+        , requireAssetsReady_(hFalse)
 	{
 	}
 
@@ -389,12 +390,15 @@ namespace Heart
 
     hBool hResourceManager::RequiredResourcesReady()
     {
+        if (requireAssetsReady_) return hTrue;
+        
         hLoadedResourcePackages* corepak = mtLoadedPackages_.Find(hCRC32::StringCRC("CORE"));
         if (corepak != NULL)
         {
-            return corepak->package_ != NULL;
+            requireAssetsReady_ = corepak->package_ != NULL;
         }
-        return hFalse;
+
+        return requireAssetsReady_;
     }
 
     //////////////////////////////////////////////////////////////////////////

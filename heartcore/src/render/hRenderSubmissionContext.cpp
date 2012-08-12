@@ -41,9 +41,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf )
+    void hRenderSubmissionCtx::SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf, hUint32 stride )
     {
-        impl_.SetVertexStream( 0, vtxBuf->pImpl(), vtxBuf->GetStride() );
+        impl_.SetVertexStream( 0, vtxBuf->pImpl(), stride );
     }
 
     //////////////////////////////////////////////////////////////////////////

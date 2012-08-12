@@ -38,34 +38,29 @@ namespace Heart
 	class hVertexBuffer;
 	class hIndexBuffer;
 	class hVertexDeclaration;
+    class hConsoleUI;
 
-	class hSystemConsole
+    class hSystemConsole
 	{
 	public:
 		hSystemConsole()
-			: keyboard_( NULL )
-			,shown_( hFalse )
-			,nInputChars_( 0 )
-			,keyboardAccessKey_( 0 )
-			,inputDirty_( hFalse )
-			,logDirty_( hFalse )
-			,loaded_( hFalse )
+			: loaded_( hFalse )
+            , consoleWindow_(NULL)
 		{
-			memset( inputBuffer_, 0, INPUT_BUFFER_LEN );
 		}
 		~hSystemConsole()
 		{
 		}
 
-		void												Initialise( hControllerManager* pControllerManager,
-																		hLuaStateManager* pSquirrel,
-																		hResourceManager* pResourceManager,
-																		hRenderer* pRenderer );
+        void												Initialise( hControllerManager* pControllerManager,
+                                                                        hLuaStateManager* pSquirrel,
+                                                                        hResourceManager* pResourceManager,
+                                                                        hRenderer* renderer,
+                                                                        hGwenRenderer* uiRenderer );
 		void												Destroy();
-
 		void												Update();
-		void												Render( hRenderer* pRenderer );
         void                                                ClearLog();
+        void 												ExecuteBuffer(const hChar* input);
 		static void											PrintConsoleMessage( const hChar* string );
 
 	private:
@@ -78,23 +73,17 @@ namespace Heart
 
 		void												UpdateConsole();
 		void 												ClearConsoleBuffer();
-		void 												ExecuteBuffer();
 		void												LogString( const hChar* inputStr );
 
         hRenderer*                                          renderer_;
 		hResourceManager*									resourceManager_;
         hDrawCallContext                                    ctx_;
-		//
-		const hdKeyboard*									keyboard_;			
-		hBool												shown_;
-		hUint32												keyboardAccessKey_;
-		hUint32												nInputChars_;
-		hChar												inputBuffer_[ INPUT_BUFFER_LEN ];
-		hString												consoleLog_;
-		hInt32												inputHistoryEntry_;
-		deque< hString >								    inputHistroy_;
-		bool												inputDirty_;
-		bool												logDirty_;
+        const hdKeyboard*                                   keyboard_;
+
+        //Display UI
+        hControllerManager*                                 controllerManager_;
+        hConsoleUI*                                         consoleWindow_;
+
 		//command processing
 		hLuaStateManager*									vm_;
 

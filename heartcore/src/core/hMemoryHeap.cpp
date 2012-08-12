@@ -41,28 +41,33 @@ hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = {0};
 
 void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
 {
-	localMspace_ = create_mspace( sizeInBytes, false );
-	mspace_track_large_chunks( localMspace_, true );
-	size_ = sizeInBytes;
-	alloced_ = 0;
-	debugAlloc_ = 0;
-	allocNum_ = 1;
+    lock_.Lock();
+    if (!localMspace_)
+    {
+        localMspace_ = create_mspace( sizeInBytes, false );
+        mspace_track_large_chunks( localMspace_, true );
+        size_ = sizeInBytes;
+        alloced_ = 0;
+        debugAlloc_ = 0;
+        allocNum_ = 1;
 
-	hcAssert( nHeapsInUse_ < MAX_HEAPS );
+        hcAssert( nHeapsInUse_ < MAX_HEAPS );
 
-	pHeaps_[ nHeapsInUse_ ] = this;
-	++nHeapsInUse_;
+        pHeaps_[ nHeapsInUse_ ] = this;
+        ++nHeapsInUse_;
 
-	useLocks_ = !threadLocal;
-	lastThreadID_ = NULL;
-    trackedAllocs_ = NULL;
+        useLocks_ = !threadLocal;
+        lastThreadID_ = NULL;
+        trackedAllocs_ = NULL;
 
 #ifdef HEART_TRACK_MEMORY_ALLOCS
-	if ( this != &hDebugHeap )
-	{
-		trackedAllocs_ = hNEW(hDebugHeap, hTackingMapType)(&hDebugHeap);
-	}
+        if ( this != &hDebugHeap )
+        {
+            trackedAllocs_ = hNEW(hDebugHeap, hTackingMapType)(&hDebugHeap);
+        }
 #endif // HEART_TRACK_MEMORY_ALLOCS
+    }
+    lock_.Unlock();
 }
 
 //////////////////////////////////////////////////////////////////////////

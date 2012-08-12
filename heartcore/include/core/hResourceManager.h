@@ -134,6 +134,8 @@ namespace Heart
 
         static void*                    resourceThreadID_;
 
+        hBool                           requireAssetsReady_;
+
 		//NEW
         hRenderer*                      renderer_;
         hRenderMaterialManager*         materialManager_;

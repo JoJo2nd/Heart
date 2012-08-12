@@ -76,10 +76,9 @@ namespace Heart
         hTexture*                   GetDepthTarget() const { return depthTarget_; }
         hViewportShaderConstants*   GetViewportConstants() const { return viewportConstants_; }
         hdParameterConstantBlock*   GetViewportConstantBlock() const { return &sharedConstantParamters_[0]; };
+        void                        UpdateParameters();
 
 	private:
-
-        void                        UpdateParameters();
 
         static const hUint32        MAX_TARGETS = 4;
 

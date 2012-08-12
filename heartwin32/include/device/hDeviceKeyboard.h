@@ -46,7 +46,7 @@ namespace Heart
         hdInputButton                   GetButton( hdInputID buttonId, hUint32 accesskey ) const;
 		const hChar*					GetCharBufferData() const { return charBuffer_; }
 		hUint32							CharBufferSizeBytes() const { return nCharacters_; }
-		void							FlushCharBufferData() { nCharacters_ = 0; }
+		void							FlushCharBufferData();
         void                            PushCharacterEvent(hChar ch);
         void                            SetButton(hdInputID buttonID, hdInputButtonState state);
 		void							Update();

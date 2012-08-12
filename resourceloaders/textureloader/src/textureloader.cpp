@@ -357,6 +357,7 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
     hUint32 len = Heart::hStrLen(params->GetInputFilePath());
     hBool gammaCorrect = hFalse;
     hBool buildMips = hFalse;
+    hBool keepcpu = hFalse;
     hBool ddsInput = hFalse;
     HeartOutputHandler outputHandler;
 
@@ -386,6 +387,11 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
     if (Heart::hStrICmp(params->GetBuildParameter("MIPMAPS", "true"),"true") == 0)
     {
         buildMips = hTrue;
+    }
+
+    if (Heart::hStrICmp(params->GetBuildParameter("KEEPCPU", "false"),"true") == 0)
+    {
+        keepcpu = hTrue;
     }
 
     Heart::hMipDesc* mips;
@@ -457,6 +463,18 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
 
             Heart::hMemCpy(mips[i].data, ptr, size);
 
+            if (gammaCorrect && textureData.bytesPerPixel_ >=3 )
+            {
+                //If this texture is going ot be read as a sRGB, Red and Blue need to be swapped
+                hByte* srgb = mips[i].data;
+                for(hUint32 i = 0; i < size; i += textureData.bytesPerPixel_, srgb += textureData.bytesPerPixel_)
+                {
+                    hByte r = srgb[0];
+                    srgb[0] = srgb[2];
+                    srgb[2] = r;
+                }
+            }
+
             ptr += mips[i].size;
             w = hMax(w >> 1, 1);
             h = hMax(h >> 1, 1);
@@ -477,7 +495,10 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
     Heart::hSerialiser ser;
     ser.Serialise(binoutput, *tex);
 
-    tex->ReleaseCPUTextureData();
+    if (!keepcpu)
+    {
+        tex->ReleaseCPUTextureData();
+    }
     
     return tex;
 }

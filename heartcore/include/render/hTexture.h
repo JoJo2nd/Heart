@@ -46,7 +46,7 @@ namespace Cmd
 
 		hTexture( hRenderer* prenderer ) 
 			: renderer_( prenderer )
-			, lockPtr_(NULL)
+			, keepcpu_(hFalse)
             , levelDescs_(NULL)
 		{}
 		~hTexture()
@@ -68,6 +68,8 @@ namespace Cmd
 		hUint32			        Height( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].height_; }
         void                    ReleaseCPUTextureData();
         hColour                 ReadPixel(hUint32 x, hUint32 y);
+        void                    SetKeepCPU(hBool val) { keepcpu_ = val; }
+        hBool                   GetKeepCPU() const { return keepcpu_; }
 
         static hUint32          GetDXTTextureSize( hBool dxt1, hUint32 width, hUint32 height );
 
@@ -87,7 +89,7 @@ namespace Cmd
 		hTextureFormat			format_;
 		hUint32					nLevels_;
 		LevelDesc*				levelDescs_;
-		void*					lockPtr_;
+        hBool                   keepcpu_;
 	};
 
     struct hTextureMapInfo
@@ -105,6 +107,7 @@ namespace Cmd
         SERIALISE_ELEMENT( (hUint32&)tex.format_ );
         SERIALISE_ELEMENT( tex.nLevels_ );
         SERIALISE_ELEMENT_COUNT( tex.levelDescs_, tex.nLevels_ );
+        SERIALISE_ELEMENT(tex.keepcpu_);
     }
 
     template<>
@@ -113,6 +116,7 @@ namespace Cmd
         DESERIALISE_ELEMENT( (hUint32&)tex.format_ );
         DESERIALISE_ELEMENT( tex.nLevels_ );
         DESERIALISE_ELEMENT( tex.levelDescs_ );
+        DESERIALISE_ELEMENT(tex.keepcpu_);
     }
 
     template<>

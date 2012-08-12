@@ -972,8 +972,8 @@ Gwen::Point Base::ChildrenSize()
 		Base* pChild = *iter;
 		if ( pChild->Hidden() ) continue;
 
-		size.x = GwenUtil_Max( size.x, pChild->Right() );
-		size.y = GwenUtil_Max( size.y, pChild->Bottom() );
+		size.x = GwenUtil_Max( size.x, GwenUtil_Max(pChild->Right(), pChild->ChildrenSize().x) );
+		size.y = GwenUtil_Max( size.y, GwenUtil_Max(pChild->Bottom(), pChild->ChildrenSize().y) );
 	}
 
 	return size;

@@ -48,6 +48,7 @@ namespace Heart
         {
             manager_ = manager;
             keyboard_ = manager->GetSystemKeyboard();
+            mouse_ = manager->GetSystemMouse();
             canvas_ = canvas;
 
             mouseX_ = 0;//TODO:FIXkeyboard_->GetAxis(Device::IID_MOUSEXAXIS).anologueVal_;
@@ -59,6 +60,7 @@ namespace Heart
 
         hControllerManager*     manager_;
         const hdKeyboard*       keyboard_;
+        const hdMouse*          mouse_;
         Gwen::Controls::Canvas* canvas_;
         hFloat                  mouseX_;
         hFloat                  mouseY_;

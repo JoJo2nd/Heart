@@ -100,12 +100,21 @@ by Lua can also return many results.
         return 0;
     }
 
+    int hLuaSetDebugMenuVisiable(lua_State* L)
+    {
+        HEART_LUA_GET_ENGINE(L);
+        const hChar* str = luaL_checkstring(L, -2);
+        hDebugMenuManager::GetInstance()->SetMenuVisiablity(str, luaL_checkinteger(L, -1) != 0);
+        return 0;
+    }
+
 	static const luaL_Reg libcore[] = {
-		{"elasped",			hLuaElasped},
-		{"elaspedHMS",		hLuaElaspedHoursMinSecs},
-		{"wait",			hLuaWait},
-		{"debugDraw",       hLuaEnableDebugDraw},
-        {"clear",           hLuaClearConsole},
+		{"elasped",			    hLuaElasped},
+		{"elaspedHMS",		    hLuaElaspedHoursMinSecs},
+		{"wait",			    hLuaWait},
+		{"debugDraw",           hLuaEnableDebugDraw},
+        {"clear",               hLuaClearConsole},
+        {"setDebugMenuShow",    hLuaSetDebugMenuVisiable},
 		{NULL, NULL}
 	};
 

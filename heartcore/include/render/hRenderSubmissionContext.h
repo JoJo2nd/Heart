@@ -88,7 +88,7 @@ namespace Heart
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         //Raw Functions
         void	SetIndexStream( hIndexBuffer* pIIBuf );
-        void	SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf );
+        void	SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf, hUint32 stride );
         void	SetRenderTarget( hUint32 idx , hTexture* pTarget );
         void    SetDepthTarget( hTexture* depth );
         void	SetViewport( const hViewport& viewport );

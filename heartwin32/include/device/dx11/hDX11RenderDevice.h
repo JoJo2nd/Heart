@@ -51,7 +51,7 @@ namespace Heart
         void                            Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup );
         void                            Destroy();
         void                            ActiveContext() {}
-        void                            BeginRender();
+        void                            BeginRender(hFloat* gpuTime);
         void                            EndRender();
         void	                        SwapBuffers();
         void                            InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
@@ -98,6 +98,7 @@ namespace Heart
         hUint32                     BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements );
 
         hdSystemWindow*             sysWindow_;
+        hUint64                     frameCounter_;
         hUint32                     width_;
         hUint32                     height_;
         hTempRenderMemAlloc         alloc_;
@@ -116,6 +117,9 @@ namespace Heart
         DepthStencilStateMapType    depthStencilStates_;
         SamplerStateMapType         samplerStateMap_;
         VertexLayoutMapType         vertexLayoutMap_;
+        ID3D11Query*                timerDisjoint_;
+        ID3D11Query*                timerFrameStart_;
+        ID3D11Query*                timerFrameEnd_;
 
     };
 

@@ -55,24 +55,16 @@ namespace Heart
                             hFloat vsDepth = 0.f,
                             hUint32 startVtx = 0, 
                             PrimitiveType type = PRIMITIVETYPE_TRILIST);
-        /*
-         * Both inline calls return the vertex/index memory that needs to be filled
-         * for the draw call. Allocation of this memory is VERY temporary, don't hold
-         * on to it because it'll be gone next frame
-         **/
         void SubmitDrawCallInline(hMaterialInstance* mat, 
-                                  hByte** ibOut, hUint32 ibSize,
-                                  hByte** vbOut, hUint32 vbSize,
-                                  hUint16** primCount, 
+                                  hByte* ibOut, hUint32 ibSize,
+                                  hByte* vbOut, hUint32 vbSize,
+                                  hUint16 primCount, 
+                                  hUint16 stride,
                                   hBool transparent = hFalse,
                                   hFloat vsDepth = 0.f,
                                   PrimitiveType type = PRIMITIVETYPE_TRILIST);
-        void SubmitDrawCallInline(hMaterialInstance* mat, 
-                                  hByte** vbOut, hUint32 vbSize,
-                                  hUint16** primCount, 
-                                  hBool transparent = hFalse,
-                                  hFloat vsDepth = 0.f,
-                                  PrimitiveType type = PRIMITIVETYPE_TRILIST);
+        void SubmitDrawCall(const hDrawCall& dc);
+        void SubmitCommand(hUint32 cmd, void* data, hUint32 size);
         void End();
 
     private:
@@ -84,7 +76,7 @@ namespace Heart
         hByte                           layerID_;
         hByte                           camID_;
         hUint32                         calls_;
-        hArray< hDrawCall, MAX_DC >     dcs_[MAX_DC];
+        hArray< hDrawCall, MAX_DC >     dcs_;
     };
 }
 

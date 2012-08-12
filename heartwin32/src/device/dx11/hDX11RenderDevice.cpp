@@ -143,10 +143,23 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
 
         mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
-        //mainRenderCtx_.renderTargetViews_[0] = renderTargetView_;
-        //mainRenderCtx_.depthStencilView_ = depthStencilView_;
-        // 
-        //ShowCursor(FALSE);
+
+        D3D11_QUERY_DESC qdesc;
+        qdesc.MiscFlags = 0;
+
+        qdesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+        hr = d3d11Device_->CreateQuery(&qdesc, &timerDisjoint_);
+        hcAssert(SUCCEEDED(hr));
+
+        qdesc.Query = D3D11_QUERY_TIMESTAMP;
+        hr = d3d11Device_->CreateQuery(&qdesc, &timerFrameStart_);
+        hcAssert(SUCCEEDED(hr));
+
+        qdesc.Query = D3D11_QUERY_TIMESTAMP;
+        hr = d3d11Device_->CreateQuery(&qdesc, &timerFrameEnd_);
+        hcAssert(SUCCEEDED(hr));
+
+        frameCounter_ = 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -155,6 +168,10 @@ namespace Heart
 
     void hdDX11RenderDevice::Destroy()
     {
+        timerDisjoint_->Release();
+        timerFrameStart_->Release();
+        timerFrameEnd_->Release();
+
         if( mainDeviceCtx_ ) 
         {
             mainDeviceCtx_->ClearState();
@@ -189,8 +206,28 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::BeginRender()
+    void hdDX11RenderDevice::BeginRender(hFloat* gpuTime)
     {
+        //get prev GPU timer
+        *gpuTime = -1.f;
+        if ( frameCounter_ > 0)
+        {
+            D3D11_QUERY_DATA_TIMESTAMP_DISJOINT gpustats;
+            UINT64 fstart, fend;
+
+            while(mainDeviceCtx_->GetData(timerDisjoint_, &gpustats, sizeof(gpustats), 0) != S_OK) {}
+            while(mainDeviceCtx_->GetData(timerFrameStart_, &fstart, sizeof(fstart), 0) != S_OK) {}
+            while(mainDeviceCtx_->GetData(timerFrameEnd_, &fend, sizeof(fend), 0) != S_OK) {}
+
+            UINT64 delta = fend - fstart;
+            *gpuTime = (hFloat)((hDouble)delta / ((hDouble)gpustats.Frequency/1000.0));
+            if (gpustats.Disjoint) *gpuTime = -2.f;
+        }
+
+        //Start new timer
+        mainDeviceCtx_->Begin(timerDisjoint_);
+        mainDeviceCtx_->End(timerFrameStart_);
+
         mainDeviceCtx_->OMSetRenderTargets( 1, &renderTargetView_, depthStencilView_ );
         
         hFloat clearcolour[] = { 1.f, 0.f, 1.f, 1.f };
@@ -204,7 +241,7 @@ namespace Heart
 
     void hdDX11RenderDevice::EndRender()
     {
-
+        ++frameCounter_;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -213,7 +250,12 @@ namespace Heart
 
     void hdDX11RenderDevice::SwapBuffers()
     {
-        mainSwapChain_->Present( 1, 0 );
+        mainSwapChain_->Present( 0, 0 );
+        if (frameCounter_ > 0)
+        {
+            mainDeviceCtx_->End(timerFrameEnd_);
+            mainDeviceCtx_->End(timerDisjoint_);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -247,6 +289,7 @@ namespace Heart
     void hdDX11RenderDevice::InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx )
     {
         ctx->SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
+        ctx->SetDefaultTargets( renderTargetView_, depthStencilView_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

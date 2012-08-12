@@ -154,6 +154,9 @@ namespace Heart
         hGwenRenderer*                  uiRenderer_;
         hConfigOptions                  configFile_;
 
+        //Debug 
+        hDebugMenuManager*              debugMenuManager_;
+
         //app functions
     public:
         hSharedLibAddress               sharedLib_;

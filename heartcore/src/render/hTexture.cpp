@@ -128,11 +128,11 @@ namespace Heart
     Heart::hColour hTexture::ReadPixel(hUint32 x, hUint32 y)
     {
         hcAssert(x < Width() && y < Height());
-        if (!levelDescs_[0].mipdata_ || format_ != TFORMAT_ARGB8)
+        if (!levelDescs_[0].mipdata_)
         {
-            hcPrintf("Attempt was made to read a pixel from a texture where the CPU resource data"
-                     "has been released. This is done automatically for DXT textures on load.");
-            return BLACK;
+            hcPrintf("Attempt was made to read a pixel (%u, %u) from a texture where the CPU resource data"
+                     "has been released. This is done automatically for DXT textures on load.", x, y);
+            return WHITE;
         }
 
         hColour ret(

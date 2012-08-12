@@ -333,6 +333,7 @@ namespace Heart
             {
                 if ((*handler->packageLink_)(res, engine_))
                 {
+                    hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
                     res->SetIsLinked(hTrue);
                 }
             }

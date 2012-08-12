@@ -66,14 +66,23 @@ namespace Heart
     struct HEARTDEV_SLIBEXPORT hdInputButton
 	{
 		hdInputButton() 
-            : buttonVal_( hFalse )
-			, raisingEdge_( hFalse )
-			, fallingEdge_( hFalse )
+            : buttonState_(0)
 		{}
-		hBool			buttonVal_		: 1;
-		hBool			raisingEdge_	: 1;
-		hBool			fallingEdge_	: 1;
-		hBool			isRepeat_		: 1;
+        hdInputButton(const hdInputButton& rhs)
+        {
+            buttonState_ = rhs.buttonState_;
+        }
+        union
+        {
+            struct  
+            {
+                hBool			buttonVal_		: 1;
+                hBool			raisingEdge_	: 1;
+                hBool			fallingEdge_	: 1;
+                hBool			isRepeat_		: 1;
+            };
+            hUint32 buttonState_;
+        };
 	};
 
 	//////////////////////////////////////////////////////////////////////////

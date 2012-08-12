@@ -92,7 +92,7 @@ namespace Heart
             }
         }
 
-        return NULL;
+        return AddRenderTechnique(name);
     }
 
     int keyCompare(const void* lhs, const void* rhs)

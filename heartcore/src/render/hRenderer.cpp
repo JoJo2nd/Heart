@@ -106,6 +106,30 @@ namespace Heart
         CreateIndexBuffer(NULL, 65535, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &volatileIBuffer_ );
         CreateVertexBuffer(NULL, 65535, ~0U, RESOURCEFLAG_DYNAMIC, &volatileVBuffer_ );
 
+        //Create viewport/camera for debug drawing
+        hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
+        hRenderViewportTargetSetup rtDesc;
+        rtDesc.nTargets_ = 0;
+        rtDesc.width_ = GetWidth();
+        rtDesc.height_ = GetHeight();
+        rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8;
+        rtDesc.hasDepthStencil_ = hFalse;
+        rtDesc.depthFormat_ = Heart::TFORMAT_D24S8F;
+
+        hViewport vp;
+        vp.x_ = 0;
+        vp.y_ = 0;
+        vp.width_ = GetWidth();
+        vp.height_ = GetHeight();
+
+        camera->Initialise(this);
+        camera->SetRenderTargetSetup(rtDesc);
+        camera->SetFieldOfView( 45.f );
+        camera->SetOrthoParams(0 ,0, GetWidth(), GetHeight(), 0.1f, 100.f);
+        camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
+        camera->SetViewport(vp);
+        camera->SetTechniquePass(techniqueManager_.GetRenderTechniqueInfo("main"));
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -144,7 +168,7 @@ namespace Heart
 	void hRenderer::EndRenderFrame()
 	{
         ParentClass::SwapBuffers();
-        ParentClass::BeginRender();
+        ParentClass::BeginRender(&gpuTime_);
     
         CollectAndSortDrawCalls();
         SubmitDrawCallsMT();
@@ -182,7 +206,10 @@ namespace Heart
         hcAssert(dt);
         resource->SetImpl(dt);
 
-        resource->ReleaseCPUTextureData();
+        if (!resource->GetKeepCPU())
+        {
+            resource->ReleaseCPUTextureData();
+        }
 
  		return resource;
 	}
@@ -263,6 +290,11 @@ namespace Heart
         if ((flags & RESOURCEFLAG_KEEPCPUDATA) == 0)
         {
             (*outTex)->ReleaseCPUTextureData();
+            (*outTex)->SetKeepCPU(hFalse);
+        }
+        else
+        {
+            (*outTex)->SetKeepCPU(hTrue);
         }
 	}
 
@@ -376,7 +408,7 @@ namespace Heart
     void hRenderer::SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
     {
         hcAssertMsg(drawCallBlockIdx_.value_+count < MAX_DCBLOCKS, "Too many draw calls");
-        if (drawCallBlockIdx_.value_+count < MAX_DCBLOCKS)
+        if (drawCallBlockIdx_.value_+count >= MAX_DCBLOCKS)
             return;
 
         hUint32 wIdx;
@@ -408,6 +440,7 @@ namespace Heart
     hUint32 hRenderer::BeginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID)
     {
         hRendererCamera* camera = GetRenderCamera(camID);
+        camera->UpdateParameters();
         hUint32 retTechMask = camera->GetTechniqueMask();
 
         ctx->SetRenderTarget(0, camera->GetRenderTarget(0));
@@ -483,7 +516,7 @@ namespace Heart
             if (material != mat->GetParentMaterial() || pass != nPass)
             {
                 hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
-                hMaterialTechniquePass* techpass = tech->GetPass(pass);
+                hMaterialTechniquePass* techpass = tech->GetPass(nPass);
                 mainSubmissionCtx_.SetVertexShader( techpass->GetVertexShader() );
                 mainSubmissionCtx_.SetPixelShader( techpass->GetFragmentShader() );
                 mainSubmissionCtx_.SetRenderStateBlock( techpass->GetBlendState() );
@@ -519,7 +552,7 @@ namespace Heart
 
                 //Copy
                 hMemCpy(ibmap.ptr_, dcall->imIBBuffer_, dcall->ibSize_);
-                hMemCpy(ibmap.ptr_, dcall->imVBBuffer_, dcall->vbSize_);
+                hMemCpy(vbmap.ptr_, dcall->imVBBuffer_, dcall->vbSize_);
 
                 mainSubmissionCtx_.Unmap(&ibmap);
                 mainSubmissionCtx_.Unmap(&vbmap);
@@ -530,22 +563,12 @@ namespace Heart
 
             mainSubmissionCtx_.SetPrimitiveType(dcall->primType_);
             mainSubmissionCtx_.SetIndexStream(ib);
-            mainSubmissionCtx_.SetVertexStream(0,vb);
-            if (dcall->indexBuffer_)
+            mainSubmissionCtx_.SetVertexStream(0, vb, dcall->stride_);
+            if (dcall->indexBuffer_ == NULL)
                 mainSubmissionCtx_.DrawPrimitive(dcall->primCount_, dcall->startVertex_);
             else
                 mainSubmissionCtx_.DrawIndexedPrimitive(dcall->primCount_, dcall->startVertex_);
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::InitRenderCamera( hUint32 id, const hRendererCamera& camera )
-    {
-        hcAssertMsg(id < 15, "Invalid camera id access");
-        renderCameras_[id] = camera;
     }
 
 }

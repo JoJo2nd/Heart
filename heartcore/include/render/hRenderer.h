@@ -31,6 +31,9 @@
 namespace Heart
 {
 
+#define HEART_DEBUG_CAMERA_ID (13)
+#define HEART_DEBUGUI_CAMERA_ID (14)
+
 	class hResourceManager;
 	class hResourceDependencyList;
     class hSerialiserFileStream;
@@ -85,6 +88,7 @@ namespace Heart
         hMaterialInstance*  matInstance_;
         hUint16             primCount_;
         hUint16             startVertex_;
+        hUint16             stride_;
         PrimitiveType       primType_ : 4;
         hBool               immediate_ : 1;
     };
@@ -102,7 +106,6 @@ namespace Heart
 		void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
 		void													Destroy();
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
-        void                                                    InitRenderCamera(hUint32 id, const hRendererCamera& camera);
         hRendererCamera*                                        GetRenderCamera(hUint32 id) { hcAssertMsg(id < 15, "Invalid camera id access"); return &renderCameras_[id];}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,6 +174,7 @@ namespace Heart
 		hFloat													shaderVersion_;
 		hBool													fullscreen_;
 		hBool													vsync_;
+        hFloat                                                  gpuTime_;
 
         hRendererCamera                                         renderCameras_[15];
 		hRenderState*											renderStateCache_;

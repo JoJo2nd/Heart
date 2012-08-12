@@ -101,7 +101,9 @@ class hMemoryHeap : public hMemoryHeapBase
 {
 public:
 
-    hMemoryHeap() {};
+    hMemoryHeap() 
+        : localMspace_(0)
+    {};
 
 	~hMemoryHeap();
 

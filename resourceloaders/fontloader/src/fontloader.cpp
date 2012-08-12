@@ -52,6 +52,7 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
 {
     using namespace Heart;
 
+    hFloat fontScale = hAtoF(params->GetBuildParameter("SCALE", "1"));
     hXMLDocument xmldoc;
     hChar* xmlmem = (hChar*)hHeapMalloc(GetGlobalHeap(), inFile->Lenght()+1);
     inFile->Read(xmlmem, inFile->Lenght());
@@ -65,7 +66,7 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
 
     hFloat pageWidth = common.GetAttributeFloat("scaleW");
     hFloat pageHeight = common.GetAttributeFloat("scaleH");
-    font->SetFontHeight(common.GetAttributeFloat("lineHeight"));
+    font->SetFontHeight(common.GetAttributeFloat("lineHeight")*fontScale);
     font->SetFontWidth(0.f);
     font->SetPageCount(common.GetAttributeInt("pages"));
 
@@ -88,16 +89,22 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
         hFontCharacter newchar;
         newchar.page_       = glyph.GetAttributeInt("page", 0);
         newchar.unicode_    = glyph.GetAttributeInt("id", -1);
-        newchar.x_          = glyph.GetAttributeInt("x", 0.f);
-        newchar.y_          = glyph.GetAttributeInt("y", 0.f);
-        newchar.height_     = glyph.GetAttributeInt("width", 0.f);
-        newchar.width_      = glyph.GetAttributeInt("height", 0.f);
-        newchar.xOffset_    = glyph.GetAttributeInt("xoffset", 0.f);
-        newchar.yOffset_    = glyph.GetAttributeInt("yoffset", 0.f);
+        newchar.x_          = glyph.GetAttributeFloat("x", 0.f);
+        newchar.y_          = glyph.GetAttributeFloat("y", 0.f);
+        newchar.height_     = glyph.GetAttributeFloat("height", 0.f);
+        newchar.width_      = glyph.GetAttributeFloat("width", 0.f);
+        newchar.xOffset_    = glyph.GetAttributeFloat("xoffset", 0.f);
+        newchar.yOffset_    = glyph.GetAttributeFloat("yoffset", 0.f);
         newchar.xAdvan_     = glyph.GetAttributeFloat("xadvance", 0.f);
 
-        newchar.UV1_ = hCPUVec2(newchar.x_/pageWidth, 1.f-(newchar.y_/pageHeight));//top left
-        newchar.UV2_ = hCPUVec2((newchar.x_+newchar.width_)/pageWidth, 1.f-((newchar.y_+newchar.height_)/pageHeight));//bottom right
+        newchar.UV1_ = hCPUVec2(newchar.x_/pageWidth, ((newchar.y_+newchar.height_)/pageHeight));//top left
+        newchar.UV2_ = hCPUVec2((newchar.x_+newchar.width_)/pageWidth, (newchar.y_/pageHeight));//bottom right
+
+        newchar.height_ *= fontScale;
+        newchar.width_ *= fontScale;
+        newchar.yOffset_ *= fontScale;
+        newchar.xOffset_ *= fontScale;
+        newchar.xAdvan_ *= fontScale;
 
         font->AddFontCharacter(&newchar);
     }           

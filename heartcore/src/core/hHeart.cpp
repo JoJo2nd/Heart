@@ -83,6 +83,8 @@ namespace Heart
 
         entityFactory_ = hNEW(GetGlobalHeap(), hEntityFactory);
 
+        debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
+
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -100,65 +102,9 @@ namespace Heart
         deviceConfig_.width_ = config_.Width_;
         deviceConfig_.height_ = config_.Height_;
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        //TODO: Get these from the game + engine list
-        const char*  requiredResourcesList[] =
-        {
-            "ENGINE/EFFECTS/DEBUG.CFX",
-            "ENGINE/FONTS/CONSOLE.FNT",
-            "ENGINE/FONTS/UI.FNT",
-            "ENGINE/EFFECTS/SIMPLECOLOUR.CFX",
-            "ENGINE/EFFECTS/UI_COLOUR.CFX",
-            "ENGINE/EFFECTS/UI_COLOUR_TEX.CFX",
-            "ENGINE/TEXTURES/UI_SKIN.TEX",
-            NULL
-        };
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        // Register Engine side resource loaders //////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-        resourceMananger_->SetResourceHandlers( "TEX", 
-            hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnTextureLoad >( renderer_ ), 
-            hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnTextureUnload >( renderer_ ),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "FNT",
-            hResourceManager::ResourceLoadCallback::bind< &hFont::OnFontLoad >(),
-            hResourceManager::ResourceUnloadCallback::bind< &hFont::OnFontUnload >(),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "CFX",
-            hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnMaterialLoad >( renderer_ ), 
-            hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnMaterialUnload >( renderer_ ),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "GPU",
-            hResourceManager::ResourceLoadCallback::bind< hRenderer, &hRenderer::OnShaderProgramLoad >( renderer_ ), 
-            hResourceManager::ResourceUnloadCallback::bind< hRenderer, &hRenderer::OnShaderProgramUnload >( renderer_ ),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "OGG",
-            hResourceManager::ResourceLoadCallback::bind< &hSoundResource::OnSoundLoad >(), 
-            hResourceManager::ResourceUnloadCallback::bind< &hSoundResource::OnSoundUnload >(),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "SBK",
-            hResourceManager::ResourceLoadCallback::bind< &hSoundBankResource::OnSoundBankLoad >(), 
-            hResourceManager::ResourceUnloadCallback::bind< &hSoundBankResource::OnSoundBankUnload >(),
-            NULL );
-
-        resourceMananger_->SetResourceHandlers( "WOD", 
-            hResourceManager::ResourceLoadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptLoad >(entityFactory_),
-            hResourceManager::ResourceUnloadCallback::bind< hEntityFactory, &hEntityFactory::OnWorldObjectScriptUnload >(entityFactory_),
-            NULL );
-*/
         //////////////////////////////////////////////////////////////////////////
         // Register Engine Level Event Channels //////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        //eventManager_->AddChannel( KERNEL_EVENT_CHANNEL );
 
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
@@ -185,15 +131,12 @@ namespace Heart
             resourceMananger_
             );
 
-        resourceMananger_->Initialise( this, renderer_, fileMananger_, requiredResourcesList );
+        resourceMananger_->Initialise( this, renderer_, fileMananger_, NULL );
 
         soundManager_->Initialise();
 
         hIFileSystem* luaFilesystems[] = 
         {
-            //TODO: Add disk file system
-            //TODO: Add TCP/IP file system
-            //zipFileSystem_,
             fileMananger_,
             NULL
         };
@@ -206,9 +149,11 @@ namespace Heart
         // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
 
-        console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_ );
+        console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_, uiRenderer_ );
 
         uiRenderer_->Initialise(renderer_, resourceMananger_);
+
+        debugMenuManager_->Initialise(uiRenderer_, renderer_, resourceMananger_, controllerManager_);
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
@@ -221,6 +166,8 @@ namespace Heart
         engineState_ = hHeartState_LoadingCore;
 
         GetResourceManager()->mtLoadPackage("CORE");
+
+
 
     }
 
@@ -274,7 +221,7 @@ namespace Heart
 
         (*mainRender_)( this );
 
-        GetConsole()->Render( GetRenderer() );
+        debugMenuManager_->RenderMenus();
 
         GetRenderer()->EndRenderFrame();
 
@@ -314,7 +261,7 @@ namespace Heart
 
         GetRenderer()->BeginRenderFrame();
 
-        GetConsole()->Render( GetRenderer() );
+        debugMenuManager_->RenderMenus();
 
         GetRenderer()->EndRenderFrame();
 
@@ -326,8 +273,9 @@ namespace Heart
     {
         //eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
 
-        // job manager is destroyed by the quit logic
         jobManager_->Destory();
+
+        debugMenuManager_->Destroy();
 
         uiRenderer_->DestroyResources();
 
@@ -340,6 +288,8 @@ namespace Heart
         luaVM_->Destroy();
 
         renderer_->Destroy();
+
+        hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
 
         hDELETE_SAFE(GetGlobalHeap(), entityFactory_);
 
@@ -420,6 +370,7 @@ namespace Heart
 #endif
 {
     static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+    static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
     Heart::hdDeviceConfig deviceConfig;
 
 #ifdef _WIN32
@@ -429,8 +380,10 @@ namespace Heart
 #endif
 
     Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap);
+    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap);
 
     Heart::GetGlobalHeap()->create(1024*1024,hFalse);
+    Heart::GetDebugHeap()->create(1024*1024,hFalse);
 
     Heart::HeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::HeartEngine) (NULL, &deviceConfig);
 
