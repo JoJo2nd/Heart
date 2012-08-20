@@ -78,6 +78,8 @@ namespace Private
 	 	hCPUVec2				UV2_;
 	};
 
+    typedef hUint64 hFontLookup;
+
 	class HEARTCORE_SLIBEXPORT hFont : public hResourceClassBase
 	{
 	public:
@@ -93,6 +95,8 @@ namespace Private
             , nMaxFontCharacters_(0)
             , nFontCharacters_(0)
             , fontCharacters_(NULL)
+            , fontLookupSteps_(0)
+            , fontLookup_(NULL)
         {}
 		virtual	~hFont();
 
@@ -114,8 +118,7 @@ namespace Private
                                           const hCPUVec2& topleft, 
                                           const hCPUVec2& bottomright, 
                                           const hChar* str );
-        hUint32             RenderStringSingleLine( void* iBuffer, 
-                                                    void* vBuffer, 
+        hUint32             RenderStringSingleLine( void* vBuffer, 
                                                     const hCPUVec2& topleft, 
                                                     const hChar* str );
         hCPUVec2            CalcRenderSize(const hChar* str);
@@ -143,7 +146,8 @@ namespace Private
         hUint32                     nMaxFontCharacters_;
 	 	hUint32						nFontCharacters_;
 		hFontCharacter*	            fontCharacters_;
-
+        hUint32                     fontLookupSteps_;
+        hFontLookup*                fontLookup_;
 	};
 
     //////////////////////////////////////////////////////////////////////////
@@ -160,6 +164,8 @@ namespace Private
         SERIALISE_ELEMENT( data.fontHeight_ );
         SERIALISE_ELEMENT( data.nFontCharacters_ );
         SERIALISE_ELEMENT_COUNT( data.fontCharacters_, data.nFontCharacters_ );
+        SERIALISE_ELEMENT( data.fontLookupSteps_ );
+        SERIALISE_ELEMENT_COUNT( data.fontLookup_, data.nFontCharacters_ );
     }
 
     template<>
@@ -172,6 +178,8 @@ namespace Private
         DESERIALISE_ELEMENT( data.fontHeight_ );
         DESERIALISE_ELEMENT( data.nFontCharacters_ );
         DESERIALISE_ELEMENT( data.fontCharacters_ );
+        DESERIALISE_ELEMENT( data.fontLookupSteps_ );
+        DESERIALISE_ELEMENT( data.fontLookup_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

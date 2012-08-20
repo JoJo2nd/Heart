@@ -42,6 +42,7 @@ namespace Heart
 
     void hSoundManager::Update()
     {
+        HEART_PROFILE_FUNC();
         for ( hSoundSource* i = soundSources_.GetHead(); i; i = i->GetNext() )
         {
             i->Update();

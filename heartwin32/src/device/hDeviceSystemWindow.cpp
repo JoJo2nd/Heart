@@ -67,6 +67,21 @@ namespace Heart
 			ShowWindow( hWnd_, SW_SHOW ); 
 			UpdateWindow( hWnd_ ); 
 
+            RECT w,C;
+            GetClientRect(hWnd_, &C);
+            GetWindowRect( hWnd_, &w );
+            cursorOffsetX_ = wndWidth_ - C.right;
+            cursorOffsetY_ = wndHeight_ - C.bottom;
+            if (cursorOffsetX_ != 0 || cursorOffsetY_ != 0)
+            {
+                SetWindowPos(hWnd_,NULL, 0, 0, wndWidth_+cursorOffsetX_, wndHeight_+cursorOffsetY_, SWP_NOMOVE|SWP_NOZORDER);
+
+                GetClientRect(hWnd_, &C);
+                GetWindowRect( hWnd_, &w );
+                cursorOffsetX_ = wndWidth_ - C.right;
+                cursorOffsetY_ = wndHeight_ - C.bottom;
+            }
+
 			systemHandle_.hWnd_ = hWnd_;
 
 			return hTrue;
@@ -158,10 +173,16 @@ namespace Heart
 			return 0;
 		case WM_ACTIVATE:
 			{
-// 				GetCursorPos( &prevMousePos_ );
-//                 mouse_->SetMousePosition((hFloat)prevMousePos_.x, (hFloat)prevMousePos_.y);
+
 			}
 			return 0;
+        case WM_MOUSEMOVE:
+            {
+                int x = (signed short)LOWORD( lParam );
+                int y = (signed short)HIWORD( lParam );
+
+                mouse_.SetMousePosition((hFloat)x, (hFloat)y);
+            }
 		case WM_KEYDOWN:
 			{
 				keyboard_.SetButton(wParam, hButtonState_IS_DOWN);
@@ -228,17 +249,6 @@ namespace Heart
 
 	void hdSystemWindow::Update()
 	{
-		if ( GetActiveWindow() == hWnd_ )
-		{
-			RECT r, w;
-			POINT mouse;
-
-			GetClientRect( hWnd_, &r );
-			GetWindowRect( hWnd_, &w );
-			GetCursorPos( &mouse );
-            mouse_.SetMousePosition((hFloat)(mouse.x-w.left), (hFloat)(mouse.y-w.top-(((w.bottom-w.top)-r.bottom))));
-		}
-
 		PumpMessages();
 	}
 

@@ -35,6 +35,7 @@ namespace Heart
     void hDrawCallContext::Begin( hRenderer* renderer )
     {
         hcAssertMsg(renderer_ == NULL && calls_ == 0, "hDrawCallContext begin called without end");
+        SetScissor(0.f, 0.f, 1.f, 1.f);
         renderer_ = renderer;
         calls_ = 0;
     }
@@ -59,9 +60,10 @@ namespace Heart
         dc->matInstance_    = mat;
         dc->indexBuffer_    = ib;
         dc->vertexBuffer_   = vb;
+        dc->scissor_        = scissor_;
         dc->primCount_      = primCount;
         dc->startVertex_    = startVtx;
-        dc->stride_         = 0;
+        dc->stride_         = vb->GetStride();
         dc->primType_       = type;
         dc->immediate_      = hFalse;
     }
@@ -89,6 +91,7 @@ namespace Heart
         dc->vbSize_         = vbSize;
         dc->primCount_      = primCount;
         dc->startVertex_    = 0;
+        dc->scissor_        = scissor_;
         dc->stride_         = stride;
         dc->primType_       = type;
         dc->immediate_      = hTrue;
@@ -117,6 +120,50 @@ namespace Heart
         if (calls_)
             renderer_->SubmitDrawCallBlock(dcs_.GetBuffer(), calls_);
         calls_ = 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hDrawCallContext::Map( hVertexBuffer* vb, hUint32 size )
+    {
+        void* ret = renderer_->AllocTempRenderMemory(size);
+        hRenderResourceUpdateCmd cmd;
+        cmd.flags_ = hRenderResourceUpdateCmd::eMapTypeVtxBuffer;
+        cmd.size_ = size;
+        cmd.data_ = ret;
+        cmd.vb_ = vb;
+        renderer_->SumbitResourceUpdateCommand(cmd);
+        return ret;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hDrawCallContext::Map( hIndexBuffer* ib, hUint32 size )
+    {
+        void* ret = renderer_->AllocTempRenderMemory(size);
+        hRenderResourceUpdateCmd cmd;
+        cmd.flags_ = hRenderResourceUpdateCmd::eMapTypeIdxBuffer;
+        cmd.size_ = size;
+        cmd.data_ = ret;
+        cmd.ib_ = ib;
+        renderer_->SumbitResourceUpdateCommand(cmd);
+        return ret;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDrawCallContext::SetScissor(hUint32 left, hUint32 top, hUint32 right, hUint32 bottom)
+    {
+        scissor_.left_ = left;
+        scissor_.top_ = top;
+        scissor_.right_ = right;
+        scissor_.bottom_ = bottom;
     }
 
 }

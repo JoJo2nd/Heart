@@ -67,6 +67,23 @@ namespace Heart
 		hRenderFrameStats passes_[ MAX_PASSES ];
 	};
 
+    struct HEARTCORE_SLIBEXPORT hRenderResourceUpdateCmd
+    {
+        enum hMapType
+        {
+            eMapTypeVtxBuffer,
+            eMapTypeIdxBuffer,
+        };
+        union
+        {
+            hVertexBuffer*  vb_;
+            hIndexBuffer*   ib_;
+        };
+        void*   data_;
+        hUint32 size_;
+        hUint16 flags_;
+    };
+
     struct HEARTCORE_SLIBEXPORT hDrawCall
     {
         hUint64             sortKey_;
@@ -85,12 +102,13 @@ namespace Heart
                 hUint32     vbSize_;
             };
         };            
-        hMaterialInstance*  matInstance_;
-        hUint16             primCount_;
-        hUint16             startVertex_;
-        hUint16             stride_;
-        PrimitiveType       primType_ : 4;
-        hBool               immediate_ : 1;
+        hMaterialInstance*      matInstance_;
+        hUint16                 primCount_;
+        hUint16                 startVertex_;
+        hUint16                 stride_;
+        hScissorRect            scissor_;
+        PrimitiveType           primType_ : 4;
+        hBool                   immediate_ : 1;
     };
 
 	class HEARTCORE_SLIBEXPORT hRenderer : public hdRenderDevice
@@ -101,6 +119,8 @@ namespace Heart
 
         static const hUint32									DEFAULT_SCRATCH_BUFFER_SIZE = 1024*1024*8;
         static const hUint32                                    MAX_DCBLOCKS = (64*1024);
+        static const hUint32                                    s_resoruceUpdateLimit = 1024;
+        static const hUint32                                    s_scratchBufferCount = 5;
 
 		hRenderer();
 		void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
@@ -137,6 +157,7 @@ namespace Heart
 		void													CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB );
 		void													DestroyVertexBuffer( hVertexBuffer* pOut );
 
+        void                                                    SumbitResourceUpdateCommand(const hRenderResourceUpdateCmd& cmd);
         void                                                    SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
 		void*													AllocTempRenderMemory( hUint32 size );
 
@@ -146,6 +167,7 @@ namespace Heart
 		void													BeginRenderFrame();
 		void													EndRenderFrame();
 		hUint32													CurrentFPS() { return FPS_; }
+        hFloat                                                  GetLastGPUTime() { return gpuTime_; }
 
 		//////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
@@ -165,7 +187,7 @@ namespace Heart
         void                                                    CollectAndSortDrawCalls();
         void                                                    SubmitDrawCallsMT();
         void                                                    SubmitDrawCallsST();
-
+        void DoDrawResourceUpdates();
 		// Init params
 		hSystem*												system_;
 		hUint32 												width_;
@@ -181,14 +203,17 @@ namespace Heart
 		hResourceManager*										resourceManager_;
         hRenderMaterialManager                                  techniqueManager_;
         hRenderSubmissionCtx                                    mainSubmissionCtx_;
-        hVertexBuffer*                                          volatileVBuffer_;
-        hIndexBuffer*                                           volatileIBuffer_;
+        hVertexBuffer*                                          volatileVBuffer_[s_scratchBufferCount];
+        hIndexBuffer*                                           volatileIBuffer_[s_scratchBufferCount];
 
         hUint32                                                 scratchBufferSize_;
         hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];
         hAtomicInt                                              scratchPtrOffset_;
         hAtomicInt                                              drawCallBlockIdx_;
         hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
+        hAtomicInt                                              drawResourceUpdateCalls_;
+        hArray< hRenderResourceUpdateCmd, s_resoruceUpdateLimit >     drawResourceUpdates_;
+
 
 
 

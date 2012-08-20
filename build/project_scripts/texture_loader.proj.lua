@@ -20,10 +20,10 @@ project "texture_loader"
         defines {DebugDefines}
         libdirs {"../../nvidia-texture-tools/project/vc8/Debug (no cuda).Win32/lib"}
         libdirs {TargetDir..DebugCfgName}
-		flags {"Symbols"}
+		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {"../../nvidia-texture-tools/project/vc8/Release (no cuda).Win32/lib"}
         libdirs {TargetDir..ReleaseCfgName}
-        flags {"Optimize"}
+        flags {ReleaseOptions}

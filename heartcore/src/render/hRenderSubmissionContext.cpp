@@ -77,7 +77,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::SetScissorRect( const ScissorRect& scissor )
+    void hRenderSubmissionCtx::SetScissorRect( const hScissorRect& scissor )
     {
         impl_.SetScissorRect( scissor );
     }

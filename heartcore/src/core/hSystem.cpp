@@ -43,6 +43,7 @@ namespace Heart
 
 	void hSystem::Update()
 	{
+        HEART_PROFILE_FUNC();
 		hdSystemWindow::Update();
 	}
 

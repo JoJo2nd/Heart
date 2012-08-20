@@ -138,6 +138,7 @@ namespace Heart
 
 	void hSystemConsole::Update()
 	{
+        HEART_PROFILE_FUNC();
 		if ( !loaded_ )
 		{
 			if ( hDebugMenuManager::GetInstance()->Ready() )

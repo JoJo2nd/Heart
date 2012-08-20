@@ -15,8 +15,8 @@ project "heartwin32"
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         --flags {"Symbols","Optimize"}
-		flags {"Symbols"}
+		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
-        flags {"Optimize"}
+        flags {ReleaseOptions}

@@ -83,6 +83,7 @@ namespace Heart
 
 	void hLuaStateManager::Update()
 	{
+        HEART_PROFILE_FUNC();
 		for ( hLuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
 		{
             hLuaThreadState* next = i->GetNext();

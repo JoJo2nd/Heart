@@ -47,6 +47,7 @@ namespace Heart
         void Begin(hRenderer* renderer);
         void SetRenderLayer(hByte val) { layerID_ = val; }
         void SetCameraID(hByte val) { camID_ = val; }
+        void SetScissor(hUint32 left, hUint32 top, hUint32 right, hUint32 bottom);
         void SubmitDrawCall( hMaterialInstance* mat, 
                             hIndexBuffer* ib, 
                             hVertexBuffer* vb, 
@@ -64,7 +65,12 @@ namespace Heart
                                   hFloat vsDepth = 0.f,
                                   PrimitiveType type = PRIMITIVETYPE_TRILIST);
         void SubmitDrawCall(const hDrawCall& dc);
-        void SubmitCommand(hUint32 cmd, void* data, hUint32 size);
+        /*
+         * A map lasts the course of a frame. Resoruces are updated from the returned 
+         * pointer just before the submit at the end of a frame.
+         **/
+        void* Map(hVertexBuffer* vb, hUint32 size);
+        void* Map(hIndexBuffer* ib, hUint32 size);
         void End();
 
     private:
@@ -72,6 +78,8 @@ namespace Heart
         void Submit();
 
         static const hUint32            MAX_DC = 32;
+
+        hScissorRect                    scissor_;
         hRenderer*                      renderer_;
         hByte                           layerID_;
         hByte                           camID_;

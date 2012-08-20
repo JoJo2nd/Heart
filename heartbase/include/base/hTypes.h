@@ -56,6 +56,12 @@ struct hcEmptyType {};
     #endif
 #endif
 
+#if defined (HEART_PLAT_WINDOWS)
+    #define HEART_THREAD_LOCAL  __declspec(thread)
+#else
+    #error ("Unknown platform ")
+#endif
+
 namespace Heart
 {
 	class ClassTypeBase

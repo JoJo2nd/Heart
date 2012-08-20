@@ -64,6 +64,8 @@
 #include "base/hMemoryDefines.h"
 #include "base/hMemoryUtil.h"
 
+#include "base/hSysCalls.h"
+
 #include "base/hCRC32.h"
 
 #include "base/hReflection.h"
@@ -84,5 +86,7 @@
 #include "base/hUTF8.h"
 #include "base/hRendererConstants.h"
 #include "base/hIBuiltDataCache.h"
+#include "base/hClock.h"
+#include "base/hProfiler.h"
 
 #endif // HEARTBASE_H__

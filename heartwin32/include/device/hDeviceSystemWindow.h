@@ -85,6 +85,8 @@ namespace Heart
 		SystemHandle				systemHandle_;
 		POINT						prevMousePos_;
         hInt16                      wheelMove_;
+        hUint32                     cursorOffsetX_;
+        hUint32                     cursorOffsetY_;
 
         hdKeyboard		            keyboard_;
         hdMouse                     mouse_;

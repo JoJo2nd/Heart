@@ -92,7 +92,7 @@ namespace Heart
         void	SetRenderTarget( hUint32 idx , hTexture* pTarget );
         void    SetDepthTarget( hTexture* depth );
         void	SetViewport( const hViewport& viewport );
-        void	SetScissorRect( const ScissorRect& scissor );
+        void	SetScissorRect( const hScissorRect& scissor );
         void    SetPixelShader( hShaderProgram* ps );
         void    SetVertexShader( hShaderProgram* vs );
         void    SetConstantBuffer( hdParameterConstantBlock* constBuffer );

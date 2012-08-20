@@ -202,6 +202,7 @@ namespace Heart
 
     void hResourceManager::MainThreadUpdate()
     {
+        HEART_PROFILE_FUNC();
         hMutexAutoScope autoLock(&ltAccessMutex_);
 
         //Push reqeusts

@@ -103,8 +103,11 @@ namespace Heart
         CreateVertexBuffer( NULL, RenderUtility::GetSphereMeshVertexCount( 16, 8 ), hrVF_XYZ, 0, &debugSphereVB_ );
         RenderUtility::BuildSphereMesh( 16, 8, 1.f, &mainSubmissionCtx_,debugSphereIB_, debugSphereVB_ );
 
-        CreateIndexBuffer(NULL, 65535, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &volatileIBuffer_ );
-        CreateVertexBuffer(NULL, 65535, ~0U, RESOURCEFLAG_DYNAMIC, &volatileVBuffer_ );
+        for (hUint32 i =0; i < s_scratchBufferCount; ++i)
+        {
+            CreateIndexBuffer(NULL, 65535, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &volatileIBuffer_[i] );
+            CreateVertexBuffer(NULL, 65535, ~0U, RESOURCEFLAG_DYNAMIC, &volatileVBuffer_[i] );
+        }
 
         //Create viewport/camera for debug drawing
         hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
@@ -150,6 +153,7 @@ namespace Heart
 
 	void hRenderer::BeginRenderFrame()
 	{
+        HEART_PROFILE_FUNC();
 		//ReleasePendingRenderResources();
         //Start new frame
 
@@ -159,6 +163,7 @@ namespace Heart
         //Free last frame draw calls and temporary memory
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
+        hAtomic::AtomicSet(drawResourceUpdateCalls_, 0);
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -167,10 +172,13 @@ namespace Heart
     
 	void hRenderer::EndRenderFrame()
 	{
+        HEART_PROFILE_FUNC();
+
         ParentClass::SwapBuffers();
         ParentClass::BeginRender(&gpuTime_);
     
         CollectAndSortDrawCalls();
+        DoDrawResourceUpdates();
         SubmitDrawCallsMT();
 
         ParentClass::EndRender();
@@ -405,6 +413,23 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hRenderer::SumbitResourceUpdateCommand( const hRenderResourceUpdateCmd& cmd )
+    {
+        hcAssertMsg(drawResourceUpdateCalls_.value_ < s_resoruceUpdateLimit, "Too many resource updates calls");
+        if (drawResourceUpdateCalls_.value_ >= s_resoruceUpdateLimit)
+            return;
+
+        hUint32 wIdx;
+        hAtomic::AtomicAddWithPrev(drawResourceUpdateCalls_, 1, &wIdx);
+
+        //copy calls
+        drawResourceUpdates_[wIdx] = cmd;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderer::SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
     {
         hcAssertMsg(drawCallBlockIdx_.value_+count < MAX_DCBLOCKS, "Too many draw calls");
@@ -470,6 +495,7 @@ namespace Heart
 
     void hRenderer::CollectAndSortDrawCalls()
     {
+        HEART_PROFILE_FUNC();
         //TODO: wait on job chain
         
         // POSSIBLE TODO: parallel merge sort
@@ -482,6 +508,7 @@ namespace Heart
 
     void hRenderer::SubmitDrawCallsMT()
     {
+        HEART_PROFILE_FUNC();
         /* TODO: Multi-thread submit, but ST is debug-able */
         SubmitDrawCallsST();
     }
@@ -492,12 +519,16 @@ namespace Heart
 
     void hRenderer::SubmitDrawCallsST()
     {
+        HEART_PROFILE_FUNC();
         /*Single thread submit*/
         hUint32 camera = ~0U;
         const hMaterial* material = NULL;
         hUint32 pass = ~0U;
         hUint32 tmask = ~0U;
         hUint32 dcs = drawCallBlockIdx_.value_;
+        hUint32 scidx = 0;
+        hScissorRect scissorRect;
+
         for (hUint32 dc = 0; dc < dcs; ++dc)
         {
             hDrawCall* dcall = &drawCallBlocks_[dc];
@@ -508,6 +539,10 @@ namespace Heart
             {
                 //Begin camera pass
                 tmask = BeginCameraRender(&mainSubmissionCtx_, nCam);
+                scissorRect.left_ = 0;
+                scissorRect.top_ = 0;
+                scissorRect.right_ = GetRenderCamera(nCam)->GetTargetWidth();
+                scissorRect.bottom_ = GetRenderCamera(nCam)->GetTargetHeight();
                 camera = nCam;
             }
 
@@ -540,34 +575,54 @@ namespace Heart
                     mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
             }
 
+            if (dcall->scissor_ != scissorRect)
+            {
+                mainSubmissionCtx_.SetScissorRect(dcall->scissor_);
+                scissorRect = dcall->scissor_;
+            }
 
             hIndexBuffer* ib  = dcall->indexBuffer_;
             hVertexBuffer* vb = dcall->vertexBuffer_;
-            if (dcall->immediate_)
-            {
-                hIndexBufferMapInfo ibmap;
-                hVertexBufferMapInfo vbmap;
-                mainSubmissionCtx_.Map(volatileIBuffer_, &ibmap);
-                mainSubmissionCtx_.Map(volatileVBuffer_, &vbmap);
-
-                //Copy
-                hMemCpy(ibmap.ptr_, dcall->imIBBuffer_, dcall->ibSize_);
-                hMemCpy(vbmap.ptr_, dcall->imVBBuffer_, dcall->vbSize_);
-
-                mainSubmissionCtx_.Unmap(&ibmap);
-                mainSubmissionCtx_.Unmap(&vbmap);
-
-                ib = volatileIBuffer_;
-                vb = volatileVBuffer_;
-            }
 
             mainSubmissionCtx_.SetPrimitiveType(dcall->primType_);
-            mainSubmissionCtx_.SetIndexStream(ib);
             mainSubmissionCtx_.SetVertexStream(0, vb, dcall->stride_);
             if (dcall->indexBuffer_ == NULL)
+            {
                 mainSubmissionCtx_.DrawPrimitive(dcall->primCount_, dcall->startVertex_);
+            }
             else
+            {
+                mainSubmissionCtx_.SetIndexStream(ib);
                 mainSubmissionCtx_.DrawIndexedPrimitive(dcall->primCount_, dcall->startVertex_);
+            }
+        }
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::DoDrawResourceUpdates()
+    {
+        HEART_PROFILE_FUNC();
+
+        hUint32 updates = drawResourceUpdateCalls_.value_;
+        for (hUint32 i = 0; i < updates; ++i)
+        {
+            hRenderResourceUpdateCmd* cmd = &drawResourceUpdates_[i];
+            if (cmd->flags_ == hRenderResourceUpdateCmd::eMapTypeIdxBuffer)
+            {
+                hIndexBufferMapInfo map; 
+                mainSubmissionCtx_.Map(cmd->ib_, &map);
+                hMemCpy(map.ptr_, cmd->data_, cmd->size_);
+                mainSubmissionCtx_.Unmap(&map);
+            }
+            else if (cmd->flags_ == hRenderResourceUpdateCmd::eMapTypeVtxBuffer)
+            {
+                hVertexBufferMapInfo map; 
+                mainSubmissionCtx_.Map(cmd->vb_, &map);
+                hMemCpy(map.ptr_, cmd->data_, cmd->size_);
+                mainSubmissionCtx_.Unmap(&map);
+            }
         }
     }
 

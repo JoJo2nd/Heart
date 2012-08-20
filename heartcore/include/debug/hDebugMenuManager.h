@@ -29,6 +29,19 @@
 
 namespace Heart
 {
+    class hDebugMenuBase : public Gwen::Controls::WindowControl
+    {
+    public:
+        hDebugMenuBase(Gwen::Controls::Base* parent)
+            : WindowControl(parent)
+        {
+
+        }
+
+        virtual void PreRenderUpdate() = 0;
+        virtual void EndFrameUpdate() = 0;
+    };
+
     class hDebugMenuManager
     {
     public:
@@ -42,7 +55,9 @@ namespace Heart
         void                        RegisterMenu(const hChar* name, Gwen::Controls::Base* menu);
         void                        UnregisterMenu(Gwen::Controls::Base* menu);
         void                        SetMenuVisiablity(const hChar* name, hBool show);
+        void                        PreRenderUpdate() {}
         void                        RenderMenus();
+        void                        EndFrameUpdate() {}
         static hDebugMenuManager*   GetInstance() { return instance_; }
         hBool                       Ready() { return uiCanvas_ != NULL; }
 

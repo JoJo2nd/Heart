@@ -36,3 +36,6 @@
 #include "base/hMemoryHeapBase.cpp"
 #include "base/hAtomic.cpp"
 #include "base/hUTF8.cpp"
+#include "base/hClock.cpp"
+#include "base/hProfiler.cpp"
+#include "base/hSysCalls.cpp"

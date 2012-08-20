@@ -17,9 +17,9 @@ project "material_loader"
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         libdirs {TargetDir..DebugCfgName}
-		flags {"Symbols"}
+		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {TargetDir..ReleaseCfgName}
-        flags {"Optimize"}
+        flags {ReleaseOptions}

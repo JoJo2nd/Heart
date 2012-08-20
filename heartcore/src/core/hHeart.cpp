@@ -86,6 +86,12 @@ namespace Heart
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
 
         //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+
+        rtProfileMenu_ = NULL;
+
+        //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         if ( configFile )
@@ -155,6 +161,10 @@ namespace Heart
 
         debugMenuManager_->Initialise(uiRenderer_, renderer_, resourceMananger_, controllerManager_);
 
+#if defined HEART_DO_PROFILE
+        g_ProfilerManager_ = hNEW(GetDebugHeap(), hProfilerManager)();
+#endif
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,8 +176,6 @@ namespace Heart
         engineState_ = hHeartState_LoadingCore;
 
         GetResourceManager()->mtLoadPackage("CORE");
-
-
 
     }
 
@@ -188,44 +196,61 @@ namespace Heart
 
     void HeartEngine::DoUpdate()
     {
-        GetSystem()->Update();
+#ifdef HEART_DO_PROFILE
+        g_ProfilerManager_->BeginFrame();
+#endif
+        hTimer frameTimer;
 
-        GetResourceManager()->MainThreadUpdate();
+        {
+            HEART_PROFILE_SCOPE("MainUpdate");
 
-        GetControllerManager()->Update();
+            hClock::BeginTimer(frameTimer);
+            hClock::Update();
 
-        //before calling Update dispatch the last frames messages
-        GetEventManager()->DispatchEvents();
+            GetSystem()->Update();
 
-        hClock::Update();
+            GetResourceManager()->MainThreadUpdate();
 
-        GetConsole()->Update();
+            GetControllerManager()->Update();
 
-//         if ( (*quitFlag) )
-//         {
-//             if ( config->shutdownTickFunc_( pEngine ) )
-//             {
-//                 //wait on game to say ok to shutdown
-//                 GetJobManager()->Destory();
-//                 break;
-//             }
-//         }
+            //before calling Update dispatch the last frames messages
+            GetEventManager()->DispatchEvents();
 
-        GetSoundManager()->Update();
+            GetConsole()->Update();
 
-        (*mainUpdate_)( this );
+    //         if ( (*quitFlag) )
+    //         {
+    //             if ( config->shutdownTickFunc_( pEngine ) )
+    //             {
+    //                 //wait on game to say ok to shutdown
+    //                 GetJobManager()->Destory();
+    //                 break;
+    //             }
+    //         }
 
-        GetVM()->Update();
+            GetSoundManager()->Update();
 
-        GetRenderer()->BeginRenderFrame();
+            (*mainUpdate_)( this );
 
-        (*mainRender_)( this );
+            GetVM()->Update();
 
-        debugMenuManager_->RenderMenus();
+            GetRenderer()->BeginRenderFrame();
 
-        GetRenderer()->EndRenderFrame();
+            (*mainRender_)( this );
 
-        GetControllerManager()->EndOfFrameUpdate();
+            debugMenuManager_->RenderMenus();
+
+            GetRenderer()->EndRenderFrame();
+
+            GetControllerManager()->EndOfFrameUpdate();
+
+            hClock::EndTimer(frameTimer);
+        }
+
+        if (rtProfileMenu_)
+        {
+            rtProfileMenu_->EndFrameUpdate(frameTimer.ElapsedmS()/1000.f, GetRenderer()->GetLastGPUTime());
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -234,38 +259,44 @@ namespace Heart
 
     void HeartEngine::DoUpdateNoApp()
     {
-        hClock::Update();
+#ifdef HEART_DO_PROFILE
+        g_ProfilerManager_->BeginFrame();
+#endif
 
-        GetSystem()->Update();
+        {
+            HEART_PROFILE_SCOPE("MainUpdateNoApp");
 
-        GetResourceManager()->MainThreadUpdate();
+            hClock::Update();
 
-        GetControllerManager()->Update();
+            GetSystem()->Update();
 
-        //before calling Update dispatch the last frames messages
-        GetEventManager()->DispatchEvents();
+            GetResourceManager()->MainThreadUpdate();
 
-        hClock::Update();
+            GetControllerManager()->Update();
 
-        GetConsole()->Update();
+            //before calling Update dispatch the last frames messages
+            GetEventManager()->DispatchEvents();
 
-//         if ( (*quitFlag) )
-//         {
-//             GetJobManager()->Destory();
-//             break;
-//         }
+            GetConsole()->Update();
 
-        GetSoundManager()->Update();
+    //         if ( (*quitFlag) )
+    //         {
+    //             GetJobManager()->Destory();
+    //             break;
+    //         }
 
-        GetVM()->Update();
+            GetSoundManager()->Update();
 
-        GetRenderer()->BeginRenderFrame();
+            GetVM()->Update();
 
-        debugMenuManager_->RenderMenus();
+            GetRenderer()->BeginRenderFrame();
 
-        GetRenderer()->EndRenderFrame();
+            debugMenuManager_->RenderMenus();
 
-        GetControllerManager()->EndOfFrameUpdate();
+            GetRenderer()->EndRenderFrame();
+
+            GetControllerManager()->EndOfFrameUpdate();
+        }
     }
 
 
@@ -322,7 +353,6 @@ namespace Heart
 
     void HeartEngine::DoEngineTick()
     {
-        Device::ThreadSleep(1);
         switch(engineState_)
         {
         case hHeartState_LoadingCore:
@@ -331,6 +361,7 @@ namespace Heart
 
                 if (GetResourceManager()->RequiredResourcesReady())
                 {
+                    PostCoreResourceLoad();
                     if (sharedLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
                     {
                         (*coreAssetsLoaded_)(this);
@@ -355,6 +386,20 @@ namespace Heart
             //TODO
             break;
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void HeartEngine::PostCoreResourceLoad()
+    {
+        //////////////////////////////////////////////////////////////////////////
+        // Create debug menus ////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+
+        rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas());
+        debugMenuManager_->RegisterMenu("rtp", rtProfileMenu_);
     }
 
 }

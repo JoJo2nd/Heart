@@ -30,9 +30,9 @@ configuration (DebugCfgName)
 	targetsuffix "_d"
 	targetdir (TargetDir..DebugCfgName)
 	defines {{DebugDefines}}
-	flags {"Symbols"}
+	flags {DebugOptions}
 configuration (ReleaseCfgName)
 	targetsuffix "_r"
 	targetdir (TargetDir..ReleaseCfgName)
 	defines {{ReleaseDefines}}
-	flags {"Optimize"}
+	flags {ReleaseOptions}

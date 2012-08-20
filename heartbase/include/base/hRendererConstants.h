@@ -33,6 +33,16 @@ namespace Heart
 	struct hRect 
 	{
 		hUint32 top_,left_,right_,bottom_;
+
+        hBool operator == (const hRect& rhs)
+        {
+            return left_ == rhs.left_ && right_ == rhs.right_ && top_ == rhs.top_ && bottom_ == rhs.bottom_;
+        }
+
+        hBool operator != (const hRect& rhs)
+        {
+            return !(*this == rhs);
+        }
 	};
 
 	struct hViewport
@@ -44,7 +54,22 @@ namespace Heart
 		hUint32 x_,y_,width_,height_;
 	};
 
-	typedef hRect ScissorRect;
+	typedef hRect hScissorRect;
+
+    struct hRelativeScissorRect
+    {
+        hFloat left,top,right,bottom;
+
+        hBool operator == (const hRelativeScissorRect& rhs)
+        {
+            return left == rhs.left && right == rhs.right && top == rhs.top && bottom == rhs.bottom;
+        }
+
+        hBool operator != (const hRelativeScissorRect& rhs)
+        {
+            return !(*this == rhs);
+        }
+    };
 
 	struct hColour
 	{

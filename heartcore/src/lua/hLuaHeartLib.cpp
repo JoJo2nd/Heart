@@ -108,35 +108,31 @@ by Lua can also return many results.
         return 0;
     }
 
-	static const luaL_Reg libcore[] = {
-		{"elasped",			    hLuaElasped},
-		{"elaspedHMS",		    hLuaElaspedHoursMinSecs},
-		{"wait",			    hLuaWait},
-		{"debugDraw",           hLuaEnableDebugDraw},
-        {"clear",               hLuaClearConsole},
-        {"setDebugMenuShow",    hLuaSetDebugMenuVisiable},
-		{NULL, NULL}
-	};
-
     int hLuaExit(lua_State* L)
     {
         HEART_LUA_GET_ENGINE(L);
         //engine->GetEventManager()->PostEvent( Heart::KERNEL_EVENT_CHANNEL, Heart::Device::KernelEvents::QuitRequestedEvent() );
+        exit(luaL_checknumber( L, 1 ));
         return 0;
     }
 
-    static const luaL_Reg libos[] = {
-        {"exit",           hLuaExit},
+	static const luaL_Reg libcore[] = {
+		{"elasped",			    hLuaElasped},
+		{"elaspedHMS",		    hLuaElaspedHoursMinSecs},
+		{"wait",			    hLuaWait},
+		{"dd",                  hLuaEnableDebugDraw},
+        {"cls",                 hLuaClearConsole},
+        {"dms",                 hLuaSetDebugMenuVisiable},
+        {"exit",                hLuaExit},
         {NULL, NULL}
-    };
+	};
 
 #define HEART_OPEN_LIB(name) \
     lua_pushlightuserdata(L, engine); \
-    luaI_openlib( L, "h"#name, lib##name, 1 ); \
+    luaI_openlib( L, "h", name, 1 ); \
 
 	void OpenHeartLuaLib( lua_State* L, HeartEngine* engine )
 	{
-        HEART_OPEN_LIB(core);
-        HEART_OPEN_LIB(os);
+        HEART_OPEN_LIB(libcore);
 	}
 }

@@ -133,6 +133,7 @@ namespace Heart
 
 
         void                            RegisterDefaultComponents();
+        void                            PostCoreResourceLoad();
         void                            DoUpdate();
         void                            DoUpdateNoApp();
 
@@ -156,6 +157,7 @@ namespace Heart
 
         //Debug 
         hDebugMenuManager*              debugMenuManager_;
+        hRTProfilerMenu*                rtProfileMenu_;
 
         //app functions
     public:

@@ -8,6 +8,9 @@
 
 //#define HEART_DO_ASSERTS
 
+typedef void (*hPrintfCallback)(const hChar*);
+HEARTBASE_SLIBEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
+
 #if defined HEART_DEBUG || defined HEART_DO_ASSERTS
 
 #define MAX_WARNING_LEVEL ( WARNING_HIGH )
@@ -23,11 +26,8 @@
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
 #define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!:"x, __VA_ARGS__ ); }
 
-typedef void (*hPrintfCallback)(const hChar*);
-
 HEARTBASE_SLIBEXPORT void HEART_API hcOutputStringRaw( const hChar* msg, ... );
 HEARTBASE_SLIBEXPORT void HEART_API hcOutputString( const hChar* msg, ... );
-HEARTBASE_SLIBEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 
 #define hcBreak					__asm { int 3 } 
 

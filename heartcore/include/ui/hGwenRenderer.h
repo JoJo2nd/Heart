@@ -39,6 +39,8 @@ namespace Heart
         ~hGwenRenderer() 
         {}
 
+        static const hUint32 s_maxDrawPrims = 1024*32;
+
         void SetRenderCameraID(hByte layer) { rndCameraID_ = layer; }
 
         void Initialise(hRenderer* renderer, hResourceManager* resourceManager);
@@ -74,6 +76,7 @@ namespace Heart
             DrawMode_Lines,
             DrawMode_VertexColour,
             DrawMode_Textured,
+            DrawMode_Text,
         };
 
         struct ColourVtx
@@ -93,8 +96,6 @@ namespace Heart
         void                    SwitchDrawMode(DrawMode newMode);
         void                    BeginDrawMode();
         void                    Flush();
-        void                    BeginTextDraw(hFont* font, hUint32 nChars);
-        void                    EndTextDraw(hUint32 nChars);
 
         hRenderer*                  renderer_;
         hDrawCallContext            dcCtx_;
@@ -112,16 +113,28 @@ namespace Heart
         hByte*                      inlineTxtVtxMem_;
         hByte*                      inlineTxtIdxMem_;
         hUint16*                    inlineTxtPC_;
+        hUint32                     vcStride_;
         hUint32                     textVtxStride_;
         hFont*                      activeFont_;
         hUint32                     charactersLeft_;
-        ScissorRect                 screenRect_;
+        hScissorRect                 screenRect_;
         Gwen::Texture*              currentTexture_;
+
+        hVertexBuffer*              vtxColourVB_;
+        hVertexBuffer*              texturedVB_;
+        hIndexBuffer*               vtxColourIB_;
+        hIndexBuffer*               texturedIB_;
+        hUint16*                    vcIBPtr_;
+        hUint16*                    tIBPtr_;
+        hByte*                      vcVBPtr_;
+        hUint16                     vcStart_;
+        hByte*                      tVBPtr_;
+        hUint16                     tVBStart_;
 
         hUint16*                    tmpIB;
         hByte*                      tmpVB;
 
-        hUint32                 primCount_;
+        hUint32                 vtxCount_;
         hColour                 currentColour_;
         hUint32                 currectColourUint_;
         DrawMode                activeDrawMode_;

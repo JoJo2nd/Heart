@@ -170,7 +170,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetScissorRect( const ScissorRect& scissor )
+    void hdDX11RenderSubmissionCtx::SetScissorRect( const hScissorRect& scissor )
     {
         D3D11_RECT s;
         s.left = scissor.left_;

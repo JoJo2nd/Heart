@@ -119,6 +119,12 @@
 
 #define RAPIDXML_NO_EXCEPTIONS
 
+#define HEART_DO_PROFILE
+
+#if defined (HEART_DEBUG) && !defined (HEART_DO_PROFILE)
+    #define HEART_DO_PROFILE
+#endif
+
 #ifdef HEART_PACKER
     #define HEART_USE_DEFAULT_MEM_ALLOC
 #endif

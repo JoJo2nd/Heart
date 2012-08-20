@@ -62,7 +62,7 @@ namespace Heart
         void	SetRenderTarget( hUint32 idx , hdDX11Texture* target );
         void    SetDepthTarget( hdDX11Texture* depth );
         void	SetViewport( const hViewport& viewport );
-        void	SetScissorRect( const ScissorRect& scissor );
+        void	SetScissorRect( const hScissorRect& scissor );
         void	ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
         void    SetPrimitiveType( PrimitiveType type );
         void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );

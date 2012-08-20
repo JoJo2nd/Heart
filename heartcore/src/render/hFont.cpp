@@ -166,8 +166,9 @@ hUint32 hFont::RenderString( void* iBuffer,
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 hFont::RenderStringSingleLine(void* iBuffer, void* vBuffer, const hCPUVec2& topleft, const hChar* str)
+hUint32 hFont::RenderStringSingleLine(void* vBuffer, const hCPUVec2& topleft, const hChar* str)
 {
+    HEART_PROFILE_FUNC();
     hUint32 nLines = 0;
     hFloat startx;
     hFloat starty;
@@ -177,7 +178,6 @@ hUint32 hFont::RenderStringSingleLine(void* iBuffer, void* vBuffer, const hCPUVe
     hUint16 vOffset = 0;//vBuffer.VertexCount();
     hFloat fh = (hFloat)fontHeight_;
 
-    hUint16* idx = (hUint16*)iBuffer;
     Vex* vtx = (Vex*)vBuffer;
 
     startx = topleft.x;
@@ -201,22 +201,15 @@ hUint32 hFont::RenderStringSingleLine(void* iBuffer, void* vBuffer, const hCPUVe
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Draw as a quad /////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
-        //hUint16* idx = *idx;
-        //Vex* vtx = (Vex*)*vBuffer;
-        *idx = vOffset;   ++idx;
-        *idx = vOffset+2; ++idx;
-        *idx = vOffset+1; ++idx;
+        vOffset += 6;
 
-        *idx = vOffset+2; ++idx;
-        *idx = vOffset+3; ++idx;
-        *idx = vOffset+1; ++idx;
+        *vtx = quad[ 0 ]; ++vtx;
+        *vtx = quad[ 1 ]; ++vtx;
+        *vtx = quad[ 2 ]; ++vtx;
 
-        vOffset += 4;
-
-        for ( hUint32 i = 0; i < 4; ++i )
-        {
-            *vtx = quad[ i ]; ++vtx;
-        }
+        *vtx = quad[ 2 ]; ++vtx;
+        *vtx = quad[ 1 ]; ++vtx;
+        *vtx = quad[ 3 ]; ++vtx;
 
         startx += c.xAdvan_;
 
@@ -410,29 +403,41 @@ void hFont::RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Pri
 
 hFontCharacter* hFont::GetFontCharacter( hUint32 charcode )
 {
-	//binary search for the character
-	hInt32 top = nFontCharacters_;
-	hInt32 bottom = 0;
-	hInt32 mid;
-
-	while ( top >= bottom )
-	{
-		mid = (bottom + top)/ 2;
-		if ( fontCharacters_[mid].unicode_ > charcode )
-		{
-			top = mid-1;
-		}
-		else if ( fontCharacters_[mid].unicode_ < charcode )
-		{
-			bottom = mid+1;
-		}
-		else
-		{
-			return &fontCharacters_[mid];
-		}
-	}
-
-	return &fontCharacters_[nFontCharacters_-1];
+    HEART_PROFILE_FUNC();
+ 	//binary search for the character
+//  	hInt32 top = nFontCharacters_;
+//  	hInt32 bottom = 0;
+//  	hInt32 mid;
+//  
+//  	while ( top >= bottom )
+//  	{
+//  		mid = (bottom + top)/ 2;
+//  		if ( fontCharacters_[mid].unicode_ > charcode )
+//  		{
+//  			top = mid-1;
+//  		}
+//  		else if ( fontCharacters_[mid].unicode_ < charcode )
+//  		{
+//  			bottom = mid+1;
+//  		}
+//  		else
+//  		{
+//  			return &fontCharacters_[mid];
+//  		}
+//  	}
+//  
+//  	return &fontCharacters_[nFontCharacters_-1];
+ 	
+    // "Step" search. Most fonts contain blocks of character (e.g. think ascii range)
+    // We abuse that fact with this search, because when fons get big e.g. > 1000 glphys 
+    // a binary search doesn't cut it.
+    for (hUint32 i = 1; i < fontLookupSteps_; ++i)
+    {
+        if (charcode >= (fontLookup_[i-1]&0xFFFFFFFF) && charcode <= (fontLookup_[i]&0xFFFFFFFF))
+            return &fontCharacters_[charcode-((fontLookup_[i-1]&0xFFFFFFFF00000000)>>32)];
+    }
+    
+    return &fontCharacters_[nFontCharacters_-1];
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -441,13 +446,17 @@ hFontCharacter* hFont::GetFontCharacter( hUint32 charcode )
 
 hCPUVec2 hFont::CalcRenderSize( const hChar* str )
 {
+    HEART_PROFILE_FUNC();
     hCPUVec2 ret(0.f,0.f);
     for (;*str;++str)
     {
         const hFontCharacter& fchar = *GetFontCharacter(*str);
         ret.x += fchar.xAdvan_;
-        ret.y = hMax(ret.y, fontHeight_);
     }
+
+    const hFontCharacter& fchar = *GetFontCharacter(' ');
+    ret.y = fontHeight_;
+    ret.x += fchar.xAdvan_;
 
     return ret;
 }
@@ -459,11 +468,10 @@ hCPUVec2 hFont::CalcRenderSize( const hChar* str )
 void hFont::SetFontCharacterLimit( hUint32 nChars )
 {
     nMaxFontCharacters_ = nChars;
-    if (fontCharacters_)
-    {
-        hDELETE_ARRAY_SAFE(GetGlobalHeap(), fontCharacters_);
-    }
+    hDELETE_ARRAY_SAFE(GetGlobalHeap(), fontCharacters_);
+    hDELETE_ARRAY_SAFE(GetGlobalHeap(), fontLookup_);
     fontCharacters_ = hNEW_ARRAY(GetGlobalHeap(), hFontCharacter, nMaxFontCharacters_);
+    fontLookup_ = hNEW_ARRAY(GetGlobalHeap(), hFontLookup, nMaxFontCharacters_);//TODO: reduce this
     nFontCharacters_ = 0;
 }
 
@@ -474,12 +482,18 @@ void hFont::SetFontCharacterLimit( hUint32 nChars )
 void hFont::AddFontCharacter( const hFontCharacter* fchar )
 {
     hcAssert(nFontCharacters_ < nMaxFontCharacters_);
+    fontLookup_[nFontCharacters_] = fchar->unicode_;
     fontCharacters_[nFontCharacters_++] = *fchar;
 }
 
 int hFontCharacterSort(const void* lhs, const void* rhs)
 {
     return ((hFontCharacter*)lhs)->unicode_ < ((hFontCharacter*)rhs)->unicode_ ? -1 : 1;
+}
+
+int hFontIDSort(const void* lhs, const void* rhs)
+{
+    return *((hFontLookup*)lhs) < *((hFontLookup*)rhs) ? -1 : 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -489,6 +503,20 @@ int hFontCharacterSort(const void* lhs, const void* rhs)
 void hFont::SortCharacters()
 {
     qsort(fontCharacters_, nFontCharacters_, sizeof(hFontCharacter), hFontCharacterSort);
+    hUint32 of = 0;
+    hUint32 nSteps = 0;
+    for (hUint32 i = 0; i < nFontCharacters_; ++i)
+    {
+        if (fontCharacters_[i].unicode_ > (of+1))
+        {
+            fontLookup_[nSteps++] = ((((hUint64)fontCharacters_[i].unicode_-i)<<32) | fontCharacters_[i].unicode_);
+        }
+        of = fontCharacters_[i].unicode_;
+    }
+    //fontLookup_[nSteps-1].idx_ = nFontCharacters_-2;//-2 because last entry is invalid character
+    //fontLookup_[nSteps-1].unicode_ = fontCharacters_[nFontCharacters_-2].unicode_;
+    fontLookup_[nSteps-1] = ((((hUint64)nFontCharacters_-2)<<32) | fontCharacters_[nFontCharacters_-2].unicode_);
+    fontLookupSteps_ = nSteps;
 }
 
 //////////////////////////////////////////////////////////////////////////

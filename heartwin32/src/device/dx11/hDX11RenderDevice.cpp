@@ -90,7 +90,7 @@ namespace Heart
                 D3D_DRIVER_TYPE_HARDWARE, 
                 NULL, 
 #if !defined (HEART_DEBUG)
-                D3D11_CREATE_DEVICE_DEBUG, 
+                0, 
 #else
                 D3D11_CREATE_DEVICE_DEBUG,
 #endif
@@ -400,13 +400,13 @@ namespace Heart
                 if ( compressedFormat )
                 {
                     //D3D want the number of 4x4 blocks in the first row of the texture
-                    if ( desc.Format == DXGI_FORMAT_BC1_UNORM )
+                    if ( desc.Format == DXGI_FORMAT_BC1_UNORM || desc.Format == DXGI_FORMAT_BC1_UNORM_SRGB )
                     {
-                        data.SysMemPitch = (hMax(initialData[i].width/4, 4))*8;
+                        data.SysMemPitch = (( initialData[i].width + 3 )/4 )*8;
                     }
                     else
                     {
-                        data.SysMemPitch = (hMax(initialData[i].width/4, 4))*16;
+                        data.SysMemPitch = (( initialData[i].width + 3 )/4 )*16;
                     }
                 }
                 else

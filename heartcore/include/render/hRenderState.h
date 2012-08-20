@@ -109,7 +109,7 @@ struct hTargetStateBlock
 	hRenderTargetTexture*	pTargets_[ MAX_RENDER_TARGETS ];
 	hRenderTargetTexture*	pDepthSurface_;
 	hViewport				viewport_;
-	ScissorRect				scissorRect_;
+	hScissorRect			scissorRect_;
 	union
 	{
 		hUint32 AllFlags_;
@@ -244,7 +244,7 @@ public:
 		vp.width_ = Renderer_.GetWidth();
 		vp.height_ = Renderer_.GetHeight();
 		SetViewport( vp );
-		ScissorRect s;
+		hScissorRect s;
 		s.top_ = 0;
 		s.bottom_ = Renderer_.GetHeight();
 		s.left_ = 0;
@@ -333,7 +333,7 @@ public:
 			PushDirtyState( RS_SCISSOR_TEST );
 		}
 	}
-	void					setScissorRect( ScissorRect rect )
+	void					setScissorRect( hScissorRect rect )
 	{
 		if ( targetStateBlock_.scissorRect_.top_	!= rect.top_	||
 			 targetStateBlock_.scissorRect_.bottom_ != rect.bottom_ ||

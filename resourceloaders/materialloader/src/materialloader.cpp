@@ -235,7 +235,7 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
                 rasstate.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
                 rasstate.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
                 rasstate.slopeScaledDepthBias_ = xPass.FirstChild("slopescaleddepthbias").GetValueFloat();
-                rasstate.scissorEnable_ = RSV_DISABLE;
+                rasstate.scissorEnable_ = xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
                 rasstate.frontCounterClockwise_ = RSV_ENABLE;
 
                 pass.SetBlendStateDesc(blendstate);

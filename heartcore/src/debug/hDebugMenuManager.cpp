@@ -125,6 +125,7 @@ namespace Heart
 
     void hDebugMenuManager::RenderMenus()
     {
+        HEART_PROFILE_FUNC();
         if (resourceManager_->RequiredResourcesReady())
         {
             if (uiCanvas_ == NULL)
