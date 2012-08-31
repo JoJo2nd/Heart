@@ -28,6 +28,29 @@
 namespace Heart
 {
     //////////////////////////////////////////////////////////////////////////
+    // Custom entry //////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    class hConsoleTextbox : public Gwen::Controls::TextBox
+    {
+    public:
+        hConsoleTextbox(Gwen::Controls::Base* parent)
+            : TextBox(parent)
+        {
+            
+        }
+
+        bool OnKeyReturn( bool bDown )
+        {
+            if ( bDown ) 
+                return true;
+            OnEnter();
+            // Try to move to the next control, as if tab had been pressed
+            OnKeyTab( true );
+            return true;
+        }
+    };
+    
+    //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
@@ -42,8 +65,9 @@ namespace Heart
             outputList_ = hNEW(GetGlobalHeap(), Gwen::Controls::ListBox)(this);
             outputList_->SetSize(500, 200);
             outputList_->SetHidden(false);
+            outputList_->SetScroll(hTrue, hTrue);
 
-            entry_ = hNEW(GetGlobalHeap(), Gwen::Controls::TextBox)(this);
+            entry_ = hNEW(GetGlobalHeap(), hConsoleTextbox)(this);
             entry_->SetText( "" );
             entry_->SetPos(0, 210);
             entry_->SetWidth(500);
@@ -83,6 +107,7 @@ namespace Heart
             Gwen::Controls::TextBox* textbox = (Gwen::Controls::TextBox*) (pControl);
             console_->ExecuteBuffer(Gwen::Utility::UnicodeToString(textbox->GetText()).c_str());
             textbox->SetText("");
+            textbox->Focus();
         }
 
         Gwen::Controls::ListBox* outputList_;

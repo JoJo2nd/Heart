@@ -35,8 +35,8 @@ namespace Heart
     void hDrawCallContext::Begin( hRenderer* renderer )
     {
         hcAssertMsg(renderer_ == NULL && calls_ == 0, "hDrawCallContext begin called without end");
-        SetScissor(0.f, 0.f, 1.f, 1.f);
         renderer_ = renderer;
+        SetScissor(0.f, 0.f, renderer_->GetWidth(), renderer_->GetHeight());
         calls_ = 0;
     }
 

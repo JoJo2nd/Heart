@@ -77,6 +77,7 @@ namespace Heart
 
         dcCtx_.SetCameraID(rndCameraID_);
         dcCtx_.SetRenderLayer(0);
+        dcCtx_.SetScissor(0, 0, renderer_->GetWidth(), renderer_->GetHeight());
         dcCtx_.Begin(renderer_);
         
 
@@ -356,6 +357,7 @@ namespace Heart
         if (!pFont || !pFont->data)
             return;
 
+        Flush();
         SwitchDrawMode(DrawMode_Text);
 
         pos.x += GetRenderOffset().x;
@@ -478,6 +480,7 @@ namespace Heart
             inlineVtxMem_ = vcVBPtr_;
             break;
         case DrawMode_Textured:
+        case DrawMode_Text:
             currentStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
             inlineVtxMem_ = tVBPtr_;
             break;

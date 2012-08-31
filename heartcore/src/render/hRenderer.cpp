@@ -541,8 +541,8 @@ namespace Heart
                 tmask = BeginCameraRender(&mainSubmissionCtx_, nCam);
                 scissorRect.left_ = 0;
                 scissorRect.top_ = 0;
-                scissorRect.right_ = GetRenderCamera(nCam)->GetTargetWidth();
-                scissorRect.bottom_ = GetRenderCamera(nCam)->GetTargetHeight();
+                scissorRect.right_ = 0;
+                scissorRect.bottom_ = 0;
                 camera = nCam;
             }
 

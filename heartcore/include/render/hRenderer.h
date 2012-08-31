@@ -187,7 +187,7 @@ namespace Heart
         void                                                    CollectAndSortDrawCalls();
         void                                                    SubmitDrawCallsMT();
         void                                                    SubmitDrawCallsST();
-        void DoDrawResourceUpdates();
+        void                                                    DoDrawResourceUpdates();
 		// Init params
 		hSystem*												system_;
 		hUint32 												width_;
