@@ -42,7 +42,7 @@ extern "C"
     DLL_EXPORT
         Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::HeartEngine*);
     DLL_EXPORT
-        Heart::hResourceClassBase* HEART_API HeartRawLoader(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput);
+        Heart::hResourceClassBase* HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput);
     DLL_EXPORT
         hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::HeartEngine* engine);
     DLL_EXPORT

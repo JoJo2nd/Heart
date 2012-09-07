@@ -32,6 +32,32 @@
 
 using namespace Heart;
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+#define TEXTURE_MAGIC_NUM              hMAKE_FOURCC('h','T','E','X')
+#define TEXTURE_STRING_MAX_LEN         (32)
+#define TEXTURE_MAJOR_VERSION          (((hUint16)1))
+#define TEXTURE_MINOR_VERSION          (((hUint16)0))
+#define TEXTURE_VERSION                ((TEXTURE_MAJOR_VERSION << 16)|TEXTURE_MINOR_VERSION)
+
+#pragma pack(push, 1)
+
+struct TextureHeader
+{
+    Heart::hResourceBinHeader   resHeader;
+    hUint32                     version;
+    hUint32                     width;
+    hUint32                     height;
+    hUint32                     depth;
+    hUint32                     mipCount;
+    Heart::hTextureFormat       format;
+    Heart::ResourceFlags        flags;
+};
+
+#pragma pack(pop)
+
 struct RawTextureData
 {
     void*                   data_;      //Assumes RGBA or L8 format based on bytesPerPixel
@@ -341,8 +367,11 @@ void pngRead(png_structp pngPtr, png_bytep pDst, png_size_t len)
 DLL_EXPORT
 Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine)
 {
-    Heart::hTexture* tex = engine->GetRenderer()->OnTextureLoad(infile);
-    return tex;
+    TextureHeader header = {0};
+
+    infile->Read(&header, sizeof(header));
+
+    return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -350,7 +379,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
 
     RawTextureData textureData;
@@ -428,9 +457,7 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
         compressor.process(inputOptions,compresserOptions, outputOptions);
 
         /*
-        * TODO: Create texture need the w/h sizes of each mip
-        * Serialiser needs compact header at start of class block
-        * Serialiser needs to allow custom, named binary blocks
+        * Create texture need the w/h sizes of each mip
         */
 
         mipCount = outputHandler.mips_;
@@ -489,18 +516,37 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
         textureData.format_ = (Heart::hTextureFormat)(textureData.format_ | Heart::TFORMAT_GAMMA_sRGB);
     }
 
-    Heart::hTexture* tex;
-    engine->GetRenderer()->CreateTexture(textureData.width_, textureData.height_, mipCount, mips, textureData.format_, Heart::RESOURCEFLAG_KEEPCPUDATA, &tex);
-    
-    Heart::hSerialiser ser;
-    ser.Serialise(binoutput, *tex);
+    //Write Header
+    TextureHeader header = {0};
+    header.resHeader.resourceType = TEXTURE_MAGIC_NUM;
+    header.version = TEXTURE_VERSION;
+    header.width = textureData.width_;
+    header.height = textureData.height_;
+    header.depth = 0;
+    header.mipCount = textureData.mips_;
+    header.format = textureData.format_;
+    header.flags = keepcpu ? Heart::RESOURCEFLAG_KEEPCPUDATA : (Heart::ResourceFlags)0;
 
-    if (!keepcpu)
+    binoutput->Write(&header, sizeof(header));
+
+    //Write mip info
+    for (hUint32 i = 0; i < header.mipCount; ++i)
     {
-        tex->ReleaseCPUTextureData();
+        Heart::hMipDesc mdesc;
+        mdesc = mips[i];
+        mdesc.data = 0;
+        binoutput->Write(&mdesc, sizeof(mdesc));
     }
-    
-    return tex;
+
+    //Write Texture data
+    for (hUint32 i = 0; i < header.mipCount; ++i)
+    {
+        binoutput->Write(mips[i].data, mips[i].size);
+        //Release Data
+        hDELETE_ARRAY_SAFE(GetGlobalHeap(), mips[i].data);
+    }
+
+    return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////

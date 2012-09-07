@@ -35,15 +35,9 @@ namespace Heart
 
     struct HEARTDEV_SLIBEXPORT hdDX11ParameterConstantBlock
     {
-        
-        hUint32 GetSize() const { return size_; } //in Floats
-        hFloat* GetBufferAddress() const { return cpuIntermediateData_; }//
-        void    Flush( ID3D11DeviceContext* ctx );
-
-        hUint32         slot_;
-        ID3D11Buffer*   constBuffer_;
-        hUint32         size_;
-        hFloat*         cpuIntermediateData_;//intermediate data from CPU -> GPU
+        ID3D11Buffer*    constBuffer_;
+        hUint32          size_;
+        void*            mapData_;
     };
 
     class HEARTDEV_SLIBEXPORT hdDX11ShaderProgram
@@ -75,14 +69,12 @@ namespace Heart
             }
         }
 
-        hBool           GetShaderParameter( hUint32 i, hShaderParameter* param );
-        const hFloat*   GetShaderParameterDefaultValue( hUint32 idx ) const;
-        hUint32         GetConstantBufferCount() const;
-        const hChar*    GetConstantBufferName( hUint32 idx ) const;
-        hUint32         GetConstantBufferSize( hUint32 idx ) const;
-        hUint32         GetConstantBufferReg( hUint32 idx ) const;
-        hUint32         GetSamplerRegister( const hChar* name ) const;
-        hUint32         GetInputLayout() const { return inputLayoutFlags_; }
+        hUint32                         GetConstantBlockCount() const;
+        void                            GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc);
+        hUint32                         GetShaderParameterCount();
+        hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param);
+        hUint32                         GetSamplerRegister(const hChar* name) const;
+        hUint32                         GetInputLayout() const { return inputLayoutFlags_; }
 
     private:
 

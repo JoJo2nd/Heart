@@ -27,9 +27,109 @@
 
 #include "materialloader.h"
 
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+#define MATERIAL_MAGIC_NUM              hMAKE_FOURCC('h','M','F','X')
+#define MATERIAL_STRING_MAX_LEN         (32)
+#define MATERIAL_MAJOR_VERSION          (((hUint16)1))
+#define MATERIAL_MINOR_VERSION          (((hUint16)0))
+#define MATERIAL_VERSION                ((MATERIAL_MAJOR_VERSION << 16)|MATERIAL_MINOR_VERSION)
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+#pragma pack(push, 1)
+
+struct MaterialHeader
+{
+    Heart::hResourceBinHeader   resHeader;
+    hUint32                     version;
+    hByte                       samplerCount;
+    hUint16                     samplerRemapCount;
+    hUint16                     parameterCount;
+    hUint32                     parameterRemapCount;
+    hByte                       groupCount;
+    hUint32                     techniqueCount;
+    hUint32                     passCount;
+    hChar                       defaultGroupName[MATERIAL_STRING_MAX_LEN];
+    hUint32                     samplerOffset;      //always after header
+    hUint32                     parameterOffset;
+    hUint32                     groupOffset;
+};
+
+struct SamplerRemapDefinition
+{
+    hChar               parameterName[MATERIAL_STRING_MAX_LEN];
+};
+
+struct SamplerDefinition
+{
+    hChar                       samplerName[MATERIAL_STRING_MAX_LEN];
+    Heart::hResourceID          defaultTextureID;
+    Heart::hSamplerStateDesc    samplerState;
+    hUint8                      remapParamCount;
+};
+
+struct ParameterRemapDefinition
+{
+    hChar               parameterName[MATERIAL_STRING_MAX_LEN];
+    hUint8              writeOffset;
+};
+
+struct ParameterDefinition
+{
+    hChar                       parameterName[MATERIAL_STRING_MAX_LEN];
+    Heart::hParameterType       type;
+    hUint8                      remapParamCount;
+};
+
+struct GroupDefinition
+{
+    hChar               groupName[MATERIAL_STRING_MAX_LEN];
+    hUint16             techniques;
+};
+
+struct TechniqueDefinition
+{
+    hChar               technqiueName[MATERIAL_STRING_MAX_LEN];
+    hUint8              transparent;
+    hUint8              layer;
+    hUint16             passes;
+};
+
+struct PassDefintion
+{
+    hUint16                             pass;
+    Heart::hBlendStateDesc              blendState;
+    Heart::hDepthStencilStateDesc       depthState;
+    Heart::hRasterizerStateDesc         rasterizerState;
+    Heart::hResourceID                  vertexProgramID;
+    Heart::hResourceID                  fragmentProgramID;
+};
+
+#pragma pack(pop)
+
 //////////////////////////////////////////////////////////////////////////
 // Enum Tables ///////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
+Heart::hXMLEnumReamp g_parameterTypes[] =
+{
+    {"float",   Heart::ePTFloat1},
+    {"float2",  Heart::ePTFloat2},
+    {"float3",  Heart::ePTFloat3},
+    {"float4",  Heart::ePTFloat4},
+    {"matrix3", Heart::ePTFloat3x3},
+    {"matrix4", Heart::ePTFloat4x4},
+    {"none",    Heart::ePTNone},
+};
+
+
 Heart::hXMLEnumReamp g_samplerStates[] =
 {
     { "repeat",                  Heart::SSV_WRAP },
@@ -135,14 +235,91 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::HeartEngine* )
+Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::HeartEngine* engine )
 {
     using namespace Heart;
-
+    hRenderer* renderer = engine->GetRenderer();
     hMaterial* material = hNEW(GetGlobalHeap(), hMaterial)();
 
-    Heart::hSerialiser ser;
-    ser.Deserialise(inFile, *material);
+    MaterialHeader header;
+    inFile->Read(&header, sizeof(header));
+
+    //TODO: handle this...
+    hcAssert(header.version == MATERIAL_VERSION);
+
+    //Read samplers
+    for (hUint32 i = 0, imax = header.samplerCount; i < imax; ++i)
+    {
+        SamplerDefinition samplerDef;
+        hSamplerParameter sampler;
+        inFile->Read(&samplerDef, sizeof(samplerDef));
+        
+        sampler.defaultTextureID_ = samplerDef.defaultTextureID;
+        hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), samplerDef.samplerName);
+        sampler.samplerState_ = renderer->CreateSamplerState(samplerDef.samplerState);
+
+        material->AddSamplerParameter(sampler);
+    }
+
+    material->SetParameterInputOutputReserves(header.parameterCount, header.parameterRemapCount);
+
+    //Read parameters
+    for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
+    {
+        ParameterDefinition paramDef;
+        hMaterialParameterID id;
+        inFile->Read(&paramDef, sizeof(paramDef));
+
+        id = material->AddMaterialParameter(paramDef.parameterName, paramDef.type);
+        for (hUint32 i2 = 0, i2max = paramDef.remapParamCount; i2 < i2max; ++i2)
+        {
+            ParameterRemapDefinition paramRemap;
+            inFile->Read(&paramRemap, sizeof(paramRemap));
+
+            material->AddProgramOutput(paramRemap.parameterName, id);
+        }
+    }
+
+    //Add Groups, Techniques & Passes
+    for (hUint32 groupidx = 0, groupCount = header.groupCount; groupidx < groupCount; ++groupidx)
+    {
+        GroupDefinition groupDef;
+        hMaterialGroup* group = NULL;
+        inFile->Read(&groupDef, sizeof(groupDef));
+
+        group = material->AddGroup(groupDef.groupName);
+
+        group->techniques_.Reserve(groupDef.techniques);
+        group->techniques_.Resize(groupDef.techniques);
+        for (hUint32 techniqueIdx = 0, techniqueCount = groupDef.techniques; techniqueIdx < techniqueCount; ++techniqueIdx)
+        {
+            TechniqueDefinition techDef;
+            inFile->Read(&techDef, sizeof(techDef));
+            hMaterialTechnique* tech = &group->techniques_[techniqueIdx];
+
+            tech->SetPasses(techDef.passes);
+            tech->SetLayer(techDef.layer);
+            tech->SetSortAsTransparent(techDef.transparent > 0);
+
+            for (hUint32 passIdx = 0, passCount = techDef.passes; passIdx < passCount; ++passIdx)
+            {
+                PassDefintion passDef;
+                hMaterialTechniquePass pass;
+
+                inFile->Read(&passDef, sizeof(passDef));
+                
+                pass.SetBlendState(renderer->CreateBlendState(passDef.blendState));
+                pass.SetDepthStencilState(renderer->CreateDepthStencilState(passDef.depthState));
+                pass.SetRasterizerState(renderer->CreateRasterizerState(passDef.rasterizerState));
+                pass.SetVertexShaderResID(passDef.vertexProgramID);
+                pass.SetFragmentShaderResID(passDef.fragmentProgramID);
+
+                tech->AppendPass(pass);
+            }
+        }
+    }
+
+    material->SetActiveGroup(header.defaultGroupName);
 
     return material;
 }
@@ -152,9 +329,12 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
+    MaterialHeader matHeader = {0};
+
+    binoutput->Seek(0, hISerialiseStream::eBegin);
 
     hXMLDocument xmldoc;
     hChar* xmlmem = (hChar*)hHeapMalloc(GetGlobalHeap(), inFile->Lenght()+1);
@@ -164,97 +344,171 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
     if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, GetGlobalHeap()) == hFalse)
         return NULL;
 
-    hMaterial* material = hNEW(GetGlobalHeap(), hMaterial)();
+    //Write header
+    //hMemZero(&matHeader, sizeof(matHeader));
+    matHeader.resHeader.resourceType = hMAKE_FOURCC('X','X','X','X');//Write a invalid four cc, we'll write a correct one later
+    matHeader.version = MATERIAL_VERSION;
+    binoutput->Write(&matHeader, sizeof(matHeader));
+
+    matHeader.resHeader.resourceType = MATERIAL_MAGIC_NUM;
+
+    hStrCopy( matHeader.defaultGroupName, MATERIAL_STRING_MAX_LEN, hXMLGetter(&xmldoc).FirstChild("material").FirstChild("defaultgroup").GetValueString("lowdetail"));
+
+    matHeader.samplerOffset = binoutput->Tell();
 
     hXMLGetter xSampler = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("sampler");
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
-        hSamplerParameter samp;
-        hStrCopy(samp.name_, 32, xSampler.GetAttributeString("name","none"));
-        samp.nameLen_ = hStrLen(samp.name_);
-        samp.defaultTextureID_ = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
-        samp.samplerDesc_.addressU_ = xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        samp.samplerDesc_.addressV_ = xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        samp.samplerDesc_.addressW_ = xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        samp.samplerDesc_.borderColour_ = xSampler.FirstChild("bordercolour").GetValueColour(hColour(0.f, 0.f, 0.f, 1.f));
-        samp.samplerDesc_.filter_   = xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, SSV_POINT);
-        samp.samplerDesc_.maxAnisotropy_ = xSampler.FirstChild("maxanisotropy").GetValueInt(1);
-        samp.samplerDesc_.minLOD_ = xSampler.FirstChild("minlod").GetValueFloat();
-        samp.samplerDesc_.maxLOD_ = xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX);
-        samp.samplerDesc_.mipLODBias_ = xSampler.FirstChild("miplodbias").GetValueFloat();
+        SamplerDefinition sampDef = {0};
+        hUint32 remapos = binoutput->Tell() + hOffsetOf(SamplerDefinition, remapParamCount);
 
-        material->AddSamplerParameter(samp);
+        hStrCopy(sampDef.samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
+
+        sampDef.defaultTextureID = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
+        sampDef.samplerState.addressU_ = xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP);
+        sampDef.samplerState.addressV_ = xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, SSV_CLAMP);
+        sampDef.samplerState.addressW_ = xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, SSV_CLAMP);
+        sampDef.samplerState.borderColour_ = xSampler.FirstChild("bordercolour").GetValueColour(hColour(0.f, 0.f, 0.f, 1.f));
+        sampDef.samplerState.filter_   = xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, SSV_POINT);
+        sampDef.samplerState.maxAnisotropy_ = xSampler.FirstChild("maxanisotropy").GetValueInt(1);
+        sampDef.samplerState.minLOD_ = xSampler.FirstChild("minlod").GetValueFloat();
+        sampDef.samplerState.maxLOD_ = xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX);
+        sampDef.samplerState.mipLODBias_ = xSampler.FirstChild("miplodbias").GetValueFloat();
+
+        ++matHeader.samplerCount;
+        binoutput->Write(&sampDef, sizeof(sampDef));
+        
+//         hXMLGetter xRemap(xSampler.FirstChild("dest"));
+//         for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
+//         {
+//             SamplerRemapDefinition remapDef = {0};
+//             hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
+//             ++sampDef.remapParamCount;
+//             ++matHeader.samplerRemapCount;
+// 
+//             binoutput->Write(&remapDef, sizeof(remapDef));
+//         }
+// 
+//         binoutput->Seek(remapos, hISerialiseStream::eBegin);
+//         binoutput->Write(&sampDef.remapParamCount, sizeof(sampDef.remapParamCount));
+//         binoutput->Seek(0, hISerialiseStream::eEnd);
     }
+
+    matHeader.parameterOffset = binoutput->Tell();
+
+    hXMLGetter xParameter = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("parameter");
+    for (; xParameter.ToNode(); xParameter = xParameter.NextSibling())
+    {
+        ParameterDefinition paramDef = {0};
+        hUint32 remapos = binoutput->Tell()+hOffsetOf(ParameterDefinition, remapParamCount);
+        
+        hStrCopy(paramDef.parameterName, MATERIAL_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
+        paramDef.type = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
+
+        ++matHeader.parameterCount;
+        binoutput->Write(&paramDef, sizeof(paramDef));
+
+        hXMLGetter xRemap(xParameter.FirstChild("dest"));
+        for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
+        {
+            ParameterRemapDefinition remapDef = {0};
+            hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xRemap.GetAttributeString("name", "none"));
+            remapDef.writeOffset = xRemap.GetAttributeInt("offset", 0);
+
+            ++paramDef.remapParamCount;
+            ++matHeader.parameterRemapCount;
+            binoutput->Write(&remapDef, sizeof(remapDef));
+        }
+
+        binoutput->Seek(remapos, hISerialiseStream::eBegin);
+        binoutput->Write(&paramDef.remapParamCount, sizeof(paramDef.remapParamCount));
+        binoutput->Seek(0, hISerialiseStream::eEnd);
+    }
+
+    matHeader.groupOffset = binoutput->Tell();
 
     hXMLGetter xGroup = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("group");
     for (; xGroup.ToNode(); xGroup = xGroup.NextSibling())
     {
-        hMaterialGroup* group = material->AddGroup(xGroup.GetAttributeString("name","none"));
+        GroupDefinition groupDef = {0};
+        hUint32 techos = binoutput->Tell() + hOffsetOf(GroupDefinition, techniques);
+
+        hStrCopy(groupDef.groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
+
+        ++matHeader.groupCount;
+        binoutput->Write(&groupDef, sizeof(groupDef));
 
         hXMLGetter xTech = xGroup.FirstChild("technique");
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
-            hMaterialTechnique tech;
-            tech.SetName(xTech.GetAttributeString("name","none"));
-            tech.SetSortAsTransparent(hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0);
-            tech.SetLayer((hByte)(xTech.FirstChild("layer").GetValueInt()&0xFF));
+            TechniqueDefinition techDef = {0};
+            hUint32 passos = binoutput->Tell() + hOffsetOf(TechniqueDefinition, passes);
+            hStrCopy(techDef.technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
+            techDef.transparent = hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0;
+            techDef.layer = (hByte)(xTech.FirstChild("layer").GetValueInt()&0xFF);
 
+            ++groupDef.techniques;
+            ++matHeader.techniqueCount;
+            binoutput->Write(&techDef, sizeof(techDef));
 
             hXMLGetter xPass = xTech.FirstChild("pass");
             for (; xPass.ToNode(); xPass = xPass.NextSibling())
             {
-                hMaterialTechniquePass pass;
-                hBlendStateDesc blendstate;
-                hDepthStencilStateDesc depthstate;
-                hRasterizerStateDesc rasstate;
+                PassDefintion passDef = {0};
 
-                blendstate.blendEnable_ = xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                blendstate.blendOp_ = xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
-                blendstate.blendOpAlpha_ = xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
-                blendstate.destBlend_ = xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
-                blendstate.destBlendAlpha_ = xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
-                blendstate.srcBlend_= xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
-                blendstate.srcBlendAlpha_= xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
-                blendstate.renderTargetWriteMask_ = xPass.FirstChild("rendertargetwritemask").GetValueHex(0xFF);
+                passDef.blendState.blendEnable_ = xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.blendState.blendOp_ = xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
+                passDef.blendState.blendOpAlpha_ = xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
+                passDef.blendState.destBlend_ = xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                passDef.blendState.destBlendAlpha_ = xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                passDef.blendState.srcBlend_= xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                passDef.blendState.srcBlendAlpha_= xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                passDef.blendState.renderTargetWriteMask_ = xPass.FirstChild("rendertargetwritemask").GetValueHex(0xFF);
 
-                depthstate.depthEnable_ = xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                depthstate.depthFunc_ = xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, RSV_Z_CMP_LESS);
-                depthstate.depthWriteMask_ = xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                depthstate.stencilEnable_ = xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                depthstate.stencilFunc_ = xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, RSV_SF_CMP_NEVER);
-                depthstate.stencilDepthFailOp_ = xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
-                depthstate.stencilFailOp_ = xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
-                depthstate.stencilPassOp_ = xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
-                depthstate.stencilReadMask_ = xPass.FirstChild("stencilreadmask").GetValueHex(0xFFFFFFFF);
-                depthstate.stencilWriteMask_ = xPass.FirstChild("stencilwritemask").GetValueHex(0xFFFFFFFF);
-                depthstate.stencilRef_ = xPass.FirstChild("stencilref").GetValueHex(0x00000000);
+                passDef.depthState.depthEnable_ = xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.depthState.depthFunc_ = xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, RSV_Z_CMP_LESS);
+                passDef.depthState.depthWriteMask_ = xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.depthState.stencilEnable_ = xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.depthState.stencilFunc_ = xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, RSV_SF_CMP_NEVER);
+                passDef.depthState.stencilDepthFailOp_ = xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                passDef.depthState.stencilFailOp_ = xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                passDef.depthState.stencilPassOp_ = xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                passDef.depthState.stencilReadMask_ = xPass.FirstChild("stencilreadmask").GetValueHex(0xFFFFFFFF);
+                passDef.depthState.stencilWriteMask_ = xPass.FirstChild("stencilwritemask").GetValueHex(0xFFFFFFFF);
+                passDef.depthState.stencilRef_ = xPass.FirstChild("stencilref").GetValueHex(0x00000000);
 
-                rasstate.cullMode_ = xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW);
-                rasstate.depthBias_ = xPass.FirstChild("depthbias").GetValueFloat();
-                rasstate.depthBiasClamp_ = xPass.FirstChild("depthbiasclamp").GetValueFloat();
-                rasstate.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                rasstate.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
-                rasstate.slopeScaledDepthBias_ = xPass.FirstChild("slopescaleddepthbias").GetValueFloat();
-                rasstate.scissorEnable_ = xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
-                rasstate.frontCounterClockwise_ = RSV_ENABLE;
+                passDef.rasterizerState.cullMode_ = xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW);
+                passDef.rasterizerState.depthBias_ = xPass.FirstChild("depthbias").GetValueFloat();
+                passDef.rasterizerState.depthBiasClamp_ = xPass.FirstChild("depthbiasclamp").GetValueFloat();
+                passDef.rasterizerState.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.rasterizerState.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
+                passDef.rasterizerState.slopeScaledDepthBias_ = xPass.FirstChild("slopescaleddepthbias").GetValueFloat();
+                passDef.rasterizerState.scissorEnable_ = xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                passDef.rasterizerState.frontCounterClockwise_ = RSV_ENABLE;
 
-                pass.SetBlendStateDesc(blendstate);
-                pass.SetDepthStencilStateDesc(depthstate);
-                pass.SetRasterizerStateDesc(rasstate);
-                pass.SetVertexShaderResID(hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString()));
-                pass.SetFragmentShaderResID(hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString()));
+                passDef.vertexProgramID   = hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString());
+                passDef.fragmentProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString());
 
-                tech.AppendPass(pass);
+                ++techDef.passes;
+                ++matHeader.passCount;
+                binoutput->Write(&passDef, sizeof(passDef));
             }
 
-            group->techniques_.PushBack(tech);
+            binoutput->Seek(passos, hISerialiseStream::eBegin);
+            binoutput->Write(&techDef.passes, sizeof(techDef.passes));
+            binoutput->Seek(0, hISerialiseStream::eEnd);
         }
+
+        binoutput->Seek(techos, hISerialiseStream::eBegin);
+        binoutput->Write(&groupDef.techniques, sizeof(groupDef.techniques));
+        binoutput->Seek(0, hISerialiseStream::eEnd);
     }
 
-    Heart::hSerialiser ser;
-    ser.Serialise(binoutput, *material);
+    // Rewrite the header
+    binoutput->Seek(0, hISerialiseStream::eBegin);
+    binoutput->Write(&matHeader, sizeof(matHeader));
 
-    return material;
+    return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////

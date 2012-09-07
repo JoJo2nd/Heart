@@ -62,9 +62,16 @@ namespace Heart
         {
             return fileHandle_->Write( pBuffer, size );
         }
-        hUint32				Seek( hUint64 offset )
+        hUint32				Seek( hUint64 offset, hSeekOffset from = hISerialiseStream::eBegin )
         {
-            return fileHandle_->Seek( offset, SEEKOFFSET_BEGIN );
+            hdSeekOffset of = SEEKOFFSET_BEGIN;
+            switch(from)
+            {
+            case hISerialiseStream::eBegin:     of = SEEKOFFSET_BEGIN; break;
+            case hISerialiseStream::eCurrent:   of = SEEKOFFSET_CURRENT; break;
+            case hISerialiseStream::eEnd:       of = SEEKOFFSET_END; break;
+            }
+            return fileHandle_->Seek( offset, of );
         }
         hUint64				Tell()
         {

@@ -1343,7 +1343,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count )
+    hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, hUint32 count )
     {
         hdDX11ParameterConstantBlock* constBlocks = hNEW_ARRAY(GetGlobalHeap()/*!heap*/, hdDX11ParameterConstantBlock, count);
         for ( hUint32 i = 0; i < count; ++i )
@@ -1353,13 +1353,12 @@ namespace Heart
             hZeroMem( &desc, sizeof(desc) );
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
             desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.ByteWidth = sizes[i]*sizeof(hFloat);
+            desc.ByteWidth = sizes[i];
             desc.CPUAccessFlags = 0;
             hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
             hcAssert( SUCCEEDED( hr ) );
-            constBlocks[i].slot_ = regs[i];
             constBlocks[i].size_ = sizes[i];
-            constBlocks[i].cpuIntermediateData_ = (hFloat*)hHeapAlignMalloc(GetGlobalHeap()/*!heap*/, sizeof(hFloat)*sizes[i], 16);
+            constBlocks[i].mapData_ = NULL;
         }
 
         return constBlocks;
@@ -1384,7 +1383,7 @@ namespace Heart
         {
             constBlocks[i].constBuffer_->Release();
             constBlocks[i].constBuffer_ = NULL;
-            hHeapFreeSafe(GetGlobalHeap()/*!heap*/, constBlocks[i].cpuIntermediateData_);
+            constBlocks[i].size_ = 0;
         }
 
         hDELETE_ARRAY_SAFE(GetGlobalHeap()/*!heap*/, constBlocks);

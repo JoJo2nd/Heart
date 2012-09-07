@@ -71,33 +71,6 @@ namespace Heart
     static const hUint32 VIEWPORT_CONST_BUFFER_ID = hCRC32::StringCRC( "ViewportConstants" );
     static const hUint32 INSTANCE_CONST_BUFFER_ID = hCRC32::StringCRC( "InstanceConstants" );
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    const hShaderParameter* hMaterial::GetShaderParameter( const hChar* name ) const
-    {
-        hUint32 count = constParameters_.GetSize();
-	    for ( hUint32 i = 0; i < count; ++i )
-	    {
-		    if ( hStrCmp( name, constParameters_[i].name_.GetBuffer() ) == 0 )
-		    {
-			    return &constParameters_[i];
-		    }
-	    }
-	    return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    const hShaderParameter* hMaterial::GetShaderParameterByIndex( hUint32 index ) const
-    {
-     	hcAssert( index < constParameters_.GetSize() );
-     	
-        return &constParameters_[index];
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -105,16 +78,9 @@ namespace Heart
 
     hMaterial::~hMaterial()
     {
-//         for (hUint32 i = 0, c = activeTechniques_->GetSize(); i < c; ++i)
-//         {
-//             for (hUint32 i2 = 0, c2 = activeTechniques_[i]->GetPassCount(); i2 < c2; ++i2)
-//             {
-//                 activeTechniques_[i].GetPass(i2)->ReleaseResources(renderer_);
-//             }
-//         }
-
         if (renderer_)
         {
+            /* - TODO: FIX ME
             for (hUint32 i = 0, c = samplers_.GetSize(); i < c; ++i)
             {
                 renderer_->DestroySamplerState(samplers_[i].samplerState_);
@@ -125,93 +91,8 @@ namespace Heart
                      samplers_[i].boundTexture_->DecRef();
                  }
             }
+            }*/
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterial::FindOrAddShaderParameter( const hShaderParameter& newParam, const hFloat* defaultVal )
-    {
-        if ( newParam.cBuffer_ == VIEWPORT_CONST_BUFFER_ID || newParam.cBuffer_ == INSTANCE_CONST_BUFFER_ID )
-            return;
-
-        hUint32 constBufIdx = FindConstBufferIndexFromID( newParam.cBuffer_ );
-        hUint32 size = constParameters_.GetSize();
-        for ( hUint32 i = 0; i < size; ++i )
-        {
-            if ( Heart::hStrCmp( constParameters_[i].name_.GetBuffer(), newParam.name_.GetBuffer() ) == 0 )
-            {
-                hcAssertMsg( constParameters_[i].cBuffer_ == constBufIdx && 
-                             constParameters_[i].cReg_ == newParam.cReg_,
-                             "Shader Const Parameter registers must match across material techniques and passes." );
-                return;
-            }
-        }
-
-        hShaderParameter copyParam = newParam;
-        copyParam.cBuffer_ = constBufIdx;
-        constParameters_.PushBack( copyParam );
-
-        if ( defaultVal )
-        {
-            // Add the default value
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterial::AddConstBufferDesc( const hChar* name, hUint32 reg, hUint32 size )
-    {
-        hUint32 crc = hCRC32::StringCRC( name );
-
-        if ( crc == VIEWPORT_CONST_BUFFER_ID || crc == INSTANCE_CONST_BUFFER_ID )
-            return;
-
-        hUint32 cbdCount = constBufferDescs_.GetSize();
-        hBool added = hFalse;
-
-        for ( hUint32 i = 0; i < cbdCount; ++i )
-        {
-            if ( crc == constBufferDescs_[i].nameCRC_ )
-            {
-                hcAssert( constBufferDescs_[i].reg_ == reg );
-                constBufferDescs_[i].size_ = hMax( constBufferDescs_[i].size_, size );
-                added = hTrue;
-            }
-            
-        }
-
-        if ( !added )
-        {
-            hConstBufferDesc desc;
-            desc.nameCRC_   = crc;
-            desc.reg_       = reg;
-            desc.size_      = size;
-            constBufferDescs_.PushBack( desc );
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint32 hMaterial::FindConstBufferIndexFromID( hUint32 id )
-    {
-        hUint32 size = constBufferDescs_.GetSize();
-        for ( hUint32 i = 0; i < size; ++i )
-        {
-            if ( id == constBufferDescs_[i].nameCRC_ )
-            {
-                return i;
-            }
-        }
-
-        hcAssertFailMsg( "Can't find constant buffer to match id 0x%08X", id );
-        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -301,108 +182,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::AddSamplerParameter( const hSamplerParameter& sampler )
-    {
-        samplers_.PushBack(sampler);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     hBool hMaterial::Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager)
     {
-        hUint32 nSamp = samplers_.GetSize();
-        for ( hUint32 samp = 0; samp < nSamp; ++samp )
-        {
-            samplers_[samp].boundTexture_ = static_cast< hTexture* >( resManager->ltGetResource(samplers_[samp].defaultTextureID_) );
-            if (samplers_[samp].defaultTextureID_)
-            {
-                if ((samplers_[samp].boundTexture_ && !samplers_[samp].samplerState_))
-                {
-                    samplers_[samp].samplerState_ = renderer->CreateSamplerState( samplers_[samp].samplerDesc_ );
-                }
-                else
-                {
-                    return hTrue;
-                }
-            }
-            else
-            {
-                if (!samplers_[samp].samplerState_)
-                {
-                    samplers_[samp].samplerState_ = renderer->CreateSamplerState( samplers_[samp].samplerDesc_ );
-                }
-            }
-        }
-
-        activeTechniques_ = &groups_.GetBuffer()->techniques_;
-        hUint32 nTech = activeTechniques_->GetSize();
-        for ( hUint32 tech = 0; tech < nTech; ++tech )
-        {
-            if (!(*activeTechniques_)[tech].Link(resManager, renderer, matManager))
-            {
-                return hFalse;
-            }
-
-            hUint32 nPasses = (*activeTechniques_)[tech].GetPassCount();
-            for(hUint32 pass = 0; pass < nPasses; ++pass)
-            {
-                hMaterialTechniquePass* passPtr = (*activeTechniques_)[tech].GetPass(pass);
-                hShaderProgram* vp = passPtr->GetVertexShader();
-                hShaderProgram* fp = passPtr->GetFragmentShader();
-
-                hdShaderProgram* prog = vp->pImpl();
-                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
-                {
-                    AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
-                }
-                hUint32 parameterCount = vp->GetParameterCount();
-                for ( hUint32 i = 0; i < parameterCount; ++i )
-                {
-                    hShaderParameter param;
-                    hBool ok = prog->GetShaderParameter( i, &param );
-                    hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
-                }
-                for ( hUint32 samp = 0; samp < nSamp; ++samp )
-                {
-                    hUint32 reg = prog->GetSamplerRegister( samplers_[samp].name_ );
-                    if ( reg != ~0U )
-                    {
-                        hcAssert( reg == samplers_[samp].samplerReg_ || ~0U == samplers_[samp].samplerReg_ );
-                        samplers_[samp].samplerReg_ = reg;
-                    }
-                }
-
-                prog = fp->pImpl();
-                for ( hUint32 i = 0; i < prog->GetConstantBufferCount(); ++i )
-                {
-                    AddConstBufferDesc( prog->GetConstantBufferName( i ), prog->GetConstantBufferReg( i ), prog->GetConstantBufferSize( i ) );
-                }
-                parameterCount = fp->GetParameterCount();
-                for ( hUint32 i = 0; i < parameterCount; ++i )
-                {
-
-                    hShaderParameter param;
-                    hBool ok = prog->GetShaderParameter( i, &param );
-                    hcAssertMsg( ok, "Shader Parameter Look up Out of Bounds" );
-                    FindOrAddShaderParameter( param, prog->GetShaderParameterDefaultValue( i ) );
-                }
-                for ( hUint32 samp = 0; samp < nSamp; ++samp )
-                {
-                    hUint32 reg = prog->GetSamplerRegister( samplers_[samp].name_ );
-                    if ( reg != ~0U )
-                    {
-                        hcAssert( reg == samplers_[samp].samplerReg_ || ~0U == samplers_[samp].samplerReg_ );
-                        samplers_[samp].samplerReg_ = reg;
-                    }
-                }
-            }
-        }
-
-        //TODO: Create technique flags
-        //matManager->OnMaterialLoad( resource, resID );
+        for (hUint32 i = 0; i < )
         return hTrue;
     }
 
@@ -410,11 +192,76 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSamplerParameter::DefaultState()
+    void hMaterial::SetParameterInputOutputReserves( hUint32 totalIn, hUint32 totalOut )
     {
-        boundTexture_ = NULL;
+        materialParameters_.Reserve(totalIn);
+        programOutputs_.Reserve(totalOut);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialParameterID hMaterial::AddMaterialParameter( hChar* name, hParameterType type )
+    {
+        //Don't want to grow.
+        hcAssert(materialParameters_.GetSize() < materialParameters_.GetReserve());
+        hMaterialParameterID id = materialParameters_.GetSize();
+        hMaterialParameter param;
+        hStrCopy(param.name_, hMAX_PARAMETER_NAME_LEN, name);
+        param.type_ = type;
+        param.dataOffset_ = totalParameterDataSize_;
+        switch(type)
+        {
+        case ePTFloat1:
+        case ePTFloat2:
+        case ePTFloat3:
+        case ePTFloat4:
+            totalParameterDataSize_ += sizeof(hFloat)*4;
+            break;
+        case ePTFloat3x3:
+        case ePTFloat4x4:
+            totalParameterDataSize_ += sizeof(hFloat)*16;
+            break;
+        }
+
+        materialParameters_.PushBack(param);
+
+        return id;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::AddProgramOutput( hChar* name, hMaterialParameterID parameterID )
+    {
+        hcAssert(programOutputs_.GetSize() < programOutputs_.GetReserve());
+
+        hProgramOutput outp;
+        hStrCopy(outp.name_, hMAX_PARAMETER_NAME_LEN, name);
+        outp.parameterID_ = parameterID;
+
+        programOutputs_.PushBack(outp);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::SetSamplerCount( hUint32 val )
+    {
+        samplers_.Reserve(val);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::AddSamplerParameter( const hSamplerParameter& sampler )
+    {
+        samplers_.PushBack(sampler);
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -425,6 +272,7 @@ namespace Heart
         , parentMaterial_(parentMat)
     {
         hcAssert( parentMat );
+/*
         hUint32 cbCount = parentMat->GetConstantBufferCount();
         hUint32* sizes = (hUint32*)hAlloca( cbCount*sizeof(hUint32) );
         hUint32* regs = (hUint32*)hAlloca( cbCount*sizeof(hUint32) );
@@ -436,7 +284,7 @@ namespace Heart
         constBuffers_ = renderer->CreateConstantBlocks( sizes, regs, parentMat->GetConstantBufferCount() );
 
         parentMaterial_->GetSamplerArray().CopyTo( &samplers_ );
-
+*/
         matKey_ = parentMaterial_->GetMatKey();
     }
 
@@ -446,27 +294,27 @@ namespace Heart
 
     hMaterialInstance::~hMaterialInstance()
     {
-        renderer_->DestroyConstantBlocks(constBuffers_, parentMaterial_->GetConstantBufferCount());
+        renderer_->DestroyConstantBlocks(constBuffers_, constBufferCount_);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-
+/*
     void hMaterialInstance::SetShaderParameter( const hShaderParameter* param, hFloat* val, hUint32 size )
     {
-        hcAssert( param && val && size );
-        hcAssert( param >= parentMaterial_->GetShaderParameterByIndex(0) && 
-                  param <= parentMaterial_->GetShaderParameterByIndex(parentMaterial_->GetShaderParameterCount()-1) );
-
-        hdParameterConstantBlock& cb = constBuffers_[param->cBuffer_];
-        hFloat* dst = cb.GetBufferAddress() + param->cReg_;
-        for ( hUint32 i = 0; i < size && i < param->size_; ++i )
-        {
-            dst[i] = val[i];
-        }
+//         hcAssert( param && val && size );
+//         hcAssert( param >= parentMaterial_->GetShaderParameterByIndex(0) && 
+//                   param <= parentMaterial_->GetShaderParameterByIndex(parentMaterial_->GetShaderParameterCount()-1) );
+// 
+//         hdParameterConstantBlock& cb = constBuffers_[param->cBuffer_];
+//         hFloat* dst = cb.GetBufferAddress() + param->cReg_;
+//         for ( hUint32 i = 0; i < size && i < param->size_; ++i )
+//         {
+//             dst[i] = val[i];
+//         }
     }
-
+*/
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -493,80 +341,6 @@ namespace Heart
     {
         hSamplerParameter* p = const_cast< hSamplerParameter* >( param );
         p->boundTexture_ = tex;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterialTechniquePass::ReleaseResources(hRenderer* renderer)
-    {
-        HEART_RESOURCE_SAFE_RELEASE(vertexProgram_);
-        HEART_RESOURCE_SAFE_RELEASE(fragmentProgram_);
-        if (blendState_)
-            renderer->DestroyBlendState(blendState_);
-        blendState_ = NULL;
-        if (depthStencilState_)
-            renderer->DestoryDepthStencilState(depthStencilState_);
-        depthStencilState_ = NULL;
-        if (rasterizerState_)
-            renderer->DestoryRasterizerState(rasterizerState_);
-        rasterizerState_ = NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechniquePass::Link( hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager )
-    {
-        vertexProgram_   = static_cast< hShaderProgram* >( resManager->ltGetResource(vertexProgramID_) );
-        fragmentProgram_ = static_cast< hShaderProgram* >( resManager->ltGetResource(fragmentProgramID_) );
-
-        if (!vertexProgram_ || !fragmentProgram_) return hFalse;
-
-        blendState_        = renderer->CreateBlendState(blendStateDesc_);
-        rasterizerState_   = renderer->CreateRasterizerState(rasterizerStateDesc_);
-        depthStencilState_ = renderer->CreateDepthStencilState(depthStencilStateDesc_);
-
-        return hTrue;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterialTechnique::AppendPass( const hMaterialTechniquePass& pass )
-    {
-        passes_.PushBack(pass);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechnique::Link( hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager )
-    {
-        hBool linkok = hTrue;
-        hUint32 nPasses = passes_.GetSize();
-        mask_ = matManager->AddRenderTechnique( name_ )->mask_;
-        for ( hUint32 pass = 0; pass < nPasses; ++pass )
-        {
-            linkok &= passes_[pass].Link(resManager, renderer, matManager);
-        }
-
-        return linkok;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hShaderProgram::CopyShaderBlob( void* blob, hUint32 len )
-    {
-        shaderProgram_ = (hByte*)hHeapRealloc(GetGlobalHeap(), shaderProgram_, len);
-        hMemCpy(shaderProgram_, blob, len);
-        shaderProgramLength_ = len;
     }
 
 }//Heart

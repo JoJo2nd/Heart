@@ -193,6 +193,18 @@ namespace Heart
             checkedCache_ = hTrue;
             validCache_   = hTrue;
 
+            hChar* binFilepath;
+            hBuildResFilePath(binFilepath, packagePack_, resName_);
+
+            hIFile* binfile = fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
+            if (!binfile)
+            {
+                validCache_ = hFalse;
+                return hFalse;
+            }
+
+            fileSystem_->CloseFile(binfile);
+
             hUint32 hash;
             hXMLGetter node(doc_.first_node("parameterhash"));
             if (node.ToNode()->value() == NULL || 

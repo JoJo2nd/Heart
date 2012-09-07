@@ -55,7 +55,7 @@ namespace Heart
         void	SetRenderStateBlock( hdDX11DepthStencilState* st );
         void	SetRenderStateBlock( hdDX11RasterizerState* st );
         void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st );
-        void    SetConstantBlock( hdDX11ParameterConstantBlock* block );
+        void    SetConstantBlock(hUint32 reg, hdDX11ParameterConstantBlock* block);
         void    SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state );
         void    SetPixelShader( hdDX11ShaderProgram* prog );
         void    SetVertexShader( hdDX11ShaderProgram* prog );
@@ -74,6 +74,8 @@ namespace Heart
         void    Unmap( hdDX11IndexBuffer* ib, void* ptr );
         void    Map( hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data );
         void    Unmap( hdDX11VertexBuffer* vb, void* ptr );
+        void    Map(hdDX11ParameterConstantBlock* cb);
+        void    Unmap(hdDX11ParameterConstantBlock* cb);
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
         void                    SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth );

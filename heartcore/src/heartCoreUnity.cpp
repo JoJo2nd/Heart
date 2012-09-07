@@ -81,6 +81,8 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "render/hIndexBuffer.cpp"
+#include "render/hMaterialTypes.cpp"
+#include "render/hRenderShaderProgram.cpp"
 #include "render/hRenderer.cpp"
 #include "render/hRendererCamera.cpp"
 #include "render/hRendererConstants.cpp"

@@ -217,6 +217,30 @@ namespace Heart
             else
                 return att->value();
         }
+        template < typename t_type >
+        t_type GetAttributeEnum(const hChar* name, hXMLEnumReamp* enums, t_type defaultVal = 0)
+        {
+            if (!node_)
+                return defaultVal;
+            if (!node_->value())
+                return defaultVal;
+
+            rapidxml::xml_attribute<>* att = node_->first_attribute( name );
+
+            if (!att)
+                return defaultVal;
+
+            while(enums->enumStr_)
+            {
+                if (hStrICmp(enums->enumStr_, att->value()) == 0)
+                {
+                    return (t_type)enums->enumValue_;
+                }
+                ++enums;
+            }
+
+            return defaultVal;
+        }
         hInt32 GetValueInt(hInt32 defaultVal = 0)
         {
             if (!node_)

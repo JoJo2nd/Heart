@@ -252,15 +252,14 @@ namespace Heart
             if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
             {
                 handler.binLoader_              = (OnResourceDataLoad)      hd_GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
-                handler.rawLoader_              = (OnResourceDataLoadRaw)   hd_GetFunctionAddress(handler.loaderLib_,"HeartRawLoader");
-                handler.packageLink_    = (OnPackageLoadComplete)   hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
+                handler.rawCompiler_            = (OnResourceDataCompile)   hd_GetFunctionAddress(handler.loaderLib_,"HeartDataCompiler");
+                handler.packageLink_            = (OnPackageLoadComplete)   hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
                 handler.resourceDataUnload_     = (OnResourceDataUnload)    hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnlink");
                 handler.packageUnlink_          = (OnPackageUnloadComplete) hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
 
                 if ( handler.binLoader_           &&
-                     handler.rawLoader_           &&   
-                     handler.packageLink_ &&   
-                     handler.resourceDataUnload_  &&   
+                     handler.packageLink_         &&
+                     handler.resourceDataUnload_  &&
                      handler.packageUnlink_       )
                 {
                     //Add

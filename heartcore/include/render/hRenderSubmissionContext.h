@@ -57,12 +57,12 @@ namespace Heart
         hMatrix viewInverseTranspose_;
         hMatrix projection_;
         hMatrix projectionInverse_;
+        hMatrix viewProjection_;
+        hMatrix viewProjectionInverse_;
     };
 
     struct HEARTCORE_SLIBEXPORT hInstanceConstants
     {
-        hMatrix worldViewProj_;
-        hMatrix worldView_;
         hMatrix world_;
     };
 
@@ -95,7 +95,7 @@ namespace Heart
         void	SetScissorRect( const hScissorRect& scissor );
         void    SetPixelShader( hShaderProgram* ps );
         void    SetVertexShader( hShaderProgram* vs );
-        void    SetConstantBuffer( hdParameterConstantBlock* constBuffer );
+        void    SetConstantBuffer(hUint32 reg, hdParameterConstantBlock* constBuffer );
         void    SetSampler( hUint32 idx, hTexture* tex, hdSamplerState* samplerState );
         void	SetRenderStateBlock( hdDX11BlendState* st ) { impl_.SetRenderStateBlock( st ); }
         void	SetRenderStateBlock( hdDX11DepthStencilState* st ) { impl_.SetRenderStateBlock( st ); }

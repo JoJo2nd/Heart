@@ -107,11 +107,19 @@ namespace Heart
 	const hColour WHITE( 1.0f, 1.0f, 1.0f, 1.0f );
 	const hColour BLACK( 0.0f, 0.0f, 0.0f, 1.0f );
 
-#define HEART_VIEWPORT_CONSTANTS_REGISTIER (0)
-#define HEART_INSTANCE_CONSTANTS_REGISTIER (1)
+#define HEART_VIEWPORT_CONSTANTS_REGISTIER (14)
+#define HEART_INSTANCE_CONSTANTS_REGISTIER (13)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );
+
+    struct hConstantBlockDesc
+    {
+        hArray< hChar, 32 >     name_;
+        hUint32                 size_;
+        hUint32                 reg_;
+        hUint32                 hash_;
+    };
 
     struct hShaderParameter
     {

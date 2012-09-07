@@ -386,11 +386,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetConstantBlock( hdDX11ParameterConstantBlock* block )
-    {
-        block->Flush( device_ );
-        device_->VSSetConstantBuffers( block->slot_, 1, &block->constBuffer_ );
-        device_->PSSetConstantBuffers( block->slot_, 1, &block->constBuffer_ );
+    void hdDX11RenderSubmissionCtx::SetConstantBlock( hUint32 reg, hdDX11ParameterConstantBlock* block )
+    {//Maybe split these?
+        device_->VSSetConstantBuffers( reg, 1, &block->constBuffer_ );
+        device_->PSSetConstantBuffers( reg, 1, &block->constBuffer_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

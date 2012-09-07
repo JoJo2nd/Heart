@@ -122,9 +122,16 @@ namespace Heart
     class hISerialiseStream
     {
     public:
+        enum hSeekOffset
+        {
+            eCurrent = 0,
+            eBegin,
+            eEnd,
+        };
+
         virtual hUint32				Read( void* pBuffer, hUint32 size ) = 0;
         virtual hUint32				Write( const void* pBuffer, hUint32 size ) = 0;
-        virtual hUint32				Seek( hUint64 offset ) = 0;
+        virtual hUint32				Seek( hUint64 offset, hSeekOffset from = eBegin ) = 0;
         virtual hUint64				Tell() = 0;
         virtual void                SetEnableMD5Gen( hBool val ) = 0;
     };

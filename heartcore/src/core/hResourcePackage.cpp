@@ -257,47 +257,42 @@ namespace Heart
                     hd_GetSharedLibTimestamp(handler->loaderLib_));
                 hResourceClassBase* res = NULL;
                 hUint32 crc = hCRC32::StringCRC(currentResource_.GetAttributeString("name"));
+
                 hChar* binFilepath;
                 hBuildResFilePath(binFilepath, packageName_, currentResource_.GetAttributeString("name"));
-                hSerialiserFileStream inStream;
-                inStream.Open(binFilepath, hFalse, fileSystem_);
 
-                if (dataCache.IsCacheValid() && inStream.IsOpen())
+                if (!dataCache.IsCacheValid())
                 {
-                    // Load the binary file
-                    hcPrintf("Loading %s", binFilepath);
-                    res = (*handler->binLoader_)(&inStream, &paramSet, engine_);
-                    inStream.Close();
-                }
-                else
-                {
-                    // Open the raw source file
-                    if (inStream.IsOpen())
-                    {
-                        inStream.Close();
-                    }
-                    while (!res)
+                    hBool success = hFalse;
+                    while (!success)
                     {
                         hSerialiserFileStream outStream;
                         outStream.Open(binFilepath, hTrue, fileSystem_);
                         hIDataCacheFile* infile = dataCache.OpenFile(currentResource_.GetAttributeString("input"));
                         if (infile && outStream.IsOpen())
                         {
-                            hcPrintf("Building %s", binFilepath);
-                            res = (*handler->rawLoader_)(infile, &dataCache, &paramSet, engine_, &outStream);
+                            hcPrintf("Compiling Resource %s", binFilepath);
+                            (*handler->rawCompiler_)(infile, &dataCache, &paramSet, engine_, &outStream);
+
+                            success = hTrue;
                         }
 
                         if (infile)
                             dataCache.CloseFile(infile);
                         if (outStream.IsOpen())
                             outStream.Close();
-                        if (!res)
-                        {
-                            //Wait ~5 Secs before retrying
-                            Device::ThreadSleep(5000);
-                            hcPrintf("Failed Building %s. Retrying", binFilepath);
-                        }
                     }
+                }
+
+                hSerialiserFileStream inStream;
+                inStream.Open(binFilepath, hFalse, fileSystem_);
+
+                if (inStream.IsOpen())
+                {
+                    // Load the binary file
+                    hcPrintf("Loading %s", binFilepath);
+                    res = (*handler->binLoader_)(&inStream, &paramSet, engine_);
+                    inStream.Close();
                 }
 
                 hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"

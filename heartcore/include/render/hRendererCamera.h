@@ -74,7 +74,7 @@ namespace Heart
         void                        SetRenderTargetSetup( const hRenderViewportTargetSetup& desc );
         hTexture*                   GetRenderTarget( hUint32 idx ) const { return renderTargets_[idx]; }
         hTexture*                   GetDepthTarget() const { return depthTarget_; }
-        hViewportShaderConstants*   GetViewportConstants() const { return viewportConstants_; }
+        hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
         hdParameterConstantBlock*   GetViewportConstantBlock() const { return &sharedConstantParamters_[0]; };
         void                        UpdateParameters();
 
@@ -97,8 +97,8 @@ namespace Heart
         hTexture*                   renderTargets_[MAX_TARGETS];
         hTexture*                   depthTarget_;
         hdParameterConstantBlock*   sharedConstantParamters_;
-	    hViewportShaderConstants*   viewportConstants_;
-        hInstanceConstants*         instanceConstants_;
+	    hViewportShaderConstants    viewportConstants_;
+        hInstanceConstants          instanceConstants_;
 	};
 	
 }

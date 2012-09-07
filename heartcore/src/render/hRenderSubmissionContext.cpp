@@ -104,9 +104,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::SetConstantBuffer( hdParameterConstantBlock* constBuffer )
+    void hRenderSubmissionCtx::SetConstantBuffer(hUint32 reg, hdParameterConstantBlock* constBuffer )
     {
-        impl_.SetConstantBlock( constBuffer );
+        impl_.SetConstantBlock(reg, constBuffer);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -248,7 +248,7 @@ namespace Heart
         SetDepthTarget( camera->GetDepthTarget() );
         SetViewport( camera->GetViewport() );
 
-        impl_.SetConstantBlock( viewportConstantsBlock_ );
+        impl_.SetConstantBlock(HEART_VIEWPORT_CONSTANTS_REGISTIER, viewportConstantsBlock_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -277,7 +277,7 @@ namespace Heart
         SetRenderStateBlock( pass->GetBlendState() );
         SetRenderStateBlock( pass->GetDepthStencilState() );
         SetRenderStateBlock( pass->GetRasterizerState() );
-
+/* TODO: FIX ME
         for ( hUint32 i = 0; i < currentMaterial_->GetConstantBufferCount(); ++i )
         {
             SetConstantBuffer( currentMaterial_->GetConstantBlock(i) );
@@ -290,6 +290,7 @@ namespace Heart
             if (samp->boundTexture_)
                 SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
         }
+*/
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -308,10 +309,8 @@ namespace Heart
     void hRenderSubmissionCtx::SetWorldMatrix( const hMatrix& world )
     {
         instanceConstants_->world_ = world;
-        instanceConstants_->worldView_ = world * viewportConstants_->view_;
-        instanceConstants_->worldViewProj_ = world * viewportConstants_->view_ * viewportConstants_->projection_;
 
-        impl_.SetConstantBlock( instanceConstantsBlock_ );
+        impl_.SetConstantBlock(HEART_INSTANCE_CONSTANTS_REGISTIER, instanceConstantsBlock_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -321,10 +320,8 @@ namespace Heart
     void hRenderSubmissionCtx::Initialise( hRenderer* renderer )
     {
         hUint32 size = sizeof( hInstanceConstants );
-        hUint32 reg = HEART_INSTANCE_CONSTANTS_REGISTIER;
         renderer_ = renderer;
-        instanceConstantsBlock_ = renderer->CreateConstantBlocks( &size, &reg, 1 );
-        instanceConstants_ = (hInstanceConstants*)instanceConstantsBlock_->GetBufferAddress();
+        instanceConstantsBlock_ = renderer->CreateConstantBlocks( &size, 1 );
     }
 
     //////////////////////////////////////////////////////////////////////////

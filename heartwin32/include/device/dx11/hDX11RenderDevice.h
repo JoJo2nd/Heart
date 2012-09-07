@@ -66,7 +66,7 @@ namespace Heart
         //Resource Create Calls
         hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type );
         void                            DestroyShader( hdDX11ShaderProgram* shaderProg );
-        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, const hUint32* regs, hUint32 count );
+        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, hUint32 count );
         void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
         void                            DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count );
         hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );

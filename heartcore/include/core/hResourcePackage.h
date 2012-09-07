@@ -42,7 +42,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     typedef hResourceClassBase* (*OnResourceDataLoad)       (hISerialiseStream*, hIDataParameterSet*, HeartEngine*);
-    typedef hResourceClassBase* (*OnResourceDataLoadRaw)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, HeartEngine*, hISerialiseStream*);
+    typedef hResourceClassBase* (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, HeartEngine*, hISerialiseStream*);
     typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, HeartEngine*);
     typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, HeartEngine*);
     typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, HeartEngine*);
@@ -54,7 +54,7 @@ namespace Heart
         const hChar*            libPath_;
         hSharedLibAddress       loaderLib_;
         OnResourceDataLoad      binLoader_;
-        OnResourceDataLoadRaw   rawLoader_;
+        OnResourceDataCompile   rawCompiler_;
         OnPackageLoadComplete   packageLink_;
         OnResourceDataUnload    resourceDataUnload_;
         OnPackageUnloadComplete packageUnlink_;

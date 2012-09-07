@@ -136,8 +136,7 @@ namespace Heart
 		{
 			if ( size > reserve_ )
 			{
-				reserve_ = hAlign( size, _Granularity );
-				hcAssert( reserve_ >= size );
+				reserve_ = size;
 				values_ = (_Ty*)hRealloc( values_, sizeof(_Ty)*reserve_ );
 			}
 		}
@@ -199,9 +198,19 @@ namespace Heart
             return *this;
         }
 		
+        void ReserveGran( hUint32 size )
+        {
+            if ( size > reserve_ )
+            {
+                reserve_ = hAlign( size, _Granularity );
+                hcAssert( reserve_ >= size );
+                values_ = (_Ty*)hRealloc( values_, sizeof(_Ty)*reserve_ );
+            }
+        }
+
 		void Grow( hUint32 size ) 
 		{
-			Reserve( size );
+			ReserveGran( size );
 			//Construct
 			for ( hUint32 i = size_; i < size; ++i )
 				new ( values_+i ) _Ty();

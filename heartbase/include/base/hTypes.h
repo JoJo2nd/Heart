@@ -31,6 +31,8 @@
 
 typedef	char				hChar;
 typedef unsigned char		hByte;
+typedef char                hInt8;
+typedef unsigned char       hUint8;
 typedef unsigned short		hUint16;
 typedef short				hInt16;
 typedef unsigned long		hUint32;
@@ -45,6 +47,16 @@ typedef time_t              hTime;
 
 class hNullType {};
 struct hcEmptyType {};
+
+namespace Heart
+{
+    struct hResourceBinHeader
+    {
+        hUint32 resourceType;
+        hUint64 key;
+        hUint32 pad;
+    };
+}
 
 #define HEART_ALIGN_VAR( alignment, type, name ) type __declspec( align(alignment) ) name
 #define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
@@ -117,6 +129,10 @@ namespace Heart
 #define hFORCEINLINE __forceinline
 
 #endif
+
+#define hMAKE_FOURCC(a,b,c,d) \
+        ((DWORD)(BYTE)(a)        | ((DWORD)(BYTE)(b) << 8) |       \
+        ((DWORD)(BYTE)(c) << 16) | ((DWORD)(BYTE)(d) << 24 ))
 
 #include "base/hDebugMacros.h"
 #include "base/hAtomic.h"

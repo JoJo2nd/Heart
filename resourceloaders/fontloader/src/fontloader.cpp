@@ -48,7 +48,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
 

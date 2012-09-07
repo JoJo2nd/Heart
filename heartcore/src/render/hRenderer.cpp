@@ -475,7 +475,7 @@ namespace Heart
         ctx->SetDepthTarget(camera->GetDepthTarget());
         ctx->SetViewport(camera->GetViewport());
 
-        ctx->SetConstantBuffer(camera->GetViewportConstantBlock());
+        ctx->SetConstantBuffer(HEART_VIEWPORT_CONSTANTS_REGISTIER, camera->GetViewportConstantBlock());
 
         return retTechMask;
     }
@@ -561,7 +561,7 @@ namespace Heart
                 material = mat->GetParentMaterial();
                 pass = nPass;
             }
-
+/* - TODO: FIX ME!
             for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
             {
                 mainSubmissionCtx_.SetConstantBuffer( mat->GetConstantBlock(i) );
@@ -574,7 +574,7 @@ namespace Heart
                 if (samp->boundTexture_)
                     mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
             }
-
+*/
             if (dcall->scissor_ != scissorRect)
             {
                 mainSubmissionCtx_.SetScissorRect(dcall->scissor_);

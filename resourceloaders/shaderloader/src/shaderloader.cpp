@@ -31,7 +31,17 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ParseVertexInputFormat( Heart::hShaderProgram* prog, D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect );
+#define SHADER_MAGIC_NUM              hMAKE_FOURCC('h','G','P','U')
+#define SHADER_STRING_MAX_LEN         (32)
+#define SHADER_MAJOR_VERSION          (((hUint16)1))
+#define SHADER_MINOR_VERSION          (((hUint16)0))
+#define SHADER_VERSION                ((SHADER_MAJOR_VERSION << 16)|SHADER_MINOR_VERSION)
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint32 ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect );
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -119,17 +129,44 @@ struct FXIncludeHandler : public ID3DInclude
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#pragma pack(push, 1)
+
+struct ShaderHeader
+{
+    Heart::hResourceBinHeader   resHeader;
+    hUint32                     version;
+    Heart::ShaderType           type;
+    hUint32                     vertexLayout;
+    hUint32                     shaderBlobSize;
+};
+
+#pragma pack(pop)
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 DLL_EXPORT
 Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::HeartEngine* engine)
 {
     using namespace Heart;
     hShaderProgram* shaderProg = hNEW(GetGlobalHeap(), hShaderProgram)();
+    ShaderHeader header;
+    void* tmpShaderBlob = NULL;
 
-    Heart::hSerialiser ser;
-    ser.Deserialise(inFile, *shaderProg);
+    inFile->Read(&header, sizeof(ShaderHeader));
 
-    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)shaderProg->GetShaderBlob(), shaderProg->GetShaderBlobLen(), shaderProg->GetVertexLayout(), shaderProg->GetShaderType());
+    hcAssert(header.version == SHADER_VERSION);
+
+    tmpShaderBlob = hHeapMalloc(GetGlobalHeap(), header.shaderBlobSize);
+    inFile->Read(tmpShaderBlob, header.shaderBlobSize);
+
+    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)tmpShaderBlob, header.shaderBlobSize, header.vertexLayout, header.type);
     shaderProg->SetImpl(impl);
+    shaderProg->SetShaderType(header.type);
+    shaderProg->SetVertexLayout(header.vertexLayout);
+
+    hHeapFreeSafe(GetGlobalHeap(), tmpShaderBlob);
 
     return shaderProg;
 }
@@ -139,7 +176,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
 
@@ -212,47 +249,24 @@ Heart::hResourceClassBase* HEART_API HeartRawLoader( Heart::hIDataCacheFile* inF
     }
 
     D3D11_SHADER_DESC desc;
-    hUint32 parameterCount = 0;
-    hUint32 totalParameterSize = 0;
 
     reflect->GetDesc( &desc );
 
-    //CONSTANT BUFFERS
-    for ( hUint32 i = 0; i < desc.ConstantBuffers; ++i )
-    {
-        ID3D11ShaderReflectionConstantBuffer* constInfo = reflect->GetConstantBufferByIndex( i );
-        D3D11_SHADER_BUFFER_DESC bufInfo;
-        constInfo->GetDesc( &bufInfo );
- 
-        totalParameterSize += bufInfo.Size / sizeof( hFloat );
-
-        //TODO: Get Parameters...
-        for ( hUint32 i = 0; i < bufInfo.Variables; ++i )
-        {
-            ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( i );
-            D3D11_SHADER_VARIABLE_DESC varDesc;
-            var->GetDesc(&varDesc);
-
-            ++parameterCount;
-        }
-    }
-
-    hShaderProgram* shaderProg = hNEW(GetGlobalHeap(), hShaderProgram)();
+    ShaderHeader header = {0};
     if (progtype == ShaderType_VERTEXPROG)
     {
-        ParseVertexInputFormat(shaderProg, desc, reflect);
+        header.vertexLayout = ParseVertexInputFormat(desc, reflect);
     }
-    shaderProg->CopyShaderBlob(result->GetBufferPointer(), result->GetBufferSize());
-    shaderProg->SetParameterData(parameterCount, totalParameterSize);
-    shaderProg->SetShaderType(progtype);
 
-    Heart::hSerialiser ser;
-    ser.Serialise(binoutput, *shaderProg);
+    header.resHeader.resourceType = SHADER_MAGIC_NUM;
+    header.version = SHADER_VERSION;
+    header.type = progtype;
+    header.shaderBlobSize = result->GetBufferSize();
 
-    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)shaderProg->GetShaderBlob(), shaderProg->GetShaderBlobLen(), shaderProg->GetVertexLayout(), shaderProg->GetShaderType());
-    shaderProg->SetImpl(impl);
+    binoutput->Write(&header, sizeof(header));
+    binoutput->Write(result->GetBufferPointer(), result->GetBufferSize());
 
-    return shaderProg;
+    return NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -285,7 +299,7 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::H
 
 }
 
-void ParseVertexInputFormat( Heart::hShaderProgram* prog, D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect )
+hUint32 ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect )
 {
     hUint32 vertexInputLayoutFlags = 0;
     for ( hUint32 i = 0; i < desc.InputParameters; ++i )
@@ -324,5 +338,5 @@ void ParseVertexInputFormat( Heart::hShaderProgram* prog, D3D11_SHADER_DESC &des
         }
     }
 
-    prog->SetVertexLayout(vertexInputLayoutFlags);
+    return vertexInputLayoutFlags;
 }
