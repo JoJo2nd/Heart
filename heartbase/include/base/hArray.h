@@ -213,7 +213,7 @@ namespace Heart
 			ReserveGran( size );
 			//Construct
 			for ( hUint32 i = size_; i < size; ++i )
-				new ( values_+i ) _Ty();
+				new ( values_+i ) _Ty;
 			size_ = size;
 		}
 

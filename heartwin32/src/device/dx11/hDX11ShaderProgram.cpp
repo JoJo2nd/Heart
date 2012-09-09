@@ -33,7 +33,7 @@ namespace Heart
 
     hUint32 hdDX11ShaderProgram::GetShaderParameterCount()
     {
-        hUint32 params;
+        hUint32 params = 0;
         D3D11_SHADER_DESC desc;
         shaderInfo_->GetDesc( &desc );
         //CONSTANT BUFFERS
@@ -56,7 +56,7 @@ namespace Heart
     hBool hdDX11ShaderProgram::GetShaderParameter( hUint32 i, hShaderParameter* param )
     {
         hcAssert( param );
-
+        HRESULT hr;
         D3D11_SHADER_DESC desc;
         shaderInfo_->GetDesc( &desc );
         //CONSTANT BUFFERS
@@ -72,10 +72,13 @@ namespace Heart
                 ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( i );
                 D3D11_SHADER_VARIABLE_DESC varDesc;
                 var->GetDesc( &varDesc );
+                D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+                hr = shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
+                hcAssert(SUCCEEDED(hr));
 
                 hStrCopy(param->name_.GetBuffer(), param->name_.GetMaxSize(), varDesc.Name);
                 param->size_    = varDesc.Size;
-                param->cBuffer_ = buffer;
+                param->cBuffer_ = bindInfo.BindPoint;
                 param->cReg_    = varDesc.StartOffset;
 
                 return hTrue;

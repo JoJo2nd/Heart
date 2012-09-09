@@ -96,8 +96,8 @@ namespace Heart
     {
         // Data travels from cpu -> gpu
         hUint32         sizeBytes_;
-        hFloat*         cpuData_;
-        hUint32         cReg_;
+        hByte*          cpuData_;
+        hUint32         cBuffer_;
         hUint32         cOffset_;
     };
 
@@ -153,6 +153,7 @@ namespace Heart
         typedef hVector< hSamplerParameter >  SamplerArrayType;
         typedef hVector< hMaterialParameter > MaterialParametersArrayType;
         typedef hVector< hProgramOutput >     ProgramOutputArrayType;
+        typedef hVector< hParameterMapping >  ParameterMappingArrayType;
 
         hUint32                             uniqueKey_;
 		hRenderer*							renderer_;
@@ -162,7 +163,13 @@ namespace Heart
         SamplerArrayType                    samplers_;
         MaterialParametersArrayType         materialParameters_;
         ProgramOutputArrayType              programOutputs_;
+        ParameterMappingArrayType           defaultMappings_;
         hUint32                             totalParameterDataSize_;
+        hUint32                             constBlockCount_;
+        hUint32                             constantBlockSizes_[HEART_MAX_CONSTANT_BLOCKS];
+#ifdef HEART_DEBUG
+        hUint32                             constantBlockHashes_[HEART_MAX_CONSTANT_BLOCKS];
+#endif
 	};
 
     class hMaterialInstance
@@ -183,6 +190,7 @@ namespace Heart
         hdParameterConstantBlock*           GetConstantBlock( hUint32 idx ) { return constBuffers_ + idx; }
         const hMaterial*                    GetParentMaterial() const { return parentMaterial_; }
         hUint32                             GetMatKey() const { return matKey_; }
+        void                                FlushParameters();
 
     private:
 
@@ -200,12 +208,13 @@ namespace Heart
         hUint32                             matKey_;
         hMaterial*                          parentMaterial_;
         hUint32                             constBufferCount_;
+        hUint32                             constBlockDirty_;
         hdParameterConstantBlock*           constBuffers_;
         hSamplerArrayType                   samplers_;
         hUint32                             parameterMappingCount_;
         hParameterMapping*                  parameterMappings_;
         hUint32                             cpuDataSizeBytes_;
-        hFloat*                             cpuData_;
+        hByte*                              cpuData_;
     };
 
     //////////////////////////////////////////////////////////////////////////

@@ -113,6 +113,7 @@ namespace Heart
         void    Unmap( hVertexBufferMapInfo* outInfo );
         void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
         void    Unmap( hTextureMapInfo* outInfo );
+        void    Update(hdParameterConstantBlock* cb) { impl_.Update(cb); }
 
     private:
 

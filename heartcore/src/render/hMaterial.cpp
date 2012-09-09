@@ -135,7 +135,52 @@ namespace Heart
 
     hMaterialInstance* hMaterial::CreateMaterialInstance()
     {
-        return hNEW(GetGlobalHeap()/*!heap*/, hMaterialInstance)(this, renderer_);
+        hMaterialInstance* mat = hNEW(GetGlobalHeap()/*!heap*/, hMaterialInstance)(this, renderer_);
+
+        //Copy the samplers
+        mat->samplers_.Reserve(samplers_.GetSize());
+        mat->samplers_.Resize(samplers_.GetSize());
+        for (hUint32 i = 0; i < samplers_.GetSize(); ++i)
+        {
+            hStrCopy(mat->samplers_[i].name_, mat->samplers_[i].name_.GetMaxSize(), samplers_[i].name_);
+            mat->samplers_[i].boundTexture_     = samplers_[i].boundTexture_;
+            mat->samplers_[i].defaultTextureID_ = samplers_[i].defaultTextureID_;
+            mat->samplers_[i].samplerReg_       = samplers_[i].samplerReg_;
+            mat->samplers_[i].samplerState_     = samplers_[i].samplerState_;
+        }
+
+        //Create constant blocks
+        hUint32* sizes = (hUint32*)hAlloca(constBlockCount_*sizeof(hUint32));
+        hUint32* p = sizes;
+        for (hUint32 i = 0; i < HEART_MAX_CONSTANT_BLOCKS; ++i)
+        {
+            if (constantBlockSizes_[i] > 0)
+            {
+                *p = constantBlockSizes_[i];
+                ++p;
+            }
+        }
+
+        mat->constBufferCount_ = constBlockCount_;
+        mat->constBuffers_ = renderer_->CreateConstantBlocks(sizes, mat->constBufferCount_);
+
+        //Create CPU data
+        mat->cpuDataSizeBytes_ = totalParameterDataSize_;
+        mat->cpuData_ = (hByte*)hHeapMalloc(GetGlobalHeap(), totalParameterDataSize_);
+        hZeroMem(mat->cpuData_, mat->cpuDataSizeBytes_);
+
+        //Copy mappings
+        mat->parameterMappingCount_ = defaultMappings_.GetSize();
+        mat->parameterMappings_ = hNEW_ARRAY(GetGlobalHeap(), hParameterMapping, mat->parameterMappingCount_);
+        hMemCpy(mat->parameterMappings_, defaultMappings_.GetBuffer(), sizeof(hParameterMapping)*mat->parameterMappingCount_);
+        for (hUint32 i = 0; i < mat->parameterMappingCount_; ++i)
+        {
+            mat->parameterMappings_[i].cpuData_ = (mat->cpuData_)+(hUint32)mat->parameterMappings_[i].cpuData_;
+        }
+
+        // TODO: Copy/Set Defaults
+
+        return mat;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -184,7 +229,139 @@ namespace Heart
 
     hBool hMaterial::Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager)
     {
-        for (hUint32 i = 0; i < )
+        /*
+         * This code ain't pretty, so do it here in the link where we are on the loader
+         * thread and have time to do it.
+         **/
+        //
+        for (hUint32 i = 0; i < samplers_.GetSize(); ++i)
+        {
+            if (samplers_[i].defaultTextureID_)
+            {
+                samplers_[i].samplerReg_ = hErrorCode;
+                samplers_[i].boundTexture_ = static_cast<hTexture*>(resManager->ltGetResource(samplers_[i].defaultTextureID_));
+                //Not loaded yet...?
+                if (samplers_[i].boundTexture_ == NULL)
+                {
+                    return hFalse;
+                }
+            }
+        }
+
+        // Grab all the shader programs
+        for (hUint32 group = 0; group < groups_.GetSize(); ++group)
+        {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech)
+            {
+                groups_[group].techniques_[tech].mask_ = matManager->AddRenderTechnique( groups_[group].techniques_[tech].name_ )->mask_;
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass)
+                {
+                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
+                    passptr->vertexProgram_ = static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->vertexProgramID_));
+                    passptr->fragmentProgram_ = static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->fragmentProgramID_));
+                    if (passptr->vertexProgramID_ && !passptr->vertexProgram_)
+                    {
+                        return hFalse;
+                    }
+                    if (passptr->fragmentProgramID_ && !passptr->fragmentProgram_)
+                    {
+                        return hFalse;
+                    }
+                }
+            }
+        }
+
+        // All resources linked...grab const block info
+        hZeroMem(constantBlockSizes_, sizeof(constantBlockSizes_));
+#ifdef HEART_DEBUG
+        hZeroMem(constantBlockHashes_, sizeof(constantBlockHashes_));
+#endif
+        for (hUint32 group = 0; group < groups_.GetSize(); ++group)
+        {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech)
+            {
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass)
+                {
+                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
+                    for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx)
+                    {
+                        hShaderProgram* prog = passptr->GetProgram(progidx);
+                        for (hUint32 cb = 0; prog && cb < prog->GetConstantBlockCount(); ++cb)
+                        {
+                            hConstantBlockDesc desc;
+                            prog->GetConstantBlockDesc(cb, &desc);
+                            if (desc.reg_ < HEART_MIN_RESERVED_CONSTANT_BLOCK)
+                            {
+                                constantBlockSizes_[desc.reg_] = desc.size_;
+#ifdef HEART_DEBUG
+                                hcAssertMsg(constantBlockHashes_[desc.reg_] == desc.hash_ || constantBlockHashes_[desc.reg_] == 0,
+                                    "WARNING: Constant blocks don't match across shaders. This will produce undesirable results."
+                                    "Make sure constant blocks assigned are to the same registers match accross all shaders in the same"
+                                    "material.");
+                                constantBlockHashes_[desc.reg_] = desc.hash_;
+#endif // HEART_DEBUG
+                            }
+                        }
+                        // Add Sampler register
+                        for (hUint32 si = 0; si < samplers_.GetSize(); ++si)
+                        {
+                            if (samplers_[si].samplerReg_ == hErrorCode)
+                            {
+                                samplers_[si].samplerReg_ = prog->GetSamplerRegister(samplers_[si].name_);
+                            }
+                        }
+                        // Add parameter mappings.
+                        for (hUint32 sp = 0; prog && sp < prog->GetShaderParameterCount(); ++sp)
+                        {
+                            hShaderParameter param;
+                            hBool found = hFalse;
+                            prog->GetShaderParameter(sp, &param);
+                            
+                            for (hUint32 pm = 0, pms = defaultMappings_.GetSize(); pm < pms; ++pm)
+                            {
+                                if (param.cReg_ == defaultMappings_[pm].cOffset_ && param.cBuffer_ == defaultMappings_[pm].cBuffer_)
+                                {
+                                    found = hTrue;
+                                    continue;
+                                }
+                            }
+
+                            if (!found)
+                            {
+                                hProgramOutput* output = NULL;
+                                //Find the material output that matches, 
+                                for (hUint32 mo = 0; !output && mo < programOutputs_.GetSize(); ++mo)
+                                {
+                                    if (hStrCmp(programOutputs_[mo].name_, param.name_) == 0)
+                                    {
+                                        output = &programOutputs_[mo];
+                                    }
+                                }
+
+                                if (output)
+                                {
+                                    hParameterMapping newmapping;
+                                    newmapping.cBuffer_ = param.cBuffer_;
+                                    newmapping.cOffset_ = param.cReg_;
+                                    newmapping.sizeBytes_ = param.size_;
+                                    newmapping.cpuData_ = (hByte*)materialParameters_[(hUint32)output->parameterID_].dataOffset_;
+
+                                    defaultMappings_.PushBack(newmapping);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        constBlockCount_ = 0;
+        for (hUint32 i = 0; i < HEART_MAX_CONSTANT_BLOCKS; ++i)
+        {
+            if (constantBlockSizes_[i] > 0)
+                ++constBlockCount_;
+        }
+
         return hTrue;
     }
 
@@ -270,21 +447,9 @@ namespace Heart
     hMaterialInstance::hMaterialInstance( hMaterial* parentMat, hRenderer* renderer ) 
         : renderer_(renderer)
         , parentMaterial_(parentMat)
+        , constBlockDirty_(0)
     {
         hcAssert( parentMat );
-/*
-        hUint32 cbCount = parentMat->GetConstantBufferCount();
-        hUint32* sizes = (hUint32*)hAlloca( cbCount*sizeof(hUint32) );
-        hUint32* regs = (hUint32*)hAlloca( cbCount*sizeof(hUint32) );
-        for ( hUint32 i = 0; i < cbCount; ++i )
-        {
-            sizes[i] = parentMat->GetConstantBufferSize( i );
-            regs[i] = parentMat->GetConstantBufferRegister( i );
-        }
-        constBuffers_ = renderer->CreateConstantBlocks( sizes, regs, parentMat->GetConstantBufferCount() );
-
-        parentMaterial_->GetSamplerArray().CopyTo( &samplers_ );
-*/
         matKey_ = parentMaterial_->GetMatKey();
     }
 
@@ -294,6 +459,8 @@ namespace Heart
 
     hMaterialInstance::~hMaterialInstance()
     {
+        hHeapFreeSafe(GetGlobalHeap(), cpuData_);
+        hDELETE_ARRAY_SAFE(GetGlobalHeap(), parameterMappings_);
         renderer_->DestroyConstantBlocks(constBuffers_, constBufferCount_);
     }
 

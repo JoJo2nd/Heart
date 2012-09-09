@@ -63,20 +63,32 @@ namespace Private
 		const hChar*			pEnd_;
 	};
 }
+
+#pragma pack(push, 1)
+
+    // explicitly pad to 32 bytes
+    // would be nice to get this under 32 bytes, might be possible if
+    // units are pixel based, then could pack into elements into bytes.
+    // I doubt many characters are more than 256 units wide or hight
+    // in which case the possible min size is 28 bytes + page ID which could
+    // be packed into ~3 bits.
 	struct hFontCharacter
 	{
-	 	hUint32					page_;
-	 	hUint32					unicode_;//Decoded from UTF-8, where -1 is invalid
-        hFloat                  x_;
-        hFloat                  y_;
-	 	hFloat					height_;
-	 	hFloat					width_;
-        hFloat                  xOffset_;
-        hFloat                  yOffset_;
-		hFloat					xAdvan_;
-		hCPUVec2				UV1_;
-	 	hCPUVec2				UV2_;
+	 	hUint32					page_;      //4;
+	 	hUint32					unicode_;   //8;Decoded from UTF-8, where -1 is invalid
+        hFloat                  x_;         //12;
+        hFloat                  y_;         //16;
+	 	hFloat					height_;    //20;
+	 	hFloat					width_;     //24;
+        hFloat                  xOffset_;   //28;
+        hFloat                  yOffset_;   //32;
+		hFloat					xAdvan_;    //36;
+		hCPUVec2				UV1_;       //(8)44;
+	 	hCPUVec2				UV2_;       //(8)52;
+        hByte                   pad_[12];   //(12)64;
 	};
+
+#pragma pack(pop)
 
     typedef hUint64 hFontLookup;
 

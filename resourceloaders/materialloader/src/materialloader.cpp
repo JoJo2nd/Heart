@@ -297,6 +297,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
             inFile->Read(&techDef, sizeof(techDef));
             hMaterialTechnique* tech = &group->techniques_[techniqueIdx];
 
+            tech->SetName(techDef.technqiueName);
             tech->SetPasses(techDef.passes);
             tech->SetLayer(techDef.layer);
             tech->SetSortAsTransparent(techDef.transparent > 0);
@@ -329,7 +330,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
     MaterialHeader matHeader = {0};
@@ -508,7 +509,7 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
     binoutput->Seek(0, hISerialiseStream::eBegin);
     binoutput->Write(&matHeader, sizeof(matHeader));
 
-    return NULL;
+    return hTrue;
 }
 
 //////////////////////////////////////////////////////////////////////////

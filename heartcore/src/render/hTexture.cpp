@@ -33,81 +33,8 @@ namespace Heart
 
 	void hTexture::Release()
 	{
-#ifdef HEART_OLD_RENDER_SUBMISSION
-		renderer_->NewRenderCommand< Cmd::ReleaseTexture >( this );
-#endif // HEART_OLD_RENDER_SUBMISSION
 	}
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-/*
-	void hTexture::Lock( hUint16 level, hTextureMapInfo* info )
-	{
-		hcAssert( !lockPtr_ );
-		if ( level < nLevels_ && info )
-		{
-			info->level_ = level;
-			info->pitch_ = levelDescs_[level].width_*4;//TODO: fix pixel depth!
-			info->ptr_ = renderer_->AquireTempRenderMemory( levelDescs_[level].width_*info->pitch_ );
-			lockPtr_ = info->ptr_;
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hTexture::Unlock( hTextureMapInfo* info )
-	{
-		hcAssert( lockPtr_ );
-		renderer_->NewRenderCommand<Cmd::FlushTextureLevel>( this, info->level_, info->pitch_, info->ptr_ );
-		lockPtr_ = NULL;
-	}
-	}
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hTexture::FlushLevel( hUint32 level, hUint32 inpitch, void* data )
-	{
-		hUint32 p;
-		void* mapped = pImpl()->Map( level, &p );
-
-		if ( mapped )
-		{
-			// The device layer supports mapping a texture
-			// directly to memory, allowing us to copy into it
-			if ( p == inpitch )
-			{
-				//fast path
-				memcpy( mapped, data, inpitch*levelDescs_[level].height_ );
-			}
-			else
-			{
-				//slow path
-				hByte* sptr = (hByte*)data;
-				hByte* dptr = (hByte*)mapped;
-				for ( hUint32 i = 0; i < levelDescs_[level].height_; ++i )
-				{
-					memcpy( dptr, sptr, inpitch );
-					sptr += inpitch;
-					dptr += p;
-				}
-			}
-		}
-		else 
-		{
-			// The device layer doesn't support mapping a texture
-			// to a memory address, in this case the Unmap call takes a 
-			// memory address and uploads the data to the texture
-			mapped = data;
-		}
-
-		pImpl()->Unmap( level, mapped );
-		renderer_->ReleaseTempRenderMemory( data );
-	}
-*/
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -115,9 +42,20 @@ namespace Heart
 
     void hTexture::ReleaseCPUTextureData()
     {
-        for (hUint32 i = 0; i < nLevels_; ++i)
+        if (singleAlloc_)
         {
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), levelDescs_[i].mipdata_);
+            hHeapFree(GetGlobalHeap(), levelDescs_[0].mipdata_);
+            for (hUint32 i = 0; i < nLevels_; ++i)
+            {
+                levelDescs_[i].mipdata_ = NULL;
+            }
+        }
+        else
+        {
+            for (hUint32 i = 0; i < nLevels_; ++i)
+            {
+                hDELETE_ARRAY_SAFE(GetGlobalHeap(), levelDescs_[i].mipdata_);
+            }
         }
     }
 

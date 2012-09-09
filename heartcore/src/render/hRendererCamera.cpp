@@ -72,6 +72,7 @@ namespace Heart
 
         hUint32 sizes[] = { sizeof(hViewportShaderConstants), sizeof(hInstanceConstants) };
         sharedConstantParamters_ = renderer_->CreateConstantBlocks( sizes, 2 );
+        viewportConstants_ = (hViewportShaderConstants*)sharedConstantParamters_[0].mapData_;
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -85,11 +86,13 @@ namespace Heart
         hVec3 up  = hMatrixFunc::getRow( viewMatrix_, 1 );
         frustum_.UpdateFromCamera( eye, dir, up, fov, aspect_, near_, far_, isOrtho_ );
 
-        viewportConstants_.projection_ = projectionMatrix_;
-        viewportConstants_.projectionInverse_ = hMatrixFunc::inverse(projectionMatrix_);
-        viewportConstants_.view_ = viewMatrix_;
-        viewportConstants_.viewInverse_ = hMatrixFunc::inverse( viewMatrix_ );
-        viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
+        viewportConstants_->projection_ = projectionMatrix_;
+        viewportConstants_->projectionInverse_ = hMatrixFunc::inverse(projectionMatrix_);
+        viewportConstants_->view_ = viewMatrix_;
+        viewportConstants_->viewInverse_ = hMatrixFunc::inverse( viewMatrix_ );
+        viewportConstants_->viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_->viewInverse_ );
+        viewportConstants_->viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
+        viewportConstants_->viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_->viewProjection_);
     }
 
     //////////////////////////////////////////////////////////////////////////

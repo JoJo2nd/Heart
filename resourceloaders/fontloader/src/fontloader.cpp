@@ -31,16 +31,61 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#define FONT_MAGIC_NUM              hMAKE_FOURCC('h','F','N','T')
+#define FONT_STRING_MAX_LEN         (32)
+#define FONT_MAJOR_VERSION          (((hUint16)1))
+#define FONT_MINOR_VERSION          (((hUint16)0))
+#define FONT_VERSION                ((FONT_MAJOR_VERSION << 16)|FONT_MINOR_VERSION)
+
+#pragma pack(push, 1)
+
+struct FontHeader
+{
+    Heart::hResourceBinHeader   resHeader;
+    hUint32                     version;
+    hFloat                      fontHeight;
+    hUint32                     pageCount;
+    Heart::hResourceID          pageResID;
+    Heart::hResourceID          materialResID;
+    hUint32                     glyphCount;
+};
+
+#pragma pack(pop)
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 DLL_EXPORT
 Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::HeartEngine* )
 {
     using namespace Heart;
+    FontHeader header = {0};
 
-    hFont* resource = hNEW(GetGlobalHeap()/*!heap*/, hFont)();
-    hSerialiser ser;
-    ser.Deserialise( inStream, *resource );
+    hFont* font = hNEW(GetGlobalHeap()/*!heap*/, hFont)();
 
-    return resource;
+    inStream->Read(&header, sizeof(header));
+
+    font->SetFontHeight(header.fontHeight);
+    font->SetFontWidth(0);
+    font->SetPageCount(header.pageCount);
+    font->SetPageResourceID(header.pageResID);
+    font->SetMaterialResourceID(header.materialResID);
+    font->SetFontCharacterLimit(header.glyphCount);
+
+    // A pre-fetch on the inStream of 32K could really speed things up?
+    // Should be explicit call on the stream however.
+
+    for (hUint32 i = 0; i < header.glyphCount; ++i)
+    {
+        hFontCharacter ch;
+        inStream->Read(&ch, sizeof(ch));
+        font->AddFontCharacter(&ch);
+    }
+
+    font->SortCharacters();
+
+    return font;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -48,10 +93,10 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
-
+    FontHeader header = {0};
     hFloat fontScale = hAtoF(params->GetBuildParameter("SCALE", "1"));
     hXMLDocument xmldoc;
     hChar* xmlmem = (hChar*)hHeapMalloc(GetGlobalHeap(), inFile->Lenght()+1);
@@ -61,32 +106,33 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
     if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, GetGlobalHeap()) == hFalse)
         return NULL;
 
-    hFont* font = hNEW(GetGlobalHeap(), hFont)();
+    header.resHeader.resourceType = FONT_MAGIC_NUM;
+    header.version = FONT_VERSION;
+
     hXMLGetter common = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("common");
 
-    hFloat pageWidth = common.GetAttributeFloat("scaleW");
+    hFloat pageWidth  = common.GetAttributeFloat("scaleW");
     hFloat pageHeight = common.GetAttributeFloat("scaleH");
-    font->SetFontHeight(common.GetAttributeFloat("lineHeight")*fontScale);
-    font->SetFontWidth(0.f);
-    font->SetPageCount(common.GetAttributeInt("pages"));
+    header.fontHeight = common.GetAttributeFloat("lineHeight")*fontScale;
+    header.pageCount  = common.GetAttributeInt("pages");
 
     hXMLGetter pages = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("pages");
     hXMLGetter page = pages.FirstChild("page");
     const hChar* pageResName = page.GetAttributeString("file", "NONE.NONE");
     hResourceID resLink = hResourceManager::BuildResourceID(pageResName);//TODO:
-    font->SetPageResourceID(resLink);
+    header.pageResID = resLink;
     resLink = hResourceManager::BuildResourceID(hXMLGetter(&xmldoc).FirstChild("font").FirstChild("material").GetAttributeString("resource", "NONE.NONE"));
-    font->SetMaterialResourceID(resLink);
-
+    header.materialResID = resLink;
 
     hXMLGetter glyphs = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("chars");
     hUint32 characterCount = glyphs.GetAttributeInt("count");
 
-    font->SetFontCharacterLimit(characterCount);
-    
+    header.glyphCount = characterCount;
+    binoutput->Write(&header, sizeof(header));
+
     for (hXMLGetter glyph = glyphs.FirstChild("char"); glyph.ToNode(); glyph = glyph.NextSibling())
     {
-        hFontCharacter newchar;
+        hFontCharacter newchar = {0};
         newchar.page_       = glyph.GetAttributeInt("page", 0);
         newchar.unicode_    = glyph.GetAttributeInt("id", -1);
         newchar.x_          = glyph.GetAttributeFloat("x", 0.f);
@@ -106,15 +152,10 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
         newchar.xOffset_ *= fontScale;
         newchar.xAdvan_ *= fontScale;
 
-        font->AddFontCharacter(&newchar);
-    }           
+        binoutput->Write(&newchar, sizeof(hFontCharacter));
+    }
 
-    font->SortCharacters();
-
-    Heart::hSerialiser ser;
-    ser.Serialise(binoutput, *font);
-
-    return font;
+    return hTrue;
 }
 
 //////////////////////////////////////////////////////////////////////////

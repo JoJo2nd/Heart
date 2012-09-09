@@ -53,6 +53,7 @@ namespace Heart
         void                    GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc) { pImpl()->GetConstantBlockDesc(idx, desc); }
         hUint32                 GetShaderParameterCount() { return pImpl()->GetShaderParameterCount(); }
         hBool                   GetShaderParameter(hUint32 i, hShaderParameter* param) { return pImpl()->GetShaderParameter(i, param); }
+        hUint32                 GetSamplerRegister(const hChar* name) { return pImpl()->GetSamplerRegister(name); }
 
 
     private:

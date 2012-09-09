@@ -176,7 +176,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
 
@@ -235,7 +235,7 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
         errors->Release();
         errors = NULL;
         hHeapFreeSafe(GetGlobalHeap(), sourcedata);
-        return NULL;
+        return hFalse;
     }
 
     hHeapFreeSafe(GetGlobalHeap(), sourcedata);
@@ -245,7 +245,7 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
     if ( FAILED( hr ) )
     {
         hcAssertFailMsg( "Couldn't create reflection information." );
-        return NULL;
+        return hFalse;
     }
 
     D3D11_SHADER_DESC desc;
@@ -266,7 +266,7 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
     binoutput->Write(&header, sizeof(header));
     binoutput->Write(result->GetBufferPointer(), result->GetBufferSize());
 
-    return NULL;
+    return hTrue;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -475,6 +475,7 @@ namespace Heart
         ctx->SetDepthTarget(camera->GetDepthTarget());
         ctx->SetViewport(camera->GetViewport());
 
+        ctx->Update(camera->GetViewportConstantBlock());
         ctx->SetConstantBuffer(HEART_VIEWPORT_CONSTANTS_REGISTIER, camera->GetViewportConstantBlock());
 
         return retTechMask;
@@ -547,8 +548,9 @@ namespace Heart
             }
 
             hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
+            hBool newMaterial = material != mat->GetParentMaterial();
 
-            if (material != mat->GetParentMaterial() || pass != nPass)
+            if (newMaterial || pass != nPass)
             {
                 hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
                 hMaterialTechniquePass* techpass = tech->GetPass(nPass);
@@ -561,20 +563,29 @@ namespace Heart
                 material = mat->GetParentMaterial();
                 pass = nPass;
             }
-/* - TODO: FIX ME!
-            for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
+
+            if (newMaterial)
             {
-                mainSubmissionCtx_.SetConstantBuffer( mat->GetConstantBlock(i) );
+                /*
+                mat->FlushParameters();
+
+                for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
+                {
+                    mainSubmissionCtx_.SetConstantBuffer( mat->GetConstantBlock(i) );
+                }
+                */
+
+                for ( hUint32 i = 0; i < mat->GetSamplerCount(); ++i )
+                {
+                    const hSamplerParameter* samp = mat->GetSamplerParameter( i );
+                    hcWarningHigh( samp->boundTexture_ == NULL, "Sampler has no texture bound" );
+                    if (samp->boundTexture_)
+                    {
+                        mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
+                    }
+                }
             }
 
-            for ( hUint32 i = 0; i < mat->GetSamplerCount(); ++i )
-            {
-                const hSamplerParameter* samp = mat->GetSamplerParameter( i );
-                hcWarningHigh( samp->boundTexture_ == NULL, "Sampler has no texture bound" );
-                if (samp->boundTexture_)
-                    mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
-            }
-*/
             if (dcall->scissor_ != scissorRect)
             {
                 mainSubmissionCtx_.SetScissorRect(dcall->scissor_);

@@ -129,4 +129,8 @@
     #define HEART_USE_DEFAULT_MEM_ALLOC
 #endif
 
+#ifndef HEART_FINAL
+#   define HEART_ALLOW_DATA_COMPILE
+#endif
+
 #endif // _HHEARTCONFIG_H__

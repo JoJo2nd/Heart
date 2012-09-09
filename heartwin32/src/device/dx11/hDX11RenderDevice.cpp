@@ -1358,7 +1358,7 @@ namespace Heart
             hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].size_ = sizes[i];
-            constBlocks[i].mapData_ = NULL;
+            constBlocks[i].mapData_ = hHeapMalloc(GetGlobalHeap(), sizes[i]);
         }
 
         return constBlocks;
@@ -1382,6 +1382,7 @@ namespace Heart
         for ( hUint32 i = 0; i < count; ++i )
         {
             constBlocks[i].constBuffer_->Release();
+            hHeapFree(GetGlobalHeap(), constBlocks[i].mapData_);
             constBlocks[i].constBuffer_ = NULL;
             constBlocks[i].size_ = 0;
         }

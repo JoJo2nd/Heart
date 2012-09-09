@@ -60,6 +60,8 @@ namespace Heart
         void                    SetVertexShaderResID(hResourceID id) { vertexProgramID_ = id; }
         hShaderProgram*         GetFragmentShader() { return fragmentProgram_; }
         void                    SetFragmentShaderResID(hResourceID id) { fragmentProgramID_ = id; }
+        hUint32                 GetProgramCount() { return s_maxPrograms; }
+        hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i];}
         hdBlendState*           GetBlendState() { return blendState_; }
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
@@ -75,10 +77,33 @@ namespace Heart
 
         friend class hRenderer;
 
-        hResourceID                         vertexProgramID_;
-        hShaderProgram*                     vertexProgram_;
-        hResourceID                         fragmentProgramID_;
-        hShaderProgram*                     fragmentProgram_;
+        static const hUint32 s_maxPrograms = 2;
+
+        /*
+         * Following should be in an array
+         **/
+        union 
+        {
+            hShaderProgram*     programs_[s_maxPrograms];
+            struct
+            {
+                hShaderProgram* vertexProgram_;
+                hShaderProgram* fragmentProgram_;
+            };
+        };
+        union
+        {
+            hResourceID     programIDs_[s_maxPrograms];
+            struct
+            {
+                hResourceID vertexProgramID_;
+                hResourceID fragmentProgramID_;
+            };
+        };
+
+        /*
+         * Previous should be in an array
+         **/
         hdBlendState*                       blendState_;
         hdDepthStencilState*                depthStencilState_;
         hdRasterizerState*                  rasterizerState_;
@@ -125,6 +150,8 @@ namespace Heart
         HEART_ALLOW_SERIALISE_FRIEND();
 
         friend class hRenderer;
+        friend class hMaterial;
+        friend class hMaterialInstance;
 
         static const hUint32 MAX_NAME_LEN = 32;
         typedef hVector< hMaterialTechniquePass > PassArrayType;

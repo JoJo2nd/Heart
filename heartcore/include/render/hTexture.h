@@ -47,6 +47,7 @@ namespace Cmd
 		hTexture( hRenderer* prenderer ) 
 			: renderer_( prenderer )
 			, keepcpu_(hFalse)
+            , singleAlloc_(hTrue)
             , levelDescs_(NULL)
 		{}
 		~hTexture()
@@ -90,6 +91,7 @@ namespace Cmd
 		hUint32					nLevels_;
 		LevelDesc*				levelDescs_;
         hBool                   keepcpu_;
+        hBool                   singleAlloc_;
 	};
 
     struct hTextureMapInfo

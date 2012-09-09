@@ -248,6 +248,7 @@ namespace Heart
                 hStrCopy(typehandler.ext, 4, currentResource_.GetAttributeString("type"));
                 hResourceHandler* handler = handlerMap_->Find(typehandler);
                 hDataParameterSet paramSet(&currentResource_);
+#ifdef HEART_ALLOW_DATA_COMPILE
                 hBuiltDataCache dataCache(
                     fileSystem_,
                     packageName_,
@@ -255,12 +256,13 @@ namespace Heart
                     currentResource_.GetAttributeString("input"),
                     paramSet.GetParameterHash(),
                     hd_GetSharedLibTimestamp(handler->loaderLib_));
+#endif//HEART_ALLOW_DATA_COMPILE
                 hResourceClassBase* res = NULL;
                 hUint32 crc = hCRC32::StringCRC(currentResource_.GetAttributeString("name"));
 
                 hChar* binFilepath;
                 hBuildResFilePath(binFilepath, packageName_, currentResource_.GetAttributeString("name"));
-
+#ifdef HEART_ALLOW_DATA_COMPILE
                 if (!dataCache.IsCacheValid())
                 {
                     hBool success = hFalse;
@@ -271,28 +273,44 @@ namespace Heart
                         hIDataCacheFile* infile = dataCache.OpenFile(currentResource_.GetAttributeString("input"));
                         if (infile && outStream.IsOpen())
                         {
+                            hTimer timer;
                             hcPrintf("Compiling Resource %s", binFilepath);
-                            (*handler->rawCompiler_)(infile, &dataCache, &paramSet, engine_, &outStream);
-
-                            success = hTrue;
+                            hClock::BeginTimer(timer);
+                            success = (*handler->rawCompiler_)(infile, &dataCache, &paramSet, engine_, &outStream);
+                            hClock::EndTimer(timer);
+                            if (success)
+                            {
+                                hcPrintf("Compile Time = %f Secs", timer.ElapsedMS()/1000.0f);
+                            }
                         }
 
                         if (infile)
                             dataCache.CloseFile(infile);
                         if (outStream.IsOpen())
                             outStream.Close();
+
+                        if (!success)
+                        {
+                            // Wait ~5 seconds and try again...
+                            // TODO: Add a file watch?
+                            Device::ThreadSleep(5000);
+                        }
                     }
                 }
-
+#endif // HEART_ALLOW_DATA_COMPILE
                 hSerialiserFileStream inStream;
                 inStream.Open(binFilepath, hFalse, fileSystem_);
 
                 if (inStream.IsOpen())
                 {
                     // Load the binary file
+                    hTimer timer;
                     hcPrintf("Loading %s", binFilepath);
+                    hClock::BeginTimer(timer);
                     res = (*handler->binLoader_)(&inStream, &paramSet, engine_);
+                    hClock::EndTimer(timer);
                     inStream.Close();
+                    hcPrintf("Load Time = %f Secs", timer.ElapsedMS()/1000.0f);
                 }
 
                 hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"

@@ -367,11 +367,40 @@ void pngRead(png_structp pngPtr, png_bytep pDst, png_size_t len)
 DLL_EXPORT
 Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine)
 {
+    Heart::hTexture* texutre;
+    Heart::hRenderer* renderer = engine->GetRenderer();
+    Heart::hMipDesc* mips = NULL;
+    hUint32 totalTextureSize = 0;
+    hByte* textureData = NULL;
     TextureHeader header = {0};
 
     infile->Read(&header, sizeof(header));
 
-    return NULL;
+    mips = (Heart::hMipDesc*)hAlloca(header.mipCount*sizeof(Heart::hMipDesc));
+
+    //Read mip info
+    infile->Read(mips, header.mipCount*sizeof(Heart::hMipDesc));
+
+    //Add up the size need for textures
+    for (hUint32 i = 0; i < header.mipCount; ++i)
+    {
+        mips[i].data = (hByte*)totalTextureSize;
+        totalTextureSize += mips[i].size;
+    }
+
+    textureData = (hByte*)hHeapMalloc(GetGlobalHeap(), totalTextureSize);
+
+    for (hUint32 i = 0; i < header.mipCount; ++i)
+    {
+        mips[i].data = textureData + (hUint32)(mips[i].data);
+    }
+
+    //Read Texture data
+    infile->Read(textureData, totalTextureSize);
+
+    renderer->CreateTexture(header.width, header.height, header.mipCount, mips, header.format, header.flags, &texutre);
+
+    return texutre;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -379,7 +408,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
 
     RawTextureData textureData;
@@ -546,7 +575,7 @@ Heart::hResourceClassBase* HEART_API HeartDataCompiler( Heart::hIDataCacheFile* 
         hDELETE_ARRAY_SAFE(GetGlobalHeap(), mips[i].data);
     }
 
-    return NULL;
+    return hTrue;
 }
 
 //////////////////////////////////////////////////////////////////////////

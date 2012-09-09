@@ -42,7 +42,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     typedef hResourceClassBase* (*OnResourceDataLoad)       (hISerialiseStream*, hIDataParameterSet*, HeartEngine*);
-    typedef hResourceClassBase* (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, HeartEngine*, hISerialiseStream*);
+    typedef hBool               (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, HeartEngine*, hISerialiseStream*);
     typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, HeartEngine*);
     typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, HeartEngine*);
     typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, HeartEngine*);

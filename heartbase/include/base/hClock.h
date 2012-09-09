@@ -72,7 +72,7 @@ namespace Heart
 	{
 	public:
 
-		hUint32		ElapsedMS() {return deltaT_*1000;}
+		hUint32		ElapsedMS() {return deltaT_/1000;}
         hUint32		ElapsedmS() {return deltaT_;}
 
 	private:
