@@ -1182,7 +1182,8 @@ namespace Heart
         const hUint32 flags = vertexFormat;
 
         /*
-         Vertex Buffer layout:
+         Vertex Buffer layout:- Make sure code generating vertex bufffers follow this
+         TODO: this is really inflexible, so I need to make it better
             Position,
             Normal,
             Tangent,
