@@ -32,5 +32,21 @@ ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild"}
 --ReleaseOptions={"Symbols"}
 
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32"}
+HeartLibsDebug={
+    "heartbase"..DebugSuffix, 
+    "heartcore"..DebugSuffix, 
+    "heartwin32"..DebugSuffix, 
+    "crypto"..DebugSuffix, 
+    "lua"..DebugSuffix, 
+    "libpng"..DebugSuffix, 
+    "libtga"..DebugSuffix}
+HeartLibsRelease={
+    "heartbase"..ReleaseSuffix, 
+    "heartcore"..ReleaseSuffix, 
+    "heartwin32"..ReleaseSuffix, 
+    "crypto"..ReleaseSuffix, 
+    "lua"..ReleaseSuffix, 
+    "libpng"..ReleaseSuffix, 
+    "libtga"..ReleaseSuffix}
 
-PostBuildStr="IF NOT EXIST ..\\..\\..\\..\\..\\bin\\"..BinType.."\\ MKDIR ..\\..\\..\\..\\..\\bin\\"..BinType.."\\ \ncopy /Y $(TargetPath) ..\\..\\..\\..\\..\\bin\\"..BinType.."\\"
+PostBuildStr="cd ../../../deploy_scripts\ncall deploy_runtime_libs.bat"

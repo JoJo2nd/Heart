@@ -12,7 +12,6 @@ project "texture_loader"
     includedirs {"../../resourceloaders/textureloader/include/"}
     includedirs {"../../nvidia-texture-tools/src"}
 	links {PlatformLibs}
-	links { "heartbase", "heartcore", "heartwin32", "crypto", "lua", "libpng", "libtga" }
     links { "nvtt" }
 	
     configuration (DebugCfgName)
@@ -20,10 +19,12 @@ project "texture_loader"
         defines {DebugDefines}
         libdirs {"../../nvidia-texture-tools/project/vc8/Debug (no cuda).Win32/lib"}
         libdirs {TargetDir..DebugCfgName}
+        links {HeartLibsDebug}
 		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {"../../nvidia-texture-tools/project/vc8/Release (no cuda).Win32/lib"}
         libdirs {TargetDir..ReleaseCfgName}
+        links {HeartLibsRelease}
         flags {ReleaseOptions}

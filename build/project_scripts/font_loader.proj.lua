@@ -11,16 +11,17 @@ project "font_loader"
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/fontloader/include/"}
 	links {PlatformLibs}
-	links { "heartbase", "heartcore", "heartwin32", "crypto", "lua" }
 
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         libdirs {TargetDir..DebugCfgName}
+        links {HeartLibsDebug}
 		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {TargetDir..ReleaseCfgName}
+        links {HeartLibsRelease}
         flags {ReleaseOptions}

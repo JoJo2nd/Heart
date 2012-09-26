@@ -1,12 +1,22 @@
 
 SlnName = "NewTestBed"
 BinType = "game"
+DebugSuffix = "_d"
+ReleaseSuffix = "_r"
 
 dofile "HeartCommonProj.lua"
 
 solution (SlnName)
     location (SlnOutput)
     configurations ({DebugCfgName, ReleaseCfgName})
+    
+    postbuildcommands {PostBuildStr}
+    
+    configuration (DebugCfgName)
+        targetsuffix "_d"
+        
+    configuration (ReleaseCfgName)
+        targetsuffix "_r"
     
     dofile "project_scripts/bootloader.proj.lua" --1st project becomes the start up project
     dofile "project_scripts/zlib.proj.lua"

@@ -5,15 +5,16 @@ project "libpng"
 	files {"../../libpng/include/*.h","../../libpng/src/*.c"}
 	defines {CommonDefines}
 	includedirs {"../../libpng/include","../../zlib/include"}
-    links {"zlib"}
 	
 configuration (DebugCfgName)
 	targetdir (TargetDir..DebugCfgName)
 	defines {{DebugDefines}}
     libdirs {TargetDir..DebugCfgName}
+    links {"zlib_d"}
 	flags {DebugOptions}
 configuration (ReleaseCfgName)
 	targetdir (TargetDir..ReleaseCfgName)
 	defines {{ReleaseDefines}}
     libdirs {TargetDir..ReleaseCfgName}
+    links {"zlib_r"}
 	flags {ReleaseOptions}
