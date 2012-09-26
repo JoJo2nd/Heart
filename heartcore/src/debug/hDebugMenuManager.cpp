@@ -81,29 +81,24 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::RegisterMenu( const hChar* name, Gwen::Controls::Base* menu )
+    void hDebugMenuManager::RegisterMenu( const hChar* name, hDebugMenuBase* menu )
     {
         hcAssertMsg( menu->GetParent() == uiCanvas_, "Debug menus must has the debug ui canvas as a parent");
-        hDebugMenu* entry = hNEW(GetDebugHeap(), hDebugMenu);
-        entry->menu_ = menu;
-        menuMap_.Insert(hCRC32::StringCRC(name), entry);
+        menuMap_.Insert(hCRC32::StringCRC(name), menu);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::UnregisterMenu( Gwen::Controls::Base* menu )
+    void hDebugMenuManager::UnregisterMenu( hDebugMenuBase* menu )
     {
-        for (hDebugMenu* i = menuMap_.GetHead(); i; i = i->GetNext())
+        if (!menu)
         {
-            if (i->menu_ == menu)
-            {
-                menuMap_.Remove(i);
-                hDELETE(GetDebugHeap(),i);
-                return;
-            }
+            return;
         }
+
+        menuMap_.Remove(menu);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -112,10 +107,22 @@ namespace Heart
 
     void hDebugMenuManager::SetMenuVisiablity( const hChar* name, hBool show )
     {
-        hDebugMenu* dm = menuMap_.Find(hCRC32::StringCRC(name));
+        hDebugMenuBase* dm = menuMap_.Find(hCRC32::StringCRC(name));
         if (dm)
         {
-            dm->menu_->SetHidden(!show);
+            dm->SetHidden(!show);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugMenuManager::PreRenderUpdate()
+    {
+        for (hDebugMenuBase* dm = menuMap_.GetHead(); dm; dm = dm->GetNext())
+        {
+            dm->PreRenderUpdate();
         }
     }
 
@@ -145,6 +152,18 @@ namespace Heart
             inputBinder_.Update();
             uiRenderer_->SetRenderCameraID(HEART_DEBUGUI_CAMERA_ID);//TODO: do this better...
             uiCanvas_->RenderCanvas();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugMenuManager::EndFrameUpdate()
+    {
+        for (hDebugMenuBase* dm = menuMap_.GetHead(); dm; dm = dm->GetNext())
+        {
+            dm->EndFrameUpdate();
         }
     }
 

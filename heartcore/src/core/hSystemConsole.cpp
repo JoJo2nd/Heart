@@ -54,12 +54,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    class hConsoleUI : public Gwen::Controls::WindowControl
+    class hConsoleUI : public hDebugMenuBase
     {
     public:
         //GWEN_CONTROL_CONSTRUCTOR(hConsoleUI)
         hConsoleUI(Gwen::Controls::Base* parent, hSystemConsole* systemConsole)
-            : WindowControl(parent)
+            : hDebugMenuBase(parent)
             , console_(systemConsole)
         {
             outputList_ = hNEW(GetGlobalHeap(), Gwen::Controls::ListBox)(this);
@@ -86,6 +86,9 @@ namespace Heart
         {
 
         }
+
+        void PreRenderUpdate() {}
+        void EndFrameUpdate() {}
 
         void AddConsoleString(const hChar* inputStr)
         {

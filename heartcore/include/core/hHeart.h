@@ -157,7 +157,6 @@ namespace Heart
 
         //Debug 
         hDebugMenuManager*              debugMenuManager_;
-        hRTProfilerMenu*                rtProfileMenu_;
 
         //app functions
     public:

@@ -51,7 +51,6 @@ namespace Heart
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
     {
         hResourceType           type_;
-        const hChar*            libPath_;
         hSharedLibAddress       loaderLib_;
         OnResourceDataLoad      binLoader_;
         OnResourceDataCompile   rawCompiler_;

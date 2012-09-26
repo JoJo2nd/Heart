@@ -86,12 +86,6 @@ namespace Heart
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
 
         //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-
-        rtProfileMenu_ = NULL;
-
-        //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         if ( configFile )
@@ -234,6 +228,8 @@ namespace Heart
 
             GetVM()->Update();
 
+            debugMenuManager_->PreRenderUpdate();
+
             GetRenderer()->BeginRenderFrame();
 
             (*mainRender_)( this );
@@ -247,10 +243,10 @@ namespace Heart
             hClock::EndTimer(frameTimer);
         }
 
-        if (rtProfileMenu_)
-        {
-            rtProfileMenu_->EndFrameUpdate(frameTimer.ElapsedmS()/1000.f, GetRenderer()->GetLastGPUTime());
-        }
+#ifdef HEART_DO_PROFILE
+        g_ProfilerManager_->SetFrameTime(frameTimer.ElapsedmS()/1000.f);
+#endif
+        debugMenuManager_->EndFrameUpdate();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -289,6 +285,8 @@ namespace Heart
 
             GetVM()->Update();
 
+            debugMenuManager_->PreRenderUpdate();
+
             GetRenderer()->BeginRenderFrame();
 
             debugMenuManager_->RenderMenus();
@@ -297,6 +295,8 @@ namespace Heart
 
             GetControllerManager()->EndOfFrameUpdate();
         }
+
+        debugMenuManager_->EndFrameUpdate();
     }
 
 
@@ -397,9 +397,15 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Create debug menus ////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-
-        rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas());
+#ifdef HEART_DEBUG
+        hRTProfilerMenu* rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer());
+        rtProfileMenu_->SetHidden(hTrue);
         debugMenuManager_->RegisterMenu("rtp", rtProfileMenu_);
+
+        hMemoryViewMenu* mvMenu_ = hNEW(GetDebugHeap(), hMemoryViewMenu)(debugMenuManager_->GetDebugCanvas());
+        //mvMenu_->SetHidden(hTrue);
+        debugMenuManager_->RegisterMenu("mv", mvMenu_);
+#endif
     }
 
 }

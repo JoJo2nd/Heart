@@ -161,6 +161,9 @@ namespace Heart
             }
         }
 
+        // Copy regs
+        hMemCpy(mat->constantBlockRegs_, constantBlockRegs_, HEART_MAX_CONSTANT_BLOCKS);
+
         mat->constBufferCount_ = constBlockCount_;
         mat->constBuffers_ = renderer_->CreateConstantBlocks(sizes, mat->constBufferCount_);
 
@@ -359,7 +362,10 @@ namespace Heart
         for (hUint32 i = 0; i < HEART_MAX_CONSTANT_BLOCKS; ++i)
         {
             if (constantBlockSizes_[i] > 0)
+            {
+                constantBlockRegs_[constBlockCount_] = i;
                 ++constBlockCount_;
+            }
         }
 
         return hTrue;
@@ -391,15 +397,17 @@ namespace Heart
         switch(type)
         {
         case ePTFloat1:
+            totalParameterDataSize_ += sizeof(hFloat); break;
         case ePTFloat2:
+            totalParameterDataSize_ += sizeof(hFloat)*2; break;
         case ePTFloat3:
+            totalParameterDataSize_ += sizeof(hFloat)*3; break;
         case ePTFloat4:
-            totalParameterDataSize_ += sizeof(hFloat)*4;
-            break;
+            totalParameterDataSize_ += sizeof(hFloat)*4; break;
         case ePTFloat3x3:
+            totalParameterDataSize_ += sizeof(hFloat)*9; break;
         case ePTFloat4x4:
-            totalParameterDataSize_ += sizeof(hFloat)*16;
-            break;
+            totalParameterDataSize_ += sizeof(hFloat)*16; break;
         }
 
         materialParameters_.PushBack(param);
@@ -438,6 +446,21 @@ namespace Heart
     void hMaterial::AddSamplerParameter( const hSamplerParameter& sampler )
     {
         samplers_.PushBack(sampler);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialParameterID hMaterial::GetMaterialParameter(const hChar* name)
+    {
+        for (hUint32 i = 0; i < materialParameters_.GetSize(); ++i)
+        {
+            if (hStrCmp(materialParameters_[i].name_, name) == 0)
+                return i;
+        }
+
+        return hErrorCode;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -508,6 +531,46 @@ namespace Heart
     {
         hSamplerParameter* p = const_cast< hSamplerParameter* >( param );
         p->boundTexture_ = tex;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterialInstance::FlushParameters(hRenderSubmissionCtx* ctx)
+    {
+        hUint32 mask = 1;
+        if (constBlockDirty_ == 0)
+            return;
+
+        // Update parameters
+        for (hUint32 i = 0; i < parameterMappingCount_; ++i)
+        {
+            hMemCpy(((hByte*)constBuffers_[parameterMappings_[i].cBuffer_].mapData_)+parameterMappings_[i].cOffset_, parameterMappings_[i].cpuData_, parameterMappings_[i].sizeBytes_);
+        }
+
+        // Flush to const blocks
+        for (hUint32 i = 0; i < constBufferCount_; ++i, mask <<= 1)
+        {
+            if (constBlockDirty_ & mask)
+            {
+                ctx->Update(constBuffers_+i);
+            }
+        }
+
+        constBlockDirty_ = 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterialInstance::SetMaterialParameter( hMaterialParameterID param, const void* val, hUint32 size )
+    {
+        if (param == hErrorCode)
+            return;
+
+        hMemCpy(cpuData_+parentMaterial_->GetMaterialParameterData(param)->dataOffset_, val, size);
     }
 
 }//Heart

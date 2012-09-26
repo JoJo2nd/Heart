@@ -524,6 +524,7 @@ namespace Heart
         /*Single thread submit*/
         hUint32 camera = ~0U;
         const hMaterial* material = NULL;
+        hMaterialInstance* materialInst = NULL;
         hUint32 pass = ~0U;
         hUint32 tmask = ~0U;
         hUint32 dcs = drawCallBlockIdx_.value_;
@@ -564,17 +565,15 @@ namespace Heart
                 pass = nPass;
             }
 
+            mat->FlushParameters(&mainSubmissionCtx_);
+
+            for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
+            {
+                mainSubmissionCtx_.SetConstantBuffer(mat->GetConstantBlockReg(i), mat->GetConstantBlock(i));
+            }
+
             if (newMaterial)
             {
-                /*
-                mat->FlushParameters();
-
-                for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
-                {
-                    mainSubmissionCtx_.SetConstantBuffer( mat->GetConstantBlock(i) );
-                }
-                */
-
                 for ( hUint32 i = 0; i < mat->GetSamplerCount(); ++i )
                 {
                     const hSamplerParameter* samp = mat->GetSamplerParameter( i );

@@ -37,6 +37,7 @@ namespace Heart
 	class hRenderState;
 	class hTexture;
     class hMaterialInstance;
+    class hRenderSubmissionCtx;
 
     HEARTCORE_SLIBEXPORT
     hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits);
@@ -136,6 +137,8 @@ namespace Heart
         void                                SetParameterInputOutputReserves(hUint32 totalIn, hUint32 totalOut);
         hMaterialParameterID                AddMaterialParameter(hChar* name, hParameterType type);
         void                                AddProgramOutput(hChar* name, hMaterialParameterID parameterID);
+        hMaterialParameterID                GetMaterialParameter(const hChar* name);
+        const hMaterialParameter*           GetMaterialParameterData(hMaterialParameterID id) { return &materialParameters_[(hUint32)id]; }
 
         hMaterialInstance*                  CreateMaterialInstance();
         void                                DestroyMaterialInstance(hMaterialInstance* inst);
@@ -166,6 +169,7 @@ namespace Heart
         ParameterMappingArrayType           defaultMappings_;
         hUint32                             totalParameterDataSize_;
         hUint32                             constBlockCount_;
+        hByte                               constantBlockRegs_[HEART_MAX_CONSTANT_BLOCKS];
         hUint32                             constantBlockSizes_[HEART_MAX_CONSTANT_BLOCKS];
 #ifdef HEART_DEBUG
         hUint32                             constantBlockHashes_[HEART_MAX_CONSTANT_BLOCKS];
@@ -180,17 +184,18 @@ namespace Heart
         hMaterialTechnique*                 GetTechnique( hUint32 idx ) { parentMaterial_->GetTechnique( idx ); }
         hMaterialTechnique*                 GetTechniqueByName( const hChar* name ) { return parentMaterial_->GetTechniqueByName( name ); }
         hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask ) { return parentMaterial_->GetTechniqueByMask( mask ); }
-        //hUint32								GetShaderParameterCount() const { return parentMaterial_->GetShaderParameterCount(); }
-        //void                                SetShaderParameter( const hShaderParameter* param, hFloat* val, hUint32 size );
+        hMaterialParameterID                GetMaterialParameter(const hChar* name) { return parentMaterial_->GetMaterialParameter(name); }
+        void                                SetMaterialParameter(hMaterialParameterID param, const void* val, hUint32 size);
         hUint32                             GetSamplerCount() const { return samplers_.GetSize(); }
         const hSamplerParameter*            GetSamplerParameter( hUint32 idx ) const { return &samplers_[idx]; }
         const hSamplerParameter*            GetSamplerParameterByName( const hChar* name );
         void                                SetSamplerParameter( const hSamplerParameter* param, hTexture* tex );
-        //hUint32                             GetConstantBufferCount() const { return parentMaterial_->GetConstantBufferCount(); }
+        hUint32                             GetConstantBufferCount() const { return constBufferCount_; }
         hdParameterConstantBlock*           GetConstantBlock( hUint32 idx ) { return constBuffers_ + idx; }
+        hByte                               GetConstantBlockReg(hUint32 idx) const { return constantBlockRegs_[idx]; }
         const hMaterial*                    GetParentMaterial() const { return parentMaterial_; }
         hUint32                             GetMatKey() const { return matKey_; }
-        void                                FlushParameters();
+        void                                FlushParameters(hRenderSubmissionCtx* ctx);
 
     private:
 
@@ -207,6 +212,7 @@ namespace Heart
         hRenderer*                          renderer_;
         hUint32                             matKey_;
         hMaterial*                          parentMaterial_;
+        hByte                               constantBlockRegs_[HEART_MAX_CONSTANT_BLOCKS];
         hUint32                             constBufferCount_;
         hUint32                             constBlockDirty_;
         hdParameterConstantBlock*           constBuffers_;

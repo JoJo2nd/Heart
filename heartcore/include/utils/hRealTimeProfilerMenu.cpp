@@ -34,8 +34,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRTProfilerMenu::EndFrameUpdate( hFloat cpuTime, hFloat gpuTime )
+    void hRTProfilerMenu::EndFrameUpdate()
     {
+        hFloat cpuTime = g_ProfilerManager_->GetFrameTime();
+        hFloat gpuTime = renderer_->GetLastGPUTime();
         hChar labelStr[4096];
         hStrPrintf(labelStr, 2048, "CPU: %f - GPU: %f", cpuTime, gpuTime );
         cpugpuText_->SetText(labelStr);
@@ -58,7 +60,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hRTProfilerMenu::hRTProfilerMenu( Gwen::Controls::Base* parent ) : WindowControl(parent)
+    hRTProfilerMenu::hRTProfilerMenu( Gwen::Controls::Base* parent, hRenderer* renderer ) 
+        : hDebugMenuBase(parent)
+        , renderer_(renderer)
     {
         cpugpuText_ = hNEW(GetDebugHeap(), Gwen::Controls::Label)(this);
         cpugpuText_->SetPos(10, 10);

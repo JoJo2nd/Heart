@@ -30,6 +30,7 @@
 namespace Heart
 {
     class hDebugMenuBase : public Gwen::Controls::WindowControl
+                         , public hMapElement< hUint32, hDebugMenuBase >
     {
     public:
         hDebugMenuBase(Gwen::Controls::Base* parent)
@@ -52,23 +53,18 @@ namespace Heart
         void                        Initialise(hGwenRenderer* uirenderer, hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager);
         void                        Destroy();
         Gwen::Controls::Canvas*     GetDebugCanvas() const { hcAssertMsg(uiCanvas_, "Debug MenuManager is not Ready()"); return uiCanvas_; }
-        void                        RegisterMenu(const hChar* name, Gwen::Controls::Base* menu);
-        void                        UnregisterMenu(Gwen::Controls::Base* menu);
+        void                        RegisterMenu(const hChar* name, hDebugMenuBase* menu);
+        void                        UnregisterMenu(hDebugMenuBase* menu);
         void                        SetMenuVisiablity(const hChar* name, hBool show);
-        void                        PreRenderUpdate() {}
+        void                        PreRenderUpdate();
         void                        RenderMenus();
-        void                        EndFrameUpdate() {}
+        void                        EndFrameUpdate();
         static hDebugMenuManager*   GetInstance() { return instance_; }
         hBool                       Ready() { return uiCanvas_ != NULL; }
 
     private:
 
-        struct hDebugMenu : public hMapElement< hUint32, hDebugMenu >
-        {
-            Gwen::Controls::Base* menu_;
-        };
-
-        typedef hMap< hUint32, hDebugMenu > hMenuMap;
+        typedef hMap< hUint32, hDebugMenuBase > hMenuMap;
 
         static hDebugMenuManager*   instance_;
         hRenderer*                  renderer_;

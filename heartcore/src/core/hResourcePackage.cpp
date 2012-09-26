@@ -69,6 +69,7 @@ namespace Heart
         , driveFileSystem_(fileSystem)
         , fileSystem_(fileSystem)
         , currentResource_(NULL)
+        , totalResources_(0)
     {
         hZeroMem(packageName_, sizeof(packageName_));
     }

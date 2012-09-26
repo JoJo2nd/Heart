@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	hLODGroup.h	
+	filename: 	hRenderModel.h	
 	
 	Copyright (c) 13:5:2012 James Moran
 	
@@ -38,20 +38,23 @@ namespace Heart
         hFloat                      minRange_;
     };
 
-    class hLODGroup
+    class hRenderModel : public hResourceClassBase
     {
     public:
         static const hUint32 MAX_LOD_LEVEL = 9;
 
-        hLODGroup() {}
-        ~hLODGroup() {}
+        hRenderModel() {}
+        ~hRenderModel() {}
     
         hGeomLODLevel*  GetLODLevel( hFloat dist );
         hAABB           GetBounds() const { return totalBounds_; }
+        hUint32         GetLODCount() const { return levelCount_; }
+        void            SetLODCount(hUint32 val) { levelCount_ = val; }
+        hGeomLODLevel*  GetLOD(hUint32 idx) { hcAssert(idx < levelCount_); return &lodLevels_[idx]; }
+
     private:
 
-        friend class ::ModelBuilder;
-
+        hUint32                                     levelCount_;
         hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
         hAABB                                       totalBounds_;
     };

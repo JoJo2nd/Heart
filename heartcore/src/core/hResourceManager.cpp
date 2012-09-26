@@ -246,9 +246,13 @@ namespace Heart
         {
             hResourceHandler handler;
             hStrCopy(handler.type_.ext, 4, e.GetAttributeString("type") );
-            handler.libPath_ = e.GetAttributeString("libpath");
+            hUint32 fullPathSize = hStrLen(e.GetAttributeString("libpath"))+hStrLen(HEART_SUFFIX)+hStrLen(HEART_SHARED_LIB_EXT);
+            hChar* fullLibPath = (hChar*)hAlloca(fullPathSize+1);
+            hStrCopy(fullLibPath, fullPathSize, e.GetAttributeString("libpath"));
+            hStrCat(fullLibPath, fullPathSize, HEART_SUFFIX);
+            hStrCat(fullLibPath, fullPathSize, HEART_SHARED_LIB_EXT);
 
-            handler.loaderLib_ = hd_OpenSharedLib(handler.libPath_);
+            handler.loaderLib_ = hd_OpenSharedLib(fullLibPath);
             if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
             {
                 handler.binLoader_              = (OnResourceDataLoad)      hd_GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
@@ -304,7 +308,7 @@ namespace Heart
     hBool hResourceManager::mtIsPackageLoaded( const hChar* name )
     {
         hLoadedResourcePackages* pk = mtLoadedPackages_.Find(hCRC32::StringCRC(name));
-        return pk == NULL ? hFalse : hTrue;
+        return (pk && pk->package_) ? hTrue : hFalse;
     }
 
     //////////////////////////////////////////////////////////////////////////

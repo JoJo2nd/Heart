@@ -219,6 +219,11 @@ namespace Heart
                     }
                 }
             }
+
+            if (processJobChainCount_)
+            {
+                jobChainSemaphore_.Post();
+            }
         }
 
         return 0;

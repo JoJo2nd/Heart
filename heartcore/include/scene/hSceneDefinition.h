@@ -39,7 +39,7 @@ namespace Heart
     private:
         friend class ::ModelBuilder;
 
-        hLODGroup       lodGroup_;
+        hRenderModel       lodGroup_;
         hMatrix         transform_;
     };
 

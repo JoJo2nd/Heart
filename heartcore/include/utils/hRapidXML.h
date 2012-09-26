@@ -108,42 +108,42 @@ namespace Heart
             node_ = node;
         }
 
-        hXMLGetter              FirstChild( const hChar* name )
+        hXMLGetter              FirstChild( const hChar* name ) const
         {
             if ( !node_ )
                 return hXMLGetter( NULL );
 
             return hXMLGetter( node_->first_node( name ) );
         }
-        hXMLGetter              NextSibling()
+        hXMLGetter              NextSibling() const
         {
             if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(node_->name()));
         }
-        hXMLGetter              NextSiblingAny()
+        hXMLGetter              NextSiblingAny() const
         {
             if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(NULL));
         }
-        hXMLGetter              NextSibling( const hChar* name )
+        hXMLGetter              NextSibling( const hChar* name ) const
         {
             if ( !node_ || !node_->parent() )
                 return hXMLGetter(NULL);
 
             return hXMLGetter(node_->next_sibling(name));
         }
-        rapidxml::xml_attribute<>*  GetAttribute( const hChar* name )
+        rapidxml::xml_attribute<>*  GetAttribute( const hChar* name ) const
         {
             if ( !node_ )
                 return NULL;
 
             return node_->first_attribute( name );
         }
-        hInt32 GetAttributeInt(const hChar* name)
+        hInt32 GetAttributeInt(const hChar* name) const
         {
             rapidxml::xml_attribute<>* att;
 
@@ -156,7 +156,7 @@ namespace Heart
             else
                 return hAtoI(att->value());
         }
-        hInt32 GetAttributeInt(const hChar* name, hInt32 defVal)
+        hInt32 GetAttributeInt(const hChar* name, hInt32 defVal) const
         {
             rapidxml::xml_attribute<>* att;
 
@@ -169,7 +169,7 @@ namespace Heart
             else
                 return hAtoI(att->value());
         }
-        hFloat GetAttributeFloat(const hChar* name)
+        hFloat GetAttributeFloat(const hChar* name) const
         {
             rapidxml::xml_attribute<>* att;
             if ( !node_ )
@@ -181,7 +181,7 @@ namespace Heart
             else
                 return hAtoF(att->value());
         }
-        hFloat GetAttributeFloat(const hChar* name, hFloat defVal)
+        hFloat GetAttributeFloat(const hChar* name, hFloat defVal) const
         {
             rapidxml::xml_attribute<>* att;
             if ( !node_ )
@@ -193,7 +193,7 @@ namespace Heart
             else
                 return hAtoF(att->value());
         }
-        const hChar* GetAttributeString(const hChar* name)
+        const hChar* GetAttributeString(const hChar* name) const
         {
             rapidxml::xml_attribute<>* att;
             if ( !node_ )
@@ -205,7 +205,7 @@ namespace Heart
             else
                 return att->value();
         }
-        const hChar* GetAttributeString(const hChar* name, const hChar* defVal)
+        const hChar* GetAttributeString(const hChar* name, const hChar* defVal) const
         {
             rapidxml::xml_attribute<>* att;
             if ( !node_ )
@@ -218,7 +218,7 @@ namespace Heart
                 return att->value();
         }
         template < typename t_type >
-        t_type GetAttributeEnum(const hChar* name, hXMLEnumReamp* enums, t_type defaultVal = 0)
+        t_type GetAttributeEnum(const hChar* name, hXMLEnumReamp* enums, t_type defaultVal = 0) const
         {
             if (!node_)
                 return defaultVal;
@@ -241,7 +241,7 @@ namespace Heart
 
             return defaultVal;
         }
-        hInt32 GetValueInt(hInt32 defaultVal = 0)
+        hInt32 GetValueInt(hInt32 defaultVal = 0) const
         {
             if (!node_)
                 return defaultVal;
@@ -249,7 +249,7 @@ namespace Heart
                 return defaultVal;
             return hAtoI(node_->value());
         }
-        hFloat GetValueFloat(hFloat defaultVal = 0.f)
+        hFloat GetValueFloat(hFloat defaultVal = 0.f) const
         {
             if (!node_)
                 return defaultVal;
@@ -257,7 +257,7 @@ namespace Heart
                 return defaultVal;
             return hAtoF(node_->value());
         }
-        const hChar* GetValueString(const hChar* defaultVal = NULL)
+        const hChar* GetValueString(const hChar* defaultVal = NULL) const
         {
             if (!node_)
                 return defaultVal;
@@ -266,7 +266,7 @@ namespace Heart
             return node_->value();
         }
         template < typename t_type >
-        t_type GetValueEnum(hXMLEnumReamp* enums, t_type defaultVal = 0)
+        t_type GetValueEnum(hXMLEnumReamp* enums, t_type defaultVal = 0) const
         {
             if (!node_)
                 return defaultVal;
@@ -283,7 +283,7 @@ namespace Heart
 
             return defaultVal;
         }
-        hUint32 GetValueHex(hUint32 hexVal)
+        hUint32 GetValueHex(hUint32 hexVal) const
         {
             hUint32 ret;
             if (!node_)
@@ -295,7 +295,7 @@ namespace Heart
             else
                 return hexVal;
         }
-        hColour GetValueColour(hColour defVal)
+        hColour GetValueColour(hColour defVal) const
         {
             hFloat r,b,g,a;
             if (!node_)

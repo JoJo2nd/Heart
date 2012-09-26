@@ -29,19 +29,21 @@
 
 namespace Heart
 {
-    class hRTProfilerMenu : public Gwen::Controls::WindowControl
+    class hRTProfilerMenu : public hDebugMenuBase
     {
     public:
-        hRTProfilerMenu(Gwen::Controls::Base* parent);
+        hRTProfilerMenu(Gwen::Controls::Base* parent, hRenderer* renderer);
         ~hRTProfilerMenu();
 
-        void                EndFrameUpdate(hFloat cpuTime, hFloat gpuTime);
+        void                PreRenderUpdate() {}
+        void                EndFrameUpdate();
     
     private:
 
         static const hUint32    s_maxCPUtimes = 25;
 
         static hProfileEntry    s_entryCopies[hProfilerManager::s_maxProfileEntries];
+        hRenderer*              renderer_;
         Gwen::Controls::Label*  cpugpuText_;
         Gwen::Controls::Label*  headerText_;
         Gwen::Controls::Label*  cpuTimesText_[hProfilerManager::s_maxProfileEntries];

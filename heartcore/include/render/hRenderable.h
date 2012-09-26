@@ -30,17 +30,17 @@
 
 namespace Heart
 {
-	class hRenderer;
+    class hRenderer;
 
-	//////////////////////////////////////////////////////////////////////////
-	// A Renderable simply describes a collection of triangles that can be ///
-	// rendered by the renderer along with a material. ///////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	class hRenderable
-	{
-	public:
+    //////////////////////////////////////////////////////////////////////////
+    // A Renderable simply describes a collection of triangles that can be ///
+    // rendered by the renderer along with a material. ///////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    class hRenderable
+    {
+    public:
 
-		hRenderable() 
+        hRenderable() 
             : indexBuffer_(NULL)
             , vertexBuffer_(NULL)
             , primType_(PRIMITIVETYPE_TRILIST)
@@ -49,14 +49,14 @@ namespace Heart
             , materialInstance_(NULL)
         {
         }
-		virtual ~hRenderable() 
-		{
+        virtual ~hRenderable() 
+        {
             if (material_)
             {
                 material_->DestroyMaterialInstance(materialInstance_);
                 HEART_RESOURCE_SAFE_RELEASE(material_);
             }
-		}
+        }
 
         hVertexBuffer*                          GetVertexBuffer();
         void                                    SetVertexBuffer(hVertexBuffer* vtx) {vertexBuffer_ = vtx;}
@@ -66,24 +66,24 @@ namespace Heart
         void                                    SetPrimativeType(PrimitiveType primtype) { primType_ = primtype; }
         hUint32                                 GetStartIndex() const { return startIndex_; }
         void                                    SetStartIndex(hUint32 startIdx) { startIndex_ = startIdx; }
-		hUint32									GetPrimativeCount() const { return nPrimatives_; }
+        hUint32									GetPrimativeCount() const { return nPrimatives_; }
         void                                    SetPrimativeCount(hUint32 primCount) { nPrimatives_ = primCount; }
         void                                    SetMaterial(hMaterial* material) { material_ = material; }
         hMaterialInstance*                      GetMaterialInstance();
-		hAABB						            GetAABB() const { return aabb_; }
-		void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-	
-	private:
+        hAABB						            GetAABB() const { return aabb_; }
+        void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
+    
+    private:
 
         hIndexBuffer*           indexBuffer_;
         hVertexBuffer*          vertexBuffer_;
         PrimitiveType           primType_;
         hUint32                 startIndex_;
-		hUint32					nPrimatives_;
+        hUint32                 nPrimatives_;
         hMaterial*              material_;
         hMaterialInstance*      materialInstance_;
-		Heart::hAABB		    aabb_;
-	};
+        Heart::hAABB            aabb_;
+    };
 }
 
 #endif // hiMesh_h__
