@@ -54,7 +54,7 @@ extern "C"
     void  HEART_API HeartAppOnShutdown(Heart::HeartEngine*);
 }
 
-Game::TestBedCore g_TestCore;
+TestBedCore g_TestCore;
 
 HEART_SLIB_TEXPORT
 void HEART_API HeartAppFirstLoaded(Heart::HeartEngine*) 

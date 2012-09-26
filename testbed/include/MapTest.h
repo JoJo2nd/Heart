@@ -29,6 +29,7 @@
 #define MAPTEST_H__
 
 #include "Heart.h"
+#include "UnitTestFactory.h"
 
 class TestElement : public Heart::hMapElement< hUint32, TestElement >
 {
@@ -40,21 +41,18 @@ public:
 #define MAPTESTPRINT __noop
 //#define MAPTESTPRINT hcPrintf
 
-class MapTest : public Heart::hStateBase
+class MapTest : public IUnitTest
 {
+    DECLARE_HEART_UNIT_TEST();
 public:
 	MapTest( Heart::HeartEngine* engine ) 
-		: hStateBase( "SimpleRoomAddedLight" )
-		,engine_( engine )
+		: IUnitTest( engine )
 	{
 
 	}
 	~MapTest() {}
 
-	virtual void				PreEnter() {}
-	virtual hUint32				Enter() { return Heart::hStateBase::FINISHED; }
-	virtual void				PostEnter() {}
-	virtual hUint32				Main()
+	virtual hUint32				RunUnitTest()
 	{
 
 		{
@@ -66,7 +64,9 @@ public:
 			ss = GenRandomNumberUnique( s, ss, t, tc );
 
 			MapFill( t, tc );
+            MAPTESTPRINT("FILL COMPLETE");
 			MapEmpty( t, tc );
+            MAPTESTPRINT("EMPTY COMPLETE");
 		}
 
 		{
@@ -84,7 +84,10 @@ public:
 			MAPTESTPRINT( "map cleared" );
 		}
 
-		return Heart::hStateBase::FINISHED;
+        hcPrintf(__FUNCTION__" Test Complete");
+        SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+
+		return 0;
 	}
 
 	hUint32 GenRandomNumberUnique( hUint32* s, hUint32 ss, hUint32* t, hUint32 tc ) 
@@ -152,7 +155,8 @@ public:
 		{
 			//Test Delete
 			MAPTESTPRINT( "Removing Key,Value (%u,%u)", t[i], 0 );
-			delete map_.Remove( t[i] );
+            TestElement* v = map_.Remove( t[i] );
+			hDELETE(Heart::GetGlobalHeap(), v);
 			hcAssert( map_.Validate() );
 
 			hUint32 c = 0;
@@ -187,13 +191,9 @@ public:
 			MAPTESTPRINT( "%u==========================================!",c);
 		}
 	}
-	virtual void				MainRender() {}
-	virtual void				PreLeave() {}
-	virtual hUint32				Leave() { return Heart::hStateBase::FINISHED; }
 
 private:
 
-	Heart::HeartEngine*						engine_;
 	Heart::hMap< hUint32, TestElement >		map_; 
 };
 

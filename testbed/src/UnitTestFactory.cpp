@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	ResourceLoadTest.cpp	
+	filename: 	UnitTestFactory.cpp	
 	
-	Copyright (c) 3:12:2011 James Moran
+	Copyright (c) 24:9:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -25,49 +25,27 @@
 
 *********************************************************************/
 
-#include "ResourceLoadTest.h"
-#include "Gwen/UnitTest/UnitTest.h"
+#include "UnitTestFactory.h"
 
-DEFINE_HEART_UNIT_TEST(ResourceLoadTest);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ResourceLoadTest::RunUnitTest()
-{
-    switch(state_)
+IUnitTest* UnitTestFactory::CreateUnitTest( const hChar* testName )
+{   
+    if (!testName)
     {
-    case eBeginLoad:
-        {
-            hcPrintf("Loading package \"UNITTEST\"");
-            engine_->GetResourceManager()->mtLoadPackage("UNITTEST");
-            state_ = eLoading;
-        }
-        break;
-    case eLoading:
-        {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded("UNITTEST"))
-            {
-                hcPrintf("Loaded package \"UNITTEST\"");
-                state_ = eBeginUnload;
-            }
-        }
-        break;
-    case eBeginUnload:
-        {
-            //engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
-            //hcPrintf("Unloading package \"UNITTEST\"");
-            //state_ = eExit;
-        }
-        break;
-    case eExit:
-        {
-            hcPrintf("End unit test resource package load test.");
-            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
-        }
-        break;
+        return NULL;
     }
 
-    return 0;
+    for (hUint32 i = 0; i < creatorCount_; ++i)
+    {
+        if (Heart::hStrICmp(testName, creatorArray_[i].testName_) == 0)
+        {
+            return creatorArray_[i].func_(engine_);
+        }
+    }
+
+    return NULL;
 }

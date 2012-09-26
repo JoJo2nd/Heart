@@ -27,6 +27,7 @@
 
 #include "JobManagerTest.h"
 
+DEFINE_HEART_UNIT_TEST(JobManagerTest);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -50,7 +51,7 @@ static void jobFunc2( const Heart::hJobDesc& jobdesc )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 JobManagerTest::Main()
+hUint32 JobManagerTest::RunUnitTest()
 {
     hUint32 tag;
     hUint32 nums[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
@@ -83,5 +84,8 @@ hUint32 JobManagerTest::Main()
     jobChain1_.Sync();
     jobChain2_.Sync();
 
-    return Heart::hStateBase::CONTINUE;
+    hcPrintf(__FUNCTION__" Test Complete");
+    SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+
+    return 0;
 }

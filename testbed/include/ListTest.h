@@ -38,21 +38,18 @@ public:
 #define LINKTESTPRINT __noop
 //#define LINKTESTPRINT hcPrintf
 
-class ListTest : public Heart::hStateBase
+class ListTest : public IUnitTest
 {
+    DECLARE_HEART_UNIT_TEST();
 public:
 	ListTest( Heart::HeartEngine* engine ) 
-		: hStateBase( "SimpleRoomAddedLight" )
-		,engine_( engine )
+		: IUnitTest( engine )
 	{
 
 	}
 	~ListTest() {}
 
-	virtual void				PreEnter() {}
-	virtual hUint32				Enter() { return Heart::hStateBase::FINISHED; }
-	virtual void				PostEnter() {}
-	virtual hUint32				Main()
+	virtual hUint32 RunUnitTest()
 	{
 		{
 			hUint32 t[200];
@@ -93,7 +90,10 @@ public:
 			list_.Clear( hTrue );
 		}
 
-		return Heart::hStateBase::FINISHED;
+        hcPrintf(__FUNCTION__" Test Complete");
+        SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+
+		return 0;
 	}
 
 	hUint32 GenRandomNumberUnique( hUint32* s, hUint32 ss, hUint32* t, hUint32 tc ) 
@@ -190,13 +190,13 @@ public:
 			if ( i == (tc / 2) )
 			{
 				LINKTESTPRINT( "Deleting Ele : %u", li->value_ );
-				delete list_.Remove( li );
+                hDELETE(Heart::GetGlobalHeap(), list_.Remove( li ));
 				break;
 			}
 		}
 
-		delete list_.Remove( list_.GetHead() );
-		delete list_.Remove( list_.GetTail() );
+		hDELETE(Heart::GetGlobalHeap(), list_.Remove( list_.GetHead() ));
+		hDELETE(Heart::GetGlobalHeap(), list_.Remove( list_.GetTail() ));
 
 		LINKTESTPRINT( "!==========================================" );
 		LINKTESTPRINT( "Going Forward" );
@@ -213,13 +213,8 @@ public:
 		}
 	}
 
-	virtual void				MainRender() {}
-	virtual void				PreLeave() {}
-	virtual hUint32				Leave() { return Heart::hStateBase::FINISHED; }
-
 private:
 
-	Heart::HeartEngine*						engine_;
 	Heart::hLinkedList< TestListElement >	list_; 
 };
 

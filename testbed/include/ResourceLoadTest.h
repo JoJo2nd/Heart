@@ -29,64 +29,32 @@
 #define RESOURCELOADTEST_H__
 
 #include "Heart.h"
+#include "UnitTestFactory.h"
 
-class ResourceLoadTest : public Heart::hStateBase
+class ResourceLoadTest : public IUnitTest
 {
+    DECLARE_HEART_UNIT_TEST();
 public:
-    ResourceLoadTest( Heart::HeartEngine* engine ) 
-        : hStateBase( "ResourceLoadTest" )
-        ,engine_( engine )
-        ,tex1_(NULL)
-        ,tex2_(NULL)
-        ,font1_(NULL)
-        ,script_(NULL)
-        ,stream_(NULL)
-        ,soundBank_(NULL)
-        ,soundSource_(NULL)
-        ,ib_(NULL)
-        ,vb_(NULL)
-        ,materialResource_(NULL)
-        ,material_(NULL)
-        ,tech_(NULL)
-        ,rndCtx_(NULL)
-        ,gwenInput_(NULL)
+    ResourceLoadTest(Heart::HeartEngine* engine) 
+        : IUnitTest( engine )
+        , state_(eBeginLoad)
     {
-        hZeroMem(staticSource_,sizeof(staticSource_));
     }
     ~ResourceLoadTest() {}
 
-    virtual void				PreEnter();
-    virtual hUint32				Enter();
-    virtual void				PostEnter() {}
-    virtual hUint32				Main();		
-    virtual void				MainRender();
-    virtual void				PreLeave();
-    virtual hUint32				Leave();
+    hUint32				RunUnitTest();
 
 private:
 
-    Heart::HeartEngine*						engine_;
-    Heart::hResourcePackage                 resPack_;
-    Heart::hTexture*                        tex1_;
-    Heart::hTexture*                        tex2_;
-    Heart::hFont*                           font1_;
-    Heart::hWorldScriptObject*              script_;
-    Heart::hSoundResource*                  stream_;
-    Heart::hSoundBankResource*              soundBank_;
-    Heart::hSoundSource*                    soundSource_;
-    Heart::hSoundSource*                    staticSource_[11];
-    Heart::hIndexBuffer*                    ib_;
-    Heart::hVertexBuffer*                   vb_;
-    Heart::hMaterial*                       materialResource_;
-    Heart::hMaterialInstance*               material_;
-    Heart::hMaterialTechnique*              tech_;
-    Heart::hRenderSubmissionCtx*            rndCtx_;
-    Heart::hRendererCamera                  viewport_;
+    enum State
+    {
+        eBeginLoad,
+        eLoading,
+        eBeginUnload,
+        eExit,
+    };
 
-    //UI test
-    Heart::hGwenInputBinder* gwenInput_;
-    Gwen::Skin::TexturedBase* gwenSkin_;
-    Gwen::Controls::Canvas* canvas_;
+    State       state_;
 };
 
 #endif // RESOURCELOADTEST_H__

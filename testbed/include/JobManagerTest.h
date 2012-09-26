@@ -28,13 +28,14 @@
 #define JOBMANAGERTEST_H__
 
 #include "Heart.h"
+#include "UnitTestFactory.h"
 
-class JobManagerTest : public Heart::hStateBase
+class JobManagerTest : public IUnitTest
 {
+    DECLARE_HEART_UNIT_TEST();
 public:
     JobManagerTest( Heart::HeartEngine* engine ) 
-        : hStateBase( "ResourceLoadTest" )
-        , engine_( engine )
+        : IUnitTest(engine)
         , jobChain1_(64)
         , jobChain2_(64)
     {
@@ -42,12 +43,10 @@ public:
     }
     ~JobManagerTest() {}
 
-
-    virtual hUint32				Main();		
+    virtual hUint32				RunUnitTest();		
 
 private:
 
-    Heart::HeartEngine*			engine_;
     Heart::hJobChain            jobChain1_;
     Heart::hJobChain            jobChain2_;
 };

@@ -15,25 +15,30 @@
 #include "ResourceLoadTest.h"
 #include "JobManagerTest.h"
 
-namespace Game
-{
+DEFINE_HEART_UNIT_TEST(ListTest);
+DEFINE_HEART_UNIT_TEST(MapTest);
 
-	TestBedCore* TestBedCore::pInstance_ = NULL;
+#define LUA_GET_TESTBED(L) \
+    TestBedCore* testbed = (TestBedCore*)lua_topointer(L, lua_upvalueindex(1)); \
+    if (!testbed) luaL_error(L, "Unable to grab unit test pointer" ); \
 
-	Heart::hVec4 gLightDir;
-
-#define MOVE_SPEED ( 900.0f )
+    UnitTestCreator TestBedCore::unitTests_[] =
+    {
+        REGISTER_UNIT_TEST(ListTest)
+        REGISTER_UNIT_TEST(MapTest)
+        REGISTER_UNIT_TEST(JobManagerTest)
+        REGISTER_UNIT_TEST(ResourceLoadTest)
+    };
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	TestBedCore::TestBedCore() 
-		: pEngine_( NULL )
-		, currentTest_( NULL )
-		, nextTest_( 0 )
+		: pEngine_(NULL)
+		, currentTest_(NULL)
+        , factory_(NULL)
 	{
-		pInstance_ = this;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,24 +59,18 @@ namespace Game
 		hcPrintf( "cmd line: %s\n", pCmdLine );
 		hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
+        factory_ = hNEW(Heart::GetGlobalHeap(), UnitTestFactory)(pEngine, unitTests_, hStaticArraySize(unitTests_));
 		pEngine_ = pEngine;
 
-		//pEngine_->GetSystem()->SetWindowTitle( pEngine->GetHomeDirectory() );
+        static const luaL_Reg funcs[] = {
+            {"dotest",			    luaDoTest},
+            {"doalltests",		    luaDoAllTests},
+            {"printtests",			luaPrintTests},
+            {NULL, NULL}
+        };
 
-		nextTest_ = 0;
-
-        //unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateJobTest >(this) );
-        unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateResourceLoadTest >(this) );
-		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateMapTestsState >( this ) );
-		unitTestCreators_.PushBack( UnitTestCreator::bind< TestBedCore, &TestBedCore::CreateListTestState >( this ) );
-
-		luaL_Reg funcs[] =
-		{
-			{ "NextTest", LuaNextTest },
-			{ NULL, NULL }
-		};
-
-		pEngine_->GetVM()->RegisterLuaFunctions( funcs );
+        lua_pushlightuserdata(pEngine_->GetVM()->GetMainState(), this);
+        luaI_openlib(pEngine_->GetVM()->GetMainState(), "unittest", funcs, 1);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,18 +81,21 @@ namespace Game
 	{
 		if ( currentTest_ )
 		{
-			currentTest_->Process();
+			currentTest_->RunUnitTest();
 
-			if ( !currentTest_->IsActive() )
+			if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING)
 			{
-                hDELETE(Heart::GetGlobalHeap(), currentTest_);
-				currentTest_ = NULL;
+                hDELETE_SAFE(Heart::GetGlobalHeap(), currentTest_);
+
+                if (testRun_)
+                {
+                    ++currentTestIdx_;
+                    if (currentTestIdx_ < hStaticArraySize(unitTests_))
+                    {
+                        currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
+                    }
+                }
 			}
-		}
-		else
-		{
-			currentTest_ = unitTestCreators_[nextTest_]();
-			nextTest_ = (nextTest_+1) % unitTestCreators_.GetSize();
 		}
 	}
 
@@ -105,7 +107,7 @@ namespace Game
 	{
 		if ( currentTest_ )
 		{
-			currentTest_->Render();
+			//currentTest_->Render();
 		}
 	}
 
@@ -119,12 +121,8 @@ namespace Game
 		// May not be the case if saving...
 		if ( currentTest_ )
 		{
-			currentTest_->ForceLeave();
-			if ( !currentTest_->IsActive() )
-			{
-				return true;
-			}
-			return false;
+			currentTest_->ForceExitTest();
+            hDELETE_SAFE(Heart::GetGlobalHeap(), currentTest_);
 		}
 		return true;
 	}
@@ -135,85 +133,49 @@ namespace Game
 
 	void TestBedCore::EngineShutdown( Heart::HeartEngine* pEngine )
 	{
-		unitTestCreators_.Clear();
-		delete currentTest_;
-		currentTest_ = NULL;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	int TestBedCore::LuaNextTest( lua_State* L )
-	{
-		if ( pInstance_	)
-		{
-			pInstance_->StartNextTest();
-			return 0;
-		}
-
-		return luaL_error( L, "Something really bad happened outside of Lua's environment" );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void TestBedCore::StartNextTest()
-	{
-		if ( currentTest_ )
-		{
-			currentTest_->ForceLeave();
-		}
-		else
-		{
-			currentTest_ = unitTestCreators_[nextTest_]();	
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	Heart::hStateBase* TestBedCore::CreateTextureTestState()
-	{
-		return hNEW(Heart::GetGlobalHeap(), CreateTextureTest)(pEngine_);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	Heart::hStateBase* TestBedCore::CreateMapTestsState()
-	{
-		return hNEW(Heart::GetGlobalHeap(), MapTest)(pEngine_);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	Heart::hStateBase* TestBedCore::CreateListTestState()
-	{
-		return hNEW(Heart::GetGlobalHeap(), ListTest)(pEngine_);
+        hDELETE_SAFE(Heart::GetGlobalHeap(), factory_);
 	}
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    Heart::hStateBase* TestBedCore::CreateResourceLoadTest()
+    int TestBedCore::luaDoTest( lua_State* L )
     {
-        return hNEW(Heart::GetGlobalHeap(), ResourceLoadTest)(pEngine_);
+        LUA_GET_TESTBED(L);
+        testbed->currentTest_ = testbed->factory_->CreateUnitTest(luaL_checkstring(L,-1));
+        if (!testbed->currentTest_)
+        {
+            luaL_error(L, "Unit Test \"%s\" not found", luaL_checkstring(L,-1));
+        }
+        return 0;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    int TestBedCore::luaDoAllTests( lua_State* L )
+    {
+        LUA_GET_TESTBED(L);
+        testbed->testRun_ = true;
+        testbed->currentTestIdx_ = 0;
+
+        testbed->currentTest_ = testbed->factory_->CreateUnitTest(testbed->unitTests_[testbed->currentTestIdx_].testName_);
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    Heart::hStateBase* TestBedCore::CreateJobTest()
+    int TestBedCore::luaPrintTests( lua_State* L )
     {
-        return hNEW(Heart::GetGlobalHeap(), JobManagerTest)(pEngine_);
-    }
+        LUA_GET_TESTBED(L);
 
-}
+        for (hUint32 i = 0; i < hStaticArraySize(testbed->unitTests_); ++i)
+        {
+            hcPrintf(testbed->unitTests_[i].testName_);
+        }
+
+        return 0;
+    }
