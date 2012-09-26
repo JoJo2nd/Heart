@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modeldescription>
+    <lodranges count="2">
+        <range distance="100" />
+        <range distance="1000" />
+    </lodranges>
+    <materialmap count="1">
+        <material from="phong01" to="CORE.DIFFUSE" />
+    </materialmap>
+    <lod level="0">
+        <layout>
+            <position/>
+            <uv1/>
+            <normal/>
+        </layout>
+        <collada>input.dae</collada>
+    </lod>
+    <lod level="1">
+        <...>
+    </lod>
+</modeldescription>
