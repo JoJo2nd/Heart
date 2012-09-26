@@ -60,6 +60,8 @@ namespace Heart
 		void			        BeginFrame();
         void			        EnterScope( hProfileEntry* et );
         void			        ExitScope( hProfileEntry* et, hUint32 time );
+        void                    SetFrameTime(hFloat val) { frameTime_ = val; }
+        hFloat                  GetFrameTime() const { return frameTime_; }
         static hUint64          GetProcessorCycles() { return processorSpeed_; }
         static hUint64          GetProcessorCyclesToMilli() { return GetProcessorCycles()/1000; }
         static hUint64          GetProcessorCyclesToMicro() { return GetProcessorCycles()/100000; }
@@ -70,6 +72,8 @@ namespace Heart
         hProfileEntry           entries_[s_maxProfileEntries];
         hUint32                 stackTop_;
         hProfileEntry*          stack_[s_maxProfileEntries];
+        hFloat                  frameTime_;
+
         static hUint64          processorSpeed_;
 	};
 

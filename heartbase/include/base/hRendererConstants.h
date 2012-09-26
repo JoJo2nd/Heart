@@ -141,7 +141,6 @@ namespace Heart
         hUint32                             cBuffer_;
     };
 
-
     struct hMipDesc
     {
         hUint32     width;
