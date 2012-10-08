@@ -32,10 +32,10 @@
 extern "C" {
 #endif//
 
-cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len );
-void     CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
-void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
-cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );
+CY_DLLEXPORT cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len );
+CY_DLLEXPORT void     CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
+CY_DLLEXPORT void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
+CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );
 
 #define cyStringCRC32( string ) cyFullCRC32( string, strlen( string ) )
 

@@ -9,5 +9,3 @@ Most deps are included by in the repo. But the following will need to be downloa
 3) run the build build_all_external_libs.bat to compile these libs
 
 4) DXSDK is also needed
-
-5) CgToolKit 3.0 is also needed

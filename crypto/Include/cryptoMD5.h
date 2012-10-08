@@ -44,11 +44,11 @@ typedef struct
         cyByte  	md5_state8[16];
     } cy_md5_st;
 
-    #define md5_sta		cy_md5_st.md5_state32[0]
-    #define md5_stb		cy_md5_st.md5_state32[1]
-    #define md5_stc		cy_md5_st.md5_state32[2]
-    #define md5_std		cy_md5_st.md5_state32[3]
-    #define md5_st8		cy_md5_st.md5_state8
+#define md5_sta		cy_md5_st.md5_state32[0]
+#define md5_stb		cy_md5_st.md5_state32[1]
+#define md5_stc		cy_md5_st.md5_state32[2]
+#define md5_std		cy_md5_st.md5_state32[3]
+#define md5_st8		cy_md5_st.md5_state8
 
     union 
     {
@@ -56,18 +56,18 @@ typedef struct
         cyByte      md5_count8[8];
     } cy_md5_count;
 
-    #define md5_n	cy_md5_count.md5_count64
-    #define md5_n8	cy_md5_count.md5_count8
+#define md5_n	cy_md5_count.md5_count64
+#define md5_n8	cy_md5_count.md5_count8
 
     cyInt	    md5_i;
     cyByte  	md5_buf[cyMD5_BUFLEN];
 } cy_md5_ctxt;
 
-void CY_API __cyInitMD5( cy_md5_ctxt* );
-void CY_API __cyLoopMD5( cy_md5_ctxt*, const cyByte*, cyUint );
-void CY_API __cyPadMD5( cy_md5_ctxt* );
-void CY_API __cyResultMD5( cyByte*, cy_md5_ctxt* );
-void CY_API __cyMD5ToString( const cyByte*, cyChar* );
+CY_DLLEXPORT void CY_API __cyInitMD5( cy_md5_ctxt* );
+CY_DLLEXPORT void CY_API __cyLoopMD5( cy_md5_ctxt*, const cyByte*, cyUint );
+CY_DLLEXPORT void CY_API __cyPadMD5( cy_md5_ctxt* );
+CY_DLLEXPORT void CY_API __cyResultMD5( cyByte*, cy_md5_ctxt* );
+CY_DLLEXPORT void CY_API __cyMD5ToString( const cyByte*, cyChar* );
 
 /* compatibility */
 #define cyMD5_CTX		cy_md5_ctxt

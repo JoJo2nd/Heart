@@ -115,6 +115,8 @@ void WorldObjectBuilder::ParseFile( XMLDoc& doc, GameData::gdFileHandle* file )
         XMLDoc d;
         d.xml_ = new Heart::hXMLDocument;
         GameData::gdFileHandle* incfile = OpenFile(includes.GetAttribute("input")->value());
+        if (!incfile->IsValid())
+            ThrowFatalError("Couldn't open include \"%s\"", includes.GetAttribute("input")->value());
         ParseFile(d, incfile);
         docs_[docs_.size()-1] = d;
         Heart::hXMLGetter children = Heart::hXMLGetter(docs_[docs_.size()-1].xml_).FirstChild(NULL);

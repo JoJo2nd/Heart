@@ -225,6 +225,8 @@ namespace GameData
     {
         gdUint32 crc32;
         cyStartCRC32( &crc32, (const gdByte*)resID_.GetResourcePath(), strlen( resID_.GetResourcePath() ) );
+        cyContinueCRC32( &crc32, (const gdByte*)resID_.GetResourceName(), strlen( resID_.GetResourceName() ) );
+        cyContinueCRC32( &crc32, (const gdByte*)GetInputFilePath(), strlen( GetInputFilePath() ) );
         for ( gdUint32 i = 0; i < parameters_.size(); ++i )
         {
             const gdChar* val = parameters_[i].GetValue()->ConvertToString();

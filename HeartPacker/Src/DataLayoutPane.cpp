@@ -48,6 +48,7 @@ BEGIN_EVENT_TABLE( DataLayoutPane, wxTreeCtrl )
     EVT_MENU( wxID_DELETE, DataLayoutPane::OnContextMenuDelete )
     EVT_MENU( UIID_ADD_FOLDER, DataLayoutPane::OnContextMenuAddFolder )
     EVT_MENU( UIID_BUILD_RESOURCE, DataLayoutPane::OnContextMenuBuild )
+    EVT_MENU( UIID_CLEAN_RESOURCE, DataLayoutPane::OnContextMenuClean )
     EVT_TREE_KEY_DOWN( DataLayoutPane::GetMenuID(), DataLayoutPane::OnKeyDownEvent )
     EVT_DROP_FILES( DataLayoutPane::OnFileDropEvent )
     //EVT_PG_CHANGING( PropertiesPane::GetMenuID(), DataLayoutPane::OnPropertyGridChangingEvent )
@@ -66,9 +67,10 @@ void DataLayoutPane::InitMenuCompents()
     DragAcceptFiles( true );
 
     itemContextMenu_ = new wxMenu();
-    itemContextMenu_->Append( wxID_DELETE, "Delete Resource" );
-    itemContextMenu_->Append( UIID_ADD_FOLDER, "Add Folder" );
     itemContextMenu_->Append( UIID_BUILD_RESOURCE, "Build Resource" );
+    itemContextMenu_->Append( UIID_CLEAN_RESOURCE, "Clean Resource Cache" );
+    itemContextMenu_->Append( UIID_ADD_FOLDER, "Add Folder" );
+    itemContextMenu_->Append( wxID_DELETE, "Delete Resource" );
 
     propertiesPane_->Bind( wxEVT_PG_CHANGED, &DataLayoutPane::OnPropertyGridChangedEvent, this, propertiesPane_->GetMenuID() );
     propertiesPane_->Bind( wxEVT_PG_CHANGING, &DataLayoutPane::OnPropertyGridChangingEvent, this, propertiesPane_->GetMenuID() );
@@ -393,8 +395,34 @@ void DataLayoutPane::OnContextMenuBuild( wxCommandEvent& ev )
         msgDlg.ShowModal();
 
     }
+    else
+    {
+        wxMessageDialog msgDlg(this,"Build Success.","Success.",wxOK|wxCENTER);
+        msgDlg.ShowModal();
+    }
 
     mainDatabase_->ClearBuildMessages();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void DataLayoutPane::OnContextMenuClean( wxCommandEvent& ev )
+{
+    DataTreeItem* itemData = static_cast< DataTreeItem* >( GetItemData( selectedItem_ ) );
+
+    GameData::gdUniqueResourceID uri;
+    gdError er = mainDatabase_->GetResourceIDByCRC( itemData->GetResourceCRC32(), &uri );
+    if ( er != gdERROR_OK )
+    {
+        wxMessageDialog( this, "Failed to find resource in database" ).ShowModal();
+        return;
+    }
+
+    mainDatabase_->CleanSingleResourceCacheData(uri);
+
+    wxMessageDialog( this, "Cache data deleted" ).ShowModal();
 }
 
 //////////////////////////////////////////////////////////////////////////

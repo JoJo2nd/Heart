@@ -65,6 +65,7 @@ namespace GameData
         gdError BuildSingleResourceFromResInfo( const gdUniqueResourceID &resID, gdResourceInfo* resInfo );
         gdError BuildAllResources( gdBuildProgressCallback callback, void* user );
         gdError CleanData();
+        gdError CleanSingleResourceCacheData(const gdUniqueResourceID& resID);
         void    ClearBuildMessages();
         const hChar* GetWarningMessages() const;
         const hChar* GetErrorMessages() const;

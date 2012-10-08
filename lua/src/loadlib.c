@@ -329,20 +329,12 @@ static int ll_loadlib (lua_State *L) {
 */
 
 
-#ifdef HEART_ENGINE_LIB
-extern int hlCheckReadable(const char *filename);
-static int readable (const char *filename) {
-	return hlCheckReadable( filename );
-}
-#else
 static int readable (const char *filename) {
   FILE *f = fopen(filename, "r");  /* try to open file */
   if (f == NULL) return 0;  /* open failed */
   fclose(f);
   return 1;
 }
-#endif // HEART_ENGINE_LIB
-
 
 static const char *pushnexttemplate (lua_State *L, const char *path) {
   const char *l;

@@ -5,7 +5,7 @@ SlnDir = "built_projects/".._ACTION.."/"..SlnName.."/"
 ProjectDir = SlnDir.."projects/"
 TargetDir = SlnDir.."bin/"
 BinDir = "../bin/game/"
-HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include"}
+HeartIncludeDirs = {"../heart/include","../zlib/include","../lua/src","../minizip/include","../crypto/include","../rapidxml-1.13/include","../libvorbis/include","../libogg/include","../gwen/include", "../libtga/include"}
 ResourceBuilderIncludeDirs = {"../gamedatabaselib/include","../external/boost",{HeartIncludeDirs}}
 wxWidgetsIncludes={"../external/wxWidgets-2.9.2/include","../external/wxWidgets-2.9.2/include/msvc"}
 
@@ -18,7 +18,7 @@ ReleaseDefines={"NDEBUG","RELEASE"}
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32"}
 
 ExternalLibDirs={"../external/boost/stage/lib","../external/wxWidgets-2.9.2/lib/vc_lib"}
-HeartLibs={"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip",{PlatformLibs}}
+HeartLibs={"zlib","crypto","libogg","libvorbis","libvorbisfile","lua","heart","minizip","gwen_static","libtga",{PlatformLibs}}
 ResourceBuilderLibs={"gamedatabaselib",{HeartLibs}}
 
 ToolPostBuildStr="IF NOT EXIST ..\\..\\..\\..\\..\\bin\\tools\\ MKDIR ..\\..\\..\\..\\..\\bin\\tools\\ \ncopy /Y $(TargetPath) ..\\..\\..\\..\\..\\bin\\tools\\"
@@ -34,9 +34,11 @@ solution (SlnName)
     dofile "lua.proj.lua"
     dofile "minizip.proj.lua"
     dofile "crypto.proj.lua"
+    dofile "libtga.proj.lua"
     dofile "libvorbis.proj.lua"
     dofile "libvorbisfile.proj.lua"
     dofile "libogg.proj.lua"
+	dofile "gwen.proj.lua"
     dofile "heart.proj.lua"
 	dofile "libpng.proj.lua"
 	dofile "squish.proj.lua"
@@ -51,3 +53,4 @@ solution (SlnName)
 	dofile "oggstreambuilder.proj.lua"
 	dofile "oggsoundbank.proj.lua"
 	dofile "worldobjectbuilder.proj.lua"
+    dofile "modelbuilder.proj.lua"

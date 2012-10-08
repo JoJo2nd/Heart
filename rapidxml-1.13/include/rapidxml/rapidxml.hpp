@@ -45,7 +45,7 @@ namespace rapidxml
     //! </pre>
     //! \param what Human readable description of the error.
     //! \param where Pointer to character data where error was detected.
-    void parse_error_handler(const char *what, void *where);
+    HEARTCORE_SLIBEXPORT void HEART_API parse_error_handler(const char *what, void *where);
 }
 
 #else

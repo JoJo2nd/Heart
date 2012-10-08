@@ -1,1 +1,0 @@
-call ..\external\premake4.4\bin\premake4.exe --file="HeartPacker.sln.lua" vs2008

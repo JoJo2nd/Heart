@@ -36,6 +36,12 @@ typedef long                cyInt32;
 typedef unsigned char       cyByte;
 typedef char                cyChar;
 
+#ifdef CRYPTO_COMPILE_DLL
+    #define CY_DLLEXPORT __declspec(dllexport)
+#else
+    #define CY_DLLEXPORT __declspec(dllimport)
+#endif
+
 #define CY_API          __cdecl
 
 #define CY_OK           (0)
