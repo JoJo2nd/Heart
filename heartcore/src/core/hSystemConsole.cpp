@@ -62,12 +62,12 @@ namespace Heart
             : hDebugMenuBase(parent)
             , console_(systemConsole)
         {
-            outputList_ = hNEW(GetGlobalHeap(), Gwen::Controls::ListBox)(this);
+            outputList_ = hNEW(GetDebugHeap(), Gwen::Controls::ListBox)(this);
             outputList_->SetSize(500, 200);
             outputList_->SetHidden(false);
             outputList_->SetScroll(hTrue, hTrue);
 
-            entry_ = hNEW(GetGlobalHeap(), hConsoleTextbox)(this);
+            entry_ = hNEW(GetDebugHeap(), hConsoleTextbox)(this);
             entry_->SetText( "" );
             entry_->SetPos(0, 210);
             entry_->SetWidth(500);
@@ -80,6 +80,7 @@ namespace Heart
             //SizeToChildren(); Doesn't work?
             SetMinimumSize(Gwen::Point(514, 276));
             SetSize(514, 276);
+            SetPos(50, 350);
         }
 
         ~hConsoleUI()

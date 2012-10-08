@@ -110,6 +110,8 @@ namespace Heart
         return r;
     }
 
+#define hScanf scanf
+
     HEARTBASE_SLIBEXPORT
     inline hInt32 HEART_API hAtoI(const hChar* str)
     {

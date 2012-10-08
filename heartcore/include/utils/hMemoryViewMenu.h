@@ -40,10 +40,24 @@ namespace Heart
         void                PreRenderUpdate();
         void                EndFrameUpdate() {}
 
+        static void         RegisterMemoryHeap(hMemoryHeapBase* heap);
+        static void         UnregisterMemoryHeap(hMemoryHeapBase* heap);
+
     private:
+
+        struct ExtraHeap
+        {
+            hMemoryHeapBase*        heap;
+            Gwen::Controls::Label*  txt;
+        };
+
+        typedef hVector< ExtraHeap > HeapLabelArray;
 
         Gwen::Controls::Label*  generalHeapTxt_;
         Gwen::Controls::Label*  debugHeapTxt_;
+#ifdef HEART_DEBUG
+        static HeapLabelArray*  heapArray_;
+#endif
     };
 }
 

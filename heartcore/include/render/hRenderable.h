@@ -42,12 +42,12 @@ namespace Heart
 
         hRenderable() 
             : indexBuffer_(NULL)
-            , vertexBuffer_(NULL)
             , primType_(PRIMITIVETYPE_TRILIST)
             , nPrimatives_(0)
             , material_(NULL)
             , materialInstance_(NULL)
         {
+            hZeroMem(vertexBuffer_, sizeof(hVertexBuffer)*HEART_MAX_INPUT_STREAMS);
         }
         virtual ~hRenderable() 
         {
@@ -58,11 +58,11 @@ namespace Heart
             }
         }
 
-        hVertexBuffer*                          GetVertexBuffer();
-        void                                    SetVertexBuffer(hVertexBuffer* vtx) {vertexBuffer_ = vtx;}
-        hIndexBuffer*                           GetIndexBuffer();
+        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < HEART_MAX_INPUT_STREAMS); return vertexBuffer_[stream]; }
+        void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) { hcAssert(stream < HEART_MAX_INPUT_STREAMS); vertexBuffer_[stream] = vtx;}
+        hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
         void                                    SetIndexBuffer(hIndexBuffer* idx) {indexBuffer_ = idx;}
-        PrimitiveType                           GetPrimativeType() const;
+        PrimitiveType                           GetPrimativeType() const { return primType_; }
         void                                    SetPrimativeType(PrimitiveType primtype) { primType_ = primtype; }
         hUint32                                 GetStartIndex() const { return startIndex_; }
         void                                    SetStartIndex(hUint32 startIdx) { startIndex_ = startIdx; }
@@ -76,13 +76,13 @@ namespace Heart
     private:
 
         hIndexBuffer*           indexBuffer_;
-        hVertexBuffer*          vertexBuffer_;
         PrimitiveType           primType_;
         hUint32                 startIndex_;
         hUint32                 nPrimatives_;
         hMaterial*              material_;
         hMaterialInstance*      materialInstance_;
         Heart::hAABB            aabb_;
+        hVertexBuffer*          vertexBuffer_[HEART_MAX_INPUT_STREAMS];
     };
 }
 

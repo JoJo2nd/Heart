@@ -113,6 +113,7 @@ namespace Heart
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_1     (HEART_MAX_CONSTANT_BLOCKS-3)
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2     (HEART_MAX_CONSTANT_BLOCKS-4)
 #define HEART_MIN_RESERVED_CONSTANT_BLOCK               (HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2)
+#define HEART_MAX_INPUT_STREAMS                         (15)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );
@@ -355,6 +356,42 @@ namespace Heart
 		hrVF_UVMASK				= hrVF_1UV | hrVF_2UV | hrVF_3UV | hrVF_4UV | hrVF_5UV | hrVF_6UV | hrVF_7UV | hrVF_8UV,
 		hrVF_BLENDMASK			= hrVF_BLEND1 | hrVF_BLEND2 | hrVF_BLEND3 | hrVF_BLEND4,
 	};
+
+    enum hInputSemantic
+    {
+        eIS_POSITION,
+        eIS_NORMAL,
+        eIS_TEXCOORD,
+        eIS_COLOUR,
+        eIS_TANGENT,
+        eIS_BITANGENT,
+        eIS_INSTANCE, // generic id for instance data
+        //TODO: Blend weights?
+
+        eIS_FORCEDWORD = 0xFFFFFFFF
+    };
+
+    enum hInputFormat
+    {
+        eIF_FLOAT4,
+        eIF_FLOAT3,
+        eIF_FLOAT2,
+        eIF_FLOAT1,
+        eIF_UBYTE4_UNORM, // 0.f - 1.f
+        eIF_UBYTE4_SNORM, // -1.f - 1.f
+        //TODO: more?
+    
+        eIF_FORCEDWORD = 0xFFFFFFFF
+    };
+
+    struct hInputLayoutDesc
+    {
+        hInputSemantic  semantic_;              
+        hByte           semIndex_;              
+        hInputFormat    typeFormat_;            
+        hUint32         inputStream_;           
+        hUint16         instanceDataRepeat_;    
+    };
 
 	enum ResourceFlags
 	{

@@ -67,7 +67,7 @@ void TGAPixel8Reader(PixelReaderCtx_t* ctx, tga_byte* dst);
 
 TGAImage_t* TGACreateImage(TGADataReaderFuncs_t funcs, void* user)
 {
-    TGAImage_t* img = (funcs.mallocFunc_)(sizeof(TGAImage_t), user);
+    TGAImage_t* img = (funcs.mallocFunc_)(sizeof(TGAImage_t), funcs.mallocUser_);
     img->dataFuncs_ = funcs;
     img->user_ = user;
     img->dataSize_ = 0;
@@ -86,11 +86,11 @@ void TGADestroyImage(TGAImage_t* image)
     if (!image)
         return;
 
-    (image->dataFuncs_.freeFunc_)(image->data_, image->user_);
+    (image->dataFuncs_.freeFunc_)(image->data_, image->dataFuncs_.mallocUser_);
     image->data_ = NULL;
     image->dataSize_ = 0;
 
-    (image->dataFuncs_.freeFunc_)(image, image->user_);
+    (image->dataFuncs_.freeFunc_)(image, image->dataFuncs_.mallocUser_);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ int TGAReadImage(TGAImage_t* image)
         return LTGA_ERR_NOSUPPORT;
 
     image->dataSize_ = header->bpp_*header->width_*header->height_;
-    image->data_     = (image->dataFuncs_.mallocFunc_)(image->dataSize_, user);
+    image->data_     = (image->dataFuncs_.mallocFunc_)(image->dataSize_, image->dataFuncs_.mallocUser_);
     if (!image->data_)
         return LTGA_ERR_NOMEM;
 

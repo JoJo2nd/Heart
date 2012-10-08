@@ -430,11 +430,16 @@ namespace Heart
     #error ("Platform not supported")
 #endif
 
-    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap);
-    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap);
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+    Heart::hMemTracking::InitMemTracking();
+#endif
 
-    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
+    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
+    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
+
+    // It important that the debug heap is created first
     Heart::GetDebugHeap()->create(1024*1024,hFalse);
+    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
 
     Heart::HeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::HeartEngine) (NULL, &deviceConfig);
 

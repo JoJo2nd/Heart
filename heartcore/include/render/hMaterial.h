@@ -112,10 +112,16 @@ namespace Heart
 	{
 	public:
 
-		hMaterial() 
-			: renderer_(NULL)
+		hMaterial(hMemoryHeapBase* heap) 
+			: memHeap_(heap)
+            , renderer_(NULL)
             , activeTechniques_(NULL)
             , manager_(NULL)
+            , groups_(heap)
+            , samplers_(heap)
+            , materialParameters_(heap)
+            , programOutputs_(heap)
+            , defaultMappings_(heap)
             , totalParameterDataSize_(0)
 		{
 			
@@ -158,6 +164,7 @@ namespace Heart
         typedef hVector< hProgramOutput >     ProgramOutputArrayType;
         typedef hVector< hParameterMapping >  ParameterMappingArrayType;
 
+        hMemoryHeapBase*                    memHeap_;
         hUint32                             uniqueKey_;
 		hRenderer*							renderer_;
         hRenderMaterialManager*             manager_;

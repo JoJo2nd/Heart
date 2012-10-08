@@ -60,6 +60,11 @@ struct LODHeader
     hUint32         renderableOffset;
 };
 
+/*
+    After the header is an array of hInputLayoutDesc[RenderableHeader.inputElements]
+    then there is the index buffer, if it exists
+    Then there is a StreamHeader followed by stream data
+*/
 struct RenderableHeader
 {
     hUint32                 primType;
@@ -70,10 +75,15 @@ struct RenderableHeader
     hFloat                  boundsMax[3];
     Heart::hResourceID      materialID;
     hUint32                 ibSize;
-    hUint32                 ibOffset;   //Normally after this header
-    hUint32                 vbSize;
-    hUint32                 vbOffset;   //Normally after index buffer
-    hUint32                 vbLayout;
+    hUint32                 ibOffset;   
+    hUint32                 inputElements;
+    hUint32                 streams;    
+};
+
+struct StreamHeader
+{
+    hUint32 index;
+    hUint32 size;
 };
 
 #pragma pack(pop)

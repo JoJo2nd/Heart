@@ -227,15 +227,15 @@ public:
 //////////////////////////////////////////////////////////////////////////
 
 void pngRead(png_structp, png_bytep, png_size_t);
-hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData);
-hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData);
-hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData);
+hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc);
+hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc);
+hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData)
+hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc)
 {
 	// Open the PNG file.
     char        sig[8];
@@ -327,9 +327,9 @@ hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData)
 	rowbytes = png_get_rowbytes( pngStruct, pngInfo );
 
 	// Allocate the image_data buffer.
-	outData->data_ = hNEW_ARRAY(GetGlobalHeap(), hByte, rowbytes*outData->height_);
+	outData->data_ = hNEW_ARRAY(memalloc->tempHeap_, hByte, rowbytes*outData->height_);
 
-	png_bytepp pngRows = hNEW_ARRAY(GetGlobalHeap(), png_byte*, outData->height_ );
+	png_bytepp pngRows = hNEW_ARRAY(memalloc->tempHeap_, png_byte*, outData->height_ );
 
 	// set the individual row_pointers to point at the correct offsets
 	for ( hUint32 i = 0; i < outData->height_; ++i )
@@ -344,7 +344,7 @@ hBool ReadPNGFileData(hIDataCacheFile* inFile, RawTextureData* outData)
 
 	png_destroy_read_struct( &pngStruct, &pngInfo, NULL );
 	png_destroy_info_struct( pngStruct, &pngInfo );
-	hDELETE_ARRAY_SAFE(GetGlobalHeap(), pngRows);
+	hDELETE_ARRAY_SAFE(memalloc->tempHeap_, pngRows);
 
 	return hTrue;
 }
@@ -365,7 +365,7 @@ void pngRead(png_structp pngPtr, png_bytep pDst, png_size_t len)
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine)
+Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine)
 {
     Heart::hTexture* texutre;
     Heart::hRenderer* renderer = engine->GetRenderer();
@@ -388,7 +388,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
         totalTextureSize += mips[i].size;
     }
 
-    textureData = (hByte*)hHeapMalloc(GetGlobalHeap(), totalTextureSize);
+    textureData = (hByte*)hHeapMalloc(memalloc->resourcePakHeap_, totalTextureSize);
 
     for (hUint32 i = 0; i < header.mipCount; ++i)
     {
@@ -398,7 +398,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
     //Read Texture data
     infile->Read(textureData, totalTextureSize);
 
-    renderer->CreateTexture(header.width, header.height, header.mipCount, mips, header.format, header.flags, &texutre);
+    renderer->CreateTexture(header.width, header.height, header.mipCount, mips, header.format, header.flags, memalloc->resourcePakHeap_, &texutre);
 
     return texutre;
 }
@@ -408,7 +408,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
 
     RawTextureData textureData;
@@ -421,15 +421,15 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 
     if (Heart::hStrICmp(&params->GetInputFilePath()[len-4], ".tga") == 0)
     {
-        ReadTGAFileData(inFile, &textureData);
+        ReadTGAFileData(inFile, &textureData, memalloc);
     }
     else if (Heart::hStrICmp(&params->GetInputFilePath()[len-4], ".png") == 0)
     {
-        ReadPNGFileData(inFile, &textureData);
+        ReadPNGFileData(inFile, &textureData, memalloc);
     }
     else if (Heart::hStrICmp(&params->GetInputFilePath()[len-4], ".dds") == 0)
     {
-        ReadDDSFileData(inFile, &textureData);
+        ReadDDSFileData(inFile, &textureData, memalloc);
         ddsInput = hTrue;
     }
     else
@@ -514,7 +514,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         {
             mips[i].width = w;
             mips[i].height = h;
-            mips[i].data = hNEW_ARRAY(GetGlobalHeap(), hByte, size);
+            mips[i].data = hNEW_ARRAY(memalloc->tempHeap_, hByte, size);
             mips[i].size = size;
 
             Heart::hMemCpy(mips[i].data, ptr, size);
@@ -537,7 +537,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
             size = textureData.compressed_ ? Heart::hTexture::GetDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : GetPitchFromWidth(w,bitsPerPixel)*h;
         }
 
-        hHeapFreeSafe(GetGlobalHeap(), textureData.data_);
+        hHeapFreeSafe(memalloc->tempHeap_, textureData.data_);
     }
 
     if (gammaCorrect)
@@ -572,7 +572,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     {
         binoutput->Write(mips[i].data, mips[i].size);
         //Release Data
-        hDELETE_ARRAY_SAFE(GetGlobalHeap(), mips[i].data);
+        hDELETE_ARRAY_SAFE(memalloc->tempHeap_, mips[i].data);
     }
 
     return hTrue;
@@ -583,7 +583,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
     //Nothing to do
     return hTrue;
@@ -594,7 +594,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::He
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
     //Nothing to do
 }
@@ -604,7 +604,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::H
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
     engine->GetRenderer()->DestroyTexture(static_cast<hTexture*>(resource));
 }
@@ -632,12 +632,14 @@ size_t LTGA_CALLBACK TGASeekBytes(size_t offset, int from, void* user)
 
 void* LTGA_CALLBACK TGAmalloc(size_t size, void* user)
 {
-    return hHeapMalloc(GetGlobalHeap(), size);
+    Heart::hResourceMemAlloc* memalloc = (Heart::hResourceMemAlloc*)user;
+    return hHeapMalloc(memalloc->tempHeap_, size);
 }
 
 void LTGA_CALLBACK TGAfree(void* ptr, void* user)
 {
-    hHeapFreeSafe(GetGlobalHeap(), ptr);
+    Heart::hResourceMemAlloc* memalloc = (Heart::hResourceMemAlloc*)user;
+    hHeapFreeSafe(memalloc->tempHeap_, ptr);
 }
 
 
@@ -645,7 +647,7 @@ void LTGA_CALLBACK TGAfree(void* ptr, void* user)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData)
+hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc )
 {
     TGADataReaderFuncs_t funcs;
     TGAImage_t* tgaImage;
@@ -653,6 +655,7 @@ hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData)
 
     funcs.mallocFunc_ = TGAmalloc;
     funcs.freeFunc_ = TGAfree;
+    funcs.mallocUser_ = memalloc;
     funcs.reader_ = TGAReadBytes;
     funcs.seek_ = TGASeekBytes;
     funcs.writer_ = NULL;
@@ -666,7 +669,7 @@ hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData)
     TGAGetImageInfo(tgaImage, &info);
 
     hUint32 size            = info.colourWidth_*info.width_*info.height_;
-    outData->data_          = hHeapMalloc(GetGlobalHeap(), size);
+    outData->data_          = hHeapMalloc(memalloc->tempHeap_, size);
     outData->width_         = info.width_;
     outData->pitch_         = outData->width_;
     outData->height_        = info.height_;
@@ -680,7 +683,7 @@ hBool ReadTGAFileData(hIDataCacheFile* inFile, RawTextureData* outData)
     return hTrue;
 }
 
-hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData)
+hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc)
 {
     DDSHeader header;
     hUint32 textureSize = inFile->Lenght() - sizeof(header);
@@ -738,7 +741,7 @@ hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData)
     }
 
 
-    outData->data_ = hHeapMalloc(GetGlobalHeap(), textureSize);
+    outData->data_ = hHeapMalloc(memalloc->tempHeap_, textureSize);
     inFile->Read(outData->data_, textureSize);
 
     return hTrue;

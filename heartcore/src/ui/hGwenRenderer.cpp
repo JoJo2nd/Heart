@@ -29,13 +29,13 @@
 HEARTCORE_SLIBEXPORT
 void* HEART_API GWENmalloc(size_t size)
 {
-    return hHeapMalloc(Heart::GetGlobalHeap()/*!heap*/, size);
+    return hHeapMalloc(Heart::GetDebugHeap()/*!heap*/, size);
 }
 
 HEARTCORE_SLIBEXPORT
 void HEART_API GWENfree(void* ptr)
 {
-    hHeapFree(Heart::GetGlobalHeap()/*!heap*/, ptr);
+    hHeapFree(Heart::GetDebugHeap()/*!heap*/, ptr);
 }
 
 namespace Heart
@@ -43,8 +43,6 @@ namespace Heart
 
 #define IDX_BUFFER_MAX_SIZE (1024)
 #define VTX_BUFFER_MAX_SIZE (IDX_BUFFER_MAX_SIZE*4)
-#define COLOUR_VTX_LAYOUT   (hrVF_XYZ | hrVF_COLOR)
-#define UV_VTX_LAYOUT       (hrVF_XYZ | hrVF_COLOR | hrVF_1UV)
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -54,8 +52,6 @@ namespace Heart
     {
         renderer_ = renderer;
         resourceManager_ = resourceManager;
-        tmpIB = (hUint16*)hHeapMalloc(GetGlobalHeap(), IDX_BUFFER_MAX_SIZE*sizeof(hUint16));
-        tmpVB = (hByte*)hHeapMalloc(GetGlobalHeap(), VTX_BUFFER_MAX_SIZE*renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT));
     }
 
 
@@ -362,7 +358,7 @@ namespace Heart
 
         pos.x += GetRenderOffset().x;
         pos.y += GetRenderOffset().y;
-        Gwen::String ctext = Gwen::Utility::UnicodeToString(text);
+        Gwen::Utility::UnicodeToString(text, ctext_);
 
         hFont* font = static_cast<hFont*>(pFont->data);
         hFontStyle style = font->GetFontStyle();
@@ -374,11 +370,11 @@ namespace Heart
             Flush();
         }
 
-        hUint32 nChars = ctext.length();
+        hUint32 nChars = ctext_.length();
         activeFont_ = font;
 
         font->SetFontStyle(style);
-        font->RenderStringSingleLine( inlineVtxMem_, hCPUVec2((hFloat)pos.x, (hFloat)pos.y), ctext.c_str());
+        font->RenderStringSingleLine( inlineVtxMem_, hCPUVec2((hFloat)pos.x, (hFloat)pos.y), ctext_.c_str());
 
         inlineVtxMem_ += nChars*6*textVtxStride_;
         vtxCount_ += nChars*6;
@@ -401,8 +397,8 @@ namespace Heart
             return Gwen::Point();
 
         hFont* font = static_cast<hFont*>(pFont->data);
-        Gwen::String ctext = Gwen::Utility::UnicodeToString(text);
-        hCPUVec2 v = font->CalcRenderSize(ctext.c_str());
+        Gwen::Utility::UnicodeToString(text, ctext_);
+        hCPUVec2 v = font->CalcRenderSize(ctext_.c_str());
         return Gwen::Point((hInt32)v.x,(hInt32)v.y);
     }
 
@@ -476,12 +472,12 @@ namespace Heart
         {
         case DrawMode_Lines:
         case DrawMode_VertexColour:
-            currentStride_ = renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT);
+            currentStride_ = vcStride_;//renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT);
             inlineVtxMem_ = vcVBPtr_;
             break;
         case DrawMode_Textured:
         case DrawMode_Text:
-            currentStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
+            currentStride_ = textVtxStride_;//renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
             inlineVtxMem_ = tVBPtr_;
             break;
         default:
@@ -540,13 +536,19 @@ namespace Heart
         uvSampler_ = uvMaterial_->GetSamplerParameterByName("diffuseSampler");
         hcAssert(uvSampler_);
 
-        vcStride_      = renderer_->ComputeVertexLayoutStride(COLOUR_VTX_LAYOUT);
-        textVtxStride_ = renderer_->ComputeVertexLayoutStride(UV_VTX_LAYOUT);
+        hInputLayoutDesc vtxlayout[] = {
+            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+            {eIS_COLOUR,   0, eIF_FLOAT4, 0, 0},
+            {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
+        };
 
-       renderer_->CreateVertexBuffer(NULL, s_maxDrawPrims, COLOUR_VTX_LAYOUT, RESOURCEFLAG_DYNAMIC, &vtxColourVB_);
-       renderer_->CreateVertexBuffer(NULL, s_maxDrawPrims, UV_VTX_LAYOUT, RESOURCEFLAG_DYNAMIC, &texturedVB_);
-       renderer_->CreateIndexBuffer(NULL, s_maxDrawPrims, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &vtxColourIB_);
-       renderer_->CreateIndexBuffer(NULL, s_maxDrawPrims, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &texturedIB_);
+        vcStride_      = renderer_->ComputeVertexLayoutStride(vtxlayout, 2);
+        textVtxStride_ = renderer_->ComputeVertexLayoutStride(vtxlayout, 3);
+
+        renderer_->CreateVertexBuffer(NULL, s_maxDrawPrims, vtxlayout, 2, RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &vtxColourVB_);
+        renderer_->CreateVertexBuffer(NULL, s_maxDrawPrims, vtxlayout, 3, RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &texturedVB_);
+        renderer_->CreateIndexBuffer(NULL, s_maxDrawPrims, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &vtxColourIB_);
+        renderer_->CreateIndexBuffer(NULL, s_maxDrawPrims, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &texturedIB_);
 
         createdResources_ = hTrue;
     }

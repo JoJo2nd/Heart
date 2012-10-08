@@ -61,11 +61,26 @@ struct MaterialMap
 };
 
 //////////////////////////////////////////////////////////////////////////
+// Enum Tables ///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+Heart::hXMLEnumReamp g_formatTypes[] =
+{
+    {"float",   Heart::eIF_FLOAT1},
+    {"float2",  Heart::eIF_FLOAT2},
+    {"float3",  Heart::eIF_FLOAT3},
+    {"float4",  Heart::eIF_FLOAT4},
+    {"ubyte4",  Heart::eIF_UBYTE4_UNORM},
+    {"byte4",   Heart::eIF_UBYTE4_SNORM},
+};
+
+//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, Heart::hISerialiseStream* binoutput, MaterialMap* materialMap);
-hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData);
+hUint32 GetVertexBufferFormatElements(const Heart::hXMLGetter& xLODData);
+hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLayoutDesc* outDesc, hUint32 maxOut, hUint32* streamCount);
 Heart::hResourceID GetMaterialResourceIDFromMaterialIndex(const aiScene* scene, hUint32 i, MaterialMap* materialMap);
 void GetMeshBounds(const aiMesh& mesh, hFloat* min, hFloat* max);
 
@@ -73,13 +88,88 @@ void GetMeshBounds(const aiMesh& mesh, hFloat* min, hFloat* max);
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::HeartEngine* engine )
+hUint32 WriteFloat3ToFloat(const aiVector3D& inv, Heart::hISerialiseStream* st)
 {
+    return st->Write(&inv.x, sizeof(hFloat));
+}
+
+hUint32 WriteFloat3ToFloat2(const aiVector3D& inv, Heart::hISerialiseStream* st)
+{
+    hUint32 w;
+    w = st->Write(&inv.x, sizeof(hFloat));
+    w += st->Write(&inv.y, sizeof(hFloat));
+    return w;
+}
+
+hUint32 WriteFloat3ToFloat3(const aiVector3D& inv, Heart::hISerialiseStream* st)
+{
+    return st->Write(&inv, sizeof(aiVector3D));
+}
+
+hUint32 WriteFloat3ToFloat4(const aiVector3D& inv, Heart::hISerialiseStream* st)
+{
+    static const hFloat cv = 1.f;
+    hUint32 w = st->Write(&inv, sizeof(aiVector3D));
+    w += st->Write(&cv, sizeof(hFloat));
+    return w;
+}
+
+hUint32 WriteColourToFloat4(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    return st->Write(&inv, sizeof(aiColor4D));
+}
+
+hUint32 WriteColourToFloat(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    return st->Write(&inv, sizeof(hFloat));
+}
+
+hUint32 WriteColourToFloat2(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    return st->Write(&inv, sizeof(hFloat)*2);
+}
+
+hUint32 WriteColourToFloat3(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    return st->Write(&inv, sizeof(hFloat)*3);
+}
+
+hUint32 WriteColourToUbyte4(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    hByte c[] = {
+        (hByte)((inv.r*255.f)+.5f),
+        (hByte)((inv.g*255.f)+.5f),
+        (hByte)((inv.b*255.f)+.5f),
+        (hByte)((inv.a*255.f)+.5f),
+    };
+    return st->Write(c, sizeof(hByte)*4);
+}
+
+hUint32 WriteColourToByte4(const aiColor4D& inv, Heart::hISerialiseStream* st)
+{
+    hChar c[] = {
+        (hByte)((inv.r*255.f)-126.5f),
+        (hByte)((inv.g*255.f)-126.5f),
+        (hByte)((inv.b*255.f)-126.5f),
+        (hByte)((inv.a*255.f)-126.5f),
+    };
+    return st->Write(c, sizeof(hChar)*4);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+DLL_EXPORT
+Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+{
+
     using namespace Heart;
     MeshHeader header = {0};
     hRenderer* renderer = engine->GetRenderer();
-    hRenderModel* rmodel = hNEW(GetGlobalHeap(), hRenderModel)();
+    hRenderModel* rmodel = hNEW(memalloc->resourcePakHeap_, hRenderModel)();
+    hInputLayoutDesc inputDesc[32];
+    hInputLayoutDesc streamInputDesc[32];
     void* tmpBuffer = NULL;
     hUint32 tmpbufsize = 0;
 
@@ -106,9 +196,11 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
             hAABB aabb;
 
             inStream->Read(&rHeader, sizeof(rHeader));
+            hcAssert(rHeader.inputElements < 32);
+            inStream->Read(inputDesc, sizeof(hInputLayoutDesc)*rHeader.inputElements);
+
             tmpbufsize = hMax(tmpbufsize, rHeader.ibSize);
-            tmpbufsize = hMax(tmpbufsize, rHeader.vbSize);
-            tmpBuffer = hHeapRealloc(GetGlobalHeap(), tmpBuffer, tmpbufsize);
+            tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
             
             bounds[0] = hVec3(rHeader.boundsMin[0], rHeader.boundsMin[1], rHeader.boundsMin[2]);
             bounds[1] = hVec3(rHeader.boundsMax[0], rHeader.boundsMax[1], rHeader.boundsMax[2]);
@@ -122,19 +214,43 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
                 (PrimitiveType)rHeader.primType, 
                 &ib );
 
-            inStream->Read(tmpBuffer, rHeader.vbSize);
-            renderer->CreateVertexBuffer(tmpBuffer, rHeader.verts, rHeader.vbLayout, 0, &vb);
-
             renderable->SetStartIndex(rHeader.startIndex);
             renderable->SetPrimativeCount(rHeader.nPrimatives);
             renderable->SetPrimativeType((PrimitiveType)rHeader.primType);
             renderable->SetAABB(aabb);
             renderable->SetIndexBuffer(ib);
-            renderable->SetVertexBuffer(vb);
+
+            hUint32 streams = rHeader.streams;
+            for (hUint32 streamIdx = 0; streamIdx < streams; ++streamIdx)
+            {
+                StreamHeader sHeader = {0};
+                inStream->Read(&sHeader, sizeof(sHeader));
+
+                tmpbufsize = hMax(tmpbufsize, sHeader.size);
+                tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
+
+                inStream->Read(tmpBuffer, sHeader.size);
+
+                //Builder stream inputDesc
+                hUint32 sidc = rHeader.inputElements;
+                hUint32 side = 0;
+                for (hUint32 sid = 0; sid < sidc; ++sid)
+                {
+                    if (inputDesc[sid].inputStream_ == sHeader.index)
+                    {
+                        streamInputDesc[side] = inputDesc[sid];
+                        ++side;
+                    }
+                }
+
+                //TODO: fix
+                renderer->CreateVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
+                renderable->SetVertexBuffer(sHeader.index, vb);
+            }
         }
     }
 
-    hHeapFreeSafe(GetGlobalHeap(), tmpBuffer);
+    hHeapFreeSafe(memalloc->tempHeap_, tmpBuffer);
 
     return rmodel;
 }
@@ -144,7 +260,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
     MeshHeader header = {0};
@@ -155,11 +271,11 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     MaterialMap* materialMap = NULL;
     hUint32 lodIdx;
     
-    xmlmem = (hChar*)hHeapMalloc(GetGlobalHeap(), inFile->Lenght()+1);
+    xmlmem = (hChar*)hHeapMalloc(memalloc->tempHeap_, inFile->Lenght()+1);
     inFile->Read(xmlmem, inFile->Lenght());
     xmlmem[inFile->Lenght()] = 0;
 
-    if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, GetGlobalHeap()) == hFalse)
+    if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, memalloc->tempHeap_) == hFalse)
         return hFalse;
 
     header.resHeader.resourceType = MESH_MAGIC_NUM;
@@ -187,7 +303,6 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     materialMap[materialMapCount].resID  = NULL;
 
     binoutput->Write(&header, sizeof(header));
-
 
     lodIdx = 0;
     hXMLGetter xLODData = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
@@ -228,7 +343,10 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
 {
     const aiScene* scene = NULL;
 
-    hUint32 vtxFormat = GetVertexBufferFormat(xLODData);
+    hUint32 inputElements = GetVertexBufferFormatElements(xLODData);
+    Heart::hInputLayoutDesc* inputDesc = (Heart::hInputLayoutDesc*)hAlloca(sizeof(Heart::hInputLayoutDesc)*inputElements);
+    hUint32 inputStreams = 0;
+    hUint32 vtxFormat = GetVertexBufferFormat(xLODData, inputDesc, inputElements, &inputStreams);    
     const hChar* sceneName = xLODData.FirstChild("collada").GetValueString();
 
     if (!sceneName)
@@ -245,7 +363,6 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         hUint32 writeOffset = binoutput->Tell();
         aiMesh* mesh = scene->mMeshes[meshIdx];
 
-        renderableHeader.vbLayout = vtxFormat;
         renderableHeader.primType = Heart::PRIMITIVETYPE_TRILIST;
         renderableHeader.nPrimatives = (hUint16)mesh->mNumFaces;
         renderableHeader.startIndex = 0;
@@ -260,6 +377,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         }
 
         binoutput->Write(&renderableHeader, sizeof(renderableHeader));
+        binoutput->Write(inputDesc, sizeof(Heart::hInputLayoutDesc)*inputElements);
 
         renderableHeader.ibOffset = binoutput->Tell();
 
@@ -276,58 +394,112 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
             renderableHeader.ibSize += binoutput->Write(idxs, sizeof(idxs));
         }
 
-        renderableHeader.vbOffset = binoutput->Tell();
         renderableHeader.verts = mesh->mNumVertices;
-        for (hUint32 vtxIdx = 0; vtxIdx < mesh->mNumVertices; ++vtxIdx)
+
+        renderableHeader.inputElements = inputElements;
+        renderableHeader.streams = inputStreams;
+
+        for (hUint32 streamIdx = 0; streamIdx < inputStreams; ++streamIdx)
         {
-            /*
-                Vertex Buffer layout:- Make sure code generating vertex bufffers follow this
-                Position,
-                Normal,
-                Tangent,
-                Binormal,
-                Colour,
-                UV(1-8)
-            */
-            /*
-             * TODO: *Possibly* Pack transform onto vertices?
-             */
-#define WRITE_UV_CHANNEL(uvx) \
-            if (vtxFormat & Heart::hrVF_##uvx##UV)\
-            {\
-                renderableHeader.vbSize += binoutput->Write(&mesh->mTextureCoords[(uvx-1)][vtxIdx], sizeof(hFloat)*2);\
+            hUint32 streamOffset = binoutput->Tell();
+            StreamHeader streamHeader = {streamIdx, 0};
+
+            binoutput->Write(&streamHeader, sizeof(streamHeader));
+
+            for (hUint32 vtxIdx = 0; vtxIdx < mesh->mNumVertices; ++vtxIdx)
+            {
+                for (hUint32 inElem = 0; inElem < inputElements; ++inElem)
+                {
+                    if (inputDesc[inElem].inputStream_ != streamIdx)
+                        continue;
+                    /*
+                    * TODO: *Possibly* Pack transform onto vertices?
+                    */
+                    switch (inputDesc[inElem].semantic_)
+                    {
+                    case Heart::eIS_POSITION:
+                        {
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteFloat3ToFloat(mesh->mVertices[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteFloat3ToFloat2(mesh->mVertices[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteFloat3ToFloat3(mesh->mVertices[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteFloat3ToFloat4(mesh->mVertices[vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    case Heart::eIS_NORMAL:
+                        {
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteFloat3ToFloat(mesh->mNormals[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteFloat3ToFloat2(mesh->mNormals[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteFloat3ToFloat3(mesh->mNormals[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteFloat3ToFloat4(mesh->mNormals[vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    case Heart::eIS_TANGENT:
+                        {
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteFloat3ToFloat(mesh->mTangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteFloat3ToFloat2(mesh->mTangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteFloat3ToFloat3(mesh->mTangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteFloat3ToFloat4(mesh->mTangents[vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    case Heart::eIS_BITANGENT:
+                        {
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteFloat3ToFloat(mesh->mBitangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteFloat3ToFloat2(mesh->mBitangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteFloat3ToFloat3(mesh->mBitangents[vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteFloat3ToFloat4(mesh->mBitangents[vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    case Heart::eIS_TEXCOORD:
+                        {
+                            hUint32 uvidx = inputDesc[inElem].semIndex_;
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteFloat3ToFloat(mesh->mTextureCoords[uvidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteFloat3ToFloat2(mesh->mTextureCoords[uvidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteFloat3ToFloat3(mesh->mTextureCoords[uvidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteFloat3ToFloat4(mesh->mTextureCoords[uvidx][vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    case Heart::eIS_COLOUR:
+                        {
+                            hUint32 colidx = inputDesc[inElem].semIndex_;
+                            switch(inputDesc[inElem].typeFormat_)
+                            {
+                            case Heart::eIF_FLOAT1: streamHeader.size += WriteColourToFloat(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT2: streamHeader.size += WriteColourToFloat2(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT3: streamHeader.size += WriteColourToFloat3(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_FLOAT4: streamHeader.size += WriteColourToFloat4(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_UBYTE4_SNORM: streamHeader.size += WriteColourToUbyte4(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            case Heart::eIF_UBYTE4_UNORM: streamHeader.size += WriteColourToByte4(mesh->mColors[colidx][vtxIdx], binoutput); break;
+                            default: hcAssertFailMsg("Unsupported Format"); break;
+                            }
+                        }
+                        break;
+                    }
+                }
             }
 
-            if (vtxFormat & Heart::hrVF_XYZ)
-            {
-                renderableHeader.vbSize += binoutput->Write(&mesh->mVertices[vtxIdx], sizeof(aiVector3D));
-            }
-            if (vtxFormat & Heart::hrVF_NORMAL)
-            {
-                renderableHeader.vbSize += binoutput->Write(&mesh->mNormals[vtxIdx], sizeof(aiVector3D));
-            }
-            if (vtxFormat & Heart::hrVF_TANGENT)
-            {
-                renderableHeader.vbSize += binoutput->Write(&mesh->mTangents[vtxIdx], sizeof(aiVector3D));
-            }
-            if (vtxFormat & Heart::hrVF_BINORMAL)
-            {
-                renderableHeader.vbSize += binoutput->Write(&mesh->mBitangents[vtxIdx], sizeof(aiVector3D));
-            }
-            if (vtxFormat & Heart::hrVF_COLOR)
-            {
-                renderableHeader.vbSize += binoutput->Write(&mesh->mColors[0][vtxIdx], sizeof(aiColor4D));
-            }
-            WRITE_UV_CHANNEL(1);
-            WRITE_UV_CHANNEL(2);
-            WRITE_UV_CHANNEL(3);
-            WRITE_UV_CHANNEL(4);
-            WRITE_UV_CHANNEL(5);
-            WRITE_UV_CHANNEL(6);
-            WRITE_UV_CHANNEL(7);
-            WRITE_UV_CHANNEL(8);
-
-#undef WRITE_UV_CHANNEL
+            binoutput->Seek(streamOffset, Heart::hISerialiseStream::eBegin);
+            binoutput->Write(&streamHeader, sizeof(streamHeader));
+            binoutput->Seek(0, Heart::hISerialiseStream::eEnd);
         }
 
         binoutput->Seek(writeOffset, Heart::hISerialiseStream::eBegin);
@@ -386,25 +558,106 @@ Heart::hResourceID GetMaterialResourceIDFromMaterialIndex(const aiScene* scene, 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData)
+hUint32 GetVertexBufferFormatElements( const Heart::hXMLGetter& xLODData )
 {
-    Heart::hXMLGetter xLayout(xLODData.FirstChild("layout"));
-    hUint32 vtxFmt = 0;
-    if (xLayout.FirstChild("position").ToNode())    vtxFmt |= Heart::hrVF_XYZ;
-    if (xLayout.FirstChild("normal").ToNode())      vtxFmt |= Heart::hrVF_NORMAL;
-    if (xLayout.FirstChild("colour").ToNode())      vtxFmt |= Heart::hrVF_COLOR;
-    if (xLayout.FirstChild("tangent").ToNode())     vtxFmt |= Heart::hrVF_TANGENT;
-    if (xLayout.FirstChild("binormal").ToNode())    vtxFmt |= Heart::hrVF_BINORMAL;
-    if (xLayout.FirstChild("uv1").ToNode())         vtxFmt |= Heart::hrVF_1UV;
-    if (xLayout.FirstChild("uv2").ToNode())         vtxFmt |= Heart::hrVF_2UV;
-    if (xLayout.FirstChild("uv3").ToNode())         vtxFmt |= Heart::hrVF_3UV;
-    if (xLayout.FirstChild("uv4").ToNode())         vtxFmt |= Heart::hrVF_4UV;
-    if (xLayout.FirstChild("uv5").ToNode())         vtxFmt |= Heart::hrVF_5UV;
-    if (xLayout.FirstChild("uv6").ToNode())         vtxFmt |= Heart::hrVF_6UV;
-    if (xLayout.FirstChild("uv7").ToNode())         vtxFmt |= Heart::hrVF_7UV;
-    if (xLayout.FirstChild("uv8").ToNode())         vtxFmt |= Heart::hrVF_8UV;
+    hUint32 ret = 0;
+    for (Heart::hXMLGetter xLayout(xLODData.FirstChild("layout").FirstChild(NULL)); xLayout.ToNode(); xLayout = xLayout.NextSiblingAny(), ++ret);
+    return ret;
+}
 
-    return vtxFmt;
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLayoutDesc* outDesc, hUint32 maxOut, hUint32* streamCount)
+{
+    /*
+        TODO: this doesn't handle instance data yet
+    */
+    Heart::hXMLGetter xLayout(xLODData.FirstChild("layout"));
+    Heart::hXMLGetter ie(xLODData.FirstChild("layout"));
+    hUint32 iElement = 0;
+    ie = xLayout.FirstChild("position");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_POSITION;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+        
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+    ie = xLayout.FirstChild("normal");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_NORMAL;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+    ie = xLayout.FirstChild("colour");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_COLOUR;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_UBYTE4_UNORM);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+    ie = xLayout.FirstChild("tangent");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_TANGENT;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+    ie = xLayout.FirstChild("bitangent");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_BITANGENT;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+    ie = xLayout.FirstChild("texcoord");
+    if (ie.ToNode())
+    {
+        outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
+        outDesc[iElement].semantic_ = Heart::eIS_TEXCOORD;
+        outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+        outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT2);
+        outDesc[iElement].instanceDataRepeat_ = 0;
+
+        *streamCount = hMax(*streamCount, outDesc[iElement].inputStream_+1);
+        ++iElement;
+        if (iElement >= maxOut) return iElement;
+    }
+
+    return iElement;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -412,7 +665,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData)
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
     using namespace Heart;
 
@@ -424,7 +677,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::He
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
 
 }
@@ -433,7 +686,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::H
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
 
 }

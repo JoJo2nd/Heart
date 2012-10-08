@@ -43,7 +43,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf, hUint32 stride )
     {
-        impl_.SetVertexStream( 0, vtxBuf->pImpl(), stride );
+        impl_.SetVertexStream( stream, vtxBuf->pImpl(), stride );
     }
 
     //////////////////////////////////////////////////////////////////////////

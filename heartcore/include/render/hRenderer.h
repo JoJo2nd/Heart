@@ -138,23 +138,17 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-
-        hTexture*                                               OnTextureLoad(hISerialiseStream* dataStream);
-
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
         hRenderSubmissionCtx*                                   CreateRenderSubmissionCtx();
         void                                                    DestroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx );
 		/*
 			pimpl methods
 		*/
 		void													DestroyMaterial( hMaterial* pMat );
-		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex );
+		void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex );
 		void													DestroyTexture( hTexture* pOut );
 		void													CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB );
 		void													DestroyIndexBuffer( hIndexBuffer* pOut );
-		void													CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB );
+		void													CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
 		void													DestroyVertexBuffer( hVertexBuffer* pOut );
 
         void                                                    SumbitResourceUpdateCommand(const hRenderResourceUpdateCmd& cmd);
@@ -179,9 +173,6 @@ namespace Heart
 
 		friend class hVertexDeclarationManager;
 
-		void													CreateVertexDeclaration( hVertexDeclaration*& pOut, hUint32 vtxFlags );
-		void													DestroyVertexDeclaration( hVertexDeclaration* pVD );
-
         //
         hUint32                                                 BeginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID);
         void                                                    CollectAndSortDrawCalls();
@@ -203,8 +194,6 @@ namespace Heart
 		hResourceManager*										resourceManager_;
         hRenderMaterialManager                                  techniqueManager_;
         hRenderSubmissionCtx                                    mainSubmissionCtx_;
-        hVertexBuffer*                                          volatileVBuffer_[s_scratchBufferCount];
-        hIndexBuffer*                                           volatileIBuffer_[s_scratchBufferCount];
 
         hUint32                                                 scratchBufferSize_;
         hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];

@@ -42,7 +42,7 @@ namespace Heart
 
 hFont::~hFont()
 {
-    hDELETE_ARRAY_SAFE(GetGlobalHeap()/*!heap*/, fontCharacters_);
+    hDELETE_ARRAY_SAFE(heap_, fontCharacters_);
 }
 
 
@@ -468,10 +468,10 @@ hCPUVec2 hFont::CalcRenderSize( const hChar* str )
 void hFont::SetFontCharacterLimit( hUint32 nChars )
 {
     nMaxFontCharacters_ = nChars;
-    hDELETE_ARRAY_SAFE(GetGlobalHeap(), fontCharacters_);
-    hDELETE_ARRAY_SAFE(GetGlobalHeap(), fontLookup_);
-    fontCharacters_ = hNEW_ARRAY(GetGlobalHeap(), hFontCharacter, nMaxFontCharacters_);
-    fontLookup_ = hNEW_ARRAY(GetGlobalHeap(), hFontLookup, nMaxFontCharacters_);//TODO: reduce this
+    hDELETE_ARRAY_SAFE(heap_, fontCharacters_);
+    hDELETE_ARRAY_SAFE(heap_, fontLookup_);
+    fontCharacters_ = hNEW_ARRAY(heap_, hFontCharacter, nMaxFontCharacters_);
+    fontLookup_ = hNEW_ARRAY(heap_, hFontLookup, nMaxFontCharacters_);//TODO: reduce this
     nFontCharacters_ = 0;
 }
 

@@ -41,11 +41,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    typedef hResourceClassBase* (*OnResourceDataLoad)       (hISerialiseStream*, hIDataParameterSet*, HeartEngine*);
-    typedef hBool               (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, HeartEngine*, hISerialiseStream*);
-    typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, HeartEngine*);
-    typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, HeartEngine*);
-    typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, HeartEngine*);
+    typedef hResourceClassBase* (*OnResourceDataLoad)       (hISerialiseStream*, hIDataParameterSet*, hResourceMemAlloc*, HeartEngine*);
+    typedef hBool               (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, hResourceMemAlloc*, HeartEngine*, hISerialiseStream*);
+    typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, hResourceMemAlloc*, HeartEngine*);
+    typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, hResourceMemAlloc*, HeartEngine*);
+    typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, hResourceMemAlloc*, HeartEngine*);
     typedef hTime               (*GetTimestamp)             ();
 
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
@@ -61,43 +61,6 @@ namespace Heart
     };
 
     typedef hMap< hResourceType, hResourceHandler > hResourceHandlerMap;
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	class HEARTCORE_SLIBEXPORT hResourcePackage
-	{
-	public:
-		hResourcePackage()
-            : resourceManager_(NULL)
-		{
-        }	
-		~hResourcePackage()
-		{
-		}
-
-        hUint32             AddResourceToPackage(const hChar* resourcePath, hResourceManager* resourceManager);
-        hBool               IsPackageLoaded();
-        hUint32             GetPackageSize() const { return resourceDests_.GetSize(); }
-        hResourceClassBase* GetResource(hUint32 id) { hcAssert(IsPackageLoaded()); return resourceDests_[id]; }
-
-    private:
-
-        hVector< hUint32 >              resourcecCRC_;
-        hVector< hResourceClassBase* >  resourceDests_;
-		hResourceManager*				resourceManager_;
-	};
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    struct hResourceDesc
-    {
-        const hChar* name_;
-        const hChar* ext_;//
-    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -151,6 +114,8 @@ namespace Heart
         State                       packageState_;
         HeartEngine*                engine_;
         const hResourceHandlerMap*  handlerMap_;
+        hMemoryHeapBase*            packageHeap_;
+        hMemoryHeap                 tempHeap_;
         hZipFileSystem*             zipPackage_;
         hIFileSystem*               driveFileSystem_;
         hIFileSystem*               fileSystem_;

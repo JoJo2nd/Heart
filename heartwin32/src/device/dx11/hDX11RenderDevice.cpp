@@ -296,7 +296,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type )
+    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, ShaderType type)
     {
         HRESULT hr;
         hdDX11ShaderProgram* shader = hNEW ( GetGlobalHeap()/*!heap*/, hdDX11ShaderProgram );
@@ -312,25 +312,15 @@ namespace Heart
         }
         else if ( type == ShaderType_VERTEXPROG )
         {
-            resourceMutex_.Lock();
+            hdDX11VertexLayout* vl = CreateVertexLayout(inputLayout, layoutCount, shaderProg, len);
 
-            hdDX11VertexLayout* vl = vertexLayoutMap_.Find( inputLayout );
-
-            if ( !vl )
-            {
-                vl = CreateVertexLayout( inputLayout, shaderProg, len );
-                vertexLayoutMap_.Insert( inputLayout, vl );
-            }
-
-            shader->inputLayoutFlags_ = inputLayout;
+            shader->inputLayoutFlags_ = 0/*inputLayout*/;//TODO: grab layout id from createvertexlayout
             shader->inputLayout_ = vl;
             
             hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
-
-            resourceMutex_.Unlock();
         }
 
         return shader;
@@ -524,16 +514,29 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11VertexLayout* hdDX11RenderDevice::CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen )
+    hdDX11VertexLayout* hdDX11RenderDevice::CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen)
     {
         HRESULT hr;
-        hdDX11VertexLayout* layout = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexLayout );
-        D3D11_INPUT_ELEMENT_DESC elements[32];
+        hdDX11VertexLayout* layout = NULL;
+        D3D11_INPUT_ELEMENT_DESC* elements = (D3D11_INPUT_ELEMENT_DESC*)hAlloca(sizeof(D3D11_INPUT_ELEMENT_DESC)*desccount);
         hUint32 stride;
-        hUint32 elementCount = BuildVertexFormatArray( vertexFormat, &stride, elements );
+        hUint32 inputLayoutId;
+        hUint32 elementCount = BuildVertexFormatArray(inputdesc, desccount, &stride, &inputLayoutId, elements);
 
-        hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout->layout_ );
-        hcAssert( SUCCEEDED( hr ) );
+        resourceMutex_.Lock();
+
+        layout = vertexLayoutMap_.Find( inputLayoutId );
+
+        if (!layout)
+        {
+            layout = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexLayout );
+            hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout->layout_ );
+            hcAssert( SUCCEEDED( hr ) );
+
+            vertexLayoutMap_.Insert( inputLayoutId, layout);
+        }
+
+        resourceMutex_.Unlock();
 
         return layout;
     }
@@ -1119,53 +1122,22 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11RenderDevice::ComputeVertexLayoutStride( hUint32 vertexlayout )
+    hUint32 hdDX11RenderDevice::ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount)
     {
         hUint32 stride = 0;
-        const hUint32 flags = vertexlayout;
 
-        // declaration doesn't exist so create it
-        if ( flags & hrVF_XYZ )
+        for (hUint32 i = 0; i < desccount; ++i)
         {
-            stride += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_XYZW )
-        {
-            stride += sizeof( hFloat ) * 4;
-        }
-        if ( flags & hrVF_NORMAL )
-        {
-            stride += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_TANGENT )
-        {
-            stride += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_BINORMAL )
-        {
-            stride += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_COLOR )
-        {
-            stride += sizeof( hFloat ) * 4;
-        }
-
-        hChar usageoffset = -1;
-        switch( flags & hrVF_UVMASK )
-        {
-        case hrVF_8UV: usageoffset = 8; break;
-        case hrVF_7UV: usageoffset = 7; break;
-        case hrVF_6UV: usageoffset = 6; break;
-        case hrVF_5UV: usageoffset = 5; break;
-        case hrVF_4UV: usageoffset = 4; break;
-        case hrVF_3UV: usageoffset = 3; break;
-        case hrVF_2UV: usageoffset = 2; break;
-        case hrVF_1UV: usageoffset = 1; break;
-        }
-
-        for ( hChar i = 0; i < usageoffset; ++i )
-        {
-            stride += sizeof( hFloat ) * 2;
+            switch(desc[i].typeFormat_)
+            {
+            case eIF_FLOAT4: stride += 4*sizeof(hFloat); break;
+            case eIF_FLOAT3: stride += 3*sizeof(hFloat); break;
+            case eIF_FLOAT2: stride += 2*sizeof(hFloat); break;
+            case eIF_FLOAT1: stride += sizeof(hFloat);   break;
+            case eIF_UBYTE4_UNORM:
+            case eIF_UBYTE4_SNORM: stride += 4*sizeof(hByte); break;
+            default: hcAssertFailMsg("Invalid size format");
+            }
         }
 
         return stride;
@@ -1175,168 +1147,59 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11RenderDevice::BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements )
+    hUint32 hdDX11RenderDevice::BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements)
     {
         hUint32 elementsadded = 0;
         WORD offset = 0;
-        const hUint32 flags = vertexFormat;
+        *stride = 0;
 
-        /*
-         Vertex Buffer layout:- Make sure code generating vertex bufffers follow this
-         TODO: this is really inflexible, so I need to make it better
-            Position,
-            Normal,
-            Tangent,
-            Binormal,
-            Colour,
-            UV(1-8)
-        */
-
-        // declaration doesn't exist so create it
-        if ( flags & hrVF_XYZ )
+        for (hUint32 i = 0; i < desccount; ++i)
         {
-            elements[ elementsadded ].SemanticName = "POSITION";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;            
+            hZeroMem(&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
+
+            switch(desc[i].semantic_)
+            {
+            case eIS_POSITION:  elements[i].SemanticName = "POSITION";  break;
+            case eIS_TEXCOORD:  elements[i].SemanticName = "TEXCOORD";  break;
+            case eIS_NORMAL:    elements[i].SemanticName = "NORMAL";    break;
+            case eIS_TANGENT:   elements[i].SemanticName = "TANGENT";   break;
+            case eIS_BITANGENT: elements[i].SemanticName = "BITANGENT"; break;
+            case eIS_COLOUR:    elements[i].SemanticName = "COLOR";     break;
+            case eIS_INSTANCE:  elements[i].SemanticName = "INSTANCE";  break;
+            }
+
+            switch(desc[i].typeFormat_)
+            {
+            case eIF_FLOAT4: *stride += 4*sizeof(hFloat); elements[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+            case eIF_FLOAT3: *stride += 3*sizeof(hFloat); elements[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+            case eIF_FLOAT2: *stride += 2*sizeof(hFloat); elements[i].Format = DXGI_FORMAT_R32G32_FLOAT; break;
+            case eIF_FLOAT1: *stride += sizeof(hFloat);   elements[i].Format = DXGI_FORMAT_R32_FLOAT; break;
+            case eIF_UBYTE4_UNORM: *stride += 4*sizeof(hByte); elements[i].Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+            case eIF_UBYTE4_SNORM: *stride += 4*sizeof(hByte); elements[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+            }
+
+            elements[i].SemanticIndex = desc[i].semIndex_;
+            elements[i].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+            elements[i].InputSlotClass = desc[i].instanceDataRepeat_ == 0 ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
+            elements[i].InstanceDataStepRate = desc[i].instanceDataRepeat_;
+
+            if (i == 0)
+            {
+                hCRC32::StartCRC32(fmtID, (hChar*)&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
+            }
+            else
+            {
+                hCRC32::ContinueCRC32(fmtID, (hChar*)&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
+            }
 
             ++elementsadded;
-            offset += sizeof( hFloat ) * 3;
         }
-        if ( flags & hrVF_XYZW )
+
+        if (elementsadded)
         {
-            elements[ elementsadded ].SemanticName = "POSITIONT";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;   
-
-            ++elementsadded;
-            offset += sizeof( hFloat ) * 4;
-        }
-        if ( flags & hrVF_NORMAL )
-        {
-            elements[ elementsadded ].SemanticName = "NORMAL";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;  
-
-            ++elementsadded;
-            offset += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_TANGENT )
-        {
-            elements[ elementsadded ].SemanticName = "TANGENT";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;  
-
-            ++elementsadded;
-            offset += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_BINORMAL )
-        {
-            elements[ elementsadded ].SemanticName = "BINORMAL";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;  
-
-            ++elementsadded;
-            offset += sizeof( hFloat ) * 3;
-        }
-        if ( flags & hrVF_COLOR )
-        {
-            elements[ elementsadded ].SemanticName = "COLOR";
-            elements[ elementsadded ].SemanticIndex = 0;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;  
-
-            ++elementsadded;
-            offset += sizeof( hByte ) * 4;
+            hCRC32::FinishCRC32(fmtID);
         }
 
-        hChar usageoffset = -1;
-        switch( flags & hrVF_UVMASK )
-        {
-        case hrVF_8UV: usageoffset = 8; break;
-        case hrVF_7UV: usageoffset = 7; break;
-        case hrVF_6UV: usageoffset = 6; break;
-        case hrVF_5UV: usageoffset = 5; break;
-        case hrVF_4UV: usageoffset = 4; break;
-        case hrVF_3UV: usageoffset = 3; break;
-        case hrVF_2UV: usageoffset = 2; break;
-        case hrVF_1UV: usageoffset = 1; break;
-        }
-
-        for ( hChar i = 0; i < usageoffset; ++i )
-        {
-            elements[ elementsadded ].SemanticName = "TEXCOORD";
-            elements[ elementsadded ].SemanticIndex = (UINT)i;
-            elements[ elementsadded ].Format = DXGI_FORMAT_R32G32_FLOAT;
-            elements[ elementsadded ].InputSlot = 0;
-            elements[ elementsadded ].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;            
-            elements[ elementsadded ].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;            
-            elements[ elementsadded ].InstanceDataStepRate = 0;  
-
-            ++elementsadded;
-            offset += sizeof( hFloat ) * 2;
-        }
-
-        //TODO:...
-//         switch( flags & hrVF_BLENDMASK )
-//         {
-//         case hrVF_BLEND4: usageoffset = 4; break;
-//         case hrVF_BLEND3: usageoffset = 3; break;
-//         case hrVF_BLEND2: usageoffset = 2; break;
-//         case hrVF_BLEND1: usageoffset = 1; break;
-//         }
-// 
-//         if ( flags & hrVF_BLENDMASK )
-//         {
-//             elements[ elementsadded ].Stream = 0;
-//             elements[ elementsadded ].Offset = offset;
-//             elements[ elementsadded ].Type = D3DDECLTYPE_UBYTE4;
-//             elements[ elementsadded ].Method = D3DDECLMETHOD_DEFAULT;
-//             elements[ elementsadded ].Usage = D3DDECLUSAGE_BLENDINDICES;
-//             elements[ elementsadded ].UsageIndex = 0;
-// 
-//             ++elementsadded;
-//             offset += sizeof( hByte ) * 4;
-// 
-//             for ( BYTE i = 0; i < usageoffset; ++i )
-//             {
-//                 elements[ elementsadded ].Stream = 0;
-//                 elements[ elementsadded ].Offset = offset;
-//                 elements[ elementsadded ].Type = D3DDECLTYPE_FLOAT1;
-//                 elements[ elementsadded ].Method = D3DDECLMETHOD_DEFAULT;
-//                 elements[ elementsadded ].Usage = D3DDECLUSAGE_BLENDWEIGHT;
-//                 elements[ elementsadded ].UsageIndex = i;
-//                 pOffsets[ hrVE_BLEND1 + i ] = offset;
-// 
-//                 ++elementsadded;
-//                 offset += sizeof( hFloat );
-//             }
-//         }
-
-        //set the stride
-        *stride = offset;
         return elementsadded;
     }
 

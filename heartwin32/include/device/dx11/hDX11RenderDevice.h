@@ -62,9 +62,9 @@ namespace Heart
         hUint32                         GetWidth() const { return width_; }
         hUint32                         GetHeight() const { return height_; }
 
-        hUint32                         ComputeVertexLayoutStride( hUint32 vertexlayout );
+        hUint32                         ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         //Resource Create Calls
-        hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hUint32 inputLayout, ShaderType type );
+        hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, ShaderType type );
         void                            DestroyShader( hdDX11ShaderProgram* shaderProg );
         hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, hUint32 count );
         void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
@@ -73,7 +73,7 @@ namespace Heart
         void                            DestroyTexture( hdDX11Texture* texture );
         hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );
         void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
-        hdDX11VertexLayout*             CreateVertexLayout( hUint32 vertexFormat, const void* shaderProg, hUint32 progLen );
+        hdDX11VertexLayout*             CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen);
         void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
         hdDX11VertexBuffer*             CreateVertexBufferDevice( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialData, hUint32 flags );
         void                            DestroyVertexBufferDevice( hdDX11VertexBuffer* indexBuffer );
@@ -95,7 +95,7 @@ namespace Heart
         typedef hMap< hUint32, hdDX11SamplerState >       SamplerStateMapType;
         typedef hMap< hUint32, hdDX11VertexLayout >       VertexLayoutMapType;
 
-        hUint32                     BuildVertexFormatArray( hUint32 vertexFormat, hUint32* stride, D3D11_INPUT_ELEMENT_DESC* elements );
+        hUint32                     BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements);
 
         hdSystemWindow*             sysWindow_;
         hUint64                     frameCounter_;

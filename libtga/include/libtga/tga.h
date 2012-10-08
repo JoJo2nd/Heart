@@ -59,6 +59,7 @@ typedef struct TGADataReaderFuncs
     TGASeekBytes_t  seek_;
     TGAmalloc_t     mallocFunc_;
     TGAfree_t       freeFunc_;
+    void*           mallocUser_;
 } TGADataReaderFuncs_t;
 
 typedef struct TGAImageInfo

@@ -30,7 +30,7 @@
 
 namespace Heart
 {
-	class hVertexDeclaration : public hPtrImpl< hdVtxDecl >
+	class hVertexDeclaration : public hPtrImpl< hdInputLayout >
 	{
 	public:
 		

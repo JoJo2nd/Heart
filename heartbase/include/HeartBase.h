@@ -60,6 +60,8 @@
 
 #include "base/hTypes.h"
 
+#include "base/hStringUtil.h"
+
 #include "base/hMemoryHeapBase.h"
 #include "base/hMemoryDefines.h"
 #include "base/hMemoryUtil.h"
@@ -82,7 +84,6 @@
 #include "base/hMap.h"
 #include "base/hStack.h"
 #include "base/hString.h"
-#include "base/hStringUtil.h"
 #include "base/hUTF8.h"
 #include "base/hRendererConstants.h"
 #include "base/hIBuiltDataCache.h"

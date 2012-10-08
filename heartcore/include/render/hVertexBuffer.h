@@ -40,39 +40,24 @@ namespace Cmd
 	{
 	public:
 
-		hVertexBuffer( hRenderer* prenderer )
-			: renderer_( prenderer )
+		hVertexBuffer( hMemoryHeapBase* heap )
+			: heap_(heap)
 		{}
 		~hVertexBuffer() 
 		{
 		}
 
-// 		void				SetVertexDeclarartion( hVertexDeclaration* pVtxDecl ) { pVtxDecl_ = pVtxDecl; }
-// 		hVertexDeclaration*	GetVertexDeclaration() const { return pVtxDecl_; }
-		void				Lock();
-		void				Unlock();
         hUint32             GetStride() const { return stride_; }
 		hUint32				VertexCount() const { return vtxCount_; }
-		template< typename _Ty >
-		void				SetElement( hUint32 idx, VertexElement element, const _Ty& val )
-		{
-		}
 
 	private:
 
 		friend class hRenderer;
 		friend class VertexBufferBuilder;
 
-		void					Release();
-		void					SetData( hUint32 idx, hUint32 stride, hUint32 offset, void* pData, hUint32 size );
-		void					FlushVertexData( void* dataPtr, hUint32 size );
-
-		hRenderer*				renderer_;
+        hMemoryHeapBase*        heap_;
         hUint32                 stride_;
 		hUint32					vtxCount_;
-		hUint32					vtxBufferSize_;
-		void*					pVtxBuffer_;
-		hByte*					lockPtr_;
 	};
 
     struct hVertexBufferMapInfo

@@ -457,10 +457,10 @@ namespace Heart
         for (hUint32 i = 0; i < materialParameters_.GetSize(); ++i)
         {
             if (hStrCmp(materialParameters_[i].name_, name) == 0)
-                return i;
+                return (hMaterialParameterID)i;
         }
 
-        return hErrorCode;
+        return (hMaterialParameterID)hErrorCode;
     }
 
     //////////////////////////////////////////////////////////////////////////

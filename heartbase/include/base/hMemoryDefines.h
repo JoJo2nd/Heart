@@ -90,22 +90,22 @@ namespace Heart
     #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, s, __FILE__, __LINE__ )
     #define hFree( p ) Heart::GetGlobalHeap()->release( p )
     #define hFreeSafe( p ) Heart::GetGlobalHeap()->release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  h->alignAlloc( s, a, __FILE__, __LINE__ )
-    #define hHeapMalloc( h, s ) h->alignAlloc( s, 16, __FILE__, __LINE__ )
-    #define hHeapRealloc( h, p, s ) h->realloc( p, s, __FILE__, __LINE__ )
-    #define hHeapFree( h, p ) h->release( p )
-    #define hHeapFreeSafe( h, p ) h->release( p ); p = NULL
+    #define hHeapAlignMalloc( h, s, a )  (h)->alignAlloc( s, a, __FILE__, __LINE__ )
+    #define hHeapMalloc( h, s ) (h)->alignAlloc( s, 16, __FILE__, __LINE__ )
+    #define hHeapRealloc( h, p, s ) (h)->realloc( p, s, __FILE__, __LINE__ )
+    #define hHeapFree( h, p ) (h)->release( p )
+    #define hHeapFreeSafe( h, p ) (h)->release( p ); p = NULL
 #else
     #define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alignAlloc( s, a )
     #define hMalloc( s ) hAlignMalloc( s, 16 )
     #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, s )
     #define hFree( p ) Heart::GetGlobalHeap()->release( p )
     #define hFreeSafe( p ) Heart::GetGlobalHeap()->release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  h->alignAlloc( s, a )
-    #define hHeapMalloc( h, s ) h->alignAlloc( s, 16 )
-    #define hHeapRealloc( h, p, s ) h->realloc( p, s )
-    #define hHeapFree( h, p ) h->release( p )
-    #define hHeapFreeSafe( h, p ) h->release( p ); p = NULL
+    #define hHeapAlignMalloc( h, s, a )  (h)->alignAlloc( s, a )
+    #define hHeapMalloc( h, s ) (h)->alignAlloc( s, 16 )
+    #define hHeapRealloc( h, p, s ) (h)->realloc( p, s )
+    #define hHeapFree( h, p ) (h)->release( p )
+    #define hHeapFreeSafe( h, p ) (h)->release( p ); p = NULL
 #endif
 
     /*

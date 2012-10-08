@@ -30,6 +30,11 @@
 
 namespace Heart
 {
+    hFORCEINLINE void hMemSet(void* dest, hByte val, hUint32 size)
+    {
+        memset(dest, val, size);
+    }
+
     hFORCEINLINE void hMemCpy( void* dest, const void* src, hUint32 size )
     {
         memcpy( dest, src, size );

@@ -29,11 +29,28 @@
 
 namespace Heart
 {
+
 namespace hSysCall
 {
     HEARTBASE_SLIBEXPORT
     hUint64 HEART_API GetProcessorSpeed();
 }
+
+namespace hMemTracking
+{
+    HEARTBASE_SLIBEXPORT
+    void HEART_API InitMemTracking();
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackAlloc(const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag);
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackRealloc(const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag);
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackFree(void* heap, void* ptr, const hChar* heaptag);
+}
+
 }
 
 #endif // HSYSCALLS_H__

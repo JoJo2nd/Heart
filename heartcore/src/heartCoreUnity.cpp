@@ -34,6 +34,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "core/hMemoryHeap.cpp"
+#include "core/hStackMemoryHeap.cpp"
 #include "core/hConfigOptions.cpp"
 #include "core/hDriveFile.cpp"
 #include "core/hDriveFileSystem.cpp"

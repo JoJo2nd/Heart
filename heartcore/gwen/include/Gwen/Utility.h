@@ -50,6 +50,15 @@ namespace Gwen
 			return temp;
 		}
 
+        inline void UnicodeToString( const UnicodeString& strIn, String& strOut )
+        {
+            if ( !strIn.length() ) strOut = "";
+
+            //std::use_facet< std::ctype<wchar_t> >(std::locale()). \
+            //	narrow(&strIn[0], &strIn[0]+strIn.length(), ' ', &temp[0]);
+            strOut.assign(strIn.begin(), strIn.end());
+        }
+
 		inline UnicodeString StringToUnicode( const String& strIn )
 		{
 			if ( !strIn.length() ) return L"";

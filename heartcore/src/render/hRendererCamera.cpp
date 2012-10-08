@@ -189,12 +189,12 @@ namespace Heart
 
         for ( hUint32 i = 0; i < setup_.nTargets_; ++i )
         {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.targetFormat_, RESOURCEFLAG_RENDERTARGET, &renderTargets_[i] );
+            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.targetFormat_, RESOURCEFLAG_RENDERTARGET, GetGlobalHeap(), &renderTargets_[i] );
         }
 
         if ( setup_.hasDepthStencil_ )
         {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, &depthTarget_ );
+            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, GetGlobalHeap(), &depthTarget_ );
         }
     }
 

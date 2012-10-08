@@ -99,16 +99,6 @@ namespace Heart
 
         ParentClass::InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
 
-        CreateIndexBuffer( NULL, RenderUtility::GetSphereMeshIndexCount( 16, 8 ), 0, PRIMITIVETYPE_TRILIST, &debugSphereIB_ );
-        CreateVertexBuffer( NULL, RenderUtility::GetSphereMeshVertexCount( 16, 8 ), hrVF_XYZ, 0, &debugSphereVB_ );
-        RenderUtility::BuildSphereMesh( 16, 8, 1.f, &mainSubmissionCtx_,debugSphereIB_, debugSphereVB_ );
-
-        for (hUint32 i =0; i < s_scratchBufferCount; ++i)
-        {
-            CreateIndexBuffer(NULL, 65535, RESOURCEFLAG_DYNAMIC, PRIMITIVETYPE_TRILIST, &volatileIBuffer_[i] );
-            CreateVertexBuffer(NULL, 65535, ~0U, RESOURCEFLAG_DYNAMIC, &volatileVBuffer_[i] );
-        }
-
         //Create viewport/camera for debug drawing
         hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
         hRenderViewportTargetSetup rtDesc;
@@ -188,68 +178,6 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hTexture* hRenderer::OnTextureLoad(hISerialiseStream* dataStream)
-	{
-        hTexture* resource = hNEW(GetGlobalHeap()/*!heap*/, hTexture)(this);
-        hSerialiser ser;
-        ser.Deserialise( dataStream, *resource );
-
-        hMipDesc* dataPtrs = (hMipDesc*)hAlloca(sizeof(hMipDesc)*resource->nLevels_);
-
-        for (hUint32 i = 0; i < resource->nLevels_; ++i)
-        {
-            dataPtrs[i].data   = resource->levelDescs_[i].mipdata_;
-            dataPtrs[i].size   = resource->levelDescs_[i].mipdataSize_;
-            dataPtrs[i].width  = resource->levelDescs_[i].width_;
-            dataPtrs[i].height = resource->levelDescs_[i].height_;
-        }
-
-        hdTexture* dt = ParentClass::CreateTextrue( 
-            resource->levelDescs_[0].width_, 
-            resource->levelDescs_[0].height_, 
-            resource->nLevels_, 
-            resource->format_, 
-            dataPtrs,
-            0 );
-        hcAssert(dt);
-        resource->SetImpl(dt);
-
-        if (!resource->GetKeepCPU())
-        {
-            resource->ReleaseCPUTextureData();
-        }
-
- 		return resource;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::CreateVertexDeclaration( hVertexDeclaration*& pOut, hUint32 vtxFlags )
-	{
-// 		pOut = hNEW ( hRendererHeap ) hVertexDeclaration();
-// 		pOut->SetImpl( hNEW ( hRendererHeap ) hdVtxDecl() );
-// 		pOut->vtxFlags_ = vtxFlags;
-// 
-// 		pImpl()->GetVertexStrideOffset( vtxFlags, pOut->stride_, pOut->elementOffsets_ );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hRenderer::DestroyVertexDeclaration( hVertexDeclaration* pVD )
-	{
-// 		hcAssert( IsRenderThread() );
-// 
-// 		pImpl()->DestroyVertexDeclaration( pVD->pImpl() );
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
 	void hRenderer::DestroyMaterial( hMaterial* pMat )
 	{
 // 		hcAssert( IsRenderThread() );
@@ -270,15 +198,15 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex )
+	void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex )
 	{
         hcAssert(levels > 0);
 
-        (*outTex) = hNEW(GetGlobalHeap()/*!heap*/, hTexture)(this);
+        (*outTex) = hNEW(heap, hTexture)(this, heap);
 
 		(*outTex)->nLevels_ = levels;
 		(*outTex)->format_ = format;
-        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(GetGlobalHeap()/*!heap*/, hTexture::LevelDesc, levels) : NULL;
+        (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(heap, hTexture::LevelDesc, levels) : NULL;
 
 		for (hUint32 i = 0; i < levels; ++i)
 		{
@@ -317,7 +245,7 @@ namespace Heart
 		ParentClass::DestroyTexture(pOut->pImpl());
         pOut->SetImpl(NULL);
 
-        hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
+        hDELETE_SAFE(pOut->heap_, pOut);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -353,13 +281,13 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	void hRenderer::CreateVertexBuffer( void* initData, hUint32 nElements, hUint32 layout, hUint32 flags, hVertexBuffer** outVB )
+	void hRenderer::CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB)
 	{
-        hVertexBuffer* pdata = hNEW(GetGlobalHeap()/*!heap*/, hVertexBuffer)(this);
+        hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
         pdata->vtxCount_ = nElements;
-        pdata->stride_ = ParentClass::ComputeVertexLayoutStride( layout );
+        pdata->stride_ = ParentClass::ComputeVertexLayoutStride( desc, desccount );
 
-        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( layout, nElements*pdata->stride_, initData, flags ) );
+        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( 0/*TODO:Pass in id from ComputeVertexLayoutString*/, nElements*pdata->stride_, initData, flags ) );
 
         *outVB = pdata;
 	}

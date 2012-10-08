@@ -56,9 +56,9 @@ hUint32 ResourceLoadTest::RunUnitTest()
         break;
     case eBeginUnload:
         {
-            //engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
-            //hcPrintf("Unloading package \"UNITTEST\"");
-            //state_ = eExit;
+            engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
+            hcPrintf("Unloading package \"UNITTEST\"");
+            state_ = eExit;
         }
         break;
     case eExit:

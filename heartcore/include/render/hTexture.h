@@ -44,8 +44,9 @@ namespace Cmd
 	{
 	public:
 
-		hTexture( hRenderer* prenderer ) 
-			: renderer_( prenderer )
+		hTexture(hRenderer* prenderer, hMemoryHeapBase* heap) 
+			: heap_(heap)
+            , renderer_( prenderer )
 			, keepcpu_(hFalse)
             , singleAlloc_(hTrue)
             , levelDescs_(NULL)
@@ -54,7 +55,7 @@ namespace Cmd
 		{
             ReleaseCPUTextureData();
 
-            hDELETE_ARRAY_SAFE(GetGlobalHeap()/*!heap*/, levelDescs_);
+            hDELETE_ARRAY_SAFE(heap_, levelDescs_);
 		}
 
         struct LevelDesc
@@ -82,10 +83,10 @@ namespace Cmd
 
         HEART_ALLOW_SERIALISE_FRIEND();
 
-		void					Release();
 		hTexture( const hTexture& c );
 		hTexture& operator = ( const hTexture& rhs );
 
+        hMemoryHeapBase*        heap_;
         hRenderer*				renderer_;
 		hTextureFormat			format_;
 		hUint32					nLevels_;

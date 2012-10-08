@@ -96,8 +96,9 @@ namespace Private
 	{
 	public:
 
-		hFont() 
-            : nTexturePages_(0)
+		hFont(hMemoryHeapBase* heap) 
+            : heap_(heap)
+            , nTexturePages_(0)
             , texturePageResID_(0)
             , texturePages_(0)
             , fontMaterial_(NULL)
@@ -146,6 +147,7 @@ namespace Private
 		void						RenderLine( hUint16** iBuffer, void** vBuffer, hUint16& vOffset, Private::hFontLine& line, hFloat cury, const hCPUVec2& topleft, const hCPUVec2& bottomright, hFloat w, hUint32& charsWritten );
 		hFontCharacter*	            GetFontCharacter( hUint32 charcode );
 
+        hMemoryHeapBase*            heap_;
 	 	hFontStyle					style_;
 	 	hUint32						nTexturePages_;
         hResourceID                 texturePageResID_;

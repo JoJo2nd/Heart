@@ -101,10 +101,19 @@ namespace Heart
         typedef _Ty* TypePtr;
 
 		hVector()
-			: values_( NULL )
+			: heap_(GetGlobalHeap())
+            , values_( NULL )
 			, size_( 0 )
 			, reserve_( 0 )
 		{}
+
+        hVector(hMemoryHeapBase* heap)
+            : heap_(heap)
+            , values_( NULL )
+            , size_( 0 )
+            , reserve_( 0 )
+        {}
+
 		~hVector()
 		{
 			Clear();
@@ -137,7 +146,7 @@ namespace Heart
 			if ( size > reserve_ )
 			{
 				reserve_ = size;
-				values_ = (_Ty*)hRealloc( values_, sizeof(_Ty)*reserve_ );
+				values_ = (_Ty*)hHeapRealloc(heap_, values_, sizeof(_Ty)*reserve_);
 			}
 		}
 
@@ -158,7 +167,7 @@ namespace Heart
 		void Clear() 
 		{
 			Shrink( 0 );
-			hFree( values_ );
+			hHeapFree(heap_, values_);
 			values_ = NULL;
 			reserve_ = 0;
 		}
@@ -204,7 +213,7 @@ namespace Heart
             {
                 reserve_ = hAlign( size, _Granularity );
                 hcAssert( reserve_ >= size );
-                values_ = (_Ty*)hRealloc( values_, sizeof(_Ty)*reserve_ );
+                values_ = (_Ty*)hHeapRealloc(heap_, values_, sizeof(_Ty)*reserve_);
             }
         }
 
@@ -225,9 +234,10 @@ namespace Heart
 			size_ = size;
 		}
 
-        TypePtr	values_;
-		hUint32 size_;
-		hUint32 reserve_;
+        hMemoryHeapBase*    heap_;
+        TypePtr	            values_;
+		hUint32             size_;
+		hUint32             reserve_;
 	};
 
     template< typename _Ty >

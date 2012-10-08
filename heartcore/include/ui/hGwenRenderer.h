@@ -117,8 +117,9 @@ namespace Heart
         hUint32                     textVtxStride_;
         hFont*                      activeFont_;
         hUint32                     charactersLeft_;
-        hScissorRect                 screenRect_;
+        hScissorRect                screenRect_;
         Gwen::Texture*              currentTexture_;
+        Gwen::String                ctext_;
 
         hVertexBuffer*              vtxColourVB_;
         hVertexBuffer*              texturedVB_;
@@ -130,9 +131,6 @@ namespace Heart
         hUint16                     vcStart_;
         hByte*                      tVBPtr_;
         hUint16                     tVBStart_;
-
-        hUint16*                    tmpIB;
-        hByte*                      tmpVB;
 
         hUint32                 vtxCount_;
         hColour                 currentColour_;

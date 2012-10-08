@@ -67,6 +67,13 @@
 #   define HEART_SHARED_LIB_EXT ".dll"
 #endif
 
+#ifdef HEART_DEBUG
+#   ifndef HEART_TRACK_MEMORY_ALLOCS
+#       define HEART_TRACK_MEMORY_ALLOCS
+//#       define HEART_MEMTRACK_FULL_STACKTRACK
+#   endif
+#endif
+
 #ifdef HEART_DLL
 
 #   ifdef HEART_BASE_DLL

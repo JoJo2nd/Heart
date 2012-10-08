@@ -37,27 +37,6 @@ namespace Heart
     hStrCat(outpath, len, file); \
     }
 
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint32 hResourcePackage::AddResourceToPackage(const hChar* resourcePath, hResourceManager* resourceManager)
-    {
-        hUint32 ret = resourceDests_.GetSize();
-
-        return ret;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourcePackage::IsPackageLoaded()
-    {
-        return false;
-    }
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -69,7 +48,9 @@ namespace Heart
         , driveFileSystem_(fileSystem)
         , fileSystem_(fileSystem)
         , currentResource_(NULL)
+        , tempHeap_("ResPackageTempHeap")
         , totalResources_(0)
+        , packageHeap_(NULL)
     {
         hZeroMem(packageName_, sizeof(packageName_));
     }
@@ -80,7 +61,7 @@ namespace Heart
 
     hResourcePackageV2::~hResourcePackageV2()
     {
-        
+        hDELETE_SAFE(GetGlobalHeap(), packageHeap_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -121,6 +102,8 @@ namespace Heart
             return -1;
         }
 
+        tempHeap_.create(0, hTrue);
+
         hChar* xmldata = (hChar*)hHeapMalloc(GetGlobalHeap(), pakDesc->Length()+1);
 
         pakDesc->Read(xmldata, pakDesc->Length());
@@ -129,6 +112,41 @@ namespace Heart
         if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata, GetGlobalHeap()))
         {
             return -1;
+        }
+
+        const hChar* memuse = hXMLGetter(&descXML_).FirstChild("memory").GetAttributeString("alloc", NULL);
+        hUint32 sizeBytes = 0;
+        if (memuse)
+        {
+            // Create stack allocator size
+            if (hStrWildcardMatch("*MB",memuse))
+            {
+                hFloat mbs;
+                hScanf("%fMB", &mbs);
+                sizeBytes = (hUint32)((mbs*(1024.f*1024.f*1024.f))+.5f);
+            }
+            else if (hStrWildcardMatch("*KB",memuse))
+            {
+                hFloat kbs;
+                hScanf("%fMB", &kbs);
+                sizeBytes = (hUint32)((kbs*(1024.f*1024.f))+.5f);
+            }
+            else
+            {
+                sizeBytes = hAtoI(memuse);
+            }
+        }
+
+        if (sizeBytes == 0)
+        {
+            // Create base/normal allocator, useful for debug
+            packageHeap_ = hNEW(GetGlobalHeap(), hMemoryHeap)(packageName_);
+            packageHeap_->create(0, hTrue);
+        }
+        else
+        {
+            packageHeap_ = hNEW(GetGlobalHeap(), hStackMemoryHeap)(GetGlobalHeap());
+            packageHeap_->create(sizeBytes, hTrue);
         }
 
         links_.Reserve(16);
@@ -196,6 +214,7 @@ namespace Heart
             {
                 if (DoPostLoadLink())
                 {
+                    tempHeap_.destroy();
                     packageState_ = State_Ready;
                     ret = hTrue;
                 }
@@ -238,6 +257,7 @@ namespace Heart
 
     void hResourcePackageV2::LoadResourcesState()
     {
+        hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
         if (currentResource_.ToNode())
         {
             //hIFile* file, const hChar* packagePath, const hChar* resName, const hChar* resourcePath, hUint32 parameterHash
@@ -277,7 +297,7 @@ namespace Heart
                             hTimer timer;
                             hcPrintf("Compiling Resource %s", binFilepath);
                             hClock::BeginTimer(timer);
-                            success = (*handler->rawCompiler_)(infile, &dataCache, &paramSet, engine_, &outStream);
+                            success = (*handler->rawCompiler_)(infile, &dataCache, &paramSet, &memAlloc, engine_, &outStream);
                             hClock::EndTimer(timer);
                             if (success)
                             {
@@ -306,9 +326,9 @@ namespace Heart
                 {
                     // Load the binary file
                     hTimer timer;
-                    hcPrintf("Loading %s", binFilepath);
+                    hcPrintf("Loading %s(CRC:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
                     hClock::BeginTimer(timer);
-                    res = (*handler->binLoader_)(&inStream, &paramSet, engine_);
+                    res = (*handler->binLoader_)(&inStream, &paramSet, &memAlloc, engine_);
                     hClock::EndTimer(timer);
                     inStream.Close();
                     hcPrintf("Load Time = %f Secs", timer.ElapsedMS()/1000.0f);
@@ -339,13 +359,14 @@ namespace Heart
 
     hBool hResourcePackageV2::DoPostLoadLink()
     {
+        hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
         hUint32 totallinked = 0;
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             if (!res->GetIsLinked())
             {
-                if ((*handler->packageLink_)(res, engine_))
+                if ((*handler->packageLink_)(res, &memAlloc, engine_))
                 {
                     hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
                     res->SetIsLinked(hTrue);
@@ -364,10 +385,12 @@ namespace Heart
 
     void hResourcePackageV2::DoPreUnloadUnlink()
     {
+        hResourceMemAlloc memAlloc = { packageHeap_, NULL };
+
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            (*handler->packageUnlink_)(res, engine_);
+            (*handler->packageUnlink_)(res, &memAlloc, engine_);
         }
     }
 
@@ -377,11 +400,12 @@ namespace Heart
 
     void hResourcePackageV2::DoUnload()
     {
+        hResourceMemAlloc memAlloc = { packageHeap_, NULL };
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res;)
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             resourceMap_.Erase(res, &next);
-            (*handler->resourceDataUnload_)(res, engine_);
+            (*handler->resourceDataUnload_)(res, &memAlloc, engine_);
             res = next;
         }
     }

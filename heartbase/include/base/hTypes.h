@@ -62,12 +62,6 @@ namespace Heart
 #define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
 #define HEART_ALIGNMENT_END( x )
 
-#ifdef HEART_DEBUG
-    #ifndef HEART_TRACK_MEMORY_ALLOCS
-        #define HEART_TRACK_MEMORY_ALLOCS
-    #endif
-#endif
-
 #if defined (HEART_PLAT_WINDOWS)
     #define HEART_THREAD_LOCAL  __declspec(thread)
 #else
@@ -104,7 +98,7 @@ namespace Heart
 #define	hTrue				(true)
 #define hErrorCode			(~0U)
 
-#define hAlignPower2( x, align ) ( (hUint32)x + (hUint32)align - 1 ) & ~((hUint32)align - 1) )
+#define hAlignPower2( x, align ) ( ( (hUint32)x + (hUint32)align - 1 ) & ~((hUint32)align - 1) )
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )
 #define hAlign( x, align ) ( x + align - (x % align) )
 #define hAlloca( x ) alloca( x )

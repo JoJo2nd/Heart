@@ -8,7 +8,7 @@ project "heartbase"
     defines {"HEART_BASE_DLL"}
     defines {CommonDefines,SharedLibDefines}
     includedirs {HeartIncludeDirs}
-    links {"crypto"}
+    links {"crypto","dbghelp"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

@@ -40,15 +40,15 @@
 extern "C"
 {
     DLL_EXPORT
-        Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::HeartEngine*);
+        Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine*);
     DLL_EXPORT
-        hBool HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput);
+        hBool HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput);
     DLL_EXPORT
-        hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::HeartEngine* engine);
+        hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine);
     DLL_EXPORT
-        void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::HeartEngine* engine);
+        void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine);
     DLL_EXPORT
-        void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::HeartEngine* engine);
+        void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine);
 };
 
 #endif // MATERIALLOADER_H__

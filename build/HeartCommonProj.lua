@@ -31,7 +31,7 @@ ReleaseDefines={"NDEBUG","RELEASE"}
 ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild"}
 --ReleaseOptions={"Symbols"}
 
-PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32"}
+PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32","dbghelp"}
 HeartLibsDebug={
     "heartbase"..DebugSuffix, 
     "heartcore"..DebugSuffix, 

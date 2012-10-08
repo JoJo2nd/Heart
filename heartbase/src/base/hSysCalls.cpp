@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include <dbghelp.h>
+
 namespace Heart
 {
 namespace hSysCall
@@ -58,6 +60,133 @@ namespace hSysCall
         RegQueryValueEx(hKey, "~MHz", NULL, NULL, (LPBYTE) &dwMHz, NULL/*&BufSize*/);
 
         return dwMHz*1000000;
+    }
+}
+
+namespace hMemTracking
+{
+namespace
+{
+    static hBool                    g_open   = hFalse;
+    static _RTL_CRITICAL_SECTION    g_access;
+    static FILE*                    g_file = NULL;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+    static void StackTraceToFile(FILE* f)
+    {
+        unsigned int   i;
+        void         * stack[ 100 ];
+        unsigned short frames;
+        SYMBOL_INFO  * symbol;
+        static HANDLE  process = 0;
+
+        if (!process)
+        {
+            process = GetCurrentProcess();
+
+            SymInitialize( process, NULL, TRUE );
+        }
+
+        frames               = CaptureStackBackTrace( 0, 100, stack, NULL );
+        symbol               = ( SYMBOL_INFO * )hAlloca(sizeof( SYMBOL_INFO ) + 256 * sizeof( char ));
+        symbol->MaxNameLen   = 255;
+        symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
+
+        for( i = 2; i < frames; i++ )
+        {
+#ifdef HEART_PRINT_SYMBOLS
+            SymFromAddr( process, ( DWORD64 )( stack[ i ] ), 0, symbol );
+            fprintf(g_file, "%i: %s - 0x%08X\n", frames - i - 1, symbol->Name, symbol->Address);
+#else
+            fprintf(g_file, "%i: 0x%08X\n", frames - i - 1, stack[i]);
+#endif
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API InitMemTracking()
+    {
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+        InitializeCriticalSection(&g_access);
+        if (g_file == NULL)
+        {
+            if (g_file = fopen("mem_track.txt", "w"))
+            {
+                g_open = hTrue;
+            }
+        }
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackAlloc( const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag )
+    {
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+        if (g_open)
+        {
+            EnterCriticalSection(&g_access);
+            fprintf(g_file, "\\!! ALLOC - 0x%08X\n"
+                "heap: %s (0x%08X) ptr: 0x%08X size: %u file: %s(%u)\n", ptr, heaptag, heap, ptr, size, tag, line);
+#ifdef HEART_MEMTRACK_FULL_STACKTRACK
+            StackTraceToFile(g_file);
+#endif
+            LeaveCriticalSection(&g_access);
+        }
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackRealloc( const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag )
+    {
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+        if (g_open)
+        {
+            EnterCriticalSection(&g_access);
+            fprintf(g_file, "\\!! ALLOC - 0x%08X\n"
+                "heap: %s (0x%08X) ptr: 0x%08X size: %u file: %s(%u)\n", ptr, heaptag, heap, ptr, size, tag, line);
+#ifdef HEART_MEMTRACK_FULL_STACKTRACK
+            StackTraceToFile(g_file);
+#endif
+            LeaveCriticalSection(&g_access);
+        }
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEARTBASE_SLIBEXPORT
+    void HEART_API TrackFree( void* heap, void* ptr, const hChar* heaptag )
+    {
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+        if (g_open)
+        {
+            EnterCriticalSection(&g_access);
+            fprintf(g_file, "\\!! FREE - 0x%08X\n"
+                "heap: %s (0x%08X) ptr: 0x%08X\n", ptr, heaptag, heap, ptr);
+#ifdef HEART_MEMTRACK_FULL_STACKTRACK
+            StackTraceToFile(g_file);
+#endif
+            LeaveCriticalSection(&g_access);
+        }
+#endif
     }
 
 }

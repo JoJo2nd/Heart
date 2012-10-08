@@ -66,6 +66,13 @@ namespace Heart
         virtual void             CloseFile(hIDataCacheFile* file) = 0;
         virtual hBool            IsCacheValid() = 0;
     };
+
+    struct hResourceMemAlloc
+    {
+        hMemoryHeapBase*    resourcePakHeap_;
+        hMemoryHeapBase*    tempHeap_;
+    };
+
 }
 
 #endif // HIBUILTDATACACHE_H__

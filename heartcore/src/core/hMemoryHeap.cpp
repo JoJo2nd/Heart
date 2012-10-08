@@ -25,15 +25,8 @@
 
 *********************************************************************/
 
-
 namespace Heart
 {
-
-#define ALLOC_BREAK_NUM 0 //0 = off
-#define ALLOC_BREAK_HEAP (hGeneralHeap)
-
-hUint32 hMemoryHeap::nHeapsInUse_ = 0;
-hMemoryHeap* hMemoryHeap::pHeaps_[ MAX_HEAPS ] = {0};
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -48,25 +41,13 @@ void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
         mspace_track_large_chunks( localMspace_, true );
         size_ = sizeInBytes;
         alloced_ = 0;
-        debugAlloc_ = 0;
-        allocNum_ = 1;
-
-        hcAssert( nHeapsInUse_ < MAX_HEAPS );
-
-        pHeaps_[ nHeapsInUse_ ] = this;
-        ++nHeapsInUse_;
-
-        useLocks_ = !threadLocal;
-        lastThreadID_ = NULL;
-        trackedAllocs_ = NULL;
 
 #ifdef HEART_TRACK_MEMORY_ALLOCS
-        if ( this != &hDebugHeap )
-        {
-            trackedAllocs_ = hNEW(hDebugHeap, hTackingMapType)(&hDebugHeap);
-        }
-#endif // HEART_TRACK_MEMORY_ALLOCS
+        threadLocal = false;
+#endif
+        initBaseHeap(!threadLocal);
     }
+    hMemoryViewMenu::RegisterMemoryHeap(this);
     lock_.Unlock();
 }
 
@@ -76,16 +57,6 @@ void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
 
 hMemoryHeap::~hMemoryHeap()
 {
-	for ( hUint32 i = 0; i < nHeapsInUse_; ++i )
-	{
-		if ( pHeaps_[ i ] == this )
-		{
-			pHeaps_[ i ] = pHeaps_[ nHeapsInUse_ - 1 ];
-			--nHeapsInUse_;
-			break;
-		}
-	}
-
 	destroy();
 }
 
@@ -95,14 +66,17 @@ hMemoryHeap::~hMemoryHeap()
 
 void hMemoryHeap::destroy()
 {
-	if ( size_ != 0 )
+	if ( localMspace_ != 0 )
 	{
-		PRE_ACTION();
+        hMemoryViewMenu::UnregisterMemoryHeap(this);
+
+		hMH_PRE_ACTION();
 		DWORD r = usage().currBytesReserved_;
 		DWORD f = destroy_mspace( localMspace_ );
-		POST_ACTION();
-		hcAssert( (r - f) == 0 );
-		size_ = 0;
+        size_ = 0;
+        localMspace_ = 0;
+		hMH_POST_ACTION();
+        hcAssert( (r - f) == 0 );
 	}
 }
 
@@ -112,12 +86,12 @@ void hMemoryHeap::destroy()
 
 void* hMemoryHeap::alloc( hUint32 size )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -127,12 +101,12 @@ void* hMemoryHeap::alloc( hUint32 size )
 
 void* hMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC( r, file, line, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -142,15 +116,15 @@ void* hMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
 
 void* hMemoryHeap::realloc( void* ptr, hUint32 size )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
 	alloced_ -= s;
-	RELEASE_TRACK_INFO( ptr, s );
+	hMH_RELEASE_TRACK_INFO( ptr, s );
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -160,15 +134,15 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size )
 
 void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
 	alloced_ -= s;
-	RELEASE_TRACK_INFO( ptr, s );
+	hMH_RELEASE_TRACK_INFO( ptr, s );
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC( r, file, line, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -178,12 +152,12 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 
 
 void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -193,12 +167,12 @@ void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
 
 void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line )
 {
-	PRE_ACTION();
+	hMH_PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
 	alloced_ += s;
-	TRACK_ALLOC( r, file, line, s, allocNum_++ );
-	POST_ACTION();
+	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
+	hMH_POST_ACTION();
 	return r;
 }
 
@@ -210,13 +184,13 @@ void hMemoryHeap::release( void* ptr )
 {
 	if ( ptr != NULL )
 	{	
-		PRE_ACTION();
+		hMH_PRE_ACTION();
         hcAssert( pointerBelongsToMe(ptr) );
 		size_t s = mspace_allocate_size(ptr);
 		alloced_ -= s;
-		RELEASE_TRACK_INFO( ptr, s );
+		hMH_RELEASE_TRACK_INFO( ptr, s );
 		mspace_free( localMspace_, ptr );
-		POST_ACTION();
+		hMH_POST_ACTION();
 	}
 }
 
@@ -226,7 +200,7 @@ void hMemoryHeap::release( void* ptr )
 
 hUint32 hMemoryHeap::bytesAllocated() const
 {
-	Heart::hAtomic::LWMemoryBarrier();
+	hAtomic::LWMemoryBarrier();
 	return alloced_;
 }
 
@@ -237,62 +211,26 @@ hUint32 hMemoryHeap::bytesAllocated() const
 hMemoryHeapBase::HeapInfo hMemoryHeap::usage()
 {
     hMemoryHeapBase::HeapInfo info;
-    PRE_ACTION();
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+    hMH_PRE_ACTION();
     mspace_malloc_stats( localMspace_, &info.peakBytesReserved_, &info.currBytesReserved_, &info.totalBytesAllocated_ );
+    hMemCpy(&info.exData_, &mspace_mallinfo(localMspace_), sizeof(mallinfo));
 
-    POST_ACTION();
+    hMH_POST_ACTION();
+#endif
     return info;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-/*
-mallinfo hMemoryHeap::info()
-{
-    PRE_ACTION();
-    mallinfo m = mspace_mallinfo( localMspace_ );
-    POST_ACTION();
-    return m;
-}
-*/
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
 hBool hMemoryHeap::pointerBelongsToMe( void* ptr )
 {
-    PRE_ACTION();
+    hMH_PRE_ACTION();
     hBool r = mspace_valid_pointer( localMspace_, ptr ) == 1 ? hTrue : hFalse;
-    POST_ACTION();
+    hMH_POST_ACTION();
     return r;
 }
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void hMemoryHeap::printLeaks(const hChar* heapname)
-{
-    PRE_ACTION();
-
-    if (trackedAllocs_)
-    {
-        hUint32 leaks = 0;
-        hcPrintf("Heap %s Report Start--------------------------", heapname);
-        for (hMemTrackingInfo* i = trackedAllocs_->GetHead(); i; i = i->GetNext(), ++leaks)
-        {
-            hcPrintf("//- Memory Leak Detected -------------------------------------------------------------");
-            hcPrintf("%s(%d) : Memory block of %d bytes (Address :: 0x%08X, Alloc # %d) was leaked from here", i->file_, i->line_, i->size_, i->GetKey(), i->allocNum_);
-            hcPrintf("------------------------------------------------------------------------------------//");
-        }
-        hcPrintf("Heap %s Report End (total leaks %d)-----------", heapname, leaks);
-    }
-
-    POST_ACTION();
-}
-
-#undef PRE_ACTION
-#undef POST_ACTION
  
 }

@@ -27,14 +27,6 @@
 
 namespace Heart
 {
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hTexture::Release()
-	{
-	}
-
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -44,7 +36,7 @@ namespace Heart
     {
         if (singleAlloc_)
         {
-            hHeapFree(GetGlobalHeap(), levelDescs_[0].mipdata_);
+            hHeapFree(heap_, levelDescs_[0].mipdata_);
             for (hUint32 i = 0; i < nLevels_; ++i)
             {
                 levelDescs_[i].mipdata_ = NULL;
@@ -54,7 +46,7 @@ namespace Heart
         {
             for (hUint32 i = 0; i < nLevels_; ++i)
             {
-                hDELETE_ARRAY_SAFE(GetGlobalHeap(), levelDescs_[i].mipdata_);
+                hDELETE_ARRAY_SAFE(heap_, levelDescs_[i].mipdata_);
             }
         }
     }

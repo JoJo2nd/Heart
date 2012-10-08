@@ -41,7 +41,7 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect );
+hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::hInputLayoutDesc* output, hUint32 maxOut);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -138,6 +138,7 @@ struct ShaderHeader
     Heart::ShaderType           type;
     hUint32                     vertexLayout;
     hUint32                     shaderBlobSize;
+    hUint32                     inputLayoutElements;
 };
 
 #pragma pack(pop)
@@ -147,26 +148,33 @@ struct ShaderHeader
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::HeartEngine* engine)
+Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine)
 {
     using namespace Heart;
-    hShaderProgram* shaderProg = hNEW(GetGlobalHeap(), hShaderProgram)();
+    hShaderProgram* shaderProg = hNEW(memalloc->resourcePakHeap_, hShaderProgram)();
     ShaderHeader header;
+    hInputLayoutDesc* inLayout = NULL;
     void* tmpShaderBlob = NULL;
 
     inFile->Read(&header, sizeof(ShaderHeader));
 
     hcAssert(header.version == SHADER_VERSION);
 
-    tmpShaderBlob = hHeapMalloc(GetGlobalHeap(), header.shaderBlobSize);
+    if (header.inputLayoutElements)
+    {
+        inLayout = (hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*header.inputLayoutElements);
+        inFile->Read(inLayout, sizeof(hInputLayoutDesc)*header.inputLayoutElements);
+    }
+
+    tmpShaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
     inFile->Read(tmpShaderBlob, header.shaderBlobSize);
 
-    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)tmpShaderBlob, header.shaderBlobSize, header.vertexLayout, header.type);
+    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)tmpShaderBlob, header.shaderBlobSize, inLayout, header.inputLayoutElements, header.type);
     shaderProg->SetImpl(impl);
     shaderProg->SetShaderType(header.type);
     shaderProg->SetVertexLayout(header.vertexLayout);
 
-    hHeapFreeSafe(GetGlobalHeap(), tmpShaderBlob);
+    hHeapFreeSafe(memalloc->tempHeap_, tmpShaderBlob);
 
     return shaderProg;
 }
@@ -176,7 +184,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
 
@@ -208,7 +216,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 
     hChar* sourcedata = NULL;
     hUint32 sourcedatalen = inFile->Lenght();
-    sourcedata = (hChar*)hHeapRealloc(GetGlobalHeap(), sourcedata, sourcedatalen+1);
+    sourcedata = (hChar*)hHeapRealloc(memalloc->tempHeap_, sourcedata, sourcedatalen+1);
     inFile->Read(sourcedata, sourcedatalen);
     sourcedata[sourcedatalen] = 0;
 
@@ -234,11 +242,11 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         hcPrintf("Shader Compile failed! Error Msg :: %s", errors->GetBufferPointer());
         errors->Release();
         errors = NULL;
-        hHeapFreeSafe(GetGlobalHeap(), sourcedata);
+        hHeapFreeSafe(memalloc->tempHeap_, sourcedata);
         return hFalse;
     }
 
-    hHeapFreeSafe(GetGlobalHeap(), sourcedata);
+    hHeapFreeSafe(memalloc->tempHeap_, sourcedata);
 
     ID3D11ShaderReflection* reflect;
     hr = D3DReflect( result->GetBufferPointer(), result->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect );
@@ -253,9 +261,12 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     reflect->GetDesc( &desc );
 
     ShaderHeader header = {0};
+    Heart::hInputLayoutDesc* inLayout = NULL;
     if (progtype == ShaderType_VERTEXPROG)
     {
-        header.vertexLayout = ParseVertexInputFormat(desc, reflect);
+        inLayout = (Heart::hInputLayoutDesc*)hAlloca(sizeof(Heart::hInputLayoutDesc)*desc.InputParameters);
+        header.vertexLayout = 0;
+        header.inputLayoutElements = ParseVertexInputFormat(desc, reflect, inLayout, desc.InputParameters);
     }
 
     header.resHeader.resourceType = SHADER_MAGIC_NUM;
@@ -264,6 +275,10 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     header.shaderBlobSize = result->GetBufferSize();
 
     binoutput->Write(&header, sizeof(header));
+    if (header.inputLayoutElements)
+    {
+        binoutput->Write(inLayout, sizeof(Heart::hInputLayoutDesc)*header.inputLayoutElements);
+    }
     binoutput->Write(result->GetBufferPointer(), result->GetBufferSize());
 
     return hTrue;
@@ -274,7 +289,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
     return hTrue;
 }
@@ -284,7 +299,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::He
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
 
 }
@@ -294,49 +309,112 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::H
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
 {
+    using namespace Heart;
 
+    hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
+    engine->GetRenderer()->DestroyShader(sp->pImpl());
+    sp->SetImpl(NULL);
+    hDELETE(memalloc->resourcePakHeap_, sp);
 }
 
-hUint32 ParseVertexInputFormat( D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect )
+hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::hInputLayoutDesc* output, hUint32 maxOut)
 {
     hUint32 vertexInputLayoutFlags = 0;
-    for ( hUint32 i = 0; i < desc.InputParameters; ++i )
+    for ( hUint32 i = 0; i < desc.InputParameters && i < maxOut; ++i )
     {
         D3D11_SIGNATURE_PARAMETER_DESC inputDesc;
+        Heart::hInputLayoutDesc* vid = output+i;
         reflect->GetInputParameterDesc( i, &inputDesc );
+        const hChar* semantic = NULL;
+        hChar inputStr[4] = {0};
+        hUint32 streamIdx = 0;
+        if (inputDesc.SemanticName[i] == 'i')
+        {
+            inputStr[0] = inputDesc.SemanticName[0];
+            inputStr[1] = inputDesc.SemanticName[1];
+            inputStr[2] = inputDesc.SemanticName[2];
+            streamIdx = Heart::hAtoI(inputStr+1);
+        }
+
+        vid->instanceDataRepeat_ = 0;
         
         if ( Heart::hStrCmp( inputDesc.SemanticName, "POSITION" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_XYZ;
+            vid->semantic_ = Heart::eIS_POSITION;
         }
         else if ( Heart::hStrCmp( inputDesc.SemanticName, "NORMAL" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_NORMAL;
+            vid->semantic_ = Heart::eIS_NORMAL;
         }
         else if ( Heart::hStrCmp( inputDesc.SemanticName, "TANGENT" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_TANGENT;
+            vid->semantic_ = Heart::eIS_TANGENT;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "BINORMAL" ) == 0 )
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "BITANGENT" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_BINORMAL;
+            vid->semantic_ = Heart::eIS_BITANGENT;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "COLOR" ) == 0 ||
-                  Heart::hStrCmp( inputDesc.SemanticName, "COLOR0" ) == 0 )
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "COLOR" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_COLOR;
+            vid->semantic_ = Heart::eIS_COLOUR;
         }
         else if ( Heart::hStrCmp( inputDesc.SemanticName, "TEXCOORD" ) == 0 )
         {
-            vertexInputLayoutFlags |= Heart::hrVF_1UV << inputDesc.SemanticIndex;
+            vid->semantic_ = Heart::eIS_TEXCOORD;
+        }
+        else if ( Heart::hStrCmp( inputDesc.SemanticName, "INSTANCE" ) == 0 )
+        {
+            vid->semantic_ = Heart::eIS_INSTANCE;
+            //TODO: encode this in semantic?
+            vid->instanceDataRepeat_ = 1;
         }
         else
         {
             hcAssertFailMsg( "Unknown input semantic %s for vertex program", inputDesc.SemanticName );
         }
+
+        vid->semIndex_ = inputDesc.SemanticIndex;
+
+        if (inputDesc.ComponentType == D3D10_REGISTER_COMPONENT_FLOAT32)
+        {
+            switch(inputDesc.Mask)
+            {
+            case 0x01: vid->typeFormat_ = Heart::eIF_FLOAT1; break;
+            case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
+            case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
+            case 0x0F: vid->typeFormat_ = Heart::eIF_FLOAT4; break;
+            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            }
+        }
+        else if (inputDesc.ComponentType == D3D10_REGISTER_COMPONENT_UINT32)
+        {
+            //TODO: validate this
+            switch(inputDesc.Mask)
+            {
+            //case 0x01: vid->typeFormat_ = Heart::eIF_FLOAT1; break;
+            //case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
+            //case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
+            case 0x0F: vid->typeFormat_ = Heart::eIF_UBYTE4_UNORM; break;
+            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            }
+        }
+        else if (inputDesc.ComponentType == D3D10_REGISTER_COMPONENT_SINT32)
+        {
+            //TODO: validate this
+            switch(inputDesc.Mask)
+            {
+                //case 0x01: vid->typeFormat_ = Heart::eIF_FLOAT1; break;
+                //case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
+                //case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
+            case 0x0F: vid->typeFormat_ = Heart::eIF_UBYTE4_SNORM; break;
+            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            }
+        }
+
+        vid->inputStream_ = streamIdx;
     }
 
-    return vertexInputLayoutFlags;
+    return desc.InputParameters;
 }
