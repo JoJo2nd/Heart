@@ -94,6 +94,7 @@ public:
 
     struct HeapInfo
     {
+        size_t          allocs_;
         size_t			peakBytesReserved_;
         size_t			currBytesReserved_;
         size_t			totalBytesAllocated_;
@@ -116,7 +117,7 @@ public:
     virtual void*		alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line ) = 0;
     virtual void		release( void* ptr ) = 0;
     virtual HeapInfo	usage() = 0;
-    virtual hUint32     bytesAllocated() const = 0;
+    virtual hUint32     totalAllocationCount() const = 0;
     virtual hBool		pointerBelongsToMe( void* ptr ) = 0;
     const hChar*        getHeapName() const { return name_; }
 

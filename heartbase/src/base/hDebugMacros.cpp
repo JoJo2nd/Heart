@@ -74,8 +74,8 @@ void HEART_API hcOutputStringRaw( const hChar* msg, ... )
 HEARTBASE_SLIBEXPORT
 void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 {
-    static const hUint32 ks = 10;
-	static hChar buffer[ ks*1024 ];
+    const hUint32 ks = 4;
+	hChar buffer[ ks*1024 ];
 	buffer[ (ks*1024)-1 ] = 0;
 	hUint32 len = vsprintf_s( buffer, ks*1024, msg, vargs );
 
@@ -94,6 +94,43 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
     if (g_printcallback)
         g_printcallback(buffer);
 #endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+HEARTBASE_SLIBEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... )
+{
+    va_list marker;
+    va_start( marker, msg );
+    const hUint32 ks = 4;
+    hChar buffer[ ks*1024 ];
+    hUint32 ret = 0;
+
+    buffer[ (ks*1024)-1 ] = 0;
+
+    hUint32 len = vsprintf_s( buffer, ks*1024, msg, marker );
+
+    if ( newline && buffer[ len - 1 ] != '\n' )
+    {
+        buffer[ len ] = '\n';
+        buffer[ len+1 ] =  0;
+    }
+
+#ifdef HEART_PLAT_WINDOWS
+#   ifdef HEART_DEBUG
+    OutputDebugString( buffer );
+#   endif // HEART_DEBUG
+     ret = MessageBox(NULL, buffer, NULL, MB_ABORTRETRYIGNORE);
+     if (ret == IDABORT) ret = 0; // abort
+     else if (ret == IDRETRY) ret = 1; // break to debugger
+     else ret = 2; // ignore
+#endif
+
+    va_end( marker );
+
+    return ret;
 }
 
 //////////////////////////////////////////////////////////////////////////

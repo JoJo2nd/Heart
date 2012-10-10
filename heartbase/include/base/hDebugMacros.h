@@ -16,9 +16,24 @@ HEARTBASE_SLIBEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb
 #define MAX_WARNING_LEVEL ( WARNING_HIGH )
 
 #define hcPrintf				hcOutputString
-#define hcAssert( x )			if ( !(x) ) { hcBreak; }
-#define hcAssertMsg( x, y,...)	if ( !(x) ) { hcPrintf( y, __VA_ARGS__ ); hcBreak; }
-#define hcAssertFailMsg( y, ... ) { hcPrintf( y, __VA_ARGS__ ); hcBreak; }
+#define hcAssert( x )			{ static hBool ignore = hFalse; \
+                                if (!ignore && !(x)) {\
+                                hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: ("#x")", __LINE__);\
+                                if (ret == 0) exit(-1);\
+                                if (ret == 1) hcBreak;\
+                                if (ret == 2) ignore = hTrue; }}
+#define hcAssertMsg( x, y,...)	{ static hBool ignore = hFalse; \
+                                if (!ignore && !(x)) {\
+                                hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: ("#x ")\n" #y, __LINE__, __VA_ARGS__);\
+                                if (ret == 0) exit(-1);\
+                                if (ret == 1) hcBreak;\
+                                if (ret == 2) ignore = hTrue; }}
+#define hcAssertFailMsg( y, ... ) { static hBool ignore = hFalse; \
+                                    if (!ignore) {\
+                                    hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: " #y, __LINE__, __VA_ARGS__);\
+                                    if (ret == 0) exit(-1);\
+                                    if (ret == 1) hcBreak;\
+                                    if (ret == 2) ignore = hTrue; }}
 #define hcCompileTimeAssert( expr, msg ) { char unnamed[(expr) ? 1 : 0]; }
 
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
@@ -28,6 +43,7 @@ HEARTBASE_SLIBEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb
 
 HEARTBASE_SLIBEXPORT void HEART_API hcOutputStringRaw( const hChar* msg, ... );
 HEARTBASE_SLIBEXPORT void HEART_API hcOutputString( const hChar* msg, ... );
+HEARTBASE_SLIBEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... );
 
 #define hcBreak					__asm { int 3 } 
 

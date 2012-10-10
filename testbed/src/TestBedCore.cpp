@@ -14,6 +14,7 @@
 #include "ListTest.h"
 #include "ResourceLoadTest.h"
 #include "JobManagerTest.h"
+#include "ModelRenderTest.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -28,6 +29,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
         REGISTER_UNIT_TEST(MapTest)
         REGISTER_UNIT_TEST(JobManagerTest)
         REGISTER_UNIT_TEST(ResourceLoadTest)
+        REGISTER_UNIT_TEST(ModelRenderTest)
     };
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

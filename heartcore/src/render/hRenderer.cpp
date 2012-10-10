@@ -99,13 +99,18 @@ namespace Heart
 
         ParentClass::InitialiseMainRenderSubmissionCtx( &mainSubmissionCtx_.impl_ );
 
+        for (hUint32 i = 0; i < HEART_MAX_RENDER_CAMERAS; ++i)
+        {
+            GetRenderCamera(i)->Initialise(this);
+        }
+
         //Create viewport/camera for debug drawing
         hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
         hRenderViewportTargetSetup rtDesc;
         rtDesc.nTargets_ = 0;
         rtDesc.width_ = GetWidth();
         rtDesc.height_ = GetHeight();
-        rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8;
+        rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8_sRGB;
         rtDesc.hasDepthStencil_ = hFalse;
         rtDesc.depthFormat_ = Heart::TFORMAT_D24S8F;
 
@@ -115,7 +120,6 @@ namespace Heart
         vp.width_ = GetWidth();
         vp.height_ = GetHeight();
 
-        camera->Initialise(this);
         camera->SetRenderTargetSetup(rtDesc);
         camera->SetFieldOfView( 45.f );
         camera->SetOrthoParams(0 ,0, GetWidth(), GetHeight(), 0.1f, 100.f);

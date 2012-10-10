@@ -71,6 +71,8 @@ void hMemoryHeap::destroy()
         hMemoryViewMenu::UnregisterMemoryHeap(this);
 
 		hMH_PRE_ACTION();
+        mallinfo mi = mspace_mallinfo(localMspace_);
+        hcAssertMsg(alloced_ == 72, "Something to test something else");
 		DWORD r = usage().currBytesReserved_;
 		DWORD f = destroy_mspace( localMspace_ );
         size_ = 0;
@@ -89,7 +91,7 @@ void* hMemoryHeap::alloc( hUint32 size )
 	hMH_PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
-	alloced_ += s;
+	++alloced_;
 	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -104,7 +106,7 @@ void* hMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
 	hMH_PRE_ACTION();
 	void* r = mspace_malloc( localMspace_, size );
 	size_t s = mspace_allocate_size( r );
-	alloced_ += s;
+	++alloced_;
 	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -118,11 +120,13 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size )
 {
 	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
-	alloced_ -= s;
 	hMH_RELEASE_TRACK_INFO( ptr, s );
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
-	alloced_ += s;
+    if (ptr == 0)
+    {
+        ++alloced_;
+    }
 	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -136,11 +140,13 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 
 {
 	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
-	alloced_ -= s;
 	hMH_RELEASE_TRACK_INFO( ptr, s );
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
-	alloced_ += s;
+    if (ptr == 0)
+    {
+        ++alloced_;
+    }
 	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -155,7 +161,7 @@ void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
 	hMH_PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
-	alloced_ += s;
+	++alloced_;
 	hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -170,7 +176,7 @@ void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment, const hChar* fil
 	hMH_PRE_ACTION();
 	void* r = mspace_memalign( localMspace_, alignment, size );
 	size_t s = mspace_allocate_size( r );
-	alloced_ += s;
+	++alloced_;
 	hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
 	hMH_POST_ACTION();
 	return r;
@@ -187,7 +193,7 @@ void hMemoryHeap::release( void* ptr )
 		hMH_PRE_ACTION();
         hcAssert( pointerBelongsToMe(ptr) );
 		size_t s = mspace_allocate_size(ptr);
-		alloced_ -= s;
+		--alloced_;
 		hMH_RELEASE_TRACK_INFO( ptr, s );
 		mspace_free( localMspace_, ptr );
 		hMH_POST_ACTION();
@@ -198,7 +204,7 @@ void hMemoryHeap::release( void* ptr )
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-hUint32 hMemoryHeap::bytesAllocated() const
+hUint32 hMemoryHeap::totalAllocationCount() const
 {
 	hAtomic::LWMemoryBarrier();
 	return alloced_;
@@ -213,6 +219,7 @@ hMemoryHeapBase::HeapInfo hMemoryHeap::usage()
     hMemoryHeapBase::HeapInfo info;
 #ifdef HEART_TRACK_MEMORY_ALLOCS
     hMH_PRE_ACTION();
+    info.allocs_ = alloced_;
     mspace_malloc_stats( localMspace_, &info.peakBytesReserved_, &info.currBytesReserved_, &info.totalBytesAllocated_ );
     hMemCpy(&info.exData_, &mspace_mallinfo(localMspace_), sizeof(mallinfo));
 

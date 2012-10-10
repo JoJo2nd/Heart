@@ -180,7 +180,9 @@ namespace Heart
 
     void hRendererCamera::SetRenderTargetSetup( const hRenderViewportTargetSetup& desc )
     {
-        hcAssertMsg( renderer_, "Call DefaultState first!" );
+        hcAssertMsg( renderer_, "Call Initialise first!" );
+
+        ReleaseRenderTargetSetup();
 
         setup_ = desc;
         hcAssert( setup_.nTargets_ < MAX_TARGETS );
@@ -195,6 +197,27 @@ namespace Heart
         if ( setup_.hasDepthStencil_ )
         {
             renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, GetGlobalHeap(), &depthTarget_ );
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRendererCamera::ReleaseRenderTargetSetup()
+    {
+        for (hUint32 i = 0; i < MAX_TARGETS; ++i)
+        {
+            if (renderTargets_[i])
+            {
+                renderer_->DestroyTexture(renderTargets_[i]);
+                renderTargets_[i] = NULL;
+            }
+        }
+        if (depthTarget_)
+        {
+            renderer_->DestroyTexture(depthTarget_);
+            depthTarget_ = NULL;
         }
     }
 

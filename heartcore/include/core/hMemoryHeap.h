@@ -53,7 +53,7 @@ namespace Heart
 	    void*		alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line );
 	    void		release( void* ptr );
         hMemoryHeapBase::HeapInfo	usage();
-        hUint32     bytesAllocated() const;
+        hUint32     totalAllocationCount() const;
 	    hBool		pointerBelongsToMe( void* ptr );
         void        printLeaks(const hChar* heapname);
 

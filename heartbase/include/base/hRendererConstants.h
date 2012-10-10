@@ -114,6 +114,7 @@ namespace Heart
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2     (HEART_MAX_CONSTANT_BLOCKS-4)
 #define HEART_MIN_RESERVED_CONSTANT_BLOCK               (HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2)
 #define HEART_MAX_INPUT_STREAMS                         (15)
+#define HEART_MAX_RENDER_CAMERAS                        (15)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );

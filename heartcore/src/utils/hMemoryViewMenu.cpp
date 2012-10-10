@@ -110,11 +110,12 @@ namespace Heart
             }
 
             info = (*heapArray_)[i].heap->usage();
-            fMB = (hFloat)info.totalBytesAllocated_/(1024.f*1024.f);
-            hStrPrintf(labelStr, 2048, "%s: %fMB (%u bytes, %u peak, %u non-mmap, %u mmap, %u free chunks, %u free space)", 
+            fMB = (hFloat)info.exData_.uordblks/(1024.f*1024.f);
+            hStrPrintf(labelStr, 2048, "%s: %fMB in %u allocations (%u bytes, %u peak, %u non-mmap, %u mmap, %u free chunks, %u free space)", 
                 (*heapArray_)[i].heap->getHeapName(),
                 fMB, 
-                info.totalBytesAllocated_,
+                info.allocs_,
+                info.exData_.uordblks,
                 info.peakBytesReserved_,
                 info.exData_.arena,
                 info.exData_.hblkhd,

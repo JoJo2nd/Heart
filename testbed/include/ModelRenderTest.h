@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	ResourceLoadTest.h	
+	filename: 	ModelRenderTest.h	
 	
-	Copyright (c) 3:12:2011 James Moran
+	Copyright (c) 10:10:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -25,22 +25,25 @@
 
 *********************************************************************/
 
-#ifndef RESOURCELOADTEST_H__
-#define RESOURCELOADTEST_H__
+#pragma once
+
+#ifndef MODELRENDERTEST_H__
+#define MODELRENDERTEST_H__
 
 #include "Heart.h"
 #include "UnitTestFactory.h"
 
-class ResourceLoadTest : public IUnitTest
+class ModelRenderTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-    ResourceLoadTest(Heart::HeartEngine* engine) 
+    ModelRenderTest(Heart::HeartEngine* engine) 
         : IUnitTest( engine )
         , state_(eBeginLoad)
+        , renderModel_(NULL)
     {
     }
-    ~ResourceLoadTest() {}
+    ~ModelRenderTest() {}
 
     hUint32				RunUnitTest();
 
@@ -50,13 +53,18 @@ private:
     {
         eBeginLoad,
         eLoading,
-        eWait,
+        eRender,
         eBeginUnload,
         eExit,
     };
 
-    State       state_;
-    hFloat      timer_;
+    void        CreateRenderResources();
+    void        DestroyRenderResources();
+
+    State                   state_;
+    hFloat                  timer_;
+    Heart::hRenderModel*    renderModel_;
+
 };
 
-#endif // RESOURCELOADTEST_H__
+#endif // MODELRENDERTEST_H__

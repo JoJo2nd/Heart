@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	ResourceLoadTest.cpp	
+	filename: 	ModelRenderTest.cpp	
 	
-	Copyright (c) 3:12:2011 James Moran
+	Copyright (c) 10:10:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -25,16 +25,16 @@
 
 *********************************************************************/
 
-#include "ResourceLoadTest.h"
+#include "ModelRenderTest.h"
 #include "Gwen/UnitTest/UnitTest.h"
 
-DEFINE_HEART_UNIT_TEST(ResourceLoadTest);
+DEFINE_HEART_UNIT_TEST(ModelRenderTest);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ResourceLoadTest::RunUnitTest()
+hUint32 ModelRenderTest::RunUnitTest()
 {
     switch(state_)
     {
@@ -50,15 +50,16 @@ hUint32 ResourceLoadTest::RunUnitTest()
             if (engine_->GetResourceManager()->mtIsPackageLoaded("UNITTEST"))
             {
                 hcPrintf("Loaded package \"UNITTEST\"");
-                state_ = eWait;
+                state_ = eRender;
                 timer_ = 0.f;
+                CreateRenderResources();
             }
         }
         break;
-    case eWait:
+    case eRender:
         {
             timer_ += Heart::hClock::Delta();
-            if (timer_ > 10.f)
+            if (timer_ > 30.f)
             {
                 state_ = eBeginUnload;
             }
@@ -66,6 +67,7 @@ hUint32 ResourceLoadTest::RunUnitTest()
         break;
     case eBeginUnload:
         {
+            DestroyRenderResources();
             engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
             hcPrintf("Unloading package \"UNITTEST\"");
             state_ = eExit;
@@ -80,4 +82,55 @@ hUint32 ResourceLoadTest::RunUnitTest()
     }
 
     return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ModelRenderTest::CreateRenderResources()
+{
+    using namespace Heart;
+    hRenderer* renderer = engine_->GetRenderer();
+    hRendererCamera* camera = renderer->GetRenderCamera(0);
+    hUint32 w = renderer->GetWidth();
+    hUint32 h = renderer->GetHeight();
+    hFloat aspect = (hFloat)w/(hFloat)h;
+    hRenderViewportTargetSetup rtDesc;
+    rtDesc.nTargets_ = 0;
+    rtDesc.width_ = w;
+    rtDesc.height_ = h;
+    rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8_sRGB;
+    rtDesc.hasDepthStencil_ = hFalse;
+    rtDesc.depthFormat_ = Heart::TFORMAT_D24S8F;
+
+    hViewport vp;
+    vp.x_ = 0;
+    vp.y_ = 0;
+    vp.width_ = w;
+    vp.height_ = h;
+
+    camera->SetRenderTargetSetup(rtDesc);
+    camera->SetFieldOfView(45.f);
+    camera->SetProjectionParams( aspect, 0.1f, 100.f);
+    camera->SetViewMatrix(Heart::hMatrixFunc::identity());
+    camera->SetViewport(vp);
+    camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+
+    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("UNITTEST.BOCO"));
+
+    hcAssert(renderModel_);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ModelRenderTest::DestroyRenderResources()
+{
+    using namespace Heart;
+    hRenderer* renderer = engine_->GetRenderer();
+    hRendererCamera* camera = renderer->GetRenderCamera(0);
+
+    camera->ReleaseRenderTargetSetup();
 }

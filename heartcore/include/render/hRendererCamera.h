@@ -72,6 +72,7 @@ namespace Heart
         void                        SetTechniquePass( const hRenderTechniqueInfo* tech ) { validTechnique_ = tech; }
         hUint32                     GetTechniqueMask() const { return validTechnique_ ? validTechnique_->mask_ : 0; }        
         void                        SetRenderTargetSetup( const hRenderViewportTargetSetup& desc );
+        void                        ReleaseRenderTargetSetup();
         hTexture*                   GetRenderTarget( hUint32 idx ) const { return renderTargets_[idx]; }
         hTexture*                   GetDepthTarget() const { return depthTarget_; }
         hViewportShaderConstants*   GetViewportConstants() { return viewportConstants_; }
