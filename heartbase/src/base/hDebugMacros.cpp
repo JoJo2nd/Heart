@@ -112,7 +112,7 @@ HEARTBASE_SLIBEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... )
 
     hUint32 len = vsprintf_s( buffer, ks*1024, msg, marker );
 
-    if ( newline && buffer[ len - 1 ] != '\n' )
+    if ( buffer[ len - 1 ] != '\n' )
     {
         buffer[ len ] = '\n';
         buffer[ len+1 ] =  0;
@@ -122,7 +122,7 @@ HEARTBASE_SLIBEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... )
 #   ifdef HEART_DEBUG
     OutputDebugString( buffer );
 #   endif // HEART_DEBUG
-     ret = MessageBox(NULL, buffer, NULL, MB_ABORTRETRYIGNORE);
+     ret = MessageBox(NULL, buffer, "ASSERT FAILED!", MB_ABORTRETRYIGNORE);
      if (ret == IDABORT) ret = 0; // abort
      else if (ret == IDRETRY) ret = 1; // break to debugger
      else ret = 2; // ignore
