@@ -46,6 +46,7 @@ namespace Heart
             , nPrimatives_(0)
             , material_(NULL)
             , materialInstance_(NULL)
+            , vtxStreams_(0)
         {
             hZeroMem(vertexBuffer_, sizeof(hVertexBuffer)*HEART_MAX_INPUT_STREAMS);
         }
@@ -59,7 +60,13 @@ namespace Heart
         }
 
         hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < HEART_MAX_INPUT_STREAMS); return vertexBuffer_[stream]; }
-        void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) { hcAssert(stream < HEART_MAX_INPUT_STREAMS); vertexBuffer_[stream] = vtx;}
+        hUint32                                 GetVertexStreams() const { return vtxStreams_; }
+        void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) 
+        {
+            hcAssert(stream < HEART_MAX_INPUT_STREAMS); 
+            vtxStreams_ = hMax(vtxStreams_,stream); 
+            vertexBuffer_[stream] = vtx;
+        }
         hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
         void                                    SetIndexBuffer(hIndexBuffer* idx) {indexBuffer_ = idx;}
         PrimitiveType                           GetPrimativeType() const { return primType_; }
@@ -69,19 +76,22 @@ namespace Heart
         hUint32									GetPrimativeCount() const { return nPrimatives_; }
         void                                    SetPrimativeCount(hUint32 primCount) { nPrimatives_ = primCount; }
         void                                    SetMaterial(hMaterial* material) { material_ = material; }
-        hMaterialInstance*                      GetMaterialInstance();
+        hMaterialInstance*                      GetMaterialInstance() const { return materialInstance_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
     
     private:
 
+        //Store this info in hDrawCall
+        Heart::hDrawCall        drawItem_;
         hIndexBuffer*           indexBuffer_;
         PrimitiveType           primType_;
         hUint32                 startIndex_;
         hUint32                 nPrimatives_;
         hMaterial*              material_;
-        hMaterialInstance*      materialInstance_;
+        hMaterialInstance*      materialInstance_;//Should we sort material key here
         Heart::hAABB            aabb_;
+        hUint32                 vtxStreams_;
         hVertexBuffer*          vertexBuffer_[HEART_MAX_INPUT_STREAMS];
     };
 }

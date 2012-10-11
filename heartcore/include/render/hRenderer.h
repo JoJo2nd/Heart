@@ -84,31 +84,27 @@ namespace Heart
         hUint16 flags_;
     };
 
+    typedef void (*hCustomRenderCallback)(hRenderer*, void*);
+
     struct HEARTCORE_SLIBEXPORT hDrawCall
     {
-        hUint64             sortKey_;
-        union
-        {
-            struct  
-            {
-                hVertexBuffer*      vertexBuffer_;
-                hIndexBuffer*       indexBuffer_;
+        static const hUint32    MAX_VERT_STREAMS = 5;
+        hUint64                 sortKey_;
+        union {
+            struct {
+                hVertexBuffer*          vertexBuffer_[MAX_VERT_STREAMS];
+                hIndexBuffer*           indexBuffer_;        
+                hMaterialInstance*      matInstance_;
+                hUint16                 primCount_;
+                hUint16                 startVertex_;
+                hScissorRect            scissor_;           // TODO: remove, is support for UI rendering.
+                PrimitiveType           primType_ : 4;
             };
-            struct  
-            {
-                hByte*      imIBBuffer_;
-                hUint32     ibSize_;
-                hByte*      imVBBuffer_;
-                hUint32     vbSize_;
+            struct {
+                hCustomRenderCallback   customCall_;
+                void*                   userPtr_;
             };
-        };            
-        hMaterialInstance*      matInstance_;
-        hUint16                 primCount_;
-        hUint16                 startVertex_;
-        hUint16                 stride_;
-        hScissorRect            scissor_;
-        PrimitiveType           primType_ : 4;
-        hBool                   immediate_ : 1;
+        };
     };
 
 	class HEARTCORE_SLIBEXPORT hRenderer : public hdRenderDevice

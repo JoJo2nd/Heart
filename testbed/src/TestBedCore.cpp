@@ -107,9 +107,9 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 
 	void TestBedCore::EngineRenderTick( hFloat delta, Heart::HeartEngine* pEngine )
 	{
-		if ( currentTest_ )
+		if ( currentTest_ && currentTest_->GetCanRender() )
 		{
-			//currentTest_->Render();
+			currentTest_->RenderUnitTest();
 		}
 	}
 

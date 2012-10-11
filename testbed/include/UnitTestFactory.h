@@ -40,6 +40,7 @@
         IUnitTest(Heart::HeartEngine* engine) 
             : exitCode_(UNIT_TEST_EXIT_CODE_RUNNING)
             , engine_(engine)
+            , canRender_(hFalse)
         {
 
         }
@@ -47,17 +48,21 @@
 
         virtual void        BeginUnitTest() {};
         virtual hUint32     RunUnitTest() = 0;
+        virtual void        RenderUnitTest() {};
         virtual void        ForceExitTest() {};
-        hUint32             GetExitCode() { return exitCode_; }
+        hUint32             GetExitCode() const { return exitCode_; }
+        hBool               GetCanRender() const { return canRender_; }
     protected:
         
         void                SetExitCode(hUint32 ecode) { exitCode_ = ecode; }
+        void                SetCanRender(hBool val) { canRender_ = val; }
 
         Heart::HeartEngine* engine_;
 
     private:
 
         hUint32             exitCode_;
+        hBool               canRender_;
     };
 
 #define DECLARE_HEART_UNIT_TEST() public:\

@@ -46,7 +46,12 @@ namespace Heart
         hRenderModel() {}
         ~hRenderModel() {}
     
-        hGeomLODLevel*  GetLODLevel( hFloat dist );
+        hGeomLODLevel*  GetLODLevel( hFloat dist )
+        {
+            for (hUint32 i = 0; i < levelCount_; ++i)
+                if (dist < lodLevels_[i].minRange_) return &lodLevels_[i];
+            return NULL;
+        }
         hAABB           GetBounds() const { return totalBounds_; }
         hUint32         GetLODCount() const { return levelCount_; }
         void            SetLODCount(hUint32 val) { levelCount_ = val; }

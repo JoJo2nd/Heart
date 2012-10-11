@@ -56,15 +56,11 @@ namespace Heart
                             hFloat vsDepth = 0.f,
                             hUint32 startVtx = 0, 
                             PrimitiveType type = PRIMITIVETYPE_TRILIST);
-        void SubmitDrawCallInline(hMaterialInstance* mat, 
-                                  hByte* ibOut, hUint32 ibSize,
-                                  hByte* vbOut, hUint32 vbSize,
-                                  hUint16 primCount, 
-                                  hUint16 stride,
-                                  hBool transparent = hFalse,
-                                  hFloat vsDepth = 0.f,
-                                  PrimitiveType type = PRIMITIVETYPE_TRILIST);
-        void SubmitDrawCall(const hDrawCall& dc);
+        void SubmitDrawCall(const hDrawCall& dc)
+        {
+            if (calls_ == MAX_DC) Flush();
+            dcs_[calls_++] = dc;
+        }
         /*
          * A map lasts the course of a frame. Resoruces are updated from the returned 
          * pointer just before the submit at the end of a frame.
@@ -75,7 +71,7 @@ namespace Heart
 
     private:
 
-        void Submit();
+        void Flush();
 
         static const hUint32            MAX_DC = 32;
 

@@ -72,7 +72,7 @@ void hMemoryHeap::destroy()
 
 		hMH_PRE_ACTION();
         mallinfo mi = mspace_mallinfo(localMspace_);
-        hcAssertMsg(alloced_ == 72, "Something to test something else");
+        hcAssertMsg(alloced_ == 0, "%u allocation(s) have not been released from heap %s", alloced_, getHeapName());
 		DWORD r = usage().currBytesReserved_;
 		DWORD f = destroy_mspace( localMspace_ );
         size_ = 0;

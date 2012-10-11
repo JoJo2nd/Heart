@@ -53,6 +53,7 @@ hUint32 ModelRenderTest::RunUnitTest()
                 state_ = eRender;
                 timer_ = 0.f;
                 CreateRenderResources();
+                SetCanRender(hTrue);
             }
         }
         break;
@@ -67,6 +68,7 @@ hUint32 ModelRenderTest::RunUnitTest()
         break;
     case eBeginUnload:
         {
+            SetCanRender(hFalse);
             DestroyRenderResources();
             engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
             hcPrintf("Unloading package \"UNITTEST\"");
@@ -83,6 +85,39 @@ hUint32 ModelRenderTest::RunUnitTest()
 
     return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ModelRenderTest::RenderUnitTest()
+{
+    Heart::hRenderer* renderer = engine_->GetRenderer();
+    Heart::hGeomLODLevel* lod = renderModel_->GetLODLevel(0.f);
+    hUint32 lodobjects = lod->renderObjects_.GetSize();
+
+    drawCtx_.Begin(renderer);
+
+    for (hUint32 i = 0; i < lodobjects; ++i)
+    {
+        // Should a renderable simply store a draw call?
+        Heart::hRenderable* renderable = &lod->renderObjects_[i];
+        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialInstance()->GetMatKey(), 0);
+        drawCall_.indexBuffer_ = renderable->GetIndexBuffer();
+        for (hUint32 vs = 0; vs < Heart::hDrawCall::MAX_VERT_STREAMS; ++vs)
+        {
+            drawCall_.vertexBuffer_[vs] = renderable->GetVertexBuffer(vs);
+        }
+        drawCall_.matInstance_ = renderable->GetMaterialInstance();
+        drawCall_.primType_ = renderable->GetPrimativeType();
+        drawCall_.startVertex_ = renderable->GetStartIndex();
+        drawCall_.primCount_ = renderable->GetPrimativeCount();
+
+        drawCtx_.SubmitDrawCall(drawCall_);
+    }
+    drawCtx_.End();
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

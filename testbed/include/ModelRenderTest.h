@@ -46,6 +46,7 @@ public:
     ~ModelRenderTest() {}
 
     hUint32				RunUnitTest();
+    void                RenderUnitTest();
 
 private:
 
@@ -64,6 +65,8 @@ private:
     State                   state_;
     hFloat                  timer_;
     Heart::hRenderModel*    renderModel_;
+    Heart::hDrawCall        drawCall_;
+    Heart::hDrawCallContext drawCtx_;
 
 };
 

@@ -524,10 +524,10 @@ namespace Heart
             }
 
             hIndexBuffer* ib  = dcall->indexBuffer_;
-            hVertexBuffer* vb = dcall->vertexBuffer_;
+            hVertexBuffer* vb = dcall->vertexBuffer_[0];
 
             mainSubmissionCtx_.SetPrimitiveType(dcall->primType_);
-            mainSubmissionCtx_.SetVertexStream(0, vb, dcall->stride_);
+            mainSubmissionCtx_.SetVertexStream(0, vb, vb->GetStride());
             if (dcall->indexBuffer_ == NULL)
             {
                 mainSubmissionCtx_.DrawPrimitive(dcall->primCount_, dcall->startVertex_);

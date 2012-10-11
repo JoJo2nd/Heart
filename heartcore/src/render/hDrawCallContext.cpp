@@ -53,51 +53,21 @@ namespace Heart
                                            hUint32 startVtx /*= 0*/, 
                                            PrimitiveType type /*= PRIMITIVETYPE_TRILIST*/ )
     {
-        if (calls_ == MAX_DC) Submit();
-        //TODO: support passes by looping here
+        if (calls_ == MAX_DC) Flush();
+        //TODO: support passes by looping here?
         hDrawCall* dc = &dcs_[calls_++];
         dc->sortKey_        = hBuildRenderSortKey(camID_, layerID_, transparent, vsDepth, mat->GetMatKey(), 0);
         dc->matInstance_    = mat;
         dc->indexBuffer_    = ib;
-        dc->vertexBuffer_   = vb;
+        dc->vertexBuffer_[0] = vb;
+        dc->vertexBuffer_[1] = NULL;
+        dc->vertexBuffer_[2] = NULL;
+        dc->vertexBuffer_[3] = NULL;
+        dc->vertexBuffer_[4] = NULL;
         dc->scissor_        = scissor_;
         dc->primCount_      = primCount;
         dc->startVertex_    = startVtx;
-        dc->stride_         = vb->GetStride();
         dc->primType_       = type;
-        dc->immediate_      = hFalse;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDrawCallContext::SubmitDrawCallInline( hMaterialInstance* mat, 
-                                                 hByte* ibOut, hUint32 ibSize,
-                                                 hByte* vbOut, hUint32 vbSize,
-                                                 hUint16 primCount, 
-                                                 hUint16 stride,
-                                                 hBool transparent /*= hFalse*/,
-                                                 hFloat vsDepth /*= 0.f*/,
-                                                 PrimitiveType type /*= PRIMITIVETYPE_TRILIST*/ )
-    {
-        if (calls_ == MAX_DC) Submit();
-        hDrawCall* dc = &dcs_[calls_++];
-        dc->sortKey_        = hBuildRenderSortKey(camID_, layerID_, transparent, vsDepth, mat->GetMatKey(), 0);
-        dc->matInstance_    = mat;
-        dc->imIBBuffer_     = (hByte*)renderer_->AllocTempRenderMemory(ibSize);
-        dc->ibSize_         = ibSize;
-        dc->imVBBuffer_     = (hByte*)renderer_->AllocTempRenderMemory(vbSize);
-        dc->vbSize_         = vbSize;
-        dc->primCount_      = primCount;
-        dc->startVertex_    = 0;
-        dc->scissor_        = scissor_;
-        dc->stride_         = stride;
-        dc->primType_       = type;
-        dc->immediate_      = hTrue;
-
-        if (ibOut) hMemCpy(dc->imIBBuffer_, ibOut, ibSize);
-        hMemCpy(dc->imVBBuffer_, vbOut, vbSize);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -106,7 +76,7 @@ namespace Heart
 
     void hDrawCallContext::End()
     {
-        Submit();
+        Flush();
         renderer_ = NULL;
         calls_ = 0;
     }
@@ -115,7 +85,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDrawCallContext::Submit()
+    void hDrawCallContext::Flush()
     {
         if (calls_)
             renderer_->SubmitDrawCallBlock(dcs_.GetBuffer(), calls_);
