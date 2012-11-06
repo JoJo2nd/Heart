@@ -36,63 +36,59 @@ namespace Heart
     // A Renderable simply describes a collection of triangles that can be ///
     // rendered by the renderer along with a material. ///////////////////////
     //////////////////////////////////////////////////////////////////////////
-    class hRenderable
+    class HEARTCORE_SLIBEXPORT hRenderable
     {
     public:
 
         hRenderable() 
-            : indexBuffer_(NULL)
-            , primType_(PRIMITIVETYPE_TRILIST)
-            , nPrimatives_(0)
+            : materialID_(0)
+            , materialKey_(0)
             , material_(NULL)
             , materialInstance_(NULL)
             , vtxStreams_(0)
         {
-            hZeroMem(vertexBuffer_, sizeof(hVertexBuffer)*HEART_MAX_INPUT_STREAMS);
         }
         virtual ~hRenderable() 
         {
             if (material_)
             {
                 material_->DestroyMaterialInstance(materialInstance_);
-                HEART_RESOURCE_SAFE_RELEASE(material_);
             }
         }
 
-        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < HEART_MAX_INPUT_STREAMS); return vertexBuffer_[stream]; }
+        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); return drawItem_.vertexBuffer_[stream]; }
         hUint32                                 GetVertexStreams() const { return vtxStreams_; }
         void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) 
         {
-            hcAssert(stream < HEART_MAX_INPUT_STREAMS); 
+            hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); 
             vtxStreams_ = hMax(vtxStreams_,stream); 
-            vertexBuffer_[stream] = vtx;
+            drawItem_.vertexBuffer_[stream] = vtx;
         }
-        hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
-        void                                    SetIndexBuffer(hIndexBuffer* idx) {indexBuffer_ = idx;}
-        PrimitiveType                           GetPrimativeType() const { return primType_; }
-        void                                    SetPrimativeType(PrimitiveType primtype) { primType_ = primtype; }
-        hUint32                                 GetStartIndex() const { return startIndex_; }
-        void                                    SetStartIndex(hUint32 startIdx) { startIndex_ = startIdx; }
-        hUint32									GetPrimativeCount() const { return nPrimatives_; }
-        void                                    SetPrimativeCount(hUint32 primCount) { nPrimatives_ = primCount; }
-        void                                    SetMaterial(hMaterial* material) { material_ = material; }
+        hIndexBuffer*                           GetIndexBuffer() const { return drawItem_.indexBuffer_; }
+        void                                    SetIndexBuffer(hIndexBuffer* idx) { drawItem_.indexBuffer_ = idx; }
+        PrimitiveType                           GetPrimativeType() const { return drawItem_.primType_; }
+        void                                    SetPrimativeType(PrimitiveType primtype) { drawItem_.primType_ = primtype; }
+        hUint32                                 GetStartIndex() const { return drawItem_.startVertex_; }
+        void                                    SetStartIndex(hUint32 startIdx) { drawItem_.startVertex_ = startIdx; }
+        hUint32									GetPrimativeCount() const { return drawItem_.primCount_; }
+        void                                    SetPrimativeCount(hUint32 primCount) { drawItem_.primCount_ = primCount; }
+        void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
+        hResourceID                             GetMaterialResourceID() const { return materialID_; }
+        void                                    SetMaterial(hMaterial* material);
         hMaterialInstance*                      GetMaterialInstance() const { return materialInstance_; }
+        hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
     
     private:
 
-        //Store this info in hDrawCall
-        Heart::hDrawCall        drawItem_;
-        hIndexBuffer*           indexBuffer_;
-        PrimitiveType           primType_;
-        hUint32                 startIndex_;
-        hUint32                 nPrimatives_;
-        hMaterial*              material_;
-        hMaterialInstance*      materialInstance_;//Should we sort material key here
-        Heart::hAABB            aabb_;
+        hResourceID             materialID_;
+        hUint32                 materialKey_;
         hUint32                 vtxStreams_;
-        hVertexBuffer*          vertexBuffer_[HEART_MAX_INPUT_STREAMS];
+        hDrawCall               drawItem_;
+        hMaterial*              material_;
+        hMaterialInstance*      materialInstance_;
+        Heart::hAABB            aabb_;
     };
 }
 

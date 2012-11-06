@@ -55,6 +55,7 @@ namespace Heart
         virtual hUint32 Read(void* dst, hUint32 size) = 0;
         virtual hUint32 Seek(hUint32 offset, SeekOffset from) = 0;
         virtual hUint32 Lenght() = 0;
+        virtual hUint32 Tell() = 0;
     };
 
     class HEARTCORE_SLIBEXPORT hIBuiltDataCache

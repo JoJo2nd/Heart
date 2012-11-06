@@ -106,6 +106,10 @@ namespace Heart
         {
             return handle_->Length();
         }
+        hUint32 Tell()
+        {
+            return handle_->Tell();
+        }
 
     private:
 

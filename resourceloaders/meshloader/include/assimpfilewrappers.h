@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hGamepad.h	
+	filename: 	assimpfilewrappers.h	
 	
-	Copyright (c) 18:7:2012 James Moran
+	Copyright (c) 13:10:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,16 +24,35 @@
 	distribution.
 
 *********************************************************************/
-#ifndef HGAMEPAD_H__
-#define HGAMEPAD_H__
+
+#pragma once
+
+#ifndef ASSIMPFILEWRAPPERS_H__
+#define ASSIMPFILEWRAPPERS_H__
+
+#include "assimp/cimport.h"
+#include "assimp/scene.h"
+#include "assimp/cfileio.h"
 
 namespace Heart
 {
-    class hdGamepad
-    {
-    public:
-    private:
-    };
+    struct hResourceMemAlloc;
+    class hIBuiltDataCache;
 }
 
-#endif // HGAMEPAD_H__
+// aiFile callbacks
+size_t   mlaiFileWriteProc (aiFile*,   const char*, size_t, size_t);
+size_t   mlaiFileReadProc  (aiFile*,   char*, size_t,size_t);
+size_t   mlaiFileTellProc  (aiFile*);
+size_t   mlaiFileSizeProc  (aiFile*);
+void     mlaiFileFlushProc (aiFile*);
+aiReturn mlaiFileSeek(aiFile*, size_t, aiOrigin);
+
+// aiFileIO callbacks
+aiFile* mlaiFileOpenProc  (aiFileIO*, const char*, const char*);
+void    mlaiFileCloseProc(aiFileIO*, C_STRUCT aiFile*);
+
+void    mlaiInitFileIO(aiFileIO*, Heart::hResourceMemAlloc*, Heart::hIBuiltDataCache*);
+void    mlaiDestroyFileIO(aiFileIO*);
+
+#endif // ASSIMPFILEWRAPPERS_H__

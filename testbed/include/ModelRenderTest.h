@@ -61,6 +61,7 @@ private:
 
     void        CreateRenderResources();
     void        DestroyRenderResources();
+    void        UpdateCamera();
 
     State                   state_;
     hFloat                  timer_;
@@ -68,6 +69,10 @@ private:
     Heart::hDrawCall        drawCall_;
     Heart::hDrawCallContext drawCtx_;
 
+    //Camera Control
+    Heart::hVec3            camPos_;
+    Heart::hVec3            camDir_;
+    Heart::hVec3            camUp_;
 };
 
 #endif // MODELRENDERTEST_H__

@@ -89,16 +89,16 @@ namespace Heart
     struct HEARTCORE_SLIBEXPORT hDrawCall
     {
         static const hUint32    MAX_VERT_STREAMS = 5;
-        hUint64                 sortKey_;
+        hUint64                 sortKey_;                                   //8b        -> 8b
         union {
             struct {
-                hVertexBuffer*          vertexBuffer_[MAX_VERT_STREAMS];
-                hIndexBuffer*           indexBuffer_;        
-                hMaterialInstance*      matInstance_;
-                hUint16                 primCount_;
-                hUint16                 startVertex_;
-                hScissorRect            scissor_;           // TODO: remove, is support for UI rendering.
-                PrimitiveType           primType_ : 4;
+                hVertexBuffer*          vertexBuffer_[MAX_VERT_STREAMS];    //(5*4)20b  -> 28b
+                hIndexBuffer*           indexBuffer_;                       //4b        -> 32b
+                hMaterialInstance*      matInstance_;                       //4b        -> 36b
+                hUint16                 primCount_;                         //2b        -> 38b
+                hUint16                 startVertex_;                       //2b        -> 42b
+                hScissorRect            scissor_;                           //(4*4b)16b -> 58b TODO: remove, is support for UI rendering.
+                PrimitiveType           primType_;                          //4b        -> 62b (Assuming 4 bytes for enum, possibly not the case)
             };
             struct {
                 hCustomRenderCallback   customCall_;

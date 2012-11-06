@@ -20,6 +20,9 @@ namespace Heart
 	class HEARTDEV_SLIBEXPORT hdInputDeviceManager
 	{
 	public:
+
+#define HEART_MAX_GAMEPADS (4)
+
 		hdInputDeviceManager();
 		virtual ~hdInputDeviceManager();
 
@@ -29,6 +32,7 @@ namespace Heart
         void                            EndOfFrameUpdate();
         hdKeyboard*                     GetSystemKeyboard() const { return keyboard_; }
         hdMouse*                        GetSystemMouse() const { return mouse_; }
+        hdGamepad*                      GetGamepad(hUint32 padIdx) { return padIdx < HEART_MAX_GAMEPADS ? pads_+padIdx : NULL; }
 
         static hUint32                  GetInputIDPairCount();
         static const hdInputIDPair*     GetInputIDPairArray();
@@ -40,6 +44,7 @@ namespace Heart
         hdSystemWindow* systemWindow_;
 		hdKeyboard*		keyboard_;
         hdMouse*        mouse_;
+        hdGamepad       pads_[HEART_MAX_GAMEPADS];
 		//TODO add game pad
 	};
 

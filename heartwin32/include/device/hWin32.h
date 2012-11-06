@@ -106,7 +106,7 @@
 #include "device/hDeviceInput.h"
 #include "device/hDeviceKeyboard.h"
 #include "device/hDeviceMouse.h"
-#include "device/hGamepad.h"
+#include "device/hDeviceGamepad.h"
 #include "device/hDeviceInputDeviceManager.h"
 
 //////////////////////////////////////////////////////////////////////////

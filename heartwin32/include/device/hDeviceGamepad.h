@@ -24,8 +24,48 @@
 	distribution.
 
 *********************************************************************/
+#pragma once
+
+#ifndef HDEVICEGAMEPAD_H__
+#define HDEVICEGAMEPAD_H__
+
 
 namespace Heart
 {
+    class HEARTDEV_SLIBEXPORT hdGamepad
+    {
+    public:
+#define HEART_DEVICE_AXIS_COUNT     (6)
+#define HEART_DEVICE_BUTTON_COUNT   (14)
 
+        hdGamepad()
+            : padIdx_(hErrorCode)
+            , connected_(hFalse)
+        {
+
+        }
+        ~hdGamepad()
+        {
+
+        }
+
+        hBool           IsConnected() const { return connected_; }
+        hdInputButton   GetButton(hUint32 buttonID) const;
+        hdInputAxis     GetAxis(hUint32 axisID) const;
+
+    private:
+
+        friend class hdInputDeviceManager;
+
+        void            ConnectPad(hUint32 idx);
+        void            Update();
+        void            EndOfFrameUpdate() {}
+
+        hUint32             padIdx_;
+        hBool               connected_;
+        XINPUT_STATE        state_;
+        hdInputButton       buttons_[HEART_DEVICE_BUTTON_COUNT];
+        hdInputAxis         axes_[HEART_DEVICE_AXIS_COUNT];
+    };
 }
+#endif // HDEVICEGAMEPAD_H__

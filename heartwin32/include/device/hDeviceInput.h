@@ -34,6 +34,8 @@ namespace Heart
 
     typedef hUint32 hdInputID;
 
+#define HEART_INPUTID_UNDEFINED (hErrorCode)
+
 #define HEART_MOUSE_LBUTTON (0x10000001)
 #define HEART_MOUSE_MBUTTON (0x10000002)
 #define HEART_MOUSE_RBUTTON (0x10000003)
@@ -43,12 +45,30 @@ namespace Heart
 #define HEART_MOUSE_BUTTON4 (0x10000007)
 #define HEART_MOUSE_BUTTON5 (0x10000008)
 
-#define XINPUT_GAMEPAD_LEFT_TRIGGER  (0x01000000)
-#define XINPUT_GAMEPAD_RIGHT_TRIGGER (0x02000000)
-#define XINPUT_GAMEPAD_LEFT_STICKX   (0x03000000)
-#define XINPUT_GAMEPAD_LEFT_STICKY   (0x04000000)
-#define XINPUT_GAMEPAD_RIGHT_STICKX  (0x05000000)
-#define XINPUT_GAMEPAD_RIGHT_STICKY  (0x06000000)
+#ifdef HEART_PLAT_WINDOWS
+#   define HEART_PAD_LEFT_TRIGGER   (0x10000009)
+#   define HEART_PAD_RIGHT_TRIGGER  (0x1000000A)
+#   define HEART_PAD_LEFT_STICKX    (0x1000000B)
+#   define HEART_PAD_LEFT_STICKY    (0x1000000C)
+#   define HEART_PAD_RIGHT_STICKX   (0x1000000D)
+#   define HEART_PAD_RIGHT_STICKY   (0x1000000E)
+#   define HEART_PAD_DPAD_UP        XINPUT_GAMEPAD_DPAD_UP	        //0x0001  
+#   define HEART_PAD_DPAD_DOWN      XINPUT_GAMEPAD_DPAD_DOWN	    //0x0002 
+#   define HEART_PAD_DPAD_LEFT      XINPUT_GAMEPAD_DPAD_LEFT	    //0x0004
+#   define HEART_PAD_DPAD_RIGHT     XINPUT_GAMEPAD_DPAD_RIGHT	    //0x0008
+#   define HEART_PAD_START          XINPUT_GAMEPAD_START	        //0x0010
+#   define HEART_PAD_BACK           XINPUT_GAMEPAD_BACK	            //0x0020
+#   define HEART_PAD_LEFT_THUMB     XINPUT_GAMEPAD_LEFT_THUMB	    //0x0040
+#   define HEART_PAD_RIGHT_THUMB    XINPUT_GAMEPAD_RIGHT_THUMB	    //0x0080
+#   define HEART_PAD_LEFT_SHOULDER  XINPUT_GAMEPAD_LEFT_SHOULDER    //0x0100
+#   define HEART_PAD_RIGHT_SHOULDER XINPUT_GAMEPAD_RIGHT_SHOULDER   //0x0200
+#   define HEART_PAD_A              XINPUT_GAMEPAD_A	            //0x1000
+#   define HEART_PAD_B              XINPUT_GAMEPAD_B	            //0x2000
+#   define HEART_PAD_X              XINPUT_GAMEPAD_X	            //0x4000
+#   define HEART_PAD_Y              XINPUT_GAMEPAD_Y	            //0x8000
+#else
+#   error ("Platform not defined") 
+#endif
 
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////

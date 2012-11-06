@@ -170,9 +170,10 @@ namespace hVec3Func
         return hVec3Func::add( a, b );
     }
 
-    hFORCEINLINE hVec3 operator += ( const hVec3& a, const hVec3& b )
+    hFORCEINLINE hVec3 operator += ( hVec3& a, const hVec3& b )
     {
-        return hVec3Func::add( a, b );
+        a = hVec3Func::add( a, b );
+        return a;
     }
 
     hFORCEINLINE hVec3 operator - ( const hVec3& a, const hVec3& b )
@@ -180,9 +181,10 @@ namespace hVec3Func
         return hVec3Func::sub( a, b );
     }
 
-    hFORCEINLINE hVec3 operator -= ( const hVec3& a, const hVec3& b )
+    hFORCEINLINE hVec3 operator -= ( hVec3& a, const hVec3& b )
     {
-        return hVec3Func::sub( a, b );
+        a = hVec3Func::sub( a, b );
+        return a;
     }
 
     hFORCEINLINE hVec3 operator * ( const hVec3& v, const hFloat s )
@@ -190,9 +192,10 @@ namespace hVec3Func
         return hVec3Func::scale( v, s );
     }
 
-    hFORCEINLINE hVec3 operator *= ( const hVec3& v, hFloat s )
+    hFORCEINLINE hVec3 operator *= ( hVec3& v, hFloat s )
     {
-        return hVec3Func::scale( v, s );
+        v = hVec3Func::scale( v, s );
+        return v;
     }
 
     hFORCEINLINE hVec3 operator / ( const hVec3& v, const hVec3& s ) 
@@ -200,9 +203,10 @@ namespace hVec3Func
         return hVec3Func::div( v, s );
     }
 
-    hFORCEINLINE hVec3 operator /= ( const hVec3& v, const hVec3& s )
+    hFORCEINLINE hVec3 operator /= ( hVec3& v, const hVec3& s )
     {
-        return hVec3Func::div( v, s );
+        v = hVec3Func::div( v, s );
+        return v;
     }
 
     hFORCEINLINE hBool operator == ( const hVec3& a, const hVec3& b )

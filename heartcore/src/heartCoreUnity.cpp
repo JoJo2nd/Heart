@@ -93,6 +93,7 @@
 #include "render/hRenderUtility.cpp"
 #include "render/hVertexBuffer.cpp"
 #include "render/hDrawCallContext.cpp"
+#include "render/hRenderable.cpp"
 
 #include "math/hViewFrustum.cpp"
 

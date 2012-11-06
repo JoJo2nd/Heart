@@ -60,7 +60,8 @@ hUint32 ModelRenderTest::RunUnitTest()
     case eRender:
         {
             timer_ += Heart::hClock::Delta();
-            if (timer_ > 30.f)
+            UpdateCamera();
+            if (timer_ > 600.f)
             {
                 state_ = eBeginUnload;
             }
@@ -93,7 +94,7 @@ hUint32 ModelRenderTest::RunUnitTest()
 void ModelRenderTest::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
-    Heart::hGeomLODLevel* lod = renderModel_->GetLODLevel(0.f);
+    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
 
     drawCtx_.Begin(renderer);
@@ -145,10 +146,16 @@ void ModelRenderTest::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
+    camPos_ = Heart::hVec3(0.f, 10.f, -110.f);
+    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
+    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
+
+    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 100.f);
-    camera->SetViewMatrix(Heart::hMatrixFunc::identity());
+    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera->SetViewMatrix(vm);
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
@@ -168,4 +175,51 @@ void ModelRenderTest::DestroyRenderResources()
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->ReleaseRenderTargetSetup();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ModelRenderTest::UpdateCamera()
+{
+    using namespace Heart;
+    using namespace Heart::hVec3Func;
+
+    hFloat delta = hClock::Delta();
+    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
+    hRenderer* renderer = engine_->GetRenderer();
+    hRendererCamera* camera = renderer->GetRenderCamera(0);
+    hVec3 camRight = cross(camUp_, camDir_);
+    hVec3 movement, angleXZ, angleYZ;
+    hFloat speed = 5.f, angleSpeed = .314f;
+
+    camRight = normaliseFast(camRight);
+
+    speed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*5.f;
+    speed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*10.f;
+    speed *= delta;
+
+    angleSpeed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*.628f;
+    angleSpeed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*1.256f;
+    angleSpeed *= delta;
+
+    movement =  scale(camRight, pad->GetAxis(HEART_PAD_LEFT_STICKX).anologueVal_*speed);
+    movement += scale(camDir_, pad->GetAxis(HEART_PAD_LEFT_STICKY).anologueVal_*speed);
+
+    movement += (pad->GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(camUp_,speed) : hVec3Func::zeroVector());
+    movement += (pad->GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(camUp_,-speed) : hVec3Func::zeroVector());
+
+    angleXZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, camUp_));
+    angleYZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKY).anologueVal_, camRight));
+
+    camPos_ += movement;
+    camDir_ = angleXZ + angleYZ;
+    camUp_  = cross(camDir_, camRight);
+
+    camDir_ = normaliseFast(camDir_);
+    camUp_  = normaliseFast(camUp_);
+
+    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    camera->SetViewMatrix(vm);
 }

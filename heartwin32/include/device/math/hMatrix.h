@@ -66,12 +66,16 @@ namespace hMatrixFunc
         return XMMatrixPerspectiveOffCenterLH( left, right, top, bottom, znear, zfar );
 	}
 
-
 	hFORCEINLINE hMatrix rotate( hFloat xt, hFloat yt, hFloat zt )
 	{
         return XMMatrixRotationRollPitchYaw( xt, yt, zt );
 		//pitch = x, yaw = y = heading, bank = z = roll
 	}
+
+    hFORCEINLINE hMatrix rotate( hFloat theta, const hVec3& axis )
+    {
+        return XMMatrixRotationAxis( axis, theta);
+    }
 
     hFORCEINLINE hMatrix RotationX( hFloat theta )
     {

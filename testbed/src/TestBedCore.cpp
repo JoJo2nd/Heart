@@ -73,6 +73,8 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 
         lua_pushlightuserdata(pEngine_->GetVM()->GetMainState(), this);
         luaI_openlib(pEngine_->GetVM()->GetMainState(), "unittest", funcs, 1);
+
+        currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

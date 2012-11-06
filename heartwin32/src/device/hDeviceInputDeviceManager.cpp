@@ -298,28 +298,28 @@ namespace Heart
         hdVKEY(HEART_MOUSE_BUTTON3),
         hdVKEY(HEART_MOUSE_BUTTON4),
         hdVKEY(HEART_MOUSE_BUTTON5),
-        
-        hdVKEY(XINPUT_GAMEPAD_DPAD_UP),	         //0x0001
-        hdVKEY(XINPUT_GAMEPAD_DPAD_DOWN),	     //0x0002
-        hdVKEY(XINPUT_GAMEPAD_DPAD_LEFT),	     //0x0004
-        hdVKEY(XINPUT_GAMEPAD_DPAD_RIGHT),	     //0x0008
-        hdVKEY(XINPUT_GAMEPAD_START),	         //0x0010
-        hdVKEY(XINPUT_GAMEPAD_BACK),	         //0x0020
-        hdVKEY(XINPUT_GAMEPAD_LEFT_THUMB),	     //0x0040
-        hdVKEY(XINPUT_GAMEPAD_RIGHT_THUMB),	     //0x0080
-        hdVKEY(XINPUT_GAMEPAD_LEFT_SHOULDER),	 //0x0100
-        hdVKEY(XINPUT_GAMEPAD_RIGHT_SHOULDER),	 //0x0200
-        hdVKEY(XINPUT_GAMEPAD_A),	             //0x1000
-        hdVKEY(XINPUT_GAMEPAD_B),	             //0x2000
-        hdVKEY(XINPUT_GAMEPAD_X),	             //0x4000
-        hdVKEY(XINPUT_GAMEPAD_Y),	             //0x8000
 
-        hdVKEY(XINPUT_GAMEPAD_LEFT_TRIGGER),  
-        hdVKEY(XINPUT_GAMEPAD_RIGHT_TRIGGER),
-        hdVKEY(XINPUT_GAMEPAD_LEFT_STICKX),   
-        hdVKEY(XINPUT_GAMEPAD_LEFT_STICKY),   
-        hdVKEY(XINPUT_GAMEPAD_RIGHT_STICKX),  
-        hdVKEY(XINPUT_GAMEPAD_RIGHT_STICKY),  
+        hdVKEY(HEART_PAD_LEFT_TRIGGER),  
+        hdVKEY(HEART_PAD_RIGHT_TRIGGER), 
+        hdVKEY(HEART_PAD_LEFT_STICKX),   
+        hdVKEY(HEART_PAD_LEFT_STICKY),   
+        hdVKEY(HEART_PAD_RIGHT_STICKX),  
+        hdVKEY(HEART_PAD_RIGHT_STICKY),  
+        hdVKEY(HEART_PAD_DPAD_UP),       
+        hdVKEY(HEART_PAD_DPAD_DOWN),     
+        hdVKEY(HEART_PAD_DPAD_LEFT),     
+        hdVKEY(HEART_PAD_DPAD_RIGHT),    
+        hdVKEY(HEART_PAD_START),         
+        hdVKEY(HEART_PAD_BACK),          
+        hdVKEY(HEART_PAD_LEFT_THUMB),    
+        hdVKEY(HEART_PAD_RIGHT_THUMB),   
+        hdVKEY(HEART_PAD_LEFT_SHOULDER), 
+        hdVKEY(HEART_PAD_RIGHT_SHOULDER),
+        hdVKEY(HEART_PAD_A),             
+        hdVKEY(HEART_PAD_B),             
+        hdVKEY(HEART_PAD_X),             
+        hdVKEY(HEART_PAD_Y),    
+
     };
 
 #undef hdVKEY
@@ -350,6 +350,11 @@ namespace Heart
         systemWindow_ = window;
         keyboard_ = systemWindow_->GetSystemKeyboard();
         mouse_    = systemWindow_->GetSystemMouse();
+
+        for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
+        {
+            pads_[i].ConnectPad(i);
+        }
 		return hTrue;
 	}
 
@@ -368,6 +373,10 @@ namespace Heart
 	void hdInputDeviceManager::Update()
 	{
 		keyboard_->Update();
+        for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
+        {
+            pads_[i].Update();
+        }
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -396,6 +405,10 @@ namespace Heart
     {
         keyboard_->EndOfFrameUpdate();
         mouse_->EndOfFrameUpdate();
+        for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
+        {
+            pads_[i].EndOfFrameUpdate();
+        }
     }
 
 }
