@@ -1,15 +1,13 @@
 project "heartwin32"
     location (ProjectDir)
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
-    files {"../../heartwin32/include/**.h","../../heartwin32/src/heartWin32Unity.cpp"}
-    files {"../../heartwin32/src/**.cpp"} -- these files are added but not compiled
+    files {"../../heart/include/pal/win32/device/**.h","../../heart/src/pal/win32/heartWin32Unity.cpp"}
+    files {"../../heart/src/pal/win32/device/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
-    defines {"HEART_WIN32_DLL"}
-    defines {CommonDefines,SharedLibDefines}
+    defines {"HEART_COMPILE_DLL"}
+    defines {CommonDefines}
     includedirs {HeartIncludeDirs}
-    links {PlatformLibs}
-    links {"heartbase","crypto"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

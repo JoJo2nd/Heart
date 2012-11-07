@@ -10,21 +10,21 @@ project "texture_loader"
     defines {"TEXTURE_LOADER_COMPILE_DLL"}
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/textureloader/include/"}
-    includedirs {"../../nvidia-texture-tools/src"}
+    includedirs {"../../external/nvidia-texture-tools/src"}
 	links {PlatformLibs}
     links { "nvtt" }
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        libdirs {"../../nvidia-texture-tools/project/vc8/Debug (no cuda).Win32/lib"}
+        libdirs {"../../external/nvidia-texture-tools/project/vc8/Debug (no cuda).Win32/lib"}
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
-        libdirs {"../../nvidia-texture-tools/project/vc8/Release (no cuda).Win32/lib"}
+        libdirs {"../../external/nvidia-texture-tools/project/vc8/Release (no cuda).Win32/lib"}
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}

@@ -1,14 +1,13 @@
 project "heartbase"
     location (ProjectDir)
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
-    files {"../../heartbase/include/**.h","../../heartbase/src/heartBaseUnity.cpp"}
-    files {"../../heartbase/src/**.cpp"} -- these files are added but not compiled
+    files {"../../heart/include/base/**.h","../../heart/src/heartBaseUnity.cpp"}
+    files {"../../heart/src/base/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
-    defines {"HEART_BASE_DLL"}
-    defines {CommonDefines,SharedLibDefines}
+    defines {"HEART_COMPILE_DLL"}
+    defines {CommonDefines}
     includedirs {HeartIncludeDirs}
-    links {"crypto","dbghelp"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

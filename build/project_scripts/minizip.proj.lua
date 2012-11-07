@@ -2,11 +2,11 @@ project "minizip"
 	location (ProjectDir)
 	kind "StaticLib"
 	language "C"
-	files {"../../minizip/include/*.h","../../minizip/src/*.c"}
-	excludes {"../../minizip/src/minizip.c", "../../minizip/src/miniunz.c"}
+	files {"../../external/minizip/include/*.h","../../external/minizip/src/*.c"}
+	excludes {"../../external/minizip/src/minizip.c", "../../external/minizip/src/miniunz.c"}
 	defines {CommonDefines,SharedLibDefines,"ZLIB_DLL"}
     defines {"NO_vsnprintf"}
-	includedirs {"../../minizip/include","../../zlib/include"}
+	includedirs {"../../external/minizip/include","../../external/zlib/include"}
     links {"zlib"}
 	
 configuration (DebugCfgName)

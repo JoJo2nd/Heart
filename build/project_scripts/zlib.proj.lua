@@ -3,11 +3,11 @@ project "zlib"
     location (ProjectDir)
     kind "SharedLib"
     language "C"
-    files {"../../zlib/Include/*.h","../../zlib/Src/*.c"}
-    excludes {"../../zlib/Src/minigzip.c"}
+    files {"../../external/zlib/Include/*.h","../../external/zlib/Src/*.c"}
+    excludes {"../../external/zlib/Src/minigzip.c"}
     defines {CommonDefines,SharedLibDefines,"ZLIB_DLL"}
 	defines {"NO_vsnprintf"}
-	includedirs {"../../zlib/include"}
+	includedirs {"../../external/zlib/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

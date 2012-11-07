@@ -2,9 +2,9 @@ project "libogg"
     location (ProjectDir)
     kind "StaticLib"
     language "C"
-    files {"../../libogg/include/**.h","../../libogg/src/**.c"}
+    files {"../../external/libogg/include/**.h","../../external/libogg/src/**.c"}
     defines {CommonDefines}
-	includedirs {"../../libogg/include"}
+	includedirs {"../../external/libogg/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

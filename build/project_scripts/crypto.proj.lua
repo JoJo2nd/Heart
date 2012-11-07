@@ -2,10 +2,10 @@
         location (ProjectDir)
         kind "SharedLib"
         language "C"
-        files {"../../crypto/include/*.h","../../crypto/src/*.c"}
+        files {"../../external/crypto/include/*.h","../../external/crypto/src/*.c"}
         defines {CommonDefines,SharedLibDefines}
         defines {"CRYPTO_COMPILE_DLL"}
-		includedirs {"../../crypto/include"}
+		includedirs {"../../external/crypto/include"}
         
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

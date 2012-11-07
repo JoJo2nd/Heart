@@ -2,9 +2,9 @@ project "libvorbisfile"
     location (ProjectDir)
     kind "StaticLib"
     language "C"
-    files {"../../libvorbis/include/vorbisfile.h","../../libvorbis/lib/vorbisfile.c"}
+    files {"../../external/libvorbis/include/vorbisfile.h","../../external/libvorbis/lib/vorbisfile.c"}
     defines {CommonDefines}
-	includedirs {"../../libvorbis/include","../../libogg/include"}
+	includedirs {"../../external/libvorbis/include","../../external/libogg/include"}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
