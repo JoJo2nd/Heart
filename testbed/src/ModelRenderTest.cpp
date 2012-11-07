@@ -25,8 +25,8 @@
 
 *********************************************************************/
 
+#include "testbed_precompiled.h"
 #include "ModelRenderTest.h"
-#include "Gwen/UnitTest/UnitTest.h"
 
 DEFINE_HEART_UNIT_TEST(ModelRenderTest);
 

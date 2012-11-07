@@ -1,4 +1,4 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/ComboBox.h"
 
 using namespace Gwen;

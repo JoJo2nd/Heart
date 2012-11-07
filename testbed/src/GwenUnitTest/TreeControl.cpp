@@ -1,4 +1,4 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/TreeControl.h"
 
 using namespace Gwen;

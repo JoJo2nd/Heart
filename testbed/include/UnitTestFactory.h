@@ -29,7 +29,6 @@
 #ifndef UNITTESTFACTORY_H__
 #define UNITTESTFACTORY_H__
 
-#include "Heart.h"
 
 #define UNIT_TEST_EXIT_CODE_RUNNING (1)
 #define UNIT_TEST_EXIT_CODE_OK      (0)
@@ -37,7 +36,7 @@
     class IUnitTest
     {
     public:
-        IUnitTest(Heart::HeartEngine* engine) 
+        IUnitTest(Heart::hHeartEngine* engine) 
             : exitCode_(UNIT_TEST_EXIT_CODE_RUNNING)
             , engine_(engine)
             , canRender_(hFalse)
@@ -57,7 +56,7 @@
         void                SetExitCode(hUint32 ecode) { exitCode_ = ecode; }
         void                SetCanRender(hBool val) { canRender_ = val; }
 
-        Heart::HeartEngine* engine_;
+        Heart::hHeartEngine* engine_;
 
     private:
 
@@ -67,11 +66,11 @@
 
 #define DECLARE_HEART_UNIT_TEST() public:\
     static const hChar* s_className_;\
-    static IUnitTest* FactoryCreator(Heart::HeartEngine*);\
+    static IUnitTest* FactoryCreator(Heart::hHeartEngine*);\
 
 #define DEFINE_HEART_UNIT_TEST(klass)\
     const hChar* klass::s_className_ = #klass ;\
-    IUnitTest* klass::FactoryCreator(Heart::HeartEngine* engine)\
+    IUnitTest* klass::FactoryCreator(Heart::hHeartEngine* engine)\
     {\
         return hNEW(Heart::GetGlobalHeap(), klass)(engine);\
     }\
@@ -79,7 +78,7 @@
 #define REGISTER_UNIT_TEST(klass)\
     {klass::s_className_, &klass::FactoryCreator},
 
-    typedef IUnitTest* (*UnitTestCreateFunc)(Heart::HeartEngine*);
+    typedef IUnitTest* (*UnitTestCreateFunc)(Heart::hHeartEngine*);
 
     struct UnitTestCreator
     {
@@ -90,7 +89,7 @@
     class UnitTestFactory 
     {
     public:
-        UnitTestFactory(Heart::HeartEngine* engine, UnitTestCreator* creators, hUint32 creatorCount)
+        UnitTestFactory(Heart::hHeartEngine* engine, UnitTestCreator* creators, hUint32 creatorCount)
             : creatorArray_(creators)
             , creatorCount_(creatorCount)
             , engine_(engine)
@@ -104,6 +103,6 @@
 
         const hUint32           creatorCount_;
         const UnitTestCreator*  creatorArray_;
-        Heart::HeartEngine*     engine_;
+        Heart::hHeartEngine*     engine_;
     };
 #endif // UNITTESTFACTORY_H__

@@ -25,6 +25,7 @@
 
 *********************************************************************/
 
+#include "testbed_precompiled.h"
 #include "ResourceLoadTest.h"
 #include "Gwen/UnitTest/UnitTest.h"
 

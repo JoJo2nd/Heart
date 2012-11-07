@@ -27,8 +27,6 @@
 #ifndef LISTTEST_H__
 #define LISTTEST_H__
 
-#include "Heart.h"
-
 class TestListElement : public Heart::hLinkedListElement< TestListElement >
 {
 public:
@@ -42,7 +40,7 @@ class ListTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-	ListTest( Heart::HeartEngine* engine ) 
+	ListTest( Heart::hHeartEngine* engine ) 
 		: IUnitTest( engine )
 	{
 

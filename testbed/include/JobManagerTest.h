@@ -27,14 +27,13 @@
 #ifndef JOBMANAGERTEST_H__
 #define JOBMANAGERTEST_H__
 
-#include "Heart.h"
 #include "UnitTestFactory.h"
 
 class JobManagerTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-    JobManagerTest( Heart::HeartEngine* engine ) 
+    JobManagerTest( Heart::hHeartEngine* engine ) 
         : IUnitTest(engine)
         , jobChain1_(64)
         , jobChain2_(64)

@@ -28,14 +28,13 @@
 #ifndef RESOURCELOADTEST_H__
 #define RESOURCELOADTEST_H__
 
-#include "Heart.h"
 #include "UnitTestFactory.h"
 
 class ResourceLoadTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-    ResourceLoadTest(Heart::HeartEngine* engine) 
+    ResourceLoadTest(Heart::hHeartEngine* engine) 
         : IUnitTest( engine )
         , state_(eBeginLoad)
     {

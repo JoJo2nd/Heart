@@ -7,6 +7,7 @@
 	purpose:	
 *********************************************************************/
 
+#include "testbed_precompiled.h"
 #include "TestBedCore.h"
 #include <time.h>
 #include "CreateTextureTest.h"
@@ -56,7 +57,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void TestBedCore::Initialise( const hChar* pCmdLine, Heart::HeartEngine* pEngine )
+	void TestBedCore::Initialise( const hChar* pCmdLine, Heart::hHeartEngine* pEngine )
 	{
 		hcPrintf( "cmd line: %s\n", pCmdLine );
 		hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
@@ -81,7 +82,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void TestBedCore::EngineUpdateTick( hFloat delta, Heart::HeartEngine* pEngine )
+	void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
 	{
 		if ( currentTest_ )
 		{
@@ -107,7 +108,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void TestBedCore::EngineRenderTick( hFloat delta, Heart::HeartEngine* pEngine )
+	void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine )
 	{
 		if ( currentTest_ && currentTest_->GetCanRender() )
 		{
@@ -119,7 +120,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	bool TestBedCore::EngineShutdownRequest( Heart::HeartEngine* pEngine )
+	bool TestBedCore::EngineShutdownRequest( Heart::hHeartEngine* pEngine )
 	{
 		// We always lets the engine shutdown right away
 		// May not be the case if saving...
@@ -135,7 +136,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	void TestBedCore::EngineShutdown( Heart::HeartEngine* pEngine )
+	void TestBedCore::EngineShutdown( Heart::hHeartEngine* pEngine )
 	{
         hDELETE_SAFE(Heart::GetGlobalHeap(), factory_);
 	}

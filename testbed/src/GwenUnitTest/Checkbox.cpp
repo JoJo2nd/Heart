@@ -1,4 +1,5 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/CheckBox.h"
 
 using namespace Gwen;

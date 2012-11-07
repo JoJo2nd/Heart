@@ -30,14 +30,13 @@
 #ifndef MODELRENDERTEST_H__
 #define MODELRENDERTEST_H__
 
-#include "Heart.h"
 #include "UnitTestFactory.h"
 
 class ModelRenderTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-    ModelRenderTest(Heart::HeartEngine* engine) 
+    ModelRenderTest(Heart::hHeartEngine* engine) 
         : IUnitTest( engine )
         , state_(eBeginLoad)
         , renderModel_(NULL)

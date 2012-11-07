@@ -1,4 +1,4 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/Properties.h"
 #include "Gwen/Controls/PropertyTree.h"
 #include "Gwen/Controls/Property/ColorSelector.h"

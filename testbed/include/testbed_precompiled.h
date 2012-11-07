@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	UnitTestFactory.cpp	
+	filename: 	testbed_precompiled.h	
 	
-	Copyright (c) 24:9:2012 James Moran
+	Copyright (c) 7:11:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,29 +24,12 @@
 	distribution.
 
 *********************************************************************/
+#pragma once
 
-#include "testbed_precompiled.h"
-#include "UnitTestFactory.h"
+#ifndef TESTBED_PRECOMPILED_H__
+#define TESTBED_PRECOMPILED_H__
 
+#include "Heart.h"
+#include "Gwen/UnitTest/UnitTest.h"
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-IUnitTest* UnitTestFactory::CreateUnitTest( const hChar* testName )
-{   
-    if (!testName)
-    {
-        return NULL;
-    }
-
-    for (hUint32 i = 0; i < creatorCount_; ++i)
-    {
-        if (Heart::hStrICmp(testName, creatorArray_[i].testName_) == 0)
-        {
-            return creatorArray_[i].func_(engine_);
-        }
-    }
-
-    return NULL;
-}
+#endif // TESTBED_PRECOMPILED_H__

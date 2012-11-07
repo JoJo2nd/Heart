@@ -1,4 +1,4 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/RadioButtonController.h"
 #include "Gwen/Controls/VerticalSlider.h"
 #include "Gwen/Controls/HorizontalSlider.h"

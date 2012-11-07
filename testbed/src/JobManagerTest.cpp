@@ -25,6 +25,7 @@
 
 *********************************************************************/
 
+#include "testbed_precompiled.h"
 #include "JobManagerTest.h"
 
 DEFINE_HEART_UNIT_TEST(JobManagerTest);

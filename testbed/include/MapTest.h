@@ -28,7 +28,6 @@
 #ifndef MAPTEST_H__
 #define MAPTEST_H__
 
-#include "Heart.h"
 #include "UnitTestFactory.h"
 
 class TestElement : public Heart::hMapElement< hUint32, TestElement >
@@ -45,7 +44,7 @@ class MapTest : public IUnitTest
 {
     DECLARE_HEART_UNIT_TEST();
 public:
-	MapTest( Heart::HeartEngine* engine ) 
+	MapTest( Heart::hHeartEngine* engine ) 
 		: IUnitTest( engine )
 	{
 

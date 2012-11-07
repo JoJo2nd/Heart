@@ -25,12 +25,11 @@
 
 *********************************************************************/
 
-#include "Heart.h"
 #include "UnitTestFactory.h"
 
 namespace Heart
 {
-	class HeartEngine;
+	class hHeartEngine;
 	class hJob;
 	class hSceneNodeLocator;
 	class hSceneNodeLight;
@@ -43,11 +42,11 @@ public:
 	TestBedCore();
 	virtual ~TestBedCore();
 
-	void							Initialise( const hChar* pCmdLine, Heart::HeartEngine* );
-	void							EngineUpdateTick( hFloat tick, Heart::HeartEngine* pEngine );
-	void							EngineRenderTick( hFloat tick, Heart::HeartEngine* pEngine );
-	bool							EngineShutdownRequest( Heart::HeartEngine* pEngine );
-	void							EngineShutdown( Heart::HeartEngine* pEngine );
+	void							Initialise( const hChar* pCmdLine, Heart::hHeartEngine* );
+	void							EngineUpdateTick( hFloat tick, Heart::hHeartEngine* pEngine );
+	void							EngineRenderTick( hFloat tick, Heart::hHeartEngine* pEngine );
+	bool							EngineShutdownRequest( Heart::hHeartEngine* pEngine );
+	void							EngineShutdown( Heart::hHeartEngine* pEngine );
 
 private:
 
@@ -57,7 +56,7 @@ private:
 
     static UnitTestCreator                  unitTests_[];
 
-	Heart::HeartEngine*						pEngine_;
+	Heart::hHeartEngine*						pEngine_;
     IUnitTest*                              currentTest_;
     UnitTestFactory*                        factory_;
     hBool                                   testRun_;

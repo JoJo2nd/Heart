@@ -4,7 +4,7 @@
 	See license in Gwen.h
 */
 
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/DockedTabControl.h"
 #include "Gwen/Controls/WindowControl.h"
 #include "Gwen/Controls/CollapsibleList.h"

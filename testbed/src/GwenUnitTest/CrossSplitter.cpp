@@ -1,4 +1,4 @@
-#include "Gwen/UnitTest/UnitTest.h"
+#include "testbed_precompiled.h"
 #include "Gwen/Controls/CrossSplitter.h"
 #include "Gwen/Controls/StatusBar.h"
 #include "Gwen/Controls/Button.h"
