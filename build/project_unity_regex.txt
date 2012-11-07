@@ -1,4 +1,2 @@
-(.*?)heartbase\\src\\(.*?)\.cpp
-(.*?)heartwin32\\src\\(.*?)\.cpp
-(.*?)heartcore\\src\\(.*?)\.cpp
-(.*?)heartcore\\gwen\\src\\(.*?)\.cpp
+(.*?)heart\\src\\(.*?)\\(.*?).cpp
+(.*?)heart\\gwen\\src\\(.*?).cpp
