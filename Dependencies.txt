@@ -1,7 +1,5 @@
 Most deps are included by in the repo. But the following will need to be downloaded
 
-
-
 1) wxWidgets-2.9.2 from http://www.wxwidgets.org. Get version wxWidget-2.9.2.zip not the installer. extract the source to external/wxWidgets-2.9.2
 
 2) boost from http://www.boost.org. Get version 1_48 again as an zip not an installer. extract the source to external/boost
