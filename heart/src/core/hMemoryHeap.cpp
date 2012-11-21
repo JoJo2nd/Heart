@@ -120,7 +120,10 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size )
 {
 	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
-	hMH_RELEASE_TRACK_INFO( ptr, s );
+    if (ptr != NULL)
+    {
+        hMH_RELEASE_TRACK_INFO( ptr, s );
+    }
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
     if (ptr == 0)
@@ -140,7 +143,10 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 
 {
 	hMH_PRE_ACTION();
 	size_t s = mspace_allocate_size(ptr);
-	hMH_RELEASE_TRACK_INFO( ptr, s );
+    if (ptr != NULL)
+    {
+        hMH_RELEASE_TRACK_INFO( ptr, s );
+    }
 	void* r = mspace_realloc( localMspace_, ptr, size );
 	s = mspace_allocate_size( r );
     if (ptr == 0)

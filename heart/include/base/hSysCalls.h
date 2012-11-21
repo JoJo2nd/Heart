@@ -49,6 +49,12 @@ namespace hMemTracking
 
     HEART_DLLEXPORT
     void HEART_API TrackFree(void* heap, void* ptr, const hChar* heaptag);
+
+    HEART_DLLEXPORT
+    void HEART_API TrackPushMarker(const hChar* heaptag);
+
+    HEART_DLLEXPORT
+    void HEART_API TrackPopMarker();
 }
 
 }
