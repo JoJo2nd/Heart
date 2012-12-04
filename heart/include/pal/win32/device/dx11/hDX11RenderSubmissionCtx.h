@@ -33,6 +33,48 @@ namespace Heart
     typedef D3D11_MAPPED_SUBRESOURCE hdDX11MappedResourceData;
     typedef ID3D11CommandList* hdDX11CommandBuffer;
 
+    class HEART_DLLEXPORT hdDX11RenderInputObject
+    {
+    public:
+        hdDX11RenderInputObject()
+            : vertexShader_(NULL)
+            , pixelShader_(NULL)
+        {
+            hZeroMem(boundProgs_, sizeof(boundProgs_));
+            hZeroMem(inputData_, sizeof(inputData_));
+        }
+
+        hBool   BindShaderProgram(hdDX11ShaderProgram* prog);
+        hBool   BindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
+        hBool   BindResourceView(hShaderParameterID paramID, hdDX11Texture* view);
+        hBool   BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
+
+    private:
+
+        friend class hdDX11RenderSubmissionCtx;
+
+        enum hdDX11ShaderProgTypes
+        {
+            hdDX11VertexProg,
+            hdDX11PixelProg,
+
+            hdDX11ProgMax
+        };
+
+        hdDX11ShaderProgram*            boundProgs_[hdDX11ProgMax];
+        ID3D11VertexShader*             vertexShader_;//quick access to render
+        ID3D11PixelShader*              pixelShader_;//quick access to render
+        //More shaders to come...
+        struct RendererInputs
+        {
+            hUint32                         resourceViewCount_;
+            ID3D11ShaderResourceView*       resourceViews_[HEART_MAX_RESOURCE_INPUTS];
+            hUint32                         samplerCount_;
+            ID3D11SamplerState*             samplerState_[HEART_MAX_RESOURCE_INPUTS];
+            ID3D11Buffer*                   programInputs_[HEART_MAX_CONSTANT_BLOCKS];
+        } inputData_[hdDX11ProgMax]; //for inputData_[vertexShader] & inputData_[pixelShader]
+    };
+
     class HEART_DLLEXPORT hdDX11RenderSubmissionCtx
     {
     public:
@@ -51,14 +93,18 @@ namespace Heart
         hdDX11CommandBuffer     SaveToCommandBuffer();
         void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
-        void	SetRenderStateBlock( hdDX11BlendState* st );
-        void	SetRenderStateBlock( hdDX11DepthStencilState* st );
-        void	SetRenderStateBlock( hdDX11RasterizerState* st );
-        void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st );
+        /* This method... */
+        void    SetRenderInputObject(hdDX11RenderInputObject* inputobj);
+        /* is able to call the following in one go...*/
+        void	SetRenderStateBlock(hUint32 samplerIdx, hdDX11SamplerState* st);
         void    SetConstantBlock(hUint32 reg, hdDX11ParameterConstantBlock* block);
         void    SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state );
         void    SetPixelShader( hdDX11ShaderProgram* prog );
         void    SetVertexShader( hdDX11ShaderProgram* prog );
+        /* ..end */
+        void	SetRenderStateBlock(hdDX11BlendState* st );
+        void	SetRenderStateBlock(hdDX11DepthStencilState* st );
+        void	SetRenderStateBlock(hdDX11RasterizerState* st );
         void	SetRenderTarget( hUint32 idx , hdDX11Texture* target );
         void    SetDepthTarget( hdDX11Texture* depth );
         void	SetViewport( const hViewport& viewport );
@@ -74,6 +120,8 @@ namespace Heart
         void    Unmap( hdDX11IndexBuffer* ib, void* ptr );
         void    Map( hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data );
         void    Unmap( hdDX11VertexBuffer* vb, void* ptr );
+        void    Map(hdDX11ParameterConstantBlock* vb, hdDX11MappedResourceData* data);
+        void    Unmap(hdDX11ParameterConstantBlock* vb, void* ptr);
         void    Update(hdDX11ParameterConstantBlock* cb);
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }

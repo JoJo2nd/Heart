@@ -67,7 +67,6 @@ namespace Heart
             : boundTexture_(NULL)
             , defaultTextureID_(0)
             , samplerState_(NULL)
-            , samplerReg_(hErrorCode)
         {
             hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
         }
@@ -75,8 +74,7 @@ namespace Heart
         {
         }
 
-        hArray<hChar, 32>                   name_;
-        hUint32                             samplerReg_;
+        hArray<hChar, hMAX_PARAMETER_NAME_LEN> name_;
         hResourceID                         defaultTextureID_;
         hTexture*                           boundTexture_;
         hdSamplerState*                     samplerState_;
@@ -85,28 +83,6 @@ namespace Heart
     typedef hVector< hSamplerParameter >  hSamplerArrayType;
 
     typedef hUint16 hMaterialParameterID;
-
-    struct hMaterialParameter
-    {
-        hChar           name_[hMAX_PARAMETER_NAME_LEN];
-        hParameterType  type_;
-        hUint16         dataOffset_;
-    };
-
-    struct hParameterMapping
-    {
-        // Data travels from cpu -> gpu
-        hUint32         sizeBytes_;
-        hByte*          cpuData_;
-        hUint32         cBuffer_;
-        hUint32         cOffset_;
-    };
-
-    struct hProgramOutput
-    {
-        hChar                   name_[hMAX_PARAMETER_NAME_LEN];
-        hMaterialParameterID    parameterID_;
-    };
 
 	class HEART_DLLEXPORT hMaterial : public hResourceClassBase
 	{
@@ -118,11 +94,6 @@ namespace Heart
             , activeTechniques_(NULL)
             , manager_(NULL)
             , groups_(heap)
-            , samplers_(heap)
-            , materialParameters_(heap)
-            , programOutputs_(heap)
-            , defaultMappings_(heap)
-            , totalParameterDataSize_(0)
 		{
 			
 		}
@@ -136,18 +107,18 @@ namespace Heart
         void                                SetManager(hRenderMaterialManager* val) { manager_ = val; }
         hMaterialGroup*                     AddGroup(const hChar* name);
         void                                SetActiveGroup(const hChar* name);
-        void                                SetSamplerCount(hUint32 val);
-        void                                AddSamplerParameter(const hSamplerParameter& sampler);
         hBool                               Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                             GetMatKey() const { return uniqueKey_; }
-        void                                SetParameterInputOutputReserves(hUint32 totalIn, hUint32 totalOut);
-        hMaterialParameterID                AddMaterialParameter(hChar* name, hParameterType type);
-        void                                AddProgramOutput(hChar* name, hMaterialParameterID parameterID);
-        hMaterialParameterID                GetMaterialParameter(const hChar* name);
-        const hMaterialParameter*           GetMaterialParameterData(hMaterialParameterID id) { return &materialParameters_[(hUint32)id]; }
+        void                                AddSamplerParameter(const hSamplerParameter& samp);
+        
+        /* Create Create/DestroyMaterialOverrides()*/
 
-        hMaterialInstance*                  CreateMaterialInstance();
-        void                                DestroyMaterialInstance(hMaterialInstance* inst);
+        /* Bind interface - return false if not set on any programs, can only set on cloned materials */
+        hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
+        hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
+
+        /* Allow access to parameter blocks and updating of parameters */
+        hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
 
 	private:
 
@@ -155,194 +126,35 @@ namespace Heart
 
 		friend class hRenderer;
         friend class hRenderMaterialManager;
-        friend class ::MaterialEffectBuilder;
+
        
+        struct BoundTexture
+        {
+            hShaderParameterID paramid;
+            hTexture* texture;
+        };
+
+        struct BoundConstBlock
+        {
+            hShaderParameterID paramid;
+            hdParameterConstantBlock* constBlock;
+        };
+
         typedef hVector< hMaterialGroup >     GroupArrayType;
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
-        typedef hVector< hSamplerParameter >  SamplerArrayType;
-        typedef hVector< hMaterialParameter > MaterialParametersArrayType;
-        typedef hVector< hProgramOutput >     ProgramOutputArrayType;
-        typedef hVector< hParameterMapping >  ParameterMappingArrayType;
 
+        hMaterial*                          clonedFrom_; //NULL if original, original is immutable 
+        hSamplerArrayType                   defaultSamplers_;
         hMemoryHeapBase*                    memHeap_;
         hUint32                             uniqueKey_;
 		hRenderer*							renderer_;
         hRenderMaterialManager*             manager_;
         GroupArrayType                      groups_;
         TechniqueArrayType*                 activeTechniques_;
-        SamplerArrayType                    samplers_;
-        MaterialParametersArrayType         materialParameters_;
-        ProgramOutputArrayType              programOutputs_;
-        ParameterMappingArrayType           defaultMappings_;
-        hUint32                             totalParameterDataSize_;
-        hUint32                             constBlockCount_;
-        hByte                               constantBlockRegs_[HEART_MAX_CONSTANT_BLOCKS];
-        hUint32                             constantBlockSizes_[HEART_MAX_CONSTANT_BLOCKS];
-#ifdef HEART_DEBUG
-        hUint32                             constantBlockHashes_[HEART_MAX_CONSTANT_BLOCKS];
-#endif
+
+        BoundConstBlock                     constBlocks_[HEART_MAX_CONSTANT_BLOCKS];
+        BoundTexture                        boundTextures_[HEART_MAX_RESOURCE_INPUTS];
 	};
-
-    class hMaterialInstance
-    {
-    public:
-
-        hUint32                             GetTechniqueCount() const { return parentMaterial_->GetTechniqueCount(); }
-        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { parentMaterial_->GetTechnique( idx ); }
-        hMaterialTechnique*                 GetTechniqueByName( const hChar* name ) { return parentMaterial_->GetTechniqueByName( name ); }
-        hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask ) { return parentMaterial_->GetTechniqueByMask( mask ); }
-        hMaterialParameterID                GetMaterialParameter(const hChar* name) { return parentMaterial_->GetMaterialParameter(name); }
-        void                                SetMaterialParameter(hMaterialParameterID param, const void* val, hUint32 size);
-        hUint32                             GetSamplerCount() const { return samplers_.GetSize(); }
-        const hSamplerParameter*            GetSamplerParameter( hUint32 idx ) const { return &samplers_[idx]; }
-        const hSamplerParameter*            GetSamplerParameterByName( const hChar* name );
-        void                                SetSamplerParameter( const hSamplerParameter* param, hTexture* tex );
-        hUint32                             GetConstantBufferCount() const { return constBufferCount_; }
-        hdParameterConstantBlock*           GetConstantBlock( hUint32 idx ) { return constBuffers_ + idx; }
-        hByte                               GetConstantBlockReg(hUint32 idx) const { return constantBlockRegs_[idx]; }
-        const hMaterial*                    GetParentMaterial() const { return parentMaterial_; }
-        hUint32                             GetMatKey() const { return matKey_; }
-        void                                FlushParameters(hRenderSubmissionCtx* ctx);
-
-    private:
-
-        friend class hMaterial;
-
-        hPRIVATE_DESTRUCTOR();
-
-        hMaterialInstance( hMaterial* parentMat, hRenderer* renderer );
-        ~hMaterialInstance();
-
-        hMaterialInstance( const hMaterialInstance& rhs );
-        hMaterialInstance& operator = ( const hMaterialInstance& rhs );
-        
-        hRenderer*                          renderer_;
-        hUint32                             matKey_;
-        hMaterial*                          parentMaterial_;
-        hByte                               constantBlockRegs_[HEART_MAX_CONSTANT_BLOCKS];
-        hUint32                             constBufferCount_;
-        hUint32                             constBlockDirty_;
-        hdParameterConstantBlock*           constBuffers_;
-        hSamplerArrayType                   samplers_;
-        hUint32                             parameterMappingCount_;
-        hParameterMapping*                  parameterMappings_;
-        hUint32                             cpuDataSizeBytes_;
-        hByte*                              cpuData_;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hMaterial >( Heart::hSerialiser* ser, const Heart::hMaterial& data )
-    {
-//        SERIALISE_ELEMENT( data.groups_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hMaterial >( Heart::hSerialiser* ser, Heart::hMaterial& data )
-    {
-//        DESERIALISE_ELEMENT( data.groups_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hMaterialGroup >( Heart::hSerialiser* ser, const Heart::hMaterialGroup& data )
-    {
-//         SERIALISE_ELEMENT( data.name_ );
-//         SERIALISE_ELEMENT( data.techniques_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hMaterialGroup >( Heart::hSerialiser* ser, Heart::hMaterialGroup& data )
-    {
-//         DESERIALISE_ELEMENT( data.name_ );
-//         DESERIALISE_ELEMENT( data.techniques_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hMaterialTechnique >( Heart::hSerialiser* ser, const Heart::hMaterialTechnique& data )
-    {
-//         SERIALISE_ELEMENT( data.name_ );
-//         SERIALISE_ELEMENT( data.passes_ );
-//         SERIALISE_ELEMENT( data.layer_ );
-//         SERIALISE_ELEMENT( data.transparent_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hMaterialTechnique >( Heart::hSerialiser* ser, Heart::hMaterialTechnique& data )
-    {
-//         DESERIALISE_ELEMENT( data.name_ );
-//         DESERIALISE_ELEMENT( data.passes_ );
-//         DESERIALISE_ELEMENT( data.layer_ );
-//         DESERIALISE_ELEMENT( data.transparent_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hMaterialTechniquePass >( Heart::hSerialiser* ser, const Heart::hMaterialTechniquePass& data )
-    {
-//         SERIALISE_ELEMENT( data.vertexProgramID_ );
-//         SERIALISE_ELEMENT( data.fragmentProgramID_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hMaterialTechniquePass >( Heart::hSerialiser* ser, Heart::hMaterialTechniquePass& data )
-    {
-//         DESERIALISE_ELEMENT( data.vertexProgramID_ );
-//         DESERIALISE_ELEMENT( data.fragmentProgramID_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    
-    template<>
-    inline void SerialiseMethod< Heart::hShaderProgram >( Heart::hSerialiser* ser, const Heart::hShaderProgram& data )
-    {
-//         SERIALISE_ELEMENT( data.vertexInputLayoutFlags_ );
-//         SERIALISE_ELEMENT( data.shaderProgramLength_ );
-//         SERIALISE_ELEMENT_COUNT( data.shaderProgram_, data.shaderProgramLength_ );
-//         SERIALISE_ELEMENT_ENUM_AS_INT( data.shaderType_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hShaderProgram >( Heart::hSerialiser* ser, Heart::hShaderProgram& data )
-    {
-//         DESERIALISE_ELEMENT( data.vertexInputLayoutFlags_ );
-//         DESERIALISE_ELEMENT( data.shaderProgramLength_ );
-//         DESERIALISE_ELEMENT( data.shaderProgram_ );
-//         DESERIALISE_ELEMENT_INT_AS_ENUM( data.shaderType_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hSamplerParameter >( Heart::hSerialiser* ser, const Heart::hSamplerParameter& data )
-    {
-//         SERIALISE_ELEMENT( data.name_ );
-//         SERIALISE_ELEMENT( data.defaultTextureID_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hSamplerParameter >( Heart::hSerialiser* ser, Heart::hSamplerParameter& data )
-    {
-//         DESERIALISE_ELEMENT( data.name_ );
-//         DESERIALISE_ELEMENT( data.defaultTextureID_ );
-    }
 }
 
 #endif // HIMATERIAL_H__

@@ -62,22 +62,57 @@ namespace Heart
         hRenderMaterialManager();
         ~hRenderMaterialManager();
    
+        struct hConstBlockParam
+        {
+            const hChar* name_; // comes from string pool of hGlobalConstantBlock
+            hUint32 nameHash_; // CRC32 of parameter
+            hUint16 offset_;
+            hUint16 size_;
+        };
 
+        void                        SetRenderer(hRenderer* renderer) { renderer_ = renderer; }
         void                        GetUniqueKey(hMaterial* mat);
         void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
         const hRenderTechniqueInfo* GetRenderTechniqueInfo( const hChar* name );
+        hdParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
+        hdParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
+        void                        OpenLuaMaterialLib(lua_State* L);
 
     private:
 
-        typedef hVector< hRenderTechniqueInfo >     TechniqueArrayType;
-        typedef hVector< hMaterialKeyContainer >    MatKeyArrayType;
+        typedef hVector< hRenderTechniqueInfo > TechniqueArrayType;
+        typedef hVector< hMaterialKeyContainer > MatKeyArrayType;
 
+        struct hGlobalConstantBlock : public hMapElement<hUint32, hGlobalConstantBlock>
+        {
+            const hChar*              name_;
+            hUint32                   nameHash_; // CRC32 of block name
+            hdParameterConstantBlock* constBlock_;
+            hUint32                   strPoolSize_;
+            hChar*                    strPool_;
+            hUint32                   aliasCount_;
+            const hChar**             aliases_;
+            hUint32                   paramCount_;
+            hConstBlockParam*         params_;
+            hUint32                   dataSize_;
+            void*                     data_;
+        };
+
+        typedef hVector< hGlobalConstantBlock > ConstBlockArrayType;
+        typedef hMap< hUint32, hGlobalConstantBlock > ConstBlockMapType;
+
+        static int RegisterParameterBlock(lua_State* L);
+        static int RegisterRenderTechnique(lua_State* L);
+
+        hRenderer*              renderer_;
         hMutex                  accessMutex_;
         hUint32                 nMatKeys_;
         hUint32                 maxKeys_;
         hMaterialKeyContainer*  matKeys_;
         TechniqueArrayType      techniques_;
+        ConstBlockArrayType     constBlocks_;
+        ConstBlockMapType       constBlockLookUp_;
     };
 }
 

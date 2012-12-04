@@ -27,29 +27,7 @@
 
 namespace Heart
 {
-    //////////////////////////////////////////////////////////////////////////
-    // Custom entry //////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    class hConsoleTextbox : public Gwen::Controls::TextBox
-    {
-    public:
-        hConsoleTextbox(Gwen::Controls::Base* parent)
-            : TextBox(parent)
-        {
-            
-        }
 
-        bool OnKeyReturn( bool bDown )
-        {
-            if ( bDown ) 
-                return true;
-            OnEnter();
-            // Try to move to the next control, as if tab had been pressed
-            OnKeyTab( true );
-            return true;
-        }
-    };
-    
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -58,29 +36,10 @@ namespace Heart
     {
     public:
         //GWEN_CONTROL_CONSTRUCTOR(hConsoleUI)
-        hConsoleUI(Gwen::Controls::Base* parent, hSystemConsole* systemConsole)
-            : hDebugMenuBase(parent)
-            , console_(systemConsole)
+        hConsoleUI(hSystemConsole* systemConsole) 
+            : console_(systemConsole)
         {
-            outputList_ = hNEW(GetDebugHeap(), Gwen::Controls::ListBox)(this);
-            outputList_->SetSize(500, 200);
-            outputList_->SetHidden(false);
-            outputList_->SetScroll(hTrue, hTrue);
 
-            entry_ = hNEW(GetDebugHeap(), hConsoleTextbox)(this);
-            entry_->SetText( "" );
-            entry_->SetPos(0, 210);
-            entry_->SetWidth(500);
-            entry_->onReturnPressed.Add( this, &hConsoleUI::OnSubmit );
-
-            SetClosable(hTrue);
-            SetDeleteOnClose(false);
-            SetTitle("System Console");
-
-            //SizeToChildren(); Doesn't work?
-            SetMinimumSize(Gwen::Point(514, 276));
-            SetSize(514, 276);
-            SetPos(50, 350);
         }
 
         ~hConsoleUI()
@@ -88,34 +47,63 @@ namespace Heart
 
         }
 
-        void PreRenderUpdate() {}
-        void EndFrameUpdate() {}
-
-        void AddConsoleString(const hChar* inputStr)
+        void InitRenderResources(hRenderer* renderer, hResourceManager* resmanager)
         {
-            outputList_->AddItem(inputStr);
-            hUint32 c = outputList_->GetTable()->RowCount(0);
-            while( c > 15)
-            {
-                outputList_->SetSelectedRow(outputList_->GetTable()->GetRow(0));
-                outputList_->RemoveItem(outputList_->GetTable()->GetRow(0));
-                --c;
-            }
-            outputList_->ScrollToBottom();
+            hInputLayoutDesc layout[] = {
+                {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+                {eIS_COLOUR,   0, eIF_FLOAT4, 0, 0},
+            };
+            struct Vertex {
+                hFloat x,y,z;
+                hFloat r,g,b,a;
+            };
+            Vertex consolePlane[] = {
+                {-1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { 1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                {-1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+
+                {-1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { 1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { 1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+            };
+
+            renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout), 0, GetDebugHeap(), &backdropPlane_);
+            backdropMat_ = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.DEBUG_MAT"));
+
+            debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
+        void PreRenderUpdate() {}
+        void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB) 
+        {
+            hInstanceConstants* inst;
+            hConstBlockMapInfo map;
+
+            if (GetVisible()) {
+                ctx->Map(instanceCB, &map);
+                inst = (hInstanceConstants*)map.ptr;
+                inst->world_ = hMatrixFunc::identity();
+                ctx->Unmap(&map);
+
+                hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);
+                if (!tech) return;
+                for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
+                    ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->GetStride());
+                    /*ctx->SetInputStreams()*/
+                    ctx->SetMaterialPass(passptr);
+                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+                    ctx->DrawPrimitive(2, 0);
+                }
+            }
+        }
+        void EndFrameUpdate() {}
 
     private:
 
-        void OnSubmit( Gwen::Controls::Base* pControl )
-        {
-            Gwen::Controls::TextBox* textbox = (Gwen::Controls::TextBox*) (pControl);
-            console_->ExecuteBuffer(Gwen::Utility::UnicodeToString(textbox->GetText()).c_str());
-            textbox->SetText("");
-            textbox->Focus();
-        }
-
-        Gwen::Controls::ListBox* outputList_;
-        Gwen::Controls::TextBox* entry_;
+        hUint32                  debugTechMask_;
+        hVertexBuffer*           textBuffer_;
+        hVertexBuffer*           backdropPlane_;
+        hMaterial*               backdropMat_;
         hSystemConsole*          console_;
     };
 
@@ -136,7 +124,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	void hSystemConsole::Initialise( hControllerManager* pControllerManager,
-									 hLuaStateManager* pSquirrel,
+									 hLuaStateManager* lua,
 									 hResourceManager* pResourceManager,
 									 hRenderer* renderer,
                                      hGwenRenderer* uiRenderer)
@@ -144,7 +132,7 @@ namespace Heart
         controllerManager_ = pControllerManager;
 		resourceManager_ = pResourceManager;
         renderer_ = renderer;
-		vm_ = pSquirrel;
+		vm_ = lua;
         keyboard_ = controllerManager_->GetSystemKeyboard();
 	}
 
@@ -177,7 +165,8 @@ namespace Heart
                 //////////////////////////////////////////////////////////////////////////
 				loaded_ = hTrue;
 
-                consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(hDebugMenuManager::GetInstance()->GetDebugCanvas(), this);
+                consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
+                consoleWindow_->InitRenderResources(renderer_, resourceManager_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
 			}
 		}
@@ -220,27 +209,24 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 
 	//TODO: make multi thread safe. Lockless queue??
-	void hSystemConsole::LogString( const hChar* inputStr )
+	void hSystemConsole::LogString(const hChar* inputStr)
 	{
-        if (consoleWindow_)
+        /*do 
         {
-            do 
+            //nasty const cast
+            hChar* s = (hChar*)hStrChr(inputStr, '\n');
+            if (s) *s = 0;
+            consoleWindow_->AddConsoleString(inputStr);
+            if (s) 
             {
-                //nasty const cast
-                hChar* s = (hChar*)hStrChr(inputStr, '\n');
-                if (s) *s = 0;
-                consoleWindow_->AddConsoleString(inputStr);
-                if (s) 
-                {
-                    *s = '\n';
-                    inputStr = s+1;
-                }
-                else
-                {
-                    return;
-                }
-            } while (*inputStr);
-        }
+                *s = '\n';
+                inputStr = s+1;
+            }
+            else
+            {
+                return;
+            }
+        } while (*inputStr);*/
 	}
 
 	//////////////////////////////////////////////////////////////////////////

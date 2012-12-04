@@ -107,7 +107,8 @@ namespace Heart
 	const hColour WHITE( 1.0f, 1.0f, 1.0f, 1.0f );
 	const hColour BLACK( 0.0f, 0.0f, 0.0f, 1.0f );
 
-#define HEART_MAX_CONSTANT_BLOCKS (14)
+#define HEART_MAX_RESOURCE_INPUTS                       (16) // D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT == 128
+#define HEART_MAX_CONSTANT_BLOCKS                       (14) // == D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT 
 #define HEART_VIEWPORT_CONSTANTS_REGISTIER              (HEART_MAX_CONSTANT_BLOCKS-1)
 #define HEART_INSTANCE_CONSTANTS_REGISTIER              (HEART_MAX_CONSTANT_BLOCKS-2)
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_1     (HEART_MAX_CONSTANT_BLOCKS-3)
@@ -115,6 +116,7 @@ namespace Heart
 #define HEART_MIN_RESERVED_CONSTANT_BLOCK               (HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2)
 #define HEART_MAX_INPUT_STREAMS                         (15)
 #define HEART_MAX_RENDER_CAMERAS                        (15)
+#define HEART_MAX_GLOBAL_CONST_BLOCK_NAME_LEN           (64)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );
@@ -126,6 +128,8 @@ namespace Heart
         hUint32                 reg_;
         hUint32                 hash_;
     };
+
+    typedef hUint32 hShaderParameterID;
 
     struct hShaderParameter
     {
@@ -151,7 +155,7 @@ namespace Heart
         hUint32     size;
     };
 
-    enum ShaderType
+    enum hShaderType
     {
         ShaderType_VERTEXPROG,
         ShaderType_FRAGMENTPROG,

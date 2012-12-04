@@ -29,6 +29,7 @@
 
 namespace Heart
 {
+    /*
     class hRTProfilerMenu : public hDebugMenuBase
     {
     public:
@@ -48,6 +49,7 @@ namespace Heart
         Gwen::Controls::Label*  headerText_;
         Gwen::Controls::Label*  cpuTimesText_[hProfilerManager::s_maxProfileEntries];
     };
+    */
 }
 
 #endif // HREALTIMEPROFILERMENU_H__

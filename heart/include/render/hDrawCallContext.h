@@ -48,7 +48,7 @@ namespace Heart
         void SetRenderLayer(hByte val) { layerID_ = val; }
         void SetCameraID(hByte val) { camID_ = val; }
         void SetScissor(hUint32 left, hUint32 top, hUint32 right, hUint32 bottom);
-        void SubmitDrawCall( hMaterialInstance* mat, 
+        void SubmitDrawCall( hMaterial* mat, 
                             hIndexBuffer* ib, 
                             hVertexBuffer* vb, 
                             hUint32 primCount, 

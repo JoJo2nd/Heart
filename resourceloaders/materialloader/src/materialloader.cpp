@@ -134,6 +134,7 @@ Heart::hXMLEnumReamp g_samplerStates[] =
 {
     { "repeat",                  Heart::SSV_WRAP },
     { "wrap",                    Heart::SSV_WRAP },
+
     { "clamp",                   Heart::SSV_CLAMP },
     { "clamptoedge",             Heart::SSV_CLAMP },
     { "mirror",                  Heart::SSV_MIRROR },
@@ -260,23 +261,23 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
         material->AddSamplerParameter(sampler);
     }
-
+/*
     material->SetParameterInputOutputReserves(header.parameterCount, header.parameterRemapCount);
-
+*/
     //Read parameters
     for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
     {
         ParameterDefinition paramDef;
-        hMaterialParameterID id;
+        //hMaterialParameterID id;
         inFile->Read(&paramDef, sizeof(paramDef));
 
-        id = material->AddMaterialParameter(paramDef.parameterName, paramDef.type);
+        //id = material->AddMaterialParameter(paramDef.parameterName, paramDef.type);
         for (hUint32 i2 = 0, i2max = paramDef.remapParamCount; i2 < i2max; ++i2)
         {
             ParameterRemapDefinition paramRemap;
             inFile->Read(&paramRemap, sizeof(paramRemap));
 
-            material->AddProgramOutput(paramRemap.parameterName, id);
+            //material->AddProgramOutput(paramRemap.parameterName, id);
         }
     }
 
@@ -379,20 +380,20 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         ++matHeader.samplerCount;
         binoutput->Write(&sampDef, sizeof(sampDef));
         
-//         hXMLGetter xRemap(xSampler.FirstChild("dest"));
-//         for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
-//         {
-//             SamplerRemapDefinition remapDef = {0};
-//             hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
-//             ++sampDef.remapParamCount;
-//             ++matHeader.samplerRemapCount;
-// 
-//             binoutput->Write(&remapDef, sizeof(remapDef));
-//         }
-// 
-//         binoutput->Seek(remapos, hISerialiseStream::eBegin);
-//         binoutput->Write(&sampDef.remapParamCount, sizeof(sampDef.remapParamCount));
-//         binoutput->Seek(0, hISerialiseStream::eEnd);
+        hXMLGetter xRemap(xSampler.FirstChild("dest"));
+        for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
+        {
+            SamplerRemapDefinition remapDef = {0};
+            hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
+            ++sampDef.remapParamCount;
+            ++matHeader.samplerRemapCount;
+
+            binoutput->Write(&remapDef, sizeof(remapDef));
+        }
+
+        binoutput->Seek(remapos, hISerialiseStream::eBegin);
+        binoutput->Write(&sampDef.remapParamCount, sizeof(sampDef.remapParamCount));
+        binoutput->Seek(0, hISerialiseStream::eEnd);
     }
 
     matHeader.parameterOffset = binoutput->Tell();

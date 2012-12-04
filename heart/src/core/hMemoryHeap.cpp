@@ -47,7 +47,8 @@ void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
 #endif
         initBaseHeap(!threadLocal);
     }
-    hMemoryViewMenu::RegisterMemoryHeap(this);
+#pragma message ("TODO")
+    //hMemoryViewMenu::RegisterMemoryHeap(this);
     lock_.Unlock();
 }
 
@@ -68,7 +69,8 @@ void hMemoryHeap::destroy()
 {
 	if ( localMspace_ != 0 )
 	{
-        hMemoryViewMenu::UnregisterMemoryHeap(this);
+#pragma message ("TODO")
+        //hMemoryViewMenu::UnregisterMemoryHeap(this);
 
 		hMH_PRE_ACTION();
         mallinfo mi = mspace_mallinfo(localMspace_);

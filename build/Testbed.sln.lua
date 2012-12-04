@@ -27,5 +27,16 @@ solution (SlnName)
     dofile "project_scripts/libvorbisfile.proj.lua"
     dofile "project_scripts/libogg.proj.lua"
     dofile "project_scripts/heartcore.proj.lua"
+    
+    --- offline util libs
+    dofile "project_scripts/libpng.proj.lua"
+    dofile "project_scripts/libtga.proj.lua"
+    
+    -- resource loader projects
+    dofile "project_scripts/texture_loader.proj.lua"
+    dofile "project_scripts/font_loader.proj.lua"
+    dofile "project_scripts/material_loader.proj.lua"
+    dofile "project_scripts/shader_loader.proj.lua"
+    dofile "project_scripts/mesh_loader.proj.lua"
 
 

@@ -103,13 +103,13 @@ void ModelRenderTest::RenderUnitTest()
     {
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
-        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialInstance()->GetMatKey(), 0);
+        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
         drawCall_.indexBuffer_ = renderable->GetIndexBuffer();
         for (hUint32 vs = 0; vs < Heart::hDrawCall::MAX_VERT_STREAMS; ++vs)
         {
             drawCall_.vertexBuffer_[vs] = renderable->GetVertexBuffer(vs);
         }
-        drawCall_.matInstance_ = renderable->GetMaterialInstance();
+        drawCall_.matInstance_ = renderable->GetMaterial();
         drawCall_.primType_ = renderable->GetPrimativeType();
         drawCall_.startVertex_ = renderable->GetStartIndex();
         drawCall_.primCount_ = renderable->GetPrimativeCount();

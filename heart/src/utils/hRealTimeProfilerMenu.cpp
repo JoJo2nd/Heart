@@ -27,7 +27,7 @@
 
 namespace Heart
 {
-
+/*
     Heart::hProfileEntry hRTProfilerMenu::s_entryCopies[hProfilerManager::s_maxProfileEntries];
 
     //////////////////////////////////////////////////////////////////////////
@@ -102,6 +102,6 @@ namespace Heart
     {
 
     }
-
+*/
 
 }

@@ -31,7 +31,7 @@
 namespace Heart
 {
     class HEART_DLLEXPORT hShaderProgram : public hResourceClassBase,
-                                                public hPtrImpl< hdShaderProgram >
+                                           public hdShaderProgram
     {
     public:
         hShaderProgram() 
@@ -46,15 +46,8 @@ namespace Heart
 
         void                    SetVertexLayout(hUint32 layout) { vertexInputLayoutFlags_ = layout; }
         hUint32                 GetVertexLayout() const { return vertexInputLayoutFlags_; }
-        ShaderType              GetShaderType() const { return shaderType_; } 
-        void                    SetShaderType(ShaderType shadertype) { shaderType_ = shadertype; }
-
-        hUint32                 GetConstantBlockCount() const { return pImpl()->GetConstantBlockCount(); }
-        void                    GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc) { pImpl()->GetConstantBlockDesc(idx, desc); }
-        hUint32                 GetShaderParameterCount() { return pImpl()->GetShaderParameterCount(); }
-        hBool                   GetShaderParameter(hUint32 i, hShaderParameter* param) { return pImpl()->GetShaderParameter(i, param); }
-        hUint32                 GetSamplerRegister(const hChar* name) { return pImpl()->GetSamplerRegister(name); }
-
+        hShaderType              GetShaderType() const { return shaderType_; } 
+        void                    SetShaderType(hShaderType shadertype) { shaderType_ = shadertype; }
 
     private:
 
@@ -63,7 +56,7 @@ namespace Heart
         friend class hRenderer;
 
         hUint32                     vertexInputLayoutFlags_;
-        ShaderType                  shaderType_;
+        hShaderType                  shaderType_;
     };
 }
 

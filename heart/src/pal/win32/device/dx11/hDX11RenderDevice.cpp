@@ -230,7 +230,7 @@ namespace Heart
 
         mainDeviceCtx_->OMSetRenderTargets( 1, &renderTargetView_, depthStencilView_ );
         
-        hFloat clearcolour[] = { 1.f, 0.f, 1.f, 1.f };
+        hFloat clearcolour[] = { 0.f, 0.f, 0.f, 1.f };
         mainDeviceCtx_->ClearRenderTargetView( renderTargetView_, clearcolour );
         mainDeviceCtx_->ClearDepthStencilView( depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0 );
     }
@@ -296,10 +296,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, ShaderType type)
+    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(const hChar* shaderProg, 
+        hUint32 len, hInputLayoutDesc* inputLayout, 
+        hUint32 layoutCount, hShaderType type, hdDX11ShaderProgram* out)
     {
         HRESULT hr;
-        hdDX11ShaderProgram* shader = hNEW ( GetGlobalHeap()/*!heap*/, hdDX11ShaderProgram );
+        hdDX11ShaderProgram* shader = out;
         shader->type_ = type;
 
         if ( type == ShaderType_FRAGMENTPROG )
@@ -330,9 +332,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyShader( hdDX11ShaderProgram* shaderProg )
+    void hdDX11RenderDevice::DestroyShader(hdDX11ShaderProgram* prog)
     {
-        hDELETE(GetGlobalHeap()/*!heap*/, shaderProg);
+        if (!prog) return;
+        if ( prog->shaderInfo_ ) {
+            prog->shaderInfo_->Release();
+            prog->shaderInfo_ = NULL;
+        }
+        if (prog->vertexShader_ && prog->type_ == ShaderType_VERTEXPROG) {
+            prog->vertexShader_->Release();
+            prog->vertexShader_ = NULL;
+        }
+        if (prog->pixelShader_ && prog->type_ == ShaderType_FRAGMENTPROG) {
+            prog->pixelShader_->Release();
+            prog->pixelShader_ = NULL;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1216,9 +1230,9 @@ namespace Heart
             D3D11_BUFFER_DESC desc;
             hZeroMem( &desc, sizeof(desc) );
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.ByteWidth = sizes[i];
-            desc.CPUAccessFlags = 0;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].size_ = sizes[i];
@@ -1232,16 +1246,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* /*constBlock*/, hShaderParameter* /*params*/, hUint32 /*parameters*/ )
-    {
-        //Does Nothing
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderDevice::DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count )
+    void hdDX11RenderDevice::DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace)
     {
         for ( hUint32 i = 0; i < count; ++i )
         {

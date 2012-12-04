@@ -65,20 +65,61 @@ namespace Heart
 
 	private:
 
-		static const hUint32								MAX_CONSOLE_LOG_SIZE = 4086;
-		static const hUint32								INPUT_BUFFER_LEN = 128;
+		static const hUint32								MAX_CONSOLE_LOG_SIZE = 4096;
+		static const hUint32								INPUT_BUFFER_LEN = 256;
 		static const hUint32								MAX_PREV_COMMAND_LOGS = 32;
 		static const hResourceID           					FONT_RESOURCE_NAME;
 		static const hResourceID           					CONSOLE_MATERIAL_NAME;
 
+        template< hUint32 t_size >
+        class hStringRingBuffer
+        {
+        public:
+            hStringRingBuffer()
+            {
+                write_ = ring_;
+                read_ = ring_;
+            }
+            void   pushChar(const hChar& x)
+            {
+                *write_ = x;
+                ++write_;
+                if (write_ >= (ring_+t_size)) write_ = ring_;
+                if (write_ == read_) 
+                {
+                    ++read_;
+                    if (read_ >= (ring_+t_size)) write_ = ring_;
+                }
+            }
+            hChar* getFront() const
+            {
+                return read_ == write_ ? NULL : write_;
+            }
+            hChar* getNext(const hChar* c) const
+            {
+                hcAssertMsg(c >= ring_ && c < ring_+t_size, "parameter doesn't belong to this ring buffer");
+                const hChar* r = c;
+                ++r;
+                if (r == write_) return NULL;//Complete
+                return r;
+            }
+        private:
+            hChar* write_, *read_;
+            hChar  ring_[t_size];
+        };
+
 		void												UpdateConsole();
 		void 												ClearConsoleBuffer();
-		void												LogString( const hChar* inputStr );
+		void												LogString(const hChar* inputStr);
 
         hRenderer*                                          renderer_;
 		hResourceManager*									resourceManager_;
         hDrawCallContext                                    ctx_;
         const hdKeyboard*                                   keyboard_;
+
+        hStringRingBuffer<MAX_CONSOLE_LOG_SIZE>             consoleLog_;                                            
+        hChar                                               inputBuffer_[INPUT_BUFFER_LEN];
+        hChar                                               prevInputs_[MAX_PREV_COMMAND_LOGS][INPUT_BUFFER_LEN];
 
         //Display UI
         hControllerManager*                                 controllerManager_;

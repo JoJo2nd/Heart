@@ -68,6 +68,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hRenderSubmissionCtx::SetMaterialPass(hMaterialTechniquePass* pass)
+    {
+        impl_.SetRenderStateBlock(pass->GetDepthStencilState());
+        impl_.SetRenderStateBlock(pass->GetBlendState());
+        impl_.SetRenderStateBlock(pass->GetRasterizerState());
+        impl_.SetRenderInputObject(pass->GetRenderInputObject());
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderSubmissionCtx::SetViewport( const hViewport& viewport )
     {
         impl_.SetViewport( viewport );
@@ -88,7 +100,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetPixelShader( hShaderProgram* ps )
     {
-        impl_.SetPixelShader( ps->pImpl() );
+        impl_.SetPixelShader(ps);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -97,7 +109,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetVertexShader( hShaderProgram* vs )
     {
-        impl_.SetVertexShader( vs->pImpl() );
+        impl_.SetVertexShader(vs);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -208,6 +220,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hRenderSubmissionCtx::Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo)
+    {
+        hdMappedData md;
+        impl_.Map(cb, &md);
+        outInfo->ptr = md.pData;
+        outInfo->cb = cb;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderSubmissionCtx::Unmap( hIndexBufferMapInfo* outInfo )
     {
         impl_.Unmap( outInfo->ib_->pImpl(), outInfo->ptr_ );
@@ -235,82 +259,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::SetRendererCamera( hRendererCamera* camera )
+    void hRenderSubmissionCtx::Unmap(hConstBlockMapInfo* info)
     {
-        viewportConstants_ = camera->GetViewportConstants();
-        viewportConstantsBlock_ = camera->GetViewportConstantBlock();
-        techniqueMask_ = camera->GetTechniqueMask();
-
-        SetRenderTarget( 0, camera->GetRenderTarget(0) );
-        SetRenderTarget( 1, camera->GetRenderTarget(1) );
-        SetRenderTarget( 2, camera->GetRenderTarget(2) );
-        SetRenderTarget( 3, camera->GetRenderTarget(3) );
-        SetDepthTarget( camera->GetDepthTarget() );
-        SetViewport( camera->GetViewport() );
-
-        impl_.SetConstantBlock(HEART_VIEWPORT_CONSTANTS_REGISTIER, viewportConstantsBlock_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderSubmissionCtx::SetMaterialInstance( hMaterialInstance* instance )
-    {
-        currentMaterial_ = instance;
-        currentTechnique_ = instance->GetTechniqueByMask( techniqueMask_ );
-        hcAssert( currentTechnique_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderSubmissionCtx::BeingMaterialInstancePass( hUint32 i )
-    {
-        hcAssert( currentTechnique_ );
-        hcAssert( currentMaterial_ );
-
-        hMaterialTechniquePass* pass = currentTechnique_->GetPass( i );
-        SetVertexShader( pass->GetVertexShader() );
-        SetPixelShader( pass->GetFragmentShader() );
-        SetRenderStateBlock( pass->GetBlendState() );
-        SetRenderStateBlock( pass->GetDepthStencilState() );
-        SetRenderStateBlock( pass->GetRasterizerState() );
-/* TODO: FIX ME
-        for ( hUint32 i = 0; i < currentMaterial_->GetConstantBufferCount(); ++i )
-        {
-            SetConstantBuffer( currentMaterial_->GetConstantBlock(i) );
-        }
-
-        for ( hUint32 i = 0; i < currentMaterial_->GetSamplerCount(); ++i )
-        {
-            const hSamplerParameter* samp = currentMaterial_->GetSamplerParameter( i );
-            hcWarningHigh( samp->boundTexture_ == NULL, "Sampler has no texture bound" );
-            if (samp->boundTexture_)
-                SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
-        }
-*/
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderSubmissionCtx::EndMaterialInstancePass()
-    {
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderSubmissionCtx::SetWorldMatrix( const hMatrix& world )
-    {
-        instanceConstants_->world_ = world;
-
-        impl_.SetConstantBlock(HEART_INSTANCE_CONSTANTS_REGISTIER, instanceConstantsBlock_ );
+        impl_.Unmap(info->cb, info->ptr);
+        info->ptr = NULL;
+        info->cb = NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -335,5 +288,4 @@ namespace Heart
             renderer_->DestroyConstantBlocks(instanceConstantsBlock_, 1);
         }
     }
-
 }

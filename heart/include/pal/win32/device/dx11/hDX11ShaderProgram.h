@@ -52,44 +52,32 @@ namespace Heart
         }
         ~hdDX11ShaderProgram()
         {
-            if ( shaderInfo_ )
-            {
-                shaderInfo_->Release();
-                shaderInfo_ = NULL;
-            }
-            if (vertexShader_ && type_ == ShaderType_VERTEXPROG)
-            {
-                vertexShader_->Release();
-                vertexShader_ = NULL;
-            }
-            if (pixelShader_ && type_ == ShaderType_FRAGMENTPROG)
-            {
-                pixelShader_->Release();
-                pixelShader_ = NULL;
-            }
         }
 
         hUint32                         GetConstantBlockCount() const;
         void                            GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc);
+        hUint32                         GetConstantBlockRegister(hShaderParameterID id) const;
         hUint32                         GetShaderParameterCount();
         hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param);
-        hUint32                         GetSamplerRegister(const hChar* name) const;
+        hUint32                         GetInputRegister(const hChar* name) const;
+        hUint32                         GetInputRegister(hShaderParameterID id) const;
         hUint32                         GetInputLayout() const { return inputLayoutFlags_; }
 
     private:
 
         friend class hdDX11RenderDevice;
         friend class hdDX11RenderSubmissionCtx;
+        friend class hdDX11RenderInputObject;
 
-        ShaderType                  type_;
-        hUint32                     inputLayoutFlags_;
-        hdDX11VertexLayout*         inputLayout_;
+        hShaderType                      type_;
+        hUint32                         inputLayoutFlags_;
+        hdDX11VertexLayout*             inputLayout_;
         union 
         {
-            ID3D11PixelShader*      pixelShader_;
-            ID3D11VertexShader*     vertexShader_;
+            ID3D11PixelShader*          pixelShader_;
+            ID3D11VertexShader*         vertexShader_;
         };
-        ID3D11ShaderReflection*     shaderInfo_;
+        ID3D11ShaderReflection*         shaderInfo_;
     };
 }
 #endif // DEVICEDX11SHADERPROGRAM_H__

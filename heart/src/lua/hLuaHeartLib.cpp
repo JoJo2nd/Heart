@@ -1,3 +1,4 @@
+#include "lauxlib.h"
 /********************************************************************
 
 	filename: 	LuaHeartLib.cpp	
@@ -84,12 +85,7 @@ by Lua can also return many results.
 
 	int hLuaEnableDebugDraw( lua_State* L )
 	{
-        HEART_LUA_GET_ENGINE(L);
-
 		int enable = luaL_checkinteger(L, -1);
-		
-		//Heart::DebugRenderer::EnableDebugDrawing( enable > 0 );
-
 		return 0;
 	}
 
@@ -110,29 +106,45 @@ by Lua can also return many results.
 
     int hLuaExit(lua_State* L)
     {
-        HEART_LUA_GET_ENGINE(L);
         //engine->GetEventManager()->PostEvent( Heart::KERNEL_EVENT_CHANNEL, Heart::Device::KernelEvents::QuitRequestedEvent() );
         exit(luaL_checknumber( L, 1 ));
         return 0;
     }
 
+    //functions that don't need upvalues
 	static const luaL_Reg libcore[] = {
 		{"elasped",			    hLuaElasped},
 		{"elaspedHMS",		    hLuaElaspedHoursMinSecs},
 		{"wait",			    hLuaWait},
-		{"dd",                  hLuaEnableDebugDraw},
-        {"cls",                 hLuaClearConsole},
-        {"dms",                 hLuaSetDebugMenuVisiable},
         {"exit",                hLuaExit},
         {NULL, NULL}
 	};
 
-#define HEART_OPEN_LIB(name) \
-    lua_pushlightuserdata(L, engine); \
-    luaI_openlib( L, "h", name, 1 ); \
+    //functions that need up values
+    static const luaL_Reg libcoreuv[] = {
+        {"dd",                  hLuaEnableDebugDraw},
+        {"cls",                 hLuaClearConsole},
+        {"dms",                 hLuaSetDebugMenuVisiable},
+        {NULL, NULL}
+    };
 
-	void OpenHeartLuaLib( lua_State* L, hHeartEngine* engine )
+    int luaopen_heartbase(lua_State *L) 
+    {
+        luaL_newlibtable(L,libcore);
+        luaL_setfuncs(L,libcore,0);
+
+        return 1;
+    }
+
+	void OpenHeartLuaLib(lua_State* L, hHeartEngine* engine)
 	{
-        HEART_OPEN_LIB(libcore);
+        luaL_requiref(L, "heart", luaopen_heartbase, true);
+        lua_pop(L, 1);//remove module from stack return by requiref
+
+        lua_getglobal(L, "heart");
+        hcAssertMsg(lua_istable(L, -1),"Type is not table, is %s",lua_typename(L, lua_type(L, -1)));
+        lua_pushlightuserdata(L, engine);
+        luaL_setfuncs(L,libcoreuv,1);
+        lua_pop(L, 1);// pop heart module table
 	}
 }

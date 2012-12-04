@@ -65,11 +65,17 @@ namespace Heart
         hdBlendState*           GetBlendState() { return blendState_; }
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
+        hdRenderInputObject*    GetRenderInputObject() { return &renderInput_; }
         void                    SetBlendState(hdBlendState* state) { blendState_ = state; }
         void                    SetDepthStencilState(hdDepthStencilState* state) { depthStencilState_ = state; }
         void                    SetRasterizerState(hdRasterizerState* state) { rasterizerState_ = state; }
         hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         void                    ReleaseResources(hRenderer* renderer);
+
+        hBool   BindShaderProgram(hdShaderProgram* prog);
+        hBool   BindSamplerInput(hShaderParameterID paramID, hdSamplerState* srv);
+        hBool   BindResourceView(hShaderParameterID paramID, hTexture* view);
+        hBool   BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer);
 
     private:
 
@@ -107,6 +113,8 @@ namespace Heart
         hdBlendState*                       blendState_;
         hdDepthStencilState*                depthStencilState_;
         hdRasterizerState*                  rasterizerState_;
+
+        hdRenderInputObject                 renderInput_;
     };
 
     class HEART_DLLEXPORT hMaterialTechnique

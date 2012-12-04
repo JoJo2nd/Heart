@@ -66,6 +66,14 @@ namespace Heart
         hMatrix world_;
     };
 
+    struct HEART_DLLEXPORT hConstBlockMapInfo
+    {
+        hdParameterConstantBlock* cb;
+        void* ptr;
+    };
+
+    class hRenderInputStreams;
+
     class HEART_DLLEXPORT hRenderSubmissionCtx
     {
     public:
@@ -78,21 +86,17 @@ namespace Heart
 
         void    Initialise( hRenderer* renderer );
 
-        //Helper Functions
-        void    SetRendererCamera( hRendererCamera* viewport );
-        void    SetMaterialInstance( hMaterialInstance* instance );
-        hUint32 GetMaterialInstancePasses() const { return currentTechnique_->GetPassCount(); }
-        void    BeingMaterialInstancePass( hUint32 i );
-        void    EndMaterialInstancePass();
-
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         //Raw Functions
         void	SetIndexStream( hIndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hVertexBuffer* vtxBuf, hUint32 stride );
+#pragma message ("TODO")
+        void    SetInputStreams(hRenderInputStreams*);
         void	SetRenderTarget( hUint32 idx , hTexture* pTarget );
         void    SetDepthTarget( hTexture* depth );
         void	SetViewport( const hViewport& viewport );
         void	SetScissorRect( const hScissorRect& scissor );
+        void    SetMaterialPass(hMaterialTechniquePass* pass);
         void    SetPixelShader( hShaderProgram* ps );
         void    SetVertexShader( hShaderProgram* vs );
         void    SetConstantBuffer(hUint32 reg, hdParameterConstantBlock* constBuffer );
@@ -102,7 +106,6 @@ namespace Heart
         void	SetRenderStateBlock( hdDX11RasterizerState* st ) { impl_.SetRenderStateBlock( st ); }
         void	SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st ) { impl_.SetRenderStateBlock( samplerIdx, st ); }
         void	ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
-        void    SetWorldMatrix( const hMatrix& world );
         void    SetPrimitiveType( PrimitiveType primType );
         void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
@@ -113,6 +116,8 @@ namespace Heart
         void    Unmap( hVertexBufferMapInfo* outInfo );
         void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
         void    Unmap( hTextureMapInfo* outInfo );
+        void    Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
+        void    Unmap(hConstBlockMapInfo* info);
         void    Update(hdParameterConstantBlock* cb) { impl_.Update(cb); }
 
     private:

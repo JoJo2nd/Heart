@@ -44,16 +44,11 @@ namespace Heart
             : materialID_(0)
             , materialKey_(0)
             , material_(NULL)
-            , materialInstance_(NULL)
             , vtxStreams_(0)
         {
         }
         virtual ~hRenderable() 
         {
-            if (material_)
-            {
-                material_->DestroyMaterialInstance(materialInstance_);
-            }
         }
 
         hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); return drawItem_.vertexBuffer_[stream]; }
@@ -75,7 +70,7 @@ namespace Heart
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
         void                                    SetMaterial(hMaterial* material);
-        hMaterialInstance*                      GetMaterialInstance() const { return materialInstance_; }
+        hMaterial*                              GetMaterial() const { return material_; }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
@@ -87,7 +82,6 @@ namespace Heart
         hUint32                 vtxStreams_;
         hDrawCall               drawItem_;
         hMaterial*              material_;
-        hMaterialInstance*      materialInstance_;
         Heart::hAABB            aabb_;
     };
 }

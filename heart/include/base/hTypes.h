@@ -96,7 +96,7 @@ namespace Heart
 
 #define	hFalse				(false)
 #define	hTrue				(true)
-#define hErrorCode			(~0U)
+#define hErrorCode			(~0)
 
 #define hAlignPower2( x, align ) ( ( (hUint32)x + (hUint32)align - 1 ) & ~((hUint32)align - 1) )
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )

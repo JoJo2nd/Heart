@@ -135,7 +135,7 @@ struct ShaderHeader
 {
     Heart::hResourceBinHeader   resHeader;
     hUint32                     version;
-    Heart::ShaderType           type;
+    Heart::hShaderType           type;
     hUint32                     vertexLayout;
     hUint32                     shaderBlobSize;
     hUint32                     inputLayoutElements;
@@ -169,8 +169,10 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
     tmpShaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
     inFile->Read(tmpShaderBlob, header.shaderBlobSize);
 
-    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)tmpShaderBlob, header.shaderBlobSize, inLayout, header.inputLayoutElements, header.type);
-    shaderProg->SetImpl(impl);
+    engine->GetRenderer()->CompileShader(
+        (hChar*)tmpShaderBlob, header.shaderBlobSize, 
+        inLayout, header.inputLayoutElements, 
+        header.type, shaderProg);
     shaderProg->SetShaderType(header.type);
     shaderProg->SetVertexLayout(header.vertexLayout);
 
@@ -188,7 +190,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 {
     using namespace Heart;
 
-    Heart::ShaderType progtype;
+    Heart::hShaderType progtype;
     const hChar* typestr = params->GetBuildParameter("TYPE","VERTEX");
     if (hStrICmp(typestr, "VERTEX") == 0)
         progtype = ShaderType_VERTEXPROG;
@@ -314,8 +316,7 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     using namespace Heart;
 
     hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
-    engine->GetRenderer()->DestroyShader(sp->pImpl());
-    sp->SetImpl(NULL);
+    engine->GetRenderer()->DestroyShader(sp);
     hDELETE(memalloc->resourcePakHeap_, sp);
 }
 

@@ -109,7 +109,7 @@ namespace Heart
 		newthread.yieldRet_ = 0;
 
 		luaL_loadstring( newthread.lua_, buff );
-		newthread.status_ = lua_resume( newthread.lua_, 0 );
+		newthread.status_ = lua_resume( newthread.lua_, NULL, 0 );
 		//status of 0 is completed OK, so we leave that be and 
 		//let lua GC collect the thread object.
 		if ( newthread.status_ == LUA_YIELD )
@@ -237,7 +237,7 @@ namespace Heart
 
 			if ( status == HLUA_WAKEUP )
 			{
-				status = lua_resume( ts->lua_, ts->yieldRet_ );
+				status = lua_resume( ts->lua_, NULL, ts->yieldRet_ );
 				if ( status == LUA_YIELD )
 				{
 					ts->yieldRet_ = lua_gettop( ts->lua_ );
@@ -305,7 +305,9 @@ namespace Heart
 
 	void hLuaStateManager::RegisterLuaFunctions( luaL_Reg* libfunc )
 	{
-		luaL_register( mainLuaState_, "Heart", libfunc );
+        lua_getglobal(mainLuaState_, "heart");
+        luaL_setfuncs(mainLuaState_,libfunc,0);
+        lua_pop(mainLuaState_, 1);// pop heart module table
 	}
 
     //////////////////////////////////////////////////////////////////////////

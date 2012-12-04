@@ -83,7 +83,6 @@ namespace Heart
 
     void hDebugMenuManager::RegisterMenu( const hChar* name, hDebugMenuBase* menu )
     {
-        hcAssertMsg( menu->GetParent() == uiCanvas_, "Debug menus must has the debug ui canvas as a parent");
         menuMap_.Insert(hCRC32::StringCRC(name), menu);
     }
 
@@ -110,7 +109,7 @@ namespace Heart
         hDebugMenuBase* dm = menuMap_.Find(hCRC32::StringCRC(name));
         if (dm)
         {
-            dm->SetHidden(!show);
+            dm->SetVisible(show);
         }
     }
 
@@ -130,10 +129,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::RenderMenus()
+    void hDebugMenuManager::RenderMenus(hRenderSubmissionCtx* rndCtx, hRenderMaterialManager* matManager)
     {
         HEART_PROFILE_FUNC();
-        if (resourceManager_->RequiredResourcesReady())
+        /*if (resourceManager_->RequiredResourcesReady())
         {
             if (uiCanvas_ == NULL)
             {
@@ -152,6 +151,40 @@ namespace Heart
             inputBinder_.Update();
             uiRenderer_->SetRenderCameraID(HEART_DEBUGUI_CAMERA_ID);//TODO: do this better...
             uiCanvas_->RenderCanvas();
+        }*/
+        hConstBlockMapInfo camMap;
+        hViewportShaderConstants* camData;
+        hMatrix view, proj;
+        hViewport viewport;
+        hdParameterConstantBlock* camCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("CameraConstants"));
+        hdParameterConstantBlock* instCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
+        hcAssertMsg(camCB, "Couldn't find global constant block \"CameraConstants\"");
+        hcAssertMsg(instCB, "Couldn't find global constant block \"InstanceConstants\"");
+
+        rndCtx->Map(camCB, &camMap);
+        camData = (hViewportShaderConstants*)camMap.ptr;
+
+        viewport.x_ = 0;
+        viewport.y_ = 0;
+        viewport.width_ = renderer_->GetWidth();
+        viewport.height_ = renderer_->GetHeight();
+        view = hMatrixFunc::identity();
+        proj = hMatrixFunc::orthoProj((hFloat)renderer_->GetWidth(), (hFloat)renderer_->GetHeight(), 0.f, 100.f);
+
+        camData->projection_ = proj;
+        camData->projectionInverse_ = hMatrixFunc::inverse(proj);
+        camData->view_ = view;
+        camData->viewInverse_ = hMatrixFunc::inverse( view );
+        camData->viewInverseTranspose_ = hMatrixFunc::transpose( camData->viewInverse_ );
+        camData->viewProjection_ = hMatrixFunc::mult(view, proj);
+        camData->viewProjectionInverse_ = hMatrixFunc::inverse(camData->viewProjection_);
+        rndCtx->Unmap(&camMap);
+
+        rndCtx->SetViewport(viewport);
+
+        for (hDebugMenuBase* i = menuMap_.GetHead(); i != NULL; i = i->GetNext())
+        {
+            i->Render(rndCtx, instCB);
         }
     }
 

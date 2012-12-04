@@ -155,7 +155,7 @@ namespace Heart
 
         console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_, uiRenderer_ );
 
-        uiRenderer_->Initialise(renderer_, resourceMananger_);
+        //uiRenderer_->Initialise(renderer_, resourceMananger_);
 
         debugMenuManager_->Initialise(uiRenderer_, renderer_, resourceMananger_, controllerManager_);
 
@@ -168,7 +168,23 @@ namespace Heart
         RegisterDefaultComponents();
 
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
+        renderer_->GetMaterialManager()->OpenLuaMaterialLib(luaVM_->GetMainState());
 
+        //Run the start up script
+        hIFile* startupscript = fileMananger_->OpenFileRoot("startup.lua", FILEMODE_READ);
+        if (startupscript)
+        {
+            hChar* script = (hChar*)hAlloca(startupscript->Length()+1);
+            startupscript->Read(script, startupscript->Length());
+            script[startupscript->Length()] = 0;
+            if (luaL_dostring(luaVM_->GetMainState(), script) != 0) {
+                hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
+                lua_pop(luaVM_->GetMainState(), 1);
+            }
+            fileMananger_->CloseFile(startupscript);
+        }
+
+        //Load core assets
         engineState_ = hHeartState_LoadingCore;
 
         GetResourceManager()->mtLoadPackage("CORE");
@@ -233,14 +249,26 @@ namespace Heart
 
             debugMenuManager_->PreRenderUpdate();
 
+            /*
+             * Begin new frame of draw calls
+             **/
             GetRenderer()->BeginRenderFrame();
 
             if (mainRender_)
                 (*mainRender_)( this );
 
-            debugMenuManager_->RenderMenus();
-
+            /*
+             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
+             **/
             GetRenderer()->EndRenderFrame();
+
+            /*
+             * Frame isn't swapped until next call to EndRenderFrame() so
+             * can render to back buffer here
+             **/
+            debugMenuManager_->RenderMenus(
+                GetRenderer()->GetMainSubmissionCtx(), 
+                GetRenderer()->GetMaterialManager());
 
             GetControllerManager()->EndOfFrameUpdate();
 
@@ -291,11 +319,25 @@ namespace Heart
 
             debugMenuManager_->PreRenderUpdate();
 
+            /*
+             * Begin new frame of draw calls
+             **/
             GetRenderer()->BeginRenderFrame();
 
-            debugMenuManager_->RenderMenus();
-
+            /*
+             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
+             **/
             GetRenderer()->EndRenderFrame();
+
+            /*
+             * Frame isn't swapped until next call to EndRenderFrame() so
+             * can render to back buffer here
+             **/
+            debugMenuManager_->RenderMenus(
+                GetRenderer()->GetMainSubmissionCtx(), 
+                GetRenderer()->GetMaterialManager());
+
+            GetControllerManager()->EndOfFrameUpdate();
 
             GetControllerManager()->EndOfFrameUpdate();
         }
@@ -395,13 +437,14 @@ namespace Heart
         // Create debug menus ////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
 #ifdef HEART_DEBUG
-        hRTProfilerMenu* rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer());
+#pragma message ("TODO")
+/*        hRTProfilerMenu* rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer());
         rtProfileMenu_->SetHidden(hTrue);
         debugMenuManager_->RegisterMenu("rtp", rtProfileMenu_);
 
         hMemoryViewMenu* mvMenu_ = hNEW(GetDebugHeap(), hMemoryViewMenu)(debugMenuManager_->GetDebugCanvas());
         //mvMenu_->SetHidden(hTrue);
-        debugMenuManager_->RegisterMenu("mv", mvMenu_);
+        debugMenuManager_->RegisterMenu("mv", mvMenu_);*/
 #endif
     }
 

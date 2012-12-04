@@ -72,10 +72,15 @@ DEFINE_HEART_UNIT_TEST(MapTest);
             {NULL, NULL}
         };
 
-        lua_pushlightuserdata(pEngine_->GetVM()->GetMainState(), this);
-        luaI_openlib(pEngine_->GetVM()->GetMainState(), "unittest", funcs, 1);
+//         lua_pushlightuserdata(pEngine_->GetVM()->GetMainState(), this);
+//         luaL_openlib(pEngine_->GetVM()->GetMainState(), "unittest", funcs, 1);
+// 
+//         lua_getglobal(L, "heart");
+//         lua_pushlightuserdata(L, engine);
+//         luaL_setfuncs(L,libcoreuv,1);
+//         lua_pop(L, 1);// pop heart module table
 
-        currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
+        //currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

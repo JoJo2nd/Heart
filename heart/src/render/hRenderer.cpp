@@ -80,6 +80,8 @@ namespace Heart
 		hResourceManager* pResourceManager	)
 	{
 
+        techniqueManager_.SetRenderer(this);
+
 		width_			= width;
 		height_			= height;
 		bpp_			= bpp;
@@ -302,9 +304,10 @@ namespace Heart
 
 	void hRenderer::DestroyVertexBuffer( hVertexBuffer* pOut )
 	{
+        hMemoryHeapBase* heap = pOut->heap_;
 		ParentClass::DestroyVertexBufferDevice(pOut->pImpl());
         pOut->SetImpl(NULL);
-		hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
+		hDELETE_SAFE(heap, pOut);
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -456,7 +459,7 @@ namespace Heart
         /*Single thread submit*/
         hUint32 camera = ~0U;
         const hMaterial* material = NULL;
-        hMaterialInstance* materialInst = NULL;
+        hMaterial* materialInst = NULL;
         hUint32 pass = ~0U;
         hUint32 tmask = ~0U;
         hUint32 dcs = drawCallBlockIdx_.value_;
@@ -466,7 +469,7 @@ namespace Heart
         for (hUint32 dc = 0; dc < dcs; ++dc)
         {
             hDrawCall* dcall = &drawCallBlocks_[dc];
-            hMaterialInstance* mat = dcall->matInstance_;
+            hMaterial* mat = dcall->matInstance_;
             hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
             hUint32 nPass = (dcall->sortKey_&0xF);
             if (nCam != camera)
@@ -481,7 +484,7 @@ namespace Heart
             }
 
             hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
-            hBool newMaterial = material != mat->GetParentMaterial();
+            hBool newMaterial = material->GetMatKey() != mat->GetMatKey();
 
             if (newMaterial || pass != nPass)
             {
@@ -493,19 +496,20 @@ namespace Heart
                 mainSubmissionCtx_.SetRenderStateBlock( techpass->GetDepthStencilState() );
                 mainSubmissionCtx_.SetRenderStateBlock( techpass->GetRasterizerState() );
 
-                material = mat->GetParentMaterial();
+                material = mat;
                 pass = nPass;
             }
 
-            mat->FlushParameters(&mainSubmissionCtx_);
+            //mat->FlushParameters(&mainSubmissionCtx_);
 
-            for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
-            {
-                mainSubmissionCtx_.SetConstantBuffer(mat->GetConstantBlockReg(i), mat->GetConstantBlock(i));
-            }
+            //for ( hUint32 i = 0; i < mat->GetConstantBufferCount(); ++i )
+            //{
+            //    mainSubmissionCtx_.SetConstantBuffer(mat->GetConstantBlockReg(i), mat->GetConstantBlock(i));
+            //}
 
             if (newMaterial)
             {
+                /*
                 for ( hUint32 i = 0; i < mat->GetSamplerCount(); ++i )
                 {
                     const hSamplerParameter* samp = mat->GetSamplerParameter( i );
@@ -515,6 +519,7 @@ namespace Heart
                         mainSubmissionCtx_.SetSampler( samp->samplerReg_, samp->boundTexture_, samp->samplerState_ );
                     }
                 }
+                */
             }
 
             if (dcall->scissor_ != scissorRect)

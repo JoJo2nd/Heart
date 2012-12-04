@@ -108,6 +108,29 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint32 hdDX11ShaderProgram::GetConstantBlockRegister(hShaderParameterID id) const
+    {
+        D3D11_SHADER_DESC desc;
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        D3D11_SHADER_BUFFER_DESC bufInfo;
+
+        shaderInfo_->GetDesc( &desc );
+
+        // Possibly worth caching this information but this hopefully isn't called too often
+        for (hUint32 cb = 0; cb < desc.ConstantBuffers; ++cb) {
+            ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex(cb);
+            constInfo->GetDesc(&bufInfo);
+            shaderInfo_->GetResourceBindingDescByName(bufInfo.Name, &bindInfo);
+            if (id == hCRC32::StringCRC(bufInfo.Name)) return bindInfo.BindPoint;
+        }
+
+        return hErrorCode;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11ShaderProgram::GetConstantBlockDesc( hUint32 idx, hConstantBlockDesc* ret )
     {
         D3D11_SHADER_DESC desc;
@@ -142,12 +165,31 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11ShaderProgram::GetSamplerRegister( const hChar* name ) const
+    hUint32 hdDX11ShaderProgram::GetInputRegister( const hChar* name ) const
     {
         D3D11_SHADER_INPUT_BIND_DESC bindInfo;
         HRESULT hr = shaderInfo_->GetResourceBindingDescByName( name, &bindInfo );
 
         return hr == S_OK ? bindInfo.BindPoint : ~0U;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hdDX11ShaderProgram::GetInputRegister(hShaderParameterID id) const
+    {
+        D3D11_SHADER_DESC desc;
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+
+        shaderInfo_->GetDesc(&desc);
+
+        for(hUint32 i = 0, c = desc.BoundResources; i < c; ++i) {
+            shaderInfo_->GetResourceBindingDesc(i, &bindInfo);
+            if (id == hCRC32::StringCRC(bindInfo.Name)) return bindInfo.BindPoint;
+        }
+
+        return hErrorCode;
     }
 
 }

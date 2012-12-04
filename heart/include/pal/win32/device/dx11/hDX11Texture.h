@@ -43,6 +43,7 @@ namespace Heart
 
         friend class hdDX11RenderDevice;
         friend class hdDX11RenderSubmissionCtx;
+        friend class hdDX11RenderInputObject;
 
         ID3D11Texture2D*            dx11Texture_;
         ID3D11RenderTargetView*     renderTargetView_;

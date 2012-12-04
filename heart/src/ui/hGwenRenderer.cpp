@@ -254,7 +254,7 @@ namespace Heart
             Flush();
             BeginDrawMode();
             currentTexture_ = texture;
-            uvMaterial_->SetSamplerParameter(uvSampler_, static_cast<hTexture*>(texture->data));
+            //uvMaterial_->SetSamplerParameter(uvSampler_, static_cast<hTexture*>(texture->data));
         }
 
         rect.x += GetRenderOffset().x;
@@ -429,7 +429,7 @@ namespace Heart
             {
             case DrawMode_Lines:
             case DrawMode_VertexColour:
-                dcCtx_.SubmitDrawCall(defaultMaterial_, NULL, vtxColourVB_, vtxCount_/3, hTrue, depth_, vcStart_);
+                //dcCtx_.SubmitDrawCall(defaultMaterial_, NULL, vtxColourVB_, vtxCount_/3, hTrue, depth_, vcStart_);
 
                 vcVBPtr_ = inlineVtxMem_;
                 vcStart_ += vtxCount_;
@@ -437,7 +437,7 @@ namespace Heart
                 hcAssertMsg(vcStart_ < s_maxDrawPrims, "Buffer Overrun");
                 break;
             case DrawMode_Textured:
-                dcCtx_.SubmitDrawCall(uvMaterial_, NULL, texturedVB_, vtxCount_/3, hTrue, depth_, tVBStart_ );
+                //dcCtx_.SubmitDrawCall(uvMaterial_, NULL, texturedVB_, vtxCount_/3, hTrue, depth_, tVBStart_ );
 
                 tVBPtr_ = inlineVtxMem_;
                 tVBStart_ += vtxCount_;
@@ -445,7 +445,7 @@ namespace Heart
                 hcAssertMsg(tVBStart_ < s_maxDrawPrims, "Buffer Overrun");
                 break;
             case DrawMode_Text:
-                dcCtx_.SubmitDrawCall(activeFont_->GetMaterialInstance(), NULL, texturedVB_, vtxCount_/3, hTrue, depth_, tVBStart_ );
+                //dcCtx_.SubmitDrawCall(activeFont_->GetMaterialInstance(), NULL, texturedVB_, vtxCount_/3, hTrue, depth_, tVBStart_ );
 
                 tVBPtr_ = inlineVtxMem_;;
                 tVBStart_ += vtxCount_;
@@ -491,10 +491,7 @@ namespace Heart
 
     void hGwenRenderer::DestroyResources()
     {
-        if (defaultMaterialResource_)
-            defaultMaterialResource_->DestroyMaterialInstance(defaultMaterial_);
-        if (uvMaterialResource_)
-            uvMaterialResource_->DestroyMaterialInstance(uvMaterial_);
+
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -527,13 +524,13 @@ namespace Heart
         defaultMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_COLOUR"));
         if (!defaultMaterialResource_)
             return;
-        defaultMaterial_ = defaultMaterialResource_->CreateMaterialInstance();
+        //defaultMaterial_ = defaultMaterialResource_->CreateMaterialInstance();
 
         uvMaterialResource_ = static_cast<hMaterial*>(resourceManager_->mtGetResource("CORE.UI_UV"));
         if (!uvMaterialResource_)
             return;
-        uvMaterial_ = uvMaterialResource_->CreateMaterialInstance();
-        uvSampler_ = uvMaterial_->GetSamplerParameterByName("diffuseSampler");
+        //uvMaterial_ = uvMaterialResource_->CreateMaterialInstance();
+        //uvSampler_ = uvMaterial_->GetSamplerParameterByName("diffuseSampler");
         hcAssert(uvSampler_);
 
         hInputLayoutDesc vtxlayout[] = {

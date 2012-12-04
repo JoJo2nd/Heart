@@ -57,18 +57,17 @@ namespace Heart
         void                            InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         void                            DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         void                            InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
-        hdDX11RenderSubmissionCtx*      GetMainSubmissionCtx() { return &mainRenderCtx_; };
         
         hUint32                         GetWidth() const { return width_; }
         hUint32                         GetHeight() const { return height_; }
 
         hUint32                         ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         //Resource Create Calls
-        hdDX11ShaderProgram*            CompileShader( const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, ShaderType type );
-        void                            DestroyShader( hdDX11ShaderProgram* shaderProg );
-        hdDX11ParameterConstantBlock*   CreateConstantBlocks( const hUint32* sizes, hUint32 count );
-        void                            UpdateConstantBlockParameters( hdDX11ParameterConstantBlock* constBlock, hShaderParameter* params, hUint32 parameters );
-        void                            DestroyConstantBlocks( hdDX11ParameterConstantBlock* constBlocks, hUint32 count );
+        hdDX11ShaderProgram*            CompileShader(const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, hShaderType type, hdDX11ShaderProgram* out);
+        void                            DestroyShader(hdDX11ShaderProgram* shaderProg);
+        hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, hUint32 count);
+        void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
+        void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
         hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );
         void                            DestroyTexture( hdDX11Texture* texture );
         hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );

@@ -530,7 +530,7 @@ hBool hFont::Link( hResourceManager* resManager )
 
     if (texturePages_ && fontMaterial_)
     {
-        fontMaterialInstance_ = fontMaterial_->CreateMaterialInstance();
+        //fontMaterialInstance_ = fontMaterial_->CreateMaterialInstance();
         return hTrue;
     }
     return hFalse;

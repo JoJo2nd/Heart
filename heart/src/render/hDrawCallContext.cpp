@@ -44,7 +44,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDrawCallContext::SubmitDrawCall( hMaterialInstance* mat, 
+    void hDrawCallContext::SubmitDrawCall( hMaterial* mat, 
                                            hIndexBuffer* ib, 
                                            hVertexBuffer* vb,
                                            hUint32 primCount, 

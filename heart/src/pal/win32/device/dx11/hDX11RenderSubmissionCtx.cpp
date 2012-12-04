@@ -1,3 +1,4 @@
+
 /********************************************************************
 
 	filename: 	DeviceDX11RenderSubmissionCtx.cpp	
@@ -31,6 +32,89 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hBool hdDX11RenderInputObject::BindShaderProgram(hdDX11ShaderProgram* prog)
+    {
+        switch(prog->type_)
+        {
+        case ShaderType_FRAGMENTPROG: {
+            pixelShader_ = prog->pixelShader_; 
+            boundProgs_[hdDX11PixelProg] = prog;
+            break;
+        }
+        case ShaderType_VERTEXPROG: {
+            vertexShader_ = prog->vertexShader_; 
+            boundProgs_[hdDX11VertexProg] = prog;
+            break;
+        }
+        default: return false; // Assert here?
+        }
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11RenderInputObject::BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
+    {
+        hUint32 cbidx;
+        hBool succ = false;
+
+        for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
+            if (!boundProgs_[p]) continue;
+            cbidx = boundProgs_[p]->GetConstantBlockRegister(paramID);
+            if (cbidx > HEART_MAX_CONSTANT_BLOCKS) continue;
+            inputData_[p].programInputs_[cbidx] = buffer->constBuffer_;
+            succ = true;
+        }
+
+        return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11RenderInputObject::BindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* ss)
+    {
+        hUint32 idx;
+        hBool succ = false;
+
+        for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
+            if (!boundProgs_[p]) continue;
+            idx = boundProgs_[p]->GetInputRegister(paramID);
+            if (idx > HEART_MAX_RESOURCE_INPUTS) continue;
+            inputData_[p].samplerState_[idx] = ss->stateObj_;
+            inputData_[p].samplerCount_ = hMax(idx+1, inputData_[p].samplerCount_);
+            succ = true;
+        }
+        return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11RenderInputObject::BindResourceView(hShaderParameterID paramID, hdDX11Texture* view)
+    {
+        hUint32 idx;
+        hBool succ = false;
+
+        for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
+            if (!boundProgs_[p]) continue;
+            idx = boundProgs_[p]->GetInputRegister(paramID);
+            if (idx > HEART_MAX_RESOURCE_INPUTS) continue;
+            inputData_[p].resourceViews_[idx] = view ? view->shaderResourceView_ : NULL;
+            inputData_[p].resourceViewCount_ = hMax(idx+1, inputData_[p].resourceViewCount_);
+            succ = true;
+        }
+        return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderSubmissionCtx::SetIndexStream( hdDX11IndexBuffer* idxBuf )
     {
         device_->IASetIndexBuffer( idxBuf->buffer_, DXGI_FORMAT_R16_UINT, 0 );
@@ -46,6 +130,32 @@ namespace Heart
         UINT strideui = stride;
         vbufferInputLayout_ = vtxBuf->vertexLayoutFlags_;
         device_->IASetVertexBuffers( stream, 1, &vtxBuf->buffer_, &strideui, &offsets );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::SetRenderInputObject(hdRenderInputObject* inputobj)
+    {
+        if (inputobj->vertexShader_)
+        {
+            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
+            device_->IASetInputLayout(inputobj->boundProgs_[ShaderType_VERTEXPROG]->inputLayout_->layout_);//ergh..clean up
+            device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
+            device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
+            device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+        }
+
+        if (inputobj->pixelShader_)
+        {
+            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11PixelProg;
+            device_->PSSetShader(inputobj->pixelShader_, NULL, 0);
+            device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
+            device_->PSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            device_->PSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -343,6 +453,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hdDX11RenderSubmissionCtx::Map(hdDX11ParameterConstantBlock* cb, hdDX11MappedResourceData* data)
+    {
+        HRESULT hr;
+        hr = device_->Map(cb->constBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, data);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderSubmissionCtx::Unmap( hdDX11Texture* tex, hUint32 level, void* ptr )
     {
         device_->Unmap( tex->dx11Texture_, level );
@@ -380,6 +500,15 @@ namespace Heart
             device_->UpdateSubresource( vb->buffer_, 0, NULL, ptr, 0, 0 );
             (*free_)( ptr );
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
+    {
+        device_->Unmap(cb->constBuffer_, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////

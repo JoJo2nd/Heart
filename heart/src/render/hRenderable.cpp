@@ -36,14 +36,7 @@ void hRenderable::SetMaterial(hMaterial* material)
 {
     hcAssertMsg(material, "Material cannot be NULL");
 
-    if (materialInstance_)
-    {
-        material_->DestroyMaterialInstance(materialInstance_);
-        materialInstance_ = NULL;
-    }
-
     material_ = material;
-    materialInstance_ = material_->CreateMaterialInstance();
     materialKey_ = material_->GetMatKey();
 }
 

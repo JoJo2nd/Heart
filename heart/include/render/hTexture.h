@@ -104,42 +104,6 @@ namespace Cmd
         hdMappedData    privateDeviceData_;
     };
 
-    template<>
-    inline void SerialiseMethod< Heart::hTexture >( Heart::hSerialiser* ser, const Heart::hTexture& tex )
-    {
-        SERIALISE_ELEMENT( (hUint32&)tex.format_ );
-        SERIALISE_ELEMENT( tex.nLevels_ );
-        SERIALISE_ELEMENT_COUNT( tex.levelDescs_, tex.nLevels_ );
-        SERIALISE_ELEMENT(tex.keepcpu_);
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hTexture >( Heart::hSerialiser* ser, Heart::hTexture& tex )
-    {
-        DESERIALISE_ELEMENT( (hUint32&)tex.format_ );
-        DESERIALISE_ELEMENT( tex.nLevels_ );
-        DESERIALISE_ELEMENT( tex.levelDescs_ );
-        DESERIALISE_ELEMENT(tex.keepcpu_);
-    }
-
-    template<>
-    inline void SerialiseMethod< Heart::hTexture::LevelDesc >( Heart::hSerialiser* ser, const Heart::hTexture::LevelDesc& data )
-    {
-        SERIALISE_ELEMENT( data.width_ );
-        SERIALISE_ELEMENT( data.height_ );
-        SERIALISE_ELEMENT( data.mipdataSize_ );
-        SERIALISE_ELEMENT_COUNT( data.mipdata_, data.mipdataSize_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hTexture::LevelDesc >( Heart::hSerialiser* ser, Heart::hTexture::LevelDesc& data )
-    {
-        DESERIALISE_ELEMENT( data.width_ );
-        DESERIALISE_ELEMENT( data.height_ );
-        DESERIALISE_ELEMENT( data.mipdataSize_ );
-        DESERIALISE_ELEMENT( data.mipdata_ );
-    }
-
 }
 
 #endif // hiTexture_h__

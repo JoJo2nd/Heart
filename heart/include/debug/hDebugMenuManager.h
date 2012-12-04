@@ -29,18 +29,24 @@
 
 namespace Heart
 {
-    class hDebugMenuBase : public Gwen::Controls::WindowControl
-                         , public hMapElement< hUint32, hDebugMenuBase >
+    class hDebugMenuBase : public hMapElement< hUint32, hDebugMenuBase >
     {
     public:
-        hDebugMenuBase(Gwen::Controls::Base* parent)
-            : WindowControl(parent)
+        hDebugMenuBase() 
+            : visible_(hFalse)
         {
-
         }
+        ~hDebugMenuBase() {}
 
+        void SetVisible(hBool visible) { visible_ = visible; }
+        hBool GetVisible() const { return visible_; }
         virtual void PreRenderUpdate() = 0;
+        virtual void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB) = 0;
         virtual void EndFrameUpdate() = 0;
+
+    private:
+
+        hBool visible_;
     };
 
     class hDebugMenuManager
@@ -57,10 +63,10 @@ namespace Heart
         void                        UnregisterMenu(hDebugMenuBase* menu);
         void                        SetMenuVisiablity(const hChar* name, hBool show);
         void                        PreRenderUpdate();
-        void                        RenderMenus();
+        void                        RenderMenus(hRenderSubmissionCtx* rndCtx, hRenderMaterialManager* matManager);
         void                        EndFrameUpdate();
         static hDebugMenuManager*   GetInstance() { return instance_; }
-        hBool                       Ready() { return uiCanvas_ != NULL; }
+        hBool                       Ready() { return resourceManager_->RequiredResourcesReady(); }
 
     private:
 

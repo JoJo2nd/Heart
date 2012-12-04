@@ -73,6 +73,7 @@ namespace Heart
 
     typedef hdDX11RenderDevice		     hdRenderDevice;
     typedef hdDX11RenderSubmissionCtx	 hdRenderSubmissionCtx;
+    typedef hdDX11RenderInputObject      hdRenderInputObject;
     typedef hdDX11VertexLayout   		 hdInputLayout;//make this include input state
     typedef hdDX11VertexBuffer	    	 hdVtxBuffer;
     typedef hdDX11IndexBuffer    	     hdIndexBuffer;

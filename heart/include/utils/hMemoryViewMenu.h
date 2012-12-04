@@ -31,6 +31,7 @@
 
 namespace Heart
 {
+    /*
     class hMemoryViewMenu : public hDebugMenuBase
     {
     public:
@@ -59,6 +60,7 @@ namespace Heart
         static HeapLabelArray*  heapArray_;
 #endif
     };
+    */
 }
 
 

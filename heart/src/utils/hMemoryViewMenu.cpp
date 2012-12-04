@@ -27,7 +27,7 @@
 
 namespace Heart
 {
-
+/*
 #ifdef HEART_DEBUG
     hMemoryViewMenu::HeapLabelArray* hMemoryViewMenu::heapArray_ = NULL;
 #endif
@@ -168,5 +168,5 @@ namespace Heart
         }
 #endif
     }
-
+*/
 }
