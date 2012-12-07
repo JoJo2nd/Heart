@@ -1,14 +1,16 @@
 @echo off
 
+call ../init_vis_studio_env.bat
+
 set BIN_FOLDER=../../bin/
 set GAME_BIN_FOLDER=%BIN_FOLDER%game/
 set TOOLS_BIN_FOLDER=%BIN_FOLDER%tools/
 set NVIDIA_TEX_TOOLS_FOLDER=../../external/nvidia-texture-tools/gnuwin32/bin/
-set NVIDIA_TEX_TOOLS_FOLDER2=../../external/nvidia-texture-tools/project/vc8/Release (no cuda).Win32/bin/
+set NVIDIA_TEX_TOOLS_FOLDER2=../../external/nvidia-texture-tools/project/%VSTYPE%/Release (no cuda).Win32/bin/
 set ASSIMP_FOLDER_R=../../external/assimp--3.0.1270-sdk/bin/assimp_release-dll_win32
 set ASSIMP_FOLDER_D=../../external/assimp--3.0.1270-sdk/bin/assimp_debug-dll_win32
-set HEART_BIN_FOLDER_R=../../build/built_projects/vs2008/lib/Release
-set HEART_BIN_FOLDER_D=../../build/built_projects/vs2008/lib/Debug
+set HEART_BIN_FOLDER_R=../../build/built_projects/%PREMAKEVSVER%/lib/Release
+set HEART_BIN_FOLDER_D=../../build/built_projects/%PREMAKEVSVER%/lib/Debug
 set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np /nfl
 
 IF NOT exist "%BIN_FOLDER%" mkdir "%BIN_FOLDER%"
