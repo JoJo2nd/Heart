@@ -1,0 +1,9 @@
+/_UpgradeReport_Files/
+/Debug (no cuda).Win32/
+/Debug.Win32/
+/Release (no cuda).Win32/
+/Release.Win32/
+/UpgradeLog.XML
+/*.sln.old
+/*.ncb
+/*.suo
