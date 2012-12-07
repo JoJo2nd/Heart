@@ -1,1 +1,1 @@
-%PYTHON_ROOT%\python.exe project_unity_fixer.py -p %1 
+%PYTHON_ROOT%\python.exe project_unity_fixer.py -p %1 -m %2

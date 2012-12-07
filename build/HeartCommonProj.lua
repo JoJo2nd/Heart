@@ -6,7 +6,11 @@ SlnDir = "../" .. SlnOutput
 ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
 DebugDir="../../bin/"..BinType
+HeartPlatformIncludeDirs = {
+    os.getenv("DXSDK_DIR").."/Include"}
 HeartIncludeDirs = {
+    HeartPlatformIncludeDirs,
+    --common
     "../../heart/include",
     "../../heart/include/pal/win32",
     "../../heart/gwen/include",
@@ -18,7 +22,8 @@ HeartIncludeDirs = {
     "../../external/rapidxml-1.13/include",
     "../../external/libvorbis/include",
     "../../external/libogg/include",
-    "../../external/libtga/include"}
+    "../../external/libtga/include",
+    "../../external/openal/include"}
 
 HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES"}
 PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS"}
@@ -30,18 +35,23 @@ ReleaseDefines={"NDEBUG","RELEASE"}
 ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild"}
 --ReleaseOptions={"Symbols"}
 
+LibDirs={
+    "../external/openal/libs/Win32",
+    os.getenv("DXSDK_DIR").."/Lib/x86"}
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32","dbghelp"}
 HeartLibsDebug={
-    "heart"..DebugSuffix, 
-    "crypto"..DebugSuffix, 
-    "lua"..DebugSuffix, 
-    "libpng"..DebugSuffix, 
-    "libtga"..DebugSuffix}
+    "heart", 
+    "crypto", 
+    "lua",
+    "zlib",
+    "libpng", 
+    "libtga"}
 HeartLibsRelease={
-    "heart"..ReleaseSuffix, 
-    "crypto"..ReleaseSuffix, 
-    "lua"..ReleaseSuffix, 
-    "libpng"..ReleaseSuffix, 
-    "libtga"..ReleaseSuffix}
+    "heart", 
+    "crypto", 
+    "lua", 
+    "zlib",
+    "libpng", 
+    "libtga"}
 
 PostBuildStr="" --"cd ../../../deploy_scripts\ncall deploy_runtime_libs.bat"

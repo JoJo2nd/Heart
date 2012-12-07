@@ -11,6 +11,7 @@ solution (SlnName)
     configurations ({DebugCfgName, ReleaseCfgName})
     
     postbuildcommands {PostBuildStr}
+    libdirs {LibDirs}
     
     configuration (DebugCfgName)
         targetsuffix "_d"
