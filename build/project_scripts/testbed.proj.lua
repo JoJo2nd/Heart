@@ -8,8 +8,10 @@ project "heart_testbed"
     files {
         "../../testbed/include/**.h",
         "../../testbed/src/**.cpp"}
-    pchheader "../../testbed/include/testbed_precompiled.h"
+    --pchheader "../../testbed/include/testbed_precompiled.h"
     pchsource "../../testbed/src/testbed_precompiled.cpp"
+    pchheader "testbed_precompiled.h"
+    --pchsource "testbed_precompiled.cpp"
     defines {HeartDefines}
     defines {"GWEN_DLL"}
     defines {CommonDefines}
