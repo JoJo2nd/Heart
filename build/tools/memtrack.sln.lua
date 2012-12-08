@@ -53,7 +53,8 @@ solution (SlnName)
         files {
             "../../tools/memtrack/include/**.h",
             "../../tools/memtrack/src/**.cpp"}
-        pchheader "../../tools/memtrack/include/precompiled.h"
+        --pchheader "../../tools/memtrack/include/precompiled.h"
+        pchheader "precompiled.h"
         pchsource "../../tools/memtrack/src/precompiled.cpp"
         defines {PlatformDefines}
         includedirs {IncludeDirs}
