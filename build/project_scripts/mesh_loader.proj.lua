@@ -22,13 +22,13 @@ project "mesh_loader"
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         libdirs {TargetDir..DebugCfgName}
-        libdirs {assimppath.."lib/assimp_debug-noboost-st_win32"}
+        libdirs {assimppath.."lib/assimp_debug-dll_win32"}
         links {HeartLibsDebug}
 		flags {DebugOptions}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {TargetDir..ReleaseCfgName}
-        libdirs {assimppath.."lib/assimp_release-noboost-st_win32"}
+        libdirs {assimppath.."lib/assimp_release-dll_win32"}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
