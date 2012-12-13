@@ -1,32 +1,70 @@
 /********************************************************************
 
-	filename: 	hSystemConsole.cpp	
-	
-	Copyright (c) 22:1:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hSystemConsole.cpp	
+    
+    Copyright (c) 22:1:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
 namespace Heart
 {
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    class hFwdLogIterator : public hITextIterator
+    {
+    public:
+        hFwdLogIterator(hSystemConsole::hConsoleLogType* log, hUint32 limit = ~0)
+            : log_(log)
+            , str_(log->getHead())
+            , limit_(limit)
+        {
+        }
+        virtual hTextMarker createMarker()
+        {
+            return (hTextMarker)str_;
+        }
+        virtual void restoreToMarker(hTextMarker mkr)
+        {
+            str_ = (hChar*)mkr;
+        }
+        virtual hUint32 getCharCode()
+        {
+            return str_ ? *str_ : 0;
+        }
+        virtual void next()
+        {
+            if (*str_ == NULL || limit_ == 0) {
+                str_ = NULL;
+                return;
+            }
+            str_ = log_->getNext(str_);
+            --limit_;
+        }
+    private:
+        const hChar* str_;
+        hSystemConsole::hConsoleLogType* log_;
+        hUint32 limit_;
+    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -52,6 +90,7 @@ namespace Heart
             hInputLayoutDesc layout[] = {
                 {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
                 {eIS_COLOUR,   0, eIF_FLOAT4, 0, 0},
+                {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
             };
             struct Vertex {
                 hFloat x,y,z;
@@ -67,18 +106,37 @@ namespace Heart
                 { 1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
             };
 
-            renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout), 0, GetDebugHeap(), &backdropPlane_);
+            renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
             backdropMat_ = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.DEBUG_MAT"));
+
+            renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
+            renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
+            consoleFont_ = static_cast< hFont* >(resmanager->mtGetResource("CORE.CONSOLE"));
+            fontMat_ = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.FONT_MAT"));
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
         void PreRenderUpdate() {}
         void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB) 
         {
+            hFloat intprt = 0.f;
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
+            hVertexBufferMapInfo vbmap;
+            hFontStyle style = {
+                FONT_ALIGN_LEFT|FONT_ALIGN_TOP,
+                WHITE, 
+                0,
+                1.8f,
+                consoleFont_
+            };
+            hCPUVec2 bottomleft(-500.f, 0.f);
+            hCPUVec2 bottomright(500.f, 0.f);
+            hCPUVec2 topleft(-500.f, 1000.f);
+            hUint32 prims = 0;
 
             if (GetVisible()) {
+
                 ctx->Map(instanceCB, &map);
                 inst = (hInstanceConstants*)map.ptr;
                 inst->world_ = hMatrixFunc::identity();
@@ -94,170 +152,185 @@ namespace Heart
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(2, 0);
                 }
+
+                {
+                    ctx->Map(textBuffer_, &vbmap);
+                    hUTF8Iterator itr("The Red Fox jumped over the Lazy Dog 1234567890!", INPUT_BUFFER_LEN);
+                    prims = hFont::RenderStringSingleLine(style, vbmap.ptr_, bottomleft, &itr);
+                    ctx->Unmap(&vbmap);
+                }
+
+                tech = fontMat_->GetTechniqueByMask(debugTechMask_);
+                if (!tech) return;
+                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
+                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
+                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
+                    ctx->SetMaterialPass(passptr);
+                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+                    ctx->DrawPrimitive(prims, 0);
+                }
+
+                {
+                    ctx->Map(logBuffer_, &vbmap);
+                    hFwdLogIterator itr(&log_, hSystemConsole::MAX_CONSOLE_LOG_SIZE);
+                    topleft.y = (log_.getLineCount()+1)*consoleFont_->GetFontHeight()*style.scale_;
+                    prims = hFont::RenderString(style, vbmap.ptr_, topleft, bottomright, &itr);
+                    ctx->Unmap(&vbmap);
+                }
+
+                tech = fontMat_->GetTechniqueByMask(debugTechMask_);
+                if (!tech) return;
+                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
+                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
+                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
+                    ctx->SetMaterialPass(passptr);
+                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+                    ctx->DrawPrimitive(prims, 0);
+                }
             }
         }
         void EndFrameUpdate() {}
+        void updateConsoleLogString(hSystemConsole::hConsoleLogType& log, hChar* inputStr) 
+        { 
+            log_ = log; 
+            hStrCopy(inputBuffer_, INPUT_BUFFER_LEN, inputStr);
+        }
 
     private:
 
+        static const hUint32 INPUT_BUFFER_LEN = hSystemConsole::INPUT_BUFFER_LEN;
+
         hUint32                  debugTechMask_;
         hVertexBuffer*           textBuffer_;
+        hVertexBuffer*           logBuffer_;
         hVertexBuffer*           backdropPlane_;
         hMaterial*               backdropMat_;
-        hSystemConsole*          console_;
+        hFont*                   consoleFont_;
+        hMaterial*               fontMat_;
+
+        hSystemConsole*                 console_;
+        hSystemConsole::hConsoleLogType log_;
+        hChar                           inputBuffer_[INPUT_BUFFER_LEN];
     };
 
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     const hResourceID   hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
-	const hResourceID   hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
-	hMutex				hSystemConsole::messagesMutex_;
-	hString				hSystemConsole::awaitingMessages_;
-	hBool				hSystemConsole::alive_ = hTrue;
+    const hResourceID   hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
+    hMutex				hSystemConsole::messagesMutex_;
+    hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
+    hUint32				hSystemConsole::msgBufferLen_ = 0;
+    hBool				hSystemConsole::alive_ = hTrue;
 
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hSystemConsole::Initialise( hControllerManager* pControllerManager,
-									 hLuaStateManager* lua,
-									 hResourceManager* pResourceManager,
-									 hRenderer* renderer,
+    void hSystemConsole::Initialise( hControllerManager* pControllerManager,
+                                     hLuaStateManager* lua,
+                                     hResourceManager* pResourceManager,
+                                     hRenderer* renderer,
                                      hGwenRenderer* uiRenderer)
-	{
+    {
         controllerManager_ = pControllerManager;
-		resourceManager_ = pResourceManager;
+        resourceManager_ = pResourceManager;
         renderer_ = renderer;
-		vm_ = lua;
+        vm_ = lua;
         keyboard_ = controllerManager_->GetSystemKeyboard();
-	}
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hSystemConsole::Destroy()
-	{
-		messagesMutex_.Lock();
-		alive_ = hFalse;
-		awaitingMessages_.clear();
-		awaitingMessages_.~hString();
-		messagesMutex_.Unlock();
-	}
+    void hSystemConsole::Destroy()
+    {
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hSystemConsole::Update()
-	{
+    void hSystemConsole::Update()
+    {
         HEART_PROFILE_FUNC();
-		if ( !loaded_ )
-		{
-			if ( hDebugMenuManager::GetInstance()->Ready() )
-			{
+        if ( !loaded_ )
+        {
+            if ( hDebugMenuManager::GetInstance()->Ready() )
+            {
                 //////////////////////////////////////////////////////////////////////////
                 // Create Menu for displaying the console ////////////////////////////////
                 //////////////////////////////////////////////////////////////////////////
-				loaded_ = hTrue;
+                loaded_ = hTrue;
 
                 consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
                 consoleWindow_->InitRenderResources(renderer_, resourceManager_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
-			}
-		}
-		else
-		{
-			messagesMutex_.Lock();
-			if ( !awaitingMessages_.empty() )
-			{
-				LogString( awaitingMessages_.c_str() );
-				awaitingMessages_.clear();
-			}
-			messagesMutex_.Unlock();
-			UpdateConsole();
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hSystemConsole::ClearConsoleBuffer()
-	{
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	void hSystemConsole::ExecuteBuffer(const hChar* input)
-	{
-		//add to the log of inputted commands
-        LogString(input);
-
-		//Run the command
-		vm_->ExecuteBuffer(input, hStrLen(input));
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	//TODO: make multi thread safe. Lockless queue??
-	void hSystemConsole::LogString(const hChar* inputStr)
-	{
-        /*do 
+            }
+        }
+        else
         {
-            //nasty const cast
-            hChar* s = (hChar*)hStrChr(inputStr, '\n');
-            if (s) *s = 0;
-            consoleWindow_->AddConsoleString(inputStr);
-            if (s) 
-            {
-                *s = '\n';
-                inputStr = s+1;
-            }
-            else
-            {
-                return;
-            }
-        } while (*inputStr);*/
-	}
+            UpdateConsole();
+        }
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hSystemConsole::UpdateConsole()
-	{
+    void hSystemConsole::ClearConsoleBuffer()
+    {
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSystemConsole::ExecuteBuffer(const hChar* input)
+    {
+        //add to the log of inputted commands
+        PrintConsoleMessage(input);
+
+        //Run the command
+        vm_->ExecuteBuffer(input, hStrLen(input));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hSystemConsole::UpdateConsole()
+    {
         if (consoleWindow_)
         {
             if (keyboard_->GetButton(VK_SHIFT).buttonVal_ && keyboard_->GetButton(VK_BACK).raisingEdge_)
             {
-                //consoleWindow_->SetHidden(!consoleWindow_->Hidden());
-                hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", hTrue);
+                visible_ = !visible_;
+                hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
             }
+
+            hMutexAutoScope mas(&messagesMutex_);
+            consoleWindow_->updateConsoleLogString(messageBuffer_, inputBuffer_);
         }
-	}
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hSystemConsole::PrintConsoleMessage( const hChar* string )
-	{
-		messagesMutex_.Lock();
-		if ( alive_ )
-		{
-			awaitingMessages_ += string;
-		}
-		messagesMutex_.Unlock();
-	}
+    void hSystemConsole::PrintConsoleMessage( const hChar* string )
+    {
+        hMutexAutoScope mas(&messagesMutex_);
+
+        hUint32 len = hStrLen(string);
+        for (hUint32 i = 0; i < len; ++i) {
+            messageBuffer_.pushChar(string[i]);
+        }
+        
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -266,5 +339,4 @@ namespace Heart
     void hSystemConsole::ClearLog()
     {
     }
-
 }

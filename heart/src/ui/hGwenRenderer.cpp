@@ -350,7 +350,7 @@ namespace Heart
     void hGwenRenderer::RenderText( Gwen::Font* pFont, Gwen::Point pos, const Gwen::UnicodeString& text )
     {
         HEART_PROFILE_FUNC();
-        if (!pFont || !pFont->data)
+        /*if (!pFont || !pFont->data)
             return;
 
         Flush();
@@ -377,7 +377,7 @@ namespace Heart
         font->RenderStringSingleLine( inlineVtxMem_, hCPUVec2((hFloat)pos.x, (hFloat)pos.y), ctext_.c_str());
 
         inlineVtxMem_ += nChars*6*textVtxStride_;
-        vtxCount_ += nChars*6;
+        vtxCount_ += nChars*6;*/
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -398,7 +398,8 @@ namespace Heart
 
         hFont* font = static_cast<hFont*>(pFont->data);
         Gwen::Utility::UnicodeToString(text, ctext_);
-        hCPUVec2 v = font->CalcRenderSize(ctext_.c_str());
+        hUTF8Iterator itr(ctext_.c_str());
+        hCPUVec2 v = font->CalcRenderSize(&itr);
         return Gwen::Point((hInt32)v.x,(hInt32)v.y);
     }
 

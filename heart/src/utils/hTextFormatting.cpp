@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	hString.h	
+	filename: 	hTextFormatting.cpp	
 	
-	Copyright (c) 22:1:2012 James Moran
+	Copyright (c) 13:12:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -24,48 +24,24 @@
 	distribution.
 
 *********************************************************************/
-#ifndef HSTRING_H__
-#define HSTRING_H__
 
 namespace Heart
 {
-    /*
-     * This will need to be replaced at some point, possibly after I write a free list or pool allocator
-     */
-    class hString : public std::basic_string< char, std::char_traits<char>, HeapAllocator< char > >
+
+
+    void hFontFormatting::formatText()
     {
-    public:
-        hString()
-        {
-        }
-        hString( const hChar* c ) 
-            : std::basic_string< char, std::char_traits<char>, HeapAllocator< char > >( c )
-        {}
 
-        void RemoveAfterLastEx(hChar ch)
-        {
-            size_t pos = find_last_of(ch);
-            if (pos != npos)
-                resize(pos+1);
-        }
+    }
 
-        void RemoveAfterLastInc(hChar ch)
-        {
-            size_t pos = find_last_of(ch);
-            if (pos != npos)
-            {
-                resize(pos);
-            }
-        }
+    void hFontFormatting::writeTextToBuffer()
+    {
 
-    private:
-    };
+    }
 
-	class hString2
-	{
-	public:
-	private:
-	};
+    hFontFormatting::hTextLine hFontFormatting::ProcessLine( const hChar* start, hFloat width, hUint32 formatFlags )
+    {
+
+    }
+
 }
-
-#endif // HSTRING_H__
