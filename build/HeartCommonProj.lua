@@ -54,4 +54,4 @@ HeartLibsRelease={
     "libpng", 
     "libtga"}
 
-PostBuildStr="" --"cd ../../../deploy_scripts\ncall deploy_runtime_libs.bat"
+PostBuildStr="cd ../../../deploy_scripts\ncall deploy_lib.bat "

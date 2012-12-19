@@ -8,6 +8,7 @@ project "zlib"
     defines {CommonDefines,SharedLibDefines,"ZLIB_DLL"}
 	defines {"NO_vsnprintf"}
 	includedirs {"../../external/zlib/include"}
+    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

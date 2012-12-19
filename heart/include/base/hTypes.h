@@ -40,6 +40,7 @@ typedef long				hInt32;
 typedef unsigned long long  hUint64;
 typedef long long			hInt64;
 typedef int					hInt;
+typedef unsigned int        hUint;
 typedef size_t              hSizeT;
 typedef float				hFloat;
 typedef double				hDouble;

@@ -110,6 +110,12 @@ namespace Heart
         return r;
     }
 
+    HEART_DLLEXPORT
+    inline void HEART_API hStrMove(hChar* src, hChar* dest, hUint count)
+    {
+        memmove(dest, src, count);
+    }
+
 #define hScanf scanf
 
     HEART_DLLEXPORT

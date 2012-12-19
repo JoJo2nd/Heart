@@ -101,15 +101,11 @@ namespace Heart
     class HEART_DLLEXPORT hMaterialInstance
     {
     public:
-        hMaterialInstance(hMemoryHeapBase* heap)
-            : memHeap_(heap)
-            , manager_(NULL)
-            , techniques_(heap)
-            , constBlocks_(heap)
-            , boundTextures_(heap)
-        {
 
-        }
+        hUint32             GetTechniqueCount() const { return techniques_.GetSize(); }
+        hMaterialTechnique* GetTechnique( hUint32 idx ) { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
+        hMaterialTechnique* GetTechniqueByName( const hChar* name );
+        hMaterialTechnique* GetTechniqueByMask( hUint32 mask );
         /* Bind interface - return false if not set on any programs */
         hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
@@ -118,11 +114,24 @@ namespace Heart
 
     private:
 
+        friend class hMaterial;
+        hPRIVATE_DESTRUCTOR();
+
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
         typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
         typedef hVector< hBoundTexture > BoundTextureArrayType;
 
-        hMaterialInstance(const hMaterialInstance&) {}
+        hMaterialInstance(hMemoryHeapBase* heap)
+            : memHeap_(heap)
+            , manager_(NULL)
+            , techniques_(heap)
+            , constBlocks_(heap)
+            , boundTextures_(heap)
+        {
+        }
+        HEART_PRIVATE_COPY(hMaterialInstance);
+        ~hMaterialInstance()
+        {}
 
         hMemoryHeapBase*            memHeap_;
         hMaterial*                  material_;

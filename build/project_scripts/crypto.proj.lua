@@ -6,6 +6,7 @@
         defines {CommonDefines,SharedLibDefines}
         defines {"CRYPTO_COMPILE_DLL"}
 		includedirs {"../../external/crypto/include"}
+        postbuildcommands {PostBuildStr..project().name}
         
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

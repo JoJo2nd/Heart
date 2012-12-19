@@ -38,6 +38,15 @@ namespace Heart
         //GWEN_CONTROL_CONSTRUCTOR(hConsoleUI)
         hConsoleUI(hSystemConsole* systemConsole) 
             : console_(systemConsole)
+            , debugTechMask_(0)
+            , textBuffer_(NULL)
+            , logBuffer_(NULL)
+            , backdropPlane_(NULL)
+            , backdropMat_(NULL)
+            , backdropCB_(NULL)
+            , consoleFont_(NULL)
+            , fontMat_(NULL)
+            , windowOffset_(1.f)
         {
 
         }
@@ -59,17 +68,19 @@ namespace Heart
                 hFloat r,g,b,a;
             };
             Vertex consolePlane[] = {
-                {-1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                { 1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                {-1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { .5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                {-.5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                {-.5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
 
-                {-1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                { 1000.5f, 1000.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                { 1000.5f, 0.f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                {-.5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { .5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
+                { .5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
             };
 
             renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
-            backdropMat_ = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.DEBUG_MAT"));
+            hMaterial* backdropMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.CONSOLE_MAT"));
+            backdropMat_ = backdropMat->createMaterialInstance();
+            backdropCB_ = backdropMat_->GetParameterConstBlock(hCRC32::StringCRC("ConsoleConstants"));
 
             renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
             renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
@@ -78,14 +89,19 @@ namespace Heart
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
-        void PreRenderUpdate() {}
+        void PreRenderUpdate() 
+        {
+            windowOffset_ += GetVisible() ? -hClock::Delta() : hClock::Delta();
+            windowOffset_ = hMax(windowOffset_, 0.f);
+            windowOffset_ = hMin(windowOffset_, 1.f);
+        }
         void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
         {
             hFloat intprt = 0.f;
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
             hVertexBufferMapInfo vbmap;
-            hFloat fontScale = 1.f;//+(.2f*sin(hClock::elapsed()*.24f));
+            hFloat fontScale = 1.f;//+(2.f*sin(hClock::elapsed()*.24f));
             hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
@@ -95,11 +111,19 @@ namespace Heart
             formatter.setFont(consoleFont_);
             formatter.setColour(WHITE);
 
-            if (GetVisible()) {
+            if (windowOffset_ < 1.f) {
 
                 ctx->Map(instanceCB, &map);
                 inst = (hInstanceConstants*)map.ptr;
                 inst->world_ = hMatrixFunc::identity();
+                inst->world_ = hMatrixFunc::Translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
+                ctx->Unmap(&map);
+
+                //Doesn't need updating every frame, could go in global constant block
+                ctx->Map(backdropCB_, &map);
+                hCPUVec2* vpsize = (hCPUVec2*)map.ptr;
+                vpsize->x = params.rtWidth_;
+                vpsize->y = params.rtHeight_;
                 ctx->Unmap(&map);
 
                 hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);
@@ -116,7 +140,7 @@ namespace Heart
                     hChar* teststr = "The Red Fox jumped over the Lazy Dog 1234567890!";
                     ctx->Map(textBuffer_, &vbmap);
                     formatter.setOutputBuffer(vbmap.ptr_, INPUT_BUFFER_LEN*6*sizeof(hFontVex));
-                    formatter.setInputStringBuffer(teststr, hStrLen(teststr));
+                    formatter.setInputStringBuffer(inputBuffer_, hStrLen(inputBuffer_));
                     formatter.setFormatExtents(FLT_MAX, 0);
                     formatter.setAlignment(hFONT_ALIGN_LEFT|hFONT_ALIGN_TOP);
                     formatter.formatText();
@@ -173,9 +197,11 @@ namespace Heart
         hVertexBuffer*           textBuffer_;
         hVertexBuffer*           logBuffer_;
         hVertexBuffer*           backdropPlane_;
-        hMaterial*               backdropMat_;
+        hMaterialInstance*       backdropMat_;
+        hdParameterConstantBlock* backdropCB_;
         hFont*                   consoleFont_;
         hMaterial*               fontMat_;
+        hFloat                   windowOffset_;
 
         hSystemConsole* console_;
         hUint32         logSize_;
@@ -276,14 +302,61 @@ namespace Heart
     {
         if (consoleWindow_)
         {
+
+            if (visible_) {
+                hUint afterC = cursorPos_;
+                hUint32 inputbytes = keyboard_->CharBufferSizeBytes();
+                const hChar* inputchars = keyboard_->GetCharBufferData();
+                for (hUint i =0; i < inputbytes; ++i) {
+                    if (!isprint(inputchars[i])) continue;
+                    inputBuffer_[cursorPos_] = inputchars[i];
+                    if (cursorPos_ >= hStrLen(inputBuffer_)) inputBuffer_[cursorPos_+1] = 0;
+                    cursorPos_ = hMin(cursorPos_+1, INPUT_BUFFER_LEN-2);
+                }
+
+                if (keyboard_->GetButton(VK_LEFT).raisingEdge_) {
+                    if (cursorPos_ > 0) --cursorPos_;
+                }
+                else if (keyboard_->GetButton(VK_RIGHT).raisingEdge_) {
+                    if (cursorPos_ < hStrLen(inputBuffer_)-1) ++cursorPos_;
+                }
+                else if (keyboard_->GetButton(VK_BACK).raisingEdge_ && !keyboard_->GetButton(VK_SHIFT).buttonVal_){
+                    memmove(inputBuffer_+cursorPos_, inputBuffer_+cursorPos_+1, hStrLen(inputBuffer_+cursorPos_));
+                    if (cursorPos_ > 0) --cursorPos_;
+                }
+                else if (keyboard_->GetButton(VK_DELETE).raisingEdge_) {
+                    memmove(inputBuffer_+cursorPos_, inputBuffer_+cursorPos_+1, hStrLen(inputBuffer_+cursorPos_));
+                }
+                else if (keyboard_->GetButton(VK_HOME).raisingEdge_) {
+                    cursorPos_ = 0;
+                }
+                else if (keyboard_->GetButton(VK_END).raisingEdge_) {
+                    cursorPos_ = hStrLen(inputBuffer_)-1;
+                }
+                else if (keyboard_->GetButton(VK_RETURN).raisingEdge_) {
+                    //Run line
+                    vm_->ExecuteBuffer(inputBuffer_, hStrLen(inputBuffer_));
+                    hZeroMem(inputBuffer_, sizeof(inputBuffer_));
+                    inputBuffer_[0] = ' ';
+                    cursorPos_ = 0;
+                }
+            }
+
             if (keyboard_->GetButton(VK_SHIFT).buttonVal_ && keyboard_->GetButton(VK_BACK).raisingEdge_)
             {
                 visible_ = !visible_;
                 hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
             }
 
+            hChar prevChar = inputBuffer_[cursorPos_];
+            if ((hInt)(hClock::elapsed()*4.f)%2 == 0) {
+                inputBuffer_[cursorPos_] = prevChar == '_' ? ' ' : '_';
+            }
+
             hMutexAutoScope mas(&messagesMutex_);
             consoleWindow_->updateConsoleLogString(messageBuffer_, inputBuffer_);
+
+            inputBuffer_[cursorPos_] = prevChar;
         }
     }
 

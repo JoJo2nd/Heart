@@ -5,6 +5,7 @@ project "libogg"
     files {"../../external/libogg/include/**.h","../../external/libogg/src/**.c"}
     defines {CommonDefines}
 	includedirs {"../../external/libogg/include"}
+    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

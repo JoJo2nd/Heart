@@ -11,6 +11,7 @@ project "shader_loader"
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/shaderloader/include/"}
 	links {PlatformLibs}
+    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

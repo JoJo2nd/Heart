@@ -13,6 +13,7 @@ project "libvorbis"
         "../../external/libvorbis/lib/tone.c"}
     defines {CommonDefines}
 	includedirs {"../../external/libvorbis/include","../../external/libogg/include"}
+    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

@@ -6,6 +6,7 @@ project "libtga"
     files {"../../external/libtga/include/**.h","../../external/libtga/Src/**.c"}
     defines {CommonDefines,SharedLibDefine}
 	includedirs {"../../external/libtga/include"}
+    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

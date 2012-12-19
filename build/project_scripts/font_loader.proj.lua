@@ -11,6 +11,7 @@ project "font_loader"
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/fontloader/include/"}
 	links {PlatformLibs}
+    postbuildcommands {PostBuildStr..project().name}
 
 	
     configuration (DebugCfgName)

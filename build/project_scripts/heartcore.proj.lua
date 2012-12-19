@@ -16,6 +16,7 @@ project "heart"
     includedirs { "../../heartcore/gwen/src/**.*", "../../heartcore/gwen/include/**.*" }
     links {"crypto","lua","zlib","minizip","libogg","libvorbis","libvorbisfile"}
     links {PlatformLibs}
+    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

@@ -10,7 +10,6 @@ solution (SlnName)
     location (SlnOutput)
     configurations ({DebugCfgName, ReleaseCfgName})
     
-    postbuildcommands {PostBuildStr}
     libdirs {LibDirs}
     
     configuration (DebugCfgName)

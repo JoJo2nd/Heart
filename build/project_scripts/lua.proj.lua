@@ -6,6 +6,7 @@
         excludes {"../../external/lua/src/lua.c","../../external/lua/src/luac.c"}
 		includedirs {"../../external/lua/src"}
 		defines {CommonDefines,"LUA_BUILD_AS_DLL"}
+        postbuildcommands {PostBuildStr..project().name}
         
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)

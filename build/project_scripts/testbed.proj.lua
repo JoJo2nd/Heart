@@ -1,4 +1,4 @@
-local PostBuildStr="cd ../../../deploy_scripts\ncall deploy_runtime_libs.bat"
+local PostBuildCmd="cd ../../../deploy_scripts\ncall deploy_external_libs.bat\ncd ../../../deploy_scripts\ncall deploy_lib.bat "
 
 project "heart_testbed"
     location (ProjectDir)
@@ -20,7 +20,7 @@ project "heart_testbed"
     links {PlatformLibs}
     links { "heart", "crypto", "lua" }
     flags {"WinMain"}
-    postbuildcommands {PostBuildStr}
+    postbuildcommands {PostBuildCmd..project().name}
 
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

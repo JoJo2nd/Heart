@@ -11,6 +11,7 @@ project "material_loader"
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/materialloader/include/"}
 	links {PlatformLibs}
+    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

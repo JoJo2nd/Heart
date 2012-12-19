@@ -8,6 +8,7 @@ project "minizip"
     defines {"NO_vsnprintf"}
 	includedirs {"../../external/minizip/include","../../external/zlib/include"}
     links {"zlib"}
+    postbuildcommands {PostBuildStr..project().name}
 	
 configuration (DebugCfgName)
 	targetdir (TargetDir..DebugCfgName)

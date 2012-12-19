@@ -5,6 +5,7 @@ project "libpng"
 	files {"../../external/libpng/include/*.h","../../external/libpng/src/*.c"}
 	defines {CommonDefines}
 	includedirs {"../../external/libpng/include","../../external/zlib/include"}
+    postbuildcommands {PostBuildStr..project().name}
 	
 configuration (DebugCfgName)
 	targetdir (TargetDir..DebugCfgName)

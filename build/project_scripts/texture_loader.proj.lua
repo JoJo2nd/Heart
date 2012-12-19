@@ -21,6 +21,7 @@ project "texture_loader"
 	links {PlatformLibs}
     links { "nvtt" }
     links "zlib"
+    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)

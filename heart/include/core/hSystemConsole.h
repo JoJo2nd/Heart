@@ -47,7 +47,10 @@ namespace Heart
             : loaded_( hFalse )
             , consoleWindow_(NULL)
             , visible_(hFalse)
+            , cursorPos_(0)
         {
+            hZeroMem(inputBuffer_, sizeof(inputBuffer_));
+            inputBuffer_[0] = ' ';
         }
         ~hSystemConsole()
         {
@@ -169,7 +172,8 @@ namespace Heart
         const hdKeyboard*                                   keyboard_;
         hBool												visible_;
 
-        hConsoleLogType consoleLog_;                                            
+        hConsoleLogType consoleLog_;
+        hUint           cursorPos_;
         hChar           inputBuffer_[INPUT_BUFFER_LEN];
         hChar           prevInputs_[MAX_PREV_COMMAND_LOGS][INPUT_BUFFER_LEN];
 

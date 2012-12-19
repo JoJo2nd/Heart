@@ -17,6 +17,7 @@ project "mesh_loader"
     includedirs {assimppath.."/include"}
 	links {PlatformLibs}
     links { "assimp" }
+    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
