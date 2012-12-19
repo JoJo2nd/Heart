@@ -43,6 +43,8 @@ namespace hUTF8
     hUint32 EncodeFromUnicode( Unicode ucIn, hChar* utf8Out );
     HEART_DLLEXPORT
     hUint32 HEART_API DecodeToUnicode( const hChar* uft8In, Unicode& ucOut );
+    HEART_DLLEXPORT 
+    hUint32 HEART_API BytesInUTF8Character(const hChar* uft8In);
 
 }
 }

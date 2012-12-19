@@ -272,6 +272,22 @@ namespace Heart
             }
         }
 
+        if (succ) {
+            hBool added = hFalse;
+            for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+                if (constBlocks_[i].paramid == id) {
+                    constBlocks_[i].constBlock = cb;
+                    added = hTrue;
+                }
+            }
+            if (!added) {
+                hBoundConstBlock bcb;
+                bcb.paramid = id;
+                bcb.constBlock = cb;
+                constBlocks_.PushBack(bcb);
+            }
+        }
+
         return succ;
     }
 
@@ -290,7 +306,40 @@ namespace Heart
             }
         }
 
+        if (succ) {
+            hBool added = hFalse;
+            for (hUint32 i = 0, c = boundTextures_.GetSize(); i < c; ++i) {
+                if (boundTextures_[i].paramid == id) {
+                    boundTextures_[i].texture = tex;
+                    boundTextures_[i].state = samplerState;
+                    added = hTrue;
+                }
+            }
+            if (!added) {
+                hBoundTexture bt;
+                bt.paramid = id;
+                bt.texture = tex;
+                bt.state = samplerState;
+                boundTextures_.PushBack(bt);
+            }
+        }
+
         return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdParameterConstantBlock* hMaterial::GetParameterConstBlock( hShaderParameterID cbid )
+    {
+        for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+            if (constBlocks_[i].paramid == cbid) {
+                return constBlocks_[i].constBlock;
+            }
+        }
+
+        return NULL;
     }
 
 }//Heart

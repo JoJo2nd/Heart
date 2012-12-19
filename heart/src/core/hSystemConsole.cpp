@@ -27,44 +27,6 @@
 
 namespace Heart
 {
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    class hFwdLogIterator : public hITextIterator
-    {
-    public:
-        hFwdLogIterator(hSystemConsole::hConsoleLogType* log, hUint32 limit = ~0)
-            : log_(log)
-            , str_(log->getHead())
-            , limit_(limit)
-        {
-        }
-        virtual hTextMarker createMarker()
-        {
-            return (hTextMarker)str_;
-        }
-        virtual void restoreToMarker(hTextMarker mkr)
-        {
-            str_ = (hChar*)mkr;
-        }
-        virtual hUint32 getCharCode()
-        {
-            return str_ ? *str_ : 0;
-        }
-        virtual void next()
-        {
-            if (*str_ == NULL || limit_ == 0) {
-                str_ = NULL;
-                return;
-            }
-            str_ = log_->getNext(str_);
-            --limit_;
-        }
-    private:
-        const hChar* str_;
-        hSystemConsole::hConsoleLogType* log_;
-        hUint32 limit_;
-    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -117,23 +79,21 @@ namespace Heart
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
         void PreRenderUpdate() {}
-        void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB) 
+        void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
         {
             hFloat intprt = 0.f;
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
             hVertexBufferMapInfo vbmap;
-            hFontStyle style = {
-                FONT_ALIGN_LEFT|FONT_ALIGN_TOP,
-                WHITE, 
-                0,
-                1.8f,
-                consoleFont_
-            };
-            hCPUVec2 bottomleft(-500.f, 0.f);
-            hCPUVec2 bottomright(500.f, 0.f);
-            hCPUVec2 topleft(-500.f, 1000.f);
+            hFloat fontScale = 1.f;//+(.2f*sin(hClock::elapsed()*.24f));
+            hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
+            hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
+            hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
             hUint32 prims = 0;
+            hFontFormatting formatter;
+            formatter.setScale(fontScale);
+            formatter.setFont(consoleFont_);
+            formatter.setColour(WHITE);
 
             if (GetVisible()) {
 
@@ -147,16 +107,21 @@ namespace Heart
                 for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
                     ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->GetStride());
-                    /*ctx->SetInputStreams()*/
                     ctx->SetMaterialPass(passptr);
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(2, 0);
                 }
 
                 {
+                    hChar* teststr = "The Red Fox jumped over the Lazy Dog 1234567890!";
                     ctx->Map(textBuffer_, &vbmap);
-                    hUTF8Iterator itr("The Red Fox jumped over the Lazy Dog 1234567890!", INPUT_BUFFER_LEN);
-                    prims = hFont::RenderStringSingleLine(style, vbmap.ptr_, bottomleft, &itr);
+                    formatter.setOutputBuffer(vbmap.ptr_, INPUT_BUFFER_LEN*6*sizeof(hFontVex));
+                    formatter.setInputStringBuffer(teststr, hStrLen(teststr));
+                    formatter.setFormatExtents(FLT_MAX, 0);
+                    formatter.setAlignment(hFONT_ALIGN_LEFT|hFONT_ALIGN_TOP);
+                    formatter.formatText();
+                    formatter.writeTextToBuffer(bottomleft);
+                    prims = formatter.getPrimitiveCount();
                     ctx->Unmap(&vbmap);
                 }
 
@@ -172,9 +137,13 @@ namespace Heart
 
                 {
                     ctx->Map(logBuffer_, &vbmap);
-                    hFwdLogIterator itr(&log_, hSystemConsole::MAX_CONSOLE_LOG_SIZE);
-                    topleft.y = (log_.getLineCount()+1)*consoleFont_->GetFontHeight()*style.scale_;
-                    prims = hFont::RenderString(style, vbmap.ptr_, topleft, bottomright, &itr);
+                    formatter.setOutputBuffer(vbmap.ptr_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6*sizeof(hFontVex));
+                    formatter.setInputStringBuffer(log_, logSize_);
+                    formatter.setFormatExtents(FLT_MAX, FLT_MAX);
+                    formatter.setAlignment(hFONT_ALIGN_LEFT|hFONT_ALIGN_BOTTOM);
+                    formatter.formatText();
+                    formatter.writeTextToBuffer(bottomleft);
+                    prims = formatter.getPrimitiveCount();
                     ctx->Unmap(&vbmap);
                 }
 
@@ -192,7 +161,7 @@ namespace Heart
         void EndFrameUpdate() {}
         void updateConsoleLogString(hSystemConsole::hConsoleLogType& log, hChar* inputStr) 
         { 
-            log_ = log; 
+            log.copyToBuffer(log_, &logSize_); 
             hStrCopy(inputBuffer_, INPUT_BUFFER_LEN, inputStr);
         }
 
@@ -208,9 +177,10 @@ namespace Heart
         hFont*                   consoleFont_;
         hMaterial*               fontMat_;
 
-        hSystemConsole*                 console_;
-        hSystemConsole::hConsoleLogType log_;
-        hChar                           inputBuffer_[INPUT_BUFFER_LEN];
+        hSystemConsole* console_;
+        hUint32         logSize_;
+        hChar           log_[hSystemConsole::MAX_CONSOLE_LOG_SIZE];
+        hChar           inputBuffer_[INPUT_BUFFER_LEN];
     };
 
     //////////////////////////////////////////////////////////////////////////

@@ -131,6 +131,19 @@ namespace Heart
                 return r;
             }
             hUint32 getLineCount() const { return newLines_; }
+            void copyToBuffer(hChar* outBuf, hUint32* outsize) 
+            {
+                if (read_ < write_) {
+                    *outsize = ((hUint32)write_-(hUint32)read_);
+                    hMemCpy(outBuf, read_, ((hUint32)write_-(hUint32)read_));
+                }
+                else {
+                    *outsize = ((hUint32)(ring_+t_size)-(hUint32)read_);
+                    hMemCpy(outBuf, read_, ((hUint32)(ring_+t_size)-(hUint32)read_));
+                    hMemCpy(outBuf+(*outsize), ring_, ((hUint32)(write_)-(hUint32)ring_));
+                    *outsize += ((hUint32)(write_)-(hUint32)ring_);
+                }
+            }
         private:
             hChar* write_, *read_;
             hChar  ring_[t_size];

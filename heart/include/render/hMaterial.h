@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hMaterial.h	
-	
-	Copyright (c) 1:4:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hMaterial.h	
+    
+    Copyright (c) 1:4:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -33,9 +33,10 @@ class ShaderProgramBuilder;
 
 namespace Heart
 {
-	class hRenderer;
-	class hRenderState;
-	class hTexture;
+    class hRenderer;
+    class hRenderState;
+    class hTexture;
+    class hMaterial;
     class hMaterialInstance;
     class hRenderSubmissionCtx;
 
@@ -82,22 +83,69 @@ namespace Heart
 
     typedef hVector< hSamplerParameter >  hSamplerArrayType;
 
+    struct hBoundTexture
+    {
+        hShaderParameterID paramid;
+        hTexture* texture;
+        hdSamplerState* state;
+    };
+
+    struct hBoundConstBlock
+    {
+        hShaderParameterID paramid;
+        hdParameterConstantBlock* constBlock;
+    };
+
     typedef hUint16 hMaterialParameterID;
 
-	class HEART_DLLEXPORT hMaterial : public hResourceClassBase
-	{
-	public:
+    class HEART_DLLEXPORT hMaterialInstance
+    {
+    public:
+        hMaterialInstance(hMemoryHeapBase* heap)
+            : memHeap_(heap)
+            , manager_(NULL)
+            , techniques_(heap)
+            , constBlocks_(heap)
+            , boundTextures_(heap)
+        {
 
-		hMaterial(hMemoryHeapBase* heap) 
-			: memHeap_(heap)
+        }
+        /* Bind interface - return false if not set on any programs */
+        hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
+        hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
+        /* Allow access to parameter blocks and updating of parameters */
+        hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+
+    private:
+
+        typedef hVector< hMaterialTechnique > TechniqueArrayType;
+        typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
+        typedef hVector< hBoundTexture > BoundTextureArrayType;
+
+        hMaterialInstance(const hMaterialInstance&) {}
+
+        hMemoryHeapBase*            memHeap_;
+        hMaterial*                  material_;
+        hRenderMaterialManager*     manager_;
+        TechniqueArrayType          techniques_;
+        BoundConstBlockArrayType    constBlocks_;
+        BoundTextureArrayType       boundTextures_;
+    };
+
+    class HEART_DLLEXPORT hMaterial : public hResourceClassBase
+    {
+    public:
+
+        hMaterial(hMemoryHeapBase* heap) 
+            : memHeap_(heap)
             , renderer_(NULL)
             , activeTechniques_(NULL)
             , manager_(NULL)
             , groups_(heap)
-		{
-			
-		}
-		~hMaterial();
+        {
+            
+        }
+        ~hMaterial();
 
         hUint32                             GetTechniqueCount() const { return activeTechniques_->GetSize(); }
         hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert( activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
@@ -112,49 +160,40 @@ namespace Heart
         void                                AddSamplerParameter(const hSamplerParameter& samp);
         
         /* Create Create/DestroyMaterialOverrides()*/
+        hMaterialInstance*  createMaterialInstance();
+        void                destroyMaterialInstance(hMaterialInstance*);
 
-        /* Bind interface - return false if not set on any programs, can only set on cloned materials */
+        /* Bind interface - return false if not set on any programs */
         hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
 
         /* Allow access to parameter blocks and updating of parameters */
         hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
 
-	private:
+    private:
 
         HEART_ALLOW_SERIALISE_FRIEND();
 
-		friend class hRenderer;
+        friend class hRenderer;
         friend class hRenderMaterialManager;
-
-       
-        struct BoundTexture
-        {
-            hShaderParameterID paramid;
-            hTexture* texture;
-        };
-
-        struct BoundConstBlock
-        {
-            hShaderParameterID paramid;
-            hdParameterConstantBlock* constBlock;
-        };
 
         typedef hVector< hMaterialGroup >     GroupArrayType;
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
+        typedef hVector< hBoundConstBlock >   BoundConstBlockArrayType;
+        typedef hVector< hBoundTexture >      BoundTextureArrayType;
 
-        hMaterial*                          clonedFrom_; //NULL if original, original is immutable 
+        hAtomicInt                          instanceCount_;
         hSamplerArrayType                   defaultSamplers_;
         hMemoryHeapBase*                    memHeap_;
         hUint32                             uniqueKey_;
-		hRenderer*							renderer_;
+        hRenderer*                          renderer_;
         hRenderMaterialManager*             manager_;
         GroupArrayType                      groups_;
         TechniqueArrayType*                 activeTechniques_;
 
-        BoundConstBlock                     constBlocks_[HEART_MAX_CONSTANT_BLOCKS];
-        BoundTexture                        boundTextures_[HEART_MAX_RESOURCE_INPUTS];
-	};
+        BoundConstBlockArrayType            constBlocks_;
+        BoundTextureArrayType               boundTextures_;
+    };
 }
 
 #endif // HIMATERIAL_H__

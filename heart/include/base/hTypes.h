@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hTypes.h	
-	
-	Copyright (c) 31:3:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hTypes.h	
+    
+    Copyright (c) 31:3:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 #ifndef hcTypes_h__
@@ -40,6 +40,7 @@ typedef long				hInt32;
 typedef unsigned long long  hUint64;
 typedef long long			hInt64;
 typedef int					hInt;
+typedef size_t              hSizeT;
 typedef float				hFloat;
 typedef double				hDouble;
 typedef bool				hBool;
@@ -70,28 +71,28 @@ namespace Heart
 
 namespace Heart
 {
-	class ClassTypeBase
-	{
-	public:
-		virtual const hUint32* GetTypeID() const = 0;
+    class ClassTypeBase
+    {
+    public:
+        virtual const hUint32* GetTypeID() const = 0;
 
-	};
+    };
 
-	template< typename _Ty >
-	class ClassType : public ClassTypeBase
-	{
-	public:
+    template< typename _Ty >
+    class ClassType : public ClassTypeBase
+    {
+    public:
 
-		const hUint32* GetTypeID() const { return &ID; }
+        const hUint32* GetTypeID() const { return &ID; }
 
-	private:
+    private:
 
-		static const hUint32 ID = 0;
+        static const hUint32 ID = 0;
 
-	};
+    };
 
-	template< typename _Ty, typename _Sy >
-	bool ClassTypesMatch( ClassType< _Ty > a, ClassType< _Sy > b ) { return a.GetTypeID() == b.GetTypeID(); }
+    template< typename _Ty, typename _Sy >
+    bool ClassTypesMatch( ClassType< _Ty > a, ClassType< _Sy > b ) { return a.GetTypeID() == b.GetTypeID(); }
 }
 
 #define	hFalse				(false)
@@ -109,7 +110,7 @@ namespace Heart
 #define HEART_PRIVATE_COPY(x) private: x(const x&); x& operator = (const x&)
 
 #ifndef NULL
-	#define NULL 0
+    #define NULL 0
 #endif
 
 #ifdef HEART_PLAT_WINDOWS

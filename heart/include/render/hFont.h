@@ -67,56 +67,6 @@ namespace Private
     };
 }
 
-    class hITextIterator
-    {
-    public:
-        typedef hUint64 hTextMarker;
-
-        hITextIterator() {}
-        virtual ~hITextIterator() {}
-        virtual hTextMarker createMarker() = 0;
-        virtual void restoreToMarker(hTextMarker) = 0;
-        virtual hUint32 getCharCode() = 0;
-        virtual void next() = 0;
-    private:
-        hITextIterator(const hITextIterator&);
-        hITextIterator& operator = (const hITextIterator&);
-    };
-
-    class hUTF8Iterator : public hITextIterator
-    {
-    public:
-        hUTF8Iterator(const hChar* str, hUint32 limit = ~0)
-            : str_(str)
-            , limit_(limit)
-        {
-        }
-        virtual hTextMarker createMarker()
-        {
-            return (hTextMarker)str_;
-        }
-        virtual void restoreToMarker(hTextMarker mkr)
-        {
-            str_ = (hChar*)mkr;
-        }
-        virtual hUint32 getCharCode()
-        {
-            hUTF8::Unicode cc;
-            hUTF8::DecodeToUnicode(str_, cc);
-            return limit_ > 0 ? cc : 0;
-        }
-        virtual void next()
-        {
-            if (*str_ == NULL || limit_ == 0) return;
-            hUTF8::Unicode cc;
-            str_ += hUTF8::DecodeToUnicode(str_, cc);
-            --limit_;
-        }
-    private:
-        const hChar* str_;
-        hUint32 limit_;
-    };
-
 #pragma pack(push, 1)
 
     // explicitly pad to 32 bytes
@@ -145,7 +95,12 @@ namespace Private
 
     typedef hUint64 hFontLookup;
 
-
+    struct hFontVex
+    {
+        hCPUVec3    pos_;
+        hColour     colour_;
+        hCPUVec2    uv_;
+    };
 
     class HEART_DLLEXPORT hFont : public hResourceClassBase
     {
@@ -179,7 +134,7 @@ namespace Private
         void                AddFontCharacter(const hFontCharacter* fchar);
         hMaterialInstance*  GetMaterialInstance() const { return fontMaterialInstance_; }
         void                SortCharacters();
-        static hUint32      RenderString( const hFontStyle& sytle, 
+        /*static hUint32      RenderString( const hFontStyle& sytle, 
                                           void* vBuffer,
                                           const hCPUVec2& topleft, 
                                           const hCPUVec2& bottomright, 
@@ -190,8 +145,9 @@ namespace Private
                                                     hITextIterator* str,
                                                     hUint32* bytesWritten = NULL,
                                                     hFloat widthLimit = FLT_MAX);
-        hCPUVec2            CalcRenderSize(hITextIterator* str);
+        hCPUVec2            CalcRenderSize(hITextIterator* str);*/
         hBool               Link(hResourceManager* resManager);
+        const hFontCharacter*       GetFontCharacter( hUint32 charcode ) const;
 
     private:
 
@@ -200,7 +156,6 @@ namespace Private
         HEART_ALLOW_SERIALISE_FRIEND();
 
         hBool                       FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr );
-        hFontCharacter*	            GetFontCharacter( hUint32 charcode );
 
         hMemoryHeapBase*            heap_;
         hUint32						nTexturePages_;

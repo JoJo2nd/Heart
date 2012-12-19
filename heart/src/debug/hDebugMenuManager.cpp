@@ -182,9 +182,12 @@ namespace Heart
 
         rndCtx->SetViewport(viewport);
 
+        hDebugRenderParams params;
+        params.rtWidth_ = renderer_->GetWidth();
+        params.rtHeight_ = renderer_->GetHeight();
         for (hDebugMenuBase* i = menuMap_.GetHead(); i != NULL; i = i->GetNext())
         {
-            i->Render(rndCtx, instCB);
+            i->Render(rndCtx, instCB, params);
         }
     }
 

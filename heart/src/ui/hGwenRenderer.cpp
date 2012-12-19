@@ -386,7 +386,7 @@ namespace Heart
 
     Gwen::Point hGwenRenderer::MeasureText( Gwen::Font* pFont, const Gwen::UnicodeString& text )
     {
-        HEART_PROFILE_FUNC();
+        /*HEART_PROFILE_FUNC();
         if (!pFont)
             return Gwen::Point();
 
@@ -399,8 +399,8 @@ namespace Heart
         hFont* font = static_cast<hFont*>(pFont->data);
         Gwen::Utility::UnicodeToString(text, ctext_);
         hUTF8Iterator itr(ctext_.c_str());
-        hCPUVec2 v = font->CalcRenderSize(&itr);
-        return Gwen::Point((hInt32)v.x,(hInt32)v.y);
+        hCPUVec2 v = font->CalcRenderSize(&itr);*/
+        return Gwen::Point((hInt32)0,(hInt32)0);
     }
 
     //////////////////////////////////////////////////////////////////////////

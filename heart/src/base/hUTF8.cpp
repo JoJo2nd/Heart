@@ -81,5 +81,24 @@ hUint32 HEART_API DecodeToUnicode( const hChar* uft8In, Unicode& ucOut )
     return ret;
 }
 
+HEART_DLLEXPORT 
+hUint32 HEART_API BytesInUTF8Character(const hChar* uft8In)
+{
+    hUint32 ret = 1;
+    // 1110xxxx 10xxxxxx 10xxxxxx
+    if((*uft8In & MASK3BYTES) == MASK3BYTES)
+    {
+        ret = 3;
+    }
+    // 110xxxxx 10xxxxxx
+    else if((*uft8In & MASK2BYTES) == MASK2BYTES)
+    {
+        ret = 2;
+    }
+    // 0xxxxxxx
+
+    return ret;
+}
+
 }
 }

@@ -49,10 +49,6 @@ namespace Heart
         hBool   BindResourceView(hShaderParameterID paramID, hdDX11Texture* view);
         hBool   BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
 
-    private:
-
-        friend class hdDX11RenderSubmissionCtx;
-
         enum hdDX11ShaderProgTypes
         {
             hdDX11VertexProg,
@@ -60,6 +56,10 @@ namespace Heart
 
             hdDX11ProgMax
         };
+
+    private:
+
+        friend class hdDX11RenderSubmissionCtx;
 
         hdDX11ShaderProgram*            boundProgs_[hdDX11ProgMax];
         ID3D11VertexShader*             vertexShader_;//quick access to render
