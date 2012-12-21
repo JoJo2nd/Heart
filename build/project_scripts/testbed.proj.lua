@@ -1,4 +1,5 @@
-local PostBuildCmd="cd ../../../deploy_scripts\ncall deploy_external_libs.bat\ncd ../../../deploy_scripts\ncall deploy_lib.bat "
+--local PostBuildCmd="cd ../../../deploy_scripts\ncall deploy_external_libs.bat\ncd ../../../deploy_scripts\ncall deploy_lib.bat "
+local PostBuildCmd="cd ../../../deploy_scripts\ncall deploy_lib.bat "
 
 project "heart_testbed"
     location (ProjectDir)
