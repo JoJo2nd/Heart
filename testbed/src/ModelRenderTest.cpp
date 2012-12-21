@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	ModelRenderTest.cpp	
-	
-	Copyright (c) 10:10:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	ModelRenderTest.cpp	
+    
+    Copyright (c) 10:10:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -96,6 +96,7 @@ void ModelRenderTest::RenderUnitTest()
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
+    const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
 
     drawCtx_.Begin(renderer);
 
@@ -104,6 +105,7 @@ void ModelRenderTest::RenderUnitTest()
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
         drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
+        /*
         drawCall_.indexBuffer_ = renderable->GetIndexBuffer();
         for (hUint32 vs = 0; vs < Heart::hDrawCall::MAX_VERT_STREAMS; ++vs)
         {
@@ -113,8 +115,21 @@ void ModelRenderTest::RenderUnitTest()
         drawCall_.primType_ = renderable->GetPrimativeType();
         drawCall_.startVertex_ = renderable->GetStartIndex();
         drawCall_.primCount_ = renderable->GetPrimativeCount();
+        */
 
-        drawCtx_.SubmitDrawCall(drawCall_);
+        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
+        drawCall_.streams_ = renderable->GetRenderStreams();
+
+        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+            drawCall_.blendState_ = passptr->GetBlendState();
+            drawCall_.depthState_ = passptr->GetDepthStencilState();
+            drawCall_.rasterState_ = passptr->GetRasterizerState();
+            drawCall_.progInput_ = *passptr->GetRenderInputObject();
+            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
+            drawCtx_.SubmitDrawCall(drawCall_);
+        }
     }
     drawCtx_.End();
 }

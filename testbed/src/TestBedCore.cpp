@@ -80,7 +80,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 //         luaL_setfuncs(L,libcoreuv,1);
 //         lua_pop(L, 1);// pop heart module table
 
-        //currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
+        currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
