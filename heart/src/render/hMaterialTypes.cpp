@@ -33,8 +33,8 @@ namespace Heart
 
     void hMaterialTechniquePass::ReleaseResources(hRenderer* renderer)
     {
-        HEART_RESOURCE_SAFE_RELEASE(vertexProgram_);
-        HEART_RESOURCE_SAFE_RELEASE(fragmentProgram_);
+        vertexProgram_ = NULL;
+        fragmentProgram_ = NULL;
         if (blendState_)
             renderer->DestroyBlendState(blendState_);
         blendState_ = NULL;

@@ -111,6 +111,7 @@ namespace Heart
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
         /* Allow access to parameter blocks and updating of parameters */
         hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+        static void destroyMaterialInstance(hMaterialInstance* inst);
 
     private:
 
@@ -121,8 +122,9 @@ namespace Heart
         typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
         typedef hVector< hBoundTexture > BoundTextureArrayType;
 
-        hMaterialInstance(hMemoryHeapBase* heap)
+        hMaterialInstance(hMemoryHeapBase* heap, hMaterial* parent)
             : memHeap_(heap)
+            , material_(parent)
             , manager_(NULL)
             , techniques_(heap)
             , constBlocks_(heap)

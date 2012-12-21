@@ -78,8 +78,25 @@ namespace Heart
 
     hMaterial::~hMaterial()
     {
-        if (renderer_)
-        {
+        hcAssertMsg(instanceCount_.value_ == 0, 
+            "Not all material instances created from this material were released");
+
+        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
+                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
+                    passptr->ReleaseResources(renderer_);
+                }
+            }
+        }
+        for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+            hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockParameterID(constBlocks_[i].paramid);
+            if (!globalCB) {
+                //Created for material so delete
+                renderer_->DestroyConstantBlocks(constBlocks_[i].constBlock, 1);
+            }
+        }
+        if (renderer_) {
             for (hUint32 i = 0, c = defaultSamplers_.GetSize(); i < c; ++i) {
                 renderer_->DestroySamplerState(defaultSamplers_[i].samplerState_);
                 defaultSamplers_[i].samplerState_ = NULL;
@@ -245,7 +262,6 @@ namespace Heart
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
                             hdParameterConstantBlock* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
                             if (!globalCB) {
-                                // Create one?
                                 globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
                             }
                             BindConstanstBuffer(cbID, globalCB);
@@ -353,7 +369,7 @@ namespace Heart
 
     hMaterialInstance* hMaterial::createMaterialInstance()
     {
-        hMaterialInstance* matInst = hNEW(memHeap_, hMaterialInstance) (memHeap_);
+        hMaterialInstance* matInst = hNEW(memHeap_, hMaterialInstance) (memHeap_, this);
         activeTechniques_->CopyTo(&matInst->techniques_);
 
         for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
@@ -368,7 +384,6 @@ namespace Heart
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
                             hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockByAlias(desc.name_);
                             if (!globalCB) {
-                                // Create one
                                 globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
                             }
                             matInst->BindConstanstBuffer(cbID, globalCB);
@@ -394,9 +409,8 @@ namespace Heart
     void hMaterial::destroyMaterialInstance(hMaterialInstance* matInst)
     {
         for (hUint32 i = 0, c = matInst->constBlocks_.GetSize(); i < c; ++i) {
-            hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlock(matInst->constBlocks_[i].paramid);
-            if (!globalCB) {
-                //Created for material so delete
+            hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockParameterID(matInst->constBlocks_[i].paramid);
+            if (!globalCB) { //Created for material so delete
                 renderer_->DestroyConstantBlocks(matInst->constBlocks_[i].constBlock, 1);
             }
         }
@@ -520,6 +534,17 @@ namespace Heart
         }
 
         return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterialInstance::destroyMaterialInstance(hMaterialInstance* inst)
+    {
+        if (!inst) return;
+        hcAssertMsg(inst->material_, "Parent material is NULL");
+        inst->material_->destroyMaterialInstance(inst);
     }
 
 }//Heart

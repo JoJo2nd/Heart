@@ -39,7 +39,7 @@ namespace Heart
         hTextIterator str(this);
         hTextIterator nextstr(this);
         hFloat fonth = scale_*font_->GetFontHeight();
-        formattedLines_.Clear();
+        formattedLines_.Resize(0);//Prevents releasing memory allocation
         textExtents_.width = 0;
         textExtents_.height = 0;
         while(*str) {

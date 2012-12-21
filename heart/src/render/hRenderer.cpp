@@ -80,7 +80,7 @@ namespace Heart
         hResourceManager* pResourceManager	)
     {
 
-        techniqueManager_.SetRenderer(this);
+        materialManager_.SetRenderer(this);
 
         width_			= width;
         height_			= height;
@@ -107,11 +107,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::Destroy()
-    {	
-        DestroyIndexBuffer(debugSphereIB_);
-        DestroyVertexBuffer(debugSphereVB_);
-        debugSphereIB_ = NULL;
-        debugSphereVB_ = NULL;
+    {
+        materialManager_.destroyRenderResources();
+        ParentClass::Destroy();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -549,7 +547,7 @@ namespace Heart
         camera->SetOrthoParams(0 ,0, GetWidth(), GetHeight(), 0.1f, 100.f);
         camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
         camera->SetViewport(vp);
-        camera->SetTechniquePass(techniqueManager_.GetRenderTechniqueInfo("main"));
+        camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
     }
 
 }

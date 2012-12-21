@@ -37,6 +37,10 @@ namespace Heart
         {}
         ~hdDX11VertexLayout()
         {
+            if (layout_) {
+                hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout_);
+                layout_->Release();
+            }
         }
 
         ID3D11InputLayout*      layout_;

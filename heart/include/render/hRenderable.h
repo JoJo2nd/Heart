@@ -56,7 +56,7 @@ namespace Heart
         void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) 
         {
             hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); 
-            vtxStreams_ = hMax(vtxStreams_,stream); 
+            vtxStreams_ = hMax(vtxStreams_,stream+1); 
             drawItem_.vertexBuffer_[stream] = vtx;
             vertexStreams_.bindVertexStream(stream, vtx->pImpl(), vtx->GetStride());
         }

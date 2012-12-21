@@ -58,7 +58,6 @@ public:
         , formattedLines_(heap)
         , primCount_(0)
     {
-
     }
     ~hFontFormatting()
     {
@@ -100,6 +99,7 @@ public:
     void setFont(hFont* font) { font_ = font; }
     void setScale(hFloat scale) { scale_ = scale; }
     void setColour(hColour col) { colour_ = col; }
+    void setReserve(hUint32 lines) { formattedLines_.Reserve(lines); }
     void formatText();
     void writeTextToBuffer(const hCPUVec2& topleft);
     hTextExtents getTextExtents() const { return textExtents_; }

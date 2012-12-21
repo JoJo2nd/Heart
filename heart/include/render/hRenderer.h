@@ -141,7 +141,7 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
         hRenderFrameStatsCollection*							LastRenderFrameStats() { return rendererStats_ + (currentRenderStatFrame_ % 2); }
-        hRenderMaterialManager*                                 GetMaterialManager() { return &techniqueManager_; }
+        hRenderMaterialManager*                                 GetMaterialManager() { return &materialManager_; }
 
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -200,7 +200,7 @@ namespace Heart
         hRendererCamera                                         renderCameras_[HEART_MAX_RENDER_CAMERAS];
         hRenderState*											renderStateCache_;
         hResourceManager*										resourceManager_;
-        hRenderMaterialManager                                  techniqueManager_;
+        hRenderMaterialManager                                  materialManager_;
         hRenderSubmissionCtx                                    mainSubmissionCtx_;
 
         hUint32                                                 scratchBufferSize_;
@@ -210,14 +210,6 @@ namespace Heart
         hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
         hAtomicInt                                              drawResourceUpdateCalls_;
         hArray< hRenderResourceUpdateCmd, s_resoruceUpdateLimit >     drawResourceUpdates_;
-
-
-
-
-        //Debug Vars
-        hMaterial*                                              debugMaterial_;
-        hIndexBuffer*                                           debugSphereIB_;
-        hVertexBuffer*                                          debugSphereVB_;
 
         hUint32										            FPS_;
         hUint32													currentRenderStatFrame_;

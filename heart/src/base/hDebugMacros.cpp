@@ -100,7 +100,7 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... )
+HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
 {
     va_list marker;
     va_start( marker, msg );
@@ -122,10 +122,15 @@ HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... )
 #   ifdef HEART_DEBUG
     OutputDebugString( buffer );
 #   endif // HEART_DEBUG
+    if (!ignore) {
      ret = MessageBox(NULL, buffer, "ASSERT FAILED!", MB_ABORTRETRYIGNORE);
      if (ret == IDABORT) ret = 0; // abort
      else if (ret == IDRETRY) ret = 1; // break to debugger
      else ret = 2; // ignore
+    }
+    else {
+        ret = 2; // ignore
+    }
 #endif
 
     va_end( marker );

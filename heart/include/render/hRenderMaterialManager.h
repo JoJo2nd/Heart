@@ -71,12 +71,14 @@ namespace Heart
         };
 
         void                        SetRenderer(hRenderer* renderer) { renderer_ = renderer; }
+        void                        destroyRenderResources();
         void                        GetUniqueKey(hMaterial* mat);
         void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
         const hRenderTechniqueInfo* GetRenderTechniqueInfo( const hChar* name );
         hdParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
         hdParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
+        hdParameterConstantBlock*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
         void                        OpenLuaMaterialLib(lua_State* L);
 
     private:
@@ -93,6 +95,7 @@ namespace Heart
             hChar*                    strPool_;
             hUint32                   aliasCount_;
             const hChar**             aliases_;
+            hUint32*                  aliasHashes_;
             hUint32                   paramCount_;
             hConstBlockParam*         params_;
             hUint32                   dataSize_;

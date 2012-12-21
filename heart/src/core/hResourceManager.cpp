@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hResourceManager.cpp
-	
-	Copyright (c) 2010/06/21 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hResourceManager.cpp
+    
+    Copyright (c) 2010/06/21 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -30,23 +30,22 @@ namespace Heart
 
     void*             hResourceManager::resourceThreadID_ = NULL;
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     hResourceManager::hResourceManager() 
-        : exitSignal_(hFalse)
-        , requireAssetsReady_(hFalse)
-	{
-	}
+        : requireAssetsReady_(hFalse)
+    {
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	hResourceManager::~hResourceManager()
-	{
-	}
+    hResourceManager::~hResourceManager()
+    {
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -58,13 +57,13 @@ namespace Heart
     }
 
     //////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     hBool hResourceManager::Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
-	{
-		hUint32 nRequiredResources = 0;
-		filesystem_ = pFileSystem;
+    {
+        hUint32 nRequiredResources = 0;
+        filesystem_ = pFileSystem;
         renderer_ = renderer;
         materialManager_ = renderer->GetMaterialManager();
         engine_ = engine;
@@ -76,53 +75,26 @@ namespace Heart
             hThread::PRIORITY_NORMAL,
             hThread::ThreadFunc::bind< hResourceManager, &hResourceManager::LoadedThreadFunc >( this ), NULL );
 
-		return hTrue;
-	}
+        return hTrue;
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hResourceManager::Shutdown( hRenderer* prenderer )
-	{
-#if 0
-        while (!requiredResourcesPackage_.IsPackageLoaded()) {Device::ThreadSleep(1);}
+    void hResourceManager::Shutdown( hRenderer* prenderer )
+    {
+        // Signals the loader thread to finish up
+        exitSignal_.Signal();
+        // The loader thread will unload everything & clean up
+        // Wait for it to complete
+        resourceLoaderThread_.Join();
 
-		for ( hUint32 i = 0, c = requiredResources_.GetSize(); i < c; ++i )
-		{
-            hResourceClassBase* res = requiredResourcesPackage_.GetResource(i);
-		    if (res)
-            {
-                res->DecRef();
-            }
-		}
-
-		exitSignal_ = hTrue;
-		loaderSemaphone_.Post();
-
-		hUint32 exitBail = 0;
-
-		while ( !resourceLoaderThread_.IsComplete() && exitBail < 1000 ) 
-		{
-			prenderer->ReleasePendingRenderResources();
-			MainThreadUpdate();
-			Device::ThreadSleep(1);
-			++exitBail;
-		}
-
-        //
-        for (hResourceClassBase* i = loadedResources_.GetHead(); i; i = i->GetNext())
-        {
-            hcPrintf("Resource ID [0x%08X] still has reference count > 0 [ref count = %d]", i->GetResourceID(), i->GetRefCount());
+        //remove references to loaded packages from the main thread
+        for (hLoadedResourcePackages* pack = mtLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
+            while (pack->GetRefCount() > 0) { pack->DecRef(); }
         }
-
-		requiredResources_.Clear();
-		requiredResourceKeys_.Clear();
-        streamingResources_.Clear( hTrue );
-
-        hFreeSafe(remappingNames_);
-#endif
-	}
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -133,7 +105,7 @@ namespace Heart
         hBool stuffToDo = hFalse;
         resourceThreadID_ = Device::GetCurrentThreadID();
 
-        while( !exitSignal_ )
+        while(!exitSignal_.TryWait())
         {
             Device::ThreadSleep(16);
             loaderSemaphone_.Wait();
@@ -173,7 +145,7 @@ namespace Heart
                         msg.package_ = pack;
                         ltPackageLoadCompleteQueue_.push(msg);
                     }
-                    stuffToDo &= pack->IsInPassiveState();
+                    stuffToDo &= !pack->IsInPassiveState();
                 }
 
                 for (hResourcePackageV2* pack = ltLoadedPackages_.GetHead(), *nextpack = NULL; pack;)
@@ -193,8 +165,31 @@ namespace Heart
             }
         }
 
-		return 0;
-	}
+        /*
+        * Bailing, so unload all packages. Done by removing the 
+        * packages with the smallest ref count first so dependant packages 
+        * are left until last
+        */
+        while (ltLoadedPackages_.GetSize() > 0) {
+            hResourcePackageV2* packToUnload;
+            hUint32 minRef = ~0;
+            for (hResourcePackageV2* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
+                // Packages don't have ref counts yet, will do in time
+                //if (pack->GetRefCount() minRef)
+                packToUnload = pack;
+                break;
+            }
+            packToUnload->Unload();
+            while (!packToUnload->ToUnload()) {
+                packToUnload->Update();
+            }
+
+            ltLoadedPackages_.Remove(packToUnload);
+            hDELETE(GetGlobalHeap(), packToUnload);
+        }
+
+        return 0;
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

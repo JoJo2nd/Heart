@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hRenderTechniqueManager.cpp	
-	
-	Copyright (c) 11:1:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hRenderTechniqueManager.cpp	
+    
+    Copyright (c) 11:1:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -216,11 +216,13 @@ namespace Heart
         // create space for alias names, we get the pointers to these and copy them later
         block.aliasCount_ = lua_rawlen(L,-1);
         block.aliases_ = (const hChar**)hHeapMalloc(GetGlobalHeap(), sizeof(hChar*)*block.aliasCount_);
+        block.aliasHashes_ = (hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*block.aliasCount_);
         for (hUint32 i = 0; i < block.aliasCount_; ++i)
         {
             lua_rawgeti(L, -1, (i+1));// push table entry onto stack (entries start at 1)
             if (lua_type(L, -1) != LUA_TSTRING) luaL_error(L, "alias must be a string");
             block.aliases_[i] = lua_tostring(L, -1);
+            block.aliasHashes_[i] = hCRC32::StringCRC(block.aliases_[i]);
             block.strPoolSize_ += lua_rawlen(L, -1)+1;// get string len
             lua_pop(L, 1);
         }
@@ -309,9 +311,18 @@ namespace Heart
 
     hdParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockByAlias(const hChar* name)
     {
+        return GetGlobalConstantBlockParameterID(hCRC32::StringCRC(name));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
+    {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             for (hUint32 a = 0, ac = constBlocks_[i].aliasCount_; a < ac; ++a) {
-                if (hStrCmp(constBlocks_[i].aliases_[a], name) == 0) {
+                if (constBlocks_[i].aliasHashes_[a] == id) {
                     return constBlocks_[i].constBlock_;
                 }
             }
@@ -320,4 +331,21 @@ namespace Heart
         return NULL;
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderMaterialManager::destroyRenderResources()
+    {
+        for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliasHashes_);
+            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliases_);
+            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].strPool_);
+            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].data_);
+            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].params_);
+            renderer_->DestroyConstantBlocks(constBlocks_[i].constBlock_, 1);
+        }
+        constBlockLookUp_.Clear(hFalse);
+        constBlocks_.Clear();
+    }
 }

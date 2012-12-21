@@ -17,23 +17,22 @@ HEART_DLLEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 
 #define hcPrintf				hcOutputString
 #define hcAssert( x )			{ static hBool ignore = hFalse; \
-                                if (!ignore && !(x)) {\
-                                hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: ("#x")", __LINE__);\
+                                if (!(x)) {\
+                                hUint32 ret = hAssertMsgFunc(ignore, __FILE__"(%u) Assert Failed: ("#x")", __LINE__);\
                                 if (ret == 0) exit(-1);\
                                 if (ret == 1) hcBreak;\
                                 if (ret == 2) ignore = hTrue; }}
 #define hcAssertMsg( x, y,...)	{ static hBool ignore = hFalse; \
-                                if (!ignore && !(x)) {\
-                                hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: ("#x ")\n" #y, __LINE__, __VA_ARGS__);\
+                                if (!(x)) {\
+                                hUint32 ret = hAssertMsgFunc(ignore, __FILE__"(%u) Assert Failed: ("#x ")\n" #y, __LINE__, __VA_ARGS__);\
                                 if (ret == 0) exit(-1);\
                                 if (ret == 1) hcBreak;\
                                 if (ret == 2) ignore = hTrue; }}
 #define hcAssertFailMsg( y, ... ) { static hBool ignore = hFalse; \
-                                    if (!ignore) {\
-                                    hUint32 ret = hAssertMsgFunc(__FILE__"(%u) Assert Failed: " #y, __LINE__, __VA_ARGS__);\
+                                    hUint32 ret = hAssertMsgFunc(ignore,__FILE__"(%u) Assert Failed: " #y, __LINE__, __VA_ARGS__);\
                                     if (ret == 0) exit(-1);\
                                     if (ret == 1) hcBreak;\
-                                    if (ret == 2) ignore = hTrue; }}
+                                    if (ret == 2) ignore = hTrue; }
 #define hcCompileTimeAssert( expr, msg ) { char unnamed[(expr) ? 1 : 0]; }
 
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
@@ -41,9 +40,9 @@ HEART_DLLEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
 #define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!:"x, __VA_ARGS__ ); }
 
-HEART_DLLEXPORT void HEART_API hcOutputStringRaw( const hChar* msg, ... );
-HEART_DLLEXPORT void HEART_API hcOutputString( const hChar* msg, ... );
-HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc( const hChar* msg, ... );
+HEART_DLLEXPORT void HEART_API hcOutputStringRaw(const hChar* msg, ...);
+HEART_DLLEXPORT void HEART_API hcOutputString(const hChar* msg, ...);
+HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
 #define hcBreak					__asm { int 3 } 
 

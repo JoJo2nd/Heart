@@ -730,6 +730,20 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 DLL_EXPORT
 void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
+    using namespace Heart;
+    hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
+    hRenderer* renderer = engine->GetRenderer();
 
+    for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
+        hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
+        for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
+            renderer->DestroyIndexBuffer(lod->renderObjects_[rIdx].GetIndexBuffer());
+            for (hUint32 s = 0, sc = lod->renderObjects_[rIdx].GetVertexStreams(); s < sc; ++s) {
+                renderer->DestroyVertexBuffer(lod->renderObjects_[rIdx].GetVertexBuffer(s));
+            }
+        }
+    }
+
+    hDELETE_SAFE(memalloc->resourcePakHeap_, resource);
 }
 

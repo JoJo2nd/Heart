@@ -102,7 +102,7 @@ namespace Heart
 
 #define hAlignPower2( x, align ) ( ( (hUint32)x + (hUint32)align - 1 ) & ~((hUint32)align - 1) )
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )
-#define hAlign( x, align ) ( x + align - (x % align) )
+#define hAlign( x, align ) ( (hUint32)(x) + align - ((hUint32)(x) % align) )
 #define hAlloca( x ) alloca( x )
 #define hOffsetOf( s, m ) (hUint32)(&(((s*)0)->m))
 #define MAX_LUA_FILESYSTEMS  (6)

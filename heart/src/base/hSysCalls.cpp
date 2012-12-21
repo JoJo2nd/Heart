@@ -170,8 +170,9 @@ void FlushSymbolsToLogFile();
         void         * stack[ 100 ];
         unsigned short frames;
         
-        frames = CaptureStackBackTrace( 0, 100, stack, NULL );
-        for( i = 0; i < frames; i++ )
+        frames = CaptureStackBackTrace( 2, 100, stack, NULL );
+        hcAssert(frames > 0 && frames < 100);
+        for( i = 0; i < frames && i < 100; i++ )
         {
             AddSymbolToLogFile(stack[i]);
             fprintf(g_file, "bt(%u,%LLX)\n", frames - i - 1, stack[i]);

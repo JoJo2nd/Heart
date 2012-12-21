@@ -242,6 +242,7 @@ namespace Heart
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
                     //wait on game to say ok to shutdown
                     //GetJobManager()->Destory(); // Should this be here?
+                    if (onShutdown_) onShutdown_(this);
                     engineState_ = hHeartState_ShuttingDown;
                     return;
                 }
@@ -373,6 +374,8 @@ namespace Heart
 
         renderer_->Destroy();
 
+        hDELETE_SAFE(GetDebugHeap(), g_ProfilerManager_);
+
         hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
 
         hDELETE_SAFE(GetGlobalHeap(), entityFactory_);
@@ -383,13 +386,13 @@ namespace Heart
 
         hDELETE(GetGlobalHeap(), console_);
 
+        hDELETE(GetGlobalHeap(), resourceMananger_);
+
         hDELETE(GetGlobalHeap(), soundManager_);
 
         hDELETE(GetGlobalHeap(), renderer_);
 
         hDELETE(GetGlobalHeap(), controllerManager_);
-
-        hDELETE(GetGlobalHeap(), resourceMananger_);
 
         hDELETE(GetGlobalHeap(), fileMananger_);
 
@@ -429,7 +432,6 @@ namespace Heart
             }
             break;
         case hHeartState_ShuttingDown:
-#pragma message ("TODO: wait on resources to unload")
             engineState_ = hHeartState_Finised;
             break;
         case hHeartState_Finised:
@@ -607,16 +609,4 @@ void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* engine )
     Heart::hd_CloseSharedLib(engine->sharedLib_);
 
     hDELETE(Heart::GetGlobalHeap(), engine);
-
-    // Check memory usage
-#define CHECK_HEAP( x ) x.printLeaks(#x)//hcAssertMsg( x.bytesAllocated() == 0, "Heap "#x" leaking %u bytes", x.bytesAllocated() );
-
-    //         CHECK_HEAP( hGeneralHeap );
-    //         CHECK_HEAP( hRendererHeap );
-    //         CHECK_HEAP( hResourceHeap );
-    //         CHECK_HEAP( hSceneGraphHeap );
-    //         CHECK_HEAP( hVMHeap );
-    //         CHECK_HEAP(hUIHeap);
-
-#undef CHECK_HEAP
 }

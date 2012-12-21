@@ -138,12 +138,6 @@ namespace Private
 
     private:
 
-        friend class ::FontBuilder;
-
-        HEART_ALLOW_SERIALISE_FRIEND();
-
-        hBool                       FitLine( Private::hFontLine& line, hFloat wid, const hChar* pStr );
-
         hMemoryHeapBase*            heap_;
         hUint32						nTexturePages_;
         hResourceID                 texturePageResID_;

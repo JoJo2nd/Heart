@@ -75,7 +75,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
-    //hHeartShutdownEngine(engine);
+    hHeartShutdownEngine(engine);
     return 0;
 }
 

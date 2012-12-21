@@ -175,6 +175,8 @@ namespace Heart
         if( mainDeviceCtx_ ) 
         {
             mainDeviceCtx_->ClearState();
+            mainDeviceCtx_->Flush();
+            mainDeviceCtx_->Release();
         }
         if ( renderTargetView_ )
         {
@@ -268,6 +270,7 @@ namespace Heart
         ID3D11DeviceContext* rsc;
         hr = d3d11Device_->CreateDeferredContext( 0, &rsc );
         hcAssert( SUCCEEDED( hr ) );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", rsc);
         ctx->SetDeviceCtx( rsc, alloc_, free_ );
         ctx->SetDefaultTargets( renderTargetView_, depthStencilView_ );
     }
@@ -278,6 +281,7 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx )
     {
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", ctx->GetDeviceCtx());
         ctx->GetDeviceCtx()->Release();
         ctx->SetDeviceCtx( NULL, NULL, NULL );
     }
@@ -309,8 +313,10 @@ namespace Heart
             shader->inputLayoutFlags_ = 0;
             hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->pixelShader_);
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
         }
         else if ( type == ShaderType_VERTEXPROG )
         {
@@ -321,8 +327,10 @@ namespace Heart
             
             hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->vertexShader_);
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
         }
 
         return shader;
@@ -336,14 +344,17 @@ namespace Heart
     {
         if (!prog) return;
         if ( prog->shaderInfo_ ) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->shaderInfo_);
             prog->shaderInfo_->Release();
             prog->shaderInfo_ = NULL;
         }
         if (prog->vertexShader_ && prog->type_ == ShaderType_VERTEXPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->vertexShader_);
             prog->vertexShader_->Release();
             prog->vertexShader_ = NULL;
         }
         if (prog->pixelShader_ && prog->type_ == ShaderType_FRAGMENTPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->pixelShader_);
             prog->pixelShader_->Release();
             prog->pixelShader_ = NULL;
         }
@@ -423,11 +434,13 @@ namespace Heart
 
         hr = d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );
         hcAssert( SUCCEEDED( hr ) );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->dx11Texture_);
 
         if ( flags & RESOURCEFLAG_RENDERTARGET )
         {
             hr = d3d11Device_->CreateRenderTargetView( texture->dx11Texture_, NULL, &texture->renderTargetView_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->renderTargetView_);
         }
 
         if ( flags & RESOURCEFLAG_DEPTHTARGET )
@@ -459,11 +472,13 @@ namespace Heart
 
             hr = d3d11Device_->CreateShaderResourceView( texture->dx11Texture_, &srvDesc, &texture->shaderResourceView_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->shaderResourceView_);
         }
         else
         {
             hr = d3d11Device_->CreateShaderResourceView( texture->dx11Texture_, NULL, &texture->shaderResourceView_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->shaderResourceView_);
         }
         
 
@@ -476,10 +491,20 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyTexture( hdDX11Texture* texture )
     {
-        if (texture->dx11Texture_)
-        {
+        if (texture->dx11Texture_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->dx11Texture_);
             texture->dx11Texture_->Release();
             texture->dx11Texture_ = NULL;
+        }
+        if (texture->shaderResourceView_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->shaderResourceView_);
+            texture->shaderResourceView_->Release();
+            texture->shaderResourceView_ = NULL;
+        }
+        if (texture->renderTargetView_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->renderTargetView_);
+            texture->renderTargetView_->Release();
+            texture->renderTargetView_ = NULL;
         }
         hDELETE_SAFE(GetGlobalHeap()/*!heap*/, texture);
     }
@@ -507,6 +532,7 @@ namespace Heart
 
         hr = d3d11Device_->CreateBuffer( &desc, initialDataPtr ? &initData : NULL, &idxBuf->buffer_ );
         hcAssert( SUCCEEDED( hr ) );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", idxBuf->buffer_);
 
         idxBuf->flags_ = flags;
         idxBuf->dataSize_ = sizeInBytes;
@@ -519,6 +545,7 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer )
     {
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", indexBuffer->buffer_);
         indexBuffer->buffer_->Release();
         indexBuffer->buffer_ = NULL;
         hDELETE(GetGlobalHeap()/*!heap*/, indexBuffer);
@@ -546,6 +573,7 @@ namespace Heart
             layout = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexLayout );
             hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout->layout_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout->layout_);
 
             vertexLayoutMap_.Insert( inputLayoutId, layout);
         }
@@ -561,7 +589,9 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyVertexLayout( hdDX11VertexLayout* layout )
     {
-        //TODO:
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout->layout_);
+        layout->layout_->Release();
+        layout->layout_ = NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -587,6 +617,7 @@ namespace Heart
 
         hr = d3d11Device_->CreateBuffer( &desc, initialDataPtr ? &initData : NULL, &vtxBuf->buffer_ );
         hcAssert( SUCCEEDED( hr ) );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", vtxBuf->buffer_);
 
         vtxBuf->flags_ = flags;
         vtxBuf->dataSize_ = sizeInBytes;
@@ -600,6 +631,7 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyVertexBufferDevice( hdDX11VertexBuffer* vtxBuf )
     {
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", vtxBuf->buffer_);
         vtxBuf->buffer_->Release();
         vtxBuf->buffer_ = NULL;
         hDELETE(GetGlobalHeap()/*!heap*/, vtxBuf);
@@ -722,6 +754,7 @@ namespace Heart
 
             hr = d3d11Device_->CreateBlendState( &blendDesc, &outBlendState->stateObj_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", outBlendState->stateObj_);
 
             blendStates_.Insert( stateKey, outBlendState );
         }
@@ -747,6 +780,9 @@ namespace Heart
             resourceMutex_.Lock();
 
             blendStates_.Remove( state->GetKey() );
+
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", state->stateObj_);
+            state->stateObj_->Release();
 
             hDELETE(GetGlobalHeap()/*!heap*/, state);
 
@@ -812,6 +848,7 @@ namespace Heart
 
             hr = d3d11Device_->CreateRasterizerState( &rasDesc, &outRasState->stateObj_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", outRasState->stateObj_);
 
             rasterizerStates_.Insert( stateKey, outRasState );
         }
@@ -837,6 +874,9 @@ namespace Heart
             resourceMutex_.Lock();
 
             rasterizerStates_.Remove( state->GetKey() );
+
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", state->stateObj_);
+            state->stateObj_->Release();
 
             hDELETE(GetGlobalHeap()/*!heap*/, state);
 
@@ -1000,6 +1040,7 @@ namespace Heart
 
             hr = d3d11Device_->CreateDepthStencilState( &dsDesc, &outDSState->stateObj_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", outDSState->stateObj_);
 
             depthStencilStates_.Insert( stateKey, outDSState );
         }
@@ -1025,6 +1066,9 @@ namespace Heart
             resourceMutex_.Lock();
 
             depthStencilStates_.Remove( state->GetKey() );
+
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", state->stateObj_);
+            state->stateObj_->Release();
 
             hDELETE(GetGlobalHeap()/*!heap*/, state);
 
@@ -1100,6 +1144,7 @@ namespace Heart
 
             hr = d3d11Device_->CreateSamplerState( &samDesc, &outSamState->stateObj_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", outSamState->stateObj_);
 
             samplerStateMap_.Insert( stateKey, outSamState );
         }
@@ -1125,6 +1170,9 @@ namespace Heart
             resourceMutex_.Lock();
 
             samplerStateMap_.Remove( state->GetKey() );
+
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", state->stateObj_);
+            state->stateObj_->Release();
 
             hDELETE(GetGlobalHeap()/*!heap*/, state);
 
@@ -1234,6 +1282,7 @@ namespace Heart
             desc.ByteWidth = sizes[i];
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", constBlocks[i].constBuffer_);
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].size_ = sizes[i];
             constBlocks[i].mapData_ = hHeapMalloc(GetGlobalHeap(), sizes[i]);
@@ -1250,6 +1299,7 @@ namespace Heart
     {
         for ( hUint32 i = 0; i < count; ++i )
         {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", constBlocks[i].constBuffer_);
             constBlocks[i].constBuffer_->Release();
             hHeapFree(GetGlobalHeap(), constBlocks[i].mapData_);
             constBlocks[i].constBuffer_ = NULL;

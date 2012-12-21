@@ -115,6 +115,7 @@ struct FXIncludeHandler : public ID3DInclude
         FXIncludePath* str = (FXIncludePath*)(((hByte*)pData)-sizeof(FXIncludePath));
         hChar* buf = (hChar*)str;
         includePaths_.Remove(str);
+        str->~FXIncludePath();
         hDELETE_ARRAY(GetGlobalHeap(), buf);
 
         return S_OK;

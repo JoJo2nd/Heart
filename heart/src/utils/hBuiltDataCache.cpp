@@ -179,6 +179,7 @@ namespace Heart
                 file->Write(tmpbuffer, ((hUint32)end - (hUint32)tmpbuffer));
                 fileSystem_->CloseFile(file);
             }
+            hHeapFree(GetGlobalHeap(), tmpbuffer);
         }
     }
 

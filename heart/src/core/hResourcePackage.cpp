@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hResourcePackage.cpp	
-	
-	Copyright (c) 14:8:2011 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hResourcePackage.cpp	
+    
+    Copyright (c) 14:8:2011 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -45,6 +45,7 @@ namespace Heart
         : packageState_(State_Unloaded)
         , engine_(engine)
         , handlerMap_(handlerMap)
+        , zipPackage_(NULL)
         , driveFileSystem_(fileSystem)
         , fileSystem_(fileSystem)
         , currentResource_(NULL)
@@ -61,6 +62,8 @@ namespace Heart
 
     hResourcePackageV2::~hResourcePackageV2()
     {
+        hDELETE_SAFE(GetGlobalHeap(), zipPackage_);
+        resourceMap_.Clear(hTrue);
         hDELETE_SAFE(GetGlobalHeap(), packageHeap_);
     }
 
@@ -148,6 +151,8 @@ namespace Heart
             packageHeap_ = hNEW(GetGlobalHeap(), hStackMemoryHeap)(GetGlobalHeap());
             packageHeap_->create(sizeBytes, hTrue);
         }
+
+        resourceMap_.SetHeap(packageHeap_);
 
         links_.Reserve(16);
         for (hXMLGetter i = hXMLGetter(descXML_.first_node("packagelinks")).FirstChild("link"); i.ToNode(); i = i.NextSibling())

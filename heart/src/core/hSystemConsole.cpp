@@ -89,6 +89,22 @@ namespace Heart
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
+        void destroyRenderResources(hRenderer* renderer)
+        {
+            hMaterialInstance::destroyMaterialInstance(backdropMat_);
+            backdropMat_ = NULL;
+            backdropCB_ = NULL;
+            renderer->DestroyVertexBuffer(backdropPlane_);
+            backdropPlane_ = NULL;
+            renderer->DestroyVertexBuffer(textBuffer_);
+            textBuffer_ = NULL;
+            renderer->DestroyVertexBuffer(logBuffer_);
+            logBuffer_ = NULL;
+            consoleFont_ = NULL;
+            fontMat_ = NULL;
+            debugTechMask_ = 0;
+            renderer = NULL;
+        }
         void PreRenderUpdate() 
         {
             windowOffset_ += GetVisible() ? -hClock::Delta() : hClock::Delta();
@@ -97,6 +113,7 @@ namespace Heart
         }
         void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
         {
+            hFixedPoolStackMemoryHeap stackHeap(32*1024, hAlloca(32*1024));
             hFloat intprt = 0.f;
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
@@ -106,10 +123,11 @@ namespace Heart
             hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
             hUint32 prims = 0;
-            hFontFormatting formatter;
+            hFontFormatting formatter(&stackHeap);
             formatter.setScale(fontScale);
             formatter.setFont(consoleFont_);
             formatter.setColour(WHITE);
+            formatter.setReserve(256);
 
             if (windowOffset_ < 1.f) {
 
@@ -243,6 +261,8 @@ namespace Heart
 
     void hSystemConsole::Destroy()
     {
+        consoleWindow_->destroyRenderResources(renderer_);
+
     }
 
     //////////////////////////////////////////////////////////////////////////
