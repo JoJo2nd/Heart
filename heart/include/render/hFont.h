@@ -132,20 +132,7 @@ namespace Private
         void                SetMaterialResourceID(hResourceID val) { fontMaterialID_ = val; }
         void                SetFontCharacterLimit(hUint32 nChars);
         void                AddFontCharacter(const hFontCharacter* fchar);
-        hMaterialInstance*  GetMaterialInstance() const { return fontMaterialInstance_; }
         void                SortCharacters();
-        /*static hUint32      RenderString( const hFontStyle& sytle, 
-                                          void* vBuffer,
-                                          const hCPUVec2& topleft, 
-                                          const hCPUVec2& bottomright, 
-                                          hITextIterator* str);
-        static hUint32      RenderStringSingleLine( const hFontStyle& style, 
-                                                    void* vBuffer, 
-                                                    const hCPUVec2& topleft, 
-                                                    hITextIterator* str,
-                                                    hUint32* bytesWritten = NULL,
-                                                    hFloat widthLimit = FLT_MAX);
-        hCPUVec2            CalcRenderSize(hITextIterator* str);*/
         hBool               Link(hResourceManager* resManager);
         const hFontCharacter*       GetFontCharacter( hUint32 charcode ) const;
 

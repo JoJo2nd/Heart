@@ -58,7 +58,6 @@ namespace Heart
         };
 
     private:
-
         friend class hdDX11RenderSubmissionCtx;
 
         hdDX11ShaderProgram*            boundProgs_[hdDX11ProgMax];
@@ -73,6 +72,36 @@ namespace Heart
             ID3D11SamplerState*             samplerState_[HEART_MAX_RESOURCE_INPUTS];
             ID3D11Buffer*                   programInputs_[HEART_MAX_CONSTANT_BLOCKS];
         } inputData_[hdDX11ProgMax]; //for inputData_[vertexShader] & inputData_[pixelShader]
+    };
+
+    class HEART_DLLEXPORT hdDX11RenderStreamsObject
+    {
+    public:
+        hdDX11RenderStreamsObject()
+            : index_(NULL)
+            , streamLower_(HEART_MAX_INPUT_STREAMS)
+            , streamUpper_(0)
+            , topology_(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
+        {
+            hZeroMem(streams_, sizeof(streams_));
+            hZeroMem(strides_, sizeof(strides_));
+        }
+
+        void setPrimType(PrimitiveType primType);
+        void bindIndexVertex(hdDX11IndexBuffer* index);
+        void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);
+
+    private:
+        friend class hdDX11RenderSubmissionCtx;
+
+        D3D11_PRIMITIVE_TOPOLOGY topology_;
+        //hdDX11IndexBuffer*  boundIndex_; // Needed?
+        //hdDX11VertexBuffer* boundStreams_[HEART_MAX_INPUT_STREAMS]; // Needed?
+        hUint16             streamLower_;
+        hUint16             streamUpper_;
+        ID3D11Buffer*       index_;
+        ID3D11Buffer*       streams_[HEART_MAX_INPUT_STREAMS];
+        UINT                strides_[HEART_MAX_INPUT_STREAMS];
     };
 
     class HEART_DLLEXPORT hdDX11RenderSubmissionCtx
@@ -91,6 +120,7 @@ namespace Heart
         {}
 
         hdDX11CommandBuffer     SaveToCommandBuffer();
+        void    SetInputStreams(hdDX11RenderStreamsObject* streams);
         void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
         void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
         /* This method... */
@@ -132,16 +162,16 @@ namespace Heart
 
         static const hUint32    MAX_RENDERTARGE_VIEWS = 4;
 
-        PrimitiveType           primType_;
-        hTempRenderMemAlloc     alloc_;
-        hTempRenderMemFree      free_;
-        ID3D11RenderTargetView* defaultRenderView_;
-        ID3D11DepthStencilView* defaultDepthView_;
-        ID3D11RenderTargetView* renderTargetViews_[MAX_RENDERTARGE_VIEWS];
-        ID3D11DepthStencilView* depthStencilView_;
-        ID3D11DeviceContext*    device_;
-        hUint32                 vbufferInputLayout_;
-        hUint32                 shaderInputLayout_;
+        D3D11_PRIMITIVE_TOPOLOGY primType_;
+        hTempRenderMemAlloc      alloc_;
+        hTempRenderMemFree       free_;
+        ID3D11RenderTargetView*  defaultRenderView_;
+        ID3D11DepthStencilView*  defaultDepthView_;
+        ID3D11RenderTargetView*  renderTargetViews_[MAX_RENDERTARGE_VIEWS];
+        ID3D11DepthStencilView*  depthStencilView_;
+        ID3D11DeviceContext*     device_;
+        hUint32                  vbufferInputLayout_;
+        hUint32                  shaderInputLayout_;
     };
 }
 

@@ -268,6 +268,7 @@ namespace Heart
                 hResourceType typehandler;
                 hStrCopy(typehandler.ext, 4, currentResource_.GetAttributeString("type"));
                 hResourceHandler* handler = handlerMap_->Find(typehandler);
+                hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
                 hDataParameterSet paramSet(&currentResource_);
 #ifdef HEART_ALLOW_DATA_COMPILE
                 hBuiltDataCache dataCache(
@@ -297,6 +298,7 @@ namespace Heart
                             hTimer timer;
                             hcPrintf("Compiling Resource %s", binFilepath);
                             hClock::BeginTimer(timer);
+                            hcAssertMsg(handler->rawCompiler_, "Data compiler not loaded!!");
                             success = (*handler->rawCompiler_)(infile, &dataCache, &paramSet, &memAlloc, engine_, &outStream);
                             hClock::EndTimer(timer);
                             if (success)

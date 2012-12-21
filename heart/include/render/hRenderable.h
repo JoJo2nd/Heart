@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hMesh.h	
-	
-	Copyright (c) 1:4:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hMesh.h	
+    
+    Copyright (c) 1:4:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -58,11 +58,20 @@ namespace Heart
             hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); 
             vtxStreams_ = hMax(vtxStreams_,stream); 
             drawItem_.vertexBuffer_[stream] = vtx;
+            vertexStreams_.bindVertexStream(stream, vtx->pImpl(), vtx->GetStride());
         }
         hIndexBuffer*                           GetIndexBuffer() const { return drawItem_.indexBuffer_; }
-        void                                    SetIndexBuffer(hIndexBuffer* idx) { drawItem_.indexBuffer_ = idx; }
+        void                                    SetIndexBuffer(hIndexBuffer* idx)
+        {
+            drawItem_.indexBuffer_ = idx;
+            vertexStreams_.bindIndexVertex(idx->pImpl());
+        }
         PrimitiveType                           GetPrimativeType() const { return drawItem_.primType_; }
-        void                                    SetPrimativeType(PrimitiveType primtype) { drawItem_.primType_ = primtype; }
+        void                                    SetPrimativeType(PrimitiveType primtype) 
+        { 
+            drawItem_.primType_ = primtype;
+            vertexStreams_.setPrimType(primtype);
+        }
         hUint32                                 GetStartIndex() const { return drawItem_.startVertex_; }
         void                                    SetStartIndex(hUint32 startIdx) { drawItem_.startVertex_ = startIdx; }
         hUint32									GetPrimativeCount() const { return drawItem_.primCount_; }
@@ -74,6 +83,7 @@ namespace Heart
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
+        const hdRenderStreamsObject&            GetRenderStreams() const { return vertexStreams_; }
     
     private:
 
@@ -82,7 +92,8 @@ namespace Heart
         hUint32                 vtxStreams_;
         hDrawCall               drawItem_;
         hMaterial*              material_;
-        Heart::hAABB            aabb_;
+        hAABB                   aabb_;
+        hdRenderStreamsObject   vertexStreams_;
     };
 }
 

@@ -137,7 +137,6 @@ namespace Heart
                 }
 
                 {
-                    hChar* teststr = "The Red Fox jumped over the Lazy Dog 1234567890!";
                     ctx->Map(textBuffer_, &vbmap);
                     formatter.setOutputBuffer(vbmap.ptr_, INPUT_BUFFER_LEN*6*sizeof(hFontVex));
                     formatter.setInputStringBuffer(inputBuffer_, hStrLen(inputBuffer_));
@@ -265,6 +264,9 @@ namespace Heart
                 consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
                 consoleWindow_->InitRenderResources(renderer_, resourceManager_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
+
+                visible_ = hTrue;
+                hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
             }
         }
         else

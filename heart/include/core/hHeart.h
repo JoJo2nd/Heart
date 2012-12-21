@@ -108,8 +108,8 @@ namespace Heart
         hHeartState_LoadingCore,
         hHeartState_Running,
         hHeartState_Paused,
-        hHeartState_Finised,
-        hHeartState_FatalError = -1,
+        hHeartState_ShuttingDown,
+        hHeartState_Finised = hErrorCode,
     };
 
     class HEART_DLLEXPORT hHeartEngine
@@ -137,7 +137,7 @@ namespace Heart
         static hFloat       Version();
 
         void                DoEngineTick();
-        hHeartState         GetState()              { return engineState_; }
+        hHeartState         GetState() { return engineState_; }
 
     private:
 
@@ -147,6 +147,7 @@ namespace Heart
         static const hFloat  HEART_VERSION; 
         static const hUint32 HEART_VERSION_MAJOR = 0;
         static const hUint32 HEART_VERSION_MINOR = 4;
+        static hdThreadEvent exitSignal_;
 
 
         void                            RegisterDefaultComponents();

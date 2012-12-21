@@ -64,7 +64,6 @@ namespace Heart
         dc->vertexBuffer_[2] = NULL;
         dc->vertexBuffer_[3] = NULL;
         dc->vertexBuffer_[4] = NULL;
-        dc->scissor_        = scissor_;
         dc->primCount_      = primCount;
         dc->startVertex_    = startVtx;
         dc->primType_       = type;

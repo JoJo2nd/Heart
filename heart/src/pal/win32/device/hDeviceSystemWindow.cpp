@@ -169,7 +169,7 @@ namespace Heart
 		case WM_CLOSE:
 			//pEventManager_->PostEvent( KERNEL_EVENT_CHANNEL, KernelEvents::QuitRequestedEvent() );
 			PostQuitMessage( 0 );
-            exit(0);
+            exitSignal_.Signal();
 			return 0;
 		case WM_ACTIVATE:
 			{

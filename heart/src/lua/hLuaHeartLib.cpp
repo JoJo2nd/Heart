@@ -128,8 +128,43 @@ by Lua can also return many results.
         {NULL, NULL}
     };
 
+    /*
+    * New 'base' functions - These need to go into seperate file 
+    */
+    static int heart_luaB_print (lua_State *L) {
+        int n = lua_gettop(L);  /* number of arguments */
+        int i;
+        lua_getglobal(L, "tostring");
+        for (i=1; i<=n; i++) {
+            const char *s;
+            size_t l;
+            lua_pushvalue(L, -1);  /* function to be called */
+            lua_pushvalue(L, i);   /* value to print */
+            lua_call(L, 1, 1);
+            s = lua_tolstring(L, -1, &l);  /* get result */
+            if (s == NULL)
+                return luaL_error(L,
+                LUA_QL("tostring") " must return a string to " LUA_QL("print"));
+            if (i>1) hSystemConsole::PrintConsoleMessage("\t");
+            hSystemConsole::PrintConsoleMessage(s);
+            lua_pop(L, 1);  /* pop result */
+        }
+        hSystemConsole::PrintConsoleMessage("\n");
+        return 0;
+    }
+
+    static const luaL_Reg heartBaseLib[] = {
+        {"print", heart_luaB_print},
+        {NULL, NULL}
+    };
+
     int luaopen_heartbase(lua_State *L) 
     {
+        // override the normal print with our version
+        lua_pushglobaltable(L);
+        luaL_setfuncs(L, heartBaseLib, 0);
+
+        //pust base functions
         luaL_newlibtable(L,libcore);
         luaL_setfuncs(L,libcore,0);
 

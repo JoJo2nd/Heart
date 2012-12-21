@@ -115,6 +115,70 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hdDX11RenderStreamsObject::bindIndexVertex(hdDX11IndexBuffer* index)
+    {
+        //boundIndex_ = index;
+        index_ = index ? index->buffer_ : NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderStreamsObject::bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride)
+    {
+        hcAssert(stream < HEART_MAX_INPUT_STREAMS);
+        hBool setlb = false;
+
+        //boundStreams_[stream] = vertexbuffer;
+        streams_[stream] = vertexbuffer->buffer_;
+        strides_[stream] = stride;
+        for (hUint16 i = 0; i < HEART_MAX_INPUT_STREAMS; ++i) {
+            if (streams_[i]) {
+                if (!setlb) {
+                    streamLower_ = i;
+                    setlb = hTrue;
+                }
+                streamUpper_ = i+1;
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderStreamsObject::setPrimType(PrimitiveType primType)
+    {
+        if ( primType == PRIMITIVETYPE_LINELIST ) topology_ = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+        else if ( primType == PRIMITIVETYPE_TRILIST) topology_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        else if ( primType == PRIMITIVETYPE_TRISTRIP) topology_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        else hcAssert( hFalse );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::SetInputStreams(hdDX11RenderStreamsObject* streams)
+    {
+        hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
+        UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
+        if (primType_ != streams->topology_) device_->IASetPrimitiveTopology(streams->topology_);
+        device_->IASetIndexBuffer(streams->index_, DXGI_FORMAT_R16_UINT, 0);
+        device_->IASetVertexBuffers(
+            streams->streamLower_,
+            streams->streamUpper_-streams->streamLower_,
+            streams->streams_+streams->streamLower_,
+            streams->strides_+streams->streamLower_,
+            offsets);
+        primType_ = streams->topology_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderSubmissionCtx::SetIndexStream( hdDX11IndexBuffer* idxBuf )
     {
         device_->IASetIndexBuffer( idxBuf->buffer_, DXGI_FORMAT_R16_UINT, 0 );
@@ -138,20 +202,18 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::SetRenderInputObject(hdRenderInputObject* inputobj)
     {
-        if (inputobj->vertexShader_)
-        {
+        device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
+        if (inputobj->vertexShader_) {
             hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
             device_->IASetInputLayout(inputobj->boundProgs_[ShaderType_VERTEXPROG]->inputLayout_->layout_);//ergh..clean up
-            device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
             device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
         }
 
-        if (inputobj->pixelShader_)
-        {
+        device_->PSSetShader(inputobj->pixelShader_, NULL, 0);
+        if (inputobj->pixelShader_) {
             hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11PixelProg;
-            device_->PSSetShader(inputobj->pixelShader_, NULL, 0);
             device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->PSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->PSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -319,15 +381,17 @@ namespace Heart
             switch ( type )
             {
             case PRIMITIVETYPE_LINELIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_LINELIST ); break;
+                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_LINELIST );
+                primType_ = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
             case PRIMITIVETYPE_TRILIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST ); break;
+                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
             case PRIMITIVETYPE_TRISTRIP:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); break;
+                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
+                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
             default:
                 hcAssert( hFalse ); break;
             }
-            primType_ = type;
         }
     }
 
@@ -341,11 +405,11 @@ namespace Heart
         hUint32 verts;
         switch ( primType_ )
         {
-        case PRIMITIVETYPE_LINELIST:
+        case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
             verts = nPrimatives / 2; break;
-        case PRIMITIVETYPE_TRILIST:
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
             verts = nPrimatives * 3; break;
-        case PRIMITIVETYPE_TRISTRIP:
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
             verts = nPrimatives + 2; break;
         }
         device_->Draw( verts, start );
@@ -361,11 +425,11 @@ namespace Heart
         hUint32 verts;
         switch ( primType_ )
         {
-        case PRIMITIVETYPE_LINELIST:
+        case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
             verts = nPrimatives / 2; break;
-        case PRIMITIVETYPE_TRILIST:
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
             verts = nPrimatives * 3; break;
-        case PRIMITIVETYPE_TRISTRIP:
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
             verts = nPrimatives + 2; break;
         }
         device_->DrawIndexed( verts, start, 0 );
@@ -553,6 +617,5 @@ namespace Heart
     {
         device_->UpdateSubresource(cb->constBuffer_, 0, NULL, cb->mapData_, 0, 0);
     }
-
 
 }

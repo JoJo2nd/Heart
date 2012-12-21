@@ -54,15 +54,16 @@ namespace Heart
     __declspec(selectany)
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
 
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     hHeartEngine::hHeartEngine( const hChar* configFile, hdDeviceConfig* deviceConfig )
     {
-        //
-        // Create engine classes
-        //
+        //////////////////////////////////////////////////////////////////////////
+        // Create engine classes /////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
         eventManager_ = hNEW(GetGlobalHeap(), EventManager);
 
         jobManager_ = hNEW_ALIGN(GetGlobalHeap(), 32, hJobManager);
@@ -90,12 +91,12 @@ namespace Heart
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
 
         //////////////////////////////////////////////////////////////////////////
-        // Read in the configFile_ ////////////////////////////////////////////////
+        // Read in the configFile_ ///////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         if ( configFile )
             configFile_.ReadConfig( configFile, fileMananger_ );
         else
-            configFile_.ReadConfig( "config.cfg", fileMananger_ );
+            configFile_.ReadConfig( "CONFIG/config.cfg", fileMananger_ );
 
         config_.Width_ = configFile_.GetScreenWidth();
         config_.Height_ = configFile_.GetScreenHeight();
@@ -171,7 +172,7 @@ namespace Heart
         renderer_->GetMaterialManager()->OpenLuaMaterialLib(luaVM_->GetMainState());
 
         //Run the start up script
-        hIFile* startupscript = fileMananger_->OpenFileRoot("startup.lua", FILEMODE_READ);
+        hIFile* startupscript = fileMananger_->OpenFileRoot("CONFIG/startup.lua", FILEMODE_READ);
         if (startupscript)
         {
             hChar* script = (hChar*)hAlloca(startupscript->Length()+1);
@@ -184,7 +185,14 @@ namespace Heart
             fileMananger_->CloseFile(startupscript);
         }
 
-        //Load core assets
+        //////////////////////////////////////////////////////////////////////////
+        // Do any post start up init /////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        renderer_->initialiseCameras();
+
+        //////////////////////////////////////////////////////////////////////////
+        // Load core assets //////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
         engineState_ = hHeartState_LoadingCore;
 
         GetResourceManager()->mtLoadPackage("CORE");
@@ -230,15 +238,14 @@ namespace Heart
 
             GetConsole()->Update();
 
-    //         if ( (*quitFlag) )
-    //         {
-    //             if ( config->shutdownTickFunc_( pEngine ) )
-    //             {
-    //                 //wait on game to say ok to shutdown
-    //                 GetJobManager()->Destory();
-    //                 break;
-    //             }
-    //         }
+            if (GetSystem()->ExitSignaled()) {
+                if (!shutdownUpdate_ || shutdownUpdate_(this)) {
+                    //wait on game to say ok to shutdown
+                    //GetJobManager()->Destory(); // Should this be here?
+                    engineState_ = hHeartState_ShuttingDown;
+                    return;
+                }
+            }
 
             GetSoundManager()->Update();
 
@@ -307,11 +314,11 @@ namespace Heart
 
             GetConsole()->Update();
 
-    //         if ( (*quitFlag) )
-    //         {
-    //             GetJobManager()->Destory();
-    //             break;
-    //         }
+            if (GetSystem()->ExitSignaled()) {
+                exit(0);// emergency exit
+                //GetJobManager()->Destory();
+                return;
+            }
 
             GetSoundManager()->Update();
 
@@ -416,13 +423,19 @@ namespace Heart
                 }
             }
             break;
-        case hHeartState_Running:
-            {
+        case hHeartState_Running: 
+        case hHeartState_Paused: {
                 DoUpdate();
             }
             break;
+        case hHeartState_ShuttingDown:
+#pragma message ("TODO: wait on resources to unload")
+            engineState_ = hHeartState_Finised;
+            break;
+        case hHeartState_Finised:
+            break;
         default:
-            //TODO
+            hcAssertFailMsg("Engine in unknown state!");
             break;
         }
     }

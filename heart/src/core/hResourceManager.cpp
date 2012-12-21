@@ -253,6 +253,8 @@ namespace Heart
             hStrCat(fullLibPath, fullPathSize, HEART_SHARED_LIB_EXT);
 
             handler.loaderLib_ = hd_OpenSharedLib(fullLibPath);
+            hcAssertMsg(handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS, 
+                "Failed to load %s.This will cause data to fail to load", fullLibPath);
             if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
             {
                 handler.binLoader_              = (OnResourceDataLoad)      hd_GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
