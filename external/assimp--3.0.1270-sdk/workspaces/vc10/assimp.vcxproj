@@ -224,6 +224,10 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">./../../lib/$(ProjectName)_$(Configuration)_$(Platform)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">./../../obj/$(ProjectName)_$(Configuration)_$(Platform)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">./../../obj/$(ProjectName)_$(Configuration)_$(Platform)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug-dll|Win32'">$(ProjectName)d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug-noboost-st|Win32'">$(ProjectName)d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug-st|Win32'">$(ProjectName)d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">$(ProjectName)d</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
