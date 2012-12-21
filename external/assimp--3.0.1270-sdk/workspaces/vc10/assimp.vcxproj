@@ -228,7 +228,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>true</SmallerTypeCheck>
@@ -240,6 +240,9 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\libs</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
     <Midl>
@@ -264,7 +267,7 @@
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_SECURE_SCL=0;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -275,6 +278,9 @@
       <PrecompiledHeaderFile>AssimpPCH.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\libs</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'">
     <Midl>
@@ -302,7 +308,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_DLL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -319,15 +325,16 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)"
-mkdir "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)"
-mkdir "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)"
+      <Command>rem mkdir "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)"
+rem mkdir "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)"
+rem mkdir "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)"
 
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)\"
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)\"
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -367,7 +374,7 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-dll|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_DLL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>true</SmallerTypeCheck>
@@ -385,15 +392,16 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)"
-mkdir "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)"
-mkdir "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)"
+      <Command>rem mkdir "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)"
+rem mkdir "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)"
+rem mkdir "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)"
 
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)\"
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)\"
-copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\unit_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpview_$(Configuration)_$(Platform)\"
+rem copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configuration)_$(Platform)\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -499,7 +507,7 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-st|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>true</SmallerTypeCheck>
@@ -511,6 +519,9 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-st|x64'">
     <Midl>
@@ -534,7 +545,7 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_DIR);..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -545,6 +556,9 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <PrecompiledHeaderFile>AssimpPCH.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\bin.v2\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release-st|x64'">
     <Midl>
