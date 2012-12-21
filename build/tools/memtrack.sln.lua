@@ -1,3 +1,4 @@
+local PostBuildCmd="cd ../../../../deploy_scripts\ncall deploy_tool.bat "
 
 SlnName = "memtrack"
 BinType = "tools"
@@ -31,8 +32,6 @@ PlatformLibs={"dbghelp"}
 LibsDebug={}
 LibsRelease={}
 
-PostBuildStr="" --"cd ../../../deploy_scripts\ncall deploy_runtime_libs.bat"
-
 solution (SlnName)
     location (SlnDir)
     configurations ({DebugCfgName, ReleaseCfgName})
@@ -61,7 +60,7 @@ solution (SlnName)
         links {PlatformLibs}
         libdirs {LibDirs}
         flags {"WinMain","Unicode"}
-        postbuildcommands {PostBuildStr}
+        postbuildcommands {PostBuildCmd..project().name.." "..project().name}
 
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)
