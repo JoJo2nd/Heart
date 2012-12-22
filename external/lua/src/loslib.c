@@ -301,14 +301,18 @@ static const luaL_Reg syslib[] = {
   {"clock",     os_clock},
   {"date",      os_date},
   {"difftime",  os_difftime},
+#ifndef HEART_LUA_LIBS
   {"execute",   os_execute},
   {"exit",      os_exit},
   {"getenv",    os_getenv},
   {"remove",    os_remove},
   {"rename",    os_rename},
   {"setlocale", os_setlocale},
+#endif
   {"time",      os_time},
+#ifndef HEART_LUA_LIBS
   {"tmpname",   os_tmpname},
+#endif
   {NULL, NULL}
 };
 
