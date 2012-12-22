@@ -85,15 +85,20 @@ namespace Heart
             renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
             renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
             consoleFont_ = static_cast< hFont* >(resmanager->mtGetResource("CORE.CONSOLE"));
-            fontMat_ = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.FONT_MAT"));
+            hMaterial* fontMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.FONT_MAT"));
+            fontMat_ = fontMat->createMaterialInstance();
+            fontCB_ = fontMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
         void destroyRenderResources(hRenderer* renderer)
         {
             hMaterialInstance::destroyMaterialInstance(backdropMat_);
+            hMaterialInstance::destroyMaterialInstance(fontMat_);
             backdropMat_ = NULL;
             backdropCB_ = NULL;
+            fontMat_ = NULL;
+
             renderer->DestroyVertexBuffer(backdropPlane_);
             backdropPlane_ = NULL;
             renderer->DestroyVertexBuffer(textBuffer_);
@@ -123,6 +128,7 @@ namespace Heart
             hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
             hUint32 prims = 0;
+            hFloat* fontParams;
             hFontFormatting formatter(&stackHeap);
             formatter.setScale(fontScale);
             formatter.setFont(consoleFont_);
@@ -166,8 +172,26 @@ namespace Heart
                     ctx->Unmap(&vbmap);
                 }
 
+                /*
+                * INput text string
+                */
                 tech = fontMat_->GetTechniqueByMask(debugTechMask_);
                 if (!tech) return;
+
+                ctx->Map(fontCB_, &map);
+                fontParams = (hFloat*)map.ptr;
+                //colour
+                fontParams[0]=.0f;
+                fontParams[1]=.0f;
+                fontParams[2]=.0f;
+                fontParams[3]=1.f;
+                //offset
+                fontParams[4]=2.f;
+                fontParams[5]=-2.f;
+                fontParams[6]=0.f;
+                fontParams[7]=0.f;
+                ctx->Unmap(&map);
+
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
                     ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
@@ -176,6 +200,31 @@ namespace Heart
                     ctx->DrawPrimitive(prims, 0);
                 }
 
+                ctx->Map(fontCB_, &map);
+                fontParams = (hFloat*)map.ptr;
+                //colour
+                fontParams[0]=1.f;
+                fontParams[1]=1.f;
+                fontParams[2]=1.f;
+                fontParams[3]=1.f;
+                //offset
+                fontParams[4]=0.f;
+                fontParams[5]=0.f;
+                fontParams[6]=0.f;
+                fontParams[7]=0.f;
+                ctx->Unmap(&map);
+
+                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
+                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
+                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
+                    ctx->SetMaterialPass(passptr);
+                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+                    ctx->DrawPrimitive(prims, 0);
+                }
+
+                /*
+                * Log text string
+                */
                 {
                     ctx->Map(logBuffer_, &vbmap);
                     formatter.setOutputBuffer(vbmap.ptr_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6*sizeof(hFontVex));
@@ -190,6 +239,44 @@ namespace Heart
 
                 tech = fontMat_->GetTechniqueByMask(debugTechMask_);
                 if (!tech) return;
+
+
+                ctx->Map(fontCB_, &map);
+                fontParams = (hFloat*)map.ptr;
+                //colour
+                fontParams[0]=.0f;
+                fontParams[1]=.0f;
+                fontParams[2]=.0f;
+                fontParams[3]=1.f;
+                //offset
+                fontParams[4]=2.f;
+                fontParams[5]=-2.f;
+                fontParams[6]=0.f;
+                fontParams[7]=0.f;
+                ctx->Unmap(&map);
+
+                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
+                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
+                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
+                    ctx->SetMaterialPass(passptr);
+                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
+                    ctx->DrawPrimitive(prims, 0);
+                }
+
+                ctx->Map(fontCB_, &map);
+                fontParams = (hFloat*)map.ptr;
+                //colour
+                fontParams[0]=1.f;
+                fontParams[1]=1.f;
+                fontParams[2]=1.f;
+                fontParams[3]=1.f;
+                //offset
+                fontParams[4]=0.f;
+                fontParams[5]=0.f;
+                fontParams[6]=0.f;
+                fontParams[7]=0.f;
+                ctx->Unmap(&map);
+
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
                     ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
@@ -217,7 +304,8 @@ namespace Heart
         hMaterialInstance*       backdropMat_;
         hdParameterConstantBlock* backdropCB_;
         hFont*                   consoleFont_;
-        hMaterial*               fontMat_;
+        hdParameterConstantBlock* fontCB_;
+        hMaterialInstance*       fontMat_;
         hFloat                   windowOffset_;
 
         hSystemConsole* console_;
@@ -364,7 +452,7 @@ namespace Heart
                 }
             }
 
-            if (keyboard_->GetButton(VK_SHIFT).buttonVal_ && keyboard_->GetButton(VK_BACK).raisingEdge_)
+            if (keyboard_->GetButton(VK_F4).raisingEdge_)
             {
                 visible_ = !visible_;
                 hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
