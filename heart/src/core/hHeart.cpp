@@ -172,7 +172,7 @@ namespace Heart
         renderer_->GetMaterialManager()->OpenLuaMaterialLib(luaVM_->GetMainState());
 
         //Run the start up script
-        hIFile* startupscript = fileMananger_->OpenFileRoot("CONFIG/startup.lua", FILEMODE_READ);
+        hIFile* startupscript = fileMananger_->OpenFileRoot("SCRIPT/startup.lua", FILEMODE_READ);
         if (startupscript)
         {
             hChar* script = (hChar*)hAlloca(startupscript->Length()+1);

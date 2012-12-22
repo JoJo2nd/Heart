@@ -261,10 +261,16 @@ namespace Heart
 #endif // HEART_DEBUG
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
                             hdParameterConstantBlock* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
+                            hBool alreadyAdded = hFalse;
                             if (!globalCB) {
-                                globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                                for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
+                                    if (constBlocks_[mcb].paramid == cbID) {
+                                        alreadyAdded = hTrue;
+                                    }
+                                }
+                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
                             }
-                            BindConstanstBuffer(cbID, globalCB);
+                            if (globalCB) BindConstanstBuffer(cbID, globalCB);
                         }
                     }
                 }
@@ -383,10 +389,16 @@ namespace Heart
                             prog->GetConstantBlockDesc(cb, &desc);
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
                             hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockByAlias(desc.name_);
+                            hBool alreadyAdded = hFalse;
                             if (!globalCB) {
-                                globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                                for (hUint mcb=0, mcbc=matInst->constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
+                                    if (matInst->constBlocks_[mcb].paramid == cbID) {
+                                        alreadyAdded = hTrue;
+                                    }
+                                }
+                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
                             }
-                            matInst->BindConstanstBuffer(cbID, globalCB);
+                            if (globalCB) matInst->BindConstanstBuffer(cbID, globalCB);
                         }
                     }
                 }
