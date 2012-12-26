@@ -539,8 +539,40 @@
 ** Local configuration. You can use this space to add your redefinitions
 ** without modifying the main part of the file.
 */
+#ifdef HEART_LUA_LIBS
 
+/*
+** {==================================================================
+@@ LUA_NUMBER is the type of numbers in Lua.
+** CHANGE the following definitions only if you want to build Lua
+** with a number type different from double. You may also need to
+** change lua_number2int & lua_number2integer.
+** ===================================================================
+*/
 
+#   ifdef LUA_NUMBER_DOUBLE
+#       undef LUA_NUMBER_DOUBLE
+#   endif
+#   ifdef LUA_NUMBER
+#       undef LUA_NUMBER
+#   endif
+#   define LUA_NUMBER	float
+
+/*
+@@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
+@* over a number.
+*/
+#   ifdef LUAI_UACNUMBER
+#       undef LUAI_UACNUMBER
+#   endif
+#   define LUAI_UACNUMBER	float
+
+#endif
+
+#if defined (_MSC_VER) && !defined (LUA_NUMBER_DOUBLE)
+/* disable the "possible loss of data" warning from double to float */
+#pragma warning (disable:4244)
+#endif
 
 #endif
 
