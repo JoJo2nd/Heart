@@ -68,6 +68,7 @@ namespace Heart
         void                    Destroy();
         hdKeyboard*             GetSystemKeyboard() { return &keyboard_; }
         hdMouse*                GetSystemMouse()    { return &mouse_; }
+        void                    SignalExit() { exitSignal_.Signal(); }
         hBool                   ExitSignaled() { return exitSignal_.TryWait(); }
         
     private:

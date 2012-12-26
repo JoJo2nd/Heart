@@ -31,9 +31,9 @@ namespace Heart
 {
     class hdW32SoundVoiceDevice;
 
-    typedef huFunctor< void (*)(hdW32SoundVoiceDevice* , hdSoundCallbackReason)  >::type hdSoundVoiceCallback;
+    hFUNCTOR_TYPEDEF(void (*)(hdW32SoundVoiceDevice* , hdSoundCallbackReason), hdSoundVoiceCallback);
 
-    struct HEART_DLLEXPORT hdW32SoundVoiceInfo
+    struct hdW32SoundVoiceInfo
     {
         void*                   firstBuffer_;
         hUint32                 firstBufferSize_;

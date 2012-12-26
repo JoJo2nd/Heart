@@ -60,7 +60,7 @@ namespace Heart
         hTime   lastAccessTime_;
     };
 
-	typedef huFunctor< hBool(*)(const hdFileHandleInfo*) >::type		hdEnumerateFilesCallback;
+    hFUNCTOR_TYPEDEF(hBool(*)(const hdFileHandleInfo*), hdEnumerateFilesCallback);
 
 	/**
 	* Fopen 

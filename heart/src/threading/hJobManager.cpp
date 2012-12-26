@@ -60,19 +60,19 @@ namespace Heart
         jobWriteIndex_.value_= 0;
         sleepingJobThreads_.value_ = 0;
 
-        jobCoordinator_.Create( 
+        jobCoordinator_.create( 
             "Job Coordinator", 
             hThread::PRIORITY_HIGH, 
-            hThread::ThreadFunc::bind< hJobManager, &hJobManager::JobCoordinator >( this ), 
+            hFUNCTOR_BINDMEMBER(hThreadFunc, hJobManager, JobCoordinator, this),
             NULL );
 
         jobThreads_.Resize( HEART_JOB_THREADS );
 		for ( hUint32 i = 0; i < HEART_JOB_THREADS; ++i )
 		{
-			jobThreads_[ i ].Create(
+			jobThreads_[ i ].create(
 				"Job Task Thread",
 				hThread::PRIORITY_NORMAL,
-				hThread::ThreadFunc::bind< hJobManager, &hJobManager::JobThread >( this ), 
+                hFUNCTOR_BINDMEMBER(hThreadFunc, hJobManager, JobThread, this),
 				NULL );
 		}
 	}
@@ -115,11 +115,11 @@ namespace Heart
         jobChainSemaphore_.Post();
         WakeSleepingJobThreads();
 
-        jobCoordinator_.Join();
+        jobCoordinator_.join();
 
         for ( hUint32 i = 0; i < HEART_JOB_THREADS; ++i )
         {
-            jobThreads_[i].Join();
+            jobThreads_[i].join();
         }
     }
 

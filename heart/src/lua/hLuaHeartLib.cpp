@@ -1,28 +1,28 @@
 #include "lauxlib.h"
 /********************************************************************
 
-	filename: 	LuaHeartLib.cpp	
-	
-	Copyright (c) 8:5:2011 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	LuaHeartLib.cpp	
+    
+    Copyright (c) 8:5:2011 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -44,56 +44,18 @@ by Lua can also return many results.
 
 */
 
-	int hLuaWaitCheck( lua_State* L )
-	{
-		float startTime = luaL_checknumber( L, 1 );
-		float waitTime = luaL_checknumber( L, 2 );
-
-		if ( (startTime+waitTime) < hClock::elapsed() )
-		{
-			lua_pushboolean( L, hTrue );
-			return 1;
-		}
-
-		lua_pushboolean( L, hFalse );
-		return 1;
-	}
-
-	int hLuaWait( lua_State* L )
-	{
-		float waitTime = luaL_checknumber( L, 1 );
-
-		lua_pushcfunction( L, hLuaWaitCheck );
-		lua_pushnumber( L, hClock::elapsed() );
-		lua_pushnumber( L, waitTime );
-		return lua_yield( L, 3 );
-	}
-
-	int hLuaElasped( lua_State* L )
-	{
-		lua_pushnumber( L, hClock::elapsed() );
-		return 1;
-	}
-
-	int hLuaElaspedHoursMinSecs( lua_State* L )
-	{
-		lua_pushinteger( L, hClock::hours() );
-		lua_pushinteger( L, hClock::mins() );
-		lua_pushinteger( L, hClock::secs() );
-		return 3;
-	}
-
-	int hLuaEnableDebugDraw( lua_State* L )
-	{
-		int enable = luaL_checkinteger(L, -1);
-		return 0;
-	}
-
-    int hLuaClearConsole(lua_State* L)
+    int hLuaElasped( lua_State* L )
     {
-        HEART_LUA_GET_ENGINE(L);
-        engine->GetConsole()->ClearLog();
-        return 0;
+        lua_pushnumber( L, hClock::elapsed() );
+        return 1;
+    }
+
+    int hLuaElaspedHoursMinSecs( lua_State* L )
+    {
+        lua_pushinteger( L, hClock::hours() );
+        lua_pushinteger( L, hClock::mins() );
+        lua_pushinteger( L, hClock::secs() );
+        return 3;
     }
 
     int hLuaSetDebugMenuVisiable(lua_State* L)
@@ -106,25 +68,21 @@ by Lua can also return many results.
 
     int hLuaExit(lua_State* L)
     {
-        //engine->GetEventManager()->PostEvent( Heart::KERNEL_EVENT_CHANNEL, Heart::Device::KernelEvents::QuitRequestedEvent() );
-        exit(luaL_checknumber( L, 1 ));
+        HEART_LUA_GET_ENGINE(L);
+        engine->GetSystem()->SignalExit();
         return 0;
     }
 
     //functions that don't need upvalues
-	static const luaL_Reg libcore[] = {
-		{"elasped",			    hLuaElasped},
-		{"elaspedHMS",		    hLuaElaspedHoursMinSecs},
-		{"wait",			    hLuaWait},
-        {"exit",                hLuaExit},
+    static const luaL_Reg libcore[] = {
+        {"elasped",			    hLuaElasped},
+        {"elaspedHMS",		    hLuaElaspedHoursMinSecs},
         {NULL, NULL}
-	};
+    };
 
     //functions that need up values
     static const luaL_Reg libcoreuv[] = {
-        {"dd",                  hLuaEnableDebugDraw},
-        {"cls",                 hLuaClearConsole},
-        {"dms",                 hLuaSetDebugMenuVisiable},
+        {"exit",                hLuaExit},
         {NULL, NULL}
     };
 
@@ -171,8 +129,149 @@ by Lua can also return many results.
         return 1;
     }
 
-	void OpenHeartLuaLib(lua_State* L, hHeartEngine* engine)
-	{
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+#ifndef HEART_LUA_SEARCHPATH
+#   define HEART_LUA_SEARCHPATH "SCRIPT/?;SCRIPT/?.lua"
+#endif
+#ifndef HEART_LUA_READ_SIZE
+#   define HEART_LUA_READ_SIZE (4*1024)
+#endif
+#if !defined (LUA_PATH_SEP)
+#   define LUA_PATH_SEP		";"
+#endif
+#if !defined (LUA_PATH_MARK)
+#   define LUA_PATH_MARK		"?"
+#endif
+
+    static const hChar* pushNextSearchPath(lua_State* L, const hChar* path) {
+        while(*path == *LUA_PATH_SEP) path++;
+        if (*path == 0) return NULL;
+        const hChar* n = hStrChr(path, *LUA_PATH_SEP);/* find next separator */
+        if (!n) n = path + hStrLen(path);
+        lua_pushlstring(L, path, n-path);  /* template */
+        return n;
+    }
+
+    static const char* luaReader(lua_State* L, void* data, size_t* size) {
+        hIFile* file = (hIFile*)((void**)data)[0];
+        char* buf = (char*)((void**)data)[1];
+        *size = file->Read(buf, HEART_LUA_READ_SIZE);
+        return size != 0 ? buf : NULL;
+    }
+
+    int heart_lua_require(lua_State* L) {
+        HEART_LUA_GET_ENGINE(L);
+        hIFileSystem* fsys = engine->GetFileManager();
+        hIFile* file = NULL;
+        void* lrdata[2];
+        const hChar* name = luaL_checkstring(L,-1);
+        lua_getfield(L, LUA_REGISTRYINDEX, "_hLOADED");
+        lua_getfield(L, -1, name); //look for _hLOADED[name]
+        if (lua_toboolean(L, -1)) return 1; //Loaded already
+        // Attempt to load the module
+        lua_pop(L, 1);// remove get _HEARTLOADED[name] result
+        lua_getfield(L, LUA_REGISTRYINDEX, "_hSEARCHPATH");//get search string, default is HEART_LUA_SEARCHPATH
+        if (!lua_isstring(L,-1)) return luaL_error(L, "require search path must be a string");
+        const hChar* path = lua_tostring(L, -1);
+        while (path = pushNextSearchPath(L, path)) {
+            const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
+            lua_remove(L, -2);//remove path template left by pushNextSearchPath
+            file = fsys->OpenFileRoot(filename, FILEMODE_READ);
+            if (file) {
+                //Opened file, read, parse and run
+                lrdata[0] = (void*)file;
+                lrdata[1] = hAlloca(HEART_LUA_READ_SIZE);
+                int loadret = lua_load(L, luaReader, (void*)lrdata, filename, NULL);
+                fsys->CloseFile(file);
+                if (loadret != 0) {
+                    return luaL_error(L, 
+                        "error loading module %s from file %s: %s", 
+                        name, filename, lua_tostring(L, -1));
+                }
+                if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
+                    return luaL_error(L, 
+                        "error loading module %s from file %s: %s", 
+                        name, filename, lua_tostring(L, -1));
+                }
+                //module loaded ok, set _hLOADED[name] to true
+                lua_getfield(L, LUA_REGISTRYINDEX, "_hLOADED");
+                lua_pushboolean(L, 1);
+                lua_setfield(L, -2, name);
+                return 1;
+            }
+        }
+        //if we get this far we failed to load the package
+        return luaL_error(L, "error loading module \"%s\": file not found", name);
+    }
+
+    int heart_lua_require_flush(lua_State* L) {
+        HEART_LUA_GET_ENGINE(L);
+        hIFileSystem* fsys = engine->GetFileManager();
+        hIFile* file = NULL;
+        void* lrdata[2];
+        const hChar* name = luaL_checkstring(L,-1);
+        lua_getfield(L, LUA_REGISTRYINDEX, "_hSEARCHPATH");//get search string, default is HEART_LUA_SEARCHPATH
+        if (!lua_isstring(L,-1)) return luaL_error(L, "require search path must be a string");
+        const hChar* path = lua_tostring(L, -1);
+        while (path = pushNextSearchPath(L, path)) {
+            const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
+            lua_remove(L, -2);//remove path template left by pushNextSearchPath
+            file = fsys->OpenFileRoot(filename, FILEMODE_READ);
+            if (file) {
+                //Opened file, read, parse and run
+                lrdata[0] = (void*)file;
+                lrdata[1] = hAlloca(HEART_LUA_READ_SIZE);
+                int loadret = lua_load(L, luaReader, (void*)lrdata, filename, NULL);
+                fsys->CloseFile(file);
+                if (loadret != 0) {
+                    return luaL_error(L, 
+                        "error loading module %s from file %s: %s", 
+                        name, filename, lua_tostring(L, -1));
+                }
+                if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
+                    return luaL_error(L, 
+                        "error loading module %s from file %s: %s", 
+                        name, filename, lua_tostring(L, -1));
+                }
+                //module loaded ok, set _hLOADED[name] to true
+                lua_getfield(L, LUA_REGISTRYINDEX, "_hLOADED");
+                lua_pushboolean(L, 1);
+                lua_setfield(L, -2, name);
+                return 1;
+            }
+        }
+        //if we get this far we failed to load the package
+        return luaL_error(L, "error loading module \"%s\": file not found", name);
+    }
+
+    static const luaL_Reg heartBasePackageLib[] = {
+        {"require", heart_lua_require},
+        {"requireflush", heart_lua_require_flush},
+        {NULL, NULL}
+    };
+
+    void heart_lpackage_open(lua_State* L, hHeartEngine* engine) {
+        lua_newtable(L);
+        lua_setfield(L, LUA_REGISTRYINDEX, "_hLOADED");
+        
+        lua_pushstring(L, HEART_LUA_SEARCHPATH);
+        lua_setfield(L, LUA_REGISTRYINDEX, "_hSEARCHPATH");
+
+        // push our version of require and other package releated things
+        lua_pushglobaltable(L);
+        lua_pushlightuserdata(L, engine);
+        luaL_setfuncs(L, heartBasePackageLib, 1);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void OpenHeartLuaLib(lua_State* L, hHeartEngine* engine)
+    {
         luaL_requiref(L, "heart", luaopen_heartbase, true);
         lua_pop(L, 1);//remove module from stack return by requiref
 
@@ -181,5 +280,7 @@ by Lua can also return many results.
         lua_pushlightuserdata(L, engine);
         luaL_setfuncs(L,libcoreuv,1);
         lua_pop(L, 1);// pop heart module table
-	}
+
+        heart_lpackage_open(L, engine);
+    }
 }

@@ -70,10 +70,10 @@ namespace Heart
 
         LoadGamedataDesc();
 
-        resourceLoaderThread_.Create(
+        resourceLoaderThread_.create(
             "hResource Loader hThread",
             hThread::PRIORITY_NORMAL,
-            hThread::ThreadFunc::bind< hResourceManager, &hResourceManager::LoadedThreadFunc >( this ), NULL );
+            hThreadFunc::bind< hResourceManager, &hResourceManager::LoadedThreadFunc >( this ), NULL );
 
         return hTrue;
     }
@@ -88,7 +88,7 @@ namespace Heart
         exitSignal_.Signal();
         // The loader thread will unload everything & clean up
         // Wait for it to complete
-        resourceLoaderThread_.Join();
+        resourceLoaderThread_.join();
 
         //remove references to loaded packages from the main thread
         for (hLoadedResourcePackages* pack = mtLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {

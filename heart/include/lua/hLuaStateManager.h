@@ -40,8 +40,8 @@ namespace Heart
     class hComponent;
     class hLuaScriptComponent;
 
-	typedef huFunctor< hBool (*)( lua_State* ) >::type VMYieldCallback;
-	typedef huFunctor< void (*)( lua_State* ) >::type VMResumeCallback;
+	typedef hFunctor< hBool (*)( lua_State* ) >::type VMYieldCallback;
+	typedef hFunctor< void (*)( lua_State* ) >::type VMResumeCallback;
 
     struct HEART_DLLEXPORT hLuaThreadState : hLinkedListElement< hLuaThreadState >
     {
