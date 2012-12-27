@@ -34,9 +34,7 @@
 #include "ResourceLoadTest.h"
 #include "JobManagerTest.h"
 #include "ModelRenderTest.h"
-
-typedef Heart::hPublisher< void(*)(hFloat second) > SecondEventType;
-SecondEventType g_consterSecEvent;
+#include "EventTest.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -52,6 +50,7 @@ DEFINE_HEART_UNIT_TEST(MapTest);
         REGISTER_UNIT_TEST(JobManagerTest)
         REGISTER_UNIT_TEST(ResourceLoadTest)
         REGISTER_UNIT_TEST(ModelRenderTest)
+        REGISTER_UNIT_TEST(EventTest)
     };
 
     void consoleStateEvent(hFloat secs) 
@@ -106,9 +105,6 @@ DEFINE_HEART_UNIT_TEST(MapTest);
         lua_pushlightuserdata(L, this);
         luaL_setfuncs(L,funcs,1);
         lua_pop(L, 1);// pop heart module table
-
-        g_consterSecEvent.connect(
-            hFUNCTOR_BINDSTATIC(SecondEventType::hPublisherDelegate, consoleStateEvent));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

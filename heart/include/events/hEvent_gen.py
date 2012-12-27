@@ -77,7 +77,7 @@ def outputPublisherClassDef(outfile, argcount):
         if i > 0: outfile.write(", ")
         temp = Template("Param${itr}Type")
         outfile.write(temp.substitute(itr=i+1))
-    outfile.write("), hPublisherDelegate);\n")
+    outfile.write("), Delegate);\n")
     outfile.write("    hPublisher() {}\n");
     outfile.write("    hPublisher(const hPublisher& rhs)\n")
     outfile.write("    {\n")
@@ -101,6 +101,7 @@ def outputPublisherClassDef(outfile, argcount):
     outfile.write("    ~hPublisher()\n")
     outfile.write("    {\n")
     outfile.write("    }\n")
+    # deferred version
     outfile.write("    void operator () (hPublisherContext* ctx")
     for i in range(0, argcount):
         temp = Template(", Param${itr}Type param$itr")
@@ -117,11 +118,26 @@ def outputPublisherClassDef(outfile, argcount):
         outfile.write(temp.substitute(itr=i+1))
     outfile.write("        }\n")
     outfile.write("    }\n")
-    outfile.write("    void connect(const hPublisherDelegate& proc)\n")
+    # Immediate version
+    outfile.write("    void operator () (")
+    for i in range(0, argcount):
+        if i > 0: outfile.write(", ")
+        outfile.write(Template("Param${itr}Type param$itr").substitute(itr=i+1))
+    outfile.write(")\n")
+    outfile.write("    {\n")
+    outfile.write("        for (hUint i=0, c=subscribers_.GetSize(); i<c; ++i) {\n")
+    outfile.write("            subscribers_[i](")
+    for i in range(0, argcount):
+        if i > 0: outfile.write(", ")
+        outfile.write(Template("param$itr").substitute(itr=i+1))
+    outfile.write(");\n")
+    outfile.write("        }\n")
+    outfile.write("    }\n")
+    outfile.write("    void connect(const Delegate& proc)\n")
     outfile.write("    {\n")
     outfile.write("        subscribers_.PushBack(proc);\n")
     outfile.write("    }\n")
-    outfile.write("    void disconnect(const hPublisherDelegate& proc)\n")
+    outfile.write("    void disconnect(const Delegate& proc)\n")
     outfile.write("    {\n")
     outfile.write("        //This doesn't maintain order but I'm not sure that it matters,\n")
     outfile.write("        for (hUint i=0, c=subscribers_.GetSize(); i<c; ++i) {\n")
@@ -138,7 +154,7 @@ def outputPublisherClassDef(outfile, argcount):
         temp = Template("        Param${itr}Type param${itr}_;\n");
         outfile.write(temp.substitute(itr=i+1))
     outfile.write("    };\n")
-    outfile.write("    typedef hVector< hPublisherDelegate > SubscriberArrayType;\n")
+    outfile.write("    typedef hVector< Delegate > SubscriberArrayType;\n")
     outfile.write("    void publishDispatch(void* data, hUint size)\n")
     outfile.write("    {\n")
     outfile.write("        ParamStruct* params = (ParamStruct*)data;\n")

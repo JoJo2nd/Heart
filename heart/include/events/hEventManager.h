@@ -59,7 +59,7 @@ namespace Heart
         }
         void  initialise(hMemoryHeapBase* memHeap, hUint bufferSize);
         void* pushSignal(hUint sizeneeded, hDispatchDelegate proc);
-        void  updateDispatch(hUint maxIterations = 10);
+        void  updateDispatch(hUint maxIterations = 2);
 
     private:
 
