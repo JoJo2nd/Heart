@@ -69,11 +69,11 @@ namespace Heart
         engine_ = engine;
 
         LoadGamedataDesc();
-
+        loaderSemaphone_.Create(0, 128);
         resourceLoaderThread_.create(
             "hResource Loader hThread",
             hThread::PRIORITY_NORMAL,
-            hThreadFunc::bind< hResourceManager, &hResourceManager::LoadedThreadFunc >( this ), NULL );
+            hFUNCTOR_BINDMEMBER(hThreadFunc, hResourceManager, LoadedThreadFunc, this), NULL );
 
         return hTrue;
     }
@@ -84,16 +84,14 @@ namespace Heart
 
     void hResourceManager::Shutdown( hRenderer* prenderer )
     {
+        //remove references to loaded packages from the main thread
+        mtLoadedPackages_.Clear(hTrue);
         // Signals the loader thread to finish up
         exitSignal_.Signal();
+        loaderSemaphone_.Post();
         // The loader thread will unload everything & clean up
         // Wait for it to complete
         resourceLoaderThread_.join();
-
-        //remove references to loaded packages from the main thread
-        for (hLoadedResourcePackages* pack = mtLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
-            while (pack->GetRefCount() > 0) { pack->DecRef(); }
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -120,41 +118,66 @@ namespace Heart
                     while (!ltLoadRequests_.isEmpty())
                     {
                         ResourcePackageLoadMsg loadmsg = ltLoadRequests_.pop();
-                        hResourcePackageV2* toload = hNEW(GetGlobalHeap(), hResourcePackageV2)(engine_, filesystem_, &resourceHandlers_);
+                        hUint32 key = hCRC32::StringCRC(loadmsg.path_);
+                        hResourcePackage* toload = ltLoadedPackages_.Find(key);
+                        if (toload == NULL) {
+                            toload = hNEW(GetGlobalHeap(), hResourcePackage)(engine_, filesystem_, &resourceHandlers_);
 
-                        toload->LoadPackageDescription(loadmsg.path_);
+                            toload->LoadPackageDescription(loadmsg.path_);
+                            toload->AddRef();
 
-                        ltLoadedPackages_.Insert(hCRC32::StringCRC(loadmsg.path_), toload);
+                            ltLoadedPackages_.Insert(key, toload);
+                        }
+                        else {
+                            toload->AddRef();
+                            if (toload->isUnloading()) {
+                                toload->prepareReload();
+                            }
+                        }
                     }
         
-                    //TODO: process unload requests
                     while (!ltUnloadRequest_.isEmpty())
                     {
                         ResourcePackageQueueMsg unload = ltUnloadRequest_.pop();
-                        unload.package_->Unload();
+                        unload.package_->DecRef();
                     }
                 }
 
-                for (hResourcePackageV2* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext())
+                stuffToDo = hFalse;
+
+                for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext())
                 {
-                    if (pack->Update())
-                    {
-                        //Package has just finised a load...
+                    if (pack->GetRefCount() == 0 && !pack->isUnloading()) {
+                        //Package needed unloading, push across to main thread
                         hMutexAutoScope autoLock(&ltAccessMutex_);
                         ResourcePackageQueueMsg msg;
+                        msg.packageCRC_ = pack->GetPackageCRC();
+                        msg.package_ = NULL;
+                        ltPackageLoadCompleteQueue_.push(msg);
+                        pack->Unload(); 
+                    }
+                    if (pack->Update())
+                    {
+                        //Package has just finised a load, push across to main thread
+                        hMutexAutoScope autoLock(&ltAccessMutex_);
+                        ResourcePackageQueueMsg msg;
+                        msg.packageCRC_ = pack->GetPackageCRC();
                         msg.package_ = pack;
                         ltPackageLoadCompleteQueue_.push(msg);
                     }
-                    stuffToDo &= !pack->IsInPassiveState();
+                    stuffToDo |= !pack->IsInPassiveState();
                 }
 
-                for (hResourcePackageV2* pack = ltLoadedPackages_.GetHead(), *nextpack = NULL; pack;)
+                for (hResourcePackage* pack = ltLoadedPackages_.GetHead(), *nextpack = NULL; pack;)
                 {
                     nextpack = pack->GetNext();
                     if (pack->ToUnload())
                     {
-                        ltLoadedPackages_.Remove(pack);
-                        hDELETE(GetGlobalHeap(), pack);
+                        hMutexAutoScope autoLock(&ltAccessMutex_);
+                        if (ltPackageLoadCompleteQueue_.isEmpty()) {
+                            ltLoadedPackages_.Remove(pack);
+                            hDELETE(GetGlobalHeap(), pack);
+                        }
                     }
 
                     pack = nextpack;
@@ -171,13 +194,13 @@ namespace Heart
         * are left until last
         */
         while (ltLoadedPackages_.GetSize() > 0) {
-            hResourcePackageV2* packToUnload;
-            hUint32 minRef = ~0;
-            for (hResourcePackageV2* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
-                // Packages don't have ref counts yet, will do in time
-                //if (pack->GetRefCount() minRef)
-                packToUnload = pack;
-                break;
+            hResourcePackage* packToUnload;
+            for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
+                pack->DecRef();
+                if (pack->GetRefCount() == 0) {
+                    packToUnload = pack;
+                    break;
+                }
             }
             packToUnload->Unload();
             while (!packToUnload->ToUnload()) {
@@ -212,7 +235,11 @@ namespace Heart
         while (!ltPackageLoadCompleteQueue_.isEmpty())
         {
             ResourcePackageQueueMsg loadedPak = ltPackageLoadCompleteQueue_.pop();
-            hLoadedResourcePackages* pak = mtLoadedPackages_.Find(loadedPak.package_->GetPackageCRC());
+            hLoadedResourcePackages* pak = mtLoadedPackages_.Find(loadedPak.packageCRC_);
+            if (!pak) {
+                pak = hNEW(GetGlobalHeap(), hLoadedResourcePackages);
+                mtLoadedPackages_.Insert(loadedPak.packageCRC_, pak);
+            }
             pak->package_ = loadedPak.package_;
         }
 
@@ -279,23 +306,10 @@ namespace Heart
     void hResourceManager::mtLoadPackage( const hChar* name )
     {
         hUint32 pkcrc = hCRC32::StringCRC(name);
-        hLoadedResourcePackages* pk = mtLoadedPackages_.Find(pkcrc);
-        if (pk)
-        {
-            pk->AddRef();
-        }
-        else
-        {
-            pk = hNEW(GetGlobalHeap(), hLoadedResourcePackages);
-            hStrCopy(pk->path_, HEART_RESOURCE_PATH_SIZE, name);
-            pk->AddRef();
-            mtLoadedPackages_.Insert(pkcrc, pk);
-
-            //Add to be loaded
-            ResourcePackageLoadMsg msg;
-            hStrCopy(msg.path_, HEART_RESOURCE_PATH_SIZE, name);
-            mtLoadRequests_.push(msg);
-        }
+        //Add to be loaded
+        ResourcePackageLoadMsg msg;
+        hStrCopy(msg.path_, HEART_RESOURCE_PATH_SIZE, name);
+        mtLoadRequests_.push(msg);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -318,19 +332,12 @@ namespace Heart
         hLoadedResourcePackages* pk = mtLoadedPackages_.Find(pkcrc);
         if (pk)
         {
-            pk->DecRef();
-            if (pk->GetRefCount() == 0)
-            {
-                mtLoadedPackages_.Remove(pk);
-               
-                //Add to be unloaded
-                ResourcePackageQueueMsg msg;
-                msg.package_ = pk->package_;
-                mtUnloadRequest_.push(msg);
-
-                //Clean up
-                hDELETE(GetGlobalHeap(), pk);
-            }
+            //Add to be unloaded
+            // Should just the id be sent
+            ResourcePackageQueueMsg msg;
+            msg.packageCRC_ = pkcrc;
+            msg.package_ = pk->package_;
+            mtUnloadRequest_.push(msg);
         }
     }
 
@@ -377,7 +384,7 @@ namespace Heart
         hUint32 pakCRC = (hUint32)((resid&0xFFFFFFFF00000000)>>32);
         hUint32 resCRC = (hUint32)((resid&0x00000000FFFFFFFF));
 
-        hResourcePackageV2* pak = ltLoadedPackages_.Find(pakCRC);
+        hResourcePackage* pak = ltLoadedPackages_.Find(pakCRC);
         if (pak)
         {
             return pak->GetResource(resCRC);
@@ -393,10 +400,9 @@ namespace Heart
     {
         if (requireAssetsReady_) return hTrue;
         
-        hLoadedResourcePackages* corepak = mtLoadedPackages_.Find(hCRC32::StringCRC("CORE"));
-        if (corepak != NULL)
+        if (mtIsPackageLoaded("CORE"))
         {
-            requireAssetsReady_ = corepak->package_ != NULL;
+            requireAssetsReady_ = hTrue;
         }
 
         return requireAssetsReady_;

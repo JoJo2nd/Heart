@@ -44,19 +44,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    struct hLoadedResourcePackages : public hMapElement< hUint32, hLoadedResourcePackages >,
-                                     public hIReferenceCounted
+    struct hLoadedResourcePackages : public hMapElement< hUint32, hLoadedResourcePackages >
     {
         hLoadedResourcePackages() 
             : loading_(hFalse)
             , package_(NULL)
         {
-            hZeroMem(path_, sizeof(HEART_RESOURCE_PATH_SIZE));
         }
 
-        hChar					        path_[HEART_RESOURCE_PATH_SIZE];
-        hBool                           loading_;
-        hResourcePackageV2*             package_;
+        hBool                         loading_;
+        hResourcePackage*             package_;
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -112,7 +109,8 @@ namespace Heart
 
         struct ResourcePackageQueueMsg
         {
-            hResourcePackageV2*         package_;
+            hUint32                   packageCRC_;
+            hResourcePackage*         package_;
         };
 
         struct ResourcePackageLoadMsg
@@ -121,7 +119,7 @@ namespace Heart
         };
 
         typedef hMap< hUint32, StreamingResouce >                   StreamingResourceMap;
-        typedef hMap< hUint32, hResourcePackageV2 >                 ResourcePackageMap;
+        typedef hMap< hUint32, hResourcePackage >                 ResourcePackageMap;
         typedef hMap< hUint32, hLoadedResourcePackages >            LoadedResourcePackageMap;
         typedef hQueue< ResourcePackageLoadMsg, QUEUE_MAX_SIZE >    ResourceLoadRequestQueue;
         typedef hQueue< ResourcePackageQueueMsg, QUEUE_MAX_SIZE >   ResourceMsgQueue;

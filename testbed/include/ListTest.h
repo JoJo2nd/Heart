@@ -188,13 +188,18 @@ public:
 			if ( i == (tc / 2) )
 			{
 				LINKTESTPRINT( "Deleting Ele : %u", li->value_ );
-                hDELETE(Heart::GetGlobalHeap(), list_.Remove( li ));
+                list_.Remove( li );
+                hDELETE(Heart::GetGlobalHeap(), li);
 				break;
 			}
 		}
 
-		hDELETE(Heart::GetGlobalHeap(), list_.Remove( list_.GetHead() ));
-		hDELETE(Heart::GetGlobalHeap(), list_.Remove( list_.GetTail() ));
+        li = list_.GetHead();
+        list_.Remove(li);
+		hDELETE(Heart::GetGlobalHeap(), li);
+        li = list_.GetTail();
+        list_.Remove(li);
+		hDELETE(Heart::GetGlobalHeap(), li);
 
 		LINKTESTPRINT( "!==========================================" );
 		LINKTESTPRINT( "Going Forward" );

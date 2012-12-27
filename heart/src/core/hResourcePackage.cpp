@@ -41,7 +41,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackageV2::hResourcePackageV2(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap)
+    hResourcePackage::hResourcePackage(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap)
         : packageState_(State_Unloaded)
         , engine_(engine)
         , handlerMap_(handlerMap)
@@ -60,7 +60,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackageV2::~hResourcePackageV2()
+    hResourcePackage::~hResourcePackage()
     {
         hDELETE_SAFE(GetGlobalHeap(), zipPackage_);
         resourceMap_.Clear(hTrue);
@@ -71,7 +71,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourcePackageV2::LoadPackageDescription(const hChar* packname)
+    hUint32 hResourcePackage::LoadPackageDescription(const hChar* packname)
     {
         hChar zipname[MAX_PACKAGE_NAME+10];
         
@@ -140,16 +140,18 @@ namespace Heart
             }
         }
 
-        if (sizeBytes == 0)
-        {
-            // Create base/normal allocator, useful for debug
-            packageHeap_ = hNEW(GetGlobalHeap(), hMemoryHeap)(packageName_);
-            packageHeap_->create(0, hTrue);
-        }
-        else
-        {
-            packageHeap_ = hNEW(GetGlobalHeap(), hStackMemoryHeap)(GetGlobalHeap());
-            packageHeap_->create(sizeBytes, hTrue);
+        if (!packageHeap_) {
+            if (sizeBytes == 0)
+            {
+                // Create base/normal allocator, useful for debug
+                packageHeap_ = hNEW(GetGlobalHeap(), hMemoryHeap)(packageName_);
+                packageHeap_->create(0, hTrue);
+            }
+            else
+            {
+                packageHeap_ = hNEW(GetGlobalHeap(), hStackMemoryHeap)(GetGlobalHeap());
+                packageHeap_->create(sizeBytes, hTrue);
+            }
         }
 
         resourceMap_.SetHeap(packageHeap_);
@@ -163,6 +165,7 @@ namespace Heart
         currentResource_.SetNode(hXMLGetter(descXML_.first_node("resources")).FirstChild("resource").ToNode());
 
         loadedResources_ = 0;
+        totalResources_ = 0;
         for (hXMLGetter i = hXMLGetter(descXML_.first_node("resources")).FirstChild("resource"); i.ToNode(); i = i.NextSibling())
         {
             ++totalResources_;
@@ -173,6 +176,7 @@ namespace Heart
         //TODO: resource Package links/deps requests
 
         packageState_ = State_Load_WaitDeps;
+        doReload_ = hFalse;
 
         return 0;
     }
@@ -181,7 +185,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourcePackageV2::GetPackageDependancyCount() const
+    hUint32 hResourcePackage::GetPackageDependancyCount() const
     {
         return links_.GetSize();
     }
@@ -190,7 +194,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    const hChar* hResourcePackageV2::GetPackageDependancy( hUint32 i ) const
+    const hChar* hResourcePackage::GetPackageDependancy( hUint32 i ) const
     {
         return links_[i];
     }
@@ -199,7 +203,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackageV2::Update()
+    hBool hResourcePackage::Update()
     {
         hBool ret = hFalse;
         switch(packageState_)
@@ -207,6 +211,7 @@ namespace Heart
         case State_Load_WaitDeps:
             {
                 //TODO:
+                hcPrintf("Package %s Beginning Load Resources", packageName_);
                 packageState_ = State_Load_Reources;
                 break;
             }
@@ -220,6 +225,7 @@ namespace Heart
                 if (DoPostLoadLink())
                 {
                     tempHeap_.destroy();
+                    hcPrintf("Package %s is Loaded & Linked", packageName_);
                     packageState_ = State_Ready;
                     ret = hTrue;
                 }
@@ -228,13 +234,21 @@ namespace Heart
         case State_Unlink_Resoruces:
             {
                 DoPreUnloadUnlink();
+                hcPrintf("Package %s Unload started", packageName_);
                 packageState_ = State_Unload_Resources;
                 break;
             }
         case State_Unload_Resources:
             {
                 DoUnload();
-                packageState_ = State_Unloaded;
+                if (doReload_) {
+                    hcPrintf("Package %s is Reloading", packageName_);
+                    LoadPackageDescription(packageName_);
+                }
+                else {
+                    hcPrintf("Package %s is Unloaded", packageName_);
+                    packageState_ = State_Unloaded;
+                }
                 break;
             }
         case State_Unloaded:
@@ -252,15 +266,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackageV2::Unload()
+    void hResourcePackage::Unload()
     {
+        hcPrintf("Package %s Unlink started", packageName_);
         packageState_ = State_Unlink_Resoruces;
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackageV2::LoadResourcesState()
+    void hResourcePackage::LoadResourcesState()
     {
         hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
         if (currentResource_.ToNode())
@@ -356,6 +371,7 @@ namespace Heart
         else
         {
             //finished
+            hcPrintf("Package %s Beginning Link Resources", packageName_);
             packageState_ = State_Link_Resources;
         }
     }
@@ -364,7 +380,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackageV2::DoPostLoadLink()
+    hBool hResourcePackage::DoPostLoadLink()
     {
         hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
         hUint32 totallinked = 0;
@@ -390,7 +406,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackageV2::DoPreUnloadUnlink()
+    void hResourcePackage::DoPreUnloadUnlink()
     {
         hResourceMemAlloc memAlloc = { packageHeap_, NULL };
 
@@ -405,7 +421,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackageV2::DoUnload()
+    void hResourcePackage::DoUnload()
     {
         hResourceMemAlloc memAlloc = { packageHeap_, NULL };
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res;)
@@ -421,7 +437,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hResourcePackageV2::GetResource( hUint32 crc ) const
+    hResourceClassBase* hResourcePackage::GetResource( hUint32 crc ) const
     {
         hResourceClassBase* res = resourceMap_.Find(crc);
         if (res && res->GetIsLinked())

@@ -204,8 +204,8 @@ namespace Heart
 			}
 		}
 		hUint32					GetSize() const { return size_; }
-		ElementTypePtr			GetHead() const { return (TypePtr)head_; }
-		ElementTypePtr			GetTail() const { return (TypePtr)tail_; }
+		ElementTypePtr			GetHead() const { return static_cast<TypePtr>(head_); }
+		ElementTypePtr			GetTail() const { return static_cast<TypePtr>(tail_); }
 		void					SetAutoDelete( hBool val ) { autoDelete_ = hTrue; }
 
 	private:

@@ -66,11 +66,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hResourcePackageV2 : public hMapElement< hUint32, hResourcePackageV2 >
+    class hResourcePackage : public hMapElement< hUint32, hResourcePackage >
+                           , public hIReferenceCounted
     {
     public:
-        hResourcePackageV2(hHeartEngine* engine, hIFileSystem* filesystem, const hResourceHandlerMap* handlerMap );
-        ~hResourcePackageV2();
+        hResourcePackage(hHeartEngine* engine, hIFileSystem* filesystem, const hResourceHandlerMap* handlerMap );
+        ~hResourcePackage();
 
         const hChar*            GetPackageName() const { return packageName_; }
         hUint32                 GetPackageCRC() const { return packageCRC_; }
@@ -78,12 +79,14 @@ namespace Heart
 
         //Only call the following on the loader thread...
         hUint32                 LoadPackageDescription(const hChar* );
+        void                    prepareReload() { doReload_ = hTrue; }
         hUint32                 GetPackageDependancyCount() const;
         const hChar*            GetPackageDependancy(hUint32 i) const;
         hUint32                 GetLoadCompletionPercent() { return (loadedResources_*100) / totalResources_;  }
         hBool                   Update();//Returns true when package whiches to loaded state
         void                    Unload();
         hBool                   IsInPassiveState() const { return packageState_ == State_Ready; }
+        hBool                   isUnloading() const { return packageState_ > State_Ready; }
         hBool                   ToUnload() const { return packageState_ == State_Unloaded; }
 
     private:
@@ -111,6 +114,7 @@ namespace Heart
 
         hChar                       packageName_[MAX_PACKAGE_NAME];
         hUint32                     packageCRC_;
+        hBool                       doReload_;
         State                       packageState_;
         hHeartEngine*                engine_;
         const hResourceHandlerMap*  handlerMap_;

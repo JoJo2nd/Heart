@@ -66,6 +66,11 @@ namespace Heart
         template< hUint32 flags >
         hBool ParseSafe( hChar* data, hMemoryHeapBase* heap )
         {
+            if (heap_)
+            {
+                hHeapFreeSafe(heap_, data_);
+            }
+
             data_ = data;
             heap_ = heap;
             try
