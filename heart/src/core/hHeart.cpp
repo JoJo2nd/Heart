@@ -58,7 +58,6 @@ namespace Heart
         renderer_ = hNEW(GetGlobalHeap(), hRenderer);
         soundManager_ = hNEW(GetGlobalHeap(), hSoundManager);
         console_ = hNEW(GetGlobalHeap(), hSystemConsole);
-        uiRenderer_ = hNEW(GetGlobalHeap(), hGwenRenderer);
         luaVM_ = hNEW(GetGlobalHeap(), hLuaStateManager);
         entityFactory_ = hNEW(GetGlobalHeap(), hEntityFactory);
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
@@ -113,8 +112,7 @@ namespace Heart
         // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
         console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
-        //uiRenderer_->Initialise(renderer_, resourceMananger_);
-        debugMenuManager_->Initialise(uiRenderer_, renderer_, resourceMananger_, controllerManager_);
+        debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
         g_ProfilerManager_ = hNEW(GetDebugHeap(), hProfilerManager)();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -284,7 +282,6 @@ namespace Heart
     {
         jobManager_->Destory();
         debugMenuManager_->Destroy();
-        uiRenderer_->DestroyResources();
         console_->Destroy();
         soundManager_->Destory(); 
         resourceMananger_->Shutdown( renderer_ );
@@ -295,7 +292,6 @@ namespace Heart
         hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
         hDELETE_SAFE(GetGlobalHeap(), entityFactory_);
         hDELETE_SAFE(GetGlobalHeap(), luaVM_);
-        hDELETE_SAFE(GetGlobalHeap(), uiRenderer_);
         hDELETE_SAFE(GetGlobalHeap(), console_);
         hDELETE_SAFE(GetGlobalHeap(), resourceMananger_);
         hDELETE_SAFE(GetGlobalHeap(), soundManager_);

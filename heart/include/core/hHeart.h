@@ -130,8 +130,6 @@ namespace Heart
         hJobManager*        GetJobManager()         { return jobManager_; }
         hEntityFactory*     GetEntityFactory()      { return entityFactory_; }
         hSoundManager*      GetSoundManager()       { return soundManager_; }
-        hGwenRenderer*      GetUIRenderer()         { return uiRenderer_; }
-        void*               GetUIMenuManager()      { return NULL; }
 
         static const hChar* VersionString();
         static hFloat       Version();
@@ -170,7 +168,6 @@ namespace Heart
         hLuaStateManager*               luaVM_;
         hJobManager*                    jobManager_;
         hEntityFactory*                 entityFactory_;
-        hGwenRenderer*                  uiRenderer_;
         hConfigOptions                  configFile_;
 
         //Debug 

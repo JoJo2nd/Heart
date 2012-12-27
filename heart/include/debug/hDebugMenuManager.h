@@ -62,9 +62,8 @@ namespace Heart
         hDebugMenuManager();
         ~hDebugMenuManager();
 
-        void                        Initialise(hGwenRenderer* uirenderer, hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager);
+        void                        Initialise(hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager);
         void                        Destroy();
-        Gwen::Controls::Canvas*     GetDebugCanvas() const { hcAssertMsg(uiCanvas_, "Debug MenuManager is not Ready()"); return uiCanvas_; }
         void                        RegisterMenu(const hChar* name, hDebugMenuBase* menu);
         void                        UnregisterMenu(hDebugMenuBase* menu);
         void                        SetMenuVisiablity(const hChar* name, hBool show);
@@ -82,10 +81,6 @@ namespace Heart
         hRenderer*                  renderer_;
         hResourceManager*           resourceManager_;
         hControllerManager*         controllerManager_;
-        hGwenRenderer*              uiRenderer_;
-        hGwenInputBinder            inputBinder_;
-        Gwen::Skin::TexturedBase    skin_;
-        Gwen::Controls::Canvas*     uiCanvas_;
         hMenuMap                    menuMap_;
     };
 }

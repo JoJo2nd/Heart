@@ -37,8 +37,6 @@ namespace Heart
     hDebugMenuManager::hDebugMenuManager()
         : renderer_(NULL)
         , resourceManager_(NULL)
-        , uiRenderer_(NULL)
-        , uiCanvas_(NULL)
     {
         hcAssert(instance_ == NULL);
         instance_ = this;
@@ -57,12 +55,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::Initialise(hGwenRenderer* uirenderer,  hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager )
+    void hDebugMenuManager::Initialise(hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager)
     {
         renderer_ = renderer;
         resourceManager_ = resManager;
         controllerManager_ = controllerManager;
-        uiRenderer_ = uirenderer;
 
         menuMap_.SetHeap(GetDebugHeap());
         menuMap_.SetAutoDelete(hTrue);
@@ -132,26 +129,7 @@ namespace Heart
     void hDebugMenuManager::RenderMenus(hRenderSubmissionCtx* rndCtx, hRenderMaterialManager* matManager)
     {
         HEART_PROFILE_FUNC();
-        /*if (resourceManager_->RequiredResourcesReady())
-        {
-            if (uiCanvas_ == NULL)
-            {
-                skin_.SetRender(uiRenderer_);
-                skin_.Init("CORE.UISKIN");
-                skin_.SetDefaultFont(Gwen::Utility::StringToUnicode("CORE.CONSOLE"));
-                uiCanvas_ = hNEW(GetDebugHeap(), Gwen::Controls::Canvas)(&skin_);
-                uiCanvas_->SetBackgroundColor(Gwen::Color(0, 255, 255, 64));
-                uiCanvas_->SetDrawBackground(false);
-                uiCanvas_->SetSize(renderer_->GetWidth(), renderer_->GetHeight());
-                uiCanvas_->SetPos(0, 0);
 
-                inputBinder_.SetCanvas(controllerManager_, uiCanvas_);
-            }
-
-            inputBinder_.Update();
-            uiRenderer_->SetRenderCameraID(HEART_DEBUGUI_CAMERA_ID);//TODO: do this better...
-            uiCanvas_->RenderCanvas();
-        }*/
         hConstBlockMapInfo camMap;
         hViewportShaderConstants* camData;
         hMatrix view, proj;
