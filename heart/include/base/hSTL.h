@@ -32,7 +32,7 @@
 namespace Heart
 {
     template< class _Ty >
-    class HeapAllocator : public std::allocator< _Ty >
+    class HEART_FORCEDLLEXPORT HeapAllocator : public std::allocator< _Ty >
     {	// generic allocator for objects of class _Ty
     public:
         typedef typename _Ty			value_type;

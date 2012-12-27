@@ -129,4 +129,9 @@
 #   define HEART_ALLOW_DATA_COMPILE
 #endif
 
+#ifdef _MSC_VER 
+// TODO: this needs fixing really
+#   pragma warning (disable:4251)
+#endif
+
 #endif // _HHEARTCONFIG_H__

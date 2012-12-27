@@ -27,7 +27,6 @@
 
 #include "testbed_precompiled.h"
 #include "ResourceLoadTest.h"
-#include "Gwen/UnitTest/UnitTest.h"
 
 DEFINE_HEART_UNIT_TEST(ResourceLoadTest);
 

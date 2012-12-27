@@ -30,6 +30,5 @@
 #define TESTBED_PRECOMPILED_H__
 
 #include "Heart.h"
-#include "Gwen/UnitTest/UnitTest.h"
 
 #endif // TESTBED_PRECOMPILED_H__

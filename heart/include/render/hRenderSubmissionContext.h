@@ -50,7 +50,7 @@ namespace Heart
     class hRenderer;
 
     //Should these be in there own file?
-    struct HEART_DLLEXPORT hViewportShaderConstants
+    struct hViewportShaderConstants
     {
         hMatrix view_;
         hMatrix viewInverse_;
@@ -61,12 +61,12 @@ namespace Heart
         hMatrix viewProjectionInverse_;
     };
 
-    struct HEART_DLLEXPORT hInstanceConstants
+    struct hInstanceConstants
     {
         hMatrix world_;
     };
 
-    struct HEART_DLLEXPORT hConstBlockMapInfo
+    struct hConstBlockMapInfo
     {
         hdParameterConstantBlock* cb;
         void* ptr;

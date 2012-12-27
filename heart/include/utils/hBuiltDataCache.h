@@ -104,11 +104,11 @@ namespace Heart
         }
         hUint32 Lenght()
         {
-            return handle_->Length();
+            return (hUint32)handle_->Length();
         }
         hUint32 Tell()
         {
-            return handle_->Tell();
+            return (hUint32)handle_->Tell();
         }
 
     private:

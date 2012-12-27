@@ -31,7 +31,7 @@
 namespace Heart
 {
 	template< class T, hUint32 MaxSize >
-	class hQueue
+	class HEART_FORCEDLLEXPORT hQueue
 	{
 	public:
 

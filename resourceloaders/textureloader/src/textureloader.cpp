@@ -36,6 +36,12 @@ using namespace Heart;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#ifndef MAKEFOURCC
+#   define MAKEFOURCC(ch0, ch1, ch2, ch3)                           \
+        ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) |           \
+        ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
+#endif /* defined(MAKEFOURCC) */
+
 #define TEXTURE_MAGIC_NUM              hMAKE_FOURCC('h','T','E','X')
 #define TEXTURE_STRING_MAX_LEN         (32)
 #define TEXTURE_MAJOR_VERSION          (((hUint16)1))

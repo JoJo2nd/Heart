@@ -32,7 +32,7 @@ namespace Heart
     /*
      * This will need to be replaced at some point, possibly after I write a free list or pool allocator
      */
-    class hString : public std::basic_string< char, std::char_traits<char>, HeapAllocator< char > >
+    class HEART_FORCEDLLEXPORT hString : public std::basic_string< char, std::char_traits<char>, HeapAllocator< char > >
     {
     public:
         hString()
