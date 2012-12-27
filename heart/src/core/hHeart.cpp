@@ -128,8 +128,8 @@ namespace Heart
         hIFile* startupscript = fileMananger_->OpenFileRoot("SCRIPT/startup.lua", FILEMODE_READ);
         if (startupscript)
         {
-            hChar* script = (hChar*)hAlloca(startupscript->Length()+1);
-            startupscript->Read(script, startupscript->Length());
+            hChar* script = (hChar*)hAlloca((hSizeT)startupscript->Length()+1);
+            startupscript->Read(script, (hUint)startupscript->Length());
             script[startupscript->Length()] = 0;
             if (luaL_dostring(luaVM_->GetMainState(), script) != 0) {
                 hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));

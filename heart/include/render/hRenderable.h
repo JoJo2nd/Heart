@@ -53,7 +53,7 @@ namespace Heart
 
         hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); return drawItem_.vertexBuffer_[stream]; }
         hUint32                                 GetVertexStreams() const { return vtxStreams_; }
-        void                                    SetVertexBuffer(hUint32 stream, hVertexBuffer* vtx) 
+        void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) 
         {
             hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); 
             vtxStreams_ = hMax(vtxStreams_,stream+1); 
@@ -72,10 +72,10 @@ namespace Heart
             drawItem_.primType_ = primtype;
             vertexStreams_.setPrimType(primtype);
         }
-        hUint32                                 GetStartIndex() const { return drawItem_.startVertex_; }
-        void                                    SetStartIndex(hUint32 startIdx) { drawItem_.startVertex_ = startIdx; }
-        hUint32									GetPrimativeCount() const { return drawItem_.primCount_; }
-        void                                    SetPrimativeCount(hUint32 primCount) { drawItem_.primCount_ = primCount; }
+        hUint16                                 GetStartIndex() const { return drawItem_.startVertex_; }
+        void                                    SetStartIndex(hUint16 startIdx) { drawItem_.startVertex_ = startIdx; }
+        hUint16									GetPrimativeCount() const { return drawItem_.primCount_; }
+        void                                    SetPrimativeCount(hUint16 primCount) { drawItem_.primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
         void                                    SetMaterial(hMaterial* material);
@@ -89,7 +89,7 @@ namespace Heart
 
         hResourceID             materialID_;
         hUint32                 materialKey_;
-        hUint32                 vtxStreams_;
+        hUint16                 vtxStreams_;
         hDrawCall               drawItem_;
         hMaterial*              material_;
         hAABB                   aabb_;

@@ -141,7 +141,7 @@ namespace Heart
         hIFile* file = fileSystem_->OpenFile(filePath, FILEMODE_READ);
         if (file)
         {   
-            hUint32 xmllen = file->Length();
+            hUint32 xmllen = (hUint32)file->Length();
             hChar* xmldata = (hChar*)hHeapMalloc(GetGlobalHeap(), xmllen+1);
             file->Read(xmldata, xmllen+1);
             xmldata[xmllen] = 0;

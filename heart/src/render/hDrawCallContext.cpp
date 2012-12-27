@@ -36,37 +36,7 @@ namespace Heart
     {
         hcAssertMsg(renderer_ == NULL && calls_ == 0, "hDrawCallContext begin called without end");
         renderer_ = renderer;
-        SetScissor(0.f, 0.f, renderer_->GetWidth(), renderer_->GetHeight());
         calls_ = 0;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDrawCallContext::SubmitDrawCall( hMaterial* mat, 
-                                           hIndexBuffer* ib, 
-                                           hVertexBuffer* vb,
-                                           hUint32 primCount, 
-                                           hBool transparent /*= hFalse*/,
-                                           hFloat vsDepth /*= 0.f*/,
-                                           hUint32 startVtx /*= 0*/, 
-                                           PrimitiveType type /*= PRIMITIVETYPE_TRILIST*/ )
-    {
-        if (calls_ == MAX_DC) Flush();
-        //TODO: support passes by looping here?
-        hDrawCall* dc = &dcs_[calls_++];
-        dc->sortKey_        = hBuildRenderSortKey(camID_, layerID_, transparent, vsDepth, mat->GetMatKey(), 0);
-        dc->matInstance_    = mat;
-        dc->indexBuffer_    = ib;
-        dc->vertexBuffer_[0] = vb;
-        dc->vertexBuffer_[1] = NULL;
-        dc->vertexBuffer_[2] = NULL;
-        dc->vertexBuffer_[3] = NULL;
-        dc->vertexBuffer_[4] = NULL;
-        dc->primCount_      = primCount;
-        dc->startVertex_    = startVtx;
-        dc->primType_       = type;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -122,17 +92,4 @@ namespace Heart
         renderer_->SumbitResourceUpdateCommand(cmd);
         return ret;
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDrawCallContext::SetScissor(hUint32 left, hUint32 top, hUint32 right, hUint32 bottom)
-    {
-        scissor_.left_ = left;
-        scissor_.top_ = top;
-        scissor_.right_ = right;
-        scissor_.bottom_ = bottom;
-    }
-
 }

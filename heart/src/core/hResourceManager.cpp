@@ -231,8 +231,8 @@ namespace Heart
     void hResourceManager::LoadGamedataDesc()
     {
         hIFile* f = filesystem_->OpenFile("loaders", FILEMODE_READ);
-        void* xmldata = hHeapMalloc(GetGlobalHeap(), f->Length()+1);
-        f->Read(xmldata, f->Length());
+        void* xmldata = hHeapMalloc(GetGlobalHeap(), (hUint32)(f->Length()+1));
+        f->Read(xmldata, (hUint32)f->Length());
         ((hChar*)xmldata)[f->Length()] = 0;
         filesystem_->CloseFile(f);
         gamedataDescXML_.ParseSafe< rapidxml::parse_default >((hChar*)xmldata,GetGlobalHeap());

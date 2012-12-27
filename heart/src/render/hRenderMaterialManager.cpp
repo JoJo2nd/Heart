@@ -248,8 +248,8 @@ namespace Heart
 
                 lua_getfield(L, -2, "size");// Get block.parameter.size
                 if (lua_isnumber(L, -1) == 0)  luaL_error(L,"parameter %s.size member is missing", block.params_[i].name_);
-                block.params_[i].size_ = lua_tonumber(L, -1);
-                block.params_[i].offset_ = block.dataSize_;
+                block.params_[i].size_ = lua_tounsigned(L, -1);
+                block.params_[i].offset_ = (hUint16)block.dataSize_;
                 block.dataSize_ += block.params_[i].size_;
                 //TODO: initial data read
                 lua_pop(L, 2);// Pop size and name

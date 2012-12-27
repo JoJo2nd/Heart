@@ -45,17 +45,6 @@ namespace Heart
         {}
 
         void Begin(hRenderer* renderer);
-        void SetRenderLayer(hByte val) { layerID_ = val; }
-        void SetCameraID(hByte val) { camID_ = val; }
-        void SetScissor(hUint32 left, hUint32 top, hUint32 right, hUint32 bottom);
-        void SubmitDrawCall( hMaterial* mat, 
-                            hIndexBuffer* ib, 
-                            hVertexBuffer* vb, 
-                            hUint32 primCount, 
-                            hBool transparent = hFalse,
-                            hFloat vsDepth = 0.f,
-                            hUint32 startVtx = 0, 
-                            PrimitiveType type = PRIMITIVETYPE_TRILIST);
         void SubmitDrawCall(const hDrawCall& dc)
         {
             if (calls_ == MAX_DC) Flush();

@@ -331,7 +331,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     hXMLGetter xLODData = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
     for (; xLODData.ToNode(); xLODData = xLODData.NextSibling(), ++lodIdx )
     {
-        hUint32 writeOffset = binoutput->Tell();
+        hUint64 writeOffset = binoutput->Tell();
         LODHeader lodHeader = {0};
         lodHeader.minRange = lodIdx == 0 ? 0.0f : lodInfo[lodIdx-1].maxRange;
         lodHeader.maxRange = lodInfo[lodIdx].maxRange;
@@ -385,7 +385,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
     for (hUint32 meshIdx = 0; meshIdx < scene->mNumMeshes; ++meshIdx)
     {
         RenderableHeader renderableHeader = {0};
-        hUint32 writeOffset = binoutput->Tell();
+        hUint64 writeOffset = binoutput->Tell();
         aiMesh* mesh = scene->mMeshes[meshIdx];
 
         renderableHeader.primType = Heart::PRIMITIVETYPE_TRILIST;
@@ -426,7 +426,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
 
         for (hUint32 streamIdx = 0; streamIdx < inputStreams; ++streamIdx)
         {
-            hUint32 streamOffset = binoutput->Tell();
+            hUint64 streamOffset = binoutput->Tell();
             StreamHeader streamHeader = {streamIdx, 0};
 
             binoutput->Write(&streamHeader, sizeof(streamHeader));
@@ -609,7 +609,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_POSITION;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
             outDesc[iElement].instanceDataRepeat_ = 0;
 
@@ -621,7 +621,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_NORMAL;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
             outDesc[iElement].instanceDataRepeat_ = 0;
 
@@ -633,7 +633,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_COLOUR;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_UBYTE4_UNORM);
             outDesc[iElement].instanceDataRepeat_ = 0;
 
@@ -645,7 +645,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_TANGENT;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
             outDesc[iElement].instanceDataRepeat_ = 0;
 
@@ -657,7 +657,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_BITANGENT;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT3);
             outDesc[iElement].instanceDataRepeat_ = 0;
 
@@ -669,7 +669,7 @@ hUint32 GetVertexBufferFormat(const Heart::hXMLGetter& xLODData, Heart::hInputLa
         {
             outDesc[iElement].inputStream_ = ie.GetAttributeInt("stream", 0);
             outDesc[iElement].semantic_ = Heart::eIS_TEXCOORD;
-            outDesc[iElement].semIndex_ = ie.GetAttributeInt("index", 0);
+            outDesc[iElement].semIndex_ = (hByte)ie.GetAttributeInt("index", 0);
             outDesc[iElement].typeFormat_ = ie.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT2);
             outDesc[iElement].instanceDataRepeat_ = 0;
 

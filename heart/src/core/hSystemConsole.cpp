@@ -146,8 +146,8 @@ namespace Heart
                 //Doesn't need updating every frame, could go in global constant block
                 ctx->Map(backdropCB_, &map);
                 hCPUVec2* vpsize = (hCPUVec2*)map.ptr;
-                vpsize->x = params.rtWidth_;
-                vpsize->y = params.rtHeight_;
+                vpsize->x = (hFloat)params.rtWidth_;
+                vpsize->y = (hFloat)params.rtHeight_;
                 ctx->Unmap(&map);
 
                 hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);

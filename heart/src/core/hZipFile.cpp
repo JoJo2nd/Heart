@@ -124,7 +124,7 @@ namespace Heart
         {
             filePos_ = size;
         }
-        return offset;
+        return (hUint32)offset;
     }
 
     //////////////////////////////////////////////////////////////////////////

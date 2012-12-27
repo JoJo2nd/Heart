@@ -543,8 +543,8 @@ namespace Heart
         vp.height_ = GetHeight();
 
         camera->SetRenderTargetSetup(rtDesc);
-        camera->SetFieldOfView( 45.f );
-        camera->SetOrthoParams(0 ,0, GetWidth(), GetHeight(), 0.1f, 100.f);
+        camera->SetFieldOfView(45.f);
+        camera->SetOrthoParams(0.f, 0.f, (hFloat)GetWidth(), (hFloat)GetHeight(), 0.1f, 100.f);
         camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
         camera->SetViewport(vp);
         camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));

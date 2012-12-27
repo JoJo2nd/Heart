@@ -66,7 +66,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
     inStream->Read(&header, sizeof(header));
 
-    font->SetFontHeight(header.fontHeight);
+    font->SetFontHeight((hUint32)header.fontHeight);
     font->SetFontWidth(0);
     font->SetPageCount(header.pageCount);
     font->SetPageResourceID(header.pageResID);

@@ -91,12 +91,12 @@ namespace Heart
             const hChar*              name_;
             hUint32                   nameHash_; // CRC32 of block name
             hdParameterConstantBlock* constBlock_;
-            hUint32                   strPoolSize_;
+            hUint                     strPoolSize_;
             hChar*                    strPool_;
-            hUint32                   aliasCount_;
+            hUint                     aliasCount_;
             const hChar**             aliases_;
             hUint32*                  aliasHashes_;
-            hUint32                   paramCount_;
+            hUint                     paramCount_;
             hConstBlockParam*         params_;
             hUint32                   dataSize_;
             void*                     data_;

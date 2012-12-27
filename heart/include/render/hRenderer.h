@@ -88,7 +88,7 @@ namespace Heart
 
     struct HEART_DLLEXPORT hDrawCall
     {
-        static const hUint32    MAX_VERT_STREAMS = 5;
+        static const hUint      MAX_VERT_STREAMS = 5;
         hUint64                 sortKey_;                                   //8b        -> 8b
         union {
             struct {

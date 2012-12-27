@@ -107,9 +107,9 @@ namespace Heart
 
         tempHeap_.create(0, hTrue);
 
-        hChar* xmldata = (hChar*)hHeapMalloc(GetGlobalHeap(), pakDesc->Length()+1);
+        hChar* xmldata = (hChar*)hHeapMalloc(GetGlobalHeap(), (hUint32)(pakDesc->Length()+1));
 
-        pakDesc->Read(xmldata, pakDesc->Length());
+        pakDesc->Read(xmldata, (hUint32)pakDesc->Length());
         xmldata[pakDesc->Length()] = 0;
 
         if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata, GetGlobalHeap()))

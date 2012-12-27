@@ -101,7 +101,7 @@ namespace Heart
                 }
 
                 // line break checking, gotta be ascii character for this
-                if (hIsSpace(cc)) {
+                if ((cc&0x7F) == cc && hIsSpace((cc&0x7F))) {
                     if (cc == ' ') {
                         startx += fc.xAdvan_*scale_;
                     }

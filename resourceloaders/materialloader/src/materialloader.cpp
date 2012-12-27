@@ -57,9 +57,9 @@ struct MaterialHeader
     hUint32                     techniqueCount;
     hUint32                     passCount;
     hChar                       defaultGroupName[MATERIAL_STRING_MAX_LEN];
-    hUint32                     samplerOffset;      //always after header
-    hUint32                     parameterOffset;
-    hUint32                     groupOffset;
+    hUint64                     samplerOffset;      //always after header
+    hUint64                     parameterOffset;
+    hUint64                     groupOffset;
 };
 
 struct SamplerRemapDefinition
@@ -362,7 +362,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
         SamplerDefinition sampDef = {0};
-        hUint32 remapos = binoutput->Tell() + hOffsetOf(SamplerDefinition, remapParamCount);
+        hUint64 remapos = binoutput->Tell() + hOffsetOf(SamplerDefinition, remapParamCount);
 
         hStrCopy(sampDef.samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
 
@@ -402,7 +402,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xParameter.ToNode(); xParameter = xParameter.NextSibling())
     {
         ParameterDefinition paramDef = {0};
-        hUint32 remapos = binoutput->Tell()+hOffsetOf(ParameterDefinition, remapParamCount);
+        hUint64 remapos = binoutput->Tell()+hOffsetOf(ParameterDefinition, remapParamCount);
         
         hStrCopy(paramDef.parameterName, MATERIAL_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
         paramDef.type = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
@@ -415,7 +415,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         {
             ParameterRemapDefinition remapDef = {0};
             hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xRemap.GetAttributeString("name", "none"));
-            remapDef.writeOffset = xRemap.GetAttributeInt("offset", 0);
+            remapDef.writeOffset = (hUint8)xRemap.GetAttributeInt("offset", 0);
 
             ++paramDef.remapParamCount;
             ++matHeader.parameterRemapCount;
@@ -433,7 +433,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xGroup.ToNode(); xGroup = xGroup.NextSibling())
     {
         GroupDefinition groupDef = {0};
-        hUint32 techos = binoutput->Tell() + hOffsetOf(GroupDefinition, techniques);
+        hUint64 techos = binoutput->Tell() + hOffsetOf(GroupDefinition, techniques);
 
         hStrCopy(groupDef.groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
 
@@ -444,7 +444,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
             TechniqueDefinition techDef = {0};
-            hUint32 passos = binoutput->Tell() + hOffsetOf(TechniqueDefinition, passes);
+            hUint64 passos = binoutput->Tell() + hOffsetOf(TechniqueDefinition, passes);
             hStrCopy(techDef.technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
             techDef.transparent = hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0;
             techDef.layer = (hByte)(xTech.FirstChild("layer").GetValueInt()&0xFF);
@@ -480,7 +480,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
                 passDef.depthState.stencilRef_ = xPass.FirstChild("stencilref").GetValueHex(0x00000000);
 
                 passDef.rasterizerState.cullMode_ = xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW);
-                passDef.rasterizerState.depthBias_ = xPass.FirstChild("depthbias").GetValueFloat();
+                passDef.rasterizerState.depthBias_ = 0;//xPass.FirstChild("depthbias").GetValueFloat();
                 passDef.rasterizerState.depthBiasClamp_ = xPass.FirstChild("depthbiasclamp").GetValueFloat();
                 passDef.rasterizerState.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
                 passDef.rasterizerState.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
