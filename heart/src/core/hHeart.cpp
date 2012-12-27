@@ -26,21 +26,6 @@ distribution.
 *********************************************************************/
 
 /************************************************************************/
-/*
-Engine Memory Heap allocations
-*/
-/************************************************************************/
-// #define MB                ( 1024 * 1024 )
-// 
-// Heart::hMemoryHeap hDebugHeap;
-// Heart::hMemoryHeap hRendererHeap;
-// Heart::hMemoryHeap hResourceHeap;
-// Heart::hMemoryHeap hSceneGraphHeap;
-// Heart::hMemoryHeap hGeneralHeap;
-// Heart::hMemoryHeap hVMHeap;
-// Heart::hMemoryHeap hUIHeap;
-
-/************************************************************************/
 /*    Engine Init                                                         */
 /************************************************************************/
 
@@ -64,30 +49,18 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        eventManager_ = hNEW(GetGlobalHeap(), EventManager);
-
+        mainPublisherCtx_ = hNEW(GetGlobalHeap(), hPublisherContext);
         jobManager_ = hNEW_ALIGN(GetGlobalHeap(), 32, hJobManager);
-
         controllerManager_ = hNEW(GetGlobalHeap() , hControllerManager);
-
         system_ = hNEW(GetGlobalHeap(), hSystem);
-
         fileMananger_ = hNEW(GetGlobalHeap(), hDriveFileSystem);
-
         resourceMananger_ = hNEW(GetGlobalHeap(), hResourceManager);
-
         renderer_ = hNEW(GetGlobalHeap(), hRenderer);
-
         soundManager_ = hNEW(GetGlobalHeap(), hSoundManager);
-
         console_ = hNEW(GetGlobalHeap(), hSystemConsole);
-
         uiRenderer_ = hNEW(GetGlobalHeap(), hGwenRenderer);
-
         luaVM_ = hNEW(GetGlobalHeap(), hLuaStateManager);
-
         entityFactory_ = hNEW(GetGlobalHeap(), hEntityFactory);
-
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
 
         //////////////////////////////////////////////////////////////////////////
@@ -116,15 +89,11 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         
         hcSetOutputStringCallback(hSystemConsole::PrintConsoleMessage);
-
+        mainPublisherCtx_->initialise(GetGlobalHeap(), 1024*1024);
         system_->Create( config_, deviceConfig_ );
-
         jobManager_->Initialise();
-
         controllerManager_->Initialise(system_);
-
         hClock::Initialise();
-
         renderer_->Create( 
             system_,
             config_.Width_,
@@ -135,31 +104,17 @@ namespace Heart
             config_.vsync_,
             resourceMananger_
             );
-
         resourceMananger_->Initialise( this, renderer_, fileMananger_, NULL );
-
         soundManager_->Initialise();
-
-        hIFileSystem* luaFilesystems[] = 
-        {
-            fileMananger_,
-            NULL
-        };
-
-        luaVM_->Initialise( luaFilesystems );
-
+        luaVM_->Initialise();
         entityFactory_->Initialise( fileMananger_, resourceMananger_, this );
 
         //////////////////////////////////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
-
-        console_->Initialise( controllerManager_, luaVM_, resourceMananger_, renderer_, uiRenderer_ );
-
+        console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
         //uiRenderer_->Initialise(renderer_, resourceMananger_);
-
         debugMenuManager_->Initialise(uiRenderer_, renderer_, resourceMananger_, controllerManager_);
-
         g_ProfilerManager_ = hNEW(GetDebugHeap(), hProfilerManager)();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -226,18 +181,10 @@ namespace Heart
 
             hClock::BeginTimer(frameTimer);
             hClock::Update();
-
             GetSystem()->Update();
-
             GetResourceManager()->MainThreadUpdate();
-
             GetControllerManager()->Update();
-
-            //before calling Update dispatch the last frames messages
-            GetEventManager()->DispatchEvents();
-
             GetConsole()->Update();
-
             if (GetSystem()->ExitSignaled()) {
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
                     //wait on game to say ok to shutdown
@@ -247,29 +194,24 @@ namespace Heart
                     return;
                 }
             }
-
             GetSoundManager()->Update();
-
             if (mainUpdate_)
                 (*mainUpdate_)( this );
-
             GetVM()->Update();
-
+            //before calling Update dispatch the last frames messages
+            GetMainEventPublisher()->updateDispatch();
             debugMenuManager_->PreRenderUpdate();
 
             /*
              * Begin new frame of draw calls
              **/
             GetRenderer()->BeginRenderFrame();
-
             if (mainRender_)
                 (*mainRender_)( this );
-
             /*
              * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
              **/
             GetRenderer()->EndRenderFrame();
-
             /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
@@ -277,9 +219,8 @@ namespace Heart
             debugMenuManager_->RenderMenus(
                 GetRenderer()->GetMainSubmissionCtx(), 
                 GetRenderer()->GetMaterialManager());
-
+            
             GetControllerManager()->EndOfFrameUpdate();
-
             hClock::EndTimer(frameTimer);
         }
 
@@ -303,40 +244,27 @@ namespace Heart
             HEART_PROFILE_SCOPE("MainUpdateNoApp");
 
             hClock::Update();
-
             GetSystem()->Update();
-
             GetResourceManager()->MainThreadUpdate();
-
             GetControllerManager()->Update();
-
-            //before calling Update dispatch the last frames messages
-            GetEventManager()->DispatchEvents();
-
             GetConsole()->Update();
-
             if (GetSystem()->ExitSignaled()) {
                 exit(0);// emergency exit
-                //GetJobManager()->Destory();
-                return;
             }
-
             GetSoundManager()->Update();
-
             GetVM()->Update();
+            //before calling Update dispatch the last frames messages
+            GetMainEventPublisher()->updateDispatch();
 
             debugMenuManager_->PreRenderUpdate();
-
             /*
              * Begin new frame of draw calls
              **/
             GetRenderer()->BeginRenderFrame();
-
             /*
              * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
              **/
             GetRenderer()->EndRenderFrame();
-
             /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
@@ -344,8 +272,6 @@ namespace Heart
             debugMenuManager_->RenderMenus(
                 GetRenderer()->GetMainSubmissionCtx(), 
                 GetRenderer()->GetMaterialManager());
-
-            GetControllerManager()->EndOfFrameUpdate();
 
             GetControllerManager()->EndOfFrameUpdate();
         }
@@ -356,51 +282,29 @@ namespace Heart
 
     hHeartEngine::~hHeartEngine()
     {
-        //eventManager_->RemoveChannel( KERNEL_EVENT_CHANNEL );
-
         jobManager_->Destory();
-
         debugMenuManager_->Destroy();
-
         uiRenderer_->DestroyResources();
-
         console_->Destroy();
-
         soundManager_->Destory(); 
-
         resourceMananger_->Shutdown( renderer_ );
-
         luaVM_->Destroy();
-
         renderer_->Destroy();
 
         hDELETE_SAFE(GetDebugHeap(), g_ProfilerManager_);
-
         hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
-
         hDELETE_SAFE(GetGlobalHeap(), entityFactory_);
-
-        hDELETE(GetGlobalHeap(), luaVM_);
-
+        hDELETE_SAFE(GetGlobalHeap(), luaVM_);
         hDELETE_SAFE(GetGlobalHeap(), uiRenderer_);
-
-        hDELETE(GetGlobalHeap(), console_);
-
-        hDELETE(GetGlobalHeap(), resourceMananger_);
-
-        hDELETE(GetGlobalHeap(), soundManager_);
-
-        hDELETE(GetGlobalHeap(), renderer_);
-
-        hDELETE(GetGlobalHeap(), controllerManager_);
-
-        hDELETE(GetGlobalHeap(), fileMananger_);
-
+        hDELETE_SAFE(GetGlobalHeap(), console_);
+        hDELETE_SAFE(GetGlobalHeap(), resourceMananger_);
+        hDELETE_SAFE(GetGlobalHeap(), soundManager_);
+        hDELETE_SAFE(GetGlobalHeap(), renderer_);
+        hDELETE_SAFE(GetGlobalHeap(), controllerManager_);
+        hDELETE_SAFE(GetGlobalHeap(), fileMananger_);
         hDELETE_ALIGNED(GetGlobalHeap(), jobManager_);
-
-        hDELETE(GetGlobalHeap(), eventManager_);
-
-        hDELETE(GetGlobalHeap(), system_);
+        hDELETE_SAFE(GetGlobalHeap(), mainPublisherCtx_);
+        hDELETE_SAFE(GetGlobalHeap(), system_);
 
     }
     //////////////////////////////////////////////////////////////////////////
@@ -491,22 +395,8 @@ namespace Heart
     HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib( const hChar* appLib, HINSTANCE hInstance )
 
 {
-    static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
-    static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
     Heart::hdDeviceConfig deviceConfig;
-
     deviceConfig.instance_ = hInstance;
-
-#ifdef HEART_TRACK_MEMORY_ALLOCS
-    Heart::hMemTracking::InitMemTracking();
-#endif
-
-    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
-    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
-
-    // It important that the debug heap is created first
-    Heart::GetDebugHeap()->create(1024*1024,hFalse);
-    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
 
     Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
 
@@ -548,22 +438,8 @@ namespace Heart
 
 HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine( hHeartEngineCallbacks* callbacks, HINSTANCE hInstance )
 {
-    static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
-    static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
     Heart::hdDeviceConfig deviceConfig;
-
     deviceConfig.instance_ = hInstance;
-
-#ifdef HEART_TRACK_MEMORY_ALLOCS
-    Heart::hMemTracking::InitMemTracking();
-#endif
-
-    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
-    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
-
-    // It important that the debug heap is created first
-    Heart::GetDebugHeap()->create(1024*1024,hFalse);
-    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
 
     Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
 
@@ -585,6 +461,28 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine( hHeartEngineCal
 #else
 #   error ("Platform not supported")
 #endif
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void initialiseBaseMemoryHeaps()
+{
+    static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+    static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+    Heart::hMemTracking::InitMemTracking();
+#endif
+
+    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
+    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
+
+    // It important that the debug heap is created first
+    Heart::GetDebugHeap()->create(1024*1024,hFalse);
+    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

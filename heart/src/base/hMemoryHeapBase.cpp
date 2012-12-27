@@ -25,9 +25,12 @@
 
 *********************************************************************/
 
+// Not the cleanest way to do this but it works
+extern void initialiseBaseMemoryHeaps();
+
 namespace Heart
 {
-    static hMemoryHeapBase* g_GlobalHeap = NULL;
+    static hMemoryHeapBase* g_globalHeap = NULL;
     static hMemoryHeapBase* g_debugHeap = NULL;
 
     //////////////////////////////////////////////////////////////////////////
@@ -36,8 +39,8 @@ namespace Heart
 
     HEART_DLLEXPORT void               HEART_API SetGlobalHeap( hMemoryHeapBase* heap )
     {
-        hcAssert(g_GlobalHeap == NULL);
-        g_GlobalHeap = heap;
+        hcAssert(g_debugHeap == NULL);
+        g_globalHeap = heap;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -46,8 +49,8 @@ namespace Heart
 
     HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetGlobalHeap()
     {
-        hcAssert(g_GlobalHeap != NULL);
-        return g_GlobalHeap;
+        if(g_globalHeap == NULL) initialiseBaseMemoryHeaps();
+        return g_globalHeap;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -56,7 +59,7 @@ namespace Heart
 
     HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetDebugHeap()
     {
-        hcAssert(g_debugHeap != NULL);
+        if(g_debugHeap == NULL) initialiseBaseMemoryHeaps();
         return g_debugHeap;
     }
 

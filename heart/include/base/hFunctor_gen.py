@@ -89,6 +89,11 @@ def hFunctor_gen( outFile, numParams ):
         outString += "      return (*stubFunc_)(pThis_, " + paramCallList + ");\n"
     outString += "  }\n\n"
     
+    outString += "  inline hBool operator == (const _hFunctor& rhs) const \n"
+    outString += "  {\n"
+    outString += "    return stubFunc_ == rhs.stubFunc_ && pThis_ == rhs.pThis_;\n"
+    outString += "  }\n"
+    
     outString += "  inline hBool isValid() const\n"
     outString += "  {\n"
     outString += "      return ( stubFunc_ != NULL );\n"
@@ -213,8 +218,8 @@ outString = "\n"
 outString +=  "} //namespace Heart\n"
 outString += "\n"
 outString += "#define hFUNCTOR_TYPEDEF(ty, tydef) typedef Heart::hFunctor< ##ty >::type tydef\n"
-outString += "#define hFUNCTOR_BINDSTATIC(fnr, proc) fnr::bind(proc)\n"
-outString += "#define hFUNCTOR_BINDMEMBER(fnr, klass, proc, th1s) fnr::bind<klass, &klass::proc>(th1s)\n"
+outString += "#define hFUNCTOR_BINDSTATIC(fnr, proc) fnr::bind< proc >()\n"
+outString += "#define hFUNCTOR_BINDMEMBER(fnr, klass, proc, th1s) fnr::bind< klass, &klass::proc >(th1s)\n"
 outString += "\n"
 outString += "#endif\n"
 outFile.write( outString )

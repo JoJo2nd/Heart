@@ -25,8 +25,6 @@
 
 *********************************************************************/
 
-static Heart::hIFileSystem* gLuaFileSystems[MAX_LUA_FILESYSTEMS] = {NULL};
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -58,13 +56,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hLuaStateManager::Initialise( hIFileSystem** filesystems )
+    void hLuaStateManager::Initialise()
     {
-        for ( hUint32 i = 0; i < MAX_LUA_FILESYSTEMS && filesystems[i] != NULL; ++i )
-        {
-            gLuaFileSystems[i] = filesystems[i];
-        }
-
         mainLuaState_ = NewLuaState( NULL );
     }
 

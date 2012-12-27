@@ -334,13 +334,14 @@ namespace Heart
                                      hLuaStateManager* lua,
                                      hResourceManager* pResourceManager,
                                      hRenderer* renderer,
-                                     hGwenRenderer* uiRenderer)
+                                     hPublisherContext* evtCtx)
     {
         controllerManager_ = pControllerManager;
         resourceManager_ = pResourceManager;
         renderer_ = renderer;
         vm_ = lua;
         keyboard_ = controllerManager_->GetSystemKeyboard();
+        evtCtx_ = evtCtx;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -372,9 +373,6 @@ namespace Heart
                 consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
                 consoleWindow_->InitRenderResources(renderer_, resourceManager_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
-
-                visible_ = hTrue;
-                hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
             }
         }
         else
@@ -492,4 +490,5 @@ namespace Heart
     void hSystemConsole::ClearLog()
     {
     }
+
 }

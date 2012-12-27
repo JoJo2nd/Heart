@@ -1,10 +1,28 @@
 /********************************************************************
-    created:	2008/10/08
-    created:	8:10:2008   20:07
-    filename: 	TestBedCore.cpp
-    author:		James
+
+    filename:   TestBedCore.cpp  
     
-    purpose:	
+    Copyright (c) 26:12:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
+
 *********************************************************************/
 
 #include "testbed_precompiled.h"
@@ -16,6 +34,9 @@
 #include "ResourceLoadTest.h"
 #include "JobManagerTest.h"
 #include "ModelRenderTest.h"
+
+typedef Heart::hPublisher< void(*)(hFloat second) > SecondEventType;
+SecondEventType g_consterSecEvent;
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -32,6 +53,11 @@ DEFINE_HEART_UNIT_TEST(MapTest);
         REGISTER_UNIT_TEST(ResourceLoadTest)
         REGISTER_UNIT_TEST(ModelRenderTest)
     };
+
+    void consoleStateEvent(hFloat secs) 
+    {
+        hcPrintf("Timer Event: %f Seconds", secs);
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,15 +98,17 @@ DEFINE_HEART_UNIT_TEST(MapTest);
             {NULL, NULL}
         };
 
-//         lua_pushlightuserdata(pEngine_->GetVM()->GetMainState(), this);
-//         luaL_openlib(pEngine_->GetVM()->GetMainState(), "unittest", funcs, 1);
-// 
-//         lua_getglobal(L, "heart");
-//         lua_pushlightuserdata(L, engine);
-//         luaL_setfuncs(L,libcoreuv,1);
-//         lua_pop(L, 1);// pop heart module table
+        lua_State* L = pEngine_->GetVM()->GetMainState();
+        lua_newtable(L);
+        lua_pushvalue(L,-1);//add twice to avoid set _G[unittest] & get _G[unittest]
+        lua_setglobal(L, "unittest");
+        //global table "unittest" already on stack
+        lua_pushlightuserdata(L, this);
+        luaL_setfuncs(L,funcs,1);
+        lua_pop(L, 1);// pop heart module table
 
-        currentTest_ = factory_->CreateUnitTest("ModelRenderTest");
+        g_consterSecEvent.connect(
+            hFUNCTOR_BINDSTATIC(SecondEventType::hPublisherDelegate, consoleStateEvent));
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,6 +117,14 @@ DEFINE_HEART_UNIT_TEST(MapTest);
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
+        static hFloat s_timer = 0.f;
+        static hFloat s_counts = 0.f;
+        s_timer+=delta;
+        if (s_timer > 1.f) {
+            s_timer -= 1.f;
+            ++s_counts;
+            //g_consterSecEvent(pEngine->GetMainEventPublisher(), s_counts);
+        }
         if ( currentTest_ )
         {
             currentTest_->RunUnitTest();

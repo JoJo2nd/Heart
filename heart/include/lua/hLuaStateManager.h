@@ -61,7 +61,7 @@ namespace Heart
 		hLuaStateManager();
 		virtual ~hLuaStateManager();
 
-		void			Initialise( hIFileSystem** filesystems );
+		void			Initialise();
 		void			Destroy();
 		void			ExecuteBuffer( const hChar* buff, hUint32 size );
 		void			Update();

@@ -72,7 +72,7 @@ namespace Heart
     class hResourceManager;
     class hSystemConsole;
     class hSoundManager;
-    class EventManager;
+    class hPublisherContext;
     class hControllerManager;
     class hSystem;
     class hRenderer;
@@ -123,7 +123,7 @@ namespace Heart
         hSystem*            GetSystem()             { return system_; }
         hRenderer*          GetRenderer()           { return renderer_; }
         hResourceManager*   GetResourceManager()    { return resourceMananger_; }
-        EventManager*       GetEventManager()       { return eventManager_; }
+        hPublisherContext*  GetMainEventPublisher() { return mainPublisherCtx_; }
         hControllerManager* GetControllerManager()  { return controllerManager_; }
         hSystemConsole*     GetConsole()            { return console_; }
         hLuaStateManager*   GetVM()                 { return luaVM_; }
@@ -164,7 +164,7 @@ namespace Heart
         hSystem*                        system_;
         hRenderer*                      renderer_;
         hSoundManager*                  soundManager_;
-        EventManager*                   eventManager_;
+        hPublisherContext*              mainPublisherCtx_;
         hControllerManager*             controllerManager_;
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;

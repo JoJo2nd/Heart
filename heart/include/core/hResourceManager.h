@@ -73,9 +73,7 @@ namespace Heart
             WRITE,
         };
 
-        //typedef hFunctor< hResourceClassBase*(*)(const hChar*, hUint32 resId, hSerialiserFileStream*, hResourceManager* ) >::type			ResourceLoadCallback;
         hFUNCTOR_TYPEDEF(hResourceClassBase*(*)(const hChar*, hUint32 resId, hSerialiserFileStream*, hResourceManager*), ResourceLoadCallback);
-        //typedef hFunctor< hUint32(*)(const hChar*, hResourceClassBase*, hResourceManager* ) >::type			ResourceUnloadCallback;
         hFUNCTOR_TYPEDEF(hUint32(*)(const hChar*, hResourceClassBase*, hResourceManager* ),  ResourceUnloadCallback);
 
         hResourceManager();

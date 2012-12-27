@@ -61,7 +61,7 @@ hUint32 ModelRenderTest::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
-            if (timer_ > 600.f)
+            if (timer_ > 15.f)
             {
                 state_ = eBeginUnload;
             }

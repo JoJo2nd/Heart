@@ -40,7 +40,7 @@ namespace Heart
     class hVertexDeclaration;
     class hConsoleUI;
 
-    class hSystemConsole
+    class HEART_DLLEXPORT hSystemConsole
     {
     public:
         hSystemConsole()
@@ -60,7 +60,7 @@ namespace Heart
                                     hLuaStateManager* pSquirrel,
                                     hResourceManager* pResourceManager,
                                     hRenderer* renderer,
-                                    hGwenRenderer* uiRenderer );
+                                    hPublisherContext* evtCtx);
         void            Destroy();
         void            Update();
         void            ClearLog();
@@ -68,7 +68,7 @@ namespace Heart
         static void     PrintConsoleMessage(const hChar* string);
 
         template< hUint32 t_size >
-        class hStringRingBuffer
+        class HEART_FORCEDLLEXPORT hStringRingBuffer
         {
         public:
             hStringRingBuffer()
@@ -79,7 +79,7 @@ namespace Heart
             }
             hStringRingBuffer(const hStringRingBuffer& rhs)
             {
-                ring_ = rhs.ring_;
+                hMemCpy(ring_, rhs.ring_, sizeof(ring_));
                 write_ = ring_+((hUint32)rhs.write_-(hUint32)rhs.ring_);
                 read_ = ring_+((hUint32)rhs.read_-(hUint32)rhs.ring_);
                 newLines_ = rhs.newLines_;
@@ -171,6 +171,7 @@ namespace Heart
         hResourceManager*									resourceManager_;
         const hdKeyboard*                                   keyboard_;
         hBool												visible_;
+        hPublisherContext*                                  evtCtx_;
 
         hConsoleLogType consoleLog_;
         hUint           cursorPos_;
