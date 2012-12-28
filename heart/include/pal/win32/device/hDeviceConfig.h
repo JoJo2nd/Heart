@@ -33,6 +33,7 @@ namespace Heart
 	{
 	public:
 		HINSTANCE		instance_;
+        HWND            hWnd_; // Can be NULL, in which case a window is created
 		hUint32			width_;
 		hUint32			height_;
 	};

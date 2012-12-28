@@ -67,6 +67,10 @@ namespace
 
     hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, hFileMode mode ) const
     {
+        hUint32 len = hStrLen(filename)+hStrLen(workingDir_.GetBuffer())+1;
+        hChar* fullFilename = (hChar*)hAlloca(len);
+        hStrCopy(fullFilename, len, workingDir_.GetBuffer());
+        hStrCat(fullFilename, len, filename);
         hdFileHandle* fh;
         const hChar* devMode;
 
@@ -83,7 +87,7 @@ namespace
             return NULL;
         }
 
-        if ( !hdFopen( filename, devMode, &fh ) )
+        if ( !hdFopen( fullFilename, devMode, &fh ) )
         {
             return NULL;
         }
@@ -119,10 +123,11 @@ namespace
 		hEnumerateFilesCallbackInfo cbInfo;
         cbInfo.fn_ = fn;
 
-        hUint32 len = hStrLen( path )+hStrLen( FILE_PREFIX )+1;
-        hChar* fullFilename = (hChar*)hAlloca( len );
-        hStrCopy( fullFilename, len, FILE_PREFIX );
-        hStrCat( fullFilename, len, path );
+        hUint32 len = hStrLen(path)+hStrLen(FILE_PREFIX)+hStrLen(workingDir_.GetBuffer())+1;
+        hChar* fullFilename = (hChar*)hAlloca(len);
+        hStrCopy(fullFilename, len, workingDir_.GetBuffer());
+        hStrCat(fullFilename, len, FILE_PREFIX);
+        hStrCat(fullFilename, len, path);
 
 		hdEnumerateFiles( fullFilename, hdEnumerateFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
 	}
@@ -133,10 +138,11 @@ namespace
 
     void hDriveFileSystem::CreateDirectory( const hChar* path )
     {
-        hUint32 len = hStrLen( path )+hStrLen( FILE_PREFIX )+1;
-        hChar* fullFilename = (hChar*)hAlloca( len );
-        hStrCopy( fullFilename, len, FILE_PREFIX );
-        hStrCat( fullFilename, len, path );
+        hUint32 len = hStrLen(path)+hStrLen(FILE_PREFIX)+hStrLen(workingDir_.GetBuffer())+1;
+        hChar* fullFilename = (hChar*)hAlloca(len);
+        hStrCopy(fullFilename, len, workingDir_);
+        hStrCat(fullFilename, len, FILE_PREFIX);
+        hStrCat(fullFilename, len, path);
 
         hdCreateDirectory(fullFilename);
     }

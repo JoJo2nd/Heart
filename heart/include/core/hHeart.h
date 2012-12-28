@@ -116,7 +116,7 @@ namespace Heart
     {
     public:
 
-        hHeartEngine( const char* configFile, hdDeviceConfig* deviceConfig );
+        hHeartEngine( const char* rootdir, hdDeviceConfig* deviceConfig );
         ~hHeartEngine();
 
         hDriveFileSystem*   GetFileManager()        { return fileMananger_; }
@@ -156,6 +156,7 @@ namespace Heart
         HeartConfig                     config_;
         hdDeviceConfig                  deviceConfig_;
         hHeartState                     engineState_;
+        hArray< hChar, 1024 >           workingDir_;
         
         hDriveFileSystem*               fileMananger_;
         hResourceManager*               resourceMananger_;

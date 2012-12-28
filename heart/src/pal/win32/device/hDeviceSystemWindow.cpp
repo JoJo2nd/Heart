@@ -35,13 +35,14 @@ namespace Heart
     hBool hdSystemWindow::Create( const hdDeviceConfig& deviceconfig )
     {
         hInstance_ = deviceconfig.instance_;
+        hWnd_ = deviceconfig.hWnd_;
         wndWidth_ = deviceconfig.width_;
         wndHeight_ = deviceconfig.height_;
+        ownWindow_ = hFalse;
 
         strcpy( &wndClassName_[ 0 ], "hWindow" );
 
-        if ( CreateWndClassEx( hInstance_, wndClassName_ ) )
-        {
+        if (!hWnd_ && CreateWndClassEx( hInstance_, wndClassName_ ) ) {
             hWnd_ = CreateWindow( 
                 wndClassName_,		 // name of window class 
                 wndTitle_,			 // title-bar string 
@@ -63,28 +64,28 @@ namespace Heart
             // Show the window and send a WM_PAINT message to the window 
             // procedure. 
 
+            ownWindow_ = hTrue;
+
             ShowWindow( hWnd_, SW_SHOW ); 
             UpdateWindow( hWnd_ ); 
+        }
 
-            RECT w,C;
+        RECT w,C;
+        GetClientRect(hWnd_, &C);
+        GetWindowRect( hWnd_, &w );
+        cursorOffsetX_ = wndWidth_ - C.right;
+        cursorOffsetY_ = wndHeight_ - C.bottom;
+        if (cursorOffsetX_ != 0 || cursorOffsetY_ != 0)
+        {
+            SetWindowPos(hWnd_,NULL, 0, 0, wndWidth_+cursorOffsetX_, wndHeight_+cursorOffsetY_, SWP_NOMOVE|SWP_NOZORDER);
+
             GetClientRect(hWnd_, &C);
             GetWindowRect( hWnd_, &w );
             cursorOffsetX_ = wndWidth_ - C.right;
             cursorOffsetY_ = wndHeight_ - C.bottom;
-            if (cursorOffsetX_ != 0 || cursorOffsetY_ != 0)
-            {
-                SetWindowPos(hWnd_,NULL, 0, 0, wndWidth_+cursorOffsetX_, wndHeight_+cursorOffsetY_, SWP_NOMOVE|SWP_NOZORDER);
-
-                GetClientRect(hWnd_, &C);
-                GetWindowRect( hWnd_, &w );
-                cursorOffsetX_ = wndWidth_ - C.right;
-                cursorOffsetY_ = wndHeight_ - C.bottom;
-            }
-
-            systemHandle_.hWnd_ = hWnd_;
-
-            return hTrue;
         }
+
+        systemHandle_.hWnd_ = hWnd_;
 
         return hFalse;
     }
@@ -95,8 +96,10 @@ namespace Heart
 
     void hdSystemWindow::Destroy()
     {
-        DestroyWindow( hWnd_ );
-        UnregisterClass( &wndClassName_[ 0 ], hInstance_ );
+        if (ownWindow_) {
+            DestroyWindow( hWnd_ );
+            UnregisterClass( &wndClassName_[ 0 ], hInstance_ );
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

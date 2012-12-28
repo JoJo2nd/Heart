@@ -56,6 +56,7 @@ namespace Heart
         hdSystemWindow()
             : hInstance_( NULL )
             , hWnd_( NULL )
+            , ownWindow_(hFalse)
         {
             wndTitle_[0] = 0;
         }
@@ -91,6 +92,7 @@ namespace Heart
         hUint32                     cursorOffsetX_;
         hUint32                     cursorOffsetY_;
 
+        hBool                       ownWindow_;
         hdKeyboard		            keyboard_;
         hdMouse                     mouse_;
 

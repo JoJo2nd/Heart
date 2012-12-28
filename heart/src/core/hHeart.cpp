@@ -44,8 +44,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hHeartEngine::hHeartEngine( const hChar* configFile, hdDeviceConfig* deviceConfig )
+    hHeartEngine::hHeartEngine( const hChar* rootdir, hdDeviceConfig* deviceConfig )
     {
+        if (rootdir) hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), rootdir);
+        else hSysCall::GetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
+
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -53,7 +56,7 @@ namespace Heart
         jobManager_ = hNEW_ALIGN(GetGlobalHeap(), 32, hJobManager);
         controllerManager_ = hNEW(GetGlobalHeap() , hControllerManager);
         system_ = hNEW(GetGlobalHeap(), hSystem);
-        fileMananger_ = hNEW(GetGlobalHeap(), hDriveFileSystem);
+        fileMananger_ = hNEW(GetGlobalHeap(), hDriveFileSystem)(workingDir_);
         resourceMananger_ = hNEW(GetGlobalHeap(), hResourceManager);
         renderer_ = hNEW(GetGlobalHeap(), hRenderer);
         soundManager_ = hNEW(GetGlobalHeap(), hSoundManager);
@@ -65,10 +68,7 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        if ( configFile )
-            configFile_.ReadConfig( configFile, fileMananger_ );
-        else
-            configFile_.ReadConfig( "CONFIG/config.cfg", fileMananger_ );
+        configFile_.ReadConfig( "CONFIG/config.cfg", fileMananger_ );
 
         config_.Width_ = configFile_.GetScreenWidth();
         config_.Height_ = configFile_.GetScreenHeight();
@@ -80,16 +80,12 @@ namespace Heart
         deviceConfig_.height_ = config_.Height_;
 
         //////////////////////////////////////////////////////////////////////////
-        // Register Engine Level Event Channels //////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-
-        //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         
         hcSetOutputStringCallback(hSystemConsole::PrintConsoleMessage);
         mainPublisherCtx_->initialise(GetGlobalHeap(), 1024*1024);
-        system_->Create( config_, deviceConfig_ );
+        system_->Create(config_, deviceConfig_);
         jobManager_->Initialise();
         controllerManager_->Initialise(system_);
         hClock::Initialise();
@@ -393,6 +389,7 @@ namespace Heart
 {
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
+    deviceConfig.hWnd_ = NULL;
 
     Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
 
@@ -436,6 +433,7 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine( hHeartEngineCal
 {
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
+    deviceConfig.hWnd_ = NULL;
 
     Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
 
