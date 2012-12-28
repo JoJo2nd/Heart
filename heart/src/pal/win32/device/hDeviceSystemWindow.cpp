@@ -38,8 +38,7 @@ namespace Heart
         wndWidth_ = deviceconfig.width_;
         wndHeight_ = deviceconfig.height_;
 
-        //hcAssert( ( strlen( deviceconfig.classname_ ) + 1 ) < hdDeviceConfig::WNDCLASSNAMELEN );
-        strcpy( &wndClassName_[ 0 ], "hWindow"/*deviceconfig.classname_*/ );
+        strcpy( &wndClassName_[ 0 ], "hWindow" );
 
         if ( CreateWndClassEx( hInstance_, wndClassName_ ) )
         {

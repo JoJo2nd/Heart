@@ -32,12 +32,7 @@ namespace Heart
 	class HEART_DLLEXPORT hdDeviceConfig
 	{
 	public:
-		static const hUint32			HOME_DIRECTORY_MAX_LEN = 2048;
-		static const hUint32			WNDCLASSNAMELEN = 256;
-
 		HINSTANCE		instance_;
-		hChar			pWorkingDir_[ HOME_DIRECTORY_MAX_LEN ];
-		hChar			classname_[ WNDCLASSNAMELEN ];
 		hUint32			width_;
 		hUint32			height_;
 	};

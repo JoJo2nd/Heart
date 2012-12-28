@@ -226,8 +226,8 @@ namespace Heart
     hBool hSoundResource::RequestNextAudioBlock( hSoundPlaybackHandle handle )
     {
         hPlaybackInfo* info = &playbackInfos_[handle];
-        ResourceFlags ret = QueueStreamRead( info->inBuffer_, hPlaybackInfo::OGG_BUFFER_SIZE, info->tell_, &info->readOpID_ );
-        return ret == ResourceFlags_OK;
+        hUint ret = QueueStreamRead( info->inBuffer_, hPlaybackInfo::OGG_BUFFER_SIZE, info->tell_, &info->readOpID_ );
+        return ret == 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -242,7 +242,7 @@ namespace Heart
         if ( info->eoSource_ )
             return hTrue;
 
-        if ( PollSteamRead( info->readOpID_, &read ) == ResourceFlags_OK )
+        if ( PollSteamRead( info->readOpID_, &read ) == 0 )
         {
             info->inSizes = read;
             info->readOpID_ = ~0U;

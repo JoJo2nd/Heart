@@ -51,31 +51,17 @@ namespace Heart
 
 
     class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >,
-                                                public hIReferenceCounted
+                                               public hIReferenceCounted
     {
-    protected:
-        enum ResourceFlags
-        {
-            ResourceFlags_OK            = 0,
-            ResourceFlags_DISKRESOURCE  = 1,
-            ResourceFlags_FULLYLOADED   = 1 << 1,
-            ResourceFlags_BUSY          = 1 << 2,
-            ResourceFlags_INVALID       = 1 << 3,
-            ResourceFlags_STREAMING     = 1 << 4,
-        };
-
     public:
         hResourceClassBase() 
-            : flags_( 0 )
-            , manager_( NULL )
-            , resourceID_( 0 )
+            : resourceID_( 0 )
             , linked_(hFalse)
         {}
         virtual ~hResourceClassBase() {}
-        hBool                   IsDiskResource() const { return (flags_ & ResourceFlags_DISKRESOURCE) == ResourceFlags_DISKRESOURCE; }
-        void                    IsDiskResource( hBool val ) { flags_ = val ? (flags_ | ResourceFlags_DISKRESOURCE) : (flags_ & ~ResourceFlags_DISKRESOURCE); }
         hUint32                 GetResourceID() const { return resourceID_; }
-        hUint32                 GetFlags() const { return flags_; }
+        void                    SetName(const hChar* name) { hStrCopy(name_.GetBuffer(), name_.GetMaxSize(), name); }
+        const hChar*            GetName() const { return name_.GetBuffer(); }
         void                    SetType(const hResourceType& type) { type_ = type; }
         hResourceType           GetType() const { return type_; }
         void                    SetIsLinked(hBool val){ linked_ = val; }
@@ -84,14 +70,12 @@ namespace Heart
     protected:
 
         void    OnZeroRef() const;
-        void    SetResID( hUint32 id ) { resourceID_ = id; }
 
         friend class hResourceManager;
         friend class hResoucePackageV2;
 
-        hResourceManager*  manager_;
+        hArray<hChar, 32>  name_;
         hUint32            resourceID_;
-        hUint32            flags_;
         hBool              linked_;
         hResourceType      type_;
     };
@@ -103,11 +87,11 @@ namespace Heart
             : hResourceClassBase()
         {
             hZeroMem( &readOps_, sizeof(readOps_) );
-            flags_ |= ResourceFlags_STREAMING;
+            //flags_ |= ResourceFlags_STREAMING;
         }
         virtual ~hStreamingResourceBase();
-        ResourceFlags QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID );
-        ResourceFlags PollSteamRead( hUint32 opID, hUint32* read );
+        hUint QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID );
+        hUint PollSteamRead( hUint32 opID, hUint32* read );
 
     private:
 

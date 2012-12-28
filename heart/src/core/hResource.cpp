@@ -44,7 +44,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID )
+    hUint hStreamingResourceBase::QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID )
     {
         //hMutexAutoScope am( &lock_ );
         for ( hUint32 i = 0; i < MAX_READ_OPS; ++i )
@@ -61,12 +61,12 @@ namespace Heart
 
                 *opID = i;
                 //manager_->Post();
-                return ResourceFlags_OK;
+                return 0;
             }
         }
 
         *opID = ~0U;
-        return ResourceFlags_BUSY;
+        return -1;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -92,7 +92,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase::ResourceFlags hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
+    hUint hStreamingResourceBase::PollSteamRead( hUint32 opID, hUint32* read )
     {
         //hMutexAutoScope am( &lock_ );
         hcAssert( opID < MAX_READ_OPS );
@@ -101,9 +101,9 @@ namespace Heart
         {
             *read = readOps_[opID].read_;
             readOps_[opID].active_ = hFalse;
-            return ResourceFlags_OK;
+            return 0;
         }
-        return ResourceFlags_BUSY;
+        return -1;
     }
 
     //////////////////////////////////////////////////////////////////////////

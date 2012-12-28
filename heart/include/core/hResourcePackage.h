@@ -88,6 +88,8 @@ namespace Heart
         hBool                   IsInPassiveState() const { return packageState_ == State_Ready; }
         hBool                   isUnloading() const { return packageState_ > State_Ready; }
         hBool                   ToUnload() const { return packageState_ == State_Unloaded; }
+        void                    printResourceInfo();
+        const hChar*            getPackageStateString() const;
 
     private:
 
@@ -100,7 +102,6 @@ namespace Heart
         hBool                       DoPostLoadLink();
         void                        DoPreUnloadUnlink();
         void                        DoUnload();
-
         enum State
         {
             State_Load_WaitDeps,

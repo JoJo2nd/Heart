@@ -85,6 +85,7 @@ namespace Heart
         void                            Shutdown( hRenderer* prenderer );
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }
+        void                            printResourceInfo() { printInfo_.Signal(); loaderSemaphone_.Post(); }
 
         //Main Thread interface
         hResourceClassBase*             mtGetResource(const hChar* path);
@@ -126,10 +127,11 @@ namespace Heart
 
         hUint32                         LoadedThreadFunc( void* );
         void                            LoadGamedataDesc();
-
+        void loaderThreadPrintResourceInfo();
         static void*                    resourceThreadID_;
 
         hBool                           requireAssetsReady_;
+        hThreadEvent                    printInfo_;
 
         //NEW
         hRenderer*                      renderer_;
@@ -139,7 +141,7 @@ namespace Heart
         //
         hThread                         resourceLoaderThread_;
         hSemaphore                      loaderSemaphone_;
-        hdThreadEvent                   exitSignal_;
+        hThreadEvent                    exitSignal_;
         hAtomicInt                      resourceSweepCount_;
 
         //Loader Thread var

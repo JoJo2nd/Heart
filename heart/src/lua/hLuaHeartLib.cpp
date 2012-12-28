@@ -73,6 +73,13 @@ by Lua can also return many results.
         return 0;
     }
 
+    int hLuaResourceInfo(lua_State* L)
+    {
+        HEART_LUA_GET_ENGINE(L);
+        engine->GetResourceManager()->printResourceInfo();
+        return 0;
+    }
+
     //functions that don't need upvalues
     static const luaL_Reg libcore[] = {
         {"elasped",			    hLuaElasped},
@@ -82,7 +89,8 @@ by Lua can also return many results.
 
     //functions that need up values
     static const luaL_Reg libcoreuv[] = {
-        {"exit",                hLuaExit},
+        {"exit",    hLuaExit},
+        {"resinfo", hLuaResourceInfo},
         {NULL, NULL}
     };
 

@@ -108,6 +108,10 @@ namespace Heart
             Device::ThreadSleep(16);
             loaderSemaphone_.Wait();
 
+            if (printInfo_.TryWait()) {
+                loaderThreadPrintResourceInfo();
+            }
+
             stuffToDo = hTrue;
 
             while (stuffToDo)
@@ -432,6 +436,21 @@ namespace Heart
             return pak->package_->GetResource(resCRC);
         }
         return NULL;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::loaderThreadPrintResourceInfo()
+    {
+        hcPrintf("=== Loaded Package Info Start ===");
+        for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
+            hcPrintf("Package %s -- State: %s -- %u%% Loaded -- RC %u", 
+                pack->GetPackageName(), pack->getPackageStateString(), 
+                pack->GetLoadCompletionPercent(), pack->GetRefCount());
+            pack->printResourceInfo();
+        }
+        hcPrintf("=== Loaded Package Info End ===");
     }
 
 }

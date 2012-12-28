@@ -348,7 +348,7 @@ namespace Heart
                 {
                     // Load the binary file
                     hTimer timer;
-                    hcPrintf("Loading %s(CRC:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
+                    hcPrintf("Loading %s (crc:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
                     hClock::BeginTimer(timer);
                     res = (*handler->binLoader_)(&inStream, &paramSet, &memAlloc, engine_);
                     hClock::EndTimer(timer);
@@ -361,6 +361,7 @@ namespace Heart
                                  "This is a Fatal Error.");
                 if (res)
                 {
+                    res->SetName(currentResource_.GetAttributeString("name"));
                     res->SetType(typehandler);
                     resourceMap_.Insert(crc, res);
                     ++loadedResources_;
@@ -445,6 +446,36 @@ namespace Heart
             return res;
         }
         return NULL;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::printResourceInfo()
+    {
+        for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
+            hcPrintf("  Resource %s:\n"
+                "    Type: %s | Linked: %s | crc: 0x%08X", 
+                res->GetName(), res->GetType().ext, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hChar* hResourcePackage::getPackageStateString() const
+    {
+        static const hChar* stateStr [] = {
+            "State_Load_WaitDeps",
+            "State_Load_Reources",
+            "State_Link_Resources",
+            "State_Loaded",// a.k.a State_Ready
+            "State_Unlink_Resoruces",
+            "State_Unload_Resources",
+            "State_Unloaded",
+        };
+        return stateStr[packageState_];
     }
 
 #undef hBuildResFilePath
