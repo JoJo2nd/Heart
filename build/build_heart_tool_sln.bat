@@ -5,6 +5,6 @@ call %PYTHON_ROOT%python ..\heart\include\events\hEvent_gen.py -i 11 -o "..\hear
 cd ..\heart\include\base
 call %PYTHON_ROOT%python hFunctor_gen.py
 cd ..\..\..\build\project_scripts
-call ..\..\external\premake4.4\bin\premake4.exe --file="testbed.sln.lua" %PREMAKEVSVER%
+call ..\..\external\premake4.4\bin\premake4.exe --file="heart_tool.sln.lua" %PREMAKEVSVER%
 cd ..
-%PYTHON_ROOT%\python.exe scripts\project_unity_fixer.py -p "built_projects\%PREMAKEVSVER%\game\projects\heart.%VS_EXT%" -m %PREMAKEVSVER% -r "project_scripts\testbed_unity_regex.txt" -b "project_scripts\testbed_unity_build_platforms.txt"
+%PYTHON_ROOT%\python.exe scripts\project_unity_fixer.py -p "built_projects\%PREMAKEVSVER%\tools\projects\heart.%VS_EXT%" -m %PREMAKEVSVER% -r "project_scripts\testbed_unity_regex.txt" -b "project_scripts\testbed_unity_build_platforms.txt"

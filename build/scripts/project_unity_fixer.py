@@ -91,14 +91,16 @@ def main():
     parser = argparse.ArgumentParser(prog="component_def_gen",description='Generates component definitions xml')
     parser.add_argument('-p','--proj', action='append' , help='Appends an Input project path to fixup')
     parser.add_argument('-m','--mode', help='Selects between "vs2008" mode and "vs2010" mode')
+    parser.add_argument('-r','--regexfile', help='Text file with a list of RegEx expressions to match project file names against')
+    parser.add_argument('-b','--builds', help='text file with list of build platforms to match')
     
     args = parser.parse_args()
 
-    regexfile = open("project_unity_regex.txt")
+    regexfile = open(args.regexfile)#"project_unity_regex.txt")
     regexs = stripLines(regexfile.readlines())
     regexfile.close()
     
-    buildplats = open("project_unity_build_platforms.txt")
+    buildplats = open(args.builds)#"project_unity_build_platforms.txt")
     buildconfigs = stripLines(buildplats.readlines())
     buildplats.close()
     

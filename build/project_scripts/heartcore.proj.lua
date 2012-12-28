@@ -7,7 +7,6 @@ project "heart"
         "../../heart/src/heartCoreUnity.cpp",
         "../../heart/src/heartBaseUnity.cpp",
         "../../heart/src/pal/win32/heartWin32Unity.cpp"}
-    files { "../../heart/gwen/src/**.*", "../../heart/gwen/include/**.*" }
     files {"../../heart/src/**.cpp"} -- these files are added but not compiled
     defines {HeartDefines}
     defines {"HEART_COMPILE_DLL","GWEN_COMPILE_DLL"}
