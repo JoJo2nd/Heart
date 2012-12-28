@@ -28,6 +28,8 @@
 namespace Heart
 {
 
+    hFloat hSystemConsole::s_FontSize = 1.f;
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -123,7 +125,7 @@ namespace Heart
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
             hVertexBufferMapInfo vbmap;
-            hFloat fontScale = 1.f;//+(2.f*sin(hClock::elapsed()*.24f));
+            hFloat fontScale = hSystemConsole::getFontSize();//+(2.f*sin(hClock::elapsed()*.24f));
             hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);

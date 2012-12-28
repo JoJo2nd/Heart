@@ -6,6 +6,7 @@ ReleaseSuffix = "_tr"
 
 dofile "../project_common/heart_common_proj.lua"
 os.execute("\"..\\deploy_scripts\\deploy_external_libs.bat\"");
+table.insert(HeartDefines,"HEART_TOOL_BUILD")
 
 solution (SlnName)
     location (SlnOutput)

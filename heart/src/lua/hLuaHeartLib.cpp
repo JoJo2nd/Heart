@@ -80,10 +80,17 @@ by Lua can also return many results.
         return 0;
     }
 
+    int hLuaConsoleSize(lua_State* L)
+    {
+        hSystemConsole::setFontSize(lua_tonumber(L,-1));
+        return 0;
+    }
+
     //functions that don't need upvalues
     static const luaL_Reg libcore[] = {
-        {"elasped",			    hLuaElasped},
-        {"elaspedHMS",		    hLuaElaspedHoursMinSecs},
+        {"elasped",     hLuaElasped},
+        {"elaspedHMS",  hLuaElaspedHoursMinSecs},
+        {"fntsize",     hLuaConsoleSize},
         {NULL, NULL}
     };
 

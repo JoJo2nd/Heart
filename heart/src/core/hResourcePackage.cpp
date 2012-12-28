@@ -454,8 +454,8 @@ namespace Heart
     void hResourcePackage::printResourceInfo()
     {
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
-            hcPrintf("  Resource %s:\n"
-                "    Type: %s | Linked: %s | crc: 0x%08X", 
+            hcPrintf("  Resource %s:"
+                " Type: %s | Linked: %s | crc: 0x%08X", 
                 res->GetName(), res->GetType().ext, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
         }
     }

@@ -33,14 +33,22 @@
 #       define HEART_DEBUG
 #   endif
 #   ifndef HEART_SUFFIX
-#       define HEART_SUFFIX "_d"
+#       ifdef HEART_TOOL_BUILD
+#           define HEART_SUFFIX "_td"
+#       else
+#           define HEART_SUFFIX "_d"
+#       endif
 #   endif
 #else
 #   ifndef HEART_RELEASE
 #       define HEART_RELEASE
 #   endif
 #   ifndef HEART_SUFFIX
-#       define HEART_SUFFIX "_r"
+#       ifdef HEART_TOOL_BUILD
+#           define HEART_SUFFIX "_tr"
+#       else
+#           define HEART_SUFFIX "_r"
+#       endif
 #   endif
 #endif
 
@@ -128,6 +136,10 @@
 #ifndef HEART_FINAL
 #   define HEART_ALLOW_DATA_COMPILE
 #endif
+
+#ifdef HEART_TOOL_BUILD
+#   define HEART_USE_DEFAULT_MEM_ALLOC
+#endif //HEART_TOOL_BUILD
 
 #ifdef _MSC_VER 
 // TODO: this needs fixing really

@@ -152,6 +152,8 @@ namespace Heart
             hChar  ring_[t_size];
             hUint32 newLines_;
         };
+        static void     setFontSize(hFloat size) { s_FontSize = size; }
+        static hFloat   getFontSize() { return s_FontSize; }
 
         static const hUint32        MAX_CONSOLE_LOG_SIZE = 4096;
         static const hUint32        INPUT_BUFFER_LEN = 256;
@@ -162,6 +164,7 @@ namespace Heart
         static const hUint32        MAX_PREV_COMMAND_LOGS = 32;
         static const hResourceID    FONT_RESOURCE_NAME;
         static const hResourceID    CONSOLE_MATERIAL_NAME;
+        static hFloat s_FontSize;
 
 
         void    UpdateConsole();

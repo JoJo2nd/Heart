@@ -25,7 +25,7 @@ HeartIncludeDirs = {
     "../../external/libtga/include",
     "../../external/openal/include"}
 
-HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES"}
+HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES","HEART_LUA_LIBS"}
 PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS"}
 CommonDefines= {{PlatformDefines},"_CRT_SECURE_NO_WARNINGS","HEART_ENGINE_LIB"}
 SharedLibDefines = {"_DLL","SHARED_LIB","HEART_DLL"}
