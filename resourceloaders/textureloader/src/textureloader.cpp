@@ -36,6 +36,12 @@ using namespace Heart;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#ifndef MAKEFOURCC
+#   define MAKEFOURCC(ch0, ch1, ch2, ch3)                           \
+        ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) |           \
+        ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
+#endif /* defined(MAKEFOURCC) */
+
 #define TEXTURE_MAGIC_NUM              hMAKE_FOURCC('h','T','E','X')
 #define TEXTURE_STRING_MAX_LEN         (32)
 #define TEXTURE_MAJOR_VERSION          (((hUint16)1))
@@ -365,7 +371,7 @@ void pngRead(png_structp pngPtr, png_bytep pDst, png_size_t len)
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine)
+Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
 {
     Heart::hTexture* texutre;
     Heart::hRenderer* renderer = engine->GetRenderer();
@@ -408,7 +414,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
 
     RawTextureData textureData;
@@ -583,7 +589,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     //Nothing to do
     return hTrue;
@@ -594,7 +600,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     //Nothing to do
 }
@@ -604,7 +610,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     engine->GetRenderer()->DestroyTexture(static_cast<hTexture*>(resource));
 }

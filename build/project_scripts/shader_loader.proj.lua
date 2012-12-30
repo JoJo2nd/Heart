@@ -18,9 +18,11 @@ project "shader_loader"
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}

@@ -2,9 +2,9 @@ project "libpng"
 	location (ProjectDir)
 	kind "StaticLib"
 	language "C"
-	files {"../../libpng/include/*.h","../../libpng/src/*.c"}
+	files {"../../external/libpng/include/*.h","../../external/libpng/src/*.c"}
 	defines {CommonDefines}
-	includedirs {"../../libpng/include","../../zlib/include"}
+	includedirs {"../../external/libpng/include","../../external/zlib/include"}
 	
 configuration (DebugCfgName)
 	targetdir (TargetDir..DebugCfgName)
@@ -12,9 +12,11 @@ configuration (DebugCfgName)
     libdirs {TargetDir..DebugCfgName}
     links {"zlib_d"}
 	flags {DebugOptions}
+    postbuildcommands {PostBuildStr..project().name..DebugSuffix}
 configuration (ReleaseCfgName)
 	targetdir (TargetDir..ReleaseCfgName)
 	defines {{ReleaseDefines}}
     libdirs {TargetDir..ReleaseCfgName}
     links {"zlib_r"}
 	flags {ReleaseOptions}
+    postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}

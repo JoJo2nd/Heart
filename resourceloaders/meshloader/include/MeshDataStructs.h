@@ -47,7 +47,6 @@ struct MeshHeader
     Heart::hResourceBinHeader   resHeader;
     hUint32                     version;
     hUint32                     lodCount;
-
 };
 
 struct LODHeader
@@ -57,7 +56,7 @@ struct LODHeader
     hFloat          boundsMin[3];
     hFloat          boundsMax[3];
     hUint32         renderableCount;
-    hUint32         renderableOffset;
+    hUint64         renderableOffset;
 };
 
 /*
@@ -75,15 +74,15 @@ struct RenderableHeader
     hFloat                  boundsMax[3];
     Heart::hResourceID      materialID;
     hUint32                 ibSize;
-    hUint32                 ibOffset;   
+    hUint64                 ibOffset;   
     hUint32                 inputElements;
     hUint32                 streams;    
 };
 
 struct StreamHeader
 {
-    hUint32 index;
     hUint32 size;
+    hUint16 index;
 };
 
 #pragma pack(pop)

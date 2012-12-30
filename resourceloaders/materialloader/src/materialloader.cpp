@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	materialloader.cpp	
-	
-	Copyright (c) 29:7:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	materialloader.cpp	
+    
+    Copyright (c) 29:7:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -57,9 +57,9 @@ struct MaterialHeader
     hUint32                     techniqueCount;
     hUint32                     passCount;
     hChar                       defaultGroupName[MATERIAL_STRING_MAX_LEN];
-    hUint32                     samplerOffset;      //always after header
-    hUint32                     parameterOffset;
-    hUint32                     groupOffset;
+    hUint64                     samplerOffset;      //always after header
+    hUint64                     parameterOffset;
+    hUint64                     groupOffset;
 };
 
 struct SamplerRemapDefinition
@@ -134,11 +134,12 @@ Heart::hXMLEnumReamp g_samplerStates[] =
 {
     { "repeat",                  Heart::SSV_WRAP },
     { "wrap",                    Heart::SSV_WRAP },
+
     { "clamp",                   Heart::SSV_CLAMP },
     { "clamptoedge",             Heart::SSV_CLAMP },
     { "mirror",                  Heart::SSV_MIRROR },
     { "border",                  Heart::SSV_BORDER },
-    { "anisotropic",             Heart::SSV_ANISOTROPIC },
+    { " ",             Heart::SSV_ANISOTROPIC },
     { "point",                   Heart::SSV_POINT },
     { "linear",                  Heart::SSV_LINEAR },
     { "linearmipmaplinear",      Heart::SSV_LINEAR },
@@ -235,7 +236,7 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
     hRenderer* renderer = engine->GetRenderer();
@@ -260,23 +261,23 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
         material->AddSamplerParameter(sampler);
     }
-
+/*
     material->SetParameterInputOutputReserves(header.parameterCount, header.parameterRemapCount);
-
+*/
     //Read parameters
     for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
     {
         ParameterDefinition paramDef;
-        hMaterialParameterID id;
+        //hMaterialParameterID id;
         inFile->Read(&paramDef, sizeof(paramDef));
 
-        id = material->AddMaterialParameter(paramDef.parameterName, paramDef.type);
+        //id = material->AddMaterialParameter(paramDef.parameterName, paramDef.type);
         for (hUint32 i2 = 0, i2max = paramDef.remapParamCount; i2 < i2max; ++i2)
         {
             ParameterRemapDefinition paramRemap;
             inFile->Read(&paramRemap, sizeof(paramRemap));
 
-            material->AddProgramOutput(paramRemap.parameterName, id);
+            //material->AddProgramOutput(paramRemap.parameterName, id);
         }
     }
 
@@ -330,7 +331,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
     MaterialHeader matHeader = {0};
@@ -361,7 +362,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
         SamplerDefinition sampDef = {0};
-        hUint32 remapos = binoutput->Tell() + hOffsetOf(SamplerDefinition, remapParamCount);
+        hUint64 remapos = binoutput->Tell() + hOffsetOf(SamplerDefinition, remapParamCount);
 
         hStrCopy(sampDef.samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
 
@@ -379,20 +380,20 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         ++matHeader.samplerCount;
         binoutput->Write(&sampDef, sizeof(sampDef));
         
-//         hXMLGetter xRemap(xSampler.FirstChild("dest"));
-//         for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
-//         {
-//             SamplerRemapDefinition remapDef = {0};
-//             hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
-//             ++sampDef.remapParamCount;
-//             ++matHeader.samplerRemapCount;
-// 
-//             binoutput->Write(&remapDef, sizeof(remapDef));
-//         }
-// 
-//         binoutput->Seek(remapos, hISerialiseStream::eBegin);
-//         binoutput->Write(&sampDef.remapParamCount, sizeof(sampDef.remapParamCount));
-//         binoutput->Seek(0, hISerialiseStream::eEnd);
+        hXMLGetter xRemap(xSampler.FirstChild("dest"));
+        for (; xRemap.ToNode(); xRemap = xRemap.NextSibling())
+        {
+            SamplerRemapDefinition remapDef = {0};
+            hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
+            ++sampDef.remapParamCount;
+            ++matHeader.samplerRemapCount;
+
+            binoutput->Write(&remapDef, sizeof(remapDef));
+        }
+
+        binoutput->Seek(remapos, hISerialiseStream::eBegin);
+        binoutput->Write(&sampDef.remapParamCount, sizeof(sampDef.remapParamCount));
+        binoutput->Seek(0, hISerialiseStream::eEnd);
     }
 
     matHeader.parameterOffset = binoutput->Tell();
@@ -401,7 +402,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xParameter.ToNode(); xParameter = xParameter.NextSibling())
     {
         ParameterDefinition paramDef = {0};
-        hUint32 remapos = binoutput->Tell()+hOffsetOf(ParameterDefinition, remapParamCount);
+        hUint64 remapos = binoutput->Tell()+hOffsetOf(ParameterDefinition, remapParamCount);
         
         hStrCopy(paramDef.parameterName, MATERIAL_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
         paramDef.type = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
@@ -414,7 +415,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         {
             ParameterRemapDefinition remapDef = {0};
             hStrCopy(remapDef.parameterName, MATERIAL_STRING_MAX_LEN, xRemap.GetAttributeString("name", "none"));
-            remapDef.writeOffset = xRemap.GetAttributeInt("offset", 0);
+            remapDef.writeOffset = (hUint8)xRemap.GetAttributeInt("offset", 0);
 
             ++paramDef.remapParamCount;
             ++matHeader.parameterRemapCount;
@@ -432,7 +433,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     for (; xGroup.ToNode(); xGroup = xGroup.NextSibling())
     {
         GroupDefinition groupDef = {0};
-        hUint32 techos = binoutput->Tell() + hOffsetOf(GroupDefinition, techniques);
+        hUint64 techos = binoutput->Tell() + hOffsetOf(GroupDefinition, techniques);
 
         hStrCopy(groupDef.groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
 
@@ -443,7 +444,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
             TechniqueDefinition techDef = {0};
-            hUint32 passos = binoutput->Tell() + hOffsetOf(TechniqueDefinition, passes);
+            hUint64 passos = binoutput->Tell() + hOffsetOf(TechniqueDefinition, passes);
             hStrCopy(techDef.technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
             techDef.transparent = hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0;
             techDef.layer = (hByte)(xTech.FirstChild("layer").GetValueInt()&0xFF);
@@ -479,7 +480,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
                 passDef.depthState.stencilRef_ = xPass.FirstChild("stencilref").GetValueHex(0x00000000);
 
                 passDef.rasterizerState.cullMode_ = xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW);
-                passDef.rasterizerState.depthBias_ = xPass.FirstChild("depthbias").GetValueFloat();
+                passDef.rasterizerState.depthBias_ = 0;//xPass.FirstChild("depthbias").GetValueFloat();
                 passDef.rasterizerState.depthBiasClamp_ = xPass.FirstChild("depthbiasclamp").GetValueFloat();
                 passDef.rasterizerState.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
                 passDef.rasterizerState.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
@@ -517,7 +518,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
     hMaterial* mat = static_cast< hMaterial* >(resource);
@@ -529,7 +530,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
 
 }
@@ -539,7 +540,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
 

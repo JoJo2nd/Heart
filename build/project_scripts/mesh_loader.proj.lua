@@ -9,7 +9,9 @@ project "mesh_loader"
     defines {HeartDefines}
     defines {"GWEN_DLL"}
     defines {CommonDefines,SharedLibDefines}
-    defines {"MESH_LOADER_COMPILE_DLL"}
+    defines {
+        "MESH_LOADER_COMPILE_DLL",
+        "_HAS_ITERATOR_DEBUGGING=0"}
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/meshloader/include/"}
     includedirs {assimppath.."/include"}
@@ -23,6 +25,7 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_debug-dll_win32"}
         links {HeartLibsDebug}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
@@ -30,3 +33,4 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_release-dll_win32"}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}

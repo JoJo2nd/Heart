@@ -115,6 +115,7 @@ struct FXIncludeHandler : public ID3DInclude
         FXIncludePath* str = (FXIncludePath*)(((hByte*)pData)-sizeof(FXIncludePath));
         hChar* buf = (hChar*)str;
         includePaths_.Remove(str);
+        str->~FXIncludePath();
         hDELETE_ARRAY(GetGlobalHeap(), buf);
 
         return S_OK;
@@ -135,7 +136,7 @@ struct ShaderHeader
 {
     Heart::hResourceBinHeader   resHeader;
     hUint32                     version;
-    Heart::ShaderType           type;
+    Heart::hShaderType           type;
     hUint32                     vertexLayout;
     hUint32                     shaderBlobSize;
     hUint32                     inputLayoutElements;
@@ -148,7 +149,7 @@ struct ShaderHeader
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine)
+Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
 {
     using namespace Heart;
     hShaderProgram* shaderProg = hNEW(memalloc->resourcePakHeap_, hShaderProgram)();
@@ -169,8 +170,10 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
     tmpShaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
     inFile->Read(tmpShaderBlob, header.shaderBlobSize);
 
-    hdShaderProgram* impl = engine->GetRenderer()->CompileShader((hChar*)tmpShaderBlob, header.shaderBlobSize, inLayout, header.inputLayoutElements, header.type);
-    shaderProg->SetImpl(impl);
+    engine->GetRenderer()->CompileShader(
+        (hChar*)tmpShaderBlob, header.shaderBlobSize, 
+        inLayout, header.inputLayoutElements, 
+        header.type, shaderProg);
     shaderProg->SetShaderType(header.type);
     shaderProg->SetVertexLayout(header.vertexLayout);
 
@@ -184,11 +187,11 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine, Heart::hISerialiseStream* binoutput )
+hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
 {
     using namespace Heart;
 
-    Heart::ShaderType progtype;
+    Heart::hShaderType progtype;
     const hChar* typestr = params->GetBuildParameter("TYPE","VERTEX");
     if (hStrICmp(typestr, "VERTEX") == 0)
         progtype = ShaderType_VERTEXPROG;
@@ -289,7 +292,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     return hTrue;
 }
@@ -299,7 +302,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
 
 }
@@ -309,13 +312,12 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::HeartEngine* engine )
+void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
 
     hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
-    engine->GetRenderer()->DestroyShader(sp->pImpl());
-    sp->SetImpl(NULL);
+    engine->GetRenderer()->DestroyShader(sp);
     hDELETE(memalloc->resourcePakHeap_, sp);
 }
 

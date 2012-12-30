@@ -1,3 +1,10 @@
+local vsname = "vc8"
+if os.getenv("VS90COMNTOOLS") ~= nil then
+    vsname = "vc9"
+elseif os.getenv("VS100COMNTOOLS") ~= nil then
+    vsname = "vc10"
+end
+
 project "texture_loader"
     location (ProjectDir)
 	debugdir (DebugDir) --only in Premake 4.4
@@ -10,21 +17,24 @@ project "texture_loader"
     defines {"TEXTURE_LOADER_COMPILE_DLL"}
     includedirs {HeartIncludeDirs}
     includedirs {"../../resourceloaders/textureloader/include/"}
-    includedirs {"../../nvidia-texture-tools/src"}
+    includedirs {"../../external/nvidia-texture-tools/src"}
 	links {PlatformLibs}
     links { "nvtt" }
+    links "zlib"
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        libdirs {"../../nvidia-texture-tools/project/vc8/Debug (no cuda).Win32/lib"}
+        libdirs {"../../external/nvidia-texture-tools/project/"..vsname.."/Debug (no cuda).Win32/lib"}
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
-        libdirs {"../../nvidia-texture-tools/project/vc8/Release (no cuda).Win32/lib"}
+        libdirs {"../../external/nvidia-texture-tools/project/"..vsname.."/Release (no cuda).Win32/lib"}
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}

@@ -25,6 +25,7 @@
 
 *********************************************************************/
 
+#include "testbed_precompiled.h"
 #include "CreateTextureTest.h"
 
 

@@ -27,12 +27,11 @@
 #ifndef CREATETEXTURETEST_H__
 #define CREATETEXTURETEST_H__
 
-#include "Heart.h"
 
 class CreateTextureTest : public Heart::hStateBase
 {
 public:
-	CreateTextureTest( Heart::HeartEngine* engine ) 
+	CreateTextureTest( Heart::hHeartEngine* engine ) 
 		: hStateBase( "SimpleRoomAddedLight" )
 		,engine_( engine )
 	{
@@ -50,7 +49,7 @@ public:
 
 private:
 
-	Heart::HeartEngine*						engine_;
+	Heart::hHeartEngine*						engine_;
 };
 
 #endif // CREATETEXTURETEST_H__
