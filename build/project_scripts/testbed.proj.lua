@@ -21,14 +21,15 @@ project "heart_testbed"
     links {PlatformLibs}
     links { "heart", "crypto", "lua" }
     flags {"WinMain"}
-    postbuildcommands {PostBuildCmd..project().name}
 
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         --flags {"Symbols","Optimize"}
         flags {DebugOptions}
+        postbuildcommands {PostBuildStr..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}

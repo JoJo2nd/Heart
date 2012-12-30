@@ -5,14 +5,15 @@
         files {"../../external/crypto/include/*.h","../../external/crypto/src/*.c"}
         defines {CommonDefines,SharedLibDefines}
         defines {"CRYPTO_COMPILE_DLL"}
-		includedirs {"../../external/crypto/include"}
-        postbuildcommands {PostBuildStr..project().name}
+        includedirs {"../../external/crypto/include"}
         
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {{DebugDefines}}
         flags {DebugOptions}
+        postbuildcommands {PostBuildStr..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {{ReleaseDefines}}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}

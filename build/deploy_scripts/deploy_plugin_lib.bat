@@ -3,13 +3,17 @@
 call ../init_vis_studio_env.bat
 
 set BIN_FOLDER=../../bin/
-set GAME_BIN_FOLDER=%BIN_FOLDER%game/
-set TOOLS_BIN_FOLDER=%BIN_FOLDER%tools/
+set GAME_BIN_FOLDER_BASE=%BIN_FOLDER%game/
+set TOOLS_BIN_FOLDER_BASE=%BIN_FOLDER%tools/
+set GAME_BIN_FOLDER=%GAME_BIN_FOLDER_BASE%PLUGIN/
+set TOOLS_BIN_FOLDER=%TOOLS_BIN_FOLDER_BASE%PLUGIN/
 set HEART_BIN_FOLDER_R=../../build/built_projects/%PREMAKEVSVER%/game/lib/Release/
 set HEART_BIN_FOLDER_D=../../build/built_projects/%PREMAKEVSVER%/game/lib/Debug/
 set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np
 
 IF NOT exist "%BIN_FOLDER%" mkdir "%BIN_FOLDER%"
+IF NOT exist "%GAME_BIN_FOLDER_BASE%" mkdir "%GAME_BIN_FOLDER_BASE%"
+IF NOT exist "%TOOLS_BIN_FOLDER_BASE%" mkdir "%TOOLS_BIN_FOLDER_BASE%"
 IF NOT exist "%GAME_BIN_FOLDER%" mkdir "%GAME_BIN_FOLDER%"
 IF NOT exist "%TOOLS_BIN_FOLDER%" mkdir "%TOOLS_BIN_FOLDER%"
 

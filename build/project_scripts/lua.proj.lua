@@ -10,13 +10,14 @@
             "LUA_BUILD_AS_DLL",
             "HEART_LUA_LIBS"
             }
-        postbuildcommands {PostBuildStr..project().name}
         
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)
             defines {{DebugDefines}}
             flags {DebugOptions}
+            postbuildcommands {PostBuildStr..project().name..DebugSuffix}
         configuration (ReleaseCfgName)
             targetdir (TargetDir..ReleaseCfgName)
             defines {{ReleaseDefines}}
             flags {ReleaseOptions}
+            postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}

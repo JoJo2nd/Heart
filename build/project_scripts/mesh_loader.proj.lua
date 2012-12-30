@@ -17,7 +17,6 @@ project "mesh_loader"
     includedirs {assimppath.."/include"}
 	links {PlatformLibs}
     links { "assimp" }
-    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
@@ -26,6 +25,7 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_debug-dll_win32"}
         links {HeartLibsDebug}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
@@ -33,3 +33,4 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_release-dll_win32"}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}

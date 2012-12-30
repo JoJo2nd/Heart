@@ -15,14 +15,15 @@ project "heart"
     includedirs { "../../heartcore/gwen/src/**.*", "../../heartcore/gwen/include/**.*" }
     links {"crypto","lua","zlib","minizip","libogg","libvorbis","libvorbisfile"}
     links {PlatformLibs}
-    postbuildcommands {PostBuildStr..project().name}
     
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
         --flags {"Symbols","Optimize"}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStr..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}

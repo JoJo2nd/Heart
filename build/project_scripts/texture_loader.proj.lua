@@ -21,7 +21,6 @@ project "texture_loader"
 	links {PlatformLibs}
     links { "nvtt" }
     links "zlib"
-    postbuildcommands {PostBuildStr..project().name}
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
@@ -30,6 +29,7 @@ project "texture_loader"
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
@@ -37,3 +37,4 @@ project "texture_loader"
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
+        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}

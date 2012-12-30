@@ -39,10 +39,10 @@ solution (SlnName)
     postbuildcommands {PostBuildStr}
     
     configuration (DebugCfgName)
-        targetsuffix "_d"
+        targetsuffix(DebugSuffix)
         
     configuration (ReleaseCfgName)
-        targetsuffix "_r"
+        targetsuffix(ReleaseSuffix)
     
     project "memtrack"
         location (ProjectDir)
@@ -60,16 +60,17 @@ solution (SlnName)
         links {PlatformLibs}
         libdirs {LibDirs}
         flags {"WinMain","Unicode"}
-        postbuildcommands {PostBuildCmd..project().name.." "..project().name}
 
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)
             defines {DebugDefines}
             --flags {"Symbols","Optimize"}
             flags {DebugOptions}
+            postbuildcommands {PostBuildCmd..project().name..DebugSuffix.." "..project().name}
         configuration (ReleaseCfgName)
             targetdir (TargetDir..ReleaseCfgName)
             defines {ReleaseDefines}
             flags {ReleaseOptions}
+            postbuildcommands {PostBuildCmd..project().name..ReleaseSuffix.." "..project().name}
 
 

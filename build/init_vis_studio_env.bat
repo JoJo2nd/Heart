@@ -1,4 +1,3 @@
-@echo off
 
 if defined VS100COMNTOOLS goto SETUPVS10
 if defined VS90COMNTOOLS goto SETUPVS9

@@ -5,6 +5,7 @@ DebugSuffix = "_d"
 ReleaseSuffix = "_r"
 
 dofile "../project_common/heart_common_proj.lua"
+os.execute("\"..\\deploy_scripts\\deploy_external_libs.bat\"");
 
 solution (SlnName)
     location (SlnOutput)

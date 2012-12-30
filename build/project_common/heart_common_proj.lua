@@ -26,6 +26,9 @@ HeartIncludeDirs = {
     "../../external/openal/include"}
 
 HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES","HEART_LUA_LIBS"}
+if BinType == "tools" then
+    table.insert(HeartDefines, "HEART_TOOL_BUILD")
+end
 PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS"}
 CommonDefines= {{PlatformDefines},"_CRT_SECURE_NO_WARNINGS","HEART_ENGINE_LIB"}
 SharedLibDefines = {"_DLL","SHARED_LIB","HEART_DLL"}
@@ -57,6 +60,15 @@ HeartLibsRelease={
 
 if BinType == "game" then
     PostBuildStr="cd ../../../../deploy_scripts\ncall deploy_lib.bat "
+    PostBuildStrPlugin="cd ../../../../deploy_scripts\ncall deploy_plugin_lib.bat "
 else
     PostBuildStr="cd ../../../../deploy_scripts\ncall deploy_tool.bat "
+end
+
+function appendSuffixToTableEntries(t, sf)
+    rt = {}
+    for k,v in pairs(t) do
+        rt[k] = v..sf
+    end
+    return rt
 end

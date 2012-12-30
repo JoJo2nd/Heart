@@ -7,4 +7,4 @@ call %PYTHON_ROOT%python hFunctor_gen.py
 cd ..\..\..\build\project_scripts
 call ..\..\external\premake4.4\bin\premake4.exe --file="testbed.sln.lua" %PREMAKEVSVER%
 cd ..
-%PYTHON_ROOT%\python.exe scripts\project_unity_fixer.py -p "built_projects\%PREMAKEVSVER%\game\projects\heart.%VS_EXT%" -m %PREMAKEVSVER% -r "project_scripts\testbed_unity_regex.txt" -b "project_scripts\testbed_unity_build_platforms.txt"
+%PYTHON_ROOT%\python.exe scripts\project_unity_fixer.py -p "built_projects\%PREMAKEVSVER%\game\projects\heart.%VS_EXT%" -m %PREMAKEVSVER% -r "project_scripts\heart_unity_regex.txt" -b "project_scripts\heart_unity_build_platforms.txt"
