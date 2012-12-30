@@ -28,7 +28,9 @@
 namespace Heart
 {
 
-    hFloat hSystemConsole::s_FontSize = 1.f;
+    hFloat              hSystemConsole::s_fontSize = 1.f;
+    hConsoleOutputProc  hSystemConsole::s_consoleOutputCallback = NULL;
+    void*               hSystemConsole::s_consoleOutputUser = NULL;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -483,6 +485,9 @@ namespace Heart
             messageBuffer_.pushChar(string[i]);
         }
         
+        if (s_consoleOutputCallback){
+            s_consoleOutputCallback(string, s_consoleOutputUser);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

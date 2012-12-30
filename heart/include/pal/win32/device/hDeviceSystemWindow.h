@@ -45,6 +45,7 @@ namespace Heart
     HEART_DLLEXPORT hUint32 HEART_API              hd_DefaultScreenWidth();
     HEART_DLLEXPORT hUint32 HEART_API              hd_DefaultScreenHeight();
     HEART_DLLEXPORT hBool HEART_API                hd_DefaultVsyncSetting();
+    HEART_DLLEXPORT void HEART_API                 hd_AddSharedLibSearchDir(const hChar* abspath);
     HEART_DLLEXPORT hSharedLibAddress HEART_API    hd_OpenSharedLib(const hChar* libname);
     HEART_DLLEXPORT void HEART_API                 hd_CloseSharedLib(hSharedLibAddress lib);
     HEART_DLLEXPORT hTime HEART_API                hd_GetSharedLibTimestamp(hSharedLibAddress lib);
@@ -57,6 +58,7 @@ namespace Heart
             : hInstance_( NULL )
             , hWnd_( NULL )
             , ownWindow_(hFalse)
+            , procChain_(NULL)
         {
             wndTitle_[0] = 0;
         }
@@ -71,12 +73,17 @@ namespace Heart
         hdMouse*                GetSystemMouse()    { return &mouse_; }
         void                    SignalExit() { exitSignal_.Signal(); }
         hBool                   ExitSignaled() { return exitSignal_.TryWait(); }
+        hUint32                 getWindowWidth() const { return wndWidth_; }
+        hUint32                 getWindowHeight() const { return wndHeight_; }
+        hBool                   getOwnWindow() const { return ownWindow_; }
         
     private:
 
         hBool                   CreateWndClassEx( HINSTANCE hinstance, const hChar* classname );
         static LRESULT CALLBACK WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
         LRESULT                 WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+        
+        static hdSystemWindow*      s_instance;
 
         HINSTANCE					hInstance_;
         HWND						hWnd_;
@@ -91,6 +98,7 @@ namespace Heart
         hInt16                      wheelMove_;
         hUint32                     cursorOffsetX_;
         hUint32                     cursorOffsetY_;
+        WNDPROC                     procChain_;
 
         hBool                       ownWindow_;
         hdKeyboard		            keyboard_;

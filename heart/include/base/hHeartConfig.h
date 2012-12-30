@@ -138,12 +138,20 @@
 #endif
 
 #ifdef HEART_TOOL_BUILD
-#   define HEART_USE_DEFAULT_MEM_ALLOC
+//#   define HEART_USE_DEFAULT_MEM_ALLOC
 #endif //HEART_TOOL_BUILD
 
 #ifdef _MSC_VER 
 // TODO: this needs fixing really
 #   pragma warning (disable:4251)
+#endif
+
+#ifdef HEART_PLAT_WINDOWS
+#   define hputenv _putenv
+#   define hgetenv getenv
+#else
+#   define hputenv putenv
+#   define hgetenv getenv
 #endif
 
 #endif // _HHEARTCONFIG_H__

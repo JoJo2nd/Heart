@@ -82,7 +82,7 @@ namespace Heart
         sd.OutputWindow = sysHandle->GetSystemHandle()->hWnd_;
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
-        sd.Windowed = !fullscreen;
+        sd.Windowed = sysWindow_->getOwnWindow() ? !fullscreen : TRUE;
 
         hcPrintf("Creating DirectX 11 Device");
         if( hr = D3D11CreateDeviceAndSwapChain( 

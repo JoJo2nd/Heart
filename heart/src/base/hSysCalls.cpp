@@ -178,13 +178,14 @@ void FlushSymbolsToLogFile();
 
     static void StackTraceToFile(FILE* f)
     {
+        static const hUint32 callstackLimit = 256;
         unsigned int   i;
-        void         * stack[ 100 ];
+        void         * stack[ 256 ];
         unsigned short frames;
         
-        frames = CaptureStackBackTrace( 2, 100, stack, NULL );
-        hcAssert(frames > 0 && frames < 100);
-        for( i = 0; i < frames && i < 100; i++ )
+        frames = CaptureStackBackTrace( 2, 256, stack, NULL );
+        hcAssert(frames > 0 && frames < 256);
+        for( i = 0; i < frames && i < 256; i++ )
         {
             AddSymbolToLogFile(stack[i]);
             fprintf(g_file, "bt(%u,%LLX)\n", frames - i - 1, stack[i]);

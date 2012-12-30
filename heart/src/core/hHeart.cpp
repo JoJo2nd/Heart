@@ -44,10 +44,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hHeartEngine::hHeartEngine( const hChar* rootdir, hdDeviceConfig* deviceConfig )
+    hHeartEngine::hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig)
     {
         if (rootdir) hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), rootdir);
         else hSysCall::GetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
+
+        hUint end = hStrLen(workingDir_.GetBuffer())-1;
+        if (workingDir_[end] != '\\' && workingDir_[end] != '/') {
+            hStrCat(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), "/");
+        }
 
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
@@ -60,7 +65,7 @@ namespace Heart
         resourceMananger_ = hNEW(GetGlobalHeap(), hResourceManager);
         renderer_ = hNEW(GetGlobalHeap(), hRenderer);
         soundManager_ = hNEW(GetGlobalHeap(), hSoundManager);
-        console_ = hNEW(GetGlobalHeap(), hSystemConsole);
+        console_ = hNEW(GetGlobalHeap(), hSystemConsole)(consoleCb, consoleUser);
         luaVM_ = hNEW(GetGlobalHeap(), hLuaStateManager);
         entityFactory_ = hNEW(GetGlobalHeap(), hEntityFactory);
         debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
@@ -89,6 +94,8 @@ namespace Heart
         jobManager_->Initialise();
         controllerManager_->Initialise(system_);
         hClock::Initialise();
+        config_.Width_ = system_->getWindowWidth();
+        config_.Height_ = system_->getWindowHeight();
         renderer_->Create( 
             system_,
             config_.Width_,
@@ -384,14 +391,14 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib( const hChar* appLib, HINSTANCE hInstance )
+    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar* appLib, HINSTANCE hInstance, HWND hWnd)
 
 {
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
-    deviceConfig.hWnd_ = NULL;
+    deviceConfig.hWnd_ = hWnd;
 
-    Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
+    Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, NULL, NULL, &deviceConfig);
 
     engine->sharedLib_ = Heart::hd_OpenSharedLib(appLib);
 
@@ -429,13 +436,14 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine( hHeartEngineCallbacks* callbacks, HINSTANCE hInstance )
+HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
-    deviceConfig.hWnd_ = NULL;
+    deviceConfig.hWnd_ = hWnd;
 
-    Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, &deviceConfig);
+    Heart::hHeartEngine* engine = 
+        hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
 
     engine->firstLoaded_        = callbacks->firstLoaded_;
     engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;

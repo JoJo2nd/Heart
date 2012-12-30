@@ -63,10 +63,15 @@ namespace Heart
     hBool hResourceManager::Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
     {
         hUint32 nRequiredResources = 0;
+        hChar pluginpath[2048];
         filesystem_ = pFileSystem;
         renderer_ = renderer;
         materialManager_ = renderer->GetMaterialManager();
         engine_ = engine;
+
+        hd_AddSharedLibSearchDir(engine->GetWorkingDir());
+        hStrPrintf(pluginpath, 2048, "%sPLUGIN/", engine->GetWorkingDir());
+        hd_AddSharedLibSearchDir(pluginpath);
 
         LoadGamedataDesc();
         loaderSemaphone_.Create(0, 128);
@@ -261,7 +266,8 @@ namespace Heart
 
     void hResourceManager::LoadGamedataDesc()
     {
-        hIFile* f = filesystem_->OpenFile("loaders", FILEMODE_READ);
+        hIFile* f = filesystem_->OpenFileRoot("CONFIG/LOADERS", FILEMODE_READ);
+        hcAssertMsg(f, "config/loaders failed to load, this is fatal");
         void* xmldata = hHeapMalloc(GetGlobalHeap(), (hUint32)(f->Length()+1));
         f->Read(xmldata, (hUint32)f->Length());
         ((hChar*)xmldata)[f->Length()] = 0;

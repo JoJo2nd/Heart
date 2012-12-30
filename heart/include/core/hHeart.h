@@ -48,16 +48,19 @@ struct hHeartEngineCallbacks
     hMainRenderProc                      mainRender_;
     hShutdownUpdateProc                  shutdownUpdate_;
     hOnShutdownProc                      onShutdown_;
+    const hChar*                         overrideFileRoot_;
+    hConsoleOutputProc                   consoleCallback_;
+    void*                                consoleCallbackUser_;
 };
 
 extern "C"
 {
-#ifdef _WIN32
+#ifdef WIN32
 
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib( const hChar*, HINSTANCE hInstance );
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine( hHeartEngineCallbacks*, HINSTANCE hInstance );
+    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*, HINSTANCE hInstance, HWND hWnd);
+    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
 #else
-    #error ("Platform not supported")
+#   error ("Platform not supported")
 #endif
     HEART_DLLEXPORT hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* );
     HEART_DLLEXPORT void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* );
@@ -116,7 +119,7 @@ namespace Heart
     {
     public:
 
-        hHeartEngine( const char* rootdir, hdDeviceConfig* deviceConfig );
+        hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig);
         ~hHeartEngine();
 
         hDriveFileSystem*   GetFileManager()        { return fileMananger_; }
@@ -133,7 +136,7 @@ namespace Heart
 
         static const hChar* VersionString();
         static hFloat       Version();
-
+        const hChar*        GetWorkingDir() { return workingDir_.GetBuffer(); }
         void                DoEngineTick();
         hHeartState         GetState() { return engineState_; }
 

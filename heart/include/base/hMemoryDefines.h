@@ -123,7 +123,7 @@ namespace Heart
     #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
     #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
     #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
-
+#if 0 // may want to enable these later to check only heaps are being used
     inline void* operator new ( size_t size )
     {
         hcBreak;
@@ -145,7 +145,7 @@ namespace Heart
     {
         hcBreak;
     }
-    
+#endif
 #else//HEART_USE_DEFAULT_MEM
 
 #define hAlignMalloc( s, a ) _aligned_malloc( s, a )

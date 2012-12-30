@@ -28,6 +28,8 @@
 
 namespace Heart
 {
+    hdSystemWindow* hdSystemWindow::s_instance = NULL;
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -42,6 +44,8 @@ namespace Heart
 
         strcpy( &wndClassName_[ 0 ], "hWindow" );
 
+        s_instance = this;
+
         if (!hWnd_ && CreateWndClassEx( hInstance_, wndClassName_ ) ) {
             hWnd_ = CreateWindow( 
                 wndClassName_,		 // name of window class 
@@ -54,7 +58,7 @@ namespace Heart
                 (HWND) NULL,         // no owner window 
                 (HMENU) NULL,        // use class menu 
                 hInstance_,          // handle to application instance 
-                (LPVOID) this );     // no window-creation data 
+                NULL );              // no window-creation data 
 
             DWORD err = GetLastError();
 
@@ -68,6 +72,14 @@ namespace Heart
 
             ShowWindow( hWnd_, SW_SHOW ); 
             UpdateWindow( hWnd_ ); 
+        }
+        else {
+            RECT C;
+            GetClientRect(hWnd_, &C);
+            wndWidth_ = C.right;
+            wndHeight_ = C.bottom;
+
+            procChain_ = (WNDPROC)SetWindowLong(hWnd_, GWL_WNDPROC, (LONG)&hdSystemWindow::WindowProc);
         }
 
         RECT w,C;
@@ -113,9 +125,9 @@ namespace Heart
         ZeroMemory( &wndClassEx_, sizeof( wndClassEx_ ) );
         wndClassEx_.cbSize = sizeof( wndClassEx_ );				// size of structure 
         wndClassEx_.style = CS_HREDRAW | CS_VREDRAW;            // redraw if size changes 
-        wndClassEx_.lpfnWndProc = &hdSystemWindow::WindowProc;			// points to window procedure 
+        wndClassEx_.lpfnWndProc = &hdSystemWindow::WindowProc;	// points to window procedure 
         wndClassEx_.cbClsExtra = 0;								// no extra class memory 
-        wndClassEx_.cbWndExtra = sizeof( void* );				// no extra window memory 
+        wndClassEx_.cbWndExtra = 0;				                // no extra window memory 
         wndClassEx_.hInstance = hinstance;						// handle to instance 
         wndClassEx_.hIcon = LoadIcon( NULL, IDI_APPLICATION );  // predefined app. icon 
         wndClassEx_.hCursor = LoadCursor( NULL, IDC_ARROW );    // predefined arrow 
@@ -134,30 +146,18 @@ namespace Heart
 
     LRESULT CALLBACK hdSystemWindow::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
     {
-        hdSystemWindow* wnd = NULL;
-        // i wont have to do this if it was defined right!!! :@ [6/21/2008 James]
-#pragma warning ( push )
-#pragma warning ( disable : 4244 )
-#pragma warning ( disable : 4312 )
-        if( uMsg == WM_NCCREATE )
-        {
-            // retrieve Window instance from window creation data and associate
-            wnd = reinterpret_cast< hdSystemWindow* >( ( ( LPCREATESTRUCT ) lParam )->lpCreateParams );
-            SetWindowLongPtr( hwnd, 0, reinterpret_cast< LONG_PTR >( wnd ) );
-        }
-        else
-        {
-            // retrieve associated Window instance
-            wnd = reinterpret_cast< hdSystemWindow* >( GetWindowLongPtr( hwnd, 0 ) );
-        }
-#pragma warning ( pop )
         // call the windows message handler
-        if ( wnd )
+        if ( s_instance )
         {
-            return wnd->WndProc( hwnd, uMsg, wParam, lParam );
+            s_instance->WndProc( hwnd, uMsg, wParam, lParam );
         }
 
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        if (s_instance->procChain_) {
+            return CallWindowProc(s_instance->procChain_, hwnd, uMsg, wParam, lParam);
+        }
+        else {
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -175,6 +175,10 @@ namespace Heart
         case WM_ACTIVATE:
             {
 
+            }
+            return 0;
+        case WM_SIZE: {
+                hcPrintf("Size Event: Width %u, Height %u", LOWORD(lParam), HIWORD(lParam));
             }
             return 0;
         case WM_MOUSEMOVE:
@@ -241,7 +245,7 @@ namespace Heart
         default:
             break;
         }
-        return DefWindowProc(hwnd, uMsg, wParam, lParam); 
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -310,6 +314,20 @@ namespace Heart
     HEART_DLLEXPORT hBool HEART_API hd_DefaultVsyncSetting()
     {
         return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEART_DLLEXPORT void HEART_API hd_AddSharedLibSearchDir(const hChar* abspath)
+    {
+        //push directory on to $path
+        hUint len = hStrLen(hgetenv("path"))+hStrLen(abspath)+20;
+        hChar* buf = (hChar*)hAlloca(len);
+        hStrPrintf(buf, len, "path=%s;%s", hgetenv("path"), abspath);
+        hputenv(buf);
+        hcPrintf("PATH = %s", hgetenv("path"));
     }
 
     //////////////////////////////////////////////////////////////////////////
