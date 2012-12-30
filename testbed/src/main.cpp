@@ -62,7 +62,7 @@ void CreateErrorBox( DWORD error );
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {	
-    hHeartEngineCallbacks callbacks;
+    hHeartEngineCallbacks callbacks = {0};
 
     callbacks.firstLoaded_ = HeartAppFirstLoaded;
     callbacks.coreAssetsLoaded_ = HeartAppCoreAssetsLoaded;
@@ -71,7 +71,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.shutdownUpdate_ = HeartAppShutdownUpdate;
     callbacks.onShutdown_ = HeartAppOnShutdown;
 
-    Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance);
+    Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
     
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
