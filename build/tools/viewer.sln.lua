@@ -19,14 +19,13 @@ HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
 
 myIncludeDirs = {
     {HeartIncludeDirs},
+    {wxWidgetsIncludeDirs},
     "../../tools/viewer/include",
-    "../../external/wxWidgets-2.9.2/include",
-    "../../external/wxWidgets-2.9.2/include/msvc",
     "../../external/boost/",
     }
 myLibDirs = {
     {LibDirs},
-    "../../external/wxWidgets-2.9.2/lib/vc_lib",
+    {wxWidgetsLibsDirs},
     "../../external/boost/stage/lib",
     }
 myDefines={

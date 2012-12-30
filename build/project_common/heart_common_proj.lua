@@ -7,7 +7,8 @@ ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
 DebugDir="../../bin/"..BinType
 HeartPlatformIncludeDirs = {
-    os.getenv("DXSDK_DIR").."/Include"}
+    os.getenv("DXSDK_DIR").."/Include",
+}
 HeartIncludeDirs = {
     HeartPlatformIncludeDirs,
     --common
@@ -23,7 +24,12 @@ HeartIncludeDirs = {
     "../../external/libvorbis/include",
     "../../external/libogg/include",
     "../../external/libtga/include",
-    "../../external/openal/include"}
+    "../../external/openal/include",
+}
+wxWidgetsIncludeDirs = {
+    "../../external/wxWidgets-2.9.2/include/msvc",
+    "../../external/wxWidgets-2.9.2/include",
+}
 
 HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES","HEART_LUA_LIBS"}
 if BinType == "tools" then
@@ -42,6 +48,9 @@ ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild","Symbols"}
 LibDirs={
     "../../external/openal/libs/Win32",
     os.getenv("DXSDK_DIR").."/Lib/x86"}
+wxWidgetsLibsDirs={
+    "../../external/wxWidgets-2.9.2/lib/vc_lib",
+}
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32","dbghelp"}
 HeartLibsDebug={
     "heart", 

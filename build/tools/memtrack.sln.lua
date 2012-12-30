@@ -14,11 +14,10 @@ TargetDir = SlnDir.."../lib/"
 DebugDir="../../bin/"..BinType
 IncludeDirs = {
     "../../tools/memtrack/include",
-    "../../external/wxWidgets-2.9.2/include",
-    "../../external/wxWidgets-2.9.2/include/msvc",
+    {wxWidgetsIncludeDirs},
     "../../external/boost/"}
 LibDirs = {
-    "../../external/wxWidgets-2.9.2/lib/vc_lib",
+    {wxWidgetsLibsDirs},
     "../../external/boost/stage/lib"}
 
 PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS","_CRT_SECURE_NO_WARNINGS"}
