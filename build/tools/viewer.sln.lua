@@ -108,4 +108,3 @@ solution (SlnName)
             postbuildcommands {
                 "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
             }
-
