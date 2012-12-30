@@ -209,9 +209,9 @@ void ViewerMainFrame::evtOpen(wxCommandEvent& evt)
 
 void ViewerMainFrame::evtShowConsole(wxCommandEvent& evt)
 {
-    wxAuiPaneInfo info = auiManager_->GetPane("Console Window");
+    wxAuiPaneInfo& info = auiManager_->GetPane("Console Window");
     if (info.IsOk()) {
-        info.Show(true);
+        info.Show();
         auiManager_->Update();
     }
 }
@@ -254,8 +254,7 @@ void ViewerMainFrame::dockPaneRegister(wxWindow* pane, const wxString& name, con
 
 void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
 {
-    evt.GetPane()->Hide();
-    evt.Veto(true);
+    wxAuiPaneInfo* info = evt.GetPane();
 
     // update view
     auiManager_->Update();

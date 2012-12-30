@@ -7,7 +7,8 @@ ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
 DebugDir="../../bin/"..BinType
 HeartPlatformIncludeDirs = {
-    os.getenv("DXSDK_DIR").."/Include"}
+    os.getenv("DXSDK_DIR").."/Include",
+}
 HeartIncludeDirs = {
     HeartPlatformIncludeDirs,
     --common
@@ -23,8 +24,17 @@ HeartIncludeDirs = {
     "../../external/libvorbis/include",
     "../../external/libogg/include",
     "../../external/libtga/include",
-    "../../external/openal/include"}
+    "../../external/openal/include",
+}
+wxWidgetsIncludeDirs = {
+    "../../external/wxWidgets-2.9.4/include/msvc",
+    "../../external/wxWidgets-2.9.4/include",
+}
 
+wxWidgetsDefines={
+    "WXUSINGDLL",
+    "wxMSVC_VERSION_AUTO"
+}
 HeartDefines= {"HEART_ENGINE","HEART_PLAT_DX11","USE_DL_PREFIX","ONLY_MSPACES","HEART_LUA_LIBS"}
 if BinType == "tools" then
     table.insert(HeartDefines, "HEART_TOOL_BUILD")
@@ -42,6 +52,9 @@ ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild","Symbols"}
 LibDirs={
     "../../external/openal/libs/Win32",
     os.getenv("DXSDK_DIR").."/Lib/x86"}
+wxWidgetsLibsDirs={
+    "../../external/wxWidgets-2.9.4/lib/"..os.getenv("VSTYPE").."0_dll",
+}
 PlatformLibs={"d3d11","d3dcompiler","d3dx11","dxguid","xinput","openAL32","dbghelp"}
 HeartLibsDebug={
     "heart", 
@@ -64,6 +77,8 @@ if BinType == "game" then
 else
     PostBuildStr="cd ../../../../deploy_scripts\ncall deploy_tool.bat "
 end
+
+ToolDeployDir="../../bin/tools/$project/$config"
 
 function appendSuffixToTableEntries(t, sf)
     rt = {}

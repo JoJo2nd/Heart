@@ -1,12 +1,14 @@
 Most deps are included by in the repo. But the following will need to be downloaded
 
-1) wxWidgets-2.9.2 from http://www.wxwidgets.org. Get version wxWidget-2.9.2.zip not the installer. extract the source to external/wxWidgets-2.9.2
-FOR visual stdio 2010 open wx292_msw_vc10.zip and extract to build/msw. This contains fixed projects for visual studio 2010
+*) wxWidgets-2.9.4 from http://www.wxwidgets.org. Get version wxWidget-2.9.4.zip not the installer. extract the source to external/wxWidgets-2.9.4
+Download the binaries for 2.9.4 and extract them to external/wxWidgets-2.9.4/lib. Pick the correct verion (vs2008 is vc90, vs2010 is vc100)
 
-2) boost from http://www.boost.org. Get version 1_48 again as an zip not an installer. extract the source to external/boost
+*) boost from http://www.boost.org. Get version 1_48 again as an zip not an installer. extract the source to external/boost
 
-3) OpenAL needs to be installed. It can be found in external/openal/redist
+*) Install python 2.7 and add the environment variable PYTHON_ROOT to point to the path with python.exe in it
 
-3) run the build build_all_external_libs.bat to compile any libs that need to be built
+*) OpenAL needs to be installed. It can be found in external/openal/redist
 
-4) DXSDK is also needed
+*) run the build/build_all_external_libs.bat to compile any libs that need to be built
+
+*) DXSDK is also needed
