@@ -87,9 +87,8 @@ void ConsoleLog::initFrame()
     paneinfo.Caption("Console Window");
     paneinfo.Float();
     paneinfo.Floatable(true);
-    paneinfo.Dockable(true);
+    paneinfo.CloseButton(true);
     paneinfo.CaptionVisible(true);
-    paneinfo.DestroyOnClose(false);
     paneinfo.MinSize(300, 200);
 
     evt_registerAuiPane(this, "Console Window", paneinfo);
