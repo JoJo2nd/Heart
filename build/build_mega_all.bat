@@ -13,8 +13,8 @@ devenv built_projects\%PREMAKEVSVER%\game\NewTestBed\NewTestBed.sln /Rebuild "De
 devenv built_projects\%PREMAKEVSVER%\game\NewTestBed\NewTestBed.sln /Rebuild "Release|Win32" > logs/testbed_release_build_log.txt
 echo Building memtrack
 devenv built_projects\%PREMAKEVSVER%\tools\memtrack\memtrack.sln /Rebuild "Debug|Win32" > logs/memtrack_debug_build_log.txt
-devenv built_projects\%PREMAKEVSVER%\game\memtrack\memtrack.sln /Rebuild "Release|Win32" > logs/memtrack_release_build_log.txt
+devenv built_projects\%PREMAKEVSVER%\tools\memtrack\memtrack.sln /Rebuild "Release|Win32" > logs/memtrack_release_build_log.txt
 echo Building viewer
 devenv built_projects\%PREMAKEVSVER%\tools\viewer\viewer.sln /Rebuild "Debug|Win32" > logs/viewer_debug_build_log.txt
-devenv built_projects\%PREMAKEVSVER%\game\viewer\viewer.sln /Rebuild "Release|Win32" > logs/viewer_release_build_log.txt
+devenv built_projects\%PREMAKEVSVER%\tools\viewer\viewer.sln /Rebuild "Release|Win32" > logs/viewer_release_build_log.txt
 echo ...Done
