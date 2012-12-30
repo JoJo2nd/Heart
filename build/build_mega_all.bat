@@ -1,5 +1,8 @@
+@echo off
+set CURDIR=%cd%
 call init_vis_studio_env.bat
 call build_all_external_libs.bat
+cd %CURDIR%
 call build_testbed_sln.bat
 cd tools
 call build_memtrack_project.bat

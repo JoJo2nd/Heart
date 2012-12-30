@@ -1,4 +1,5 @@
 
+if defined VSVARS_ARE_ENABLED goto EXIT
 if defined VS100COMNTOOLS goto SETUPVS10
 if defined VS90COMNTOOLS goto SETUPVS9
 goto ERRORMSG
@@ -21,5 +22,9 @@ goto FINISH
 
 :ERRORMSG
 echo "Visual Studio not found" 
+goto EXIT
 
 :FINISH
+set VSVARS_ARE_ENABLED=TRUE
+
+:EXIT
