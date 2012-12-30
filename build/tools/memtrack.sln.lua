@@ -1,9 +1,10 @@
-local PostBuildCmd="cd ../../../../deploy_scripts\ncall deploy_tool.bat "
 
 SlnName = "memtrack"
 BinType = "tools"
 DebugSuffix = "_d"
 ReleaseSuffix = "_r"
+
+dofile "../project_common/heart_common_proj.lua"
 
 DebugCfgName = "Debug"
 ReleaseCfgName = "Release"
@@ -20,7 +21,14 @@ LibDirs = {
     {wxWidgetsLibsDirs},
     "../../external/boost/stage/lib"}
 
-PlatformDefines={"WIN32","_WIN32","WINDOWS","_WINDOWS","_CRT_SECURE_NO_WARNINGS"}
+PlatformDefines={
+    {wxWidgetsDefines},
+    "WIN32",
+    "_WIN32",
+    "WINDOWS",
+    "_WINDOWS",
+    "_CRT_SECURE_NO_WARNINGS"
+}
 DebugDefines={"_DEBUG","DEBUG"}
 DebugOptions={"Symbols","NoEditAndContinue","NoMinimalRebuild"}
 ReleaseDefines={"NDEBUG","RELEASE"}
@@ -34,8 +42,6 @@ LibsRelease={}
 solution (SlnName)
     location (SlnDir)
     configurations ({DebugCfgName, ReleaseCfgName})
-    
-    postbuildcommands {PostBuildStr}
     
     configuration (DebugCfgName)
         targetsuffix(DebugSuffix)
@@ -65,11 +71,17 @@ solution (SlnName)
             defines {DebugDefines}
             --flags {"Symbols","Optimize"}
             flags {DebugOptions}
-            postbuildcommands {PostBuildCmd..project().name..DebugSuffix.." "..project().name}
+            postbuildcommands {PostBuildStr..project().name..DebugSuffix.." "..project().name}
+            postbuildcommands {
+                "call deploy_wxwidgets_libs.bat ud "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}),
+            }
         configuration (ReleaseCfgName)
             targetdir (TargetDir..ReleaseCfgName)
             defines {ReleaseDefines}
             flags {ReleaseOptions}
-            postbuildcommands {PostBuildCmd..project().name..ReleaseSuffix.." "..project().name}
+            postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." "..project().name}
+            postbuildcommands {
+                "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
+            }
 
 

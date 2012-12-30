@@ -31,6 +31,7 @@ myLibDirs = {
 myDefines={
     {CommonDefines},
     {HeartDefines},
+    {wxWidgetsDefines},
     "_SCL_SECURE_NO_WARNINGS"
 }
 myDebugDefines={
@@ -88,18 +89,23 @@ solution (SlnName)
         --prebuildcommands "cd ../../../../deploy_scripts\ncall deploy_game_libs_to_tools_bin.bat"
 
         configuration (DebugCfgName)
-            targetdir (TargetDir..DebugCfgName)
+            targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}))
             defines {myDebugDefines}
             flags {myDebugOptions}
             libdirs(HeartLibDir..DebugCfgName)
             links {myLibsDebug}
             postbuildcommands {PostBuildStr..project().name..DebugSuffix.." "..project().name}
+            postbuildcommands {
+                "call deploy_wxwidgets_libs.bat ud "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}),
+            }
         configuration (ReleaseCfgName)
-            targetdir (TargetDir..ReleaseCfgName)
+            targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}))
             defines {myReleaseDefines}
             flags {myReleaseOptions}
             libdirs(HeartLibDir..ReleaseCfgName)
             links {myLibsRelease}
             postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." "..project().name}
-
+            postbuildcommands {
+                "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
+            }
 
