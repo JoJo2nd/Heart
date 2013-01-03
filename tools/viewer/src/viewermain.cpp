@@ -112,6 +112,7 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 
 BEGIN_EVENT_TABLE(ViewerMainFrame, wxFrame)
     EVT_MENU(wxID_OPEN, ViewerMainFrame::evtOpen)
+    EVT_MENU(wxID_SAVE, ViewerMainFrame::evtSave)
     EVT_MENU(cuiID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
     EVT_AUI_PANE_CLOSE(ViewerMainFrame::evtOnPaneClose)
     EVT_CLOSE(ViewerMainFrame::evtClose)
@@ -142,8 +143,7 @@ void ViewerMainFrame::initFrame(const wxString& heartpath)
 
     wxMenu* filemenu = new wxMenu();
     filemenu->Append(wxID_OPEN, "&Open");
-    filemenu->Append(wxID_SAVE, "&Save");
-    filemenu->Append(wxID_SAVEAS, "Save &As");
+    filemenu->Append(wxID_SAVE, "&Save Packages");
     filemenu->AppendSeparator();
     filemenu->Append(cuiID_SHOWCONSOLE, "Show &Console");
 
@@ -172,12 +172,18 @@ void ViewerMainFrame::initFrame(const wxString& heartpath)
     callbacks.overrideFileRoot_ = NULL; 
     if (heartpath.length()>0) {
         callbacks.overrideFileRoot_ = heartpath.c_str();
+        dataPath_ = heartpath.ToStdWstring();
+    }
+    else {
+        dataPath_ = boost::filesystem::current_path();
     }
     callbacks.consoleCallback_ = &ViewerMainFrame::consoleMsgCallback;
     callbacks.consoleCallbackUser_ = this;
     heart_ = hHeartInitEngine(&callbacks, wxGetInstance(), renderFrame->GetHWND());
 
     timer_.start(heart_);
+
+    packageSystem_.initialiseSystem(dataPath_.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -258,6 +264,20 @@ void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
 
     // update view
     auiManager_->Update();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::evtSave(wxCommandEvent& evt)
+{
+    wxString msgstr;
+    msgstr.Printf("This will write package information to directory %s.\n Is this ok?", dataPath_.c_str());
+    wxMessageDialog msg(this, msgstr, "Are You Sure?", wxYES_NO);
+    if (msg.ShowModal() == wxID_YES) { 
+        packageSystem_.serialise();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -1,60 +1,9 @@
 
--- SlnName = "viewer"
--- BinType = "tools"
--- DebugSuffix = "_d"
--- ReleaseSuffix = "_r"
-
--- DebugCfgName = "Debug"
--- ReleaseCfgName = "Release"
--- SlnOutput = "built_projects/".._ACTION.."/tools/"..SlnName.."/"
--- SlnDir = "../" .. SlnOutput
--- ProjectDir = SlnDir.."../projects/"
--- TargetDir = SlnDir.."../lib/"
--- DebugDir="../../bin/"..BinType
--- -- link against the game version of libs
--- HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
-
--- myIncludeDirs = {
-    -- {HeartIncludeDirs},
-    -- {wxWidgetsIncludeDirs},
-    -- "../../tools/viewer/include",
-    -- "../../external/boost/",
-    -- }
--- myLibDirs = {
-    -- {LibDirs},
-    -- {wxWidgetsLibsDirs},
-    -- "../../external/boost/stage/lib",
-    -- }
--- myDefines={
-    -- {CommonDefines},
-    -- {HeartDefines},
-    -- {wxWidgetsDefines},
-    -- "_SCL_SECURE_NO_WARNINGS"
--- }
--- myDebugDefines={
-    -- {myDefines},
-    -- {DebugDefines},
--- }
--- myDebugOptions={
-    -- {DebugOptions},
--- }
--- myReleaseDefines={
-    -- {myDefines},
-    -- {ReleaseDefines},
--- }
--- myReleaseOptions={
-    -- {ReleaseOptions},
--- }
-
--- myPlatformLibs={
-    -- {PlatformLibs},
--- }
--- myLibsDebug={
-    -- {appendSuffixToTableEntries(HeartLibsDebug, DebugSuffix)},
--- }
--- myLibsRelease={
-    -- {appendSuffixToTableEntries(HeartLibsRelease, ReleaseSuffix)},
--- }
+-- link against the game version of libs
+viewerHeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
+viewerHeartLibs= {
+    "crypto"
+}
 
 project "viewer_api"
     location (ProjectDir)
@@ -65,24 +14,54 @@ project "viewer_api"
         "../../tools/viewer_api/include/impl/**.h",
         "../../tools/viewer_api/src/**.cpp"
     }
-    pchheader "precompiled.h"
-    pchsource "../../tools/viewer_api/src/precompiled.cpp"
-    defines {myPlatformDefines}
-    includedirs {myIncludeDirs}
-    links {myPlatformLibs}
-    libdirs {myLibDirs}
+    --pchheader "precompiled.h"
+    --pchsource "../../tools/viewer_api/src/precompiled.cpp"
+    defines {
+        {CommonDefines},
+        {"_DLL","SHARED_LIB","VAPI_COMPILE_DLL"},
+        {PlatformDefines},
+    }
+    includedirs {
+        "../../external/crypto/include",
+        "../../external/rapidxml-1.13/include",
+        {wxWidgetsIncludeDirs},
+        "../../tools/viewer_api/include",
+        "../../external/boost/",
+    }
+    links {
+        "dbghelp",
+        "shlwapi",
+    }
+    libdirs {
+        {wxWidgetsLibsDirs},
+        "../../external/boost/stage/lib",
+    }
     flags {"Unicode"}
     buildoptions { "-Zm116" } -- needs at least Zm116 or boost pops it
 
     configuration (DebugCfgName)
-        targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}))
-        defines {myDebugDefines}
-        flags {myDebugOptions}
-        libdirs(HeartLibDir..DebugCfgName)
-        links {myLibsDebug}
+        targetdir (TargetDir..DebugCfgName)
+        defines {
+            {DebugDefines},
+        }
+        flags {
+            {DebugOptions},
+        }
+        libdirs(viewerHeartLibDir..DebugCfgName)
+        links {
+            appendSuffixToTableEntries(viewerHeartLibs, DebugSuffix)
+        }
+        postbuildcommands {PostBuildStr..project().name..DebugSuffix.." viewer"}
     configuration (ReleaseCfgName)
-        targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}))
-        defines {myReleaseDefines}
-        flags {myReleaseOptions}
-        libdirs(HeartLibDir..ReleaseCfgName)
-        links {myLibsRelease}
+        targetdir (TargetDir..ReleaseCfgName)
+        defines { 
+            {ReleaseDefines},
+        }
+        flags {
+            {ReleaseOptions},
+        }
+        libdirs(viewerHeartLibDir..ReleaseCfgName)
+        links {
+            appendSuffixToTableEntries(viewerHeartLibs, ReleaseSuffix)
+        }
+        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." viewer"}

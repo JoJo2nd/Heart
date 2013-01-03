@@ -13,7 +13,7 @@ SlnOutput = "built_projects/".._ACTION.."/tools/"..SlnName.."/"
 SlnDir = "../" .. SlnOutput
 ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
-DebugDir="../../bin/"..BinType
+DebugDir="../../bin/game"
 -- link against the game version of libs
 HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
 
@@ -21,6 +21,7 @@ myIncludeDirs = {
     {HeartIncludeDirs},
     {wxWidgetsIncludeDirs},
     "../../tools/viewer/include",
+    "../../tools/viewer_api/include",
     "../../external/boost/",
     }
 myLibDirs = {
@@ -51,6 +52,7 @@ myReleaseOptions={
 
 myPlatformLibs={
     {PlatformLibs},
+    "viewer_api"
 }
 myLibsDebug={
     {appendSuffixToTableEntries(HeartLibsDebug, DebugSuffix)},
@@ -108,3 +110,5 @@ solution (SlnName)
             postbuildcommands {
                 "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
             }
+    
+    dofile "viewer_api.proj.lua"

@@ -50,14 +50,18 @@
 #include "wx/richmsgdlg.h"
 #include "wx/listctrl.h"
 #include "wx/gbsizer.h"
+#include "wx/msgdlg.h"
 
 #include "boost/filesystem.hpp"
 #include "boost/signals2.hpp"
 #include "boost/smart_ptr.hpp"
 #include "boost/foreach.hpp"
 #include "boost/crc.hpp"
+#include "boost/bimap.hpp"
 
 #define boost_foreach    BOOST_FOREACH
+
+#include "viewer_api.h"
 
 #include "uieventsids.h"
 

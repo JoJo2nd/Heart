@@ -79,6 +79,7 @@ private:
     //Events
     DECLARE_EVENT_TABLE();
     void            evtOpen(wxCommandEvent& evt);
+    void            evtSave(wxCommandEvent& evt);
     void            evtShowConsole(wxCommandEvent& evt);
     void            evtOnPaneClose(wxAuiManagerEvent& evt);
     void            evtClose(wxCloseEvent& evt);
@@ -88,8 +89,10 @@ private:
     wxFileHistory           fileHistory_;
     RenderTimer             timer_;
     Heart::hHeartEngine*    heart_;
+    boost::filesystem::path dataPath_;
     ConnectionVectorType    connnections_;
     SavedPaneInfo           paneSavedLayouts_;
+    vPackageSystem          packageSystem_;
 };
 
 //////////////////////////////////////////////////////////////////////////
