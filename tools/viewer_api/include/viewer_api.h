@@ -33,5 +33,7 @@
 #include "viewer_api_config.h"
 
 #include "package_system.h"
+#include "action_stack.h"
+#include "module.h"
 
 #endif // VIEWER_API_H__

@@ -87,7 +87,7 @@ solution (SlnName)
         links {myPlatformLibs}
         libdirs {myLibDirs}
         flags {"WinMain","Unicode"}
-        buildoptions { "-Zm116" } -- needs at least Zm116 or boost pops it
+        buildoptions { "-Zm200" } -- needs at least Zm127 or boost pops it
         --prebuildcommands "cd ../../../../deploy_scripts\ncall deploy_game_libs_to_tools_bin.bat"
 
         configuration (DebugCfgName)

@@ -28,10 +28,6 @@
 #include "precompiled.h"
 #include "consolelog.h"
 
-extern boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
-extern boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
-extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -127,4 +123,21 @@ void ConsoleLog::evtConsoleSubmit(wxCommandEvent& event)
 void ConsoleLog::evtResize(wxSizeEvent& evt)
 {
     evt.Skip();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ConsoleLog::logString(const char* channel, const char* msg, ...)
+{
+    char buffer1[2046],buffer2[4096];
+
+    va_list marker;
+    va_start(marker, msg );
+    vsnprintf_s(buffer1, 2046, msg, marker);
+
+    _snprintf(buffer2, 4096, "[%s] %s\n", channel, buffer1);
+    evt_consoleOutputSignal(buffer2);
+    va_end( marker );
 }

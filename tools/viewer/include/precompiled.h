@@ -67,4 +67,9 @@
 
 typedef unsigned int uint;
 
+extern boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
+extern boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
+extern boost::signals2::signal< void () > evt_mainWindowCreate;
+extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
+
 #endif // PRECOMPILED_H__

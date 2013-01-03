@@ -30,11 +30,6 @@
 #include "viewermain.h"
 #include "consolelog.h"
 
-extern boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
-extern boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
-extern boost::signals2::signal< void () > evt_mainWindowCreate;
-extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
-
 IMPLEMENT_APP(ViewerApp);
 
 //////////////////////////////////////////////////////////////////////////
@@ -47,7 +42,7 @@ bool ViewerApp::OnInit()
 
     wxInitAllImageHandlers();
 
-    ViewerMainFrame* frame = new ViewerMainFrame(heartPath_);
+    ViewerMainFrame* frame = new ViewerMainFrame(heartPath_, pluginPaths_);
     frame->Show();
     SetTopWindow(frame);
 
@@ -135,11 +130,11 @@ ViewerMainFrame::~ViewerMainFrame()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ViewerMainFrame::initFrame(const wxString& heartpath)
+void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& pluginPaths)
 {
     auiManager_ = new wxAuiManager(this, wxAUI_MGR_DEFAULT | wxAUI_MGR_TRANSPARENT_DRAG);
 
-    wxMenuBar* menubar = new wxMenuBar();
+    menuBar_ = new wxMenuBar();
 
     wxMenu* filemenu = new wxMenu();
     filemenu->Append(wxID_OPEN, "&Open");
@@ -147,9 +142,9 @@ void ViewerMainFrame::initFrame(const wxString& heartpath)
     filemenu->AppendSeparator();
     filemenu->Append(cuiID_SHOWCONSOLE, "Show &Console");
 
-    menubar->Append(filemenu, "&File");
+    menuBar_->Append(filemenu, "&File");
 
-    SetMenuBar(menubar);
+    SetMenuBar(menuBar_);
 
     wxPanel* renderFrame = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(1280, 720));
 
@@ -184,6 +179,8 @@ void ViewerMainFrame::initFrame(const wxString& heartpath)
     timer_.start(heart_);
 
     packageSystem_.initialiseSystem(dataPath_.c_str());
+
+    moduleSystem_.initialiseAndLoadPlugins(auiManager_, menuBar_, pluginPaths.ToStdString());
 }
 
 //////////////////////////////////////////////////////////////////////////

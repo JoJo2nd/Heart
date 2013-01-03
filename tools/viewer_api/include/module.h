@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   module.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 3:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,55 @@
     distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef MODULE_H__
+#define MODULE_H__
 
-class ConsoleLog : public wxPanel
+#include <exception>
+
+namespace Heart
 {
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
+class hHeartEngine;
+}
 
-    static void logString(const char* channel, const char* msg, ...);
+class vActionStack;
+class wxAuiManager;
+class wxMenuBar;
 
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+struct vModuleInitStruct 
+{
+    wxAuiManager* aui;
+    wxMenuBar*    menu;
+    vActionStack*  actionStack;
 };
 
-#endif // CONSOLELOG_H__
+class vModuleException : public std::exception
+{
+public:
+    explicit vModuleException(const char* msg)
+        : what_(msg)
+    {
+    }
+    const char* what() const {return what_;}
+private:
+    const char* what_;
+};
+
+class vModuleBase
+{
+public:
+    virtual ~vModuleBase() {}
+    virtual const char*  getModuleName() const = 0;
+    virtual void initialise(const vModuleInitStruct& initdata) = 0;
+    virtual void destroy() = 0;
+    virtual void activate() = 0;
+    virtual void constantUpdate() = 0;
+    virtual void activeUpdate() = 0;
+    virtual void engineUpdate(Heart::hHeartEngine*) = 0;
+    virtual void engineRender(Heart::hHeartEngine*) = 0;
+    virtual void deactvate() = 0;
+};
+
+#endif // MODULE_H__
