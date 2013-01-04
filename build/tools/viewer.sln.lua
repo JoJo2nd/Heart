@@ -17,6 +17,8 @@ DebugDir="../../bin/game"
 -- link against the game version of libs
 HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
 
+debugArgsStr="-p \"../tools/plugin/$config;./plugin/$config;../tools/viewer_plugins/$config;viewer_plugins/$config\""
+
 myIncludeDirs = {
     {HeartIncludeDirs},
     {wxWidgetsIncludeDirs},
@@ -93,6 +95,7 @@ solution (SlnName)
         configuration (DebugCfgName)
             targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}))
             defines {myDebugDefines}
+            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=DebugCfgName}))
             flags {myDebugOptions}
             libdirs(HeartLibDir..DebugCfgName)
             links {myLibsDebug}
@@ -103,6 +106,7 @@ solution (SlnName)
         configuration (ReleaseCfgName)
             targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}))
             defines {myReleaseDefines}
+            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=ReleaseCfgName}))
             flags {myReleaseOptions}
             libdirs(HeartLibDir..ReleaseCfgName)
             links {myLibsRelease}
@@ -112,3 +116,4 @@ solution (SlnName)
             }
     
     dofile "viewer_api.proj.lua"
+    dofile "viewer_texture_plugin.proj.lua"

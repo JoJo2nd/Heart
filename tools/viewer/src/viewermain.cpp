@@ -180,7 +180,7 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 
     packageSystem_.initialiseSystem(dataPath_.c_str());
 
-    moduleSystem_.initialiseAndLoadPlugins(auiManager_, menuBar_, pluginPaths.ToStdString());
+    moduleSystem_.initialiseAndLoadPlugins(auiManager_, this, menuBar_, pluginPaths.ToStdString());
 }
 
 //////////////////////////////////////////////////////////////////////////

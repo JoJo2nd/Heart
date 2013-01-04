@@ -50,7 +50,7 @@ ModuleSystem::~ModuleSystem()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModuleSystem::initialiseAndLoadPlugins(wxAuiManager* auiManager, wxMenuBar* menubar,const std::string& pluginPaths)
+void ModuleSystem::initialiseAndLoadPlugins(wxAuiManager* auiManager, wxWindow* parentWnd, wxMenuBar* menubar,const std::string& pluginPaths)
 {
     std::string str=pluginPaths;
     size_t marker;
@@ -97,6 +97,7 @@ void ModuleSystem::initialiseAndLoadPlugins(wxAuiManager* auiManager, wxMenuBar*
     vModuleInitStruct initData;
     initData.aui = auiManager;
     initData.menu = menubar;
+    initData.parent = parentWnd;
     for (size_t i=0,c=loadedPlugIns_.size(); i<c; ++i) {
         loadedPlugIns_[i].module_ = loadedPlugIns_[i].entryProc_();
         loadedPlugIns_[i].actionStack_=new vActionStack();

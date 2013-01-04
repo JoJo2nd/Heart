@@ -38,14 +38,19 @@ class hHeartEngine;
 }
 
 class vActionStack;
+class wxWindow;
 class wxAuiManager;
 class wxMenuBar;
 
+typedef void (VAPI_API* vDebugStringOutputProc)(const char* msg, ...);
+
 struct vModuleInitStruct 
 {
-    wxAuiManager* aui;
-    wxMenuBar*    menu;
-    vActionStack*  actionStack;
+    vDebugStringOutputProc  debugOutput;
+    wxAuiManager*           aui;
+    wxMenuBar*              menu;
+    vActionStack*           actionStack;
+    wxWindow*               parent;
 };
 
 class vModuleException : public std::exception

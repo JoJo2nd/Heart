@@ -47,14 +47,14 @@ public:
     ModuleSystem();
     ~ModuleSystem();
 
-    void initialiseAndLoadPlugins(wxAuiManager* auiManager, wxMenuBar* menubar,const std::string& pluginPaths);
+    void initialiseAndLoadPlugins(wxAuiManager* auiManager, wxWindow* parentWnd, wxMenuBar* menubar,const std::string& pluginPaths);
     void getModuleList(std::vector< ModuleDesc >* outarray) const;
     void switchToModule();
     boost::shared_ptr< vModuleBase > getActiveModule() const;
 
 private:
 
-    typedef vModuleBase* (*PlugInEntryProc)();
+    typedef vModuleBase* (VAPI_API *PlugInEntryProc)();
     struct LoadedModuleInfo 
     {
         HMODULE         loadedLib_;
