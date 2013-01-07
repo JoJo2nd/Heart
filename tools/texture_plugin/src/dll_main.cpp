@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   dll_main.cpp  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 3:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,13 @@
     distribution.
 
 *********************************************************************/
-#pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#include "plugin_defines.h"
+#include "texture_module.h"
+#include <stdlib.h>
 
-class ConsoleLog : public wxPanel
+extern "C" PLUGIN_EXPORT
+vModuleBase* VAPI_API viewer_plugin_factory_create()
 {
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
-
-    static void logString(const char* channel, const char* msg, ...);
-
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
-};
-
-#endif // CONSOLELOG_H__
+    return new TextureModule();
+}

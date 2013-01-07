@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   texture_module.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 4:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -26,37 +26,40 @@
 *********************************************************************/
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef TEXTURE_MODULE_H__
+#define TEXTURE_MODULE_H__
 
-class ConsoleLog : public wxPanel
+#include "plugin_defines.h"
+#include "texture_database.h"
+#include "viewer_api.h"
+#include "wx/event.h"
+
+class TextureManagementWindow;
+
+class TextureModule : public vModuleBase
 {
 public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
-
-    static void logString(const char* channel, const char* msg, ...);
+    TextureModule() {}
+    ~TextureModule() {}
+    const char*  getModuleName() const { return PLUGIN_NAME; }
+    void initialise(const vModuleInitStruct& initdata);
+    void destroy();
+    void activate();
+    void constantUpdate();
+    void activeUpdate();
+    void engineUpdate(Heart::hHeartEngine*);
+    void engineRender(Heart::hHeartEngine*);
+    void deactvate();
 
 private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
+    void evtShowTexManagement(wxCommandEvent& evt);
 
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+    wxAuiManager*           aui_;
+    vActionStack*           actionStack_;
+    wxWindow*               parent_;
+    vMenuIDProvider*        menuIDProvider_;
+    TextureDatabase*        textureDatabase_;
+    TextureManagementWindow* texManagerWnd_;
 };
 
-#endif // CONSOLELOG_H__
+#endif // TEXTURE_MODULE_H__

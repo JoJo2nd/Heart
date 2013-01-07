@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   action_stack.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 3:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,34 @@
     distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef ACTION_STACK_H__
+#define ACTION_STACK_H__
 
-class ConsoleLog : public wxPanel
+#include "viewer_api_config.h"
+
+class vAction
 {
 public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
-
-    static void logString(const char* channel, const char* msg, ...);
-
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+    virtual ~vAction();
+    virtual bool    canUndoRedo() = 0;
+    virtual void    doAction() = 0;
+    virtual void    undoAction() = 0;
 };
 
-#endif // CONSOLELOG_H__
+class VAPI_EXPORT vActionStack
+{
+    VAPI_PIMPL(vActionStack);
+public:
+    vActionStack();
+    ~vActionStack();
+    size_t  getRedoStackSize() const;
+    size_t  getUndoStackSize() const;
+    void    pushAction(vAction* act);
+    void    undoAction();
+    void    redoAction();
+};
+
+#endif // ACTION_STACK_H__

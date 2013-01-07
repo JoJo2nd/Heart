@@ -13,14 +13,17 @@ SlnOutput = "built_projects/".._ACTION.."/tools/"..SlnName.."/"
 SlnDir = "../" .. SlnOutput
 ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
-DebugDir="../../bin/"..BinType
+DebugDir="../../bin/game"
 -- link against the game version of libs
 HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
+
+debugArgsStr="-p \"../tools/plugin/$config;./plugin/$config;../tools/viewer_plugins/$config;viewer_plugins/$config\""
 
 myIncludeDirs = {
     {HeartIncludeDirs},
     {wxWidgetsIncludeDirs},
     "../../tools/viewer/include",
+    "../../tools/viewer_api/include",
     "../../external/boost/",
     }
 myLibDirs = {
@@ -51,6 +54,7 @@ myReleaseOptions={
 
 myPlatformLibs={
     {PlatformLibs},
+    "viewer_api"
 }
 myLibsDebug={
     {appendSuffixToTableEntries(HeartLibsDebug, DebugSuffix)},
@@ -85,12 +89,13 @@ solution (SlnName)
         links {myPlatformLibs}
         libdirs {myLibDirs}
         flags {"WinMain","Unicode"}
-        buildoptions { "-Zm116" } -- needs at least Zm116 or boost pops it
+        buildoptions { "-Zm200" } -- needs at least Zm127 or boost pops it
         --prebuildcommands "cd ../../../../deploy_scripts\ncall deploy_game_libs_to_tools_bin.bat"
 
         configuration (DebugCfgName)
             targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}))
             defines {myDebugDefines}
+            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=DebugCfgName}))
             flags {myDebugOptions}
             libdirs(HeartLibDir..DebugCfgName)
             links {myLibsDebug}
@@ -101,6 +106,7 @@ solution (SlnName)
         configuration (ReleaseCfgName)
             targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}))
             defines {myReleaseDefines}
+            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=ReleaseCfgName}))
             flags {myReleaseOptions}
             libdirs(HeartLibDir..ReleaseCfgName)
             links {myLibsRelease}
@@ -108,4 +114,6 @@ solution (SlnName)
             postbuildcommands {
                 "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
             }
-
+    
+    dofile "viewer_api.proj.lua"
+    dofile "viewer_texture_plugin.proj.lua"

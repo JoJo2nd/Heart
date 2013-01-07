@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   viewer_config.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 31:12:2012 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -26,37 +26,29 @@
 *********************************************************************/
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef VIEWER_CONFIG_H__
+#define VIEWER_CONFIG_H__
 
-class ConsoleLog : public wxPanel
-{
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
+#ifdef VAPI_COMPILE_DLL
+#   define VAPI_EXPORT __declspec(dllexport)
+#else
+#   define VAPI_EXPORT __declspec(dllimport)
+#endif
 
-    static void logString(const char* channel, const char* msg, ...);
+#define VAPI_API   __cdecl
 
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
+#define VAPI_PIMPL(klass) \
+    public: \
+        class vImpl; \
+        vImpl*   impl_; \
+    private: \
+        klass(const klass& rhs); \
+        klass& operator = (const klass& rhs)
 
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
+#ifdef VAPI_COMPILE_DLL
+#   define VAPI_PRIVATE_HEADER()
+#else
+#   define VAPI_PRIVATE_HEADER() char* err_CannotIncludeOutsideOfLibrary[0]
+#endif
 
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
-};
-
-#endif // CONSOLELOG_H__
+#endif // VIEWER_CONFIG_H__

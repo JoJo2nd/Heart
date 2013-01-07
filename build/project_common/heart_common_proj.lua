@@ -48,7 +48,7 @@ DebugOptions={"Symbols","NoMinimalRebuild"}
 ReleaseDefines={"NDEBUG","RELEASE"}
 ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild","Symbols"}
 --ReleaseOptions={"Symbols"}
-
+    
 LibDirs={
     "../../external/openal/libs/Win32",
     os.getenv("DXSDK_DIR").."/Lib/x86"}

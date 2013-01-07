@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #pragma once
+#include "modulesystem.h"
 
 #ifndef VIEWERMAIN_H__
 #define VIEWERMAIN_H__
@@ -58,11 +59,11 @@ private:
 class ViewerMainFrame : public wxFrame
 {
 public:
-    ViewerMainFrame(const wxString& heartpath)
+    ViewerMainFrame(const wxString& heartpath, const wxString& pluginPaths)
         : wxFrame(NULL, wxID_ANY, "Heart Viewer", wxDefaultPosition, wxSize(1280, 720))
         , fileConfig_("Viewer", "", "viewer.cfg", "viewer.cfg")
     {
-        initFrame(heartpath);
+        initFrame(heartpath, pluginPaths);
     }
     ~ViewerMainFrame();
 
@@ -73,12 +74,13 @@ private:
 
     static void consoleMsgCallback(const hChar* msg, void*);
     void consoleInput(const hChar* msg);
-    void initFrame(const wxString& heartpath);
+    void initFrame(const wxString& heartpath, const wxString& pluginPaths);
     void dockPaneRegister(wxWindow* pane, const wxString&, const wxAuiPaneInfo&);
 
     //Events
     DECLARE_EVENT_TABLE();
     void            evtOpen(wxCommandEvent& evt);
+    void            evtSave(wxCommandEvent& evt);
     void            evtShowConsole(wxCommandEvent& evt);
     void            evtOnPaneClose(wxAuiManagerEvent& evt);
     void            evtClose(wxCloseEvent& evt);
@@ -86,10 +88,14 @@ private:
     wxAuiManager*           auiManager_;
     wxFileConfig            fileConfig_;
     wxFileHistory           fileHistory_;
+    wxMenuBar*              menuBar_;
     RenderTimer             timer_;
     Heart::hHeartEngine*    heart_;
+    boost::filesystem::path dataPath_;
     ConnectionVectorType    connnections_;
     SavedPaneInfo           paneSavedLayouts_;
+    ModuleSystem            moduleSystem_;
+    vPackageSystem          packageSystem_;
 };
 
 //////////////////////////////////////////////////////////////////////////

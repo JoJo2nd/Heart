@@ -30,11 +30,6 @@
 #include "viewermain.h"
 #include "consolelog.h"
 
-extern boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
-extern boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
-extern boost::signals2::signal< void () > evt_mainWindowCreate;
-extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
-
 IMPLEMENT_APP(ViewerApp);
 
 //////////////////////////////////////////////////////////////////////////
@@ -47,7 +42,7 @@ bool ViewerApp::OnInit()
 
     wxInitAllImageHandlers();
 
-    ViewerMainFrame* frame = new ViewerMainFrame(heartPath_);
+    ViewerMainFrame* frame = new ViewerMainFrame(heartPath_, pluginPaths_);
     frame->Show();
     SetTopWindow(frame);
 
@@ -112,6 +107,7 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 
 BEGIN_EVENT_TABLE(ViewerMainFrame, wxFrame)
     EVT_MENU(wxID_OPEN, ViewerMainFrame::evtOpen)
+    EVT_MENU(wxID_SAVE, ViewerMainFrame::evtSave)
     EVT_MENU(cuiID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
     EVT_AUI_PANE_CLOSE(ViewerMainFrame::evtOnPaneClose)
     EVT_CLOSE(ViewerMainFrame::evtClose)
@@ -134,22 +130,21 @@ ViewerMainFrame::~ViewerMainFrame()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ViewerMainFrame::initFrame(const wxString& heartpath)
+void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& pluginPaths)
 {
     auiManager_ = new wxAuiManager(this, wxAUI_MGR_DEFAULT | wxAUI_MGR_TRANSPARENT_DRAG);
 
-    wxMenuBar* menubar = new wxMenuBar();
+    menuBar_ = new wxMenuBar();
 
     wxMenu* filemenu = new wxMenu();
     filemenu->Append(wxID_OPEN, "&Open");
-    filemenu->Append(wxID_SAVE, "&Save");
-    filemenu->Append(wxID_SAVEAS, "Save &As");
+    filemenu->Append(wxID_SAVE, "&Save Packages");
     filemenu->AppendSeparator();
     filemenu->Append(cuiID_SHOWCONSOLE, "Show &Console");
 
-    menubar->Append(filemenu, "&File");
+    menuBar_->Append(filemenu, "&File");
 
-    SetMenuBar(menubar);
+    SetMenuBar(menuBar_);
 
     wxPanel* renderFrame = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(1280, 720));
 
@@ -172,12 +167,26 @@ void ViewerMainFrame::initFrame(const wxString& heartpath)
     callbacks.overrideFileRoot_ = NULL; 
     if (heartpath.length()>0) {
         callbacks.overrideFileRoot_ = heartpath.c_str();
+        dataPath_ = heartpath.ToStdWstring();
+    }
+    else {
+        dataPath_ = boost::filesystem::current_path();
     }
     callbacks.consoleCallback_ = &ViewerMainFrame::consoleMsgCallback;
     callbacks.consoleCallbackUser_ = this;
     heart_ = hHeartInitEngine(&callbacks, wxGetInstance(), renderFrame->GetHWND());
 
     timer_.start(heart_);
+
+    packageSystem_.initialiseSystem(dataPath_.c_str());
+
+    moduleSystem_.initialiseAndLoadPlugins(
+        auiManager_, 
+        this, 
+        menuBar_, 
+        &packageSystem_, 
+        pluginPaths.ToStdString(),
+        boost::filesystem::path(dataPath_.c_str()));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -258,6 +267,20 @@ void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
 
     // update view
     auiManager_->Update();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::evtSave(wxCommandEvent& evt)
+{
+    wxString msgstr;
+    msgstr.Printf("This will write package information to directory %s.\n Is this ok?", dataPath_.c_str());
+    wxMessageDialog msg(this, msgstr, "Are You Sure?", wxYES_NO);
+    if (msg.ShowModal() == wxID_YES) { 
+        packageSystem_.serialise();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////

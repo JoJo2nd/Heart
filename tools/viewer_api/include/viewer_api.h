@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   viewer_api.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 31:12:2012 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,16 @@
     distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef VIEWER_API_H__
+#define VIEWER_API_H__
 
-class ConsoleLog : public wxPanel
-{
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
+#include "viewer_api_config.h"
 
-    static void logString(const char* channel, const char* msg, ...);
+#include "package_system.h"
+#include "action_stack.h"
+#include "module.h"
 
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
-};
-
-#endif // CONSOLELOG_H__
+#endif // VIEWER_API_H__

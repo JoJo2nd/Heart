@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   menuidprovider.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 4:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,39 +24,40 @@
     distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef MENUIDPROVIDER_H__
+#define MENUIDPROVIDER_H__
 
-class ConsoleLog : public wxPanel
+class MenuIDProvider : public vMenuIDProvider
 {
 public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
+    unsigned int aquireMenuID(unsigned int id)
     {
-        initFrame();
+        if (allocatedIDs_.size() <= id) {
+            allocatedIDs_.resize(id+1);
+        }
+        allocatedIDs_[id]=getUniqueMenuID();
+        return allocatedIDs_[id];
     }
-    ~ConsoleLog();
-
-    static void logString(const char* channel, const char* msg, ...);
+    unsigned int getMenuID(unsigned int id)
+    {
+        return allocatedIDs_[id];
+    }
 
 private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
 
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
+    static uint getUniqueMenuID()
+    {
+        static uint s_currentID=0;
+        ++s_currentID;
+        return cuiID_MAX+s_currentID;
+    }
 
-    DECLARE_EVENT_TABLE();
+    typedef std::vector< uint > IDLookArrayType;
 
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+    IDLookArrayType allocatedIDs_;
 };
 
-#endif // CONSOLELOG_H__
+#endif // MENUIDPROVIDER_H__

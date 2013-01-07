@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   status_codes.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 31:12:2012 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -26,37 +26,21 @@
 *********************************************************************/
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef STATUS_CODES_H__
+#define STATUS_CODES_H__
 
-class ConsoleLog : public wxPanel
+enum vErrorCode
 {
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
-
-    static void logString(const char* channel, const char* msg, ...);
-
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+    vOK_ALREADY_ADDED           = 1,
+    vOK                         = 0,
+    vERROR_ALREADY_CREATED      = -1,
+    vERROR_CREATES_CYCLIC_REF   = -2,
+    vERROR_HAS_DEPENDANTS       = -3,
+    vERROR_NOT_FOUND            = -4,
+    vERROR_DUPLICATE_RESORUCE_FOUND = -5,
+    vERROR_DEP_PKG_NOT_FOUND    = -6,
+    vERROR_DEP_ASSET_NOT_FOUND  = -7, 
+    vERROR_FILE_IO              = -8,
 };
 
-#endif // CONSOLELOG_H__
+#endif // STATUS_CODES_H__

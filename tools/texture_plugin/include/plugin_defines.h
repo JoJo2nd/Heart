@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   consolelog.h  
+    filename:   plugin_defines.h  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 4:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -26,37 +26,29 @@
 *********************************************************************/
 #pragma once
 
-#ifndef CONSOLELOG_H__
-#define CONSOLELOG_H__
+#ifndef PLUGIN_DEFINES_H__
+#define PLUGIN_DEFINES_H__
 
-class ConsoleLog : public wxPanel
+#ifdef PLUGIN_COMPILE_DLL
+#   define PLUGIN_EXPORT __declspec(dllexport)
+#else
+#   define PLUGIN_EXPORT __declspec(dllimport)
+#endif
+
+#define PLUGIN_NAME ("Texture Plugin")
+
+enum TextureModuleMenuID
 {
-public:
-    ConsoleLog(wxWindow* parent) 
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400))
-    {
-        initFrame();
-    }
-    ~ConsoleLog();
+    MENUID_SHOW_TEXTURE_MANAGEMENT,
+    MENUID_SAVE_TEXTURE_DB,
+    MENUID_ADD_DELETE_TEXTURES,
+    MENUID_COMPRESS_TEXTURES,
+    MENUID_TEXTURE_SELECT,
+    MENUID_CONVERT,
+    MENUID_APPLY_TEXTURESETTINGS,
+    MENUID_BUILD_SINGLE,
 
-    static void logString(const char* channel, const char* msg, ...);
-
-private:
-    void            consoleOutputString(const hChar* msg);
-    void            initFrame();
-
-    void            evtConsoleSubmit(wxCommandEvent& event);
-    void            evtResize(wxSizeEvent& evt);
-
-    DECLARE_EVENT_TABLE();
-
-    wxTextCtrl*         logTextCtrl_;
-    wxTextCtrl*         inputCtrl_;
-    wxButton*           submitButton_;
-    wxFlexGridSizer*    mainSizer_;
-    wxFlexGridSizer*    lowerSizer_;
-    boost::signals2::connection outputConn_;
-    wxSize              goodSize_;
+    MENUID_MAX
 };
 
-#endif // CONSOLELOG_H__
+#endif // PLUGIN_DEFINES_H__
