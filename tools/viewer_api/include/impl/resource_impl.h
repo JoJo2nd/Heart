@@ -84,12 +84,13 @@ public:
     //Non-public interface
     vErrorCode          addAsDependent(boost::shared_ptr< vResource > dep);
     void                serialise(xml_doc* doc, rapidxml::xml_node<>* node, const vPackageSystem& pkgsys) const;
-
+    const char* getInputFilePath();
     vPackage::vImpl*             pkg_;
     std::string                  resName_;
     vResourceTypeID              resType_;
     std::string                  fullAssetPath_;
     std::string                  relativeInputPathStr_;
+    std::string                  absoluteInputPathStr_;
     boost::filesystem::path      absoluteInputPath_;
     boost::filesystem::path      relativeInputPath_;
     DependencyTableType          dependencies_;

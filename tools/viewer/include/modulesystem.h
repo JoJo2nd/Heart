@@ -35,6 +35,8 @@
 #include <string>
 #include <vector>
 
+class MenuIDProvider;
+
 struct ModuleDesc
 {
     std::string name;
@@ -47,7 +49,13 @@ public:
     ModuleSystem();
     ~ModuleSystem();
 
-    void initialiseAndLoadPlugins(wxAuiManager* auiManager, wxWindow* parentWnd, wxMenuBar* menubar,const std::string& pluginPaths);
+    void initialiseAndLoadPlugins(
+        wxAuiManager* auiManager, 
+        wxWindow* parentWnd, 
+        wxMenuBar* menubar, 
+        vPackageSystem* pkgsys, 
+        const std::string& pluginPaths, 
+        boost::filesystem::path& databasePath);
     void getModuleList(std::vector< ModuleDesc >* outarray) const;
     void switchToModule();
     boost::shared_ptr< vModuleBase > getActiveModule() const;
@@ -61,6 +69,8 @@ private:
         PlugInEntryProc entryProc_;
         vModuleBase*    module_;
         vActionStack*   actionStack_;
+        MenuIDProvider* menuIDProvider_;
+        std::string     dataPath_;
     };
     typedef std::vector< boost::filesystem::path > PathVectorType;
     typedef std::vector< LoadedModuleInfo > ModuleVectorType;

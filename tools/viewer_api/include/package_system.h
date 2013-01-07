@@ -31,6 +31,7 @@ distribution.
 
 #include "viewer_api_config.h"
 #include "status_codes.h"
+#include <vector>
 
 class vPackage;
 class vPackageLink;
@@ -50,8 +51,10 @@ public:
     size_t          getPackageCount() const;
     vPackage*       getPackage(size_t) const;
     vPackage*       getPackage(const char*) const;
-    vResourceTypeID  registerType(const char* ext);
+    vResourceTypeID registerType(const char* ext);
+    vResourceTypeID getTypeID(const char* ext);
     const char*     getTypeExt(vResourceTypeID type) const;
+    void            getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray) const;
 };
 
 class VAPI_EXPORT vPackage 
@@ -69,6 +72,7 @@ public:
     vResource*          addResourceInfo(const char* name, vResourceTypeID type);
     vErrorCode          removeResourceInfo(vResource*);
     void                addPackageLink(vResource* res, vResource* linkedRes);
+    void                getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray) const;
 };
 
 class VAPI_EXPORT vResource
@@ -90,6 +94,7 @@ public:
     void                removeParameter(const vResourceParameter&);
     void                removeParameter(const char*);
     void                setInputFilePath(const char* filepath);
+    const char*         getInputFilePath() const;
 };
 
 class VAPI_EXPORT vResourceParameter

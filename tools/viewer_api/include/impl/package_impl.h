@@ -59,7 +59,7 @@ public:
     vErrorCode                      resolveResourceLinks(vPackageSystem* pkgSys);
     vErrorCode                      serialise(const vPackageSystem& pkgsys) const;
     const boost::filesystem::path&  getPackagePath() const { return packagePath_; }
-
+    void getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray);
 private:
 
     std::string             name_;

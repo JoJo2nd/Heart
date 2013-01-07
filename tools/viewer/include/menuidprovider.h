@@ -1,6 +1,6 @@
 /********************************************************************
 
-    filename:   texture_module.h  
+    filename:   menuidprovider.h  
     
     Copyright (c) 4:1:2013 James Moran
     
@@ -24,42 +24,40 @@
     distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef TEXTURE_MODULE_H__
-#define TEXTURE_MODULE_H__
+#ifndef MENUIDPROVIDER_H__
+#define MENUIDPROVIDER_H__
 
-#include "plugin_defines.h"
-#include "texture_database.h"
-#include "viewer_api.h"
-#include "wx/event.h"
-
-class TextureManagementWindow;
-
-class TextureModule : public vModuleBase
+class MenuIDProvider : public vMenuIDProvider
 {
 public:
-    TextureModule() {}
-    ~TextureModule() {}
-    const char*  getModuleName() const { return PLUGIN_NAME; }
-    void initialise(const vModuleInitStruct& initdata);
-    void destroy();
-    void activate();
-    void constantUpdate();
-    void activeUpdate();
-    void engineUpdate(Heart::hHeartEngine*);
-    void engineRender(Heart::hHeartEngine*);
-    void deactvate();
+    unsigned int aquireMenuID(unsigned int id)
+    {
+        if (allocatedIDs_.size() <= id) {
+            allocatedIDs_.resize(id+1);
+        }
+        allocatedIDs_[id]=getUniqueMenuID();
+        return allocatedIDs_[id];
+    }
+    unsigned int getMenuID(unsigned int id)
+    {
+        return allocatedIDs_[id];
+    }
 
 private:
-    void evtShowTexManagement(wxCommandEvent& evt);
 
-    wxAuiManager*           aui_;
-    vActionStack*           actionStack_;
-    wxWindow*               parent_;
-    vMenuIDProvider*        menuIDProvider_;
-    TextureDatabase*        textureDatabase_;
-    TextureManagementWindow* texManagerWnd_;
+    static uint getUniqueMenuID()
+    {
+        static uint s_currentID=0;
+        ++s_currentID;
+        return cuiID_MAX+s_currentID;
+    }
+
+    typedef std::vector< uint > IDLookArrayType;
+
+    IDLookArrayType allocatedIDs_;
 };
 
-#endif // TEXTURE_MODULE_H__
+#endif // MENUIDPROVIDER_H__

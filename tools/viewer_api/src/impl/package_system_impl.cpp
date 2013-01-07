@@ -119,3 +119,26 @@ const char* vPackageSystem::vImpl::getTypeExt(vResourceTypeID type)
 {
     return resourceTypes_[type].c_str();
 }
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+vResourceTypeID vPackageSystem::vImpl::getTypeID(const char* ext)
+{
+    assert(strlen(ext) == 3);
+    if (strlen(ext) != 3) return 0;
+    boost::crc_32_type crc;
+    crc.process_block(ext, ext+3);
+    if (resourceTypes_.find(crc.checksum()) == resourceTypes_.end()) return 0;
+    return crc.checksum();
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void vPackageSystem::vImpl::getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray)
+{
+    for(PackageMapType::const_iterator itr=packages_.begin(),c=packages_.end(); itr!=c; ++itr) {
+        itr->second->getResourcesOfType(type, outarray);
+    }
+}

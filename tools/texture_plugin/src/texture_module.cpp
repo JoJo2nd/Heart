@@ -27,9 +27,11 @@
 
 #include "plugin_defines.h"
 #include "texture_module.h"
+#include "texture_management_window.h"
 #include "wx/menu.h"
 #include "wx/msgdlg.h"
 #include "wx/aui/aui.h"
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -37,28 +39,44 @@
 
 void TextureModule::initialise(const vModuleInitStruct& initdata)
 {
-    //test
-    wxMenu* menu = new wxMenu();
-    menu->Append(wxID_HIGHEST+3, "Test Item 1");
-    menu->Append(wxID_HIGHEST+4, "Test Item 2");
+    menuIDProvider_ = initdata.menuIDProvider;
+    aui_ = initdata.aui;
+    actionStack_ = initdata.actionStack;
+    parent_ = initdata.parent;
 
-    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, &TextureModule::evtTest1, this, wxID_HIGHEST+3);
-    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, &TextureModule::evtTest2, this, wxID_HIGHEST+4);
+    textureDatabase_=new TextureDatabase(initdata.pgkSystem);
+
+    wxMenu* menu = new wxMenu();
+    menu->Append(menuIDProvider_->aquireMenuID(MENUID_SHOW_TEXTURE_MANAGEMENT), "Show Texture Management");
+
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, &TextureModule::evtShowTexManagement, this, menuIDProvider_->getMenuID(MENUID_SHOW_TEXTURE_MANAGEMENT));
 
     initdata.menu->Append(menu, "Texture Manager");
 
-    wxPanel* paneltest = new wxPanel(initdata.parent, wxID_ANY, wxDefaultPosition, wxSize(400, 400));
-    wxAuiPaneInfo paneinfo;
-    paneinfo.Name("Test Texture Window");
-    paneinfo.Caption("Test Texture Window");
-    paneinfo.Float();
-    paneinfo.Floatable(true);
-    paneinfo.CloseButton(true);
-    paneinfo.MaximizeButton(true);
-    paneinfo.MinimizeButton(true);
-    paneinfo.CaptionVisible(true);
-    paneinfo.MinSize(400, 400);
-    initdata.aui->AddPane(paneltest, paneinfo);
+    std::string textureDBPath=initdata.dataPath;
+    textureDBPath+="/textures.tdb";
+
+    std::ifstream ofs(textureDBPath);
+    if (ofs.is_open()) {
+        boost::archive::text_iarchive oa(ofs);
+
+        TextureDatabase& tdb = *textureDatabase_;
+        oa >> tdb;
+    }
+
+    texManagerWnd_ = new TextureManagementWindow(
+        parent_, 
+        menuIDProvider_, 
+        menu, 
+        textureDatabase_, 
+        initdata.pgkSystem, 
+        textureDBPath.c_str());
+    initdata.aui->AddPane(texManagerWnd_, TextureManagementWindow::getDefaultAuiPaneInfo());
+
+    initdata.aui->Update();
+
+    textureDatabase_->validateAndConsolidate();
+    texManagerWnd_->updateView(*textureDatabase_);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -127,16 +145,9 @@ void TextureModule::deactvate()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void TextureModule::evtTest1(wxCommandEvent& evt)
+void TextureModule::evtShowTexManagement(wxCommandEvent& evt)
 {
-    wxMessageDialog(NULL, "test 1").ShowModal();
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void TextureModule::evtTest2(wxCommandEvent& evt)
-{
-    wxMessageDialog(NULL, "test 2").ShowModal();
+    wxAuiPaneInfo& info=aui_->GetPane(TextureManagementWindow::getDefaultAuiPaneInfo().name);
+    info.Show(true);
+    aui_->Update();
 }

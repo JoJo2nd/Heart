@@ -38,9 +38,17 @@ class hHeartEngine;
 }
 
 class vActionStack;
+class vPackageSystem;
 class wxWindow;
 class wxAuiManager;
 class wxMenuBar;
+
+class vMenuIDProvider
+{
+public:
+    virtual unsigned int aquireMenuID(unsigned int id) = 0;
+    virtual unsigned int getMenuID(unsigned int id) = 0;
+};
 
 typedef void (VAPI_API* vDebugStringOutputProc)(const char* msg, ...);
 
@@ -51,6 +59,9 @@ struct vModuleInitStruct
     wxMenuBar*              menu;
     vActionStack*           actionStack;
     wxWindow*               parent;
+    vMenuIDProvider*        menuIDProvider;
+    vPackageSystem*         pgkSystem;
+    const char*             dataPath;
 };
 
 class vModuleException : public std::exception

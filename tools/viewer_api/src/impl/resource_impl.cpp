@@ -52,11 +52,18 @@ vResource::vImpl::vImpl(vPackage::vImpl* pkg, const char* resName) : pkg_(pkg)
 void vResource::vImpl::setInputFilePath(const boost::filesystem::path& p)
 {
     absoluteInputPath_ = boost::filesystem::absolute(p, pkg_->getPackagePath());
-    absoluteInputPath_ = boost::filesystem::canonical(absoluteInputPath_);
+    if (boost::filesystem::exists(absoluteInputPath_)) {
+        absoluteInputPath_ = boost::filesystem::canonical(absoluteInputPath_);//dies when path is not there
+    }
     
     wchar_t outputRelPath[MAX_PATH];
     PathRelativePathTo(outputRelPath, pkg_->getPackagePath().c_str(), FILE_ATTRIBUTE_DIRECTORY, absoluteInputPath_.c_str(), FILE_ATTRIBUTE_NORMAL);
-    relativeInputPath_ = outputRelPath;
+    if (wcslen(outputRelPath) == 0) {
+        relativeInputPath_ = absoluteInputPath_;
+    }
+    else {
+        relativeInputPath_ = outputRelPath;
+    }
 
     relativeInputPathStr_ = relativeInputPath_.generic_string();
 }
@@ -188,6 +195,15 @@ void vResource::vImpl::setName(const char* name)
 const char* vResource::vImpl::getFullAssetName() const
 {
     return fullAssetPath_.c_str();
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+const char* vResource::vImpl::getInputFilePath()
+{
+    absoluteInputPathStr_ = absoluteInputPath_.generic_string();
+    return absoluteInputPathStr_.c_str();
 }
 
 //////////////////////////////////////////////////////////////////////////

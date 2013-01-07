@@ -27,6 +27,7 @@
 
 #include "precompiled.h"
 #include "modulesystem.h"
+#include "menuidprovider.h"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -50,7 +51,13 @@ ModuleSystem::~ModuleSystem()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModuleSystem::initialiseAndLoadPlugins(wxAuiManager* auiManager, wxWindow* parentWnd, wxMenuBar* menubar,const std::string& pluginPaths)
+void ModuleSystem::initialiseAndLoadPlugins(
+    wxAuiManager* auiManager, 
+    wxWindow* parentWnd, 
+    wxMenuBar* menubar, 
+    vPackageSystem* pkgsys, 
+    const std::string& pluginPaths, 
+    boost::filesystem::path& databasePath)
 {
     std::string str=pluginPaths;
     size_t marker;
@@ -98,10 +105,17 @@ void ModuleSystem::initialiseAndLoadPlugins(wxAuiManager* auiManager, wxWindow* 
     initData.aui = auiManager;
     initData.menu = menubar;
     initData.parent = parentWnd;
+    initData.pgkSystem = pkgsys;
     for (size_t i=0,c=loadedPlugIns_.size(); i<c; ++i) {
         loadedPlugIns_[i].module_ = loadedPlugIns_[i].entryProc_();
         loadedPlugIns_[i].actionStack_=new vActionStack();
+        loadedPlugIns_[i].menuIDProvider_=new MenuIDProvider();
+        boost::filesystem::path datapath=databasePath/"CONFIG"/loadedPlugIns_[i].module_->getModuleName();
+        loadedPlugIns_[i].dataPath_=datapath.generic_string();
+        boost::filesystem::create_directories(datapath);
         initData.actionStack=loadedPlugIns_[i].actionStack_;
+        initData.menuIDProvider=loadedPlugIns_[i].menuIDProvider_;
+        initData.dataPath=loadedPlugIns_[i].dataPath_.c_str();
         loadedPlugIns_[i].module_->initialise(initData);
     }
 }

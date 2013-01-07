@@ -60,7 +60,8 @@ public:
     vPackage*   getPackage(const char* pkg);
     vResourceTypeID registerType(const char* ext);
     const char*    getTypeExt(vResourceTypeID type);
-
+    vResourceTypeID getTypeID(const char* ext);
+    void getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray);
     vPackageSystem*         interface_;
     boost::filesystem::path dataRoot_;
     PackageMapType          packages_;

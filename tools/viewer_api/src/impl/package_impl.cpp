@@ -278,5 +278,18 @@ vErrorCode vPackage::vImpl::resolveResourceLinks(vPackageSystem* pkgSys)
 
 vResource* vPackage::vImpl::getResourceInfoByName(const char* asset)
 {
-    return resources_[asset].get();
+    if (resources_.find(asset) == resources_.end()) return NULL;
+    else return resources_[asset].get();
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void vPackage::vImpl::getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray)
+{
+    for (ResourceMap::const_iterator i=resources_.begin(),c=resources_.end(); i!=c; ++i) {
+        if (i->second->getType() == type) {
+            outarray->push_back(i->second.get());
+        }
+    }
 }
