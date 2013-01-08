@@ -10,9 +10,20 @@ project "libvorbisfile"
         targetdir (TargetDir..DebugCfgName)
         defines {{DebugDefines}}
         flags {DebugOptions}
-        postbuildcommands {PostBuildStr..project().name..DebugSuffix}
-    configuration (ReleaseCfgName)
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..DebugCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=DebugCfgName,
+        })
+        postbuildcommands(ssub(PostBuildDeployCmd,StrVars))    configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {{ReleaseDefines}}
         flags {ReleaseOptions}
-        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..ReleaseCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=ReleaseCfgName,
+        })
+        postbuildcommands(ssub(PostBuildDeployCmd,StrVars))

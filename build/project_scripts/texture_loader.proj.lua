@@ -5,6 +5,12 @@ elseif os.getenv("VS100COMNTOOLS") ~= nil then
     vsname = "vc10"
 end
 
+texloaderPreBuildCmd=[[
+echo Copying nvtt libs
+cd "$(REPOROOT)build/deploy_scripts"
+call deploy_nvtt.bat "$(BINGAMEROOT)/plugin"
+]]
+
 project "texture_loader"
     location (ProjectDir)
 	debugdir (DebugDir) --only in Premake 4.4
@@ -21,6 +27,7 @@ project "texture_loader"
 	links {PlatformLibs}
     links { "nvtt" }
     links "zlib"
+    postbuildcommands(ssub(texloaderPreBuildCmd, HeartCommonVars))
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
@@ -29,7 +36,13 @@ project "texture_loader"
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..DebugCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=DebugCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
@@ -37,4 +50,10 @@ project "texture_loader"
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..ReleaseCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=ReleaseCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))

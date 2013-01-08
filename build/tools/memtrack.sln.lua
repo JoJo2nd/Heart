@@ -3,24 +3,25 @@ SlnName = "memtrack"
 BinType = "tools"
 DebugSuffix = "_d"
 ReleaseSuffix = "_r"
+heartBuildRoot=os.getenv("HEART_BUILD_ROOT")
+heartRepoRoot=os.getenv("HEART_REPO_ROOT")
+heartBinToolRoot=os.getenv("HEART_BIN_TOOL_ROOT")
+heartBinGameRoot=os.getenv("HEART_BIN_GAME_ROOT")
+heartBinRoot=os.getenv("HEART_BIN_ROOT")
+heartProjectRoot="../project_scripts/"
+heartProjectCommonRoot="../project_common/"
 
-dofile "../project_common/heart_common_proj.lua"
+dofile(heartProjectCommonRoot.."heart_common_proj.lua")
 
-DebugCfgName = "Debug"
-ReleaseCfgName = "Release"
-SlnOutput = "built_projects/".._ACTION.."/tools/"..SlnName.."/"
-SlnDir = "../" .. SlnOutput
-ProjectDir = SlnDir.."../projects/"
-TargetDir = SlnDir.."../lib/"
-DebugDir="../../bin/"..BinType
 IncludeDirs = {
     "../../tools/memtrack/include",
     {wxWidgetsIncludeDirs},
-    "../../external/boost/"}
+    "../../external/boost/"
+}
 LibDirs = {
     {wxWidgetsLibsDirs},
-    "../../external/boost/stage/lib"}
-
+    "../../external/boost/stage/lib"
+}
 PlatformDefines={
     {wxWidgetsDefines},
     "WIN32",
@@ -29,13 +30,21 @@ PlatformDefines={
     "_WINDOWS",
     "_CRT_SECURE_NO_WARNINGS"
 }
-DebugDefines={"_DEBUG","DEBUG"}
-DebugOptions={"Symbols","NoEditAndContinue","NoMinimalRebuild"}
-ReleaseDefines={"NDEBUG","RELEASE"}
-ReleaseOptions={"Optimize","NoEditAndContinue","NoMinimalRebuild"}
---ReleaseOptions={"Symbols"}
-
-PlatformLibs={"dbghelp"}
+DebugDefines={
+    "_DEBUG","DEBUG"
+}
+DebugOptions={
+    "Symbols","NoEditAndContinue","NoMinimalRebuild"
+}
+ReleaseDefines={
+    "NDEBUG","RELEASE"
+}
+ReleaseOptions={
+    "Optimize","NoEditAndContinue","NoMinimalRebuild"
+}
+PlatformLibs={
+    "dbghelp"
+}
 LibsDebug={}
 LibsRelease={}
 
@@ -69,19 +78,22 @@ solution (SlnName)
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)
             defines {DebugDefines}
-            --flags {"Symbols","Optimize"}
             flags {DebugOptions}
-            postbuildcommands {PostBuildStr..project().name..DebugSuffix.." "..project().name}
             postbuildcommands {
-                "call deploy_wxwidgets_libs.bat ud "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}),
+                ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars, {LIBNAME=project().name, TARGETDIR=TargetDir..DebugCfgName, PROJECT=project().name,CONFIG=DebugCfgName}))
+            }
+            postbuildcommands {
+                ssub(DeploywxWidgetsCmd, table.splice(HeartCommonVars, {WXTYPE="ud", PROJECT=project().name,CONFIG=DebugCfgName}))
             }
         configuration (ReleaseCfgName)
             targetdir (TargetDir..ReleaseCfgName)
             defines {ReleaseDefines}
             flags {ReleaseOptions}
-            postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." "..project().name}
             postbuildcommands {
-                "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
+                ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars, {LIBNAME=project().name, TARGETDIR=TargetDir..ReleaseCfgName, PROJECT=project().name,CONFIG=ReleaseCfgName}))
+            }
+            postbuildcommands {
+                ssub(DeploywxWidgetsCmd, table.splice(HeartCommonVars, {WXTYPE="u", PROJECT=project().name,CONFIG=ReleaseCfgName}))
             }
 
 

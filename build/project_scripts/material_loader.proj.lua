@@ -18,11 +18,23 @@ project "material_loader"
         libdirs {TargetDir..DebugCfgName}
         links {HeartLibsDebug}
 		flags {DebugOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..DebugCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=DebugCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         libdirs {TargetDir..ReleaseCfgName}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..ReleaseCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=ReleaseCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))

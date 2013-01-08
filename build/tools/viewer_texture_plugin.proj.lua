@@ -6,9 +6,19 @@ elseif os.getenv("VS100COMNTOOLS") ~= nil then
 end
 
 -- link against the game version of libs
-texpluginHeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
+texpluginHeartLibDir = ssub("$(BUILDROOT)/$ACTION/game/lib/", table.splice(HeartCommonVars,{ACTION=_ACTION,SLNNAME=SlnName}))
 texpluginHeartLibs= {
 }
+texpluginPrebuildCmd=[[
+echo Copying nvtt libs"
+cd "$(REPOROOT)build/deploy_scripts"
+call deploy_nvtt.bat "$(BINTOOLROOT)/plugin/debug"
+call deploy_nvtt.bat "$(BINTOOLROOT)/plugin/release"
+echo Copying FreeImage libs
+robocopy "$(REPOROOT)external/freeimage/dist" "$(BINTOOLROOT)plugin/debug" freeimage.dll /XO /XX /njh /njs /ndl /nc /ns /np
+robocopy "$(REPOROOT)external/freeimage/dist" "$(BINTOOLROOT)plugin/release" freeimage.dll /XO /XX /njh /njs /ndl /nc /ns /np
+exit /B 0
+]]
 
 project "texture_plugin"
     location (ProjectDir)
@@ -52,15 +62,7 @@ project "texture_plugin"
     flags {"Unicode"}
     buildoptions { "-Zm116" } -- needs at least Zm116 or boost pops it
     prebuildcommands {
-        "echo Copying nvtt libs",
-        "IF NOT exist \"../../../../bin/tools/plugin/debug\" mkdir \"../../bin/tools/plugin/debug\"",
-        "IF NOT exist \"../../../../bin/tools/plugin/release\" mkdir \"../../bin/tools/plugin/release\"",
-        "cd ../../../../deploy_scripts",
-        "call deploy_nvtt.bat \"../../bin/tools/plugin/debug\"",
-        "call deploy_nvtt.bat \"../../bin/tools/plugin/release\"",
-        "robocopy \"../../external/freeimage/dist\" \"../../bin/tools/plugin/debug\" freeimage.dll /XO /XX /njh /njs /ndl /nc /ns /np",
-        "robocopy \"../../external/freeimage/dist\" \"../../bin/tools/plugin/release\" freeimage.dll /XO /XX /njh /njs /ndl /nc /ns /np",
-        "exit /B 0",
+        ssub(texpluginPrebuildCmd, HeartCommonVars),
     }
 
     configuration (DebugCfgName)
@@ -77,7 +79,9 @@ project "texture_plugin"
         links {
             appendSuffixToTableEntries(texpluginHeartLibs, DebugSuffix)
         }
-        postbuildcommands {PostBuildStr..project().name..DebugSuffix.." plugin"}
+        postbuildcommands {
+            ssub(PostBuildToolPluginDeployCmd, table.splice(HeartCommonVars,{LIBNAME=project().name, TARGETDIR=TargetDir..DebugCfgName, PROJECT=project().name,CONFIG=DebugCfgName})) 
+        }
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines { 
@@ -92,4 +96,6 @@ project "texture_plugin"
         links {
             appendSuffixToTableEntries(texpluginHeartLibs, ReleaseSuffix)
         }
-        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." plugin"}
+        postbuildcommands {
+            ssub(PostBuildToolPluginDeployCmd, table.splice(HeartCommonVars,{LIBNAME=project().name, TARGETDIR=TargetDir..ReleaseCfgName, PROJECT=project().name,CONFIG=ReleaseCfgName})) 
+        }

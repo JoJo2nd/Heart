@@ -1,6 +1,8 @@
 @echo off
 call ../init_vis_studio_env.bat
 
+rem usage deploy_nvtt [destfolder]
+
 set NVIDIA_TEX_TOOLS_FOLDER=../../external/nvidia-texture-tools/gnuwin32/bin/
 set NVIDIA_TEX_TOOLS_FOLDER2=../../external/nvidia-texture-tools/project/%VSTYPE%/Release (no cuda).Win32/bin/
 set NVTT_COPY="nvtt.dll" "jpeg62.dll" "libpng12.dll" "libtiff3.dll" "zlib1.dll"
