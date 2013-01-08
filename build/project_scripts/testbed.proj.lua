@@ -1,5 +1,3 @@
---local PostBuildCmd="cd ../../../deploy_scripts\ncall deploy_external_libs.bat\ncd ../../../deploy_scripts\ncall deploy_lib.bat "
-local PostBuildCmd="cd ../../../../deploy_scripts\ncall deploy_lib.bat "
 
 project "heart_testbed"
     location (ProjectDir)
@@ -25,11 +23,22 @@ project "heart_testbed"
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
         defines {DebugDefines}
-        --flags {"Symbols","Optimize"}
         flags {DebugOptions}
-        postbuildcommands {PostBuildStr..project().name..DebugSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..DebugCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=DebugCfgName,
+        })
+        postbuildcommands(ssub(PostBuildDeployCmd,StrVars))
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
         flags {ReleaseOptions}
-        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..ReleaseCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=ReleaseCfgName,
+        })
+        postbuildcommands(ssub(PostBuildDeployCmd,StrVars))

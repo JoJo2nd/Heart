@@ -60,7 +60,6 @@ solution (SlnName)
     
     project "memtrack"
         location (ProjectDir)
-        debugdir (DebugDir) --only in Premake 4.4
         kind "WindowedApp"
         language "C++"
         files {
@@ -77,6 +76,7 @@ solution (SlnName)
 
         configuration (DebugCfgName)
             targetdir (TargetDir..DebugCfgName)
+            debugdir (ssub(ToolDebugDirEx, table.splice(HeartCommonVars, {PROJECT=project().name,CONFIG=DebugCfgName})))
             defines {DebugDefines}
             flags {DebugOptions}
             postbuildcommands {
@@ -87,6 +87,7 @@ solution (SlnName)
             }
         configuration (ReleaseCfgName)
             targetdir (TargetDir..ReleaseCfgName)
+            debugdir (ssub(ToolDebugDirEx, table.splice(HeartCommonVars, {PROJECT=project().name,CONFIG=ReleaseCfgName})))
             defines {ReleaseDefines}
             flags {ReleaseOptions}
             postbuildcommands {
