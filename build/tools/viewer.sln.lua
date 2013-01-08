@@ -3,21 +3,26 @@ SlnName = "viewer"
 BinType = "tools"
 DebugSuffix = "_d"
 ReleaseSuffix = "_r"
+heartBuildRoot=os.getenv("HEART_BUILD_ROOT")
+heartRepoRoot=os.getenv("HEART_REPO_ROOT")
+heartBinToolRoot=os.getenv("HEART_BIN_TOOL_ROOT")
+heartBinGameRoot=os.getenv("HEART_BIN_GAME_ROOT")
+heartBinRoot=os.getenv("HEART_BIN_ROOT")
+heartProjectRoot="../project_scripts/"
+heartProjectCommonRoot="../project_common/"
 
 dofile "../project_common/heart_common_proj.lua"
-os.execute("\"..\\deploy_scripts\\deploy_external_libs.bat\"");
+-- Make as prebuild commnad
+-- os.execute("\"..\\deploy_scripts\\deploy_external_libs.bat\"");
 
-DebugCfgName = "Debug"
-ReleaseCfgName = "Release"
-SlnOutput = "built_projects/".._ACTION.."/tools/"..SlnName.."/"
-SlnDir = "../" .. SlnOutput
-ProjectDir = SlnDir.."../projects/"
-TargetDir = SlnDir.."../lib/"
-DebugDir="../../bin/game"
 -- link against the game version of libs
-HeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
+DebugDir=ssub("$BINGAMEROOT",HeartCommonVars)
+HeartLibDir = ssub("$(BUILDROOT)/$ACTION/game/lib/", table.splice(HeartCommonVars,{ACTION=_ACTION,SLNNAME=SlnName}))
+--"../built_projects/".._ACTION.."/game/lib/"
 
-debugArgsStr="-p \"../tools/plugin/$config;./plugin/$config;../tools/viewer_plugins/$config;viewer_plugins/$config\""
+debugArgsStr=[[
+-p "$(BINGAMEROOT)../tools/plugin/$(CONFIG);$(BINGAMEROOT)./plugin/$(CONFIG);$(BINGAMEROOT)../tools/viewer_plugins/$(CONFIG);$(BINGAMEROOT)viewer_plugins/$(CONFIG)"
+]]
 
 myIncludeDirs = {
     {HeartIncludeDirs},
@@ -93,26 +98,30 @@ solution (SlnName)
         --prebuildcommands "cd ../../../../deploy_scripts\ncall deploy_game_libs_to_tools_bin.bat"
 
         configuration (DebugCfgName)
-            targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}))
+            targetdir (ssub("$BINTOOLROOT/$PROJECT/$CONFIG",table.splice(HeartCommonVars,{PROJECT=project().name,CONFIG=DebugCfgName})))
             defines {myDebugDefines}
-            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=DebugCfgName}))
+            debugargs(ssub(debugArgsStr, table.splice(HeartCommonVars, {CONFIG=DebugCfgName})))
             flags {myDebugOptions}
             libdirs(HeartLibDir..DebugCfgName)
             links {myLibsDebug}
-            postbuildcommands {PostBuildStr..project().name..DebugSuffix.." "..project().name}
             postbuildcommands {
-                "call deploy_wxwidgets_libs.bat ud "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=DebugCfgName}),
+                ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars, {LIBNAME=project().name, TARGETDIR=TargetDir..DebugCfgName, PROJECT=project().name,CONFIG=DebugCfgName}))
+            }
+            postbuildcommands {
+                ssub(DeploywxWidgetsCmd, table.splice(HeartCommonVars, {WXTYPE="ud", PROJECT=project().name,CONFIG=DebugCfgName}))
             }
         configuration (ReleaseCfgName)
-            targetdir (string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}))
+            targetdir (ssub("$BINTOOLROOT/$PROJECT/$CONFIG",table.splice(HeartCommonVars,{PROJECT=project().name,CONFIG=ReleaseCfgName})))
             defines {myReleaseDefines}
-            debugargs(string.gsub(debugArgsStr, "%$(%w+)", {config=ReleaseCfgName}))
+            debugargs(ssub(debugArgsStr, table.splice(HeartCommonVars, {config=ReleaseCfgName})))
             flags {myReleaseOptions}
             libdirs(HeartLibDir..ReleaseCfgName)
             links {myLibsRelease}
-            postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." "..project().name}
             postbuildcommands {
-                "call deploy_wxwidgets_libs.bat u "..string.gsub(ToolDeployDir, "%$(%w+)", {project=project().name, config=ReleaseCfgName}),
+                ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars, {LIBNAME=project().name, TARGETDIR=TargetDir..ReleaseCfgName, PROJECT=project().name,CONFIG=ReleaseCfgName}))
+            }
+            postbuildcommands {
+                ssub(DeploywxWidgetsCmd, table.splice(HeartCommonVars, {WXTYPE="u", PROJECT=project().name,CONFIG=ReleaseCfgName}))
             }
     
     dofile "viewer_api.proj.lua"

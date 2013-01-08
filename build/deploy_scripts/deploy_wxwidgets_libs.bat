@@ -9,7 +9,7 @@ set wxWIDGET_COPY="wxmsw294%1_*_%VSTYPE%0.*" "wxbase294%1_*_%VSTYPE%0.*" "wxbase
 set wxWIDGET_LIB_FOLDER=../../external/wxWidgets-2.9.4/lib/%VSTYPE%0_dll
 set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np
 
-ROBOCOPY "%wxWIDGET_LIB_FOLDER%" "%2" %wxWIDGET_COPY% %ROBOCOPY_OPTIONS%
+ROBOCOPY "%wxWIDGET_LIB_FOLDER%" "%~2" %wxWIDGET_COPY% %ROBOCOPY_OPTIONS%
 
 IF %ERRORLEVEL% GTR 2 GOTO :REPORT_ERRORLEVEL
 

@@ -1,6 +1,6 @@
 
 -- link against the game version of libs
-viewerHeartLibDir = "../built_projects/".._ACTION.."/game/lib/"
+viewerHeartLibDir = ssub("$(BUILDROOT)/$ACTION/game/lib/", table.splice(HeartCommonVars,{ACTION=_ACTION,SLNNAME=SlnName}))
 viewerHeartLibs= {
     "crypto"
 }
@@ -51,7 +51,9 @@ project "viewer_api"
         links {
             appendSuffixToTableEntries(viewerHeartLibs, DebugSuffix)
         }
-        postbuildcommands {PostBuildStr..project().name..DebugSuffix.." viewer"}
+        postbuildcommands {
+            ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars,{LIBNAME=project().name, TARGETDIR=TargetDir..DebugCfgName, PROJECT="viewer",CONFIG=DebugCfgName})) 
+        }
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines { 
@@ -64,4 +66,6 @@ project "viewer_api"
         links {
             appendSuffixToTableEntries(viewerHeartLibs, ReleaseSuffix)
         }
-        postbuildcommands {PostBuildStr..project().name..ReleaseSuffix.." viewer"}
+        postbuildcommands {
+            ssub(PostBuildToolDeployCmd, table.splice(HeartCommonVars,{LIBNAME=project().name, TARGETDIR=TargetDir..ReleaseCfgName, PROJECT="viewer",CONFIG=ReleaseCfgName})) 
+        }

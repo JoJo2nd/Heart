@@ -1,5 +1,11 @@
 assimppath = "../../external/assimp--3.0.1270-sdk/"
 
+meshloaderPreBuildCmd=[[
+echo Copying assimp libs
+robocopy $(REPOROOT)external/assimp--3.0.1270-sdk/bin/assimp_release-dll_win32 "$(BINGAMEROOT)/plugin" "*.dll" "*.pdb" /XO /XX /njh /njs /ndl /nc /ns /np /nfl /v
+robocopy $(REPOROOT)external/assimp--3.0.1270-sdk/bin/assimp_debug-dll_win32 "$(BINGAMEROOT)/plugin" "*.dll" "*.pdb" /XO /XX /njh /njs /ndl /nc /ns /np /nfl /v
+]]
+
 project "mesh_loader"
     location (ProjectDir)
 	debugdir (DebugDir) --only in Premake 4.4
@@ -17,6 +23,7 @@ project "mesh_loader"
     includedirs {assimppath.."/include"}
 	links {PlatformLibs}
     links { "assimp" }
+    postbuildcommands(ssub(meshloaderPreBuildCmd, HeartCommonVars))
 	
     configuration (DebugCfgName)
         targetdir (TargetDir..DebugCfgName)
@@ -25,7 +32,13 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_debug-dll_win32"}
         links {HeartLibsDebug}
 		flags {DebugOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..DebugSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..DebugCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=DebugCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))
     configuration (ReleaseCfgName)
         targetdir (TargetDir..ReleaseCfgName)
         defines {ReleaseDefines}
@@ -33,4 +46,10 @@ project "mesh_loader"
         libdirs {assimppath.."lib/assimp_release-dll_win32"}
         links {HeartLibsRelease}
         flags {ReleaseOptions}
-        postbuildcommands {PostBuildStrPlugin..project().name..ReleaseSuffix}
+        StrVars=table.splice(HeartCommonVars, {
+            TARGETDIR=TargetDir..ReleaseCfgName,
+            LIBNAME=project().name,
+            PROJECT=project().name,
+            CONFIG=ReleaseCfgName,
+        })
+        postbuildcommands(ssub(PostBuildPluginDeployCmd,StrVars))

@@ -1,32 +1,24 @@
 @echo off
+rem usage deploy_lib [lib name] [source folder] [dest folder]
 
 call ../init_vis_studio_env.bat
 
-set BIN_FOLDER=../../bin/
-set GAME_BIN_FOLDER=%BIN_FOLDER%game/
-set TOOLS_BIN_FOLDER=%BIN_FOLDER%tools/
-set HEART_BIN_FOLDER_R=../../build/built_projects/%PREMAKEVSVER%/game/lib/Release/
-set HEART_BIN_FOLDER_D=../../build/built_projects/%PREMAKEVSVER%/game/lib/Debug/
+set SRC_FOLDER=%~2
+set DEST_FOLDER=%~3
 set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np
 
-IF NOT exist "%BIN_FOLDER%" mkdir "%BIN_FOLDER%"
-IF NOT exist "%GAME_BIN_FOLDER%" mkdir "%GAME_BIN_FOLDER%"
-IF NOT exist "%TOOLS_BIN_FOLDER%" mkdir "%TOOLS_BIN_FOLDER%"
-
-if exist "%HEART_BIN_FOLDER_R%%1.dll" ( 
-  set CPYEXT="%1.dll" "%1.pdb"
-) else if exist "%HEART_BIN_FOLDER_R%%1.exe" ( 
-  set CPYEXT="%1.exe" "%1.pdb"
-) else if exist "%HEART_BIN_FOLDER_D%%1.dll" ( 
-  set CPYEXT="%1.dll" "%1.pdb"
-) else if exist "%HEART_BIN_FOLDER_D%%1.exe" ( 
-  set CPYEXT="%1.exe" "%1.pdb"
+if exist "%SRC_FOLDER%/%1_?.dll" ( 
+  echo Copying DLL
+  set CPYEXT="%1_?.dll" "%1_?.pdb"
+) else if exist "%SRC_FOLDER%/%1_?.exe" ( 
+  echo Copying EXE
+  set CPYEXT="%1_?.exe" "%1_?.pdb"
 ) else (
+  echo Nothing to copy
   goto :EXIT
 )
 
-IF exist "%HEART_BIN_FOLDER_D%" ROBOCOPY "%HEART_BIN_FOLDER_D%" "%GAME_BIN_FOLDER%" %CPYEXT% %ROBOCOPY_OPTIONS%
-IF exist "%HEART_BIN_FOLDER_R%" ROBOCOPY "%HEART_BIN_FOLDER_R%" "%GAME_BIN_FOLDER%" %CPYEXT% %ROBOCOPY_OPTIONS%
+ROBOCOPY "%SRC_FOLDER%" "%DEST_FOLDER%" %CPYEXT% %ROBOCOPY_OPTIONS%
 
 IF %ERRORLEVEL% GTR 2 GOTO :REPORT_ERRORLEVEL
 
@@ -34,7 +26,6 @@ IF %ERRORLEVEL% GTR 2 GOTO :REPORT_ERRORLEVEL
 EXIT /B 0
 
 :REPORT_ERRORLEVEL
-echo.
 if ERRORLEVEL 16 echo ***FATAL ERROR*** & goto :FATAL_ERROR
 if ERRORLEVEL 8 echo **FAILED COPIES** & goto :FATAL_ERROR
 if ERRORLEVEL 4 echo *MISMATCHES* & goto :FATAL_ERROR
