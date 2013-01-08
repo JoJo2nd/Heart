@@ -50,6 +50,7 @@ SlnDir=SlnOutput
 ProjectDir = SlnDir.."../projects/"
 TargetDir = SlnDir.."../lib/"
 DebugDir=ssub("$BINROOT/$BINTYPE",HeartCommonVars)
+ToolDebugDirEx="$BINTOOLROOT/$PROJECT/$CONFIG"
 
 
 HeartPlatformIncludeDirs = {

@@ -3,9 +3,15 @@ SlnName = "NewTestBed"
 BinType = "game"
 DebugSuffix = "_d"
 ReleaseSuffix = "_r"
+heartBuildRoot=os.getenv("HEART_BUILD_ROOT")
+heartRepoRoot=os.getenv("HEART_REPO_ROOT")
+heartBinToolRoot=os.getenv("HEART_BIN_TOOL_ROOT")
+heartBinGameRoot=os.getenv("HEART_BIN_GAME_ROOT")
+heartBinRoot=os.getenv("HEART_BIN_ROOT")
+heartProjectRoot="../project_scripts/"
+heartProjectCommonRoot="../project_common/"
 
-dofile "../project_common/heart_common_proj.lua"
-os.execute("\"..\\deploy_scripts\\deploy_external_libs.bat\"");
+dofile (heartProjectCommonRoot.."heart_common_proj.lua")
 
 solution (SlnName)
     location (SlnOutput)
@@ -19,25 +25,7 @@ solution (SlnName)
     configuration (ReleaseCfgName)
         targetsuffix(ReleaseSuffix)
     
-    dofile "testbed.proj.lua" --1st project becomes the start up project
-    dofile "zlib.proj.lua"
-    dofile "lua.proj.lua"
-    dofile "minizip.proj.lua"
-    dofile "crypto.proj.lua"
-    dofile "libvorbis.proj.lua"
-    dofile "libvorbisfile.proj.lua"
-    dofile "libogg.proj.lua"
-    dofile "heartcore.proj.lua"
-    
-    --- offline util libs
-    dofile "libpng.proj.lua"
-    dofile "libtga.proj.lua"
-    
-    -- resource loader projects
-    dofile "texture_loader.proj.lua"
-    dofile "font_loader.proj.lua"
-    dofile "material_loader.proj.lua"
-    dofile "shader_loader.proj.lua"
-    dofile "mesh_loader.proj.lua"
+    dofile (heartProjectRoot.."testbed.proj.lua") --1st project becomes the start up project
+    dofile (heartProjectCommonRoot.."include_heart_projects.lua")
 
 
