@@ -140,12 +140,12 @@ namespace Heart
         (void)osize;
         if (nsize == 0) 
         {
-            hHeapFree(GetGlobalHeap()/*!heap*/, ptr );
+            hHeapFree(GetLuaHeap(), ptr );
             return NULL;
         }
         else
         {
-            return hHeapRealloc(GetGlobalHeap()/*!heap*/, ptr, nsize);
+            return hHeapRealloc(GetLuaHeap(), ptr, nsize);
         }
     }
 
