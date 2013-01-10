@@ -42,6 +42,7 @@ namespace Heart
         hTime               GetTimestamp();
 
 	private:
+        hPRIVATE_DESTRUCTOR();
 
 		friend class		hDriveFileSystem;
 

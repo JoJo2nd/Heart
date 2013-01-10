@@ -29,6 +29,7 @@ namespace Heart
 {
     extern const hChar* ComponentPropertyName[] =
     {
+        "None",
         "Bool",
         "Int",
         "UInt",

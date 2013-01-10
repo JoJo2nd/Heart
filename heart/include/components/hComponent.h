@@ -39,6 +39,7 @@ namespace Heart
 
     enum hComponentPropertyType
     {
+        eComponentPropertyType_None,
         eComponentPropertyType_Bool,
         eComponentPropertyType_Int,
         eComponentPropertyType_UInt,
@@ -46,6 +47,42 @@ namespace Heart
         eComponentPropertyType_String,
         eComponentPropertyType_ResourceAsset,
     };
+
+    enum hComponentTypeFlag
+    {
+        eComponentTypeFlag_Bool        = 1,
+        eComponentTypeFlag_Int         = 1 << 1,
+        eComponentTypeFlag_Float       = 1 << 2,
+        eComponentTypeFlag_Array       = 1 << 3,
+        eComponentTypeFlag_String      = 1 << 4,
+        eComponentTypeFlag_Signed      = 1 << 5,
+        eComponentTypeFlag_ResID       = 1 << 6,
+        eComponentTypeFlag_Ptr         = 1 << 7,    
+        //eComponentTypeFlag_Vector2
+        //eComponentTypeFlag_Vector3
+        //eComponentTypeFlag_Vector4
+        //eComponentTypeFlag_Matrix
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    template< typename t_ty >
+    inline hUint32 hGetComponentTypeFlags()
+    {
+        hUint32 flags=0;
+        if (hIs_same<hRemove_const<t_ty>::type, hBool>::value) flags|=eComponentTypeFlag_Bool;
+        if (hIs_same<hRemove_pointer<t_ty>::type, hChar>::value) flags|=eComponentTypeFlag_String;
+        if (hIs_same<hRemove_extent<t_ty>::type, hChar>::value) flags|=eComponentTypeFlag_String;
+        if (hIs_same<t_ty, hResourceID>::value) flags|=eComponentTypeFlag_ResID;// TODO: ATM, will detect all uint64 as resource ids
+        if (hIs_integral<t_ty>::value) flags|=eComponentTypeFlag_Int;
+        if (hIs_floating_point<t_ty>::value) flags|=eComponentTypeFlag_Float;
+        if (hIs_signed<t_ty>::value) flags|=eComponentTypeFlag_Signed;
+        if (hIs_array<t_ty>::value) flags|=eComponentTypeFlag_Array;
+        if (hIs_pointer<t_ty>::value) flags|=eComponentTypeFlag_Ptr;
+        return flags;
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -61,6 +98,7 @@ namespace Heart
     {
         const hChar*            name_;
         const hChar*            doc_;
+        hUint32                 flags_;
         hComponentPropertyType  type_;
         const hChar*            typeStr_;
         hUint32                 offset_;
@@ -126,14 +164,14 @@ namespace Heart
 
 #define HEART_COMPONET_PROPERTIES_BEGIN( klass )\
     const Heart::hComponentProperty klass::propertyArray_[] = { \
-        HEART_COMPONENT_PROPERTY(klass, "__id__", id_, UInt, "Component Type ID")
+        HEART_COMPONENT_PROPERTY(klass, "__id__", hUint32, id_, "Component Type ID")
 
 #define HEART_COMPONET_PROPERTIES_END( klass ) \
     };\
     hUint32         klass::GetPropertyCount() { return hStaticArraySize(propertyArray_); }
 
-#define HEART_COMPONENT_PROPERTY( klass, name, var, type, doc )\
-    { name, doc, Heart::eComponentPropertyType_##type, Heart::ComponentPropertyName[Heart::eComponentPropertyType_##type], hOffsetOf( klass, var ) },
+#define HEART_COMPONENT_PROPERTY( klass, name, type, var, doc )\
+    { name, doc, Heart::hGetComponentTypeFlags<type>(), Heart::eComponentPropertyType_None, Heart::ComponentPropertyName[Heart::eComponentPropertyType_None], hOffsetOf( klass, var ) },
 }
 
 #endif // HCOMPONENT_H__

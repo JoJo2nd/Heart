@@ -27,12 +27,12 @@
 
 namespace Heart
 {
-    HEART_DEFINE_COMPONENT_TYPE( hLuaScriptComponent , "ScriptComponent", "A Component to link a script to an entity." );
-    HEART_COMPONET_PROPERTIES_BEGIN( hLuaScriptComponent )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Auto Run",      autoLoadScript_,    Bool,           "Automatically run script when object is created." )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Asset",  resource_,       ResourceAsset,  "Script asset to use." )
-        HEART_COMPONENT_PROPERTY( hLuaScriptComponent, "Script Name",   scriptName_,        String,         "Name of script in debugger." )
-    HEART_COMPONET_PROPERTIES_END( hLuaScriptComponent );
+    HEART_DEFINE_COMPONENT_TYPE(hLuaScriptComponent , "ScriptComponent", "A Component to link a script to an entity.");
+    HEART_COMPONET_PROPERTIES_BEGIN(hLuaScriptComponent)
+        HEART_COMPONENT_PROPERTY(hLuaScriptComponent, "Auto Run",     hBool,       autoLoadScript_,    "Automatically run script when object is created.")
+        HEART_COMPONENT_PROPERTY(hLuaScriptComponent, "Script Asset", hResourceID, resource_,          "Script asset to use.")
+        HEART_COMPONENT_PROPERTY(hLuaScriptComponent, "Script Name",  char[32],    scriptName_,        "Name of script in debugger.")
+    HEART_COMPONET_PROPERTIES_END(hLuaScriptComponent);
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
