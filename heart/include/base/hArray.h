@@ -98,6 +98,7 @@ namespace Heart
     class HEART_FORCEDLLEXPORT hVector
     {
     public: 
+        typedef hVector< _Ty, _Granularity > SelfType;
         typedef _Ty* TypePtr;
 
         hVector()
@@ -122,6 +123,10 @@ namespace Heart
         template< typename _Uy, hUint32 _OtherGranularity >
         void CopyTo( hVector< _Uy, _OtherGranularity >* rhs ) const
         {
+            if (rhs->heap_!=heap_) {
+                rhs->~SelfType();
+            }
+            rhs->heap_=heap_;
             rhs->Reserve( size_ );
             for ( hUint32 i = 0; i < size_; ++i )
             {
@@ -160,7 +165,7 @@ namespace Heart
 
         void PushBack( const _Ty& val )
         {
-            Resize( size_ + 1 );
+            GrowNoConstruct(size_ + 1);
             values_[size_-1] = val;
         }
 
@@ -223,6 +228,12 @@ namespace Heart
             //Construct
             for ( hUint32 i = size_; i < size; ++i )
                 new ( values_+i ) _Ty;
+            size_ = size;
+        }
+        
+        void GrowNoConstruct(hSizeT size)
+        {
+            ReserveGran( size );
             size_ = size;
         }
 

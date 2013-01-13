@@ -99,7 +99,7 @@ namespace Heart
 
         hVector< hNodeLink >                nodeLinks_;
         hVector< hEntity* >                 sceneEntities_;
-        hVector< hSceneNodeComponent >      sceneNodeComponents_;
+        //hVector< hSceneNodeComponent >      sceneNodeComponents_;
         //hLinearOctree...?
         hVector< hRenderModelComponent >    renderModels_;
         hVector< hIndexBuffer* >            sharedIndexBuffers_;

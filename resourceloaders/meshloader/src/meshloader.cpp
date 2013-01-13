@@ -323,7 +323,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     }
     materialMap[materialMapCount].first  = NULL;
     materialMap[materialMapCount].second = NULL;
-    materialMap[materialMapCount].resID  = NULL;
+    materialMap[materialMapCount].resID  = hResourceID();
 
     binoutput->Write(&header, sizeof(header));
 
@@ -576,7 +576,7 @@ Heart::hResourceID GetMaterialResourceIDFromMaterialIndex(const aiScene* scene, 
             return materialMap[i].resID;
     }
 
-    return 0;
+    return Heart::hResourceID();
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -29,7 +29,7 @@
 
 namespace Heart
 {
-    class hSceneNodeComponent : public hComponent
+    /*class hSceneNodeComponent : public hComponent
     {
         HEART_COMPONENT_TYPE();
     public: 
@@ -49,7 +49,7 @@ namespace Heart
         hMatrix                 nextLocalMatrix_;
         hMatrix                 localMatrix_;
 
-    };
+    };*/
 }
 
 #endif // HSCENENODECOMPONENT_H__

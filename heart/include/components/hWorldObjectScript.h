@@ -30,7 +30,7 @@
 namespace Heart
 {
     class hEntityFactory;
-
+#if 0
     class hWorldScriptObject : public hResourceClassBase
     {
     public:
@@ -47,21 +47,20 @@ namespace Heart
 
         void                       ParseFromXML(const hXMLDocument& xml, const hEntityFactory* entityFactory, hResourceManager* resManager);
         hUint32                    GetObjectInstanceCount() const { return worldObjectInstances_.GetSize(); }
-        hEntityInstanceDefinition* GetEntityInstanceDefinition( hUint32 idx ) { return &worldObjectInstances_[idx]; };
-        hWorldObjectDefinition*    GetWorldObjectType(const hChar* typenamestr ) const { return objectDefMap_.Find(hCRC32::StringCRC(typenamestr)); }
+        hWorldObjectTemplate*      GetWorldObjectType(const hChar* typenamestr ) const { return objectDefMap_.Find(hCRC32::StringCRC(typenamestr)); }
         hUint32                    GetWorldObjectTypeCount() const { return objectDefs_.GetSize(); }
-        hWorldObjectDefinition*    GetWorldObjectType(hUint32 idx) { return &objectDefs_[idx]; }
+
 
     private:
 
-        typedef hVector< hWorldObjectDefinition >           ObjectDefinitionArray;
-        typedef hMap< hUint32, hWorldObjectDefinition >     ObjectDefinitionMap;
-        typedef hVector< hEntityInstanceDefinition >        EntityDefinitionArray;
+        typedef hVector< hWorldObjectTemplate >           ObjectDefinitionArray;
+        typedef hMap< hUint32, hWorldObjectTemplate >     ObjectDefinitionMap;
 
         ObjectDefinitionArray   objectDefs_;
         ObjectDefinitionMap     objectDefMap_;
         EntityDefinitionArray   worldObjectInstances_;
     };
+#endif
 }
 
 #endif // HWORLDOBJECTSCRIPT_H__

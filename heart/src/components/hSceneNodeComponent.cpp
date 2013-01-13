@@ -27,7 +27,7 @@
 
 namespace Heart
 {
-    HEART_DEFINE_COMPONENT_TYPE( hSceneNodeComponent , "SceneNodeComponent", "A Component that defines an entity in a world scene." );
-    HEART_COMPONET_PROPERTIES_BEGIN( hSceneNodeComponent )
-    HEART_COMPONET_PROPERTIES_END( hSceneNodeComponent );
+//     HEART_DEFINE_COMPONENT_TYPE( hSceneNodeComponent , "SceneNodeComponent", "A Component that defines an entity in a world scene." );
+//     HEART_COMPONET_PROPERTIES_BEGIN( hSceneNodeComponent )
+//     HEART_COMPONET_PROPERTIES_END( hSceneNodeComponent );
 }

@@ -109,7 +109,7 @@ namespace Heart
         resourceMananger_->Initialise( this, renderer_, fileMananger_, NULL );
         soundManager_->Initialise();
         luaVM_->Initialise();
-        entityFactory_->Initialise( fileMananger_, resourceMananger_, this );
+        entityFactory_->initialise( fileMananger_, resourceMananger_, this );
 
         //////////////////////////////////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
