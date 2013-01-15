@@ -103,6 +103,7 @@ extern "C"
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include "core/hMemoryHeap.h"
 #include "core/hStackMemoryHeap.h"
+#include "core/hTypePoolMemoryHeap.h"
 #include "core/hDeferredReturn.h"
 #include "utils/hRapidXML.h"
 #include "core/hConfigOptions.h"

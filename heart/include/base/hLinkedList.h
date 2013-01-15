@@ -87,7 +87,7 @@ namespace Heart
             , head_( NULL )
             , tail_( NULL )
             , autoDelete_( hTrue )
-            , heap_(&heap)
+            , heap_(heap)
         {
         }
 		~hLinkedList()
