@@ -158,9 +158,8 @@ namespace Heart
                 if (!tech) return;
                 for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->GetStride());
+                    ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->getStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(2, 0);
                 }
 
@@ -198,7 +197,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
+                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
@@ -220,7 +219,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
+                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
@@ -261,7 +260,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
+                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
@@ -283,7 +282,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
+                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
                     ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);

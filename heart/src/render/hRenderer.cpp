@@ -261,9 +261,7 @@ namespace Heart
         hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::ComputeVertexLayoutStride( desc, desccount );
-
-        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( 0/*TODO:Pass in id from ComputeVertexLayoutString*/, nElements*pdata->stride_, initData, flags ) );
-
+        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( desc, desccount, nElements*pdata->stride_, initData, flags ) );
         *outVB = pdata;
     }
 

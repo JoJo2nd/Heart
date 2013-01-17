@@ -32,12 +32,12 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hRenderable::SetMaterial(hMaterial* material)
+void hRenderable::SetMaterial(hMaterialInstance* material)
 {
     hcAssertMsg(material, "Material cannot be NULL");
 
-    material_ = material;
-    materialKey_ = material_->GetMatKey();
+    matInstance_ = material;
+    materialKey_ = matInstance_->getMaterialKey();
 }
 
 }

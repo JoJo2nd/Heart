@@ -79,6 +79,7 @@ namespace Heart
     public:
         hdDX11RenderStreamsObject()
             : index_(NULL)
+            , layout_(NULL)
             , streamLower_(HEART_MAX_INPUT_STREAMS)
             , streamUpper_(0)
             , topology_(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
@@ -90,15 +91,16 @@ namespace Heart
         void setPrimType(PrimitiveType primType);
         void bindIndexVertex(hdDX11IndexBuffer* index);
         void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);
+        void bindVertexFetch(hdDX11ShaderProgram* prog);
 
     private:
         friend class hdDX11RenderSubmissionCtx;
 
         D3D11_PRIMITIVE_TOPOLOGY topology_;
-        //hdDX11IndexBuffer*  boundIndex_; // Needed?
-        //hdDX11VertexBuffer* boundStreams_[HEART_MAX_INPUT_STREAMS]; // Needed?
+        ID3D11InputLayout*  layout_;
         hUint16             streamLower_;
         hUint16             streamUpper_;
+        hdDX11VertexBuffer* boundStreams_[HEART_MAX_INPUT_STREAMS];
         ID3D11Buffer*       index_;
         ID3D11Buffer*       streams_[HEART_MAX_INPUT_STREAMS];
         UINT                strides_[HEART_MAX_INPUT_STREAMS];
@@ -109,7 +111,6 @@ namespace Heart
     public:
         hdDX11RenderSubmissionCtx() 
             : depthStencilView_(NULL)
-            , vbufferInputLayout_(0)
         {
             for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i )
             {
@@ -170,8 +171,6 @@ namespace Heart
         ID3D11RenderTargetView*  renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView*  depthStencilView_;
         ID3D11DeviceContext*     device_;
-        hUint32                  vbufferInputLayout_;
-        hUint32                  shaderInputLayout_;
     };
 }
 

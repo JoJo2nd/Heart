@@ -74,6 +74,7 @@ namespace Heart
         impl_.SetRenderStateBlock(pass->GetBlendState());
         impl_.SetRenderStateBlock(pass->GetRasterizerState());
         impl_.SetRenderInputObject(pass->GetRenderInputObject());
+        impl_.SetInputStreams(pass->getRenderStreamsObject());
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -63,8 +63,8 @@ namespace Heart
 
         hUint32                         ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         //Resource Create Calls
-        hdDX11ShaderProgram*            CompileShader(const hChar* shaderProg, hUint32 len, hInputLayoutDesc* inputLayout, hUint32 layoutCount, hShaderType type, hdDX11ShaderProgram* out);
-        void                            DestroyShader(hdDX11ShaderProgram* shaderProg);
+        hdDX11ShaderProgram*            CompileShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
+        void                            DestroyShader(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
         hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, hUint32 count);
         void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
         void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
@@ -74,8 +74,8 @@ namespace Heart
         void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
         hdDX11VertexLayout*             CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen);
         void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
-        hdDX11VertexBuffer*             CreateVertexBufferDevice( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialData, hUint32 flags );
-        void                            DestroyVertexBufferDevice( hdDX11VertexBuffer* indexBuffer );
+        hdDX11VertexBuffer*             CreateVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags);
+        void                            DestroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
         hdDX11BlendState*               CreateBlendState( const hBlendStateDesc& desc );
         void                            DestroyBlendState( hdDX11BlendState* state );
         hdDX11RasterizerState*          CreateRasterizerState( const hRasterizerStateDesc& desc );

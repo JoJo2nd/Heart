@@ -47,8 +47,10 @@ namespace Cmd
 		{
 		}
 
-        hUint32             GetStride() const { return stride_; }
-		hUint32				VertexCount() const { return vtxCount_; }
+        hUint                   getStride() const { return stride_; }
+        hUint	                getVertexCount() const { return vtxCount_; }
+        hUint                   getDescCount() const { return pImpl()->streamDescCount_; }
+        const hInputLayoutDesc* getLayoutDesc() const { return pImpl()->streamLayoutDesc_; }
 
 	private:
 

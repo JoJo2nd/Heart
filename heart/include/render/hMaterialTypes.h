@@ -66,6 +66,7 @@ namespace Heart
         hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
         hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
         hdRenderInputObject*    GetRenderInputObject() { return &renderInput_; }
+        hdRenderStreamsObject*  getRenderStreamsObject() { return &boundStreams_; }
         void                    SetBlendState(hdBlendState* state) { blendState_ = state; }
         void                    SetDepthStencilState(hdDepthStencilState* state) { depthStencilState_ = state; }
         void                    SetRasterizerState(hdRasterizerState* state) { rasterizerState_ = state; }
@@ -76,6 +77,7 @@ namespace Heart
         hBool   BindSamplerInput(hShaderParameterID paramID, hdSamplerState* srv);
         hBool   BindResourceView(hShaderParameterID paramID, hTexture* view);
         hBool   BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer);
+        hBool   bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt);
 
     private:
 
@@ -113,7 +115,7 @@ namespace Heart
         hdBlendState*                       blendState_;
         hdDepthStencilState*                depthStencilState_;
         hdRasterizerState*                  rasterizerState_;
-
+        hdRenderStreamsObject               boundStreams_;
         hdRenderInputObject                 renderInput_;
     };
 

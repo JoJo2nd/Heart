@@ -32,13 +32,16 @@ namespace Heart
     class HEART_DLLEXPORT hdDX11VertexBuffer
     {
     public:
-        hdDX11VertexBuffer() {}
+        hdDX11VertexBuffer() 
+            : streamDescCount_(0)
+        {}
         ~hdDX11VertexBuffer() {}
 
-        hUint32             vertexLayoutFlags_;
         ID3D11Buffer*       buffer_;
         hUint32             flags_;
         hUint32             dataSize_;
+        hUint               streamDescCount_;
+        hInputLayoutDesc    streamLayoutDesc_[HEART_MAX_INPUT_STREAMS];
     };
 }
 

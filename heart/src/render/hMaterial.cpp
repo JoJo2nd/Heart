@@ -503,6 +503,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hBool hMaterialInstance::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt) {
+        hBool succ = true;
+        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
+            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
+                techniques_[tech].GetPass(passIdx)->bindInputStreams(type, idx, vtxs, streamCnt);
+            }
+        }
+        return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hdParameterConstantBlock* hMaterialInstance::GetParameterConstBlock(hShaderParameterID cbid)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
@@ -557,6 +571,14 @@ namespace Heart
         if (!inst) return;
         hcAssertMsg(inst->material_, "Parent material is NULL");
         inst->material_->destroyMaterialInstance(inst);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint32 hMaterialInstance::getMaterialKey() const {
+        return material_->GetMatKey();
     }
 
 }//Heart

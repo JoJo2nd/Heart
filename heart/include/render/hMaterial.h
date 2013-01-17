@@ -102,6 +102,7 @@ namespace Heart
     {
     public:
 
+        hUint32             getMaterialKey() const;
         hUint32             GetTechniqueCount() const { return techniques_.GetSize(); }
         hMaterialTechnique* GetTechnique( hUint32 idx ) { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
         hMaterialTechnique* GetTechniqueByName( const hChar* name );
@@ -109,6 +110,7 @@ namespace Heart
         /* Bind interface - return false if not set on any programs */
         hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
+        hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
         /* Allow access to parameter blocks and updating of parameters */
         hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
         static void destroyMaterialInstance(hMaterialInstance* inst);
