@@ -106,7 +106,6 @@ void ModelRenderTest::RenderUnitTest()
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
         drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
-        drawCall_.streams_ = renderable->GetRenderStreams();
 
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
@@ -115,6 +114,7 @@ void ModelRenderTest::RenderUnitTest()
             drawCall_.depthState_ = passptr->GetDepthStencilState();
             drawCall_.rasterState_ = passptr->GetRasterizerState();
             drawCall_.progInput_ = *passptr->GetRenderInputObject();
+            drawCall_.streams_=*passptr->getRenderStreamsObject();
             drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
             drawCtx_.SubmitDrawCall(drawCall_);
         }

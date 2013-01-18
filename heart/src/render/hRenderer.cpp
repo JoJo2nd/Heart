@@ -243,13 +243,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyIndexBuffer( hIndexBuffer* pOut )
+    void hRenderer::DestroyIndexBuffer(hIndexBuffer* ib)
     {
-        //hcAssert( IsRenderThread() );
-
-        ParentClass::DestroyIndexBufferDevice( pOut->pImpl() );
-        pOut->SetImpl(NULL);
-        hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
+        hcAssert(ib);
+        ParentClass::DestroyIndexBufferDevice(ib->pImpl());
+        ib->SetImpl(NULL);
+        hDELETE_SAFE(GetGlobalHeap(), ib);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -261,9 +260,7 @@ namespace Heart
         hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::ComputeVertexLayoutStride( desc, desccount );
-
-        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( 0/*TODO:Pass in id from ComputeVertexLayoutString*/, nElements*pdata->stride_, initData, flags ) );
-
+        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( desc, desccount, nElements*pdata->stride_, initData, flags ) );
         *outVB = pdata;
     }
 
@@ -271,12 +268,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyVertexBuffer( hVertexBuffer* pOut )
+    void hRenderer::DestroyVertexBuffer(hVertexBuffer* vb)
     {
-        hMemoryHeapBase* heap = pOut->heap_;
-        ParentClass::DestroyVertexBufferDevice(pOut->pImpl());
-        pOut->SetImpl(NULL);
-        hDELETE_SAFE(heap, pOut);
+        hcAssert(vb);
+        hMemoryHeapBase* heap = vb->heap_;
+        ParentClass::DestroyVertexBufferDevice(vb->pImpl());
+        vb->SetImpl(NULL);
+        hDELETE_SAFE(heap, vb);
     }
 
     //////////////////////////////////////////////////////////////////////////

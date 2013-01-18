@@ -300,17 +300,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(const hChar* shaderProg, 
-        hUint32 len, hInputLayoutDesc* inputLayout, 
-        hUint32 layoutCount, hShaderType type, hdDX11ShaderProgram* out)
+    hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(
+        hMemoryHeapBase* heap, const hChar* shaderProg, 
+        hUint32 len, hShaderType type, hdDX11ShaderProgram* out)
     {
         HRESULT hr;
         hdDX11ShaderProgram* shader = out;
         shader->type_ = type;
+        shader->blobLen_=len;
+        shader->shaderBlob_=hNEW_ARRAY(heap, hUint8, len);
+        hMemCpy(shader->shaderBlob_, shaderProg, len);
 
-        if ( type == ShaderType_FRAGMENTPROG )
-        {
-            shader->inputLayoutFlags_ = 0;
+        if ( type == ShaderType_FRAGMENTPROG ) {
             hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->pixelShader_);
@@ -318,13 +319,7 @@ namespace Heart
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
         }
-        else if ( type == ShaderType_VERTEXPROG )
-        {
-            hdDX11VertexLayout* vl = CreateVertexLayout(inputLayout, layoutCount, shaderProg, len);
-
-            shader->inputLayoutFlags_ = 0/*inputLayout*/;//TODO: grab layout id from createvertexlayout
-            shader->inputLayout_ = vl;
-            
+        else if ( type == ShaderType_VERTEXPROG ) {
             hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->vertexShader_);
@@ -340,10 +335,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyShader(hdDX11ShaderProgram* prog)
+    void hdDX11RenderDevice::DestroyShader(hMemoryHeapBase* heap, hdDX11ShaderProgram* prog)
     {
         if (!prog) return;
-        if ( prog->shaderInfo_ ) {
+        if (prog->shaderInfo_) {
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->shaderInfo_);
             prog->shaderInfo_->Release();
             prog->shaderInfo_ = NULL;
@@ -358,6 +353,9 @@ namespace Heart
             prog->pixelShader_->Release();
             prog->pixelShader_ = NULL;
         }
+        if (prog->shaderBlob_) {
+            hDELETE_ARRAY_SAFE(heap, prog->shaderBlob_);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -367,7 +365,7 @@ namespace Heart
     hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
     {
         HRESULT hr;
-        hdDX11Texture* texture = hNEW(GetGlobalHeap()/*!heap*/, hdDX11Texture);
+        hdDX11Texture* texture = hNEW(GetGlobalHeap(), hdDX11Texture);
         hBool compressedFormat = hFalse;
 
         D3D11_TEXTURE2D_DESC desc;
@@ -598,30 +596,32 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBufferDevice( hUint32 vertexLayout, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags)
     {
         hdDX11VertexBuffer* vtxBuf = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexBuffer );
         HRESULT hr;
-        D3D11_BUFFER_DESC desc;
+        D3D11_BUFFER_DESC bufdesc;
         D3D11_SUBRESOURCE_DATA initData;
 
-        hZeroMem( &desc, sizeof(desc) );
-        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        desc.ByteWidth = sizeInBytes;
-        desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-        desc.CPUAccessFlags = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
-        desc.MiscFlags = 0;
+        hZeroMem(vtxBuf->streamLayoutDesc_, sizeof(vtxBuf->streamLayoutDesc_));
+        hZeroMem(&bufdesc, sizeof(bufdesc));
+        bufdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bufdesc.ByteWidth = sizeInBytes;
+        bufdesc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+        bufdesc.CPUAccessFlags = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0;
+        bufdesc.MiscFlags = 0;
 
         hZeroMem( &initData, sizeof(initData) );
         initData.pSysMem = initialDataPtr;
 
-        hr = d3d11Device_->CreateBuffer( &desc, initialDataPtr ? &initData : NULL, &vtxBuf->buffer_ );
+        hr = d3d11Device_->CreateBuffer( &bufdesc, initialDataPtr ? &initData : NULL, &vtxBuf->buffer_ );
         hcAssert( SUCCEEDED( hr ) );
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", vtxBuf->buffer_);
 
         vtxBuf->flags_ = flags;
         vtxBuf->dataSize_ = sizeInBytes;
-        vtxBuf->vertexLayoutFlags_ = vertexLayout;
+        hMemCpy(vtxBuf->streamLayoutDesc_, desc, sizeof(hInputLayoutDesc)*desccount);
+        vtxBuf->streamDescCount_=desccount;
         return vtxBuf;
     }
 

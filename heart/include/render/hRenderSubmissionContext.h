@@ -87,35 +87,28 @@ namespace Heart
         void    Initialise( hRenderer* renderer );
 
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
+        void                  RunCommandBuffer(hdRenderCommandBuffer cmdBuf);
         //Raw Functions
-        void    SetIndexStream(hIndexBuffer* pIIBuf);
-        void    SetVertexStream(hUint32 stream, hVertexBuffer* vtxBuf, hUint32 stride);
+
         void    SetInputStreams(hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
         void    SetRenderInputObject(hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
-        void    SetRenderTarget( hUint32 idx , hTexture* pTarget );
-        void    SetDepthTarget( hTexture* depth );
-        void    SetViewport( const hViewport& viewport );
-        void    SetScissorRect( const hScissorRect& scissor );
+        void    SetRenderTarget(hUint32 idx , hTexture* pTarget);
+        void    SetDepthTarget(hTexture* depth);
+        void    SetViewport(const hViewport& viewport);
+        void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);
-        void    SetPixelShader( hShaderProgram* ps );
-        void    SetVertexShader( hShaderProgram* vs );
-        void    SetConstantBuffer(hUint32 reg, hdParameterConstantBlock* constBuffer );
-        void    SetSampler( hUint32 idx, hTexture* tex, hdSamplerState* samplerState );
         void    SetRenderStateBlock( hdDX11BlendState* st ) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock( hdDX11DepthStencilState* st ) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock( hdDX11RasterizerState* st ) { impl_.SetRenderStateBlock( st ); }
-        void    SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st ) { impl_.SetRenderStateBlock( samplerIdx, st ); }
-        void    ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
-        void    SetPrimitiveType( PrimitiveType primType );
-        void    DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
-        void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
-        void    RunCommandBuffer( hdRenderCommandBuffer cmdBuf );
-        void    Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo );
-        void    Unmap( hIndexBufferMapInfo* outInfo );
-        void    Map( hVertexBuffer* ib, hVertexBufferMapInfo* outInfo );
-        void    Unmap( hVertexBufferMapInfo* outInfo );
-        void    Map( hTexture* ib, hUint32 level, hTextureMapInfo* outInfo );
-        void    Unmap( hTextureMapInfo* outInfo );
+        void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
+        void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
+        void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
+        void    Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo);
+        void    Unmap(hIndexBufferMapInfo* outInfo);
+        void    Map(hVertexBuffer* ib, hVertexBufferMapInfo* outInfo);
+        void    Unmap(hVertexBufferMapInfo* outInfo);
+        void    Map(hTexture* ib, hUint32 level, hTextureMapInfo* outInfo);
+        void    Unmap(hTextureMapInfo* outInfo);
         void    Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
         void    Unmap(hConstBlockMapInfo* info);
         void    Update(hdParameterConstantBlock* cb) { impl_.Update(cb); }

@@ -472,6 +472,7 @@ void initialiseBaseMemoryHeaps()
 {
     static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
     static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+    static hByte g_luaMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
 
 #ifdef HEART_TRACK_MEMORY_ALLOCS
     Heart::hMemTracking::InitMemTracking();
@@ -479,10 +480,12 @@ void initialiseBaseMemoryHeaps()
 
     Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
     Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
+    Heart::SetLuaHeap(hPLACEMENT_NEW(g_luaMemoryPoolSpace) Heart::hMemoryHeap("LuaHeap"));
 
     // It important that the debug heap is created first
     Heart::GetDebugHeap()->create(1024*1024,hFalse);
     Heart::GetGlobalHeap()->create(1024*1024,hFalse);
+    Heart::GetLuaHeap()->create(1024*1024,hTrue);
 }
 
 //////////////////////////////////////////////////////////////////////////

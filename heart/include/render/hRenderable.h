@@ -43,34 +43,32 @@ namespace Heart
         hRenderable() 
             : materialID_(0)
             , materialKey_(0)
-            , material_(NULL)
-            , vtxStreams_(0)
+            , matInstance_(NULL)
+            , primType_(PRIMITIVETYPE_TRILIST)
+            , indexBuffer_(NULL)
         {
+            hZeroMem(vertexBuffer_, sizeof(vertexBuffer_));
         }
         virtual ~hRenderable() 
         {
         }
 
-        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); return drawItem_.vertexBuffer_[stream]; }
-        hUint32                                 GetVertexStreams() const { return vtxStreams_; }
-        void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) 
-        {
-            hcAssert(stream < hDrawCall::MAX_VERT_STREAMS); 
-            vtxStreams_ = hMax(vtxStreams_,stream+1); 
-            drawItem_.vertexBuffer_[stream] = vtx;
-            vertexStreams_.bindVertexStream(stream, vtx->pImpl(), vtx->GetStride());
+        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const {
+            hcAssert(stream < HEART_MAX_INPUT_STREAMS); 
+            return vertexBuffer_[stream]; 
         }
-        hIndexBuffer*                           GetIndexBuffer() const { return drawItem_.indexBuffer_; }
-        void                                    SetIndexBuffer(hIndexBuffer* idx)
-        {
-            drawItem_.indexBuffer_ = idx;
-            vertexStreams_.bindIndexVertex(idx->pImpl());
+        void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) {
+            hcAssert(stream < HEART_MAX_INPUT_STREAMS);
+            vertexBuffer_[stream]=vtx;
         }
-        PrimitiveType                           GetPrimativeType() const { return drawItem_.primType_; }
-        void                                    SetPrimativeType(PrimitiveType primtype) 
-        { 
-            drawItem_.primType_ = primtype;
-            vertexStreams_.setPrimType(primtype);
+        hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
+        void                                    SetIndexBuffer(hIndexBuffer* idx) {
+            indexBuffer_=idx;
+        }
+        PrimitiveType                           GetPrimativeType() const { return primType_; }
+        void                                    SetPrimativeType(PrimitiveType primtype) { 
+            hcAssert(primtype < PRIMITIVETYPE_MAX);
+            primType_ = primtype;
         }
         hUint16                                 GetStartIndex() const { return drawItem_.startVertex_; }
         void                                    SetStartIndex(hUint16 startIdx) { drawItem_.startVertex_ = startIdx; }
@@ -78,21 +76,25 @@ namespace Heart
         void                                    SetPrimativeCount(hUint16 primCount) { drawItem_.primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
-        void                                    SetMaterial(hMaterial* material);
-        hMaterial*                              GetMaterial() const { return material_; }
+        void                                    SetMaterial(hMaterialInstance* material);
+        hMaterialInstance*                      GetMaterial() const { return matInstance_; }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-        const hdRenderStreamsObject&            GetRenderStreams() const { return vertexStreams_; }
+        void                                    bind() { 
+            matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_, HEART_MAX_INPUT_STREAMS); 
+        }
     
     private:
 
         hResourceID             materialID_;
         hUint32                 materialKey_;
-        hUint16                 vtxStreams_;
         hDrawCall               drawItem_;
-        hMaterial*              material_;
+        hMaterialInstance*      matInstance_;
         hAABB                   aabb_;
+        PrimitiveType           primType_;
+        hIndexBuffer*           indexBuffer_;
+        hVertexBuffer*          vertexBuffer_[HEART_MAX_INPUT_STREAMS];
         hdRenderStreamsObject   vertexStreams_;
     };
 }

@@ -57,6 +57,8 @@ namespace Heart
 
     hBool hdDX11RenderInputObject::BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
     {
+        hcAssert(paramID != 0);
+        hcAssert(buffer);
         hUint32 cbidx;
         hBool succ = false;
 
@@ -117,7 +119,6 @@ namespace Heart
 
     void hdDX11RenderStreamsObject::bindIndexVertex(hdDX11IndexBuffer* index)
     {
-        //boundIndex_ = index;
         index_ = index ? index->buffer_ : NULL;
     }
 
@@ -130,7 +131,7 @@ namespace Heart
         hcAssert(stream < HEART_MAX_INPUT_STREAMS);
         hBool setlb = false;
 
-        //boundStreams_[stream] = vertexbuffer;
+        boundStreams_[stream] = vertexbuffer;
         streams_[stream] = vertexbuffer->buffer_;
         strides_[stream] = stride;
         for (hUint16 i = 0; i < HEART_MAX_INPUT_STREAMS; ++i) {
@@ -160,11 +161,36 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hdDX11RenderStreamsObject::bindVertexFetch(hdDX11ShaderProgram* prog) {
+        hcAssert(prog);
+        hInputLayoutDesc* desc=NULL, *dptr=NULL;
+        hUint descn=0;
+        for(hUint i=0; i<HEART_MAX_INPUT_STREAMS; ++i) {
+            if (boundStreams_[i]) {
+                descn+=boundStreams_[i]->streamDescCount_;
+            }
+        }
+        desc=(hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*descn);
+        dptr=desc;
+        for(hUint i=0; i<HEART_MAX_INPUT_STREAMS; ++i) {
+            if (boundStreams_[i]) {
+                hMemCpy(dptr, boundStreams_[i]->streamLayoutDesc_, sizeof(hInputLayoutDesc)*boundStreams_[i]->streamDescCount_);
+                dptr+=boundStreams_[i]->streamDescCount_;
+            }
+        }
+        layout_=prog->createVertexLayout(desc, descn)->layout_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderSubmissionCtx::SetInputStreams(hdDX11RenderStreamsObject* streams)
     {
         hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
         UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
         if (primType_ != streams->topology_) device_->IASetPrimitiveTopology(streams->topology_);
+        device_->IASetInputLayout(streams->layout_);
         device_->IASetIndexBuffer(streams->index_, DXGI_FORMAT_R16_UINT, 0);
         device_->IASetVertexBuffers(
             streams->streamLower_,
@@ -179,33 +205,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetIndexStream( hdDX11IndexBuffer* idxBuf )
-    {
-        device_->IASetIndexBuffer( idxBuf->buffer_, DXGI_FORMAT_R16_UINT, 0 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride )
-    {
-        UINT offsets = 0;
-        UINT strideui = stride;
-        vbufferInputLayout_ = vtxBuf->vertexLayoutFlags_;
-        device_->IASetVertexBuffers( stream, 1, &vtxBuf->buffer_, &strideui, &offsets );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hdDX11RenderSubmissionCtx::SetRenderInputObject(hdRenderInputObject* inputobj)
     {
         device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
         if (inputobj->vertexShader_) {
             hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
-            device_->IASetInputLayout(inputobj->boundProgs_[ShaderType_VERTEXPROG]->inputLayout_->layout_);//ergh..clean up
+            //device_->IASetInputLayout(inputobj->boundProgs_[ShaderType_VERTEXPROG]->inputLayout_->layout_);//ergh..clean up
             device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -246,38 +251,6 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11RasterizerState* st )
     {
         device_->RSSetState( st->stateObj_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st )
-    {
-        device_->VSSetSamplers( samplerIdx, 1, &st->stateObj_ );
-        device_->PSSetSamplers( samplerIdx, 1, &st->stateObj_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetPixelShader( hdDX11ShaderProgram* prog )
-    {
-        hcAssert( prog->type_ == ShaderType_FRAGMENTPROG );
-        device_->PSSetShader( prog->pixelShader_, NULL, 0 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetVertexShader( hdDX11ShaderProgram* prog )
-    {
-        hcAssert( prog->type_ == ShaderType_VERTEXPROG );
-        shaderInputLayout_ = prog->GetInputLayout();
-        device_->IASetInputLayout( prog->inputLayout_->layout_ );
-        device_->VSSetShader( prog->vertexShader_, NULL, 0 );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -374,34 +347,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetPrimitiveType( PrimitiveType type )
-    {
-        //if ( type != primType_ )
-        {
-            switch ( type )
-            {
-            case PRIMITIVETYPE_LINELIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_LINELIST );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
-            case PRIMITIVETYPE_TRILIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
-            case PRIMITIVETYPE_TRISTRIP:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
-            default:
-                hcAssert( hFalse ); break;
-            }
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hdDX11RenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 start )
     {
-        hcAssert( (vbufferInputLayout_&shaderInputLayout_) == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {
@@ -421,7 +368,6 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 start )
     {
-        hcAssert( (vbufferInputLayout_&shaderInputLayout_) == shaderInputLayout_ );
         hUint32 verts;
         switch ( primType_ )
         {
@@ -573,28 +519,6 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
     {
         device_->Unmap(cb->constBuffer_, 0);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetConstantBlock( hUint32 reg, hdDX11ParameterConstantBlock* block )
-    {//Maybe split these?
-        device_->VSSetConstantBuffers( reg, 1, &block->constBuffer_ );
-        device_->PSSetConstantBuffers( reg, 1, &block->constBuffer_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state )
-    {
-        device_->VSSetSamplers( idx, 1, &state->stateObj_ );
-        device_->PSSetSamplers( idx, 1, &state->stateObj_ );
-        device_->VSSetShaderResources( idx, 1, &tex->shaderResourceView_ );
-        device_->PSSetShaderResources( idx, 1, &tex->shaderResourceView_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

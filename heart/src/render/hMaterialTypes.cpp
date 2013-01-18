@@ -104,6 +104,22 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hBool hMaterialTechniquePass::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt) {
+        boundStreams_.setPrimType(type);
+        boundStreams_.bindIndexVertex(idx ? idx->pImpl() : NULL);
+        for(hUint i=0; i<streamcnt; ++i) {
+            if (vtx[i]) {
+                boundStreams_.bindVertexStream(i, vtx[i]->pImpl(), vtx[i]->getStride());
+            }
+        }
+        boundStreams_.bindVertexFetch(vertexProgram_);
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hMaterialTechnique::AppendPass( const hMaterialTechniquePass& pass )
     {
         passes_.PushBack(pass);
