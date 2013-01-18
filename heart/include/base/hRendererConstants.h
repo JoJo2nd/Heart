@@ -114,7 +114,7 @@ namespace Heart
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_1     (HEART_MAX_CONSTANT_BLOCKS-3)
 #define HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2     (HEART_MAX_CONSTANT_BLOCKS-4)
 #define HEART_MIN_RESERVED_CONSTANT_BLOCK               (HEART_RESERVED_CUSTOM_CONSTANTS_REGISTIER_2)
-#define HEART_MAX_INPUT_STREAMS                         (15)
+#define HEART_MAX_INPUT_STREAMS                         (15) //Add more if needed
 #define HEART_MAX_RENDER_CAMERAS                        (15)
 #define HEART_MAX_GLOBAL_CONST_BLOCK_NAME_LEN           (64)
 
@@ -528,144 +528,11 @@ namespace Heart
         hFloat                  maxLOD_;
     };
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    template<>
-    inline void SerialiseMethod< Heart::hColour >( Heart::hSerialiser* ser, const Heart::hColour& data )
+    enum hMaterialInstanceFlags
     {
-        SERIALISE_ELEMENT( data.r_ );
-        SERIALISE_ELEMENT( data.g_ );
-        SERIALISE_ELEMENT( data.b_ );
-        SERIALISE_ELEMENT( data.a_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< Heart::hColour >( Heart::hSerialiser* ser, Heart::hColour& data )
-    {
-        DESERIALISE_ELEMENT( data.r_ );
-        DESERIALISE_ELEMENT( data.g_ );
-        DESERIALISE_ELEMENT( data.b_ );
-        DESERIALISE_ELEMENT( data.a_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    
-    template<>
-    inline void SerialiseMethod< hBlendStateDesc >( hSerialiser* ser, const hBlendStateDesc& data )
-    {
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.srcBlend_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.destBlend_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendOp_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.srcBlendAlpha_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.destBlendAlpha_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.blendOpAlpha_ );
-        SERIALISE_ELEMENT( data.renderTargetWriteMask_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hBlendStateDesc >( hSerialiser* ser, hBlendStateDesc& data )
-    {
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.srcBlend_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.destBlend_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendOp_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.srcBlendAlpha_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.destBlendAlpha_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.blendOpAlpha_ );
-        DESERIALISE_ELEMENT( data.renderTargetWriteMask_ );
-    }
-
-    template<>
-    inline void SerialiseMethod< hDepthStencilStateDesc >( hSerialiser* ser, const hDepthStencilStateDesc& data )
-    {
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthWriteMask_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthFunc_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilEnable_ );
-        SERIALISE_ELEMENT( data.stencilReadMask_ );
-        SERIALISE_ELEMENT( data.stencilWriteMask_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFailOp_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilDepthFailOp_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilPassOp_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.stencilFunc_ );
-        SERIALISE_ELEMENT( data.stencilRef_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hDepthStencilStateDesc >( hSerialiser* ser, hDepthStencilStateDesc& data )
-    {
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthWriteMask_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthFunc_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilEnable_ );
-        DESERIALISE_ELEMENT( data.stencilReadMask_ );
-        DESERIALISE_ELEMENT( data.stencilWriteMask_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFailOp_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilDepthFailOp_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilPassOp_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.stencilFunc_ );
-        DESERIALISE_ELEMENT( data.stencilRef_ );
-    }
-
-    template<>
-    inline void SerialiseMethod< hRasterizerStateDesc >( hSerialiser* ser, const hRasterizerStateDesc& data )
-    {
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.fillMode_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.cullMode_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.frontCounterClockwise_ );
-        SERIALISE_ELEMENT( data.depthBias_ );
-        SERIALISE_ELEMENT( data.depthBiasClamp_ );
-        SERIALISE_ELEMENT( data.slopeScaledDepthBias_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.depthClipEnable_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.scissorEnable_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hRasterizerStateDesc >( hSerialiser* ser, hRasterizerStateDesc& data )
-    {
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.fillMode_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.cullMode_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.frontCounterClockwise_ );
-        DESERIALISE_ELEMENT( data.depthBias_ );
-        DESERIALISE_ELEMENT( data.depthBiasClamp_ );
-        DESERIALISE_ELEMENT( data.slopeScaledDepthBias_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.depthClipEnable_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.scissorEnable_ );
-    }
-
-    template<>
-    inline void SerialiseMethod< hSamplerStateDesc >( hSerialiser* ser, const hSamplerStateDesc& data )
-    {
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.filter_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressU_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressV_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.addressW_ );
-        SERIALISE_ELEMENT( data.mipLODBias_ );
-        SERIALISE_ELEMENT( data.maxAnisotropy_ );
-        SERIALISE_ELEMENT( data.borderColour_ );
-        SERIALISE_ELEMENT( data.minLOD_ );
-        SERIALISE_ELEMENT( data.maxLOD_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hSamplerStateDesc >( hSerialiser* ser, hSamplerStateDesc& data )
-    {
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.filter_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressU_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressV_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.addressW_ );
-        DESERIALISE_ELEMENT( data.mipLODBias_ );
-        DESERIALISE_ELEMENT( data.maxAnisotropy_ );
-        DESERIALISE_ELEMENT( data.borderColour_ );
-        DESERIALISE_ELEMENT( data.minLOD_ );
-        DESERIALISE_ELEMENT( data.maxLOD_ );
-    }
-
+        hMatInst_DontInstanceConstantBuffers = 1 << 1,
+        //hMatInst_DontInstanceConstantBuffers,
+    };
 }//Heart
 
 #endif // RENDERERCONSTANTS_H__

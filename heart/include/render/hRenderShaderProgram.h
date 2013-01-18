@@ -34,8 +34,8 @@ namespace Heart
                                            public hdShaderProgram
     {
     public:
-        hShaderProgram() 
-            : vertexInputLayoutFlags_(0)
+        hShaderProgram(hdRenderDevice* device) 
+            : hdShaderProgram(device)
             , shaderType_(ShaderType_MAX)
         {
 
@@ -44,9 +44,7 @@ namespace Heart
         {
         }
 
-        void                    SetVertexLayout(hUint32 layout) { vertexInputLayoutFlags_ = layout; }
-        hUint32                 GetVertexLayout() const { return vertexInputLayoutFlags_; }
-        hShaderType              GetShaderType() const { return shaderType_; } 
+        hShaderType             GetShaderType() const { return shaderType_; } 
         void                    SetShaderType(hShaderType shadertype) { shaderType_ = shadertype; }
 
     private:
@@ -55,8 +53,7 @@ namespace Heart
 
         friend class hRenderer;
 
-        hUint32                     vertexInputLayoutFlags_;
-        hShaderType                  shaderType_;
+        hShaderType shaderType_;
     };
 }
 

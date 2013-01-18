@@ -49,7 +49,7 @@ namespace Heart
             , backdropMat_(NULL)
             , backdropCB_(NULL)
             , consoleFont_(NULL)
-            , fontMat_(NULL)
+            , logMat_(NULL)
             , windowOffset_(1.f)
         {
 
@@ -83,25 +83,32 @@ namespace Heart
 
             renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
             hMaterial* backdropMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.CONSOLE_MAT"));
-            backdropMat_ = backdropMat->createMaterialInstance();
+            backdropMat_ = backdropMat->createMaterialInstance(0);
+            backdropMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &backdropPlane_, 1);
             backdropCB_ = backdropMat_->GetParameterConstBlock(hCRC32::StringCRC("ConsoleConstants"));
 
             renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
             renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
             consoleFont_ = static_cast< hFont* >(resmanager->mtGetResource("CORE.CONSOLE"));
             hMaterial* fontMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.FONT_MAT"));
-            fontMat_ = fontMat->createMaterialInstance();
-            fontCB_ = fontMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
+            logMat_ = fontMat->createMaterialInstance(0);
+            logMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &logBuffer_, 1);
+            inputMat_=fontMat->createMaterialInstance(hMatInst_DontInstanceConstantBuffers);
+            inputMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &textBuffer_, 1);
+
+            fontCB_ = logMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
+            inputMat_->BindConstanstBuffer(hCRC32::StringCRC("FontParams"), fontCB_);
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
         void destroyRenderResources(hRenderer* renderer)
         {
             hMaterialInstance::destroyMaterialInstance(backdropMat_);
-            hMaterialInstance::destroyMaterialInstance(fontMat_);
+            hMaterialInstance::destroyMaterialInstance(logMat_);
+            hMaterialInstance::destroyMaterialInstance(inputMat_);
             backdropMat_ = NULL;
             backdropCB_ = NULL;
-            fontMat_ = NULL;
+            logMat_ = NULL;
 
             renderer->DestroyVertexBuffer(backdropPlane_);
             backdropPlane_ = NULL;
@@ -110,7 +117,7 @@ namespace Heart
             renderer->DestroyVertexBuffer(logBuffer_);
             logBuffer_ = NULL;
             consoleFont_ = NULL;
-            fontMat_ = NULL;
+            logMat_ = NULL;
             debugTechMask_ = 0;
             renderer = NULL;
         }
@@ -158,9 +165,7 @@ namespace Heart
                 if (!tech) return;
                 for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->GetStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(2, 0);
                 }
 
@@ -179,7 +184,7 @@ namespace Heart
                 /*
                 * INput text string
                 */
-                tech = fontMat_->GetTechniqueByMask(debugTechMask_);
+                tech = inputMat_->GetTechniqueByMask(debugTechMask_);
                 if (!tech) return;
 
                 ctx->Map(fontCB_, &map);
@@ -198,9 +203,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
@@ -220,15 +223,16 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->GetStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
                 /*
                 * Log text string
                 */
+                tech = logMat_->GetTechniqueByMask(debugTechMask_);
+                if (!tech) return;
+
                 {
                     ctx->Map(logBuffer_, &vbmap);
                     formatter.setOutputBuffer(vbmap.ptr_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6*sizeof(hFontVex));
@@ -241,7 +245,7 @@ namespace Heart
                     ctx->Unmap(&vbmap);
                 }
 
-                tech = fontMat_->GetTechniqueByMask(debugTechMask_);
+                tech = logMat_->GetTechniqueByMask(debugTechMask_);
                 if (!tech) return;
 
 
@@ -261,9 +265,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
@@ -283,9 +285,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->GetStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
             }
@@ -309,7 +309,8 @@ namespace Heart
         hdParameterConstantBlock* backdropCB_;
         hFont*                   consoleFont_;
         hdParameterConstantBlock* fontCB_;
-        hMaterialInstance*       fontMat_;
+        hMaterialInstance*       logMat_;
+        hMaterialInstance*       inputMat_;
         hFloat                   windowOffset_;
 
         hSystemConsole* console_;
@@ -322,12 +323,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    const hResourceID   hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
-    const hResourceID   hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
-    hMutex				hSystemConsole::messagesMutex_;
+    const hResourceID               hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
+    const hResourceID               hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
+    hMutex				            hSystemConsole::messagesMutex_;
     hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
-    hUint32				hSystemConsole::msgBufferLen_ = 0;
-    hBool				hSystemConsole::alive_ = hTrue;
+    hUint32				            hSystemConsole::msgBufferLen_ = 0;
+    hBool				            hSystemConsole::alive_ = hTrue;
 
 
     //////////////////////////////////////////////////////////////////////////

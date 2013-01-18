@@ -152,10 +152,10 @@ DLL_EXPORT
 Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
 {
     using namespace Heart;
-    hShaderProgram* shaderProg = hNEW(memalloc->resourcePakHeap_, hShaderProgram)();
+    hShaderProgram* shaderProg = hNEW(memalloc->resourcePakHeap_, hShaderProgram)(engine->GetRenderer());
     ShaderHeader header;
     hInputLayoutDesc* inLayout = NULL;
-    void* tmpShaderBlob = NULL;
+    void* shaderBlob = NULL;
 
     inFile->Read(&header, sizeof(ShaderHeader));
 
@@ -167,17 +167,16 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
         inFile->Read(inLayout, sizeof(hInputLayoutDesc)*header.inputLayoutElements);
     }
 
-    tmpShaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
-    inFile->Read(tmpShaderBlob, header.shaderBlobSize);
+    shaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
+    inFile->Read(shaderBlob, header.shaderBlobSize);
 
     engine->GetRenderer()->CompileShader(
-        (hChar*)tmpShaderBlob, header.shaderBlobSize, 
-        inLayout, header.inputLayoutElements, 
+        memalloc->resourcePakHeap_,
+        (hChar*)shaderBlob, header.shaderBlobSize,
         header.type, shaderProg);
     shaderProg->SetShaderType(header.type);
-    shaderProg->SetVertexLayout(header.vertexLayout);
 
-    hHeapFreeSafe(memalloc->tempHeap_, tmpShaderBlob);
+    hHeapFreeSafe(memalloc->tempHeap_, shaderBlob);
 
     return shaderProg;
 }
@@ -317,7 +316,7 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     using namespace Heart;
 
     hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
-    engine->GetRenderer()->DestroyShader(sp);
+    engine->GetRenderer()->DestroyShader(memalloc->resourcePakHeap_, sp);
     hDELETE(memalloc->resourcePakHeap_, sp);
 }
 
