@@ -57,6 +57,8 @@ namespace Heart
 
     hBool hdDX11RenderInputObject::BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
     {
+        hcAssert(paramID != 0);
+        hcAssert(buffer);
         hUint32 cbidx;
         hBool succ = false;
 
@@ -188,6 +190,7 @@ namespace Heart
         hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
         UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
         if (primType_ != streams->topology_) device_->IASetPrimitiveTopology(streams->topology_);
+        device_->IASetInputLayout(streams->layout_);
         device_->IASetIndexBuffer(streams->index_, DXGI_FORMAT_R16_UINT, 0);
         device_->IASetVertexBuffers(
             streams->streamLower_,

@@ -373,8 +373,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hMaterialInstance* hMaterial::createMaterialInstance()
+    hMaterialInstance* hMaterial::createMaterialInstance(hUint32 flags)
     {
+        hBool dontcreatecb=(hMatInst_DontInstanceConstantBuffers&flags) == hMatInst_DontInstanceConstantBuffers;;
         hMaterialInstance* matInst = hNEW(memHeap_, hMaterialInstance) (memHeap_, this);
         activeTechniques_->CopyTo(&matInst->techniques_);
 
@@ -396,7 +397,7 @@ namespace Heart
                                         alreadyAdded = hTrue;
                                     }
                                 }
-                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                                if (!alreadyAdded && !dontcreatecb) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
                             }
                             if (globalCB) matInst->BindConstanstBuffer(cbID, globalCB);
                         }
@@ -411,6 +412,7 @@ namespace Heart
         }
 
         hAtomic::Increment(instanceCount_);
+        matInst->flags_=flags;
         return matInst;
     }
 
@@ -420,9 +422,11 @@ namespace Heart
 
     void hMaterial::destroyMaterialInstance(hMaterialInstance* matInst)
     {
+        hcAssert(matInst);
+        hBool didntcreatecb=(hMatInst_DontInstanceConstantBuffers&matInst->flags_) == hMatInst_DontInstanceConstantBuffers;
         for (hUint32 i = 0, c = matInst->constBlocks_.GetSize(); i < c; ++i) {
             hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockParameterID(matInst->constBlocks_[i].paramid);
-            if (!globalCB) { //Created for material so delete
+            if (!globalCB && !didntcreatecb) { //Created for material so delete
                 renderer_->DestroyConstantBlocks(matInst->constBlocks_[i].constBlock, 1);
             }
         }
@@ -436,6 +440,8 @@ namespace Heart
 
     hBool hMaterialInstance::BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb)
     {
+        hcAssert(id);
+        hcAssert(cb);
         hBool succ = true;
         for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
             for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {

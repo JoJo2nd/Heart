@@ -86,6 +86,7 @@ namespace Heart
         {
             hZeroMem(streams_, sizeof(streams_));
             hZeroMem(strides_, sizeof(strides_));
+            hZeroMem(boundStreams_, sizeof(boundStreams_));
         }
 
         void setPrimType(PrimitiveType primType);

@@ -47,24 +47,27 @@ namespace Heart
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
+            hZeroMem(vertexBuffer_, sizeof(vertexBuffer_));
         }
         virtual ~hRenderable() 
         {
         }
 
         hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const {
-            hcAssert(stream < HEART_MAX_INPUT_STREAMS); return drawItem_.vertexBuffer_[stream]; 
+            hcAssert(stream < HEART_MAX_INPUT_STREAMS); 
+            return vertexBuffer_[stream]; 
         }
         void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) {
             hcAssert(stream < HEART_MAX_INPUT_STREAMS);
             vertexBuffer_[stream]=vtx;
         }
-        hIndexBuffer*                           GetIndexBuffer() const { return drawItem_.indexBuffer_; }
+        hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
         void                                    SetIndexBuffer(hIndexBuffer* idx) {
             indexBuffer_=idx;
         }
-        PrimitiveType                           GetPrimativeType() const { return drawItem_.primType_; }
+        PrimitiveType                           GetPrimativeType() const { return primType_; }
         void                                    SetPrimativeType(PrimitiveType primtype) { 
+            hcAssert(primtype < PRIMITIVETYPE_MAX);
             primType_ = primtype;
         }
         hUint16                                 GetStartIndex() const { return drawItem_.startVertex_; }
@@ -78,7 +81,9 @@ namespace Heart
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-        void                                    bind() { matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_, HEART_MAX_INPUT_STREAMS); }
+        void                                    bind() { 
+            matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_, HEART_MAX_INPUT_STREAMS); 
+        }
     
     private:
 

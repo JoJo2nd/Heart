@@ -243,13 +243,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyIndexBuffer( hIndexBuffer* pOut )
+    void hRenderer::DestroyIndexBuffer(hIndexBuffer* ib)
     {
-        //hcAssert( IsRenderThread() );
-
-        ParentClass::DestroyIndexBufferDevice( pOut->pImpl() );
-        pOut->SetImpl(NULL);
-        hDELETE_SAFE(GetGlobalHeap()/*!heap*/, pOut);
+        hcAssert(ib);
+        ParentClass::DestroyIndexBufferDevice(ib->pImpl());
+        ib->SetImpl(NULL);
+        hDELETE_SAFE(GetGlobalHeap(), ib);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -269,12 +268,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyVertexBuffer( hVertexBuffer* pOut )
+    void hRenderer::DestroyVertexBuffer(hVertexBuffer* vb)
     {
-        hMemoryHeapBase* heap = pOut->heap_;
-        ParentClass::DestroyVertexBufferDevice(pOut->pImpl());
-        pOut->SetImpl(NULL);
-        hDELETE_SAFE(heap, pOut);
+        hcAssert(vb);
+        hMemoryHeapBase* heap = vb->heap_;
+        ParentClass::DestroyVertexBufferDevice(vb->pImpl());
+        vb->SetImpl(NULL);
+        hDELETE_SAFE(heap, vb);
     }
 
     //////////////////////////////////////////////////////////////////////////

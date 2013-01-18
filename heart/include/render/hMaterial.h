@@ -143,6 +143,7 @@ namespace Heart
         TechniqueArrayType          techniques_;
         BoundConstBlockArrayType    constBlocks_;
         BoundTextureArrayType       boundTextures_;
+        hUint32                     flags_;
     };
 
     class HEART_DLLEXPORT hMaterial : public hResourceClassBase
@@ -173,7 +174,7 @@ namespace Heart
         void                                AddSamplerParameter(const hSamplerParameter& samp);
         
         /* Create Create/DestroyMaterialOverrides()*/
-        hMaterialInstance*  createMaterialInstance();
+        hMaterialInstance*  createMaterialInstance(hUint32 flags);
         void                destroyMaterialInstance(hMaterialInstance*);
 
         /* Bind interface - return false if not set on any programs */

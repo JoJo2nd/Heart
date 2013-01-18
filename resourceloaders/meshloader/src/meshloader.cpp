@@ -706,7 +706,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
                 hMaterial* mat = static_cast<hMaterial*>(engine->GetResourceManager()->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
                 // Possible the material won't have loaded just yet...
                 if (!mat) return hFalse; 
-                lod->renderObjects_[j].SetMaterial(mat->createMaterialInstance());
+                lod->renderObjects_[j].SetMaterial(mat->createMaterialInstance(0));
                 lod->renderObjects_[j].bind();
             }
         }
@@ -738,10 +738,14 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
         hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
         for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-            renderer->DestroyIndexBuffer(lod->renderObjects_[rIdx].GetIndexBuffer());
             for (hUint32 s = 0, sc=HEART_MAX_INPUT_STREAMS; s < sc; ++s) {
-                renderer->DestroyVertexBuffer(lod->renderObjects_[rIdx].GetVertexBuffer(s));
+                hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
+                if (vb) {
+                    renderer->DestroyVertexBuffer(vb);
+                }
             }
+            renderer->DestroyIndexBuffer(lod->renderObjects_[rIdx].GetIndexBuffer());
+            hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
         }
     }
 
