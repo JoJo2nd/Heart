@@ -205,26 +205,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetIndexStream( hdDX11IndexBuffer* idxBuf )
-    {
-        device_->IASetIndexBuffer( idxBuf->buffer_, DXGI_FORMAT_R16_UINT, 0 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride )
-    {
-        UINT offsets = 0;
-        UINT strideui = stride;
-        device_->IASetVertexBuffers( stream, 1, &vtxBuf->buffer_, &strideui, &offsets );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hdDX11RenderSubmissionCtx::SetRenderInputObject(hdRenderInputObject* inputobj)
     {
         device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
@@ -271,36 +251,6 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11RasterizerState* st )
     {
         device_->RSSetState( st->stateObj_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hUint32 samplerIdx, hdDX11SamplerState* st )
-    {
-        device_->VSSetSamplers( samplerIdx, 1, &st->stateObj_ );
-        device_->PSSetSamplers( samplerIdx, 1, &st->stateObj_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetPixelShader( hdDX11ShaderProgram* prog )
-    {
-        hcAssert( prog->type_ == ShaderType_FRAGMENTPROG );
-        device_->PSSetShader( prog->pixelShader_, NULL, 0 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetVertexShader( hdDX11ShaderProgram* prog )
-    {
-        hcAssert( prog->type_ == ShaderType_VERTEXPROG );
-        device_->VSSetShader( prog->vertexShader_, NULL, 0 );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -391,31 +341,6 @@ namespace Heart
         }
         if ( clearZ )
             device_->ClearDepthStencilView( depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetPrimitiveType( PrimitiveType type )
-    {
-        //if ( type != primType_ )
-        {
-            switch ( type )
-            {
-            case PRIMITIVETYPE_LINELIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_LINELIST );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
-            case PRIMITIVETYPE_TRILIST:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
-            case PRIMITIVETYPE_TRISTRIP:
-                device_->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
-                primType_ = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
-            default:
-                hcAssert( hFalse ); break;
-            }
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -594,28 +519,6 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
     {
         device_->Unmap(cb->constBuffer_, 0);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetConstantBlock( hUint32 reg, hdDX11ParameterConstantBlock* block )
-    {//Maybe split these?
-        device_->VSSetConstantBuffers( reg, 1, &block->constBuffer_ );
-        device_->PSSetConstantBuffers( reg, 1, &block->constBuffer_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state )
-    {
-        device_->VSSetSamplers( idx, 1, &state->stateObj_ );
-        device_->PSSetSamplers( idx, 1, &state->stateObj_ );
-        device_->VSSetShaderResources( idx, 1, &tex->shaderResourceView_ );
-        device_->PSSetShaderResources( idx, 1, &tex->shaderResourceView_ );
     }
 
     //////////////////////////////////////////////////////////////////////////

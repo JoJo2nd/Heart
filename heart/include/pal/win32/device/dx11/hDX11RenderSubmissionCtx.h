@@ -122,36 +122,26 @@ namespace Heart
         {}
 
         hdDX11CommandBuffer     SaveToCommandBuffer();
+        void                    RunSubmissionBuffer(hdDX11CommandBuffer cmdBuf);
+
         void    SetInputStreams(hdDX11RenderStreamsObject* streams);
-        void	SetIndexStream( hdDX11IndexBuffer* pIIBuf );
-        void	SetVertexStream( hUint32 stream, hdDX11VertexBuffer* vtxBuf, hUint32 stride );
-        /* This method... */
         void    SetRenderInputObject(hdDX11RenderInputObject* inputobj);
-        /* is able to call the following in one go...*/
-        void	SetRenderStateBlock(hUint32 samplerIdx, hdDX11SamplerState* st);
-        void    SetConstantBlock(hUint32 reg, hdDX11ParameterConstantBlock* block);
-        void    SetSampler( hUint32 idx, hdDX11Texture* tex, hdDX11SamplerState* state );
-        void    SetPixelShader( hdDX11ShaderProgram* prog );
-        void    SetVertexShader( hdDX11ShaderProgram* prog );
-        /* ..end */
-        void	SetRenderStateBlock(hdDX11BlendState* st );
-        void	SetRenderStateBlock(hdDX11DepthStencilState* st );
-        void	SetRenderStateBlock(hdDX11RasterizerState* st );
-        void	SetRenderTarget( hUint32 idx , hdDX11Texture* target );
-        void    SetDepthTarget( hdDX11Texture* depth );
-        void	SetViewport( const hViewport& viewport );
-        void	SetScissorRect( const hScissorRect& scissor );
-        void	ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z );
-        void    SetPrimitiveType( PrimitiveType type );
-        void	DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex );
-        void    DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex );
-        void    RunSubmissionBuffer( hdDX11CommandBuffer cmdBuf );
-        void    Map( hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data );
-        void    Unmap( hdDX11Texture* tex, hUint32 level, void* ptr );
-        void    Map( hdDX11IndexBuffer* ib, hdDX11MappedResourceData* data );
-        void    Unmap( hdDX11IndexBuffer* ib, void* ptr );
-        void    Map( hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data );
-        void    Unmap( hdDX11VertexBuffer* vb, void* ptr );
+        void	SetRenderStateBlock(hdDX11BlendState* st);
+        void	SetRenderStateBlock(hdDX11DepthStencilState* st);
+        void	SetRenderStateBlock(hdDX11RasterizerState* st);
+        void	SetRenderTarget(hUint32 idx , hdDX11Texture* target);
+        void    SetDepthTarget(hdDX11Texture* depth );
+        void	SetViewport(const hViewport& viewport);
+        void	SetScissorRect(const hScissorRect& scissor);
+        void	ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
+        void	DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
+        void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
+        void    Map(hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data);
+        void    Unmap(hdDX11Texture* tex, hUint32 level, void* ptr);
+        void    Map(hdDX11IndexBuffer* ib, hdDX11MappedResourceData* data);
+        void    Unmap(hdDX11IndexBuffer* ib, void* ptr);
+        void    Map(hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data);
+        void    Unmap(hdDX11VertexBuffer* vb, void* ptr);
         void    Map(hdDX11ParameterConstantBlock* vb, hdDX11MappedResourceData* data);
         void    Unmap(hdDX11ParameterConstantBlock* vb, void* ptr);
         void    Update(hdDX11ParameterConstantBlock* cb);

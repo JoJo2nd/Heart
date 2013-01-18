@@ -365,7 +365,7 @@ namespace Heart
     hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
     {
         HRESULT hr;
-        hdDX11Texture* texture = hNEW(GetGlobalHeap()/*!heap*/, hdDX11Texture);
+        hdDX11Texture* texture = hNEW(GetGlobalHeap(), hdDX11Texture);
         hBool compressedFormat = hFalse;
 
         D3D11_TEXTURE2D_DESC desc;

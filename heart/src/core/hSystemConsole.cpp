@@ -165,7 +165,6 @@ namespace Heart
                 if (!tech) return;
                 for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, backdropPlane_, backdropPlane_->getStride());
                     ctx->SetMaterialPass(passptr);
                     ctx->DrawPrimitive(2, 0);
                 }
@@ -204,9 +203,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
@@ -226,9 +223,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, textBuffer_, textBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
@@ -270,9 +265,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
 
@@ -292,9 +285,7 @@ namespace Heart
 
                 for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetVertexStream(0, logBuffer_, logBuffer_->getStride());
                     ctx->SetMaterialPass(passptr);
-                    ctx->SetPrimitiveType(PRIMITIVETYPE_TRILIST);
                     ctx->DrawPrimitive(prims, 0);
                 }
             }
@@ -332,12 +323,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    const hResourceID   hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
-    const hResourceID   hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
-    hMutex				hSystemConsole::messagesMutex_;
+    const hResourceID               hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
+    const hResourceID               hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
+    hMutex				            hSystemConsole::messagesMutex_;
     hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
-    hUint32				hSystemConsole::msgBufferLen_ = 0;
-    hBool				hSystemConsole::alive_ = hTrue;
+    hUint32				            hSystemConsole::msgBufferLen_ = 0;
+    hBool				            hSystemConsole::alive_ = hTrue;
 
 
     //////////////////////////////////////////////////////////////////////////
