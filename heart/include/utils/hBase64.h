@@ -36,9 +36,14 @@ namespace Heart
 {
 namespace hBase64
 {
-    hUint32 Encode(void* inputbuf, hUint32 inputCount, void* outputbuf, hUint32 outputLimit);
-    hUint32 DecodeCalcRequiredSize(void* inputbuf, hUint32 inputCount);
-    hUint32 Decode(void* inputbuf, hUint32 inputCount, void* outputbuf, hUint32 outputLimit);
+    HEART_DLLEXPORT
+    hUint HEART_API EncodeCalcRequiredSize(hUint inputCount);
+    HEART_DLLEXPORT
+    hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
+    HEART_DLLEXPORT
+    hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount);
+    HEART_DLLEXPORT
+    hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
 }
 }
 
