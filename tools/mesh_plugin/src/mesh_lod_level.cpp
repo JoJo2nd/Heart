@@ -28,6 +28,7 @@
 #include "mesh_lod_level.h"
 #include "boost/filesystem.hpp"
 #include <sstream>
+#include "material_utils.h"
 
 #define MESH_AI_FLAGS (\
     aiProcess_CalcTangentSpace |\
@@ -39,6 +40,102 @@
     aiProcess_OptimizeMeshes |\
     aiProcess_OptimizeGraph |\
     aiProcess_SortByPType)
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+#define AI_COlOUR_TO_UBYTE(c) \
+    (long)((((unsigned char)(c.r*256.f))<<24)|(((unsigned char)(c.b*256.f))<<16)|(((unsigned char)(c.b*256.f))<<8)|(((unsigned char)(c.a*256.f))))
+
+#define AI_COlOUR_TO_SBYTE(c) \
+    (long)((((unsigned char)(c.r*512.f-256.f))<<24)|(((unsigned char)(c.b*512.f-256.f))<<16)|(((unsigned char)(c.b*512.f-256.f))<<8)|(((unsigned char)(c.a*512.f-256.f))))
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+const char* getSemanticName(Heart::hInputSemantic sem) {
+    switch(sem) {
+    case Heart::eIS_POSITION: return "POSITION";
+    case Heart::eIS_NORMAL: return "NORMAL";
+    case Heart::eIS_TEXCOORD: return "TEXCOORD";
+    case Heart::eIS_COLOUR: return "COLOUR";
+    case Heart::eIS_TANGENT: return "TANGENT";
+    case Heart::eIS_BITANGENT: return "BITANGENT";
+    case Heart::eIS_INSTANCE: return "INSTANCE";
+    }
+    return "UNKNOWN";
+}
+
+const char* getFormatName(Heart::hInputFormat sem) {
+    switch(sem) {
+    case Heart::eIF_FLOAT4: return "FLOAT4";
+    case Heart::eIF_FLOAT3: return "FLOAT3";
+    case Heart::eIF_FLOAT2: return "FLOAT2";
+    case Heart::eIF_FLOAT1: return "FLOAT1";
+    case Heart::eIF_UBYTE4_UNORM: return "UBTYE4UNORM";
+    case Heart::eIF_UBYTE4_SNORM: return "UBTYE4SNORM";
+    }
+    return "UNKNOWN";
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+typedef void(*vecWriteProc)(const aiVector3D&, float*);
+typedef void(*colWriteFloatProc)(const aiColor4D&, float*);
+typedef void(*colWriteByteProc)(const aiColor4D&, long*);
+
+void writeVecToFloat(const aiVector3D& v, float* out) {
+    out[0]=v.x;
+}
+
+void writeVecTo2Floats(const aiVector3D& v, float* out) {
+    out[0]=v.x;
+    out[1]=v.y;
+}
+
+void writeVecTo3Floats(const aiVector3D& v, float* out) {
+    out[0]=v.x;
+    out[1]=v.y;
+    out[2]=v.z;
+}
+
+void writeVecTo4Floats(const aiVector3D& v, float* out) {
+    out[0]=v.x;
+    out[1]=v.y;
+    out[2]=v.z;
+    out[3]=1.f;
+}
+
+void writeColourToFloat(const aiColor4D& v, float* out) {
+    out[0]=v.r;
+}
+
+void writeColourTo2Floats(const aiColor4D& v, float* out) {
+    out[0]=v.r;
+    out[1]=v.g;
+}
+
+void writeColourTo3Floats(const aiColor4D& v, float* out) {
+    out[0]=v.r;
+    out[1]=v.g;
+    out[2]=v.b;
+}
+
+void writeColourTo4Floats(const aiColor4D& v, float* out) {
+    out[0]=v.r;
+    out[1]=v.g;
+    out[2]=v.b;
+    out[3]=v.a;
+}
+
+void writeColourToByteUnorm(const aiColor4D& v, long* out) {
+    out[0]=AI_COlOUR_TO_UBYTE(v);
+}
+
+void writeColourToByteSnorm(const aiColor4D& v, long* out) {
+    out[0]=AI_COlOUR_TO_SBYTE(v);
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -92,11 +189,14 @@ bool MeshLodLevel::importMeshObject(const std::string& filepath, size_t lodlevel
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-MeshExportResult MeshLodLevel::exportToMDF(rapidxml::xml_node<>* rootnode, vPackageSystem* pkgsys, const MaterialRemap& remap) const {
+MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, vPackageSystem* pkgsys, const MaterialRemap& remap) const {
+    using namespace rapidxml;
+
     MeshExportResult ret={true, ""};
     char tmpbuf[1024];
 
     for (size_t i=0,n=aiScene_->mNumMeshes; i<n; ++i) {
+        rapidxml::xml_node<>* renderablenode=xmldoc->allocate_node(node_element, "renderable");
         aiString matname;
         std::string fullmatname;
         aiMesh* mesh=aiScene_->mMeshes[i];
@@ -130,6 +230,8 @@ MeshExportResult MeshLodLevel::exportToMDF(rapidxml::xml_node<>* rootnode, vPack
             ret.errors+=fullassetname.c_str();
             return ret;
         }
+        rapidxml::xml_attribute<>* matnameattr=xmldoc->allocate_attribute("material", xmldoc->allocate_string(fullassetname.c_str()));
+        renderablenode->append_attribute(matnameattr);
 
         std::ifstream infile;
         infile.open(res->getInputFilePath());
@@ -220,6 +322,186 @@ MeshExportResult MeshLodLevel::exportToMDF(rapidxml::xml_node<>* rootnode, vPack
         }
 
         //Write out...
+        for (size_t i=0,n=finalinputlayout.size(); i<n; ++i) {
+            boost::shared_array<char> convertedBuffer(NULL);
+            size_t convertedBufferLen=0;
+            Heart::hInputLayoutDesc inSem=finalinputlayout[i];
+            char* base64dest=NULL;
+            size_t base64len=0;
+            rapidxml::xml_node<>* streamnode=NULL;
+
+            if (inSem.semantic_==Heart::eIS_POSITION) {
+                if (inSem.semIndex_ > 0) {
+                    ret.exportOK=false;
+                    ret.errors="Unsupported position semantic index (value too high)";
+                    return ret;
+                }
+                streamnode=xmldoc->allocate_node(node_element, "stream");
+                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
+                streamnode->append_attribute(attr);
+                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
+                streamnode->append_attribute(attr);
+                _itoa(inSem.semIndex_, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+                _itoa(mesh->mNumVertices, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+
+                vecWriteProc writer;
+                size_t destinc;
+                float* dest;
+                switch(inSem.typeFormat_){
+                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
+                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
+                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
+                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
+                default: 
+                    ret.exportOK=false; 
+                    ret.errors="Unsupported position format";
+                    return ret;
+                }
+                dest=new float[mesh->mNumVertices*destinc];
+                convertedBuffer=boost::shared_array<char>((char*)dest);
+                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
+                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
+                    writer(mesh->mVertices[v], dest);
+                }
+            } else if (inSem.semantic_==Heart::eIS_NORMAL) {
+                if (inSem.semIndex_ > 0) {
+                    ret.exportOK=false;
+                    ret.errors="Unsupported normal semantic index (value too high)";
+                    return ret;
+                }
+                streamnode=xmldoc->allocate_node(node_element, "stream");
+                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
+                streamnode->append_attribute(attr);
+                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
+                streamnode->append_attribute(attr);
+                _itoa(inSem.semIndex_, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+                _itoa(mesh->mNumVertices, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+
+                vecWriteProc writer;
+                size_t destinc;
+                float* dest;
+                switch(inSem.typeFormat_){
+                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
+                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
+                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
+                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
+                default: 
+                    ret.exportOK=false; 
+                    ret.errors="Unsupported normal format";
+                    return ret;
+                }
+                dest=new float[mesh->mNumVertices*destinc];
+                convertedBuffer=boost::shared_array<char>((char*)dest);
+                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
+                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
+                    writer(mesh->mNormals[v], dest);
+                }
+            } else if (inSem.semantic_==Heart::eIS_TANGENT) {
+                if (inSem.semIndex_ > 0) {
+                    ret.exportOK=false;
+                    ret.errors="Unsupported tangent semantic index (value too high)";
+                    return ret;
+                }
+                streamnode=xmldoc->allocate_node(node_element, "stream");
+                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
+                streamnode->append_attribute(attr);
+                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
+                streamnode->append_attribute(attr);
+                _itoa(inSem.semIndex_, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+                _itoa(mesh->mNumVertices, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+
+                vecWriteProc writer;
+                size_t destinc;
+                float* dest;
+                switch(inSem.typeFormat_){
+                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
+                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
+                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
+                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
+                default: 
+                    ret.exportOK=false; 
+                    ret.errors="Unsupported tangent format";
+                    return ret;
+                }
+                dest=new float[mesh->mNumVertices*destinc];
+                convertedBuffer=boost::shared_array<char>((char*)dest);
+                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
+                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
+                    writer(mesh->mTangents[v], dest);
+                }
+            } else if (inSem.semantic_==Heart::eIS_COLOUR) {
+                if (inSem.semIndex_ > 3 || !mesh->HasVertexColors(inSem.semIndex_)) {
+                    ret.exportOK=false;
+                    ret.errors="Unsupported colour semantic index (value too high or doesn't exist in mesh)";
+                    return ret;
+                }
+                streamnode=xmldoc->allocate_node(node_element, "stream");
+                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
+                streamnode->append_attribute(attr);
+                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
+                streamnode->append_attribute(attr);
+                _itoa(inSem.semIndex_, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+                _itoa(mesh->mNumVertices, tmpbuf, 10);
+                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+                streamnode->append_attribute(attr);
+
+                colWriteFloatProc vecwriter=NULL;
+                colWriteByteProc  colwriter=NULL;
+                size_t destinc;
+                float* fdest;
+                long*  ldest;
+                switch(inSem.typeFormat_){
+                case Heart::eIF_FLOAT1: destinc=1; vecwriter=writeColourToFloat; break;
+                case Heart::eIF_FLOAT2: destinc=2; vecwriter=writeColourTo2Floats; break;
+                case Heart::eIF_FLOAT3: destinc=3; vecwriter=writeColourTo3Floats; break;
+                case Heart::eIF_FLOAT4: destinc=4; vecwriter=writeColourTo4Floats; break;
+                case Heart::eIF_UBYTE4_UNORM: destinc=1; colwriter=writeColourToByteUnorm; break;
+                case Heart::eIF_UBYTE4_SNORM: destinc=1; colwriter=writeColourToByteSnorm; break;
+                default: 
+                    ret.exportOK=false; 
+                    ret.errors="Unsupported color format";
+                    return ret;
+                }
+                if (vecwriter) {
+                    fdest=new float[mesh->mNumVertices*destinc];
+                    convertedBuffer=boost::shared_array<char>((char*)fdest);
+                    convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
+                    for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, fdest+=destinc) {
+                        vecwriter(mesh->mColors[inSem.semIndex_][v], fdest);
+                    }
+                } else if (colwriter) {
+                    ldest=new long[mesh->mNumVertices*destinc];
+                    convertedBuffer=boost::shared_array<char>((char*)ldest);
+                    convertedBufferLen=sizeof(long)*destinc*mesh->mNumVertices;
+                    for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, ldest+=destinc) {
+                        colwriter(mesh->mColors[inSem.semIndex_][v], ldest);
+                    }
+                }
+            }
+
+            base64len=Heart::hBase64::EncodeCalcRequiredSize(convertedBufferLen);
+            base64dest=xmldoc->allocate_string(NULL, base64len);
+            Heart::hBase64::Encode(convertedBuffer.get(), convertedBufferLen, base64dest, base64len);
+            streamnode->value(base64dest, base64len);
+            renderablenode->append_node(streamnode);
+            
+        }
+
+        rootnode->append_node(renderablenode);
     }
 
     return ret;

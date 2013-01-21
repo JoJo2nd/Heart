@@ -36,6 +36,7 @@
 #include "assimp/postprocess.h"
 #include "viewer_api.h"
 #include "rapidxml/rapidxml.hpp"
+#include "xml_helpers.h"
 #include "boost/serialization/version.hpp"
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/string.hpp"
@@ -54,7 +55,9 @@ public:
     const MaterialNameVector&   getMaterialNames() const { return matNames_; }
     const aiScene*              getScene() const { return aiScene_; }
     const std::string&          getSceneName() const { return meshSourceFilepath_; }
-    MeshExportResult            exportToMDF(rapidxml::xml_node<>* rootnode, vPackageSystem* pkgsys, const MaterialRemap& remap) const;
+    MeshExportResult            exportToMDF(
+        xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, 
+        vPackageSystem* pkgsys, const MaterialRemap& remap) const;
 
 private:
     friend class boost::serialization::access;

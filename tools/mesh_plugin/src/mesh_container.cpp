@@ -27,6 +27,7 @@
 
 #include "mesh_container.h"
 #include "xml_helpers.h"
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -125,8 +126,23 @@ MeshExportResult MeshContainer::exportToMDF(const std::string& filepath, vPackag
         lodnode->append_attribute(lvlatt);
 
         rootnode->append_node(lodnode);
-        lodLevels_[i].exportToMDF(lodnode, pakSys, materialRemap_);
+        res=lodLevels_[i].exportToMDF(&outputxml, lodnode, pakSys, materialRemap_);
+        if (!res.exportOK) {
+            return res;
+        }
     }
+
+    outputxml.append_node(rootnode);
+
+    std::fstream file;
+    file.open(filepath, std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
+    if (!file.is_open()) {
+        res.exportOK=false;
+        res.errors="Couldn't open output file for write";
+        return res;
+    }
+    file << outputxml;
+    file.close();
 
     return res;
 }

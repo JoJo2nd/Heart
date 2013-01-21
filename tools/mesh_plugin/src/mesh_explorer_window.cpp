@@ -276,7 +276,11 @@ void MeshExplorerWindow::onExport(wxCommandEvent& evt) {
             if (saveFileDialog.ShowModal() == wxID_CANCEL) {
                 return;
             }
-            currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString(), pkgSystem_);
+            wxBusyCursor waitingCursor;
+            MeshExportResult exRes=currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString(), pkgSystem_);
+            if (!exRes.exportOK) {
+                wxMessageDialog(this, exRes.errors, "Export Faild?").ShowModal();
+            }
         }
     }
 }
