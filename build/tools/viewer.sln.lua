@@ -126,3 +126,4 @@ solution (SlnName)
     
     dofile "viewer_api.proj.lua"
     dofile "viewer_texture_plugin.proj.lua"
+    dofile "viewer_mesh_plugin.proj.lua"

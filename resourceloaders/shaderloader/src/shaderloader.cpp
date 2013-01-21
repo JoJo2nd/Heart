@@ -52,6 +52,7 @@ struct FXIncludeHandler : public ID3DInclude
     struct FXIncludePath : Heart::hLinkedListElement< FXIncludePath >
     {
         Heart::hString path_;
+
     };
     typedef Heart::hLinkedList< FXIncludePath > IncludePathArray;
 
@@ -224,7 +225,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 
     const char* entry = params->GetBuildParameter("ENTRY","main");
     const char* profile = params->GetBuildParameter("PROFILE","vs_3_0");
-    hr = D3DX11CompileFromMemory( 
+    hr = D3DCompile( 
         sourcedata, 
         sourcedatalen, 
         params->GetInputFilePath(),
@@ -234,10 +235,8 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         profile, 
         compileFlags, 
         0, 
-        NULL, 
         &result, 
-        &errors, 
-        NULL );
+        &errors);
 
     if (FAILED(hr) && errors)
     {

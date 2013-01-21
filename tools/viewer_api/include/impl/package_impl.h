@@ -46,6 +46,7 @@ class vPackage::vImpl
 
 public:
     const char* getName() const { return name_.c_str(); }
+    const char* getRootPath() const { return packagePathStr_.c_str(); }
     size_t     getHeapSize() const { return heapSize_; }
     void       setHeapSize(size_t bytes) { heapSize_ = bytes; }
     size_t     getResourceCount() const  { return resources_.size(); }
@@ -59,10 +60,11 @@ public:
     vErrorCode                      resolveResourceLinks(vPackageSystem* pkgSys);
     vErrorCode                      serialise(const vPackageSystem& pkgsys) const;
     const boost::filesystem::path&  getPackagePath() const { return packagePath_; }
-    void getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray);
+    void                            getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray);
 private:
 
     std::string             name_;
+    std::string             packagePathStr_;
     boost::filesystem::path packagePath_;
     boost::filesystem::path xmlPath_;
     boost::filesystem::path lnkPath_;

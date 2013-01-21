@@ -1317,5 +1317,4 @@ namespace Heart
     {
         cmdBuf->Release();
     }
-
 }

@@ -64,6 +64,7 @@ public:
     vPackage();
     ~vPackage();
     const char*         getName() const;
+    const char*         getRootPath() const;
     size_t              getHeapSize() const;
     void                setHeapSize(size_t) const;
     size_t              getResourceCount() const;
