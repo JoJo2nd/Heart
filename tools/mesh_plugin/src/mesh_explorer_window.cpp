@@ -270,17 +270,36 @@ void MeshExplorerWindow::onExport(wxCommandEvent& evt) {
             if (wxMessageDialog(this, msg, "Are You Sure?", wxYES_NO).ShowModal() == wxID_NO) {
                 return;
             }
-            
-            wxFileDialog saveFileDialog(this, _("Export MDF file"), "", "",
-                "MDF files (*.mdf)|*.mdf", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
-            if (saveFileDialog.ShowModal() == wxID_CANCEL) {
-                return;
+        }    
+        wxFileDialog saveFileDialog(this, _("Export MDF file"), "", "",
+            "MDF files (*.mdf)|*.mdf", wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+        if (saveFileDialog.ShowModal() == wxID_CANCEL) {
+            return;
+        }
+        wxBusyCursor waitingCursor;
+        MeshExportResult exRes=currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString(), pkgSystem_);
+        if (!exRes.exportOK) {
+            wxMessageDialog(this, exRes.errors, "Export Failed?").ShowModal();
+        }
+
+        if (!res) {
+            res=pkg->addResourceInfo(currentMesh_->getExportResourceName().c_str(), matResID_);
+            if (!res) {
+                wxMessageDialog(this, "Failed to add resource to package...", "Error").ShowModal();
             }
-            wxBusyCursor waitingCursor;
-            MeshExportResult exRes=currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString(), pkgSystem_);
-            if (!exRes.exportOK) {
-                wxMessageDialog(this, exRes.errors, "Export Faild?").ShowModal();
-            }
+        }
+
+        res->setInputFilePath(saveFileDialog.GetPath().c_str());
+        res->breakAllDependentLinks();
+        for (MaterialRemap::const_iterator i=currentMesh_->getMaterialRemap().begin(),n=currentMesh_->getMaterialRemap().end(); i!=n; ++i) {
+            std::string fullassetname=i->second;
+            std::string pkgname=fullassetname.substr(0, fullassetname.find('.'));
+            std::string resname=fullassetname.substr(fullassetname.find('.')+1);
+            vPackage* lpkg=pkgSystem_->getPackage(pkgname.c_str());
+            if (!lpkg) continue;
+            vResource* lres=lpkg->getResourceInfoByName(resname.c_str());
+            if (!lres) continue;
+            pkg->addPackageLink(res, lres);
         }
     }
 }

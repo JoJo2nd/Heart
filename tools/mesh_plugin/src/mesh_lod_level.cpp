@@ -45,10 +45,25 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 #define AI_COlOUR_TO_UBYTE(c) \
-    (long)((((unsigned char)(c.r*256.f))<<24)|(((unsigned char)(c.b*256.f))<<16)|(((unsigned char)(c.b*256.f))<<8)|(((unsigned char)(c.a*256.f))))
+    (long)((((unsigned char)(c[0]*256.f))<<24)|(((unsigned char)(c[1]*256.f))<<16)|(((unsigned char)(c[2]*256.f))<<8)|(((unsigned char)(c[3]*256.f))))
 
 #define AI_COlOUR_TO_SBYTE(c) \
-    (long)((((unsigned char)(c.r*512.f-256.f))<<24)|(((unsigned char)(c.b*512.f-256.f))<<16)|(((unsigned char)(c.b*512.f-256.f))<<8)|(((unsigned char)(c.a*512.f-256.f))))
+    (long)((((unsigned char)(c[0]*512.f-256.f))<<24)|(((unsigned char)(c[1]*512.f-256.f))<<16)|(((unsigned char)(c[2]*512.f-256.f))<<8)|(((unsigned char)(c[3]*512.f-256.f))))
+
+#define MDF_EXPORT_CHECK1(x, str1) \
+    if (!(x)) {\
+        ret.exportOK=false;\
+        ret.errors=str1;\
+        return ret;\
+    }
+
+#define MDF_EXPORT_CHECK2(x, str1, str2) \
+    if (!(x)) {\
+        ret.exportOK=false;\
+        ret.errors=str1;\
+        ret.errors+=str2;\
+        return ret;\
+    }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -81,60 +96,88 @@ const char* getFormatName(Heart::hInputFormat sem) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-typedef void(*vecWriteProc)(const aiVector3D&, float*);
-typedef void(*colWriteFloatProc)(const aiColor4D&, float*);
-typedef void(*colWriteByteProc)(const aiColor4D&, long*);
 
-void writeVecToFloat(const aiVector3D& v, float* out) {
-    out[0]=v.x;
+template< typename t_vec, size_t indim, size_t outdim >
+void writeVecToFloat(const t_vec& v, float* out) {
+    for (size_t i=0; i<outdim; ++i) {
+        if (i<indim) {
+            out[i]=v[i];
+        } else {
+            out[i]= i >= 4 ? 1.f : 0.f;
+        }
+    }
 }
 
-void writeVecTo2Floats(const aiVector3D& v, float* out) {
-    out[0]=v.x;
-    out[1]=v.y;
-}
-
-void writeVecTo3Floats(const aiVector3D& v, float* out) {
-    out[0]=v.x;
-    out[1]=v.y;
-    out[2]=v.z;
-}
-
-void writeVecTo4Floats(const aiVector3D& v, float* out) {
-    out[0]=v.x;
-    out[1]=v.y;
-    out[2]=v.z;
-    out[3]=1.f;
-}
-
-void writeColourToFloat(const aiColor4D& v, float* out) {
-    out[0]=v.r;
-}
-
-void writeColourTo2Floats(const aiColor4D& v, float* out) {
-    out[0]=v.r;
-    out[1]=v.g;
-}
-
-void writeColourTo3Floats(const aiColor4D& v, float* out) {
-    out[0]=v.r;
-    out[1]=v.g;
-    out[2]=v.b;
-}
-
-void writeColourTo4Floats(const aiColor4D& v, float* out) {
-    out[0]=v.r;
-    out[1]=v.g;
-    out[2]=v.b;
-    out[3]=v.a;
-}
-
-void writeColourToByteUnorm(const aiColor4D& v, long* out) {
+template< typename t_ty >
+void writeVecToByteUnorm(const t_ty& v, long* out) {
     out[0]=AI_COlOUR_TO_UBYTE(v);
 }
 
-void writeColourToByteSnorm(const aiColor4D& v, long* out) {
+template< typename t_ty >
+void writeVecToByteSnorm(const t_ty& v, long* out) {
     out[0]=AI_COlOUR_TO_SBYTE(v);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+template< typename t_ty >
+rapidxml::xml_node<>* writeStreamNode(xml_doc* doc, Heart::hInputSemantic semantic, Heart::hInputFormat typeformat, 
+size_t semIdx, size_t elements, const t_ty* inputbuf, boost::shared_array<char>* outputBuffer, size_t* outputBufLen) {
+    using namespace rapidxml;
+
+    typedef void(*tyVecWriteFloatProc)(const t_ty&, float*);
+    typedef void(*tyVecWriteByteProc)(const t_ty&, long*);
+
+    MeshExportResult ret;
+    xml_doc* xmldoc=doc;
+    rapidxml::xml_node<>* streamnode=NULL;
+    char tmpbuf[128];
+    
+    streamnode=xmldoc->allocate_node(node_element, "stream");
+    rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(semantic));
+    streamnode->append_attribute(attr);
+    attr=xmldoc->allocate_attribute("type", getFormatName(typeformat));
+    streamnode->append_attribute(attr);
+    _itoa(semIdx, tmpbuf, 10);
+    attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
+    streamnode->append_attribute(attr);
+    _itoa(elements, tmpbuf, 10);
+    attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+    streamnode->append_attribute(attr);
+
+    tyVecWriteFloatProc vecwriter=NULL;
+    tyVecWriteByteProc  colwriter=NULL;
+    size_t destinc;
+    float* fdest;
+    long*  ldest;
+    switch(typeformat){
+    case Heart::eIF_FLOAT1: destinc=1; vecwriter=writeVecToFloat<t_ty, 4, 1>; break;
+    case Heart::eIF_FLOAT2: destinc=2; vecwriter=writeVecToFloat<t_ty, 4, 2>; break;
+    case Heart::eIF_FLOAT3: destinc=3; vecwriter=writeVecToFloat<t_ty, 4, 3>; break;
+    case Heart::eIF_FLOAT4: destinc=4; vecwriter=writeVecToFloat<t_ty, 4, 4>; break;
+    case Heart::eIF_UBYTE4_UNORM: destinc=1; colwriter=writeVecToByteUnorm<t_ty>; break;
+    case Heart::eIF_UBYTE4_SNORM: destinc=1; colwriter=writeVecToByteSnorm<t_ty>; break;
+    default: return NULL;
+    }
+    if (vecwriter) {
+        fdest=new float[elements*destinc];
+        *outputBuffer=boost::shared_array<char>((char*)fdest);
+        *outputBufLen=sizeof(float)*destinc*elements;
+        for (size_t v=0,vn=elements; v<vn; ++v, fdest+=destinc) {
+            vecwriter(inputbuf[v], fdest);
+        }
+    } else if (colwriter) {
+        ldest=new long[elements*destinc];
+        *outputBuffer=boost::shared_array<char>((char*)ldest);
+        *outputBufLen=sizeof(long)*destinc*elements;
+        for (size_t v=0,vn=elements; v<vn; ++v, ldest+=destinc) {
+            colwriter(inputbuf[v], ldest);
+        }
+    }
+
+    return streamnode;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -206,43 +249,21 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         fullmatname+="_";
         fullmatname+=matname.C_Str();
         MaterialRemap::const_iterator matremap=remap.find(fullmatname);
-        if (matremap==remap.end()) {
-            ret.exportOK=false;
-            ret.errors="Failed to find remap for material ";
-            ret.errors+=matname.C_Str();
-            return ret;
-        }
+        MDF_EXPORT_CHECK2(matremap!=remap.end(), "Failed to find remap for material ", matname.C_Str());
 
         std::string fullassetname=matremap->second;
         std::string pkgname=fullassetname.substr(0, fullassetname.find('.'));
         std::string resname=fullassetname.substr(fullassetname.find('.')+1);
         vPackage* pkg=pkgsys->getPackage(pkgname.c_str());
-        if (!pkg) {
-            ret.exportOK=false;
-            ret.errors="Failed to remap material, couldn't find package ";
-            ret.errors+=pkgname.c_str();
-            return ret;
-        }
+        MDF_EXPORT_CHECK2(pkg, "Failed to remap material, couldn't find package ", pkgname)
         vResource* res=pkg->getResourceInfoByName(resname.c_str());
-        if (!res) {
-            ret.exportOK=false;
-            ret.errors="Failed to remap material, couldn't find resource ";
-            ret.errors+=fullassetname.c_str();
-            return ret;
-        }
+        MDF_EXPORT_CHECK2(res, "Failed to remap material, couldn't find resource ", fullassetname.c_str());
         rapidxml::xml_attribute<>* matnameattr=xmldoc->allocate_attribute("material", xmldoc->allocate_string(fullassetname.c_str()));
         renderablenode->append_attribute(matnameattr);
 
         std::ifstream infile;
         infile.open(res->getInputFilePath());
-        if(!infile.is_open()) {
-            ret.exportOK=false;
-            ret.errors="Failed to remap material, couldn't open resource ";
-            ret.errors+=fullassetname.c_str();
-            ret.errors+=" with filepath ";
-            ret.errors+=res->getInputFilePath();
-            return ret;
-        }
+        MDF_EXPORT_CHECK2(infile.is_open(), "Failed to remap material, couldn't open resource ", res->getInputFilePath());
         std::vector< std::string > vertexProgs;
         size_t xmlfilelen=boost::filesystem::file_size(res->getInputFilePath());
         boost::shared_array<char> xmldata(new char[xmlfilelen+1]);
@@ -250,52 +271,25 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         infile.read(xmldata.get(), xmlfilelen);
         xmldata[xmlfilelen]=0;
         extractVertexProgramsFromMaterial(xmldata.get(), xmlfilelen, &vertexProgs);
-
-        if (vertexProgs.empty()) {
-            ret.exportOK=false;
-            ret.errors="Failed to any vertex programs in material ";
-            ret.errors+=fullassetname.c_str();
-            return ret;
-        }
+        MDF_EXPORT_CHECK2(!vertexProgs.empty(), "Failed to any vertex programs in material ", fullassetname);
 
         std::vector< Heart::hInputLayoutDesc > finalinputlayout;
         for (size_t vp=0,vpn=vertexProgs.size(); vp<vpn; ++vp) {
             std::string vppkgname=vertexProgs[i].substr(0, vertexProgs[i].find('.'));
             std::string vpresname=vertexProgs[i].substr(vertexProgs[i].find('.')+1);
             vPackage* vppkg=pkgsys->getPackage(vppkgname.c_str());
-            if (!vppkg) {
-                ret.exportOK=false;
-                ret.errors="Failed to read vertex prog, couldn't find package ";
-                ret.errors+=vppkgname;
-                return ret;
-            }
+            MDF_EXPORT_CHECK2(vppkg, "Failed to read vertex prog, couldn't find package ", vppkgname);
             vResource* vpres=pkg->getResourceInfoByName(vpresname.c_str());
-            if (!vpres) {
-                ret.exportOK=false;
-                ret.errors="Failed to read vertex prog, couldn't find resource ";
-                ret.errors+=vertexProgs[i];
-                return ret;
-            }
+            MDF_EXPORT_CHECK2(vpres, "Failed to read vertex prog, couldn't find resource ", vertexProgs[i]);
             std::ifstream vpfile;
             vpfile.open(vpres->getInputFilePath());
-            if(!vpfile.is_open()) {
-                ret.exportOK=false;
-                ret.errors="Failed to read vertex prog, couldn't open resource ";
-                ret.errors+=vertexProgs[i];
-                ret.errors+=" with filepath ";
-                ret.errors+=vpres->getInputFilePath();
-                return ret;
-            }
+            MDF_EXPORT_CHECK2(vpfile.is_open(), "Failed to read vertex prog, couldn't open resource ", vpres->getInputFilePath());
             std::vector< Heart::hInputLayoutDesc > inputlayout;
             size_t vertexSrcLen=boost::filesystem::file_size(vpres->getInputFilePath());
             boost::shared_array<char> vertexSrc(new char[vertexSrcLen+1]);
             memset(vertexSrc.get(), 0, vertexSrcLen+1);
             vpfile.read(vertexSrc.get(), vertexSrcLen);
-            if (!vpres->getParameter("PROFILE") || !vpres->getParameter("ENTRY")) {
-                ret.exportOK=false;
-                ret.errors="Failed to read vertex prog, couldn't find entry or profile";
-                return ret;
-            }
+            MDF_EXPORT_CHECK1(vpres->getParameter("PROFILE") && vpres->getParameter("ENTRY"), "Failed to read vertex prog, couldn't find entry or profile");
             bool succ=extractVertexInputLayoutFromShaderSource(
                 vertexSrc.get(), 
                 strlen(vertexSrc.get()), 
@@ -331,166 +325,35 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
             rapidxml::xml_node<>* streamnode=NULL;
 
             if (inSem.semantic_==Heart::eIS_POSITION) {
-                if (inSem.semIndex_ > 0) {
-                    ret.exportOK=false;
-                    ret.errors="Unsupported position semantic index (value too high)";
-                    return ret;
-                }
-                streamnode=xmldoc->allocate_node(node_element, "stream");
-                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
-                streamnode->append_attribute(attr);
-                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
-                streamnode->append_attribute(attr);
-                _itoa(inSem.semIndex_, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-                _itoa(mesh->mNumVertices, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-
-                vecWriteProc writer;
-                size_t destinc;
-                float* dest;
-                switch(inSem.typeFormat_){
-                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
-                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
-                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
-                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
-                default: 
-                    ret.exportOK=false; 
-                    ret.errors="Unsupported position format";
-                    return ret;
-                }
-                dest=new float[mesh->mNumVertices*destinc];
-                convertedBuffer=boost::shared_array<char>((char*)dest);
-                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
-                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
-                    writer(mesh->mVertices[v], dest);
-                }
+                MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported position semantic index (value too high)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mVertices, &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_NORMAL) {
-                if (inSem.semIndex_ > 0) {
-                    ret.exportOK=false;
-                    ret.errors="Unsupported normal semantic index (value too high)";
-                    return ret;
-                }
-                streamnode=xmldoc->allocate_node(node_element, "stream");
-                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
-                streamnode->append_attribute(attr);
-                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
-                streamnode->append_attribute(attr);
-                _itoa(inSem.semIndex_, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-                _itoa(mesh->mNumVertices, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-
-                vecWriteProc writer;
-                size_t destinc;
-                float* dest;
-                switch(inSem.typeFormat_){
-                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
-                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
-                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
-                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
-                default: 
-                    ret.exportOK=false; 
-                    ret.errors="Unsupported normal format";
-                    return ret;
-                }
-                dest=new float[mesh->mNumVertices*destinc];
-                convertedBuffer=boost::shared_array<char>((char*)dest);
-                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
-                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
-                    writer(mesh->mNormals[v], dest);
-                }
+                MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported normal semantic index (value too high)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mNormals, &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_TANGENT) {
-                if (inSem.semIndex_ > 0) {
-                    ret.exportOK=false;
-                    ret.errors="Unsupported tangent semantic index (value too high)";
-                    return ret;
-                }
-                streamnode=xmldoc->allocate_node(node_element, "stream");
-                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
-                streamnode->append_attribute(attr);
-                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
-                streamnode->append_attribute(attr);
-                _itoa(inSem.semIndex_, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-                _itoa(mesh->mNumVertices, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-
-                vecWriteProc writer;
-                size_t destinc;
-                float* dest;
-                switch(inSem.typeFormat_){
-                case Heart::eIF_FLOAT1: destinc=1; writer=writeVecToFloat; break;
-                case Heart::eIF_FLOAT2: destinc=2; writer=writeVecTo2Floats; break;
-                case Heart::eIF_FLOAT3: destinc=3; writer=writeVecTo3Floats; break;
-                case Heart::eIF_FLOAT4: destinc=4; writer=writeVecTo4Floats; break;
-                default: 
-                    ret.exportOK=false; 
-                    ret.errors="Unsupported tangent format";
-                    return ret;
-                }
-                dest=new float[mesh->mNumVertices*destinc];
-                convertedBuffer=boost::shared_array<char>((char*)dest);
-                convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
-                for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, dest+=destinc) {
-                    writer(mesh->mTangents[v], dest);
-                }
+                MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported tangent semantic index (value too high)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mTangents, &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
+            } else if (inSem.semantic_==Heart::eIS_BITANGENT) {
+                MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported bitangent semantic index (value too high)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mBitangents, &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_COLOUR) {
-                if (inSem.semIndex_ > 3 || !mesh->HasVertexColors(inSem.semIndex_)) {
-                    ret.exportOK=false;
-                    ret.errors="Unsupported colour semantic index (value too high or doesn't exist in mesh)";
-                    return ret;
-                }
-                streamnode=xmldoc->allocate_node(node_element, "stream");
-                rapidxml::xml_attribute<>* attr=xmldoc->allocate_attribute("semantic", getSemanticName(inSem.semantic_));
-                streamnode->append_attribute(attr);
-                attr=xmldoc->allocate_attribute("type", getFormatName(inSem.typeFormat_));
-                streamnode->append_attribute(attr);
-                _itoa(inSem.semIndex_, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("index", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-                _itoa(mesh->mNumVertices, tmpbuf, 10);
-                attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
-                streamnode->append_attribute(attr);
-
-                colWriteFloatProc vecwriter=NULL;
-                colWriteByteProc  colwriter=NULL;
-                size_t destinc;
-                float* fdest;
-                long*  ldest;
-                switch(inSem.typeFormat_){
-                case Heart::eIF_FLOAT1: destinc=1; vecwriter=writeColourToFloat; break;
-                case Heart::eIF_FLOAT2: destinc=2; vecwriter=writeColourTo2Floats; break;
-                case Heart::eIF_FLOAT3: destinc=3; vecwriter=writeColourTo3Floats; break;
-                case Heart::eIF_FLOAT4: destinc=4; vecwriter=writeColourTo4Floats; break;
-                case Heart::eIF_UBYTE4_UNORM: destinc=1; colwriter=writeColourToByteUnorm; break;
-                case Heart::eIF_UBYTE4_SNORM: destinc=1; colwriter=writeColourToByteSnorm; break;
-                default: 
-                    ret.exportOK=false; 
-                    ret.errors="Unsupported color format";
-                    return ret;
-                }
-                if (vecwriter) {
-                    fdest=new float[mesh->mNumVertices*destinc];
-                    convertedBuffer=boost::shared_array<char>((char*)fdest);
-                    convertedBufferLen=sizeof(float)*destinc*mesh->mNumVertices;
-                    for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, fdest+=destinc) {
-                        vecwriter(mesh->mColors[inSem.semIndex_][v], fdest);
-                    }
-                } else if (colwriter) {
-                    ldest=new long[mesh->mNumVertices*destinc];
-                    convertedBuffer=boost::shared_array<char>((char*)ldest);
-                    convertedBufferLen=sizeof(long)*destinc*mesh->mNumVertices;
-                    for (size_t v=0,vn=mesh->mNumVertices; v<vn; ++v, ldest+=destinc) {
-                        colwriter(mesh->mColors[inSem.semIndex_][v], ldest);
-                    }
-                }
+                MDF_EXPORT_CHECK1(inSem.semIndex_<4 && mesh->HasVertexColors(inSem.semIndex_), "Unsupported colour semantic index (value too high or colour values not there)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mColors[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
+            } else if (inSem.semantic_==Heart::eIS_TEXCOORD) {
+                MDF_EXPORT_CHECK1(inSem.semIndex_<8 && mesh->HasTextureCoords(inSem.semIndex_), "Unsupported texcoord semantic index (value too high or no data at index)");
+                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mTextureCoords[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
+                MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             }
 
             base64len=Heart::hBase64::EncodeCalcRequiredSize(convertedBufferLen);
@@ -498,7 +361,6 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
             Heart::hBase64::Encode(convertedBuffer.get(), convertedBufferLen, base64dest, base64len);
             streamnode->value(base64dest, base64len);
             renderablenode->append_node(streamnode);
-            
         }
 
         rootnode->append_node(renderablenode);

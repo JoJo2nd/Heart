@@ -80,6 +80,7 @@ public:
     void                removeParameter(const vResourceParameter& param);
     void                removeParameter(const char* paramname);
     void                setInputFilePath(const boost::filesystem::path& p);
+    void                breakAllDependentLinks();
 
     //Non-public interface
     vErrorCode          addAsDependent(boost::shared_ptr< vResource > dep);

@@ -96,6 +96,7 @@ public:
     void                removeParameter(const char*);
     void                setInputFilePath(const char* filepath);
     const char*         getInputFilePath() const;
+    void                breakAllDependentLinks();
 };
 
 class VAPI_EXPORT vResourceParameter
