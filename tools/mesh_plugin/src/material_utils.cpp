@@ -188,7 +188,7 @@ bool extractVertexInputLayoutFromShaderSource(
             vid.semantic_ = Heart::eIS_COLOUR;
         } else if ( Heart::hStrCmp( inputDesc.SemanticName, "TEXCOORD" ) == 0 ) {
             vid.semantic_ = Heart::eIS_TEXCOORD;
-        } else if ( inputDesc.SemanticName[0]=='i' ) {
+        } else if (  Heart::hStrCmp( inputDesc.SemanticName, "INSTANCE" ) ) {
             vid.semantic_ = Heart::eIS_INSTANCE;
         } else {
             *outErrors += "Unknown input semantic ";

@@ -197,6 +197,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11VertexLayout* hdDX11ShaderProgram::createVertexLayout(hInputLayoutDesc* desc, hUint n) const {
+        D3D11_SHADER_DESC shaderdesc;
+        shaderInfo_->GetDesc(&shaderdesc);
+        if (n < shaderdesc.InputParameters) {
+            return NULL;
+        }
         return device_->CreateVertexLayout(desc, n, shaderBlob_, blobLen_);
     }
 

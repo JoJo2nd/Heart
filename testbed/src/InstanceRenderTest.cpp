@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	ModelRenderTest.cpp	
+    filename:   InstanceRenderTest.cpp  
     
-    Copyright (c) 10:10:2012 James Moran
+    Copyright (c) 27:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,32 +24,37 @@
     distribution.
 
 *********************************************************************/
-
 #include "testbed_precompiled.h"
-#include "ModelRenderTest.h"
+#include "InstanceRenderTest.h"
 
-DEFINE_HEART_UNIT_TEST(ModelRenderTest);
+DEFINE_HEART_UNIT_TEST(InstanceRenderTest);
+
+#define INSTANCE_ROWS   (20)
+#define INSTANCE_COLS   (INSTANCE_ROWS)
+#define INSTANCE_INC    (50.f)
+#define INSTANCE_START  (-(INSTANCE_INC)*(INSTANCE_ROWS/2))
+#define INSTANCE_COUNT  (INSTANCE_ROWS*INSTANCE_COLS)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ModelRenderTest::RunUnitTest()
+hUint32 InstanceRenderTest::RunUnitTest()
 {
     switch(state_)
     {
     case eBeginLoad:
         {
-            hcPrintf("Loading package \"UNITTEST\"");
-            engine_->GetResourceManager()->mtLoadPackage("UNITTEST");
+            hcPrintf("Loading package \"INSTANCETEST\"");
+            engine_->GetResourceManager()->mtLoadPackage("INSTANCETEST");
             state_ = eLoading;
         }
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded("UNITTEST"))
+            if (engine_->GetResourceManager()->mtIsPackageLoaded("INSTANCETEST"))
             {
-                hcPrintf("Loaded package \"UNITTEST\"");
+                hcPrintf("Loaded package \"INSTANCETEST\"");
                 state_ = eRender;
                 timer_ = 0.f;
                 CreateRenderResources();
@@ -61,7 +66,7 @@ hUint32 ModelRenderTest::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
-            if (timer_ > 15.f)
+            if (timer_ > 30.f)
             {
                 state_ = eBeginUnload;
             }
@@ -71,8 +76,8 @@ hUint32 ModelRenderTest::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
-            hcPrintf("Unloading package \"UNITTEST\"");
+            engine_->GetResourceManager()->mtUnloadPackage("INSTANCETEST");
+            hcPrintf("Unloading package \"INSTANCETEST\"");
             state_ = eExit;
         }
         break;
@@ -91,7 +96,7 @@ hUint32 ModelRenderTest::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModelRenderTest::RenderUnitTest()
+void InstanceRenderTest::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
@@ -116,7 +121,7 @@ void ModelRenderTest::RenderUnitTest()
             drawCall_.progInput_ = *passptr->GetRenderInputObject();
             drawCall_.streams_=*passptr->getRenderStreamsObject();
             drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
+            drawCall_.instanceCount_=INSTANCE_COUNT;
             drawCtx_.SubmitDrawCall(drawCall_);
         }
     }
@@ -128,9 +133,15 @@ void ModelRenderTest::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModelRenderTest::CreateRenderResources()
+void InstanceRenderTest::CreateRenderResources()
 {
     using namespace Heart;
+#pragma pack(push, 1)
+    struct PostionVec {
+        hFloat x,y,z;
+    };
+#pragma pack(pop)
+
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
@@ -150,42 +161,65 @@ void ModelRenderTest::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 10.f, -110.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
+    camPos_ = Heart::hVec3(0.f, 120.f, -650.f);
+    camDir_ = Heart::hVec3(.022f, -.22f, 1.f);
+    camUp_  = Heart::hVec3(0.f, 1.9f, .45f);
 
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
 
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera->SetProjectionParams( aspect, 0.1f, 2000.f);
     camera->SetViewMatrix(vm);
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("UNITTEST.BOCO"));
-
+    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("INSTANCETEST.BOCO"));
     hcAssert(renderModel_);
+
+    PostionVec positions[INSTANCE_COUNT];
+    Heart::hInputLayoutDesc instLayout[] ={
+        {eIS_INSTANCE, 0, eIF_FLOAT3, 1, 1},
+    };
+
+    hFloat gridz=INSTANCE_START;
+    for (hUint i=0, idx=0; i<INSTANCE_ROWS; ++i, gridz+=INSTANCE_INC) {
+        hFloat gridx=INSTANCE_START;
+        for (hUint j=0; j<INSTANCE_COLS; ++j, gridx+=INSTANCE_INC, ++idx) {
+            positions[idx].x=gridx;
+            positions[idx].y=0.f;
+            positions[idx].z=gridz;
+        }
+    }
+
+    renderer->CreateVertexBuffer(
+        positions, INSTANCE_COUNT, instLayout, hStaticArraySize(instLayout), 
+        Heart::RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &instanceStream_);
+
+
+    renderModel_->bindVertexStream(1, instanceStream_);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModelRenderTest::DestroyRenderResources()
+void InstanceRenderTest::DestroyRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->ReleaseRenderTargetSetup();
+    renderer->DestroyVertexBuffer(instanceStream_);
+    instanceStream_=NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ModelRenderTest::UpdateCamera()
+void InstanceRenderTest::UpdateCamera()
 {
     using namespace Heart;
     using namespace Heart::hVec3Func;

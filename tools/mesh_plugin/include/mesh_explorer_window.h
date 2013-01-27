@@ -88,11 +88,13 @@ private:
     void onAddLodClick(wxCommandEvent& evt);
     void onMatListItemSelect(wxListEvent& evt);
     void onResNameTextEntry(wxCommandEvent& evt);
+    void onYZAxisSwapCheck(wxCommandEvent& evt);
     void refreshView(size_t selectedLod, size_t excludeFlags = 0);
 
     boost::shared_ptr< MeshContainer >  currentMesh_;
     vPackageSystem*                     pkgSystem_;
     vResourceTypeID                     matResID_;
+    vResourceTypeID                     meshResID_;
     wxComboBox*                         packageDropdown_;
     wxTextCtrl*                         resNameEntry_;
     wxFilePickerCtrl*                   lodFilePick_;
@@ -101,6 +103,7 @@ private:
     wxListView*                         meshNodeList_;
     wxListView*                         matList_;
     wxComboBox*                         matSelectDropdown_;
+    wxCheckBox*                         yzAxisSwapCheck_;
 };
 
 #endif // MESH_EXPLORER_WINDOW_H__

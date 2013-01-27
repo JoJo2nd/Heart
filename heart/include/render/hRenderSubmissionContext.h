@@ -103,6 +103,7 @@ namespace Heart
         void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
+        void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
         void    Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo);
         void    Unmap(hIndexBufferMapInfo* outInfo);
         void    Map(hVertexBuffer* ib, hVertexBufferMapInfo* outInfo);

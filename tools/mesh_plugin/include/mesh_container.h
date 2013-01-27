@@ -51,6 +51,7 @@ public:
     const MeshLodLevel&     getLodLevel(size_t level) const { return lodLevels_[level]; }
     bool                    importMeshIntoLod(size_t lodlvl, const std::string& filepath);
     void                    appendNewLodLevel();
+    void                    setYZAxisSwap(size_t lodlvl, bool val);
     const std::string&      getExportPackageName() const { return outputPackageName_; }
     void                    setExportPackageName(const char* pkgname) { outputPackageName_=pkgname; }
     const std::string&      getExportResourceName() const { return outputResName_; }

@@ -70,25 +70,25 @@
 //////////////////////////////////////////////////////////////////////////
 const char* getSemanticName(Heart::hInputSemantic sem) {
     switch(sem) {
-    case Heart::eIS_POSITION: return "POSITION";
-    case Heart::eIS_NORMAL: return "NORMAL";
-    case Heart::eIS_TEXCOORD: return "TEXCOORD";
-    case Heart::eIS_COLOUR: return "COLOUR";
-    case Heart::eIS_TANGENT: return "TANGENT";
-    case Heart::eIS_BITANGENT: return "BITANGENT";
-    case Heart::eIS_INSTANCE: return "INSTANCE";
+    case Heart::eIS_POSITION:   return "POSITION";
+    case Heart::eIS_NORMAL:     return "NORMAL";
+    case Heart::eIS_TEXCOORD:   return "TEXCOORD";
+    case Heart::eIS_COLOUR:     return "COLOUR";
+    case Heart::eIS_TANGENT:    return "TANGENT";
+    case Heart::eIS_BITANGENT:  return "BITANGENT";
+    case Heart::eIS_INSTANCE:   return "INSTANCE";
     }
     return "UNKNOWN";
 }
 
 const char* getFormatName(Heart::hInputFormat sem) {
     switch(sem) {
-    case Heart::eIF_FLOAT4: return "FLOAT4";
-    case Heart::eIF_FLOAT3: return "FLOAT3";
-    case Heart::eIF_FLOAT2: return "FLOAT2";
-    case Heart::eIF_FLOAT1: return "FLOAT1";
-    case Heart::eIF_UBYTE4_UNORM: return "UBTYE4UNORM";
-    case Heart::eIF_UBYTE4_SNORM: return "UBTYE4SNORM";
+    case Heart::eIF_FLOAT4:         return "FLOAT4";
+    case Heart::eIF_FLOAT3:         return "FLOAT3";
+    case Heart::eIF_FLOAT2:         return "FLOAT2";
+    case Heart::eIF_FLOAT1:         return "FLOAT1";
+    case Heart::eIF_UBYTE4_UNORM:   return "UBTYE4UNORM";
+    case Heart::eIF_UBYTE4_SNORM:   return "UBTYE4SNORM";
     }
     return "UNKNOWN";
 }
@@ -108,6 +108,23 @@ void writeVecToFloat(const t_vec& v, float* out) {
     }
 }
 
+template< typename t_vec, size_t indim, size_t outdim >
+void writeVecToFloatSwap(const t_vec& v, float* out) {
+    for (size_t i=0; i<outdim; ++i) {
+        if (i<indim) {
+            out[i]=v[i];
+        } else {
+            out[i]= i >= 4 ? 1.f : 0.f;
+        }
+    }
+    if (outdim>2) {
+        //swap Z<->Y
+        float t=out[1];
+        out[1]=out[2];
+        out[2]=t;
+    }
+}
+
 template< typename t_ty >
 void writeVecToByteUnorm(const t_ty& v, long* out) {
     out[0]=AI_COlOUR_TO_UBYTE(v);
@@ -122,9 +139,9 @@ void writeVecToByteSnorm(const t_ty& v, long* out) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-template< typename t_ty >
-rapidxml::xml_node<>* writeStreamNode(xml_doc* doc, Heart::hInputSemantic semantic, Heart::hInputFormat typeformat, 
-size_t semIdx, size_t elements, const t_ty* inputbuf, boost::shared_array<char>* outputBuffer, size_t* outputBufLen) {
+template< typename t_ty, size_t t_indim >
+rapidxml::xml_node<>* writeStreamNode(xml_doc* doc, Heart::hInputSemantic semantic, Heart::hInputFormat typeformat, size_t semIdx, 
+size_t elements, const t_ty* inputbuf, boost::shared_array<char>* outputBuffer, size_t* outputBufLen, bool axisswap=false) {
     using namespace rapidxml;
 
     typedef void(*tyVecWriteFloatProc)(const t_ty&, float*);
@@ -146,6 +163,9 @@ size_t semIdx, size_t elements, const t_ty* inputbuf, boost::shared_array<char>*
     _itoa(elements, tmpbuf, 10);
     attr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
     streamnode->append_attribute(attr);
+    _itoa(0, tmpbuf, 10);
+    attr=xmldoc->allocate_attribute("sinput", xmldoc->allocate_string(tmpbuf));
+    streamnode->append_attribute(attr);
 
     tyVecWriteFloatProc vecwriter=NULL;
     tyVecWriteByteProc  colwriter=NULL;
@@ -153,10 +173,10 @@ size_t semIdx, size_t elements, const t_ty* inputbuf, boost::shared_array<char>*
     float* fdest;
     long*  ldest;
     switch(typeformat){
-    case Heart::eIF_FLOAT1: destinc=1; vecwriter=writeVecToFloat<t_ty, 4, 1>; break;
-    case Heart::eIF_FLOAT2: destinc=2; vecwriter=writeVecToFloat<t_ty, 4, 2>; break;
-    case Heart::eIF_FLOAT3: destinc=3; vecwriter=writeVecToFloat<t_ty, 4, 3>; break;
-    case Heart::eIF_FLOAT4: destinc=4; vecwriter=writeVecToFloat<t_ty, 4, 4>; break;
+    case Heart::eIF_FLOAT1: destinc=1; vecwriter=axisswap ? writeVecToFloatSwap<t_ty, t_indim, 1> : writeVecToFloat<t_ty, t_indim, 1>; break;
+    case Heart::eIF_FLOAT2: destinc=2; vecwriter=axisswap ? writeVecToFloatSwap<t_ty, t_indim, 2> : writeVecToFloat<t_ty, t_indim, 2>; break;
+    case Heart::eIF_FLOAT3: destinc=3; vecwriter=axisswap ? writeVecToFloatSwap<t_ty, t_indim, 3> : writeVecToFloat<t_ty, t_indim, 3>; break;
+    case Heart::eIF_FLOAT4: destinc=4; vecwriter=axisswap ? writeVecToFloatSwap<t_ty, t_indim, 4> : writeVecToFloat<t_ty, t_indim, 4>; break;
     case Heart::eIF_UBYTE4_UNORM: destinc=1; colwriter=writeVecToByteUnorm<t_ty>; break;
     case Heart::eIF_UBYTE4_SNORM: destinc=1; colwriter=writeVecToByteSnorm<t_ty>; break;
     default: return NULL;
@@ -187,6 +207,7 @@ size_t semIdx, size_t elements, const t_ty* inputbuf, boost::shared_array<char>*
 MeshLodLevel::MeshLodLevel() 
     : aiScene_(NULL)
     , aiImporter_(new Assimp::Importer)
+    , yzAxisSwap_(false)
 {
 
 }
@@ -316,6 +337,57 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         }
 
         //Write out...
+        boost::shared_array<char> idxBuffer(NULL);
+        size_t convertedIdxBufferLen=0;
+        size_t indices=mesh->mNumFaces*3;
+        size_t indicessize=0;
+        if (indices > 0xFFFF) {
+            indicessize=indices*sizeof(hUint32);
+            idxBuffer=boost::shared_array<char>(new char[indicessize]);
+            hUint32* iptr=(hUint32*)idxBuffer.get();
+            for (hUint32 faceIdx=0,n=mesh->mNumFaces; faceIdx < n; ++faceIdx) {
+                hUint32 idxs[] = {
+                    mesh->mFaces[faceIdx].mIndices[0],
+                    mesh->mFaces[faceIdx].mIndices[1],
+                    mesh->mFaces[faceIdx].mIndices[2],
+                };
+                //Only handle triangles
+                MDF_EXPORT_CHECK1(mesh->mFaces[faceIdx].mNumIndices, "Non-Triangle mesh");
+                *iptr=mesh->mFaces[faceIdx].mIndices[0]; ++iptr;
+                *iptr=mesh->mFaces[faceIdx].mIndices[1]; ++iptr;
+                *iptr=mesh->mFaces[faceIdx].mIndices[2]; ++iptr;
+            }
+        } else {
+            indicessize=indices*sizeof(hUint16);
+            idxBuffer=boost::shared_array<char>(new char[indicessize]);
+            hUint16* iptr=(hUint16*)idxBuffer.get();
+            for (hUint32 faceIdx=0,n=mesh->mNumFaces; faceIdx < n; ++faceIdx) {
+                hUint16 idxs[] = {
+                    (hUint16)mesh->mFaces[faceIdx].mIndices[0],
+                    (hUint16)mesh->mFaces[faceIdx].mIndices[1],
+                    (hUint16)mesh->mFaces[faceIdx].mIndices[2],
+                };
+                //Only handle triangles
+                MDF_EXPORT_CHECK1(mesh->mFaces[faceIdx].mNumIndices, "Non-Triangle mesh");
+                *iptr=mesh->mFaces[faceIdx].mIndices[0]; ++iptr;
+                *iptr=mesh->mFaces[faceIdx].mIndices[1]; ++iptr;
+                *iptr=mesh->mFaces[faceIdx].mIndices[2]; ++iptr;
+            }
+        }
+
+        rapidxml::xml_node<>* idxstreamnode=NULL;
+        idxstreamnode=xmldoc->allocate_node(node_element, "index");
+        rapidxml::xml_attribute<>* idxattr=xmldoc->allocate_attribute("type", (indices > 0xFFFF) ? "IDX32" : "IDX16");
+        idxstreamnode->append_attribute(idxattr);
+        _itoa(indices, tmpbuf, 10);
+        idxattr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
+        idxstreamnode->append_attribute(idxattr);
+        size_t idxBase64len=Heart::hBase64::EncodeCalcRequiredSize(indicessize);
+        char* idxBase64dest=xmldoc->allocate_string(NULL, idxBase64len);
+        Heart::hBase64::Encode(idxBuffer.get(), indicessize, idxBase64dest, idxBase64len);
+        idxstreamnode->value(idxBase64dest, idxBase64len);
+        renderablenode->append_node(idxstreamnode);
+
         for (size_t i=0,n=finalinputlayout.size(); i<n; ++i) {
             boost::shared_array<char> convertedBuffer(NULL);
             size_t convertedBufferLen=0;
@@ -326,35 +398,38 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
 
             if (inSem.semantic_==Heart::eIS_POSITION) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported position semantic index (value too high)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
-                    mesh->mNumVertices, mesh->mVertices, &convertedBuffer, &convertedBufferLen);
+                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mVertices, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_NORMAL) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported normal semantic index (value too high)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
-                    mesh->mNumVertices, mesh->mNormals, &convertedBuffer, &convertedBufferLen);
+                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mNormals, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_TANGENT) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported tangent semantic index (value too high)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
-                    mesh->mNumVertices, mesh->mTangents, &convertedBuffer, &convertedBufferLen);
+                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mTangents, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_BITANGENT) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported bitangent semantic index (value too high)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
-                    mesh->mNumVertices, mesh->mBitangents, &convertedBuffer, &convertedBufferLen);
+                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                    mesh->mNumVertices, mesh->mBitangents, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_COLOUR) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_<4 && mesh->HasVertexColors(inSem.semIndex_), "Unsupported colour semantic index (value too high or colour values not there)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiColor4D, 4>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mColors[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_TEXCOORD) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_<8 && mesh->HasTextureCoords(inSem.semIndex_), "Unsupported texcoord semantic index (value too high or no data at index)");
-                streamnode=writeStreamNode(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mTextureCoords[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
+            } else {
+                continue; //Handles instance streams
             }
+
 
             base64len=Heart::hBase64::EncodeCalcRequiredSize(convertedBufferLen);
             base64dest=xmldoc->allocate_string(NULL, base64len);

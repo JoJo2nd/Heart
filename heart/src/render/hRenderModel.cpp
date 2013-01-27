@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   plugin_defines.h  
+    filename:   hRenderModel.cpp  
     
-    Copyright (c) 19:1:2013 James Moran
+    Copyright (c) 27:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,37 +24,22 @@
     distribution.
 
 *********************************************************************/
-#pragma once
 
-#ifndef PLUGIN_DEFINES_H__
-#define PLUGIN_DEFINES_H__
-
-#ifdef PLUGIN_COMPILE_DLL
-#   define PLUGIN_EXPORT __declspec(dllexport)
-#else
-#   define PLUGIN_EXPORT __declspec(dllimport)
-#endif
-
-#define PLUGIN_NAME ("Mesh Plugin")
-
-typedef unsigned int uint;
-
-enum MeshModuleMenuID
+namespace Heart
 {
-    MENUID_SHOWINSPECTOR,
-    MENUID_NEW,
-    MENUID_LOAD,
-    MENUID_SAVE,
-    MENUID_EXPORT,
-    MENUID_PACKAGEDROPDOWN,
-    MENUID_RESNAMEENTRY,
-    MENUID_LODFILEPICKER,
-    MENUID_LODLEVELDROPDOWN,
-    MENUID_MESHNODELIST,
-    MENUID_MATSELECTDROPDOWN,
-    MENUID_MATLIST,
-    MENUID_ADDLODLEVEL,
-    MENUID_YZAXISSWAP,
-};
 
-#endif // PLUGIN_DEFINES_H__
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool hRenderModel::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
+    for (hUint lodIdx=0,lodCnt=levelCount_; lodIdx<lodCnt; ++lodIdx) {
+        hGeomLODLevel* lod=&lodLevels_[lodIdx];
+        for (hUint rndIdx=0,rndCnt=lodLevels_[lodIdx].renderObjects_.GetSize(); rndIdx<rndCnt; ++rndIdx) {
+            lod->renderObjects_[rndIdx].bindVertexStream(inputSlot, vtxBuf);
+        }
+    }
+    return true;
+}
+
+}

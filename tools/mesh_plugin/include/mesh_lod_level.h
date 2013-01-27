@@ -55,6 +55,8 @@ public:
     const MaterialNameVector&   getMaterialNames() const { return matNames_; }
     const aiScene*              getScene() const { return aiScene_; }
     const std::string&          getSceneName() const { return meshSourceFilepath_; }
+    void                        setYZAxisSwap(bool v) { yzAxisSwap_=v; }
+    bool                        getYZAxisSwap() const { return yzAxisSwap_; }
     MeshExportResult            exportToMDF(
         xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, 
         vPackageSystem* pkgsys, const MaterialRemap& remap) const;
@@ -65,6 +67,7 @@ private:
     template<typename t_archive>
     void save(t_archive& ar, const unsigned int version) const
     {
+        ar&yzAxisSwap_;
         ar&lodlevel_;
         ar&matNames_;
         ar&meshSourceFilepath_;
@@ -73,6 +76,9 @@ private:
     void load(t_archive& ar, const unsigned int version)
     {
         switch(version) {
+        case 1: {
+            ar&yzAxisSwap_;
+        }
         case 0: {
             ar&lodlevel_;
             ar&matNames_;
@@ -89,6 +95,9 @@ private:
     size_t              lodlevel_;
     MaterialNameVector  matNames_;
     std::string         meshSourceFilepath_;
+    bool                yzAxisSwap_;
 };
+
+BOOST_CLASS_VERSION(MeshLodLevel, 1)
 
 #endif // MESH_LOD_LEVEL_H__

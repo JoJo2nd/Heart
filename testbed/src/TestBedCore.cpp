@@ -36,6 +36,7 @@
 #include "ModelRenderTest.h"
 #include "EventTest.h"
 #include "Base64Test.h"
+#include "InstanceRenderTest.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -54,6 +55,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(ResourceLoadTest)
         REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(EventTest)
+        REGISTER_UNIT_TEST(InstanceRenderTest)
     };
 
     void consoleStateEvent(hFloat secs) 

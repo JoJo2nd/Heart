@@ -136,6 +136,7 @@ namespace Heart
         void	ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
         void	DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
+        void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx);
         void    Map(hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data);
         void    Unmap(hdDX11Texture* tex, hUint32 level, void* ptr);
         void    Map(hdDX11IndexBuffer* ib, hdDX11MappedResourceData* data);

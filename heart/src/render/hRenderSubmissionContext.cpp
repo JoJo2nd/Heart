@@ -108,6 +108,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hRenderSubmissionCtx::DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex) {
+        impl_.DrawIndexedPrimitiveInstanced(instanceCount, nPrimatives, startVertex);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderSubmissionCtx::RunCommandBuffer( hdRenderCommandBuffer cmdBuf )
     {
         impl_.RunSubmissionBuffer( cmdBuf );
@@ -225,4 +233,5 @@ namespace Heart
             renderer_->DestroyConstantBlocks(instanceConstantsBlock_, 1);
         }
     }
+
 }

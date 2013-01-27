@@ -1240,6 +1240,7 @@ namespace Heart
             case eIF_UBYTE4_SNORM: *stride += 4*sizeof(hByte); elements[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
             }
 
+            elements[i].InputSlot=desc[i].inputStream_;
             elements[i].SemanticIndex = desc[i].semIndex_;
             elements[i].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
             elements[i].InputSlotClass = desc[i].instanceDataRepeat_ == 0 ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;

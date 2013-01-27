@@ -123,6 +123,10 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
         0,
         NULL,
         wxCB_DROPDOWN|wxCB_READONLY);
+    yzAxisSwapCheck_=new wxCheckBox(
+        this, 
+        idProvider->aquireMenuID(MENUID_YZAXISSWAP), 
+        "Swap Y Up Axis");
 
     wxBoxSizer* topSizer=new wxBoxSizer(wxVERTICAL);
     wxBoxSizer* packageSizer=new wxBoxSizer(wxHORIZONTAL);
@@ -134,7 +138,8 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     lodSizer->Add(lodLevelDropdown_, 1, wxSTRETCH_NOT);
     lodSizer->Add(new wxStaticText(this, wxID_ANY, "LOD LEVEL"), 1, wxALL|wxSHAPED);
     lodSizer->Add(addLodLevelBtn_, 1, wxSTRETCH_NOT);
-    lodPickSizer->Add(lodFilePick_, 1, wxSTRETCH_NOT);
+    lodPickSizer->Add(yzAxisSwapCheck_, 1, wxSTRETCH_NOT);
+    lodPickSizer->Add(lodFilePick_, 3, wxSTRETCH_NOT);
     matPickSizer->Add(matSelectDropdown_, 1, wxSTRETCH_NOT);
     matPickSizer->Add(new wxStaticText(this, wxID_ANY, "Replacement Material"), 1, wxALL|wxSHAPED);
     topSizer->Add(packageSizer, 5, wxALL|wxEXPAND);
@@ -162,6 +167,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     matSelectDropdown_->Bind(wxEVT_COMMAND_COMBOBOX_SELECTED, &MeshExplorerWindow::onMatSelectItem, this, idProvider->getMenuID(MENUID_MATSELECTDROPDOWN));
     resNameEntry_->Bind(wxEVT_COMMAND_TEXT_UPDATED, &MeshExplorerWindow::onResNameTextEntry, this, idProvider->getMenuID(MENUID_RESNAMEENTRY));
     matList_->Bind(wxEVT_COMMAND_LIST_ITEM_SELECTED, &MeshExplorerWindow::onMatListItemSelect, this, idProvider->getMenuID(MENUID_MATLIST));
+    yzAxisSwapCheck_->Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &MeshExplorerWindow::onYZAxisSwapCheck, this, idProvider->getMenuID(MENUID_YZAXISSWAP));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onNew, this, idProvider->getMenuID(MENUID_NEW));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onLoad, this, idProvider->getMenuID(MENUID_LOAD));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onSave, this, idProvider->getMenuID(MENUID_SAVE));
@@ -170,6 +176,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     wxArrayString selectionItems;
     std::vector<vResource*> matResources;
     matResID_=pkgSystem_->getTypeID("MFX");
+    meshResID_=pkgSystem_->getTypeID("MSH");
     for(size_t i=0,n=pkgSystem_->getPackageCount(); i<n; ++i) {
         selectionItems.push_back(pkgSystem_->getPackage(i)->getName());
     }
@@ -191,6 +198,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
         meshNodeList_->Enable(false);
         matList_->Enable(false);
         matSelectDropdown_->Enable(false);
+        yzAxisSwapCheck_->Enable(false);
     }
 }
 
@@ -283,7 +291,7 @@ void MeshExplorerWindow::onExport(wxCommandEvent& evt) {
         }
 
         if (!res) {
-            res=pkg->addResourceInfo(currentMesh_->getExportResourceName().c_str(), matResID_);
+            res=pkg->addResourceInfo(currentMesh_->getExportResourceName().c_str(), meshResID_);
             if (!res) {
                 wxMessageDialog(this, "Failed to add resource to package...", "Error").ShowModal();
             }
@@ -318,6 +326,7 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
         meshNodeList_->Enable(false);
         matList_->Enable(false);
         matSelectDropdown_->Enable(false);
+        yzAxisSwapCheck_->Enable(false);
         return;
     }
     wxArrayString selectionItems;
@@ -333,6 +342,7 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
     meshNodeList_->Enable(true);
     matList_->Enable(true);
     matSelectDropdown_->Enable(true);
+    yzAxisSwapCheck_->Enable(true);
 
     selectionItems.clear();
     for (size_t i=0,n=currentMesh_->getLodCount(); i<n; ++i) {
@@ -376,6 +386,8 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
 
     packageDropdown_->SetSelection(packageDropdown_->FindString(currentMesh_->getExportPackageName()));
     resNameEntry_->ChangeValue(currentMesh_->getExportResourceName());
+
+    yzAxisSwapCheck_->SetValue(lodLevel->getYZAxisSwap());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -471,6 +483,14 @@ void MeshExplorerWindow::onMatListItemSelect(wxListEvent& evt) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+void MeshExplorerWindow::onYZAxisSwapCheck(wxCommandEvent& evt) {
+    currentMesh_->setYZAxisSwap(getCurrentLodIdx(), evt.IsChecked());
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 int MeshExplorerWindow::getCurrentLodIdx() const {
     int selection=lodLevelDropdown_->GetCurrentSelection();
     if ((size_t)selection>currentMesh_->getLodCount()) {
@@ -486,3 +506,4 @@ int MeshExplorerWindow::getCurrentLodIdx() const {
 const MeshLodLevel* MeshExplorerWindow::getCurrentLod() const {
     return &currentMesh_->getLodLevel(getCurrentLodIdx());
 } 
+
