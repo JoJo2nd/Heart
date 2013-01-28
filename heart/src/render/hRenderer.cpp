@@ -444,43 +444,22 @@ namespace Heart
                 camera = nCam;
             }
 
-            //hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
             hBool newMaterial = matKey != lastMatKey;
             lastMatKey = matKey;
             if (newMaterial)
             {
-                /*
-                hMaterialTechnique* tech = mat->GetTechniqueByMask(tmask);
-                hMaterialTechniquePass* techpass = tech->GetPass(nPass);
-                mainSubmissionCtx_.SetVertexShader( techpass->GetVertexShader() );
-                mainSubmissionCtx_.SetPixelShader( techpass->GetFragmentShader() );
-                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetBlendState() );
-                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetDepthStencilState() );
-                mainSubmissionCtx_.SetRenderStateBlock( techpass->GetRasterizerState() );
-                */
                 mainSubmissionCtx_.SetRenderStateBlock(dcall->blendState_);
                 mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
                 mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
             }
 
             mainSubmissionCtx_.SetRenderInputObject(&dcall->progInput_);
-            /*
-            hIndexBuffer* ib  = dcall->indexBuffer_;
-            hVertexBuffer* vb = dcall->vertexBuffer_[0];
-            mainSubmissionCtx_.SetPrimitiveType(dcall->primType_);
-            mainSubmissionCtx_.SetVertexStream(0, vb, vb->GetStride());
-            if (dcall->indexBuffer_ == NULL)
-            {
-                mainSubmissionCtx_.DrawPrimitive(dcall->primCount_, dcall->startVertex_);
-            }
-            else
-            {
-                mainSubmissionCtx_.SetIndexStream(ib);
-                mainSubmissionCtx_.DrawIndexedPrimitive(dcall->primCount_, dcall->startVertex_);
-            }
-            */
             mainSubmissionCtx_.SetInputStreams(&dcall->streams_);
-            mainSubmissionCtx_.DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
+            if (dcall->instanceCount_) {
+                mainSubmissionCtx_.DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
+            }else{
+                mainSubmissionCtx_.DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
+            }
         }
     }
     //////////////////////////////////////////////////////////////////////////

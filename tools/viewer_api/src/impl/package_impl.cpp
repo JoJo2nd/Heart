@@ -103,6 +103,7 @@ vErrorCode vPackage::vImpl::addPackageLink(vResource* res, vResource* linkedRes)
 vErrorCode vPackage::vImpl::loadFromConfig(boost::filesystem::path xmlpath, vPackageSystem* pkgSys)
 {
     packagePath_ = xmlpath.parent_path();
+    packagePathStr_ = packagePath_.generic_string();
     xmlPath_ = xmlpath;
     lnkPath_ = packagePath_ / "LNK.XML";
     name_ = packagePath_.filename().generic_string();

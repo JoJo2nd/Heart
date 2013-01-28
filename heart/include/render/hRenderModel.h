@@ -38,7 +38,7 @@ namespace Heart
         hFloat                      minRange_;
     };
 
-    class hRenderModel : public hResourceClassBase
+    class HEART_DLLEXPORT hRenderModel : public hResourceClassBase
     {
     public:
         static const hUint32 MAX_LOD_LEVEL = 9;
@@ -56,6 +56,7 @@ namespace Heart
         hUint32         GetLODCount() const { return levelCount_; }
         void            SetLODCount(hUint32 val) { levelCount_ = val; }
         hGeomLODLevel*  GetLOD(hUint32 idx) { hcAssert(idx < levelCount_); return &lodLevels_[idx]; }
+        hBool           bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
 
     private:
 
@@ -63,6 +64,7 @@ namespace Heart
         hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
         hAABB                                       totalBounds_;
     };
+
 }
 
 #endif // HLODGROUP_H__

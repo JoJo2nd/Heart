@@ -574,7 +574,7 @@ void TextureManagementWindow::buildTextures(TextureDBItem** textures, size_t cou
                 size_t bytes=width*height*4;
                 unsigned char* data=new unsigned char[bytes];
 
-                //Free image stores upside down and in BGRA so re-arrange
+                //Free image stores upside down so re-arrange
                 switch(bpp) {
                 case 32: {
                     for(size_t y=height-1, d=0; y<height; --y) {

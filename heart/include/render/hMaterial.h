@@ -111,6 +111,7 @@ namespace Heart
         hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
         hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
+        hBool bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
         /* Allow access to parameter blocks and updating of parameters */
         hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
         static void destroyMaterialInstance(hMaterialInstance* inst);

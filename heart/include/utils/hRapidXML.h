@@ -270,6 +270,15 @@ namespace Heart
                 return defaultVal;
             return node_->value();
         }
+        hUint GetValueStringLen() const {
+            if (!node_) {
+                return 0;
+            } else if (!node_->value()) {
+                return 0;
+            } else {
+                return node_->value_size();
+            }
+        }
         template < typename t_type >
         t_type GetValueEnum(hXMLEnumReamp* enums, t_type defaultVal = 0) const
         {

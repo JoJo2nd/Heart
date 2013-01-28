@@ -120,6 +120,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hBool hMaterialTechniquePass::bindInputStream(hUint slot, hVertexBuffer* vtx) {
+        hcAssert(slot < HEART_MAX_INPUT_STREAMS);
+        if (vtx) {
+            boundStreams_.bindVertexStream(slot, vtx->pImpl(), vtx->getStride());
+        } else {
+            boundStreams_.bindVertexStream(slot, NULL, 0);
+        }
+        boundStreams_.bindVertexFetch(vertexProgram_);
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hMaterialTechnique::AppendPass( const hMaterialTechniquePass& pass )
     {
         passes_.PushBack(pass);

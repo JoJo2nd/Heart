@@ -370,7 +370,7 @@ namespace Heart
         eIS_COLOUR,
         eIS_TANGENT,
         eIS_BITANGENT,
-        eIS_INSTANCE, // generic id for instance data
+        eIS_INSTANCE,       // generic id for instance data
         //TODO: Blend weights?
 
         eIS_FORCEDWORD = 0xFFFFFFFF
@@ -378,10 +378,10 @@ namespace Heart
 
     enum hInputFormat
     {
-        eIF_FLOAT4,
-        eIF_FLOAT3,
-        eIF_FLOAT2,
         eIF_FLOAT1,
+        eIF_FLOAT2,
+        eIF_FLOAT3,
+        eIF_FLOAT4,
         eIF_UBYTE4_UNORM, // 0.f - 1.f
         eIF_UBYTE4_SNORM, // -1.f - 1.f
         //TODO: more?

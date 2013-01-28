@@ -42,6 +42,8 @@
 
 #pragma pack(push, 1)
 
+#define MESH_DATA_FLAG_32BIT_INDEX (1)
+
 struct MeshHeader
 {
     Heart::hResourceBinHeader   resHeader;
@@ -67,8 +69,8 @@ struct LODHeader
 struct RenderableHeader
 {
     hUint32                 primType;
-    hUint16                 startIndex;
-    hUint16                 nPrimatives;
+    hUint32                 startIndex;
+    hUint32                 nPrimatives;
     hUint32                 verts;
     hFloat                  boundsMin[3];
     hFloat                  boundsMax[3];
@@ -76,7 +78,8 @@ struct RenderableHeader
     hUint32                 ibSize;
     hUint64                 ibOffset;   
     hUint32                 inputElements;
-    hUint32                 streams;    
+    hUint32                 streams; 
+    hUint32                 flags;
 };
 
 struct StreamHeader
@@ -84,6 +87,15 @@ struct StreamHeader
     hUint32 size;
     hUint16 index;
 };
+
+/*--- File Layout
++MeshHeader
++->LODHeader (x MeshHeader.lodCount)
++-->RenderableHeader (x LODHedaer.renderableCount)
++--->Heart::hInputLayoutDesc (x RenderableHeader.inputElements)
++--->hUint indexbuffer (x RenderableHeader.ibSize(bytes not ints)) (16 bit or 32 bit - check renderable header)
++--->StreamHeader (x RenderableHeader.streams)
+---*/
 
 #pragma pack(pop)
 

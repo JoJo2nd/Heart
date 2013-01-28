@@ -64,6 +64,7 @@ public:
     vPackage();
     ~vPackage();
     const char*         getName() const;
+    const char*         getRootPath() const;
     size_t              getHeapSize() const;
     void                setHeapSize(size_t) const;
     size_t              getResourceCount() const;
@@ -95,6 +96,7 @@ public:
     void                removeParameter(const char*);
     void                setInputFilePath(const char* filepath);
     const char*         getInputFilePath() const;
+    void                breakAllDependentLinks();
 };
 
 class VAPI_EXPORT vResourceParameter

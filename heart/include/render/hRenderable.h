@@ -81,6 +81,9 @@ namespace Heart
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
+        void                                    bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuff)  {
+            matInstance_->bindVertexStream(inputSlot, vtxBuff);
+        }
         void                                    bind() { 
             matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_, HEART_MAX_INPUT_STREAMS); 
         }

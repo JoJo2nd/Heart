@@ -101,6 +101,7 @@ namespace Heart
             };
             struct {
                 // Pointers for the following three might not be the best solution
+                hUint                   instanceCount_;
                 hUint16                 drawPrimCount_;
                 hdBlendState*           blendState_;
                 hdRasterizerState*      rasterState_;

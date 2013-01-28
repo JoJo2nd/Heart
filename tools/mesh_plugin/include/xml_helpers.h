@@ -30,13 +30,10 @@
 #ifndef XML_HELPERS_H__
 #define XML_HELPERS_H__
 
-#include "viewer_api_config.h"
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
 #include "boost/shared_ptr.hpp"
 #include <stdlib.h>
-
-VAPI_PRIVATE_HEADER();
 
 
 class xml_doc : public rapidxml::xml_document<>
@@ -81,7 +78,6 @@ public:
             return xml_getter(node_->parent());
         }
     }
-
     xml_getter              first_child( const char* name ) const
     {
         if ( !node_ )

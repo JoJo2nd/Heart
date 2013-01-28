@@ -174,11 +174,17 @@ namespace Heart
         dptr=desc;
         for(hUint i=0; i<HEART_MAX_INPUT_STREAMS; ++i) {
             if (boundStreams_[i]) {
+                dptr->inputStream_=i;
                 hMemCpy(dptr, boundStreams_[i]->streamLayoutDesc_, sizeof(hInputLayoutDesc)*boundStreams_[i]->streamDescCount_);
                 dptr+=boundStreams_[i]->streamDescCount_;
             }
         }
-        layout_=prog->createVertexLayout(desc, descn)->layout_;
+        hdInputLayout* vtxlo=prog->createVertexLayout(desc, descn);
+        if (vtxlo) {
+            layout_=vtxlo->layout_;
+        }else{
+            layout_=NULL;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -187,6 +193,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::SetInputStreams(hdDX11RenderStreamsObject* streams)
     {
+        hcAssert(streams->layout_);
         hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
         UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
         if (primType_ != streams->topology_) device_->IASetPrimitiveTopology(streams->topology_);
@@ -379,6 +386,23 @@ namespace Heart
             verts = nPrimatives + 2; break;
         }
         device_->DrawIndexed( verts, start, 0 );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx) {
+        hUint32 verts;
+        switch ( primType_ ) {
+        case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
+            verts = nPrims / 2; break;
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
+            verts = nPrims * 3; break;
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
+            verts = nPrims + 2; break;
+        }
+        device_->DrawIndexedInstanced(verts, instanceCount, startVtx, 0, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////

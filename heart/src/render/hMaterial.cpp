@@ -523,6 +523,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hBool hMaterialInstance::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
+        hBool succ = true;
+        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
+            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
+                techniques_[tech].GetPass(passIdx)->bindInputStream(inputSlot, vtxBuf);
+            }
+        }
+        return succ;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hdParameterConstantBlock* hMaterialInstance::GetParameterConstBlock(hShaderParameterID cbid)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
