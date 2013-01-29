@@ -82,12 +82,6 @@ namespace Heart
     }
 
     HEART_DLLEXPORT
-    inline const hChar* HEART_API hStrRChr( const hChar* s1, hChar ch)
-    {
-        return strrchr(s1,(hInt)ch);
-    }
-
-    HEART_DLLEXPORT
     inline hUint32 HEART_API hStrICmp( const hChar* s1, const hChar* s2 )
     {
 #ifdef WIN32

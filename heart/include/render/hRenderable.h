@@ -70,10 +70,10 @@ namespace Heart
             hcAssert(primtype < PRIMITIVETYPE_MAX);
             primType_ = primtype;
         }
-        hUint16                                 GetStartIndex() const { return drawItem_.startVertex_; }
-        void                                    SetStartIndex(hUint16 startIdx) { drawItem_.startVertex_ = startIdx; }
-        hUint16									GetPrimativeCount() const { return drawItem_.primCount_; }
-        void                                    SetPrimativeCount(hUint16 primCount) { drawItem_.primCount_ = primCount; }
+        hUint32                                 GetStartIndex() const { return drawItem_.startVertex_; }
+        void                                    SetStartIndex(hUint32 startIdx) { drawItem_.startVertex_ = startIdx; }
+        hUint32									GetPrimativeCount() const { return drawItem_.primCount_; }
+        void                                    SetPrimativeCount(hUint32 primCount) { drawItem_.primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
         void                                    SetMaterial(hMaterialInstance* material);

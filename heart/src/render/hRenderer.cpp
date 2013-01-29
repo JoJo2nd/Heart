@@ -227,14 +227,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB )
+    void hRenderer::CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
     {
+        hUint elementSize= nIndices > 0xFFFF ? sizeof(hUint32) : sizeof(hUint16);
         hIndexBuffer* pdata = hNEW(GetGlobalHeap()/*!heap*/, hIndexBuffer)(this);
         pdata->pIndices_ = NULL;
         pdata->nIndices_ = nIndices;
-        pdata->primitiveType_ = primType;
+        pdata->type_= nIndices > 0xFFFF ? hIndexBufferType_Index32 : hIndexBufferType_Index16;
 
-        pdata->SetImpl( ParentClass::CreateIndexBufferDevice( nIndices*sizeof(hUint16), pIndices, flags ) );
+        pdata->SetImpl(ParentClass::CreateIndexBufferDevice(nIndices*elementSize, pIndices, flags));
 
         *outIB = pdata;
     }
@@ -386,7 +387,13 @@ namespace Heart
 
     int drawCallCompare(const void* lhs, const void* rhs)
     {
-        return ((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_ ? -1 : 1;
+        if (((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_) {
+            return -1;
+        } else if ((((hDrawCall*)lhs)->sortKey_ > ((hDrawCall*)rhs)->sortKey_)) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -446,12 +453,10 @@ namespace Heart
 
             hBool newMaterial = matKey != lastMatKey;
             lastMatKey = matKey;
-            if (newMaterial)
-            {
-                mainSubmissionCtx_.SetRenderStateBlock(dcall->blendState_);
-                mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
-                mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
-            }
+            //if (newMaterial){ //TODO flush correctly
+            mainSubmissionCtx_.SetRenderStateBlock(dcall->blendState_);
+            mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
+            mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
 
             mainSubmissionCtx_.SetRenderInputObject(&dcall->progInput_);
             mainSubmissionCtx_.SetInputStreams(&dcall->streams_);

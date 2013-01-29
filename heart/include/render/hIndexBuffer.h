@@ -41,27 +41,23 @@ namespace Cmd
 	public:
 		hIndexBuffer( hRenderer* prenderer ) 
 			: renderer_( prenderer )
-			, lockPtr_( NULL )
 		{}
 		~hIndexBuffer() 
 		{
 		}
 
-		hUint16			GetIndexCount() const { return nIndices_; };
-        PrimitiveType   GetPrimitiveType() const { return primitiveType_; }
+		hUint16			 GetIndexCount() const { return nIndices_; }
+        hIndexBufferType getIndexBufferType() const { return type_; }
 
 	private:
 
 		friend class hRenderer;
 		friend class IndexBufferBuilder;
 
-		void			Release();
-
-		hRenderer*		renderer_;
-		PrimitiveType	primitiveType_;
-		hUint16*		pIndices_;//< only valid on disk based resources
-		hUint16			nIndices_;
-		hUint16*		lockPtr_;
+		hRenderer*		    renderer_;
+		hUint16*		    pIndices_;//< only valid on disk based resources
+		hUint16			    nIndices_;
+        hIndexBufferType    type_;
 	};
 
     struct hIndexBufferMapInfo

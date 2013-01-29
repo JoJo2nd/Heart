@@ -56,6 +56,21 @@ struct FXIncludeHandler : public ID3DInclude
     };
     typedef Heart::hLinkedList< FXIncludePath > IncludePathArray;
 
+    FXIncludeHandler() {}
+    ~FXIncludeHandler() {
+        while (includePaths_.GetHead()) {
+            FXIncludePath* inc=includePaths_.GetHead();
+            includePaths_.Remove(inc);
+            hDELETE(Heart::GetGlobalHeap(), inc); 
+        }
+    }
+
+    void addDefaultPath(const hChar* path) {
+        FXIncludePath* inc=hNEW(Heart::GetGlobalHeap(), FXIncludePath)();
+        inc->path_=path;
+        includePaths_.PushBack(inc);
+    }
+
     STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) 
     {
         using namespace Heart;
@@ -215,7 +230,18 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         { NULL, NULL }
     };
 
+    hUint pathlen=hStrLen(params->GetInputFilePath())+1;//+1 for NULL
+    hChar* path=(hChar*)hAlloca(pathlen);
+    hChar* pathrootend=NULL;
+    hStrCopy(path, pathlen, params->GetInputFilePath());
+    if ((pathrootend=hStrRChr(path, '\\')) != NULL || (pathrootend=hStrRChr(path, '/')) != NULL) {
+        *(pathrootend+1)=0;
+    } else {
+        *path=0;
+    }
+
     includeHandler.fileAccess_ = fileCache;
+    includeHandler.addDefaultPath(path);
 
     hChar* sourcedata = NULL;
     hUint32 sourcedatalen = inFile->Lenght();

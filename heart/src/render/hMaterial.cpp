@@ -60,7 +60,7 @@ namespace Heart
     {
         hUint64 msb1  = (hUint64)(cameraID&0xF)  << 60;
         hUint64 msb2  = (hUint64)(sortLayer&0xF) << 56;
-        hUint32 msb3  = (hUint64)(transparent&0x1) << 55;
+        hUint64 msb3  = (hUint64)(transparent&0x1) << 55;
         hUint64 msb4  = (hUint64)(hFloatToFixed(viewSpaceDepth,32,16)&0xFFFFFFFF) << 19;
         hUint64 msb4t = (hUint64)((~hFloatToFixed(viewSpaceDepth,32,16))&0xFFFFFFFF) << 19;
         hUint64 msb5  = (hUint64)(materialID&0x3FFFF) << 4;

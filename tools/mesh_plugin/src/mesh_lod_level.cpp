@@ -34,12 +34,16 @@
     aiProcess_CalcTangentSpace |\
     aiProcess_JoinIdenticalVertices |\
     aiProcess_Triangulate |\
+    aiProcess_ImproveCacheLocality |\
     aiProcess_GenSmoothNormals |\
-    aiProcess_SplitLargeMeshes |\
+    /*aiProcess_SplitLargeMeshes |*/\
+    aiProcess_FindInvalidData |\
+    aiProcess_ConvertToLeftHanded |\
     aiProcess_RemoveRedundantMaterials |\
     aiProcess_OptimizeMeshes |\
     aiProcess_OptimizeGraph |\
-    aiProcess_SortByPType)
+    aiProcess_SortByPType | \
+    aiProcess_TransformUVCoords)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -109,6 +113,20 @@ void writeVecToFloat(const t_vec& v, float* out) {
 }
 
 template< typename t_vec, size_t indim, size_t outdim >
+void writeUVVecToFloat(const t_vec& v, float* out) {
+    for (size_t i=0; i<outdim; ++i) {
+        if (i<indim) {
+            out[i]= v[i];
+        } else {
+            out[i]= i >= 4 ? 1.f : 0.f;
+        }
+    }
+    if (outdim >= 2) {
+        out[1]=1.f-out[1];
+    }
+}
+
+template< typename t_vec, size_t indim, size_t outdim >
 void writeVecToFloatSwap(const t_vec& v, float* out) {
     for (size_t i=0; i<outdim; ++i) {
         if (i<indim) {
@@ -139,7 +157,7 @@ void writeVecToByteSnorm(const t_ty& v, long* out) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-template< typename t_ty, size_t t_indim >
+template< typename t_ty, size_t t_indim, bool t_isUV >
 rapidxml::xml_node<>* writeStreamNode(xml_doc* doc, Heart::hInputSemantic semantic, Heart::hInputFormat typeformat, size_t semIdx, 
 size_t elements, const t_ty* inputbuf, boost::shared_array<char>* outputBuffer, size_t* outputBufLen, bool axisswap=false) {
     using namespace rapidxml;
@@ -296,8 +314,8 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
 
         std::vector< Heart::hInputLayoutDesc > finalinputlayout;
         for (size_t vp=0,vpn=vertexProgs.size(); vp<vpn; ++vp) {
-            std::string vppkgname=vertexProgs[i].substr(0, vertexProgs[i].find('.'));
-            std::string vpresname=vertexProgs[i].substr(vertexProgs[i].find('.')+1);
+            std::string vppkgname=vertexProgs[vp].substr(0, vertexProgs[vp].find('.'));
+            std::string vpresname=vertexProgs[vp].substr(vertexProgs[vp].find('.')+1);
             vPackage* vppkg=pkgsys->getPackage(vppkgname.c_str());
             MDF_EXPORT_CHECK2(vppkg, "Failed to read vertex prog, couldn't find package ", vppkgname);
             vResource* vpres=pkg->getResourceInfoByName(vpresname.c_str());
@@ -398,32 +416,32 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
 
             if (inSem.semantic_==Heart::eIS_POSITION) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported position semantic index (value too high)");
-                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3, false>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mVertices, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_NORMAL) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported normal semantic index (value too high)");
-                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3, false>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mNormals, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_TANGENT) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported tangent semantic index (value too high)");
-                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3, false>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mTangents, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_BITANGENT) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_==0, "Unsupported bitangent semantic index (value too high)");
-                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3, false>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mBitangents, &convertedBuffer, &convertedBufferLen, yzAxisSwap_);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_COLOUR) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_<4 && mesh->HasVertexColors(inSem.semIndex_), "Unsupported colour semantic index (value too high or colour values not there)");
-                streamnode=writeStreamNode<aiColor4D, 4>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiColor4D, 4, false>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mColors[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else if (inSem.semantic_==Heart::eIS_TEXCOORD) {
                 MDF_EXPORT_CHECK1(inSem.semIndex_<8 && mesh->HasTextureCoords(inSem.semIndex_), "Unsupported texcoord semantic index (value too high or no data at index)");
-                streamnode=writeStreamNode<aiVector3D, 3>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
+                streamnode=writeStreamNode<aiVector3D, 3, true>(xmldoc, inSem.semantic_, inSem.typeFormat_, inSem.semIndex_,
                     mesh->mNumVertices, mesh->mTextureCoords[inSem.semIndex_], &convertedBuffer, &convertedBufferLen);
                 MDF_EXPORT_CHECK1(streamnode, "Unsupported stream format");
             } else {

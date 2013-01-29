@@ -95,14 +95,14 @@ namespace Heart
                 hVertexBuffer*          vertexBuffer_[MAX_VERT_STREAMS];    //(5*4)20b  -> 28b
                 hIndexBuffer*           indexBuffer_;                       //4b        -> 32b
                 hMaterial*              matInstance_;                       //4b        -> 36b
-                hUint16                 primCount_;                         //2b        -> 38b
-                hUint16                 startVertex_;                       //2b        -> 42b
+                hUint32                 primCount_;                         //2b        -> 38b
+                hUint32                 startVertex_;                       //2b        -> 42b
                 PrimitiveType           primType_;                          //4b        -> 62b (Assuming 4 bytes for enum, possibly not the case)
             };
             struct {
                 // Pointers for the following three might not be the best solution
                 hUint                   instanceCount_;
-                hUint16                 drawPrimCount_;
+                hUint32                 drawPrimCount_;
                 hdBlendState*           blendState_;
                 hdRasterizerState*      rasterState_;
                 hdDepthStencilState*    depthState_;
@@ -155,10 +155,10 @@ namespace Heart
         void													DestroyMaterial( hMaterial* pMat );
         void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex );
         void													DestroyTexture( hTexture* pOut );
-        void													CreateIndexBuffer( hUint16* pIndices, hUint16 nIndices, hUint32 flags, PrimitiveType primType, hIndexBuffer** outIB );
-        void													DestroyIndexBuffer( hIndexBuffer* pOut );
+        void													CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
+        void													DestroyIndexBuffer(hIndexBuffer* pOut);
         void													CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
-        void													DestroyVertexBuffer( hVertexBuffer* pOut );
+        void													DestroyVertexBuffer(hVertexBuffer* pOut);
 
         void                                                    SumbitResourceUpdateCommand(const hRenderResourceUpdateCmd& cmd);
         void                                                    SubmitDrawCallBlock(hDrawCall* block, hUint32 count);

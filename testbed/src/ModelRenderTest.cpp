@@ -30,6 +30,10 @@
 
 DEFINE_HEART_UNIT_TEST(ModelRenderTest);
 
+#define PACKAGE_NAME ("COMPLEXMESH1")
+#define RESOURCE_NAME ("LOSTEMPIRE")
+#define ASSET_PATH ("COMPLEXMESH1.LOSTEMPIRE")
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -40,16 +44,16 @@ hUint32 ModelRenderTest::RunUnitTest()
     {
     case eBeginLoad:
         {
-            hcPrintf("Loading package \"UNITTEST\"");
-            engine_->GetResourceManager()->mtLoadPackage("UNITTEST");
+            hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
+            engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
             state_ = eLoading;
         }
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded("UNITTEST"))
+            if (engine_->GetResourceManager()->mtIsPackageLoaded(PACKAGE_NAME))
             {
-                hcPrintf("Loaded package \"UNITTEST\"");
+                hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
                 state_ = eRender;
                 timer_ = 0.f;
                 CreateRenderResources();
@@ -61,7 +65,7 @@ hUint32 ModelRenderTest::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
-            if (timer_ > 15.f)
+            if (timer_ > 30.f)
             {
                 state_ = eBeginUnload;
             }
@@ -71,14 +75,14 @@ hUint32 ModelRenderTest::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage("UNITTEST");
-            hcPrintf("Unloading package \"UNITTEST\"");
+            engine_->GetResourceManager()->mtUnloadPackage(PACKAGE_NAME);
+            hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
             state_ = eExit;
         }
         break;
     case eExit:
         {
-            hcPrintf("End unit test %s package load test.", s_className_);
+            hcPrintf("End unit test %s.", s_className_);
             SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
         break;
@@ -105,10 +109,10 @@ void ModelRenderTest::RenderUnitTest()
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
-        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
-
+        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
             drawCall_.blendState_ = passptr->GetBlendState();
             drawCall_.depthState_ = passptr->GetDepthStencilState();
@@ -163,7 +167,7 @@ void ModelRenderTest::CreateRenderResources()
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("UNITTEST.BOCO"));
+    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
 
     hcAssert(renderModel_);
 }
@@ -211,10 +215,10 @@ void ModelRenderTest::UpdateCamera()
     movement =  scale(camRight, pad->GetAxis(HEART_PAD_LEFT_STICKX).anologueVal_*speed);
     movement += scale(camDir_, pad->GetAxis(HEART_PAD_LEFT_STICKY).anologueVal_*speed);
 
-    movement += (pad->GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(camUp_,speed) : hVec3Func::zeroVector());
-    movement += (pad->GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(camUp_,-speed) : hVec3Func::zeroVector());
+    movement += (pad->GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(camUp_, -speed) : hVec3Func::zeroVector());
+    movement += (pad->GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(camUp_, speed) : hVec3Func::zeroVector());
 
-    angleXZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, camUp_));
+    angleXZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, Heart::hVec3(0.f,1.f,0.f)));
     angleYZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKY).anologueVal_, camRight));
 
     camPos_ += movement;

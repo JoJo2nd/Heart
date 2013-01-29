@@ -301,7 +301,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
             tech->SetName(techDef.technqiueName);
             tech->SetPasses(techDef.passes);
             tech->SetLayer(techDef.layer);
-            tech->SetSortAsTransparent(techDef.transparent > 0);
+            tech->SetSort(techDef.transparent > 0);
 
             for (hUint32 passIdx = 0, passCount = techDef.passes; passIdx < passCount; ++passIdx)
             {

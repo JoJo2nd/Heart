@@ -90,7 +90,7 @@ namespace Heart
         }
 
         void setPrimType(PrimitiveType primType);
-        void bindIndexVertex(hdDX11IndexBuffer* index);
+        void bindIndexVertex(hdDX11IndexBuffer* index, hIndexBufferType format);
         void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);
         void bindVertexFetch(hdDX11ShaderProgram* prog);
 
@@ -98,6 +98,7 @@ namespace Heart
         friend class hdDX11RenderSubmissionCtx;
 
         D3D11_PRIMITIVE_TOPOLOGY topology_;
+        DXGI_FORMAT         indexFormat_;
         ID3D11InputLayout*  layout_;
         hUint16             streamLower_;
         hUint16             streamUpper_;

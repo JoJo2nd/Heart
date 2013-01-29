@@ -160,12 +160,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
             aabb = hAABB::computeFromPointSet(bounds, 2);
 
             inStream->Read(tmpBuffer, rHeader.ibSize);
-            renderer->CreateIndexBuffer(
-                (hUint16*)tmpBuffer, 
-                rHeader.nPrimatives*3, 
-                0, 
-                (PrimitiveType)rHeader.primType, 
-                &ib );
+            renderer->CreateIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
 
             renderable->SetStartIndex(rHeader.startIndex);
             renderable->SetPrimativeCount(rHeader.nPrimatives);
@@ -197,7 +192,6 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
                     }
                 }
 
-                //TODO: fix
                 renderer->CreateVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
                 renderable->SetVertexBuffer(sHeader.index, vb);
             }
@@ -330,7 +324,8 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         renderableHeader.startIndex = 0;
         renderableHeader.materialID = Heart::hResourceManager::BuildResourceID(renderablenode.GetAttributeString("material"));
         if (indexnode.ToNode()) {
-            renderableHeader.nPrimatives = indexnode.GetAttributeInt("count",0)/3;
+            renderableHeader.nPrimatives = indexnode.GetAttributeInt("count",0);
+            renderableHeader.nPrimatives /= 3;
             renderableHeader.flags|=indexnode.GetAttributeInt("count",0) > 0xFFFF ? MESH_DATA_FLAG_32BIT_INDEX : 0;
         } else {
             renderableHeader.nPrimatives = posStream.count/3;
@@ -362,6 +357,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
             binoutput->Write(indexData, ibsize);
             hHeapFreeSafe(heap, indexData);
             renderableHeader.ibSize=ibsize;
+            hcAssert(renderableHeader.nPrimatives*3*sizeof(hUint32) == ibsize || renderableHeader.nPrimatives*3*sizeof(hUint16) == ibsize);
         } else {
             renderableHeader.ibSize=0;
         }
@@ -462,7 +458,14 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 DLL_EXPORT
 void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
-
+    using namespace Heart;
+    hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
+    for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
+        hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
+        for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
+            hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
+        }
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -485,7 +488,6 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
                 }
             }
             renderer->DestroyIndexBuffer(lod->renderObjects_[rIdx].GetIndexBuffer());
-            hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
         }
     }
 

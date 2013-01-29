@@ -106,7 +106,7 @@ namespace Heart
 
     hBool hMaterialTechniquePass::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt) {
         boundStreams_.setPrimType(type);
-        boundStreams_.bindIndexVertex(idx ? idx->pImpl() : NULL);
+        boundStreams_.bindIndexVertex(idx ? idx->pImpl() : NULL, idx ? idx->getIndexBufferType() : hIndexBufferType_Index16);
         for(hUint i=0; i<streamcnt; ++i) {
             if (vtx[i]) {
                 boundStreams_.bindVertexStream(i, vtx[i]->pImpl(), vtx[i]->getStride());

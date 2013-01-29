@@ -150,10 +150,10 @@ namespace Heart
         void                    SetPasses(hUint32 count);
         hUint32                 GetPassCount() const { return passes_.GetSize(); }
         hMaterialTechniquePass* GetPass( hUint32 idx ) { return &passes_[idx]; }
-        void                    SetSortAsTransparent(hBool val) { transparent_ = val; }
-        hBool                   GetSortAsTransparent() const { return transparent_; }
+        void                    SetSort(hBool val) { transparent_ = val; }
+        hBool                   GetSort() const { return transparent_; }
         void                    SetLayer(hByte layer) { layer_ = layer; }
-        hByte                   GetLayer(hByte layer) { return layer_; }
+        hByte                   GetLayer() const { return layer_; }
         void                    AppendPass(const hMaterialTechniquePass& pass);
         hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
 

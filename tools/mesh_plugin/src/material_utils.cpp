@@ -264,7 +264,14 @@ void extractVertexProgramsFromMaterial(const char* matxml, uint len, std::vector
         } else if (node.next_sibling().to_node()) {
             node=node.next_sibling();
         } else {
-            node=node.parent().first_sibling(NULL);
+            while(node.to_node()) {
+                if (node.parent().first_sibling(NULL).to_node()) {
+                    node=node.parent().first_sibling(NULL);
+                    break;
+                } else {
+                    node=node.parent();
+                }
+            }
         }
     }
 }

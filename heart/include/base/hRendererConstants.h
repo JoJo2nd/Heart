@@ -415,6 +415,13 @@ namespace Heart
         PRIMITIVETYPE_MAX
     };
 
+    enum hIndexBufferType {
+        hIndexBufferType_Index16,
+        hIndexBufferType_Index32,
+
+        hIndexBufferType_Max
+    };
+
     enum LightSourceType
     {
         LIGHTSOURCETYPE_DIRECTION,

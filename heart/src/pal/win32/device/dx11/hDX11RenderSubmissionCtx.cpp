@@ -117,9 +117,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderStreamsObject::bindIndexVertex(hdDX11IndexBuffer* index)
+    void hdDX11RenderStreamsObject::bindIndexVertex(hdDX11IndexBuffer* index, hIndexBufferType format)
     {
         index_ = index ? index->buffer_ : NULL;
+        indexFormat_= format == hIndexBufferType_Index16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -196,9 +197,11 @@ namespace Heart
         hcAssert(streams->layout_);
         hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
         UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
-        if (primType_ != streams->topology_) device_->IASetPrimitiveTopology(streams->topology_);
+        if (primType_ != streams->topology_) {
+            device_->IASetPrimitiveTopology(streams->topology_);
+        }
         device_->IASetInputLayout(streams->layout_);
-        device_->IASetIndexBuffer(streams->index_, DXGI_FORMAT_R16_UINT, 0);
+        device_->IASetIndexBuffer(streams->index_, streams->indexFormat_, 0);
         device_->IASetVertexBuffers(
             streams->streamLower_,
             streams->streamUpper_-streams->streamLower_,
@@ -217,7 +220,6 @@ namespace Heart
         device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
         if (inputobj->vertexShader_) {
             hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
-            //device_->IASetInputLayout(inputobj->boundProgs_[ShaderType_VERTEXPROG]->inputLayout_->layout_);//ergh..clean up
             device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
