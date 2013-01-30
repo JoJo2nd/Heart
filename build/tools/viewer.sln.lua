@@ -113,7 +113,7 @@ solution (SlnName)
         configuration (ReleaseCfgName)
             targetdir (ssub("$BINTOOLROOT/$PROJECT/$CONFIG",table.splice(HeartCommonVars,{PROJECT=project().name,CONFIG=ReleaseCfgName})))
             defines {myReleaseDefines}
-            debugargs(ssub(debugArgsStr, table.splice(HeartCommonVars, {config=ReleaseCfgName})))
+            debugargs(ssub(debugArgsStr, table.splice(HeartCommonVars, {CONFIG=ReleaseCfgName})))
             flags {myReleaseOptions}
             libdirs(HeartLibDir..ReleaseCfgName)
             links {myLibsRelease}

@@ -81,7 +81,7 @@ namespace Heart
             connected_ = hTrue;
             for (hUint32 i = 0; i < HEART_DEVICE_BUTTON_COUNT; ++i)
             {
-                hBool bstate = buttons_[i].buttonVal_ == ((state_.Gamepad.wButtons & (1 << i)) > 0);
+                hBool bstate = ((state_.Gamepad.wButtons & (1 << i)) > 0);
                 buttons_[i].raisingEdge_ = (bstate && buttons_[i].buttonVal_ != bstate) ? hTrue : hFalse;
                 buttons_[i].fallingEdge_ = (!bstate && buttons_[i].buttonVal_ != bstate) ? hTrue : hFalse;
                 buttons_[i].buttonVal_ = bstate;

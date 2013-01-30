@@ -37,6 +37,8 @@
 #include "EventTest.h"
 #include "Base64Test.h"
 #include "InstanceRenderTest.h"
+#include "ComplexMesh1.h"
+#include "ComplexMesh2.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -56,6 +58,8 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(EventTest)
         REGISTER_UNIT_TEST(InstanceRenderTest)
+        REGISTER_UNIT_TEST(ComplexMesh1)
+        REGISTER_UNIT_TEST(ComplexMesh2)
     };
 
     void consoleStateEvent(hFloat secs) 

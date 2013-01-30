@@ -36,7 +36,7 @@
     aiProcess_Triangulate |\
     aiProcess_ImproveCacheLocality |\
     aiProcess_GenSmoothNormals |\
-    /*aiProcess_SplitLargeMeshes |*/\
+    aiProcess_SplitLargeMeshes |\
     aiProcess_FindInvalidData |\
     aiProcess_ConvertToLeftHanded |\
     aiProcess_RemoveRedundantMaterials |\

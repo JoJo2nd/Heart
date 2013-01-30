@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   InstanceRenderTest.cpp  
+    filename:   ComplexMesh1.cpp  
     
-    Copyright (c) 27:1:2013 James Moran
+    Copyright (c) 30:1:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,38 +24,38 @@
     distribution.
 
 *********************************************************************/
+
 #include "testbed_precompiled.h"
-#include "InstanceRenderTest.h"
+#include "ComplexMesh1.h"
+#include "TestUtils.h"
 
-DEFINE_HEART_UNIT_TEST(InstanceRenderTest);
+DEFINE_HEART_UNIT_TEST(ComplexMesh1);
 
-#define INSTANCE_ROWS   (20)
-#define INSTANCE_COLS   (INSTANCE_ROWS)
-#define INSTANCE_INC    (50.f)
-#define INSTANCE_START  (-(INSTANCE_INC)*(INSTANCE_ROWS/2))
-#define INSTANCE_COUNT  (INSTANCE_ROWS*INSTANCE_COLS)
+#define PACKAGE_NAME ("COMPLEXMESH1")
+#define RESOURCE_NAME ("LOSTEMPIRE")
+#define ASSET_PATH ("COMPLEXMESH1.LOSTEMPIRE")
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 InstanceRenderTest::RunUnitTest()
+hUint32 ComplexMesh1::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     switch(state_)
     {
     case eBeginLoad:
         {
-            hcPrintf("Loading package \"INSTANCETEST\"");
-            engine_->GetResourceManager()->mtLoadPackage("INSTANCETEST");
+            hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
+            engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
             state_ = eLoading;
         }
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded("INSTANCETEST"))
+            if (engine_->GetResourceManager()->mtIsPackageLoaded(PACKAGE_NAME))
             {
-                hcPrintf("Loaded package \"INSTANCETEST\"");
+                hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
                 state_ = eRender;
                 timer_ = 0.f;
                 CreateRenderResources();
@@ -77,14 +77,14 @@ hUint32 InstanceRenderTest::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage("INSTANCETEST");
-            hcPrintf("Unloading package \"INSTANCETEST\"");
+            engine_->GetResourceManager()->mtUnloadPackage(PACKAGE_NAME);
+            hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
             state_ = eExit;
         }
         break;
     case eExit:
         {
-            hcPrintf("End unit test %s package load test.", s_className_);
+            hcPrintf("End unit test %s.", s_className_);
             SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
         break;
@@ -97,7 +97,7 @@ hUint32 InstanceRenderTest::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void InstanceRenderTest::RenderUnitTest()
+void ComplexMesh1::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
@@ -111,10 +111,10 @@ void InstanceRenderTest::RenderUnitTest()
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
-        drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
-
+        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
             drawCall_.blendState_ = passptr->GetBlendState();
             drawCall_.depthState_ = passptr->GetDepthStencilState();
@@ -122,7 +122,7 @@ void InstanceRenderTest::RenderUnitTest()
             drawCall_.progInput_ = *passptr->GetRenderInputObject();
             drawCall_.streams_=*passptr->getRenderStreamsObject();
             drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=INSTANCE_COUNT;
+            drawCall_.instanceCount_=0;
             drawCtx_.SubmitDrawCall(drawCall_);
         }
     }
@@ -134,15 +134,9 @@ void InstanceRenderTest::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void InstanceRenderTest::CreateRenderResources()
+void ComplexMesh1::CreateRenderResources()
 {
     using namespace Heart;
-#pragma pack(push, 1)
-    struct PostionVec {
-        hFloat x,y,z;
-    };
-#pragma pack(pop)
-
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
@@ -162,103 +156,51 @@ void InstanceRenderTest::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 120.f, -650.f);
-    camDir_ = Heart::hVec3(.022f, -.22f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.9f, .45f);
+    camPos_ = Heart::hVec3(0.f, 10.f, -110.f);
+    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
+    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
 
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 2000.f);
+    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
     camera->SetViewMatrix(vm);
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("INSTANCETEST.BOCO"));
+    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+
     hcAssert(renderModel_);
-
-    PostionVec positions[INSTANCE_COUNT];
-    Heart::hInputLayoutDesc instLayout[] ={
-        {eIS_INSTANCE, 0, eIF_FLOAT3, 1, 1},
-    };
-
-    hFloat gridz=INSTANCE_START;
-    for (hUint i=0, idx=0; i<INSTANCE_ROWS; ++i, gridz+=INSTANCE_INC) {
-        hFloat gridx=INSTANCE_START;
-        for (hUint j=0; j<INSTANCE_COLS; ++j, gridx+=INSTANCE_INC, ++idx) {
-            positions[idx].x=gridx;
-            positions[idx].y=0.f;
-            positions[idx].z=gridz;
-        }
-    }
-
-    renderer->CreateVertexBuffer(
-        positions, INSTANCE_COUNT, instLayout, hStaticArraySize(instLayout), 
-        Heart::RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &instanceStream_);
-
-
-    renderModel_->bindVertexStream(1, instanceStream_);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void InstanceRenderTest::DestroyRenderResources()
+void ComplexMesh1::DestroyRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->ReleaseRenderTargetSetup();
-    renderer->DestroyVertexBuffer(instanceStream_);
-    instanceStream_=NULL;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void InstanceRenderTest::UpdateCamera()
+void ComplexMesh1::UpdateCamera()
 {
     using namespace Heart;
     using namespace Heart::hVec3Func;
 
-    hFloat delta = hClock::Delta();
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hVec3 camRight = cross(camUp_, camDir_);
-    hVec3 movement, angleXZ, angleYZ;
-    hFloat speed = 5.f, angleSpeed = .314f;
+    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
-    camRight = normaliseFast(camRight);
-
-    speed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*5.f;
-    speed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*10.f;
-    speed *= delta;
-
-    angleSpeed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*.628f;
-    angleSpeed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*1.256f;
-    angleSpeed *= delta;
-
-    movement =  scale(camRight, pad->GetAxis(HEART_PAD_LEFT_STICKX).anologueVal_*speed);
-    movement += scale(camDir_, pad->GetAxis(HEART_PAD_LEFT_STICKY).anologueVal_*speed);
-
-    movement += (pad->GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(camUp_,speed) : hVec3Func::zeroVector());
-    movement += (pad->GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(camUp_,-speed) : hVec3Func::zeroVector());
-
-    angleXZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, camUp_));
-    angleYZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKY).anologueVal_, camRight));
-
-    camPos_ += movement;
-    camDir_ = angleXZ + angleYZ;
-    camUp_  = cross(camDir_, camRight);
-
-    camDir_ = normaliseFast(camDir_);
-    camUp_  = normaliseFast(camUp_);
-
+    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
     camera->SetViewMatrix(vm);
 }
