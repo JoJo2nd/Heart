@@ -50,24 +50,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::Link( hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager )
-    {
-        vertexProgram_   = static_cast< hShaderProgram* >( resManager->ltGetResource(vertexProgramID_) );
-        fragmentProgram_ = static_cast< hShaderProgram* >( resManager->ltGetResource(fragmentProgramID_) );
-
-        if (!vertexProgram_ || !fragmentProgram_) return hFalse;
-
-        //blendState_        = renderer->CreateBlendState(blendStateDesc_);
-        //rasterizerState_   = renderer->CreateRasterizerState(rasterizerStateDesc_);
-        //depthStencilState_ = renderer->CreateDepthStencilState(depthStencilStateDesc_);
-
-        return hTrue;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     hBool hMaterialTechniquePass::BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer)
     {
         return renderInput_.BindConstantBuffer(paramID, buffer);
@@ -138,23 +120,6 @@ namespace Heart
     void hMaterialTechnique::AppendPass( const hMaterialTechniquePass& pass )
     {
         passes_.PushBack(pass);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechnique::Link( hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager )
-    {
-        hBool linkok = hTrue;
-        hUint32 nPasses = passes_.GetSize();
-        mask_ = matManager->AddRenderTechnique( name_ )->mask_;
-        for ( hUint32 pass = 0; pass < nPasses; ++pass )
-        {
-            linkok &= passes_[pass].Link(resManager, renderer, matManager);
-        }
-
-        return linkok;
     }
 
     //////////////////////////////////////////////////////////////////////////

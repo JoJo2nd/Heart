@@ -82,6 +82,9 @@ vErrorCode vResource::vImpl::addAsDependent(boost::shared_ptr< vResource > dep)
         if (i->get()->impl_ == this && dimpl->pkg_ != pkg_) {
             return vERROR_CREATES_CYCLIC_REF;
         }
+    }
+
+    for(DependencyTableType::iterator i=dependencies_.begin(), c=dependencies_.end(); i!=c; ++i) {
         if (i->get()->impl_ == dep->impl_) {
             return vOK_ALREADY_ADDED;
         }

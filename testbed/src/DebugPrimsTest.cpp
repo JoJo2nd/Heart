@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   ComplexMesh2.cpp  
+    filename:   DebugPrimsTest.cpp  
     
-    Copyright (c) 30:1:2013 James Moran
+    Copyright (c) 2:2:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,21 +24,21 @@
     distribution.
 
 *********************************************************************/
+
 #include "testbed_precompiled.h"
-#include "ComplexMesh2.h"
+#include "DebugPrimsTest.h"
 #include "TestUtils.h"
 
-DEFINE_HEART_UNIT_TEST(ComplexMesh2);
+DEFINE_HEART_UNIT_TEST(DebugPrimsTest);
 
-#define PACKAGE_NAME ("COMPLEXMESH2")
-#define RESOURCE_NAME ("HOUSE")
-#define ASSET_PATH ("COMPLEXMESH2.HOUSE")
+#define PACKAGE_NAME ("CORE")
+#define CUBE_MAT_RESID ("CORE.DEBUGMAT")
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ComplexMesh2::RunUnitTest()
+hUint32 DebugPrimsTest::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
@@ -98,8 +98,9 @@ hUint32 ComplexMesh2::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::RenderUnitTest()
+void DebugPrimsTest::RenderUnitTest()
 {
+    /*
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
@@ -115,7 +116,7 @@ void ComplexMesh2::RenderUnitTest()
         hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
+            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
             drawCall_.blendState_ = passptr->GetBlendState();
             drawCall_.depthState_ = passptr->GetDepthStencilState();
@@ -128,6 +129,7 @@ void ComplexMesh2::RenderUnitTest()
         }
     }
     drawCtx_.End();
+    */
 }
 
 
@@ -135,10 +137,11 @@ void ComplexMesh2::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::CreateRenderResources()
+void DebugPrimsTest::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
+    hResourceManager* resMgr=engine_->GetResourceManager();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
@@ -170,29 +173,33 @@ void ComplexMesh2::CreateRenderResources()
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
-
-    hcAssert(renderModel_);
+    Heart::hRenderUtility::buildDebugCubeMesh(renderer, GetGlobalHeap(), &cubeVB_);
+    Heart::hMaterial* mat=static_cast<Heart::hMaterial*>(resMgr->mtGetResource(CUBE_MAT_RESID));
+    cubeMat_=mat->createMaterialInstance(0);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::DestroyRenderResources()
+void DebugPrimsTest::DestroyRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->ReleaseRenderTargetSetup();
+    if(cubeVB_) {
+        renderer->DestroyVertexBuffer(cubeVB_);
+        cubeVB_=NULL;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::UpdateCamera()
+void DebugPrimsTest::UpdateCamera()
 {
     using namespace Heart;
     using namespace Heart::hVec3Func;

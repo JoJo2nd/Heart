@@ -28,7 +28,7 @@
 namespace Heart
 {
 
-    hFloat              hSystemConsole::s_fontSize = 1.f;
+    hFloat              hSystemConsole::s_fontSize = .5f;
     hConsoleOutputProc  hSystemConsole::s_consoleOutputCallback = NULL;
     void*               hSystemConsole::s_consoleOutputUser = NULL;
 
@@ -47,7 +47,6 @@ namespace Heart
             , logBuffer_(NULL)
             , backdropPlane_(NULL)
             , backdropMat_(NULL)
-            , backdropCB_(NULL)
             , consoleFont_(NULL)
             , logMat_(NULL)
             , windowOffset_(1.f)
@@ -60,8 +59,9 @@ namespace Heart
 
         }
 
-        void InitRenderResources(hRenderer* renderer, hResourceManager* resmanager)
+        void InitRenderResources(hRenderer* renderer)
         {
+            hRenderMaterialManager* matManager=renderer->GetMaterialManager();
             hInputLayoutDesc layout[] = {
                 {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
                 {eIS_COLOUR,   0, eIF_FLOAT4, 0, 0},
@@ -81,18 +81,31 @@ namespace Heart
                 { .5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
             };
 
+            hSamplerStateDesc ssdesc;
+            ssdesc.filter_        = SSV_POINT;
+            ssdesc.addressU_      = SSV_CLAMP;
+            ssdesc.addressV_      = SSV_CLAMP;
+            ssdesc.addressW_      = SSV_CLAMP;
+            ssdesc.mipLODBias_    = 0;
+            ssdesc.maxAnisotropy_ = 16;
+            ssdesc.borderColour_  = WHITE;
+            ssdesc.minLOD_        = -FLT_MAX;
+            ssdesc.maxLOD_        = FLT_MAX;  
+            fontSamplerState_=renderer->CreateSamplerState(ssdesc);
+
             renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
-            hMaterial* backdropMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.CONSOLE_MAT"));
+            hMaterial* backdropMat = matManager->getConsoleMat();
             backdropMat_ = backdropMat->createMaterialInstance(0);
             backdropMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &backdropPlane_, 1);
-            backdropCB_ = backdropMat_->GetParameterConstBlock(hCRC32::StringCRC("ConsoleConstants"));
 
             renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
             renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
-            consoleFont_ = static_cast< hFont* >(resmanager->mtGetResource("CORE.CONSOLE"));
-            hMaterial* fontMat = static_cast< hMaterial* >(resmanager->mtGetResource("CORE.FONT_MAT"));
+            consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
+            hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
+            hMaterial* fontMat=matManager->getDebugFontMat();
             logMat_ = fontMat->createMaterialInstance(0);
             logMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &logBuffer_, 1);
+            logMat_->BindTexture(hCRC32::StringCRC("fontSampler"), consoleTex_, fontSamplerState_);
             inputMat_=fontMat->createMaterialInstance(hMatInst_DontInstanceConstantBuffers);
             inputMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &textBuffer_, 1);
 
@@ -103,11 +116,15 @@ namespace Heart
         }
         void destroyRenderResources(hRenderer* renderer)
         {
+            hRenderUtility::destroyDebugFont(renderer, consoleFont_, consoleTex_);
+            consoleTex_=NULL;
+            hDELETE_SAFE(GetGlobalHeap(), consoleFont_);
             hMaterialInstance::destroyMaterialInstance(backdropMat_);
             hMaterialInstance::destroyMaterialInstance(logMat_);
             hMaterialInstance::destroyMaterialInstance(inputMat_);
+            renderer->DestroySamplerState(fontSamplerState_);
+            fontSamplerState_=NULL;
             backdropMat_ = NULL;
-            backdropCB_ = NULL;
             logMat_ = NULL;
 
             renderer->DestroyVertexBuffer(backdropPlane_);
@@ -124,7 +141,7 @@ namespace Heart
         void PreRenderUpdate() 
         {
             windowOffset_ += GetVisible() ? -hClock::Delta() : hClock::Delta();
-            windowOffset_ = hMax(windowOffset_, 0.f);
+            windowOffset_ = hMax(windowOffset_, .5f);
             windowOffset_ = hMin(windowOffset_, 1.f);
         }
         void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
@@ -134,7 +151,7 @@ namespace Heart
             hInstanceConstants* inst;
             hConstBlockMapInfo map;
             hVertexBufferMapInfo vbmap;
-            hFloat fontScale = hSystemConsole::getFontSize();//+(2.f*sin(hClock::elapsed()*.24f));
+            hFloat fontScale = hSystemConsole::getFontSize();
             hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
             hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
@@ -152,13 +169,6 @@ namespace Heart
                 inst = (hInstanceConstants*)map.ptr;
                 inst->world_ = hMatrixFunc::identity();
                 inst->world_ = hMatrixFunc::Translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
-                ctx->Unmap(&map);
-
-                //Doesn't need updating every frame, could go in global constant block
-                ctx->Map(backdropCB_, &map);
-                hCPUVec2* vpsize = (hCPUVec2*)map.ptr;
-                vpsize->x = (hFloat)params.rtWidth_;
-                vpsize->y = (hFloat)params.rtHeight_;
                 ctx->Unmap(&map);
 
                 hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);
@@ -306,8 +316,9 @@ namespace Heart
         hVertexBuffer*           logBuffer_;
         hVertexBuffer*           backdropPlane_;
         hMaterialInstance*       backdropMat_;
-        hdParameterConstantBlock* backdropCB_;
         hFont*                   consoleFont_;
+        hTexture*                consoleTex_;
+        hdSamplerState*          fontSamplerState_;
         hdParameterConstantBlock* fontCB_;
         hMaterialInstance*       logMat_;
         hMaterialInstance*       inputMat_;
@@ -376,7 +387,7 @@ namespace Heart
                 loaded_ = hTrue;
 
                 consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
-                consoleWindow_->InitRenderResources(renderer_, resourceManager_);
+                consoleWindow_->InitRenderResources(renderer_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
             }
         }

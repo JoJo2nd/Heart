@@ -71,7 +71,7 @@ namespace Heart
         void                        RenderMenus(hRenderSubmissionCtx* rndCtx, hRenderMaterialManager* matManager);
         void                        EndFrameUpdate();
         static hDebugMenuManager*   GetInstance() { return instance_; }
-        hBool                       Ready() { return resourceManager_->RequiredResourcesReady(); }
+        hBool                       Ready() { return hTrue; }
 
     private:
 

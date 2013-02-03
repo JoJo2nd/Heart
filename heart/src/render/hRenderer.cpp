@@ -100,6 +100,9 @@ namespace Heart
         ParentClass::Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
 
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
+
+        createDebugShadersInternal();
+
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -109,6 +112,10 @@ namespace Heart
     void hRenderer::Destroy()
     {
         materialManager_.destroyRenderResources();
+        for (hUint i=0; i<eDebugShaderMax; ++i) {
+            DestroyShader(GetGlobalHeap(), debugShaders_[i]);
+            hDELETE_SAFE(GetGlobalHeap(), debugShaders_[i]);
+        }
         ParentClass::Destroy();
     }
 
@@ -194,18 +201,20 @@ namespace Heart
             }
         }
 
-        hdTexture* dt = ParentClass::CreateTextrue( width, height, levels, format, initialData, flags );
+        hdTexture* dt = ParentClass::CreateTextureDevice( width, height, levels, format, initialData, flags );
         hcAssert(dt);
         (*outTex)->SetImpl( dt );
 
-        if ((flags & RESOURCEFLAG_KEEPCPUDATA) == 0)
-        {
+        if ((flags & (RESOURCEFLAG_KEEPCPUDATA|RESOURCEFLAG_DONTOWNCPUDATA)) == 0) {
             (*outTex)->ReleaseCPUTextureData();
             (*outTex)->SetKeepCPU(hFalse);
-        }
-        else
-        {
+        } else if ((flags & RESOURCEFLAG_DONTOWNCPUDATA) == 0) {
             (*outTex)->SetKeepCPU(hTrue);
+        } else if (flags & RESOURCEFLAG_DONTOWNCPUDATA) {
+            for (hUint32 i = 0; i < levels; ++i) {
+                (*outTex)->levelDescs_[ i ].mipdata_ = NULL;
+                (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;
+            }
         }
     }
 
@@ -217,7 +226,7 @@ namespace Heart
     {
         //hcAssert( IsRenderThread() );
 
-        ParentClass::DestroyTexture(pOut->pImpl());
+        ParentClass::DestroyTextureDevice(pOut->pImpl());
         pOut->SetImpl(NULL);
 
         hDELETE_SAFE(pOut->heap_, pOut);
@@ -260,7 +269,7 @@ namespace Heart
     {
         hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
         pdata->vtxCount_ = nElements;
-        pdata->stride_ = ParentClass::ComputeVertexLayoutStride( desc, desccount );
+        pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
         pdata->SetImpl( ParentClass::CreateVertexBufferDevice( desc, desccount, nElements*pdata->stride_, initData, flags ) );
         *outVB = pdata;
     }
@@ -530,6 +539,58 @@ namespace Heart
         camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
         camera->SetViewport(vp);
         camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hShaderProgram* hRenderer::getDebugShader(hDebugShaderID shaderID) {
+        hcAssert(shaderID < eDebugShaderMax);
+        return debugShaders_[shaderID];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createDebugShadersInternal() {
+        debugShaders_[eDebugPixelColour]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eDebugPixelColour]->shaderType_=ShaderType_FRAGMENTPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelColour),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugPixelColour)),
+            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelColour]);
+        debugShaders_[eDebugVertexPosOnly]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eDebugVertexPosOnly]->shaderType_=ShaderType_VERTEXPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugVertexPosOnly),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosOnly)),
+            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosOnly]);
+        debugShaders_[eConsoleVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eConsoleVertex]->shaderType_=ShaderType_VERTEXPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eConsoleVertex),
+            hStrLen(ParentClass::getDebugShaderSource(eConsoleVertex)),
+            "mainVP", eShaderProfile_vs4_0, debugShaders_[eConsoleVertex]);
+        debugShaders_[eConsolePixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eConsolePixel]->shaderType_=ShaderType_FRAGMENTPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eConsolePixel),
+            hStrLen(ParentClass::getDebugShaderSource(eConsolePixel)),
+            "mainFP", eShaderProfile_ps4_0, debugShaders_[eConsolePixel]);
+        debugShaders_[eDebugFontVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eDebugFontVertex]->shaderType_=ShaderType_VERTEXPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugFontVertex),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugFontVertex)),
+            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugFontVertex]);
+        debugShaders_[eDebugFontPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eDebugFontPixel]->shaderType_=ShaderType_FRAGMENTPROG;
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugFontPixel),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugFontPixel)),
+            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugFontPixel]);
     }
 
 }

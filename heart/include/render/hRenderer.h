@@ -129,10 +129,8 @@ namespace Heart
 
         hRenderer();
         void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
-
-        void initialiseCameras();
-
         void													Destroy();
+        void                                                    initialiseCameras();
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
         hRendererCamera*                                        GetRenderCamera(hUint32 id) { hcAssertMsg(id < HEART_MAX_RENDER_CAMERAS, "Invalid camera id access"); return &renderCameras_[id];}
         hRenderSubmissionCtx*                                   GetMainSubmissionCtx() { return &mainSubmissionCtx_; };
@@ -159,7 +157,7 @@ namespace Heart
         void													DestroyIndexBuffer(hIndexBuffer* pOut);
         void													CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
         void													DestroyVertexBuffer(hVertexBuffer* pOut);
-
+        
         void                                                    SumbitResourceUpdateCommand(const hRenderResourceUpdateCmd& cmd);
         void                                                    SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
         void*													AllocTempRenderMemory( hUint32 size );
@@ -171,6 +169,7 @@ namespace Heart
         void													EndRenderFrame();
         hUint32													CurrentFPS() { return FPS_; }
         hFloat                                                  GetLastGPUTime() { return gpuTime_; }
+        hShaderProgram*                                         getDebugShader(hDebugShaderID shaderID);
 
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -188,6 +187,8 @@ namespace Heart
         void                                                    SubmitDrawCallsMT();
         void                                                    SubmitDrawCallsST();
         void                                                    DoDrawResourceUpdates();
+        void                                                    createDebugShadersInternal();
+
         // Init params
         hSystem*												system_;
         hUint32 												width_;
@@ -203,6 +204,7 @@ namespace Heart
         hResourceManager*										resourceManager_;
         hRenderMaterialManager                                  materialManager_;
         hRenderSubmissionCtx                                    mainSubmissionCtx_;
+        hShaderProgram*                                         debugShaders_[eDebugShaderMax];
 
         hUint32                                                 scratchBufferSize_;
         hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];

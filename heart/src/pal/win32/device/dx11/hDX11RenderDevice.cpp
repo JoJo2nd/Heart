@@ -27,6 +27,163 @@
 
 namespace Heart
 {
+#define COMMON_CONST_BLOCK() "           \
+    cbuffer ViewportConstants            \
+    {                                    \
+    float4x4 g_View					;    \
+    float4x4 g_ViewInverse			;    \
+    float4x4 g_ViewInverseTranspose ;    \
+    float4x4 g_Projection			;    \
+    float4x4 g_ProjectionInverse	;    \
+    float4x4 g_ViewProjection       ;    \
+    float4x4 g_ViewProjectionInverse;    \
+    float4   g_viewportSize         ;    \
+    };                                   \
+    cbuffer InstanceConstants            \
+    {                                    \
+        float4x4 g_World;                \
+    };                                   \
+    "
+
+    static const hChar* s_shaderProfileNames[] = {
+        "vs_4_0",   //eShaderProfile_vs4_0,
+        "vs_4_1",   //eShaderProfile_vs4_1,
+        "vs_5_0",   //eShaderProfile_vs5_0,
+                    //
+        "ps_4_0",   //eShaderProfile_ps4_0,
+        "ps_4_1",   //eShaderProfile_ps4_1,
+        "ps_5_0",   //eShaderProfile_ps5_0,
+                    //
+        "gs_4_0",   //eShaderProfile_gs4_0,
+        "gs_4_1",   //eShaderProfile_gs4_1,
+        "gs_5_0",   //eShaderProfile_gs5_0,
+                    //
+        "cs_4_0",   //eShaderProfile_cs4_0,
+        "cs_4_1",   //eShaderProfile_cs4_1,
+        "cs_5_0",   //eShaderProfile_cs5_0,
+                    //
+        "hs_5_0",   //eShaderProfile_hs5_0,
+        "ds_5_0",   //eShaderProfile_ds5_0,
+    };
+
+    static const hChar s_debugVertex[] ={
+    COMMON_CONST_BLOCK()
+    "                                                                     \
+    struct VSInput                                                        \
+    {                                                                     \
+        float3 position : POSITION;                                       \
+    };                                                                    \
+                                                                          \
+    struct PSInput                                                        \
+    {                                                                     \
+        float4 colour   : COLOR0;                                         \
+    };                                                                    \
+                                                                          \
+    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )    \
+    {                                                                     \
+        PSInput output = (PSInput)0;                                      \
+                                                                          \
+        position = float4(input.position.xyz,1);                          \
+        position = mul(g_ViewProjection, position);                       \
+                                                                          \
+        return output;                                                    \
+    }                                                                     \
+                                                                          \
+    float4 mainFP( PSInput input ) : SV_Target0                           \
+    {                                                                     \
+        return input.colour;                                              \
+    }                                                                     \
+    "
+    };
+
+    static const hChar s_debugConsole[] = {
+    COMMON_CONST_BLOCK()
+    "                                                                       \
+    struct VSInput                                                          \
+    {                                                                       \
+        float3 position : POSITION;                                         \
+        float4 colour   : COLOR0;                                           \
+    };                                                                      \
+                                                                            \
+    struct PSInput                                                          \
+    {                                                                       \
+        float4 colour   : COLOR0;                                           \
+    };                                                                      \
+                                                                            \
+    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )      \
+    {                                                                       \
+        PSInput output = (PSInput)0;                                        \
+        output.colour = input.colour;                                       \
+                                                                            \
+        position = float4(input.position.xyz,1);                            \
+        position.xy *= g_viewportSize.xy;                                   \
+        position = mul( mul(g_ViewProjection,g_World), position );          \
+                                                                            \
+        return output;                                                      \
+    }                                                                       \
+                                                                            \
+    float4 mainFP( PSInput input ) : SV_Target0                             \
+    {                                                                       \
+        return input.colour;                                                \
+    }                                                                       \
+    "
+    };
+
+    const hChar s_debugFont[] = {
+        COMMON_CONST_BLOCK()
+        "                                                              \
+        cbuffer FontParams                                             \
+        {                                                              \
+            float4 fontColour;                                         \
+            float4 dropOffset;                                         \
+        }                                                              \
+                                                                       \
+        Texture2D   SignedDistanceField;                               \
+                                                                       \
+        SamplerState fontSampler= sampler_state{};                     \
+                                                                       \
+        struct VSInput                                                 \
+        {                                                              \
+            float3 position : POSITION;                                \
+            float4 colour 	: COLOR0;                                  \
+            float2 uv 		: TEXCOORD0;                               \
+        };                                                             \
+                                                                       \
+        struct PSInput                                                 \
+        {                                                              \
+            float4 position : SV_POSITION;                             \
+            float4 colour 	: COLOR0;                                  \
+            float2 uv 		: TEXCOORD0;                               \
+        };                                                             \
+                                                                       \
+        PSInput mainVP( VSInput input )                                \
+        {                                                              \
+            PSInput output;                                            \
+            float4 pos = float4(input.position.xyz,1);                 \
+            pos.xyz += dropOffset.xyz;                                 \
+            output.position = mul(mul(g_ViewProjection,g_World), pos); \
+            output.colour = input.colour;	                           \
+            output.uv = input.uv;                                      \
+            return output;                                             \
+        }                                                                     \
+                                                                              \
+        float4 mainFP( PSInput input ) : SV_TARGET0                           \
+        {                                                                     \
+            float a   = SignedDistanceField.Sample(fontSampler, input.uv).a;  \
+            return float4(fontColour.rgb,a);                                  \
+        }                                                                     \
+        "
+    };
+
+    static const hChar* s_debugSrcs[eDebugShaderMax] = {
+        s_debugVertex,
+        s_debugVertex,
+        s_debugConsole,
+        s_debugConsole,
+        s_debugFont,
+        s_debugFont,
+    };
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -34,7 +191,7 @@ namespace Heart
     hdDX11RenderDevice::hdDX11RenderDevice() 
         : sysWindow_(NULL)
     {
-        vertexLayoutMap_.SetHeap(GetGlobalHeap()/*!heap*/);
+        vertexLayoutMap_.SetHeap(GetGlobalHeap());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -300,6 +457,39 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSource(hMemoryHeapBase* heap, 
+    const hChar* shaderProg, hUint32 len, const hChar* entry, 
+    hShaderProfile profile, hdDX11ShaderProgram* out) {
+        HRESULT hr;
+        hdDX11ShaderProgram* shader=out;
+        const hChar* profileStr=s_shaderProfileNames[profile];
+        ID3DBlob* codeBlob;
+        ID3DBlob* errorBlob;
+        hShaderType type=ShaderType_MAX;
+
+        if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
+            type=ShaderType_VERTEXPROG;
+        } else if (profile >= eShaderProfile_ps4_0 && profile <= eShaderProfile_ps5_0) {
+            type=ShaderType_FRAGMENTPROG;
+        }
+
+        hr=D3DCompile(shaderProg, len, "memory", NULL, NULL, entry, profileStr, 0, 0, &codeBlob, &errorBlob);
+        if (errorBlob) {
+            hcPrintf("Shader Output:\n%s", errorBlob->GetBufferPointer());
+            errorBlob->Release();
+        }
+        if (FAILED(hr)) {
+            return NULL;
+        }
+        out=CompileShader(heap, (hChar*)codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), type, out);
+        codeBlob->Release();
+        return out;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hdDX11ShaderProgram* hdDX11RenderDevice::CompileShader(
         hMemoryHeapBase* heap, const hChar* shaderProg, 
         hUint32 len, hShaderType type, hdDX11ShaderProgram* out)
@@ -362,7 +552,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
+    hdDX11Texture* hdDX11RenderDevice::CreateTextureDevice( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
     {
         HRESULT hr;
         hdDX11Texture* texture = hNEW(GetGlobalHeap(), hdDX11Texture);
@@ -487,7 +677,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyTexture( hdDX11Texture* texture )
+    void hdDX11RenderDevice::DestroyTextureDevice( hdDX11Texture* texture )
     {
         if (texture->dx11Texture_) {
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->dx11Texture_);
@@ -1184,7 +1374,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11RenderDevice::ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount)
+    hUint32 hdDX11RenderDevice::computeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount)
     {
         hUint32 stride = 0;
 
@@ -1318,4 +1508,14 @@ namespace Heart
     {
         cmdBuf->Release();
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    const hChar* hdDX11RenderDevice::getDebugShaderSource(hDebugShaderID shaderid) {
+        hcAssert(shaderid < eDebugShaderMax); 
+        return s_debugSrcs[shaderid];
+    }
+
 }

@@ -35,7 +35,7 @@ namespace Heart
 	class hIndexBuffer;
 	class hVertexBuffer;
 
-namespace RenderUtility
+namespace hRenderUtility
 {
 	extern hFloat	ComputeGaussianCurve( hFloat step, hFloat power );
 	extern void		ComputeBlurWeights( hFloat blurPower, hUint32 samples, hFloat* pOutWeights );
@@ -82,7 +82,22 @@ namespace RenderUtility
 		hRenderSubmissionCtx* ctx, 
 		hIndexBuffer* outIdxBuf,
 		hVertexBuffer* outVtxBuf );
-
+    HEART_DLLEXPORT
+    hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugWireMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugConsoleMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugTexMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex, hMemoryHeapBase* heap);
+    HEART_DLLEXPORT
+    void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex);
 }																					
 }
 

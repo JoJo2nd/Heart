@@ -83,13 +83,15 @@ namespace Heart
         hUint32                 GetPackageDependancyCount() const;
         const hChar*            GetPackageDependancy(hUint32 i) const;
         hUint32                 GetLoadCompletionPercent() { return (loadedResources_*100) / totalResources_;  }
-        hBool                   Update();//Returns true when package whiches to loaded state
+        hBool                   Update(hResourceManager* manager);//Returns true when package whiches to loaded state
         void                    Unload();
         hBool                   IsInPassiveState() const { return packageState_ == State_Ready; }
         hBool                   isUnloading() const { return packageState_ > State_Ready; }
         hBool                   ToUnload() const { return packageState_ == State_Unloaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
+        hUint                   getLinkCount() const { return links_.GetSize(); }
+        const hChar*            getLink(hUint i) const { return links_[i]; }
 
     private:
 
@@ -104,12 +106,14 @@ namespace Heart
         void                        DoUnload();
         enum State
         {
+            State_Load_DepPkgs,
             State_Load_WaitDeps,
             State_Load_Reources,
             State_Link_Resources,
             State_Ready,
             State_Unlink_Resoruces,
             State_Unload_Resources,
+            State_Unload_DepPkg,
             State_Unloaded,
         };
 

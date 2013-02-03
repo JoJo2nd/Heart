@@ -85,6 +85,10 @@ namespace Heart
         viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
         viewportConstants_.viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
         viewportConstants_.viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_.viewProjection_);
+        viewportConstants_.viewportSize_[0]=viewport_.x_;
+        viewportConstants_.viewportSize_[1]=viewport_.y_;
+        viewportConstants_.viewportSize_[2]=0.f;
+        viewportConstants_.viewportSize_[3]=0.f;
 
         hConstBlockMapInfo map;
         ctx->Map(cameraConstBlock_, &map);

@@ -54,7 +54,7 @@ public:
     vResource* getResourceInfoByName(const char* asset);
     vResource* addResourceInfo(const char* name, vResourceTypeID type);
     vErrorCode removeResourceInfo(vResource* res);
-    vErrorCode addPackageLink(vResource* res, vResource* linkedRes);
+    vErrorCode addPackageLink(vResource* res, vPackage* linkedPkg, vResource* linkedRes);
     //non-public interface
     vErrorCode                      loadFromConfig(boost::filesystem::path xmlpath, vPackageSystem* pkgSys);
     vErrorCode                      resolveResourceLinks(vPackageSystem* pkgSys);

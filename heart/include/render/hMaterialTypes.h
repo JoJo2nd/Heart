@@ -57,8 +57,10 @@ namespace Heart
         }
 
         hShaderProgram*         GetVertexShader() { return vertexProgram_; }
+        void                    SetVertexShader(hShaderProgram* prog) { vertexProgram_=prog; }
         void                    SetVertexShaderResID(hResourceID id) { vertexProgramID_ = id; }
         hShaderProgram*         GetFragmentShader() { return fragmentProgram_; }
+        void                    SetFragmentShader(hShaderProgram* prog) { fragmentProgram_=prog; }
         void                    SetFragmentShaderResID(hResourceID id) { fragmentProgramID_ = id; }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
         hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i];}
@@ -70,7 +72,6 @@ namespace Heart
         void                    SetBlendState(hdBlendState* state) { blendState_ = state; }
         void                    SetDepthStencilState(hdDepthStencilState* state) { depthStencilState_ = state; }
         void                    SetRasterizerState(hdRasterizerState* state) { rasterizerState_ = state; }
-        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         void                    ReleaseResources(hRenderer* renderer);
 
         hBool   BindShaderProgram(hdShaderProgram* prog);
@@ -147,6 +148,7 @@ namespace Heart
         const hChar*            GetName() const { return &name_[0]; }
         void                    SetName(const hChar* name) { hStrCopy(name_.GetBuffer(), MAX_NAME_LEN, name); }
         hUint32                 GetMask() const { return mask_; }
+        void                    SetMask(hUint32 v) { mask_=v; }
         void                    SetPasses(hUint32 count);
         hUint32                 GetPassCount() const { return passes_.GetSize(); }
         hMaterialTechniquePass* GetPass( hUint32 idx ) { return &passes_[idx]; }
@@ -155,7 +157,6 @@ namespace Heart
         void                    SetLayer(hByte layer) { layer_ = layer; }
         hByte                   GetLayer() const { return layer_; }
         void                    AppendPass(const hMaterialTechniquePass& pass);
-        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
 
     private:
 

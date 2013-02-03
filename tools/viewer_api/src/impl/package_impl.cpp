@@ -89,10 +89,10 @@ vErrorCode vPackage::vImpl::removeResourceInfo(vResource* res)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-vErrorCode vPackage::vImpl::addPackageLink(vResource* res, vResource* linkedRes)
+vErrorCode vPackage::vImpl::addPackageLink(vResource* res, vPackage* linkedPkg, vResource* linkedRes)
 {
-    assert(res && linkedRes);
-    boost::shared_ptr< vResource > ptr = resources_[linkedRes->getName()];
+    assert(res && linkedPkg && linkedRes);
+    boost::shared_ptr< vResource > ptr=linkedPkg->impl_->resources_[linkedRes->getName()];
     return res->impl_->addAsDependent(ptr);
 }
 
@@ -164,9 +164,9 @@ vErrorCode vPackage::vImpl::serialise(const vPackageSystem& pkgSys) const
                     added = true;
                     break;
                 }
-                if (!added && name_ != deps[i]->getPackageName()) {
-                    packagelinks.push_back(deps[i]->getPackageName());
-                }
+            }
+            if (!added && name_ != deps[i]->getPackageName()) {
+                packagelinks.push_back(deps[i]->getPackageName());
             }
         }
     }
@@ -257,16 +257,16 @@ vErrorCode vPackage::vImpl::resolveResourceLinks(vPackageSystem* pkgSys)
             splitAssetName(to, &topkg, &toasset);
 
             assert(frompkg == getName());
-            vPackage* pkg = pkgSys->getPackage(topkg.c_str());
-            if (!pkg) 
+            vPackage* linkpkg = pkgSys->getPackage(topkg.c_str());
+            if (!linkpkg) 
                 return vERROR_DEP_PKG_NOT_FOUND;//TODO: warn
-            vResource* linkres = pkg->getResourceInfoByName((char*)toasset.c_str());
+            vResource* linkres = linkpkg->getResourceInfoByName((char*)toasset.c_str());
             if (!linkres) 
                 return vERROR_DEP_ASSET_NOT_FOUND;//TODO: WARN not error
             vResource* res = getResourceInfoByName(fromasset.c_str());
             if (!res) 
                 return vERROR_NOT_FOUND;
-            addPackageLink(res, linkres);
+            addPackageLink(res, linkpkg, linkres);
         }
     }
 

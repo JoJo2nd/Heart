@@ -72,7 +72,7 @@ public:
     vResource*          getResourceInfoByName(const char* asset);
     vResource*          addResourceInfo(const char* name, vResourceTypeID type);
     vErrorCode          removeResourceInfo(vResource*);
-    void                addPackageLink(vResource* res, vResource* linkedRes);
+    void                addPackageLink(vResource* res, vPackage* pkg, vResource* linkedRes);
     void                getResourcesOfType(vResourceTypeID type, std::vector<vResource*>* outarray) const;
 };
 

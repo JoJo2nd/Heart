@@ -165,7 +165,7 @@ namespace Heart
                         ltPackageLoadCompleteQueue_.push(msg);
                         pack->Unload(); 
                     }
-                    if (pack->Update())
+                    if (pack->Update(this))
                     {
                         //Package has just finised a load, push across to main thread
                         hMutexAutoScope autoLock(&ltAccessMutex_);
@@ -198,26 +198,48 @@ namespace Heart
         }
 
         /*
-        * Bailing, so unload all packages. Done by removing the 
-        * packages with the smallest ref count first so dependant packages 
-        * are left until last
+        * Bailing, so unload all packages. Packages are stored as a 
+        * graph, so we need to remove any leaf nodes first. Then that
+        * will leave us with more leaf nodes to remove and we get a
+        * kind of 'ordered' destruction...
         */
+        hUint pkgn=ltLoadedPackages_.GetSize();
+        hResourcePackage** leafpkgs=(hResourcePackage**)hAlloca(sizeof(hResourcePackage*)*pkgn);
         while (ltLoadedPackages_.GetSize() > 0) {
-            hResourcePackage* packToUnload;
-            for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext()) {
-                pack->DecRef();
-                if (pack->GetRefCount() == 0) {
-                    packToUnload = pack;
-                    break;
-                }
-            }
-            packToUnload->Unload();
-            while (!packToUnload->ToUnload()) {
-                packToUnload->Update();
+            hZeroMem(leafpkgs, sizeof(hResourcePackage*)*pkgn);
+            hUint i=0;
+            for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext(), ++i) {
+                leafpkgs[i]=pack;
             }
 
-            ltLoadedPackages_.Remove(packToUnload);
-            hDELETE(GetGlobalHeap(), packToUnload);
+            i=0;
+            for (hResourcePackage* pack = ltLoadedPackages_.GetHead(); pack; pack = pack->GetNext(), ++i) {
+                for (hUint pl=0,pln=pack->getLinkCount(); pl<pln; ++pl) {
+                    hResourcePackage* linkedPkg=ltLoadedPackages_.Find(hCRC32::StringCRC(pack->getLink(pl)));
+                    for (hUint ln=0; ln<pkgn; ++ln) {
+                        if (linkedPkg==leafpkgs[ln]) {
+                            leafpkgs[ln]=NULL;
+                        }
+                    }
+                }
+            }
+
+            for (hUint ln=0; ln<pkgn; ++ln) {
+                if (leafpkgs[ln]==NULL) continue;
+                hResourcePackage* packToUnload=leafpkgs[ln];
+
+                while (packToUnload->GetRefCount() != 0) {
+                    packToUnload->DecRef();
+                }
+
+                packToUnload->Unload();
+                while (!packToUnload->ToUnload()) {
+                    packToUnload->Update(this);
+                }
+
+                ltLoadedPackages_.Remove(packToUnload);
+                hDELETE(GetGlobalHeap(), packToUnload);
+            }
         }
 
         return 0;
@@ -406,11 +428,53 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hResourceManager::ltLoadPackage(const hChar* name) {
+        hMutexAutoScope autoLock(&ltAccessMutex_);
+        ResourcePackageLoadMsg loadMsg;
+        hStrCopy(loadMsg.path_, hStaticArraySize(loadMsg.path_), name);
+        ltLoadRequests_.push(loadMsg);
+        loaderSemaphone_.Post();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::ltUnloadPackage(const hChar* name) {
+        hMutexAutoScope autoLock(&ltAccessMutex_);
+        ResourcePackageQueueMsg unloadMsg;
+        hUint32 crc=hCRC32::StringCRC(name);
+        unloadMsg.packageCRC_=crc;
+        hResourcePackage* pkg=ltLoadedPackages_.Find(crc);
+        hcAssert(pkg);
+        if (pkg) {
+            unloadMsg.package_=pkg;
+            ltUnloadRequest_.push(unloadMsg);
+            loaderSemaphone_.Post();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hResourceManager::ltIsPackageLoaded(const hChar* name) {
+        hResourcePackage* pkg=ltLoadedPackages_.Find(hCRC32::StringCRC(name));
+        if (!pkg || !pkg->IsInPassiveState()) {
+            return hFalse;
+        }
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hBool hResourceManager::RequiredResourcesReady()
     {
         if (requireAssetsReady_) return hTrue;
         
-        if (mtIsPackageLoaded("CORE"))
+        //if (mtIsPackageLoaded("CORE"))
         {
             requireAssetsReady_ = hTrue;
         }

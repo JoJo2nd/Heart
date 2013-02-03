@@ -76,10 +76,24 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hMaterial::hMaterial(hMemoryHeapBase* heap, hRenderer* renderer) : memHeap_(heap)
+        , renderer_(renderer)
+        , activeTechniques_(NULL)
+        , manager_(renderer->GetMaterialManager())
+        , groups_(heap) 
+    {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hMaterial::~hMaterial()
     {
         hcAssertMsg(instanceCount_.value_ == 0, 
             "Not all material instances created from this material were released");
+        hcAssert(renderer_ && manager_);
 
         for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
             for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
@@ -214,75 +228,7 @@ namespace Heart
         }
 
         // All resources linked...
-        // Bind programs 
-        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
-                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
-                    for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
-                        passptr->BindShaderProgram(passptr->GetProgram(progidx));
-                    }
-                }
-            }
-        }
-        // Grab and Bind const block info
-        struct {
-            hUint32 hash;
-            hChar name[hMAX_PARAMETER_NAME_LEN];
-            hUint32 size;
-        }cbHashes[HEART_MAX_CONSTANT_BLOCKS] = {0};
-        hUint32 cbcount = 0;
-        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
-                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
-                    for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
-                        hShaderProgram* prog = passptr->GetProgram(progidx);
-                        for (hUint32 cb = 0; prog && cb < prog->GetConstantBlockCount(); ++cb) {
-                            hConstantBlockDesc desc;
-                            prog->GetConstantBlockDesc(cb, &desc);
-#ifdef HEART_DEBUG
-                            hUint32 i;
-                            for (i = 0; i < cbcount; ++i) {
-                                if (hStrCmp(cbHashes[i].name, desc.name_) == 0 ){
-                                    hcAssertMsg(cbHashes[i].hash, desc.hash_ == 0,
-                                        "WARNING: Constant blocks don't match across shaders. This will produce undesirable results."
-                                        "Make sure constant blocks, that share the same name, share the same variables across all shaders in the same"
-                                        "material.");
-                                }
-                            }
-                            if (i == cbcount){
-                                hStrCopy(cbHashes[cbcount].name, 32, desc.name_); 
-                                cbHashes[cbcount].hash = desc.hash_;
-                                cbHashes[cbcount].size = desc.size_;
-                                ++cbcount;
-                                hcAssertMsg(cbcount < HEART_MAX_CONSTANT_BLOCKS, "Buffer overrun");
-                            }
-#endif // HEART_DEBUG
-                            hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
-                            hdParameterConstantBlock* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
-                            hBool alreadyAdded = hFalse;
-                            if (!globalCB) {
-                                for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
-                                    if (constBlocks_[mcb].paramid == cbID) {
-                                        alreadyAdded = hTrue;
-                                    }
-                                }
-                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
-                            }
-                            if (globalCB) BindConstanstBuffer(cbID, globalCB);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Bind the default samplers to the programs
-        for (hUint32 si = 0; si < defaultSamplers_.GetSize(); ++si) {
-            BindTexture(hCRC32::StringCRC(defaultSamplers_[si].name_), defaultSamplers_[si].boundTexture_, defaultSamplers_[si].samplerState_);
-        }
-
-        return hTrue;
+        return bindMaterial(matManager);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -291,6 +237,7 @@ namespace Heart
 
     hBool hMaterial::BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb)
     {
+        hcAssert(activeTechniques_);
         hBool succ = true;
         for (hUint32 tech = 0, nTech = activeTechniques_->GetSize(); tech < nTech; ++tech) {
             for (hUint32 passIdx = 0, nPasses = (*activeTechniques_)[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
@@ -432,6 +379,82 @@ namespace Heart
         }
         hDELETE_SAFE(memHeap_, matInst);
         hAtomic::Decrement(instanceCount_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterial::bindMaterial(hRenderMaterialManager* matManager) {
+        // Bind programs 
+        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
+                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
+                    for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
+                        passptr->BindShaderProgram(passptr->GetProgram(progidx));
+                    }
+                }
+            }
+        }
+        // Grab and Bind const block info
+        struct {
+            hUint32 hash;
+            hChar name[hMAX_PARAMETER_NAME_LEN];
+            hUint32 size;
+        }cbHashes[HEART_MAX_CONSTANT_BLOCKS] = {0};
+        hUint32 cbcount = 0;
+        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
+                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
+                    for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
+                        hShaderProgram* prog = passptr->GetProgram(progidx);
+                        for (hUint32 cb = 0; prog && cb < prog->GetConstantBlockCount(); ++cb) {
+                            hConstantBlockDesc desc;
+                            prog->GetConstantBlockDesc(cb, &desc);
+#ifdef HEART_DEBUG
+                            hUint32 i;
+                            for (i = 0; i < cbcount; ++i) {
+                                if (hStrCmp(cbHashes[i].name, desc.name_) == 0 ){
+                                    hcAssertMsg(cbHashes[i].hash, desc.hash_ == 0,
+                                        "WARNING: Constant blocks don't match across shaders. This will produce undesirable results."
+                                        "Make sure constant blocks, that share the same name, share the same variables across all shaders in the same"
+                                        "material.");
+                                }
+                            }
+                            if (i == cbcount){
+                                hStrCopy(cbHashes[cbcount].name, 32, desc.name_); 
+                                cbHashes[cbcount].hash = desc.hash_;
+                                cbHashes[cbcount].size = desc.size_;
+                                ++cbcount;
+                                hcAssertMsg(cbcount < HEART_MAX_CONSTANT_BLOCKS, "Buffer overrun");
+                            }
+#endif // HEART_DEBUG
+                            hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
+                            hdParameterConstantBlock* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
+                            hBool alreadyAdded = hFalse;
+                            if (!globalCB) {
+                                for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
+                                    if (constBlocks_[mcb].paramid == cbID) {
+                                        alreadyAdded = hTrue;
+                                    }
+                                }
+                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                            }
+                            if (globalCB) BindConstanstBuffer(cbID, globalCB);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Bind the default samplers to the programs
+        for (hUint32 si = 0; si < defaultSamplers_.GetSize(); ++si) {
+            BindTexture(hCRC32::StringCRC(defaultSamplers_[si].name_), defaultSamplers_[si].boundTexture_, defaultSamplers_[si].samplerState_);
+        }
+
+        return hTrue;
     }
 
     //////////////////////////////////////////////////////////////////////////

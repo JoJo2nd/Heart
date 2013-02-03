@@ -59,6 +59,7 @@ namespace Heart
         hMatrix projectionInverse_;
         hMatrix viewProjection_;
         hMatrix viewProjectionInverse_;
+        hFloat  viewportSize_[4]; //x,y,0,0
     };
 
     struct hInstanceConstants

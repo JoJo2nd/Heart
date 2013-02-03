@@ -106,7 +106,17 @@ namespace Heart
 #define hAlloca( x ) alloca( x )
 #define hOffsetOf( s, m ) (hUint32)(&(((s*)0)->m))
 #define MAX_LUA_FILESYSTEMS  (6)
-#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
+
+//#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
+//Improved SizeofArray
+#   ifdef HEART_Cx11
+    template <typename t_ty, hSizeT n> 
+    constexpr hSizeT hArraySize(const t_ty (&)[n]) { return n; }
+#else
+    template < typename t_ty, hSizeT n >
+    hSizeT hArraySize(const t_ty (&)[n]) { return n; }
+#   endif
+#define hStaticArraySize(x) hArraySize(x)
 
 #define HEART_PRIVATE_COPY(x) private: x(const x&); x& operator = (const x&)
 

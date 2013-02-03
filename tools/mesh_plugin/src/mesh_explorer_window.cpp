@@ -307,7 +307,7 @@ void MeshExplorerWindow::onExport(wxCommandEvent& evt) {
             if (!lpkg) continue;
             vResource* lres=lpkg->getResourceInfoByName(resname.c_str());
             if (!lres) continue;
-            pkg->addPackageLink(res, lres);
+            pkg->addPackageLink(res, lpkg, lres);
         }
     }
 }

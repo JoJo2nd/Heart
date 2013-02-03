@@ -42,6 +42,7 @@ DEFINE_HEART_UNIT_TEST(ComplexMesh1);
 hUint32 ComplexMesh1::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
+    Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
     switch(state_)
     {
     case eBeginLoad:
@@ -67,7 +68,8 @@ hUint32 ComplexMesh1::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
-            if (pad->GetButton(HEART_PAD_BACK).buttonVal_)
+            if (pad->GetButton(HEART_PAD_BACK).buttonVal_ ||
+                kb->GetButton(VK_SPACE).raisingEdge_)
             {
                 state_ = eBeginUnload;
             }

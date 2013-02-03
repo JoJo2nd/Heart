@@ -156,6 +156,10 @@ namespace Heart
         camData->viewInverseTranspose_ = hMatrixFunc::transpose( camData->viewInverse_ );
         camData->viewProjection_ = hMatrixFunc::mult(view, proj);
         camData->viewProjectionInverse_ = hMatrixFunc::inverse(camData->viewProjection_);
+        camData->viewportSize_[0]=renderer_->GetWidth();
+        camData->viewportSize_[1]=renderer_->GetHeight();
+        camData->viewportSize_[2]=renderer_->GetWidth();
+        camData->viewportSize_[3]=renderer_->GetHeight();
         rndCtx->Unmap(&camMap);
 
         rndCtx->SetViewport(viewport);

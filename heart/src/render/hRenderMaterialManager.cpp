@@ -335,8 +335,25 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hRenderMaterialManager::createDebugMaterials() {
+        wireframeMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugWireMaterial(renderer_, wireframeMat_);
+        consoleMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugConsoleMaterial(renderer_, consoleMat_);
+        debugFontMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugFontMaterial(renderer_, debugFontMat_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderMaterialManager::destroyRenderResources()
     {
+        hDELETE_SAFE(GetGlobalHeap(), wireframeMat_);
+        hDELETE_SAFE(GetGlobalHeap(), consoleMat_);
+        hDELETE_SAFE(GetGlobalHeap(), debugFontMat_);
+
         for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliasHashes_);
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliases_);
@@ -347,5 +364,6 @@ namespace Heart
         }
         constBlockLookUp_.Clear(hFalse);
         constBlocks_.Clear();
+
     }
 }

@@ -35,7 +35,6 @@ namespace Heart
     class hdDX11Texture;
     class hdDX11ShaderProgram;
 
-
     struct HEART_DLLEXPORT hRenderDeviceSetup
     {
         hTempRenderMemAlloc     alloc_;
@@ -61,15 +60,16 @@ namespace Heart
         hUint32                         GetWidth() const { return width_; }
         hUint32                         GetHeight() const { return height_; }
 
-        hUint32                         ComputeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
+        hUint32                         computeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         //Resource Create Calls
+        hdDX11ShaderProgram*            compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
         hdDX11ShaderProgram*            CompileShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
         void                            DestroyShader(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
         hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, hUint32 count);
         void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
         void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
-        hdDX11Texture*                  CreateTextrue( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );
-        void                            DestroyTexture( hdDX11Texture* texture );
+        hdDX11Texture*                  CreateTextureDevice( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );
+        void                            DestroyTextureDevice( hdDX11Texture* texture );
         hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );
         void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
         hdDX11VertexLayout*             CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen);
@@ -85,6 +85,10 @@ namespace Heart
         hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
         void                            DestroySamplerState( hdDX11SamplerState* state );
         void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
+
+    protected:
+
+        const hChar*                getDebugShaderSource(hDebugShaderID shaderid);
 
     private:
 
@@ -119,7 +123,6 @@ namespace Heart
         ID3D11Query*                timerDisjoint_;
         ID3D11Query*                timerFrameStart_;
         ID3D11Query*                timerFrameEnd_;
-
     };
 
 }

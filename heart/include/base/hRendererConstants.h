@@ -165,6 +165,28 @@ namespace Heart
         ShaderType_FORCE_DWORD = ~0U
     };
 
+    enum hShaderProfile 
+    {
+        eShaderProfile_vs4_0,
+        eShaderProfile_vs4_1,
+        eShaderProfile_vs5_0,
+
+        eShaderProfile_ps4_0,
+        eShaderProfile_ps4_1,
+        eShaderProfile_ps5_0,
+
+        eShaderProfile_gs4_0,
+        eShaderProfile_gs4_1,
+        eShaderProfile_gs5_0,
+
+        eShaderProfile_cs4_0,
+        eShaderProfile_cs4_1,
+        eShaderProfile_cs5_0,
+
+        eShaderProfile_hs5_0,
+        eShaderProfile_ds5_0,
+    };
+
     enum hTextureFormat
     {
         TFORMAT_ARGB8,
@@ -404,6 +426,7 @@ namespace Heart
         RESOURCEFLAG_RENDERTARGET   		= 1 << 2,
         RESOURCEFLAG_DEPTHTARGET    		= 1 << 3,
         RESOURCEFLAG_KEEPCPUDATA            = 1 << 4,
+        RESOURCEFLAG_DONTOWNCPUDATA         = 1 << 5,
     };
 
     enum PrimitiveType
@@ -429,6 +452,18 @@ namespace Heart
         LIGHTSOURCETYPE_POINT,
 
         LIGHTSOURCETYPE_MAX
+    };
+
+    enum hDebugShaderID
+    {
+        eDebugVertexPosOnly,
+        eDebugPixelColour,
+        eConsoleVertex,
+        eConsolePixel,
+        eDebugFontVertex,
+        eDebugFontPixel,
+
+        eDebugShaderMax
     };
 
     struct hBlendStateDesc

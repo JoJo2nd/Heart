@@ -240,7 +240,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 {
     using namespace Heart;
     hRenderer* renderer = engine->GetRenderer();
-    hMaterial* material = hNEW(memalloc->resourcePakHeap_, hMaterial)(memalloc->resourcePakHeap_);
+    hMaterial* material = hNEW(memalloc->resourcePakHeap_, hMaterial)(memalloc->resourcePakHeap_, renderer);
 
     MaterialHeader header;
     inFile->Read(&header, sizeof(header));

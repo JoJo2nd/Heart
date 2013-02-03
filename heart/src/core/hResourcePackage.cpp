@@ -175,7 +175,7 @@ namespace Heart
 
         //TODO: resource Package links/deps requests
 
-        packageState_ = State_Load_WaitDeps;
+        packageState_ = State_Load_DepPkgs;
         doReload_ = hFalse;
 
         return 0;
@@ -203,25 +203,32 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackage::Update()
+    hBool hResourcePackage::Update(hResourceManager* manager)
     {
         hBool ret = hFalse;
         switch(packageState_)
         {
+        case State_Load_DepPkgs: {
+                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                    manager->ltLoadPackage(links_[i]);
+                }
+                packageState_ = State_Load_WaitDeps; 
+            } break;
         case State_Load_WaitDeps:
             {
-                //TODO:
-                hcPrintf("Package %s Beginning Load Resources", packageName_);
-                packageState_ = State_Load_Reources;
-                break;
-            }
-        case State_Load_Reources:
-            {
+                hBool loaded=hTrue;
+                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                    loaded &= manager->ltIsPackageLoaded(links_[i]);
+                }
+                if (loaded) {
+                    hcPrintf("Package %s Beginning Load Resources", packageName_);
+                    packageState_ = State_Load_Reources;
+                }
+            } break;
+        case State_Load_Reources: {
                 LoadResourcesState();
-                break;
-            }
-        case State_Link_Resources:
-            {
+            } break;
+        case State_Link_Resources: {
                 if (DoPostLoadLink())
                 {
                     tempHeap_.destroy();
@@ -229,34 +236,34 @@ namespace Heart
                     packageState_ = State_Ready;
                     ret = hTrue;
                 }
-                break;
-            }
+            } break;
         case State_Unlink_Resoruces:
             {
                 DoPreUnloadUnlink();
                 hcPrintf("Package %s Unload started", packageName_);
                 packageState_ = State_Unload_Resources;
-                break;
-            }
+            } break;
         case State_Unload_Resources:
             {
                 DoUnload();
+                hcPrintf("Package %s is Unloaded", packageName_);
+                packageState_ = State_Unload_DepPkg;
+            } break;
+        case State_Unload_DepPkg: {
+                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                    manager->ltUnloadPackage(links_[i]);
+                }
                 if (doReload_) {
                     hcPrintf("Package %s is Reloading", packageName_);
                     LoadPackageDescription(packageName_);
-                }
-                else {
-                    hcPrintf("Package %s is Unloaded", packageName_);
+                } else {
                     packageState_ = State_Unloaded;
                 }
-                break;
-            }
+            } break;
         case State_Unloaded:
         case State_Ready:
-        default:
-            {
-                break;
-            }
+        default:{
+            } break;
         }
 
         return ret;

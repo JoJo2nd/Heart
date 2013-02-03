@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	fontloader.cpp	
-	
-	Copyright (c) 29:7:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	fontloader.cpp	
+    
+    Copyright (c) 29:7:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -36,6 +36,8 @@
 #define FONT_MAJOR_VERSION          (((hUint16)1))
 #define FONT_MINOR_VERSION          (((hUint16)0))
 #define FONT_VERSION                ((FONT_MAJOR_VERSION << 16)|FONT_MINOR_VERSION)
+
+#define FONT_CPP_OUTPUT
 
 #pragma pack(push, 1)
 
@@ -130,6 +132,15 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     header.glyphCount = characterCount;
     binoutput->Write(&header, sizeof(header));
 
+#ifdef FONT_CPP_OUTPUT
+    hcPrintf("/////\n");
+    hcPrintf("// FontHeader\n");
+    hcPrintf("const float g_debugfontHeight = %ff;\n", header.fontHeight);
+    hcPrintf("const unsigned int g_debugpageCount = %d;\n", header.pageCount);
+    hcPrintf("const unsigned int g_debugglyphCount = %d;\n", header.glyphCount);
+    hcPrintf("\nconst Heart::hFontCharacter g_debugglyphs[] = {\n");
+#endif
+
     for (hXMLGetter glyph = glyphs.FirstChild("char"); glyph.ToNode(); glyph = glyph.NextSibling())
     {
         hFontCharacter newchar = {0};
@@ -152,8 +163,19 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         newchar.xOffset_ *= fontScale;
         newchar.xAdvan_ *= fontScale;
 
+#ifdef FONT_CPP_OUTPUT
+        hcPrintf("{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},",
+            newchar.page_, newchar.unicode_, newchar.x_, newchar.y_,
+            newchar.height_, newchar.width_, newchar.xOffset_, newchar.yOffset_, 
+            newchar.xAdvan_, newchar.UV1_.x, newchar.UV1_.y, newchar.UV2_.x, newchar.UV2_.y);
+#endif
+
         binoutput->Write(&newchar, sizeof(hFontCharacter));
     }
+
+#ifdef FONT_CPP_OUTPUT
+    hcPrintf("}; //const hFontCharacter g_debugglyphs[]\n");
+#endif
 
     return hTrue;
 }

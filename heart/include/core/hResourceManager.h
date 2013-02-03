@@ -76,7 +76,7 @@ namespace Heart
         hResourceManager();
         ~hResourceManager();
 
-        hBool                           Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources );
+        hBool                           Initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources);
         hBool                           RequiredResourcesReady();
         void                            MainThreadUpdate();
         static hUint32                  BuildResourceCRC( const hChar* resourceName );
@@ -92,6 +92,9 @@ namespace Heart
         hResourceClassBase*             mtGetResource(hResourceID crc);
 
         //Loader thread interface   
+        void                            ltLoadPackage(const hChar* name);
+        void                            ltUnloadPackage(const hChar* name);
+        hBool                           ltIsPackageLoaded(const hChar* name);
         hResourceClassBase*             ltGetResource(hResourceID crc);
 
         // New interface

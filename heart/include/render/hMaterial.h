@@ -151,15 +151,7 @@ namespace Heart
     {
     public:
 
-        hMaterial(hMemoryHeapBase* heap) 
-            : memHeap_(heap)
-            , renderer_(NULL)
-            , activeTechniques_(NULL)
-            , manager_(NULL)
-            , groups_(heap)
-        {
-            
-        }
+        hMaterial(hMemoryHeapBase* heap, hRenderer* renderer);
         ~hMaterial();
 
         hUint32                             GetTechniqueCount() const { return activeTechniques_->GetSize(); }
@@ -171,6 +163,7 @@ namespace Heart
         hMaterialGroup*                     AddGroup(const hChar* name);
         void                                SetActiveGroup(const hChar* name);
         hBool                               Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
+        hBool                               bindMaterial(hRenderMaterialManager* matManager);
         hUint32                             GetMatKey() const { return uniqueKey_; }
         void                                AddSamplerParameter(const hSamplerParameter& samp);
         
