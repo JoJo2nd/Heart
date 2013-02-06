@@ -28,6 +28,7 @@
 #include "material_utils.h"
 #include "boost/filesystem.hpp"
 #include "xml_helpers.h"
+#include "boost/smart_ptr.hpp"
 #include <assert.h>
 #include <d3d11.h>
 
@@ -251,13 +252,32 @@ bool extractVertexInputLayoutFromShaderSource(
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void extractVertexProgramsFromMaterial(const char* matxml, uint len, std::vector< std::string >* vertexProgNames) {
+void extractVertexProgramsFromMaterial(const boost::filesystem::path& xmlpath, const char* matxml, uint len, std::vector< std::string >* vertexProgNames) {
     xml_doc matxmldoc;
     matxmldoc.copy_parse(matxml, len);
     xml_getter node(matxmldoc);
     while (node.to_node()) {
         if (_stricmp(node.name(),"vertex")==0) {
             vertexProgNames->push_back(node.get_value_string());
+        }
+        if (_stricmp(node.name(),"material")==0 && node.get_attribute("inherit")) {
+            boost::filesystem::path thispath;
+            thispath=xmlpath.parent_path();
+            thispath /= boost::filesystem::path(node.get_attribute("inherit")->value());
+            std::string inheritpath=thispath.generic_string();
+
+            std::ifstream infile;
+            size_t xmlfilelen=0;
+            infile.open(inheritpath.c_str());
+            if (infile.is_open()) {
+                xmlfilelen=boost::filesystem::file_size(inheritpath);
+                boost::shared_array<char> xmldata(new char[xmlfilelen+1]);
+                memset(xmldata.get(), 0, xmlfilelen+1);
+                infile.read(xmldata.get(), xmlfilelen);
+                xmldata[xmlfilelen]=0;
+                //TODO: this is too broad and includes too many vertex programs, but it should be safe
+                extractVertexProgramsFromMaterial(inheritpath, xmldata.get(), xmlfilelen, vertexProgNames);
+            }
         }
         if (node.first_child(NULL).to_node()) {
             node=node.first_child(NULL);

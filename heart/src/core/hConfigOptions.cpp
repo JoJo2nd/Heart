@@ -49,10 +49,10 @@ namespace Heart
                 if ( doc_.ParseSafe< rapidxml::parse_default >(data, GetGlobalHeap()) )
                 {
                     hXMLGetter getter( &doc_ );
-                    rapidxml::xml_node<>* fullscreen = getter.FirstChild("renderer").FirstChild("fullscreen").ToNode();
-                    rapidxml::xml_node<>* vsync = getter.FirstChild("renderer").FirstChild( "vsync" ).ToNode();
-                    rapidxml::xml_node<>* width = getter.FirstChild("renderer").FirstChild( "width" ).ToNode();
-                    rapidxml::xml_node<>* height = getter.FirstChild("renderer").FirstChild( "height" ).ToNode();
+                    const rapidxml::xml_node<>* fullscreen = getter.FirstChild("renderer").FirstChild("fullscreen").ToNode();
+                    const rapidxml::xml_node<>* vsync = getter.FirstChild("renderer").FirstChild( "vsync" ).ToNode();
+                    const rapidxml::xml_node<>* width = getter.FirstChild("renderer").FirstChild( "width" ).ToNode();
+                    const rapidxml::xml_node<>* height = getter.FirstChild("renderer").FirstChild( "height" ).ToNode();
 
                     fullscreen_ = fullscreen && fullscreen->value() ? strcmp( fullscreen->value(), "true" ) == 0 : hd_DefaultFullscreenSetting();
                     width_ = width && width->value() ? atoi( width->value() ) : hd_DefaultScreenWidth();

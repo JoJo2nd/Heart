@@ -32,6 +32,7 @@
 
 #include "plugin_defines.h"
 #include "heart.h"
+#include "boost/filesystem.hpp"
 #include <vector>
 #include <string>
 #include <map>
@@ -47,6 +48,6 @@ bool extractVertexInputLayoutFromShaderSource(
     const char* source, uint len, const char* profile, 
     const char* entry, const char* filepath, const char* packagepath,
     std::vector< Heart::hInputLayoutDesc >* outLayout, std::string* outErrors);
-void extractVertexProgramsFromMaterial(const char* matxml, uint len, std::vector< std::string >* vertexProgNames);
+void extractVertexProgramsFromMaterial(const boost::filesystem::path& xmlpath, const char* matxml, uint len, std::vector< std::string >* vertexProgNames);
 
 #endif // MATERIAL_UTILS_H__

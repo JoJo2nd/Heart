@@ -37,7 +37,7 @@
 #define FONT_MINOR_VERSION          (((hUint16)0))
 #define FONT_VERSION                ((FONT_MAJOR_VERSION << 16)|FONT_MINOR_VERSION)
 
-#define FONT_CPP_OUTPUT
+//#define FONT_CPP_OUTPUT
 
 #pragma pack(push, 1)
 

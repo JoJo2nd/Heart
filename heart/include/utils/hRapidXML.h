@@ -102,13 +102,13 @@ namespace Heart
     class HEART_DLLEXPORT hXMLGetter
     {
     public:
-        explicit hXMLGetter( rapidxml::xml_node<>* node )
+        explicit hXMLGetter( const rapidxml::xml_node<>* node )
             : node_(node)
         {
             
         }
 
-        void                    SetNode(rapidxml::xml_node<>* node)
+        void                    SetNode(const rapidxml::xml_node<>* node)
         {
             node_ = node;
         }
@@ -322,11 +322,11 @@ namespace Heart
                 return defVal;
         }
 
-        rapidxml::xml_node<>*       ToNode() { return node_; }
+        const rapidxml::xml_node<>*       ToNode() { return node_; }
 
     private:
 
-        rapidxml::xml_node<>*       node_;
+        const rapidxml::xml_node<>*       node_;
     };
 }
 

@@ -309,7 +309,7 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         memset(xmldata.get(), 0, xmlfilelen+1);
         infile.read(xmldata.get(), xmlfilelen);
         xmldata[xmlfilelen]=0;
-        extractVertexProgramsFromMaterial(xmldata.get(), xmlfilelen, &vertexProgs);
+        extractVertexProgramsFromMaterial(res->getInputFilePath(), xmldata.get(), xmlfilelen, &vertexProgs);
         MDF_EXPORT_CHECK2(!vertexProgs.empty(), "Failed to any vertex programs in material ", fullassetname);
 
         std::vector< Heart::hInputLayoutDesc > finalinputlayout;
