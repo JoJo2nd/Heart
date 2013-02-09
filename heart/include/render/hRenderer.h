@@ -33,26 +33,6 @@ namespace Heart
 
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
-
-    class hResourceManager;
-    class hResourceDependencyList;
-    class hSerialiserFileStream;
-    class hSystem;
-    class hRenderState;
-    struct hViewport;
-    class hTexture;
-    struct hTextureMapInfo;
-    class hTextureBase;
-    class hRenderTargetTexture;
-    class DepthSurface;
-    class hVertexDeclaration;
-    class hMaterial;
-    class hIndexBuffer;
-    struct hIndexBufferMapInfo;
-    class hVertexBuffer;
-    struct hVertexBufferMapInfo;
-    class hMesh;
-    class hDrawCallPusher;
     
     struct HEART_DLLEXPORT hRenderFrameStats
     {
@@ -106,7 +86,7 @@ namespace Heart
                 hdBlendState*           blendState_;
                 hdRasterizerState*      rasterState_;
                 hdDepthStencilState*    depthState_;
-                hdRenderInputObject     progInput_;
+                hdRenderInputObject*    progInput_;
                 hdRenderStreamsObject   streams_;
             };
             struct {

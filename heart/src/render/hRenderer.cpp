@@ -467,7 +467,7 @@ namespace Heart
             mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
             mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
 
-            mainSubmissionCtx_.SetRenderInputObject(&dcall->progInput_);
+            mainSubmissionCtx_.SetRenderInputObject(dcall->progInput_);
             mainSubmissionCtx_.SetInputStreams(&dcall->streams_);
             if (dcall->instanceCount_) {
                 mainSubmissionCtx_.DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);

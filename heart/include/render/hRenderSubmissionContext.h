@@ -98,9 +98,9 @@ namespace Heart
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);
-        void    SetRenderStateBlock( hdDX11BlendState* st ) { impl_.SetRenderStateBlock( st ); }
-        void    SetRenderStateBlock( hdDX11DepthStencilState* st ) { impl_.SetRenderStateBlock( st ); }
-        void    SetRenderStateBlock( hdDX11RasterizerState* st ) { impl_.SetRenderStateBlock( st ); }
+        void    SetRenderStateBlock(hdBlendState* st) { impl_.SetRenderStateBlock( st ); }
+        void    SetRenderStateBlock(hdDepthStencilState* st) { impl_.SetRenderStateBlock( st ); }
+        void    SetRenderStateBlock(hdRasterizerState* st) { impl_.SetRenderStateBlock( st ); }
         void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);

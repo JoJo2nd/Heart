@@ -34,6 +34,7 @@ namespace Heart
 
     hBool hdDX11RenderInputObject::BindShaderProgram(hdDX11ShaderProgram* prog)
     {
+        if (!prog) return false;
         switch(prog->type_)
         {
         case ShaderType_FRAGMENTPROG: {

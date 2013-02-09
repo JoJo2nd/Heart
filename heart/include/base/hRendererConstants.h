@@ -159,9 +159,13 @@ namespace Heart
     {
         ShaderType_VERTEXPROG,
         ShaderType_FRAGMENTPROG,
+        ShaderType_GEOMETRYPROG,
+        ShaderType_HULLPROG,
+        ShaderType_DOMAINPROG,
+
+        ShaderType_COMPUTEPROG,
 
         ShaderType_MAX,
-
         ShaderType_FORCE_DWORD = ~0U
     };
 
@@ -185,6 +189,8 @@ namespace Heart
 
         eShaderProfile_hs5_0,
         eShaderProfile_ds5_0,
+
+        eShaderProfile_Max,
     };
 
     enum hTextureFormat

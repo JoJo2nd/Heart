@@ -39,6 +39,9 @@ namespace Heart
         hdDX11RenderInputObject()
             : vertexShader_(NULL)
             , pixelShader_(NULL)
+            , geometryShader_(NULL)
+            , hullShader_(NULL)
+            , domainShader_(NULL)
         {
             hZeroMem(boundProgs_, sizeof(boundProgs_));
             hZeroMem(inputData_, sizeof(inputData_));
@@ -53,6 +56,9 @@ namespace Heart
         {
             hdDX11VertexProg,
             hdDX11PixelProg,
+            hdDX11GemoProg,
+            hdDX11HullProg,
+            hdDX11DomainProg,
 
             hdDX11ProgMax
         };
@@ -61,14 +67,17 @@ namespace Heart
         friend class hdDX11RenderSubmissionCtx;
 
         hdDX11ShaderProgram*            boundProgs_[hdDX11ProgMax];
-        ID3D11VertexShader*             vertexShader_;//quick access to render
-        ID3D11PixelShader*              pixelShader_;//quick access to render
+        ID3D11VertexShader*             vertexShader_;
+        ID3D11PixelShader*              pixelShader_;
+        ID3D11GeometryShader*           geometryShader_;
+        ID3D11HullShader*               hullShader_;
+        ID3D11DomainShader*             domainShader_;
         //More shaders to come...
         struct RendererInputs
         {
             hUint32                         resourceViewCount_;
-            ID3D11ShaderResourceView*       resourceViews_[HEART_MAX_RESOURCE_INPUTS];
             hUint32                         samplerCount_;
+            ID3D11ShaderResourceView*       resourceViews_[HEART_MAX_RESOURCE_INPUTS];
             ID3D11SamplerState*             samplerState_[HEART_MAX_RESOURCE_INPUTS];
             ID3D11Buffer*                   programInputs_[HEART_MAX_CONSTANT_BLOCKS];
         } inputData_[hdDX11ProgMax]; //for inputData_[vertexShader] & inputData_[pixelShader]

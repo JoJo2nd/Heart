@@ -98,6 +98,7 @@ struct PassDefintion
     Heart::hRasterizerStateDesc         rasterizerState;
     Heart::hResourceID                  vertexProgramID;
     Heart::hResourceID                  fragmentProgramID;
+    Heart::hResourceID                  geometryProgramID;
 };
 
 #pragma pack(pop)
@@ -850,6 +851,9 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
                 }
                 if (xPass.FirstChild("fragment").ToNode() || newpass) {
                     passDef.fragmentProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString());
+                }
+                if (xPass.FirstChild("geometry").ToNode() || newpass) {
+                    passDef.geometryProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString());
                 }
 
                 if (newpass)  {

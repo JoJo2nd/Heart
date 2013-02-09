@@ -45,7 +45,7 @@ namespace Heart
     };                                   \
     "
 
-    static const hChar* s_shaderProfileNames[] = {
+    const hChar* hdDX11RenderDevice::s_shaderProfileNames[] = {
         "vs_4_0",   //eShaderProfile_vs4_0,
         "vs_4_1",   //eShaderProfile_vs4_1,
         "vs_5_0",   //eShaderProfile_vs5_0,
@@ -457,6 +457,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hShaderProfile hdDX11RenderDevice::getProfileFromString(const hChar* str) {
+        for (hUint i=0; i<hStaticArraySize(s_shaderProfileNames); ++i) {
+            if (hStrICmp(s_shaderProfileNames[i],str) == 0) {
+                return (hShaderProfile)i;
+            }
+        }
+        return eShaderProfile_Max;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSource(hMemoryHeapBase* heap, 
     const hChar* shaderProg, hUint32 len, const hChar* entry, 
     hShaderProfile profile, hdDX11ShaderProgram* out) {
@@ -497,9 +510,8 @@ namespace Heart
         HRESULT hr;
         hdDX11ShaderProgram* shader = out;
         shader->type_ = type;
-        shader->blobLen_=len;
-        shader->shaderBlob_=hNEW_ARRAY(heap, hUint8, len);
-        hMemCpy(shader->shaderBlob_, shaderProg, len);
+        shader->blobLen_= 0;
+        shader->shaderBlob_= NULL;
 
         if ( type == ShaderType_FRAGMENTPROG ) {
             hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
@@ -508,11 +520,46 @@ namespace Heart
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
-        }
-        else if ( type == ShaderType_VERTEXPROG ) {
+        } else if ( type == ShaderType_VERTEXPROG ) {
+            ID3DBlob* inputBlob;
             hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->vertexShader_);
+            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
+
+            hr = D3DGetInputSignatureBlob(shaderProg, len, &inputBlob);
+            hcAssert(SUCCEEDED(hr));
+            shader->blobLen_= inputBlob->GetBufferSize();
+            shader->shaderBlob_= hNEW_ARRAY(heap, hUint8, inputBlob->GetBufferSize());
+            hMemCpy(shader->shaderBlob_, inputBlob->GetBufferPointer(), inputBlob->GetBufferSize());
+            inputBlob->Release();
+        } else if (type==ShaderType_GEOMETRYPROG) {
+            hr=d3d11Device_->CreateGeometryShader(shaderProg, len, NULL, &shader->geomShader_);
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->geomShader_);
+            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
+        } else if (type==ShaderType_DOMAINPROG) {
+            hr=d3d11Device_->CreateDomainShader(shaderProg, len, NULL, &shader->domainShader_);
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->geomShader_);
+            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
+        } else if (type==ShaderType_HULLPROG) {
+            hr=d3d11Device_->CreateHullShader(shaderProg, len, NULL, &shader->hullShader_);
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->geomShader_);
+            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
+        } else if (type==ShaderType_COMPUTEPROG) {
+            hr=d3d11Device_->CreateComputeShader(shaderProg, len, NULL, &shader->computeShader_);
+            hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->geomShader_);
             hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
             hcAssert( SUCCEEDED( hr ) );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", shader->shaderInfo_);
@@ -543,9 +590,28 @@ namespace Heart
             prog->pixelShader_->Release();
             prog->pixelShader_ = NULL;
         }
-        if (prog->shaderBlob_) {
-            hDELETE_ARRAY_SAFE(heap, prog->shaderBlob_);
+        if (prog->geomShader_ && prog->type_ == ShaderType_GEOMETRYPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->geomShader_);
+            prog->geomShader_->Release();
+            prog->geomShader_ = NULL;
         }
+        if (prog->hullShader_ && prog->type_ == ShaderType_HULLPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->hullShader_);
+            prog->hullShader_->Release();
+            prog->hullShader_ = NULL;
+        }
+        if (prog->domainShader_ && prog->type_ == ShaderType_DOMAINPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->domainShader_);
+            prog->domainShader_->Release();
+            prog->domainShader_ = NULL;
+        }
+        if (prog->computeShader_ && prog->type_ == ShaderType_COMPUTEPROG) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", prog->computeShader_);
+            prog->computeShader_->Release();
+            prog->computeShader_ = NULL;
+        }
+        hDELETE_ARRAY_SAFE(heap, prog->shaderBlob_);
+        prog->blobLen_=0;
     }
 
     //////////////////////////////////////////////////////////////////////////

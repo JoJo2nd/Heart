@@ -121,7 +121,7 @@ void ComplexMesh1::RenderUnitTest()
             drawCall_.blendState_ = passptr->GetBlendState();
             drawCall_.depthState_ = passptr->GetDepthStencilState();
             drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = *passptr->GetRenderInputObject();
+            drawCall_.progInput_ = passptr->GetRenderInputObject();
             drawCall_.streams_=*passptr->getRenderStreamsObject();
             drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
             drawCall_.instanceCount_=0;

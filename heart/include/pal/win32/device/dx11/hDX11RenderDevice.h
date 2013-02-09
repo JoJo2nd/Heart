@@ -61,6 +61,8 @@ namespace Heart
         hUint32                         GetHeight() const { return height_; }
 
         hUint32                         computeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
+        static hShaderProfile           getProfileFromString(const hChar* str);
+        static const hChar*             getShaderProfileString(hShaderProfile profile) { hcAssert(profile < eShaderProfile_Max); return s_shaderProfileNames[profile]; }
         //Resource Create Calls
         hdDX11ShaderProgram*            compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
         hdDX11ShaderProgram*            CompileShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
@@ -99,6 +101,8 @@ namespace Heart
         typedef hMap< hUint32, hdDX11VertexLayout >       VertexLayoutMapType;
 
         hUint32                     BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements);
+
+        static const hChar*         s_shaderProfileNames[];
 
         hdSystemWindow*             sysWindow_;
         hUint64                     frameCounter_;

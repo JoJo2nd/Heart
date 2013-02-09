@@ -53,7 +53,8 @@ namespace Heart
             , depthStencilState_(NULL)
             , rasterizerState_(NULL)
         {
-
+            hZeroMem(programs_, sizeof(programs_));
+            hZeroMem(programIDs_, sizeof(programIDs_));
         }
 
         hShaderProgram*         GetVertexShader() { return vertexProgram_; }
@@ -87,7 +88,7 @@ namespace Heart
 
         friend class hRenderer;
 
-        static const hUint32 s_maxPrograms = 2;
+        static const hUint32 s_maxPrograms = 5;
 
         /*
          * Following should be in an array
@@ -99,6 +100,9 @@ namespace Heart
             {
                 hShaderProgram* vertexProgram_;
                 hShaderProgram* fragmentProgram_;
+                hShaderProgram* geometryProgram_;
+                hShaderProgram* hullProgram_;
+                hShaderProgram* domainProgram_;
             };
         };
         union
@@ -108,6 +112,9 @@ namespace Heart
             {
                 hResourceID vertexProgramID_;
                 hResourceID fragmentProgramID_;
+                hResourceID geometryProgramID_;
+                hResourceID hullProgramID_;
+                hResourceID domainProgramID_;
             };
         };
 
@@ -117,8 +124,8 @@ namespace Heart
         hdBlendState*                       blendState_;
         hdDepthStencilState*                depthStencilState_;
         hdRasterizerState*                  rasterizerState_;
-        hdRenderStreamsObject               boundStreams_;
         hdRenderInputObject                 renderInput_;
+        hdRenderStreamsObject               boundStreams_;
     };
 
     class HEART_DLLEXPORT hMaterialTechnique

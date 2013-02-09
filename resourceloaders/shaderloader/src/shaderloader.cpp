@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	shaderloader.cpp	
-	
-	Copyright (c) 31:7:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	shaderloader.cpp	
+    
+    Copyright (c) 31:7:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -207,11 +207,23 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     using namespace Heart;
 
     Heart::hShaderType progtype;
-    const hChar* typestr = params->GetBuildParameter("TYPE","VERTEX");
-    if (hStrICmp(typestr, "VERTEX") == 0)
+    const char* entry = params->GetBuildParameter("ENTRY","main");
+    const char* profile = params->GetBuildParameter("PROFILE","vs_5_0");
+    hShaderProfile profileType=hRenderer::getProfileFromString(profile);
+
+    if (profileType >= eShaderProfile_vs4_0 && profileType <= eShaderProfile_vs5_0) {
         progtype = ShaderType_VERTEXPROG;
-    else 
+    } else if (profileType >= eShaderProfile_ps4_0 && profileType <= eShaderProfile_ps5_0) {
         progtype = ShaderType_FRAGMENTPROG;
+    } else if (profileType >= eShaderProfile_gs4_0 && profileType <= eShaderProfile_gs5_0) {
+        progtype = ShaderType_GEOMETRYPROG;
+    } else if (profileType >= eShaderProfile_cs4_0 && profileType <= eShaderProfile_cs5_0) {
+        progtype = ShaderType_COMPUTEPROG;
+    } else if (profileType == eShaderProfile_hs5_0) {
+        progtype = ShaderType_HULLPROG;    
+    } else if (profileType == eShaderProfile_ds5_0) {
+        progtype = ShaderType_DOMAINPROG;
+    }
 
     FXIncludeHandler includeHandler;
     HRESULT hr;
@@ -221,12 +233,20 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 #endif
     ID3DBlob* errors;
     ID3DBlob* result;
+    const hChar* progTypeMacros[] = {
+        "HEART_COMPILE_VERTEX_PROG"  ,
+        "HEART_COMPILE_FRAGMENT_PROG",
+        "HEART_COMPILE_GEOMETRY_PROG",
+        "HEART_COMPILE_HULL_PROG"    ,
+        "HEART_COMPILE_DOMAIN_PROG"  ,
+        "HEART_COMPILE_COMPUTE_PROG" ,
+        "HEART_COMPILE_UNKNOWN"      ,
+    };
     D3D_SHADER_MACRO macros[] =
     {
         { "HEART_USING_HLSL", "1" },
-        { "HEART_USING_HLSL", "1" },
         { "HEART_ENGINE", "1" },
-        { progtype == Heart::ShaderType_VERTEXPROG ? "HEART_COMPILE_VERT_PROGRAM" : "HEART_COMPILE_FRAG_PROGRAM", "1" },
+        { progTypeMacros[progtype], "1" },
         { NULL, NULL }
     };
 
@@ -249,8 +269,6 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     inFile->Read(sourcedata, sourcedatalen);
     sourcedata[sourcedatalen] = 0;
 
-    const char* entry = params->GetBuildParameter("ENTRY","main");
-    const char* profile = params->GetBuildParameter("PROFILE","vs_3_0");
     hr = D3DCompile( 
         sourcedata, 
         sourcedatalen, 
