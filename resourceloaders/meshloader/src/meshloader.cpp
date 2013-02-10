@@ -437,8 +437,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
         hUint32 objcount = lod->renderObjects_.GetSize();
         for (hUint32 j = 0; j < objcount; ++j)
         {
-            if (lod->renderObjects_[j].GetMaterialKey() == 0)
-            {
+            if (lod->renderObjects_[j].GetMaterial() == 0) {
                 hMaterial* mat = static_cast<hMaterial*>(engine->GetResourceManager()->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
                 // Possible the material won't have loaded just yet...
                 if (!mat) return hFalse; 

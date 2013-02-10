@@ -214,8 +214,7 @@ namespace Heart
                 }
                 packageState_ = State_Load_WaitDeps; 
             } break;
-        case State_Load_WaitDeps:
-            {
+        case State_Load_WaitDeps: {
                 hBool loaded=hTrue;
                 for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
                     loaded &= manager->ltIsPackageLoaded(links_[i]);
@@ -237,14 +236,12 @@ namespace Heart
                     ret = hTrue;
                 }
             } break;
-        case State_Unlink_Resoruces:
-            {
+        case State_Unlink_Resoruces: {
                 DoPreUnloadUnlink();
                 hcPrintf("Package %s Unload started", packageName_);
                 packageState_ = State_Unload_Resources;
             } break;
-        case State_Unload_Resources:
-            {
+        case State_Unload_Resources: {
                 DoUnload();
                 hcPrintf("Package %s is Unloaded", packageName_);
                 packageState_ = State_Unload_DepPkg;

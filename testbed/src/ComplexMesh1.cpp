@@ -158,7 +158,7 @@ void ComplexMesh1::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 10.f, -110.f);
+    camPos_ = Heart::hVec3(0.f, 40.f, -60.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 

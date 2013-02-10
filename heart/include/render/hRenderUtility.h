@@ -37,6 +37,7 @@ namespace Heart
 
 namespace hRenderUtility
 {
+
 	extern hFloat	ComputeGaussianCurve( hFloat step, hFloat power );
 	extern void		ComputeBlurWeights( hFloat blurPower, hUint32 samples, hFloat* pOutWeights );
 	extern void		ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, Heart::hVec2* pOutSamples );
@@ -46,7 +47,7 @@ namespace hRenderUtility
     inline hUint16  GetSphereMeshVertexCount( hUint16 segments, hUint16 rings ) { return (hUint16)((rings + 1) * (segments+1)) + 1; }
     inline hUint16  GetSphereMeshIndexCount( hUint16 segments, hUint16 rings ) { return (hUint16)(6 * rings * (segments+1)) + 1; }
 	HEART_DLLEXPORT
-    void HEART_API BuildSphereMesh( 
+    void HEART_API buildSphereMesh( 
 		hUint16 segments, 
 		hUint16 rings, 
 		hFloat radius,
@@ -54,17 +55,12 @@ namespace hRenderUtility
         hMemoryHeapBase* heap,
 		hIndexBuffer** outIdxBuf,
 		hVertexBuffer** outVtxBuf );
-	extern void		BuildConeMesh(
-		hUint16 segments, 
-		hFloat radius,
-		hFloat depth,
-		hRenderSubmissionCtx* ctx, 
-		hIndexBuffer* outIdxBuf,
-		hVertexBuffer* outVtxBuf );
-	extern void		BuildFullscreenQuadMesh(
-		hRenderSubmissionCtx* ctx, 
-		hIndexBuffer* outIdxBuf,
-		hVertexBuffer* outVtxBuf );
+	HEART_DLLEXPORT 
+    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth,
+    hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** outVtxBuf);
+	HEART_DLLEXPORT 
+    void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint hdivs, hUint vdivs, 
+    hRenderer* rndr, hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf);
     HEART_DLLEXPORT
     hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB);
     //////////////////////////////////////////////////////////////////////////

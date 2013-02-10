@@ -107,7 +107,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API BuildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
+    void HEART_API buildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
     hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
         hInputLayoutDesc desc[] = {
@@ -224,85 +224,144 @@ namespace hRenderUtility
         ctx->Unmap( &vbMapInfo );
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-    void BuildConeMesh(	hUint16 segments, 
-                        hFloat radius, 
-                        hFloat depth, 
-                        hRenderSubmissionCtx* ctx, 
-                        hIndexBuffer* outIdxBuf, 
-                        hVertexBuffer* outVtxBuf )
-    {
-        if ( segments < 4)
-        {
-            segments = 4;
+    HEART_DLLEXPORT 
+    void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint wdivs, hUint hdivs, 
+    hRenderer* rndr, hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
+        hcAssert(width > 0.f && height > 0.f && wdivs >= 1 && hdivs >= 1);
+        hcAssert(outVtxBuf && heap && rndr);
+        hInputLayoutDesc desc[] = {
+            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+            {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
+        };
+        hFloat uvxstep=1.f/wdivs;
+        hFloat uvystep=1.f/hdivs;
+        hFloat xstep=width/wdivs;
+        hFloat ystep=height/hdivs;
+        hFloat xc=0.f;
+        hFloat yc=0.f;
+        hFloat u=0.f;
+        hFloat v=0.f;
+        hUint16 currIdx=0;
+
+        void* verts=hAlloca(sizeof(hFloat)*5*(wdivs+1)*(hdivs+1));
+        void* index=hAlloca(sizeof(hUint16)*6*(wdivs)*(hdivs));
+        hFloat* vtx=(hFloat*)verts;
+        hUint16* idx=(hUint16*)index;
+
+        for (hUint y=0,yn=(hdivs+1); y<yn; ++y, yc+=ystep, v+=uvystep) {
+            xc=0.f;
+            u=0.f;
+            for (hUint x=0,xn=(wdivs+1); x<xn; ++x, xc+=xstep, u+=uvxstep) {
+                vtx[0]=xc;vtx[1]=yc;vtx[2]=0.f;
+                vtx[3]=u; vtx[4]=v;
+                vtx+=5;
+            }
+        }
+        for (hUint y=0,yn=(hdivs); y<yn; ++y) {
+            for (hUint x=0,xn=(wdivs); x<xn; ++x) {
+                hUint16 currIdx=(y*(wdivs+1))+x;
+                idx[0]=currIdx;
+                idx[1]=currIdx+1;
+                idx[2]=currIdx+wdivs+1;
+                idx[3]=currIdx+1;
+                idx[4]=currIdx+wdivs+2;
+                idx[5]=currIdx+wdivs+1;
+                idx+=6;
+            }
         }
 
+        rndr->CreateIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
+        rndr->CreateVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    HEART_DLLEXPORT 
+    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hRenderer* rndr,
+    hMemoryHeapBase* heap, hVertexBuffer** outVtxBuf)
+    {
+        hcAssert(outVtxBuf && heap && rndr);
+        hInputLayoutDesc desc[] = {
+            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
+        };
         struct Vertex
         {
             hCPUVec3 pos;
             hCPUVec3 normal;
         };
 
-        hUint16 vtxCnt = (hUint16)(segments+2);
-        hUint16 idxCnt = (hUint16)(segments*6);
-
-
+        segments = hMax(segments, 4);
+        hUint16 vtxCnt = (hUint16)(segments*6);
         hUint16 iidx = 0;
         hUint16 vidx = 0;
-        hIndexBufferMapInfo  ibMap;
-        hVertexBufferMapInfo vbMap;
-        ctx->Map( outIdxBuf, &ibMap );
-        ctx->Map( outVtxBuf, &vbMap );
-        hUint16* idx = (hUint16*)ibMap.ptr_;
-        Vertex* vtx = (Vertex*)vbMap.ptr_;
-
-        hVec3* segmentPts = (hVec3*)hAlloca( sizeof(hVec3)*(segments+2) );
+        void* verts=hAlloca(sizeof(Vertex)*vtxCnt);
+        Vertex* vtx = (Vertex*)verts;
         hFloat dSegAngle = (2 * hmPI / segments);
 
-        for ( hUint32 i = 0; i < segments; ++i )
-        {
-            float x = radius * sinf( dSegAngle*i );
-            float y = radius * cosf( dSegAngle*i );
-
-            vtx->pos = hCPUVec3( x, y, depth );
-            ++vtx;
-        }
-        //Tip of cone
-        vtx->pos = hCPUVec3( 0.0f, 0.0f, 0.0f );
-        ++vtx;
-        // centre base of cone
-        vtx->pos = hCPUVec3( 0.0f, 0.0f, depth );
-        ++vtx;
+        hVec3 conetip(0.f, 0.f, 0.f);
+        hVec3 conebase(0.f, 0.f, depth);
 
         //Create the Cone
         for ( hUint16 i = 0; i < segments; ++i )
         {
-            idx[iidx++] = segments;
-            idx[iidx++] = (i+1)%segments;
-            idx[iidx++] = i;
+            float x1 = radius * sinf( dSegAngle*i );
+            float y1 = radius * cosf( dSegAngle*i );
+            float z1 = depth;
+            float x2 = radius * sinf( dSegAngle*(i+1) );
+            float y2 = radius * cosf( dSegAngle*(i+1) );
+            float z2 = depth;
+
+            hVec3 v1(x1, y1, z1);
+            hVec3 v2=conetip;
+            hVec3 v3(x2, y2, z2);
+            vtx[0].pos = v1;
+            vtx[1].pos = v2;
+            vtx[2].pos = v3;
+            vtx[0].normal=hVec3Func::cross(v3-v1, v2-v1);
+            vtx[1].normal=hVec3Func::cross(v1-v2, v3-v2);
+            vtx[2].normal=hVec3Func::cross(v2-v3, v1-v3);
+            vtx+=3;
         }
 
         //Create the Base
         for ( hUint16 i = 0; i < segments; ++i )
         {
-            idx[iidx++] = segments+1;
-            idx[iidx++] = i;
-            idx[iidx++] = (i+1)%segments;
+            float x1 = radius * sinf( dSegAngle*i );
+            float y1 = radius * cosf( dSegAngle*i );
+            float z1 = depth;
+            float x2 = radius * sinf( dSegAngle*(i+1) );
+            float y2 = radius * cosf( dSegAngle*(i+1) );
+            float z2 = depth;
+
+            hVec3 v1=conebase;
+            hVec3 v2(x1, y1, z1);
+            hVec3 v3(x2, y2, z2);
+            vtx[0].pos = v1;
+            vtx[1].pos = v2;
+            vtx[2].pos = v3;
+            vtx[0].normal=hVec3Func::cross(v3-v1, v2-v1);
+            vtx[1].normal=hVec3Func::cross(v1-v2, v3-v2);
+            vtx[2].normal=hVec3Func::cross(v2-v3, v1-v3);
+            vtx+=3;
         }
 
-        ctx->Unmap( &ibMap );
-        ctx->Unmap( &vbMap );
+        rndr->CreateVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB) {
 #define PRIM_COUNT (36)
+    hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB) {
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
             {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
@@ -365,8 +424,8 @@ namespace hRenderUtility
         };
         rndr->CreateVertexBuffer(verts, PRIM_COUNT, desc, hStaticArraySize(desc), 0, heap, retVB);
         return *retVB;
-#undef PRIM_COUNT
     }
+#undef PRIM_COUNT
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -708,5 +767,6 @@ namespace hRenderUtility
         hcAssert(rndr && font && tex);
         rndr->DestroyTexture(tex);
     }
+
 }
 }

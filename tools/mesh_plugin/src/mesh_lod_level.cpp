@@ -318,7 +318,7 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
             std::string vpresname=vertexProgs[vp].substr(vertexProgs[vp].find('.')+1);
             vPackage* vppkg=pkgsys->getPackage(vppkgname.c_str());
             MDF_EXPORT_CHECK2(vppkg, "Failed to read vertex prog, couldn't find package ", vppkgname);
-            vResource* vpres=pkg->getResourceInfoByName(vpresname.c_str());
+            vResource* vpres=vppkg->getResourceInfoByName(vpresname.c_str());
             MDF_EXPORT_CHECK2(vpres, "Failed to read vertex prog, couldn't find resource ", vertexProgs[i]);
             std::ifstream vpfile;
             vpfile.open(vpres->getInputFilePath());

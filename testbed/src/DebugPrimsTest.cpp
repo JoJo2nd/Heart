@@ -31,9 +31,6 @@
 
 DEFINE_HEART_UNIT_TEST(DebugPrimsTest);
 
-#define PACKAGE_NAME ("CORE")
-#define CUBE_MAT_RESID ("CORE.DEBUGMAT")
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -54,7 +51,7 @@ hUint32 DebugPrimsTest::RunUnitTest()
         } break;
     case eRender: {
             UpdateCamera();
-            if (pad->GetButton(HEART_PAD_BACK).buttonVal_ ||
+            if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ ||
                 kb->GetButton(VK_SPACE).raisingEdge_)
             {
                 state_ = eExit;
@@ -85,12 +82,36 @@ void DebugPrimsTest::RenderUnitTest()
 
     renderer->beginCameraRender(ctx, 0);
 
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(-4.f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    Heart::hMaterialTechnique* tech = wireConeMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawPrimitive(coneVB_->getVertexCount()/3, 0);
+    }
+
+    model=Heart::hMatrixFunc::mult(Heart::hMatrixFunc::RotationX(hmPI/2.f),Heart::hMatrixFunc::translation(Heart::hVec3(-10.f, 0.f, -10.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    tech = wirePlaneMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(planeIB_->GetIndexCount()/3, 0);
+    }
+
     model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(-2.5f, 0.f, 0.f)));
     ctx->Map(modelMtxCB_, &mapinfo);
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    Heart::hMaterialTechnique* tech = wireSphereMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = wireSphereMat_->GetTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -107,6 +128,18 @@ void DebugPrimsTest::RenderUnitTest()
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
         ctx->DrawPrimitive(cubeVB_->getVertexCount()/3, 0);
+    }
+
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(4.f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    tech = viewLitConeMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawPrimitive(coneVB_->getVertexCount()/3, 0);
     }
 
     model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(2.5f, 0.f, 0.f)));
@@ -163,7 +196,7 @@ void DebugPrimsTest::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 0.f, -5.f);
+    camPos_ = Heart::hVec3(0.f, 0.f, -7.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
@@ -177,17 +210,25 @@ void DebugPrimsTest::CreateRenderResources()
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     Heart::hRenderUtility::buildDebugCubeMesh(renderer, GetGlobalHeap(), &cubeVB_);
-    Heart::hRenderUtility::BuildSphereMesh(8, 8, .5f, renderer, GetGlobalHeap(), &sphereIB_, &sphereVB_);
+    Heart::hRenderUtility::buildSphereMesh(8, 8, .5f, renderer, GetGlobalHeap(), &sphereIB_, &sphereVB_);
+    Heart::hRenderUtility::buildConeMesh(8, .5f, 1.f, renderer, GetGlobalHeap(), &coneVB_);
+    Heart::hRenderUtility::buildTessellatedQuadMesh(20.f, 20.f, 20, 20, renderer, GetGlobalHeap(), &planeIB_, &planeVB_);
 
     wireCubeMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
     wireSphereMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
+    wireConeMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
+    wirePlaneMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
     viewLitCubeMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
     viewLitSphereMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
+    viewLitConeMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
      
     wireCubeMat_->bindVertexStream(0, cubeVB_);
     viewLitCubeMat_->bindVertexStream(0, cubeVB_);
     wireSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
     viewLitSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
+    wireConeMat_->bindVertexStream(0, coneVB_);
+    viewLitConeMat_->bindVertexStream(0, coneVB_);
+    wirePlaneMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, planeIB_, &planeVB_, 1);
 
     viewportCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("ViewportConstants"));
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
@@ -231,6 +272,30 @@ void DebugPrimsTest::DestroyRenderResources()
     if (viewLitSphereMat_) {
         hMaterialInstance::destroyMaterialInstance(viewLitSphereMat_);
         viewLitSphereMat_=NULL;
+    }
+    if(coneVB_) {
+        renderer->DestroyVertexBuffer(coneVB_);
+        coneVB_=NULL;
+    }
+    if (wireConeMat_) {
+        hMaterialInstance::destroyMaterialInstance(wireConeMat_);
+        wireConeMat_=NULL;
+    }
+    if (viewLitConeMat_) {
+        hMaterialInstance::destroyMaterialInstance(viewLitConeMat_);
+        viewLitConeMat_=NULL;
+    }
+    if (wirePlaneMat_) {
+        hMaterialInstance::destroyMaterialInstance(wirePlaneMat_);
+        wirePlaneMat_=NULL;
+    }
+    if (planeIB_) {
+        renderer->DestroyIndexBuffer(planeIB_);
+        planeIB_=NULL;
+    }
+    if (planeVB_) {
+        renderer->DestroyVertexBuffer(planeVB_);
+        planeVB_=NULL;
     }
 }
 

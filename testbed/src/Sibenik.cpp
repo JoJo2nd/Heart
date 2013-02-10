@@ -1,6 +1,6 @@
 /********************************************************************
 
-    filename:   ComplexMesh2.cpp  
+    filename:   Sibenik.cpp  
     
     Copyright (c) 30:1:2013 James Moran
     
@@ -25,20 +25,20 @@
 
 *********************************************************************/
 #include "testbed_precompiled.h"
-#include "ComplexMesh2.h"
+#include "Sibenik.h"
 #include "TestUtils.h"
 
-DEFINE_HEART_UNIT_TEST(ComplexMesh2);
+DEFINE_HEART_UNIT_TEST(Sibenik);
 
-#define PACKAGE_NAME ("COMPLEXMESH2")
-#define RESOURCE_NAME ("HOUSE")
-#define ASSET_PATH ("COMPLEXMESH2.HOUSE")
+#define PACKAGE_NAME ("SIBENIK")
+#define RESOURCE_NAME ("SIBENIK")
+#define ASSET_PATH ("SIBENIK.SIBENIK")
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ComplexMesh2::RunUnitTest()
+hUint32 Sibenik::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
@@ -98,7 +98,7 @@ hUint32 ComplexMesh2::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::RenderUnitTest()
+void Sibenik::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
@@ -135,7 +135,7 @@ void ComplexMesh2::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::CreateRenderResources()
+void Sibenik::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
@@ -157,7 +157,7 @@ void ComplexMesh2::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 40.f, -10.f);
+    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
@@ -179,7 +179,7 @@ void ComplexMesh2::CreateRenderResources()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::DestroyRenderResources()
+void Sibenik::DestroyRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
@@ -192,7 +192,7 @@ void ComplexMesh2::DestroyRenderResources()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::UpdateCamera()
+void Sibenik::UpdateCamera()
 {
     using namespace Heart;
     using namespace Heart::hVec3Func;
