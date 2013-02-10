@@ -87,7 +87,8 @@ namespace Heart
     {
     public:
         hdDX11RenderStreamsObject()
-            : index_(NULL)
+            : indexFormat_(DXGI_FORMAT_R16_UINT)
+            , index_(NULL)
             , layout_(NULL)
             , streamLower_(HEART_MAX_INPUT_STREAMS)
             , streamUpper_(0)
@@ -98,6 +99,7 @@ namespace Heart
             hZeroMem(boundStreams_, sizeof(boundStreams_));
         }
 
+        hBool getHasIndexStream() const { return index_ != NULL; }
         void setPrimType(PrimitiveType primType);
         void bindIndexVertex(hdDX11IndexBuffer* index, hIndexBufferType format);
         void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);

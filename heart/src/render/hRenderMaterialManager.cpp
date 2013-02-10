@@ -338,6 +338,8 @@ namespace Heart
     void hRenderMaterialManager::createDebugMaterials() {
         wireframeMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
         hRenderUtility::buildDebugWireMaterial(renderer_, wireframeMat_);
+        viewLitMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugViewLitMaterial(renderer_, viewLitMat_);
         consoleMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
         hRenderUtility::buildDebugConsoleMaterial(renderer_, consoleMat_);
         debugFontMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
@@ -351,6 +353,7 @@ namespace Heart
     void hRenderMaterialManager::destroyRenderResources()
     {
         hDELETE_SAFE(GetGlobalHeap(), wireframeMat_);
+        hDELETE_SAFE(GetGlobalHeap(), viewLitMat_);
         hDELETE_SAFE(GetGlobalHeap(), consoleMat_);
         hDELETE_SAFE(GetGlobalHeap(), debugFontMat_);
 

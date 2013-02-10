@@ -66,6 +66,7 @@ namespace Heart
         hUint32                         GetInputRegister(const hChar* name) const;
         hUint32                         GetInputRegister(hShaderParameterID id) const;
         hdDX11VertexLayout*             createVertexLayout(hInputLayoutDesc* desc, hUint n) const;
+        void                            destroyVertexLayout(hdDX11VertexLayout* vtxlayout) const;
 
     private:
 

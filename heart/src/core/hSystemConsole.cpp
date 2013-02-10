@@ -168,7 +168,7 @@ namespace Heart
                 ctx->Map(instanceCB, &map);
                 inst = (hInstanceConstants*)map.ptr;
                 inst->world_ = hMatrixFunc::identity();
-                inst->world_ = hMatrixFunc::Translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
+                inst->world_ = hMatrixFunc::translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
                 ctx->Unmap(&map);
 
                 hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);

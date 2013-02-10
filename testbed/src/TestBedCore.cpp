@@ -39,6 +39,7 @@
 #include "InstanceRenderTest.h"
 #include "ComplexMesh1.h"
 #include "ComplexMesh2.h"
+#include "DebugPrimsTest.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -60,6 +61,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(InstanceRenderTest)
         REGISTER_UNIT_TEST(ComplexMesh1)
         REGISTER_UNIT_TEST(ComplexMesh2)
+        REGISTER_UNIT_TEST(DebugPrimsTest)
     };
 
     void consoleStateEvent(hFloat secs) 

@@ -68,17 +68,8 @@ namespace Heart
 
     struct HEART_DLLEXPORT hDrawCall
     {
-        static const hUint      MAX_VERT_STREAMS = 5;
         hUint64                 sortKey_;                                   //8b        -> 8b
         union {
-            struct {
-                hVertexBuffer*          vertexBuffer_[MAX_VERT_STREAMS];    //(5*4)20b  -> 28b
-                hIndexBuffer*           indexBuffer_;                       //4b        -> 32b
-                hMaterial*              matInstance_;                       //4b        -> 36b
-                hUint32                 primCount_;                         //2b        -> 38b
-                hUint32                 startVertex_;                       //2b        -> 42b
-                PrimitiveType           primType_;                          //4b        -> 62b (Assuming 4 bytes for enum, possibly not the case)
-            };
             struct {
                 // Pointers for the following three might not be the best solution
                 hUint                   instanceCount_;
@@ -114,6 +105,7 @@ namespace Heart
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
         hRendererCamera*                                        GetRenderCamera(hUint32 id) { hcAssertMsg(id < HEART_MAX_RENDER_CAMERAS, "Invalid camera id access"); return &renderCameras_[id];}
         hRenderSubmissionCtx*                                   GetMainSubmissionCtx() { return &mainSubmissionCtx_; };
+        hUint32                                                 beginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID);
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +122,6 @@ namespace Heart
         /*
             pimpl methods
         */
-        void													DestroyMaterial( hMaterial* pMat );
         void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex );
         void													DestroyTexture( hTexture* pOut );
         void													CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
@@ -162,11 +153,9 @@ namespace Heart
         friend class hVertexDeclarationManager;
 
         //
-        hUint32                                                 BeginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID);
         void                                                    CollectAndSortDrawCalls();
         void                                                    SubmitDrawCallsMT();
         void                                                    SubmitDrawCallsST();
-        void                                                    DoDrawResourceUpdates();
         void                                                    createDebugShadersInternal();
 
         // Init params

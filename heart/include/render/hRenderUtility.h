@@ -89,6 +89,8 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugViewLitMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugConsoleMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat);

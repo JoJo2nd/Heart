@@ -38,7 +38,7 @@ class DebugPrimsTest : public IUnitTest
 public:
     DebugPrimsTest(Heart::hHeartEngine* engine) 
         : IUnitTest( engine )
-        , state_(eBeginLoad)
+        , state_(eBegin)
     {
     }
     ~DebugPrimsTest() {}
@@ -50,10 +50,8 @@ private:
 
     enum State
     {
-        eBeginLoad,
-        eLoading,
+        eBegin,
         eRender,
-        eBeginUnload,
         eExit,
     };
 
@@ -61,12 +59,14 @@ private:
     void        DestroyRenderResources();
     void        UpdateCamera();
 
-    State                           state_;
-    hFloat                          timer_;
-    Heart::hVertexBuffer*           cubeVB_;
-    Heart::hMaterialInstance*       cubeMat_;
-    Heart::hDrawCall                drawCall_;
-    Heart::hDrawCallContext         drawCtx_;
+    State                            state_;
+    hFloat                           timer_;
+    Heart::hVertexBuffer*            cubeVB_;
+    Heart::hMaterialInstance*        wireCubeMat_;
+    Heart::hMaterialInstance*        viewLitCubeMat_;
+    Heart::hdParameterConstantBlock* viewportCB_;
+    Heart::hdParameterConstantBlock* modelMtxCB_;
+    Heart::hMatrix                   modelMtx_;
 
     //Camera Control
     Heart::hVec3            camPos_;

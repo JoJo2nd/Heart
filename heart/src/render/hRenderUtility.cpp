@@ -447,66 +447,70 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB) {
+#define PRIM_COUNT (36)
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
         };
-        hFloat verts[] = {
-            // front
-            -.5f, -.5f, -.5f,
-            -.5f,  .5f, -.5f,
-             .5f,  .5f, -.5f,
+        hFloat verts[PRIM_COUNT*(3+3)] = {
+            // Positions        Normals
+            // front            
+            -.5f, -.5f, -.5f,   0.f, 0.f, -1.f,
+            -.5f,  .5f, -.5f,   0.f, 0.f, -1.f,
+             .5f,  .5f, -.5f,   0.f, 0.f, -1.f,
 
-            -.5f, -.5f, -.5f,
-             .5f,  .5f, -.5f,
-             .5f, -.5f, -.5f,
+            -.5f, -.5f, -.5f,   0.f, 0.f, -1.f,
+             .5f,  .5f, -.5f,   0.f, 0.f, -1.f,
+             .5f, -.5f, -.5f,   0.f, 0.f, -1.f,
 
             //top
-            -.5f,  .5f, -.5f,
-            -.5f,  .5f,  .5f,
-             .5f,  .5f,  .5f,
-
-            -.5f,  .5f, -.5f,
-             .5f,  .5f,  .5f,
-             .5f,  .5f,  .5f,
+            -.5f,  .5f, -.5f,   0.f, 1.f, 0.f,
+            -.5f,  .5f,  .5f,   0.f, 1.f, 0.f,
+             .5f,  .5f,  .5f,   0.f, 1.f, 0.f,
+                                          
+            -.5f,  .5f, -.5f,   0.f, 1.f, 0.f,
+             .5f,  .5f,  .5f,   0.f, 1.f, 0.f,
+             .5f,  .5f, -.5f,   0.f, 1.f, 0.f,
 
             //left
-            -.5f, -.5f, -.5f,
-            -.5f,  .5f, -.5f,
-            -.5f,  .5f,  .5f,
-
-            -.5f, -.5f, -.5f,
-            -.5f,  .5f,  .5f,
-            -.5f, -.5f,  .5f,
+            -.5f, -.5f, -.5f,   -1.f, 0.f, 0.f,
+            -.5f,  .5f, -.5f,   -1.f, 0.f, 0.f,
+            -.5f,  .5f,  .5f,   -1.f, 0.f, 0.f,
+                                        
+            -.5f, -.5f, -.5f,   -1.f, 0.f, 0.f,
+            -.5f,  .5f,  .5f,   -1.f, 0.f, 0.f,
+            -.5f, -.5f,  .5f,   -1.f, 0.f, 0.f,
             
             //right
-             .5f, -.5f, -.5f,
-             .5f,  .5f, -.5f,
-             .5f,  .5f,  .5f,
-
-              .5f, -.5f, -.5f,
-              .5f,  .5f,  .5f,
-              .5f, -.5f,  .5f,
+            .5f, -.5f, -.5f,   1.f, 0.f, 0.f,
+            .5f,  .5f, -.5f,   1.f, 0.f, 0.f,
+            .5f,  .5f,  .5f,   1.f, 0.f, 0.f,
+                                         
+            .5f, -.5f, -.5f,   1.f, 0.f, 0.f,
+            .5f,  .5f,  .5f,   1.f, 0.f, 0.f,
+            .5f, -.5f,  .5f,   1.f, 0.f, 0.f,
 
             //bottom
-            -.5f, -.5f, -.5f,
-            -.5f, -.5f,  .5f,
-             .5f, -.5f,  .5f,
+            -.5f, -.5f, -.5f,   0.f, -1.f,  0.f,
+            -.5f, -.5f,  .5f,   0.f, -1.f,  0.f,
+             .5f, -.5f,  .5f,   0.f, -1.f,  0.f,
+                                          
+            -.5f, -.5f, -.5f,   0.f, -1.f,  0.f,
+             .5f, -.5f,  .5f,   0.f, -1.f,  0.f,
+             .5f, -.5f, -.5f,   0.f, -1.f,  0.f,
 
-            -.5f, -.5f, -.5f,
-             .5f, -.5f,  .5f,
-             .5f, -.5f,  .5f,
+            // back
+            -.5f, -.5f,  .5f,   0.f, 0.f, 1.f,
+            -.5f,  .5f,  .5f,   0.f, 0.f, 1.f,
+             .5f,  .5f,  .5f,   0.f, 0.f, 1.f,
 
-            // front
-            -.5f, -.5f,  .5f,
-            -.5f,  .5f,  .5f,
-             .5f,  .5f,  .5f,
-
-            -.5f, -.5f,  .5f,
-             .5f,  .5f,  .5f,
-             .5f, -.5f,  .5f,
+            -.5f, -.5f,  .5f,   0.f, 0.f, 1.f,
+             .5f,  .5f,  .5f,   0.f, 0.f, 1.f,
+             .5f, -.5f,  .5f,   0.f, 0.f, 1.f,
         };
-        rndr->CreateVertexBuffer(verts, hStaticArraySize(verts), desc, hStaticArraySize(desc), 0, heap, retVB);
+        rndr->CreateVertexBuffer(verts, PRIM_COUNT, desc, hStaticArraySize(desc), 0, heap, retVB);
         return *retVB;
+#undef PRIM_COUNT
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -560,7 +564,7 @@ namespace hRenderUtility
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         pass.SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
         pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosOnly));
-        pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelColour));
+        pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhite));
         tech->AppendPass(pass);
         ddrawmat->SetActiveGroup("low_detail");
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
@@ -620,10 +624,68 @@ namespace hRenderUtility
 
         pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
         pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosOnly));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelColour));
+        pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelWhite));
 
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
 
+        return ddrawmat;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugViewLitMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+        hcAssert(rndr && ddrawmat);
+        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
+
+        group->techniques_.Resize(1);
+        hMaterialTechnique* tech=&group->techniques_[0];
+        tech->SetName("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass pass;
+        hBlendStateDesc blendDesc;
+        blendDesc.blendEnable_           = RSV_DISABLE;
+        blendDesc.srcBlend_              = RSV_BLEND_OP_ONE;
+        blendDesc.destBlend_             = RSV_BLEND_OP_ZERO;
+        blendDesc.blendOp_               = RSV_BLEND_FUNC_ADD;
+        blendDesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
+        blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
+        blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
+        blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
+        pass.SetBlendState(rndr->CreateBlendState(blendDesc));
+        hDepthStencilStateDesc depthDesc;
+        depthDesc.depthEnable_         = RSV_ENABLE;       //
+        depthDesc.depthWriteMask_      = RSV_ENABLE;       //
+        depthDesc.depthFunc_           = RSV_Z_CMP_LESS;   //
+        depthDesc.stencilEnable_       = RSV_DISABLE;      //
+        depthDesc.stencilReadMask_     = ~0U;              //
+        depthDesc.stencilWriteMask_    = ~0U;              //
+        depthDesc.stencilFailOp_       = RSV_SO_KEEP;      //
+        depthDesc.stencilDepthFailOp_  = RSV_SO_KEEP;      //
+        depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
+        depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
+        depthDesc.stencilRef_          = 0;                //
+        pass.SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hRasterizerStateDesc rastDesc;
+        rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
+        rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
+        rastDesc.frontCounterClockwise_ = RSV_ENABLE;                 //
+        rastDesc.depthBias_             = 0;                          //
+        rastDesc.depthBiasClamp_        = 0.f;                        //
+        rastDesc.slopeScaledDepthBias_  = 0.f;                        //
+        rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
+        rastDesc.scissorEnable_         = RSV_DISABLE;                //
+        pass.SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosNormal));
+        pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhiteViewLit));
+        tech->AppendPass(pass);
+        ddrawmat->SetActiveGroup("low_detail");
+        ddrawmat->bindMaterial(rndr->GetMaterialManager());
         return ddrawmat;
     }
 
@@ -791,6 +853,5 @@ namespace hRenderUtility
         hcAssert(rndr && font && tex);
         rndr->DestroyTexture(tex);
     }
-
 }
 }

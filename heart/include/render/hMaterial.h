@@ -154,8 +154,8 @@ namespace Heart
         hMaterial(hMemoryHeapBase* heap, hRenderer* renderer);
         ~hMaterial();
 
-        hUint32                             GetTechniqueCount() const { return activeTechniques_->GetSize(); }
-        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert( activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
+        hUint32                             GetTechniqueCount() const { hcAssert(activeTechniques_); return activeTechniques_->GetSize(); }
+        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert(activeTechniques_ && activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
         hMaterialTechnique*                 GetTechniqueByName( const hChar* name );
         hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask );
         hRenderMaterialManager*             GetManager() const { return manager_; }

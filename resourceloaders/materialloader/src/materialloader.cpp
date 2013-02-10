@@ -99,6 +99,8 @@ struct PassDefintion
     Heart::hResourceID                  vertexProgramID;
     Heart::hResourceID                  fragmentProgramID;
     Heart::hResourceID                  geometryProgramID;
+    Heart::hResourceID                  hullProgramID;
+    Heart::hResourceID                  domainProgramID;
 };
 
 #pragma pack(pop)
@@ -854,6 +856,12 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
                 }
                 if (xPass.FirstChild("geometry").ToNode() || newpass) {
                     passDef.geometryProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString());
+                }
+                if (xPass.FirstChild("hull").ToNode() || newpass) {
+                    passDef.hullProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("hull").GetValueString());
+                }
+                if (xPass.FirstChild("domain").ToNode() || newpass) {
+                    passDef.domainProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("domain").GetValueString());
                 }
 
                 if (newpass)  {

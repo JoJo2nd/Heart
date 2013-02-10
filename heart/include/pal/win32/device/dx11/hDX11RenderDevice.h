@@ -123,7 +123,6 @@ namespace Heart
         RasterizerStateMapType      rasterizerStates_;
         DepthStencilStateMapType    depthStencilStates_;
         SamplerStateMapType         samplerStateMap_;
-        VertexLayoutMapType         vertexLayoutMap_;
         ID3D11Query*                timerDisjoint_;
         ID3D11Query*                timerFrameStart_;
         ID3D11Query*                timerFrameEnd_;

@@ -40,13 +40,23 @@ namespace Heart
         case ShaderType_FRAGMENTPROG: {
             pixelShader_ = prog->pixelShader_; 
             boundProgs_[hdDX11PixelProg] = prog;
-            break;
-        }
+        } break;
         case ShaderType_VERTEXPROG: {
             vertexShader_ = prog->vertexShader_; 
             boundProgs_[hdDX11VertexProg] = prog;
-            break;
-        }
+        } break;
+        case ShaderType_GEOMETRYPROG: {
+            geometryShader_=prog->geomShader_;
+            boundProgs_[hdDX11GemoProg]=prog;
+        } break;
+        case ShaderType_HULLPROG: {
+            hullShader_=prog->hullShader_;
+            boundProgs_[hdDX11HullProg]=prog;
+        } break;
+        case ShaderType_DOMAINPROG: {
+            domainShader_=prog->domainShader_;
+            boundProgs_[hdDX11DomainProg]=prog;
+        } break;
         default: return false; // Assert here?
         }
         return true;
@@ -181,9 +191,11 @@ namespace Heart
                 dptr+=boundStreams_[i]->streamDescCount_;
             }
         }
+        
+        prog->destroyVertexLayout(layout_);
         hdInputLayout* vtxlo=prog->createVertexLayout(desc, descn);
         if (vtxlo) {
-            layout_=vtxlo->layout_;
+            layout_=vtxlo;
         }else{
             layout_=NULL;
         }
@@ -232,6 +244,30 @@ namespace Heart
             device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->PSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->PSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+        }
+
+        device_->GSSetShader(inputobj->geometryShader_, NULL, 0);
+        if (inputobj->geometryShader_) {
+            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11GemoProg;
+            device_->GSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
+            device_->GSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            device_->GSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+        }
+
+        device_->HSSetShader(inputobj->hullShader_, NULL, 0);
+        if (inputobj->hullShader_) {
+            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11HullProg;
+            device_->HSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
+            device_->HSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            device_->HSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+        }
+
+        device_->DSSetShader(inputobj->domainShader_, NULL, 0);
+        if (inputobj->domainShader_) {
+            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11DomainProg;
+            device_->DSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
+            device_->DSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            device_->DSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
         }
     }
 

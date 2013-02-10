@@ -42,53 +42,29 @@ hUint32 DebugPrimsTest::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
+    timer_ += Heart::hClock::Delta();
+    modelMtx_ = Heart::hMatrixFunc::rotate(timer_, timer_, timer_);
+
     switch(state_)
     {
-    case eBeginLoad:
-        {
-            hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
-            engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
-            state_ = eLoading;
-        }
-        break;
-    case eLoading:
-        {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded(PACKAGE_NAME))
-            {
-                hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
-                state_ = eRender;
-                timer_ = 0.f;
-                CreateRenderResources();
-                SetCanRender(hTrue);
-            }
-        }
-        break;
-    case eRender:
-        {
-            timer_ += Heart::hClock::Delta();
+    case eBegin: {
+            CreateRenderResources();
+            SetCanRender(hTrue);
+            state_ = eRender;
+        } break;
+    case eRender: {
             UpdateCamera();
             if (pad->GetButton(HEART_PAD_BACK).buttonVal_ ||
                 kb->GetButton(VK_SPACE).raisingEdge_)
             {
-                state_ = eBeginUnload;
+                state_ = eExit;
             }
-        }
-        break;
-    case eBeginUnload:
-        {
-            SetCanRender(hFalse);
-            DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage(PACKAGE_NAME);
-            hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
-            state_ = eExit;
-        }
-        break;
-    case eExit:
-        {
+        } break;
+    case eExit: {
             hcPrintf("End unit test %s.", s_className_);
+            DestroyRenderResources();
             SetExitCode(UNIT_TEST_EXIT_CODE_OK);
-        }
-        break;
+        } break;
     }
 
     return 0;
@@ -100,36 +76,38 @@ hUint32 DebugPrimsTest::RunUnitTest()
 
 void DebugPrimsTest::RenderUnitTest()
 {
-    /*
     Heart::hRenderer* renderer = engine_->GetRenderer();
-    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
-    hUint32 lodobjects = lod->renderObjects_.GetSize();
+    Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
+    Heart::hConstBlockMapInfo mapinfo;
+    Heart::hViewportShaderConstants* viewportConsts=NULL;
+    Heart::hMatrix model=modelMtx_;
 
-    drawCtx_.Begin(renderer);
+    renderer->beginCameraRender(ctx, 0);
 
-    for (hUint32 i = 0; i < lodobjects; ++i)
-    {
-        // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable = &lod->renderObjects_[i];
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(-1.f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
 
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
-        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = *passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
-            drawCtx_.SubmitDrawCall(drawCall_);
-        }
+    Heart::hMaterialTechnique* tech = wireCubeMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawPrimitive(cubeVB_->getVertexCount()/3, 0);
     }
-    drawCtx_.End();
-    */
+
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(1.f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    tech = viewLitCubeMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawPrimitive(cubeVB_->getVertexCount()/3, 0);
+    }
 }
 
 
@@ -142,6 +120,7 @@ void DebugPrimsTest::CreateRenderResources()
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hResourceManager* resMgr=engine_->GetResourceManager();
+    hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
@@ -160,7 +139,7 @@ void DebugPrimsTest::CreateRenderResources()
     vp.width_ = w;
     vp.height_ = h;
 
-    camPos_ = Heart::hVec3(0.f, 10.f, -110.f);
+    camPos_ = Heart::hVec3(0.f, 0.f, -5.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
@@ -168,14 +147,20 @@ void DebugPrimsTest::CreateRenderResources()
 
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera->SetProjectionParams(aspect, 0.1f, 1000.f);
     camera->SetViewMatrix(vm);
     camera->SetViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     Heart::hRenderUtility::buildDebugCubeMesh(renderer, GetGlobalHeap(), &cubeVB_);
-    Heart::hMaterial* mat=static_cast<Heart::hMaterial*>(resMgr->mtGetResource(CUBE_MAT_RESID));
-    cubeMat_=mat->createMaterialInstance(0);
+    wireCubeMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
+    viewLitCubeMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
+     
+    wireCubeMat_->bindVertexStream(0, cubeVB_);
+    viewLitCubeMat_->bindVertexStream(0, cubeVB_);
+
+    viewportCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("ViewportConstants"));
+    modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -192,6 +177,10 @@ void DebugPrimsTest::DestroyRenderResources()
     if(cubeVB_) {
         renderer->DestroyVertexBuffer(cubeVB_);
         cubeVB_=NULL;
+    }
+    if (wireCubeMat_) {
+        hMaterialInstance::destroyMaterialInstance(wireCubeMat_);
+        wireCubeMat_=NULL;
     }
 }
 

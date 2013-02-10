@@ -92,7 +92,7 @@ namespace hMatrixFunc
         return XMMatrixRotationX( theta );
     }
 
-	hFORCEINLINE hMatrix Translation( const hVec3& tran )
+	hFORCEINLINE hMatrix translation( const hVec3& tran )
 	{
         return XMMatrixTranslationFromVector( tran.v );
 	}
@@ -182,6 +182,11 @@ namespace hMatrixFunc
         return m.r[3];
     }
 
+    hFORCEINLINE void setTranslation(hMatrix& m, const hVec3& v) {
+        m.r[3]=v.Get128();
+        hVec128SetW(m.r[3], 1.f);
+    }
+
     hFORCEINLINE hVec4 getRow( const hMatrix& m, hUint32 row )
     {
         return m.r[row];
@@ -207,8 +212,6 @@ namespace hMatrixFunc
     {
         return hMatrixFunc::mult( lhs, rhs );
     }
-
-    SERIALISE_WORKER_TYPE_SPECIALISATION( hMatrix, hSerialisedElementHeader::Type_User );
 
 }
 

@@ -29,22 +29,23 @@
 
 namespace Heart
 {
-    class HEART_DLLEXPORT hdDX11VertexLayout : public hMapElement< hUint32, hdDX11VertexLayout >
-    {
-    public:
-        hdDX11VertexLayout() 
-            : layout_(NULL)
-        {}
-        ~hdDX11VertexLayout()
-        {
-            if (layout_) {
-                hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout_);
-                layout_->Release();
-            }
-        }
-
-        ID3D11InputLayout*      layout_;
-    };
+//     class HEART_DLLEXPORT hdDX11VertexLayout : public hMapElement< hUint32, hdDX11VertexLayout >
+//     {
+//     public:
+//         hdDX11VertexLayout() 
+//             : layout_(NULL)
+//         {}
+//         ~hdDX11VertexLayout()
+//         {
+//             if (layout_) {
+//                 hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout_);
+//                 layout_->Release();
+//             }
+//         }
+// 
+//         ID3D11InputLayout*      layout_;
+//     };
+    typedef ID3D11InputLayout hdDX11VertexLayout;
 }
 
 #endif // DEVICEDX11VERTEXLAYOUT_H__

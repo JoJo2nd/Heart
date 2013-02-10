@@ -68,110 +68,164 @@ namespace Heart
 
     static const hChar s_debugVertex[] ={
     COMMON_CONST_BLOCK()
-    "                                                                     \
-    struct VSInput                                                        \
-    {                                                                     \
-        float3 position : POSITION;                                       \
-    };                                                                    \
-                                                                          \
-    struct PSInput                                                        \
-    {                                                                     \
-        float4 colour   : COLOR0;                                         \
-    };                                                                    \
-                                                                          \
-    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )    \
-    {                                                                     \
-        PSInput output = (PSInput)0;                                      \
-                                                                          \
-        position = float4(input.position.xyz,1);                          \
-        position = mul(g_ViewProjection, position);                       \
-                                                                          \
-        return output;                                                    \
-    }                                                                     \
-                                                                          \
-    float4 mainFP( PSInput input ) : SV_Target0                           \
-    {                                                                     \
-        return input.colour;                                              \
-    }                                                                     \
+    "                                                                     \n\
+    struct VSInput                                                        \n\
+    {                                                                     \n\
+        float3 position : POSITION;                                       \n\
+    };                                                                    \n\
+                                                                          \n\
+    void mainVP( VSInput input, out float4 position : SV_POSITION )       \n\
+    {                                                                     \n\
+        position = float4(input.position.xyz,1);                          \n\
+        position = mul(mul(g_ViewProjection, g_World), position);         \n\
+    }                                                                     \n\
+                                                                          \n\
+    float4 mainFP() : SV_Target0                                          \n\
+    {                                                                     \n\
+        return float4(1,1,1,1);                                           \n\
+    }                                                                     \n\
+    "
+    };
+
+    static const hChar s_debugVertexLit[] ={
+    COMMON_CONST_BLOCK()
+    "                                                                     \n\
+    struct VSInput                                                        \n\
+    {                                                                     \n\
+        float3 position : POSITION;                                       \n\
+        float3 normal   : NORMAL;                                         \n\
+    };                                                                    \n\
+                                                                          \n\
+    struct PSInput {                                                      \n\
+        float3 normal : TEXCOORD0;                                        \n\
+    };                                                                    \n\
+                                                                          \n\
+    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )    \n\
+    {                                                                     \n\
+        PSInput output=(PSInput)0;                                        \n\
+        position = float4(input.position.xyz,1);                          \n\
+        position = mul(mul(g_ViewProjection, g_World), position);         \n\
+        output.normal = mul((float3x3)g_World, input.normal);             \n\
+        return output;                                                    \n\
+    }                                                                     \n\
+                                                                          \n\
+    float4 mainFP(PSInput input) : SV_Target0                               \n\
+    {                                                                       \n\
+        float NdotL=dot(normalize(input.normal),-normalize(g_View[2].xyz)); \n\
+        return float4(NdotL,NdotL,NdotL,1);                                 \n\
+    }                                                                       \n\
+    "
+    };
+
+    static const hChar s_debugInstVertex[] ={
+        COMMON_CONST_BLOCK()
+        "                                                                    \n\
+        struct VSInput                                                       \n\
+        {                                                                    \n\
+            float3 position : POSITION;                                      \n\
+            float4 mmtx0 : INSTANCE0;                                        \n\
+            float4 mmtx1 : INSTANCE1;                                        \n\
+            float4 mmtx2 : INSTANCE2;                                        \n\
+            float4 mmtx3 : INSTANCE3;                                        \n\
+            float4 colour : INSTANCE4;                                       \n\
+        };                                                                   \n\
+                                                                             \n\
+        struct PSInput {                                                     \n\
+            float4 colour;                                                   \n\
+        };                                                                   \n\
+                                                                             \n\
+        PSInput mainVP( VSInput input, out float4 position : SV_POSITION )   \n\
+        {                                                                    \n\
+            PSInput output={0};                                              \n\
+            position = float4(input.position.xyz,1);                         \n\
+            position = mul(g_ViewProjection, position);                      \n\
+            output.colour=input.colour;                                      \n\
+            return output;                                                   \n\
+        }                                                                    \n\
+                                                                             \n\
+        float4 mainFP(PSInput input) : SV_Target0                            \n\
+        {                                                                    \n\
+            return input.colour;                                             \n\
+        }                                                                    \n\
     "
     };
 
     static const hChar s_debugConsole[] = {
     COMMON_CONST_BLOCK()
-    "                                                                       \
-    struct VSInput                                                          \
-    {                                                                       \
-        float3 position : POSITION;                                         \
-        float4 colour   : COLOR0;                                           \
-    };                                                                      \
-                                                                            \
-    struct PSInput                                                          \
-    {                                                                       \
-        float4 colour   : COLOR0;                                           \
-    };                                                                      \
-                                                                            \
-    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )      \
-    {                                                                       \
-        PSInput output = (PSInput)0;                                        \
-        output.colour = input.colour;                                       \
-                                                                            \
-        position = float4(input.position.xyz,1);                            \
-        position.xy *= g_viewportSize.xy;                                   \
-        position = mul( mul(g_ViewProjection,g_World), position );          \
-                                                                            \
-        return output;                                                      \
-    }                                                                       \
-                                                                            \
-    float4 mainFP( PSInput input ) : SV_Target0                             \
-    {                                                                       \
-        return input.colour;                                                \
-    }                                                                       \
+    "                                                                       \n\
+    struct VSInput                                                          \n\
+    {                                                                       \n\
+        float3 position : POSITION;                                         \n\
+        float4 colour   : COLOR0;                                           \n\
+    };                                                                      \n\
+                                                                            \n\
+    struct PSInput                                                          \n\
+    {                                                                       \n\
+        float4 colour   : COLOR0;                                           \n\
+    };                                                                      \n\
+                                                                            \n\
+    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )      \n\
+    {                                                                       \n\
+        PSInput output = (PSInput)0;                                        \n\
+        output.colour = input.colour;                                       \n\
+                                                                            \n\
+        position = float4(input.position.xyz,1);                            \n\
+        position.xy *= g_viewportSize.xy;                                   \n\
+        position = mul( mul(g_ViewProjection,g_World), position );          \n\
+                                                                            \n\
+        return output;                                                      \n\
+    }                                                                       \n\
+                                                                            \n\
+    float4 mainFP( PSInput input ) : SV_Target0                             \n\
+    {                                                                       \n\
+        return input.colour;                                                \n\
+    }                                                                       \n\
     "
     };
 
     const hChar s_debugFont[] = {
         COMMON_CONST_BLOCK()
-        "                                                              \
-        cbuffer FontParams                                             \
-        {                                                              \
-            float4 fontColour;                                         \
-            float4 dropOffset;                                         \
-        }                                                              \
-                                                                       \
-        Texture2D   SignedDistanceField;                               \
-                                                                       \
-        SamplerState fontSampler= sampler_state{};                     \
-                                                                       \
-        struct VSInput                                                 \
-        {                                                              \
-            float3 position : POSITION;                                \
-            float4 colour 	: COLOR0;                                  \
-            float2 uv 		: TEXCOORD0;                               \
-        };                                                             \
-                                                                       \
-        struct PSInput                                                 \
-        {                                                              \
-            float4 position : SV_POSITION;                             \
-            float4 colour 	: COLOR0;                                  \
-            float2 uv 		: TEXCOORD0;                               \
-        };                                                             \
-                                                                       \
-        PSInput mainVP( VSInput input )                                \
-        {                                                              \
-            PSInput output;                                            \
-            float4 pos = float4(input.position.xyz,1);                 \
-            pos.xyz += dropOffset.xyz;                                 \
-            output.position = mul(mul(g_ViewProjection,g_World), pos); \
-            output.colour = input.colour;	                           \
-            output.uv = input.uv;                                      \
-            return output;                                             \
-        }                                                                     \
-                                                                              \
-        float4 mainFP( PSInput input ) : SV_TARGET0                           \
-        {                                                                     \
-            float a   = SignedDistanceField.Sample(fontSampler, input.uv).a;  \
-            return float4(fontColour.rgb,a);                                  \
-        }                                                                     \
+        "                                                              \n\
+        cbuffer FontParams                                             \n\
+        {                                                              \n\
+            float4 fontColour;                                         \n\
+            float4 dropOffset;                                         \n\
+        }                                                              \n\
+                                                                       \n\
+        Texture2D   SignedDistanceField;                               \n\
+                                                                       \n\
+        SamplerState fontSampler= sampler_state{};                     \n\
+                                                                       \n\
+        struct VSInput                                                 \n\
+        {                                                              \n\
+            float3 position : POSITION;                                \n\
+            float4 colour 	: COLOR0;                                  \n\
+            float2 uv 		: TEXCOORD0;                               \n\
+        };                                                             \n\
+                                                                       \n\
+        struct PSInput                                                 \n\
+        {                                                              \n\
+            float4 position : SV_POSITION;                             \n\
+            float4 colour 	: COLOR0;                                  \n\
+            float2 uv 		: TEXCOORD0;                               \n\
+        };                                                             \n\
+                                                                       \n\
+        PSInput mainVP( VSInput input )                                \n\
+        {                                                              \n\
+            PSInput output;                                            \n\
+            float4 pos = float4(input.position.xyz,1);                 \n\
+            pos.xyz += dropOffset.xyz;                                 \n\
+            output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
+            output.colour = input.colour;	                           \n\
+            output.uv = input.uv;                                      \n\
+            return output;                                             \n\
+        }                                                                     \n\
+                                                                              \n\
+        float4 mainFP( PSInput input ) : SV_TARGET0                           \n\
+        {                                                                     \n\
+            float a   = SignedDistanceField.Sample(fontSampler, input.uv).a;  \n\
+            return float4(fontColour.rgb,a);                                  \n\
+        }                                                                     \n\
         "
     };
 
@@ -182,6 +236,8 @@ namespace Heart
         s_debugConsole,
         s_debugFont,
         s_debugFont,
+        s_debugVertexLit,
+        s_debugVertexLit,
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -191,7 +247,6 @@ namespace Heart
     hdDX11RenderDevice::hdDX11RenderDevice() 
         : sysWindow_(NULL)
     {
-        vertexLayoutMap_.SetHeap(GetGlobalHeap());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -484,6 +539,14 @@ namespace Heart
             type=ShaderType_VERTEXPROG;
         } else if (profile >= eShaderProfile_ps4_0 && profile <= eShaderProfile_ps5_0) {
             type=ShaderType_FRAGMENTPROG;
+        } else if (profile >= eShaderProfile_gs4_0 && profile <= eShaderProfile_gs5_0) {
+            type=ShaderType_GEOMETRYPROG;
+        } else if (profile >= eShaderProfile_cs4_0 && profile <= eShaderProfile_cs5_0) {
+            type=ShaderType_COMPUTEPROG;
+        } else if (profile == eShaderProfile_hs5_0) {
+            type=ShaderType_HULLPROG;
+        } else if (profile == eShaderProfile_ds5_0) {
+            type=ShaderType_DOMAINPROG;
         }
 
         hr=D3DCompile(shaderProg, len, "memory", NULL, NULL, entry, profileStr, 0, 0, &codeBlob, &errorBlob);
@@ -818,21 +881,9 @@ namespace Heart
         hUint32 inputLayoutId;
         hUint32 elementCount = BuildVertexFormatArray(inputdesc, desccount, &stride, &inputLayoutId, elements);
 
-        resourceMutex_.Lock();
-
-        layout = vertexLayoutMap_.Find( inputLayoutId );
-
-        if (!layout)
-        {
-            layout = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexLayout );
-            hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout->layout_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout->layout_);
-
-            vertexLayoutMap_.Insert( inputLayoutId, layout);
-        }
-
-        resourceMutex_.Unlock();
+        hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout );
+        hcAssert( SUCCEEDED( hr ) );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout);
 
         return layout;
     }
@@ -843,9 +894,8 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyVertexLayout( hdDX11VertexLayout* layout )
     {
-        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout->layout_);
-        layout->layout_->Release();
-        layout->layout_ = NULL;
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout);
+        layout->Release();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1465,11 +1515,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11RenderDevice::BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements)
+    hUint32 hdDX11RenderDevice::BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, 
+    hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements)
     {
         hUint32 elementsadded = 0;
         WORD offset = 0;
         *stride = 0;
+        *fmtID=0;
 
         for (hUint32 i = 0; i < desccount; ++i)
         {
@@ -1502,21 +1554,12 @@ namespace Heart
             elements[i].InputSlotClass = desc[i].instanceDataRepeat_ == 0 ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
             elements[i].InstanceDataStepRate = desc[i].instanceDataRepeat_;
 
-            if (i == 0)
-            {
-                hCRC32::StartCRC32(fmtID, (hChar*)&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
-            }
-            else
-            {
-                hCRC32::ContinueCRC32(fmtID, (hChar*)&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
-            }
-
             ++elementsadded;
         }
 
         if (elementsadded)
         {
-            hCRC32::FinishCRC32(fmtID);
+            *fmtID=hCRC32::FullCRC((hChar*)elements, sizeof(D3D11_INPUT_ELEMENT_DESC)*elementsadded);
         }
 
         return elementsadded;

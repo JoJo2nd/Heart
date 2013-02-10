@@ -463,11 +463,13 @@ namespace Heart
     enum hDebugShaderID
     {
         eDebugVertexPosOnly,
-        eDebugPixelColour,
+        eDebugPixelWhite,
         eConsoleVertex,
         eConsolePixel,
         eDebugFontVertex,
         eDebugFontPixel,
+        eDebugVertexPosNormal,
+        eDebugPixelWhiteViewLit,
 
         eDebugShaderMax
     };

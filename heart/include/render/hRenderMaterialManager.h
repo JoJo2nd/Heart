@@ -73,9 +73,10 @@ namespace Heart
         void                        SetRenderer(hRenderer* renderer) { renderer_ = renderer; }
         void                        createDebugMaterials();
         void                        destroyRenderResources();
-        hMaterial*                  getWireframeDebug();
-        hMaterial*                  getConsoleMat() { return consoleMat_; }
-        hMaterial*                  getDebugFontMat() { return debugFontMat_; }
+        hMaterial*                  getWireframeDebug() const { return wireframeMat_; }
+        hMaterial*                  getDebugViewLit() const { return viewLitMat_; }
+        hMaterial*                  getConsoleMat() const { return consoleMat_; }
+        hMaterial*                  getDebugFontMat() const { return debugFontMat_; }
         hMaterial*                  getDebugMaterial();
         hMaterial*                  getDebugTexMaterial();
         void                        GetUniqueKey(hMaterial* mat);
@@ -123,6 +124,7 @@ namespace Heart
         ConstBlockArrayType     constBlocks_;
         ConstBlockMapType       constBlockLookUp_;
         hMaterial*              wireframeMat_;
+        hMaterial*              viewLitMat_;
         hMaterial*              consoleMat_;
         hMaterial*              debugFontMat_;
         hMaterial*              debugMat_;
