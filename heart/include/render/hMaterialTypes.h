@@ -81,6 +81,7 @@ namespace Heart
         hBool   BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer);
         hBool   bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt);
         hBool   bindInputStream(hUint slot, hVertexBuffer* vtx);
+        void    unbind();
 
     private:
 

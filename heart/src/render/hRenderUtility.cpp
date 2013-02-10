@@ -106,23 +106,21 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    extern void BuildSphereMesh( hUint16 segments, 
-                                 hUint16 rings, 
-                                 hFloat radius, 
-                                 hRenderSubmissionCtx* ctx, 
-                                 hIndexBuffer* idxBuf, 
-                                 hVertexBuffer* vtxBuf )
+    HEART_DLLEXPORT
+    void HEART_API BuildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
+    hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
-        hUint16 vtxCnt = GetSphereMeshVertexCount( segments, rings );//(hUint16)((rings + 1) * (segments+1)) + 1;
-        hUint16 idxCnt = GetSphereMeshIndexCount( segments, rings );//(hUint16)(6 * rings * (segments+1)) + 1;
+        hInputLayoutDesc desc[] = {
+            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
+            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
+        };
+        hUint16 vtxCnt = GetSphereMeshVertexCount( segments, rings );
+        hUint16 idxCnt = GetSphereMeshIndexCount( segments, rings );
 
-        hIndexBufferMapInfo  ibMap;
-        hVertexBufferMapInfo vbMap;
-        ctx->Map( idxBuf, &ibMap );
-        ctx->Map( vtxBuf, &vbMap );
-
-        hFloat* vtx      = (hFloat*)vbMap.ptr_;
-        hUint16* indices = (hUint16*)ibMap.ptr_;
+        hFloat* verts = (hFloat*)hAlloca(vtxCnt*6*sizeof(hFloat));
+        hUint16* indices = (hUint16*)hAlloca(idxCnt*sizeof(hUint16));
+        hFloat* vtx  = verts;
+        hUint16* idx = indices;
 
         hFloat dRingAngle = (hmPI / rings);
         hFloat dSegAngle = (2 * hmPI / segments);
@@ -149,10 +147,10 @@ namespace hRenderUtility
                 *vtx++ = y0;
                 *vtx++ = z0;
 
-// 				//Normal
-// 	 			*vtx++ = vNormal.x;
-// 	 			*vtx++ = vNormal.y;
-// 	 			*vtx++ = vNormal.z;
+				//Normal
+	 			*vtx++ = vNormal.x;
+	 			*vtx++ = vNormal.y;
+	 			*vtx++ = vNormal.z;
 // 
 // 				//UV
 // 	 			*vtx++ = (float) seg / (float) segments;
@@ -161,88 +159,19 @@ namespace hRenderUtility
                 if ( ring != rings ) 
                 {
                     // each vertex (except the last) has six indices pointing to it
-                    *indices++ = vtxIdx + segments + 1;
-                    *indices++ = vtxIdx;               
-                    *indices++ = vtxIdx + segments;
-                    *indices++ = vtxIdx + segments + 1;
-                    *indices++ = vtxIdx + 1;
-                    *indices++ = vtxIdx;
+                    *idx++ = vtxIdx + segments + 1;
+                    *idx++ = vtxIdx;               
+                    *idx++ = vtxIdx + segments;
+                    *idx++ = vtxIdx + segments + 1;
+                    *idx++ = vtxIdx + 1;
+                    *idx++ = vtxIdx;
                 }
                 ++vtxIdx;
             }
         }
 
-        ctx->Unmap( &ibMap );
-        ctx->Unmap( &vbMap );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    extern void BuildDebugSphereMesh( const hCPUVec3& centre,
-                                    hUint16 segments, 
-                                    hUint16 rings, 
-                                    hFloat radius, 
-                                    hUint16* startIdx,
-                                    hUint16* startVtx,
-                                    hColour colour,
-                                    hMatrix* vp,
-                                    hUint16* outIdxBuf, 
-                                    void* outVtxBuf )
-    {
-
-        struct Vertex
-        {
-            hCPUVec4    post;
-            hUint32     colour;
-        };
-
-        hUint16 vtxCnt = (hUint16)((rings + 1) * (segments+1)) + 1;
-        hUint16 idxCnt = (hUint16)(6 * rings * (segments+1)) + 1;
-        hUint32 dwColour = (hUint32)colour;
-        Vertex* vtx = (Vertex*)outVtxBuf;
-
-        hFloat dRingAngle = (hmPI / rings);
-        hFloat dSegAngle = (2 * hmPI / segments);
-
-        hUint16 idxIdx = *startIdx;
-        hUint16 vtxIdx = *startVtx;
-
-        // Generate the group of rings for the sphere
-        for( hUint32 ring = 0; ring <= rings; ring++ ) 
-        {
-            float r0 = radius * sinf (ring * dRingAngle);
-            float y0 = radius * cosf (ring * dRingAngle);
-
-            // Generate the group of segments for the current ring
-            for( hUint32 seg = 0; seg <= segments; seg++) 
-            {
-                float x0 = r0 * sinf(seg * dSegAngle);
-                float z0 = r0 * cosf(seg * dSegAngle);
-                hVec4 v( x0+centre.x, y0+centre.y, z0+centre.z, 1.0f );
-
-                vtx[vtxIdx].post   = hMatrixFunc::mult( v, *vp );
-                vtx[vtxIdx].colour = dwColour;
-
-                if ( ring != rings ) 
-                {
-                    // each vertex (except the last) has six indices pointing to it
-                    outIdxBuf[idxIdx++] = vtxIdx;
-                    outIdxBuf[idxIdx++] = vtxIdx+segments+1;
-                    outIdxBuf[idxIdx++] = vtxIdx+segments;
-
-                    outIdxBuf[idxIdx++] = vtxIdx+1;
-                    outIdxBuf[idxIdx++] = vtxIdx+segments+1;
-                    outIdxBuf[idxIdx++] = vtxIdx;
-
-                }
-                ++vtxIdx;
-            }
-        }
-
-        *startIdx = idxIdx;
-        *startVtx = vtxIdx;
+        rndr->CreateIndexBuffer(indices, idxCnt, 0, outIdxBuf);
+        rndr->CreateVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -366,80 +295,6 @@ namespace hRenderUtility
 
         ctx->Unmap( &ibMap );
         ctx->Unmap( &vbMap );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    extern void BuildDebugConeMesh( const hMatrix* transform,
-                                   hUint16 segments, 
-                                   hFloat radius, 
-                                   hFloat lenght, 
-                                   hUint16* startIdx, 
-                                   hUint16* startVtx, 
-                                   hColour colour, 
-                                   hMatrix* vp, 
-                                   hUint16* outIdxBuf, 
-                                   void* outVtxBuf )
-    {
-        if ( segments < 4)
-        {
-            segments = 4;
-        }
-
-        struct Vertex
-        {
-            hVec4    post;
-            hUint32  colour;
-        };
-
-        hUint32 dwColour = (hUint32)colour;
-
-        hUint16 iidx = *startIdx;
-        hUint16 vidx = *startVtx;
-        Vertex* vtx = (Vertex*)outVtxBuf;
-        //TODO: check alignment here...
-        hVec4* segmentPts = (hVec4*)hAlloca( sizeof(hVec4)*(segments+2) );
-        hFloat dSegAngle = (2 * hmPI / segments);
-
-        for ( hUint32 i = 0; i < segments; ++i )
-        {
-            float x = radius * sinf( dSegAngle*i );
-            float y = radius * cosf( dSegAngle*i );
-
-            segmentPts[i] = hVec4( x, y, lenght, 1.0f );
-        }
-        segmentPts[segments]   = hVec4( 0.0f, 0.0f, 0.0f, 1.0f );//Tip of cone
-        segmentPts[segments+1] = hVec4( 0.0f, 0.0f, lenght, 1.0f );// centre base of cone
-
-
-        hMatrix wvp = (*transform) * (*vp);
-
-        for ( hUint16 i = 0; i < segments+2; ++i )
-        {
-            vtx->post   = segmentPts[i] * wvp;
-            vtx->colour = dwColour;
-        }
-
-        //Create the Cone
-        for ( hUint16 i = 0; i < segments; ++i )
-        {
-            outIdxBuf[iidx++] = (segments)+(*startVtx);//Tip
-            outIdxBuf[iidx++] = i+(*startVtx);//Base 1
-            outIdxBuf[iidx++] = ((i+1)%segments)+(*startVtx);//Base 2
-        }
-
-        //Create the Base
-        for ( hUint16 i = 0; i < segments; ++i )
-        {
-            outIdxBuf[iidx++] = (segments+1)+(*startVtx);//Base Centre
-            outIdxBuf[iidx++] = i+(*startVtx);//Base 1
-            outIdxBuf[iidx++] = ((i+1)%segments)+(*startVtx);//Base 2
-        }
-
-        *startIdx = iidx;
-        *startVtx = vidx;
     }
 
     //////////////////////////////////////////////////////////////////////////

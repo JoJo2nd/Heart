@@ -85,16 +85,40 @@ void DebugPrimsTest::RenderUnitTest()
 
     renderer->beginCameraRender(ctx, 0);
 
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(-2.5f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    Heart::hMaterialTechnique* tech = wireSphereMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(sphereIB_->GetIndexCount()/3, 0);
+    }
+
     model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(-1.f, 0.f, 0.f)));
     ctx->Map(modelMtxCB_, &mapinfo);
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    Heart::hMaterialTechnique* tech = wireCubeMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = wireCubeMat_->GetTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
         ctx->DrawPrimitive(cubeVB_->getVertexCount()/3, 0);
+    }
+
+    model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(2.5f, 0.f, 0.f)));
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = model;
+    ctx->Unmap(&mapinfo);
+
+    tech = viewLitSphereMat_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(sphereIB_->GetIndexCount()/3, 0);
     }
 
     model=Heart::hMatrixFunc::mult(modelMtx_, Heart::hMatrixFunc::translation(Heart::hVec3(1.f, 0.f, 0.f)));
@@ -153,11 +177,17 @@ void DebugPrimsTest::CreateRenderResources()
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     Heart::hRenderUtility::buildDebugCubeMesh(renderer, GetGlobalHeap(), &cubeVB_);
+    Heart::hRenderUtility::BuildSphereMesh(8, 8, .5f, renderer, GetGlobalHeap(), &sphereIB_, &sphereVB_);
+
     wireCubeMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
+    wireSphereMat_=matMgr->getWireframeDebug()->createMaterialInstance(0);
     viewLitCubeMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
+    viewLitSphereMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
      
     wireCubeMat_->bindVertexStream(0, cubeVB_);
     viewLitCubeMat_->bindVertexStream(0, cubeVB_);
+    wireSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
+    viewLitSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
 
     viewportCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("ViewportConstants"));
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
@@ -181,6 +211,26 @@ void DebugPrimsTest::DestroyRenderResources()
     if (wireCubeMat_) {
         hMaterialInstance::destroyMaterialInstance(wireCubeMat_);
         wireCubeMat_=NULL;
+    }
+    if (viewLitCubeMat_) {
+        hMaterialInstance::destroyMaterialInstance(viewLitCubeMat_);
+        viewLitCubeMat_=NULL;
+    }
+    if (sphereIB_) {
+        renderer->DestroyIndexBuffer(sphereIB_);
+        sphereIB_=NULL;
+    }
+    if (sphereVB_) {
+        renderer->DestroyVertexBuffer(sphereVB_);
+        sphereVB_=NULL;
+    }
+    if (wireSphereMat_) {
+        hMaterialInstance::destroyMaterialInstance(wireSphereMat_);
+        wireSphereMat_=NULL;
+    }
+    if (viewLitSphereMat_) {
+        hMaterialInstance::destroyMaterialInstance(viewLitSphereMat_);
+        viewLitSphereMat_=NULL;
     }
 }
 

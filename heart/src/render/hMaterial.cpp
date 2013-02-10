@@ -370,6 +370,13 @@ namespace Heart
     void hMaterial::destroyMaterialInstance(hMaterialInstance* matInst)
     {
         hcAssert(matInst);
+        for (hUint32 tech = 0; tech < matInst->techniques_.GetSize(); ++tech) {
+            for (hUint32 pass = 0; pass < matInst->techniques_[tech].passes_.GetSize(); ++pass) {
+                hMaterialTechniquePass* passptr = &matInst->techniques_[tech].passes_[pass];
+                passptr->unbind();
+            }
+        }
+
         hBool didntcreatecb=(hMatInst_DontInstanceConstantBuffers&matInst->flags_) == hMatInst_DontInstanceConstantBuffers;
         for (hUint32 i = 0, c = matInst->constBlocks_.GetSize(); i < c; ++i) {
             hdParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockParameterID(matInst->constBlocks_[i].paramid);

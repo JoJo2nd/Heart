@@ -64,6 +64,10 @@ private:
     Heart::hVertexBuffer*            cubeVB_;
     Heart::hMaterialInstance*        wireCubeMat_;
     Heart::hMaterialInstance*        viewLitCubeMat_;
+    Heart::hIndexBuffer*             sphereIB_;
+    Heart::hVertexBuffer*            sphereVB_;
+    Heart::hMaterialInstance*        wireSphereMat_;
+    Heart::hMaterialInstance*        viewLitSphereMat_;
     Heart::hdParameterConstantBlock* viewportCB_;
     Heart::hdParameterConstantBlock* modelMtxCB_;
     Heart::hMatrix                   modelMtx_;

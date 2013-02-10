@@ -38,7 +38,7 @@ void updateCameraFirstPerson(hFloat delta, const Heart::hdGamepad& pad, Heart::h
     hVec3 pos=*camPos_;
     hVec3 camRight = cross(up, dir);
     hVec3 movement, angleXZ, angleYZ;
-    hFloat speed = 5.f, angleSpeed = .314f;
+    hFloat speed = 5.f, angleSpeed = 2.5f;
 
     camRight = normaliseFast(camRight);
 

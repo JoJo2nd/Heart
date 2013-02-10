@@ -40,15 +40,20 @@ namespace hRenderUtility
 	extern hFloat	ComputeGaussianCurve( hFloat step, hFloat power );
 	extern void		ComputeBlurWeights( hFloat blurPower, hUint32 samples, hFloat* pOutWeights );
 	extern void		ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, Heart::hVec2* pOutSamples );
+    //////////////////////////////////////////////////////////////////////////
+    // Debug mesh shapes /////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     inline hUint16  GetSphereMeshVertexCount( hUint16 segments, hUint16 rings ) { return (hUint16)((rings + 1) * (segments+1)) + 1; }
     inline hUint16  GetSphereMeshIndexCount( hUint16 segments, hUint16 rings ) { return (hUint16)(6 * rings * (segments+1)) + 1; }
-	extern void		BuildSphereMesh( 
+	HEART_DLLEXPORT
+    void HEART_API BuildSphereMesh( 
 		hUint16 segments, 
 		hUint16 rings, 
 		hFloat radius,
-		hRenderSubmissionCtx* ctx, 
-		hIndexBuffer* outIdxBuf,
-		hVertexBuffer* outVtxBuf );
+		hRenderer* rndr, 
+        hMemoryHeapBase* heap,
+		hIndexBuffer** outIdxBuf,
+		hVertexBuffer** outVtxBuf );
 	extern void		BuildConeMesh(
 		hUint16 segments, 
 		hFloat radius,
@@ -56,34 +61,15 @@ namespace hRenderUtility
 		hRenderSubmissionCtx* ctx, 
 		hIndexBuffer* outIdxBuf,
 		hVertexBuffer* outVtxBuf );
-	extern void		BuildDebugSphereMesh( 
-		const hVec3& centre,
-		hUint16 segments, 
-		hUint16 rings, 
-		hFloat radius, 
-		hUint16* startIdx,
-		hUint16* startVtx,
-		hColour colour,
-		hMatrix* vp,
-		hIndexBuffer* outIdxBuf, 
-		hVertexBuffer* outVtxBuf );
-	extern void		BuildDebugConeMesh(
-		const hMatrix* transform,
-		hUint16 segments, 
-		hFloat radius, 
-		hFloat lenght, 
-		hUint16* startIdx, 
-		hUint16* startVtx, 
-		hColour colour, 
-		hMatrix* vp, 
-		hIndexBuffer* outIdxBuf, 
-		hVertexBuffer* outVtxBuf );
 	extern void		BuildFullscreenQuadMesh(
 		hRenderSubmissionCtx* ctx, 
 		hIndexBuffer* outIdxBuf,
 		hVertexBuffer* outVtxBuf );
     HEART_DLLEXPORT
     hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB);
+    //////////////////////////////////////////////////////////////////////////
+    // Materials /////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugWireMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT

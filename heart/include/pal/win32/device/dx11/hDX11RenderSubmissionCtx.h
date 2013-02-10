@@ -104,6 +104,7 @@ namespace Heart
         void bindIndexVertex(hdDX11IndexBuffer* index, hIndexBufferType format);
         void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);
         void bindVertexFetch(hdDX11ShaderProgram* prog);
+        void unbind(hdDX11ShaderProgram* prog);
 
     private:
         friend class hdDX11RenderSubmissionCtx;
