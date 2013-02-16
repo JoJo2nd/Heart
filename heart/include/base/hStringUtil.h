@@ -53,7 +53,7 @@ namespace Heart
     HEART_DLLEXPORT
     inline void HEART_API hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
     {
-        hcAssert( destlen - hStrLen( dest ) < destlen );
+        hcAssert( destlen - hStrLen( dest ) <= destlen );
         strcat( dest, src );
     }
 

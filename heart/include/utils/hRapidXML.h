@@ -102,6 +102,10 @@ namespace Heart
     class HEART_DLLEXPORT hXMLGetter
     {
     public:
+        hXMLGetter() 
+            : node_(NULL)
+        {
+        }
         explicit hXMLGetter( const rapidxml::xml_node<>* node )
             : node_(node)
         {
@@ -323,6 +327,18 @@ namespace Heart
         }
 
         const rapidxml::xml_node<>*       ToNode() { return node_; }
+        hXMLGetter                        parent() const { 
+            if (!node_) {
+                return hXMLGetter(NULL);
+            }
+            return hXMLGetter(node_->parent());
+        }
+        const hChar* getName() const {
+            return node_->name();
+        }
+        hUint getNameLen() const {
+            return node_->name_size();
+        }
 
     private:
 

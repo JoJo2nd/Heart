@@ -73,12 +73,12 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        configFile_.ReadConfig( "CONFIG/config.cfg", fileMananger_ );
+        configFile_.readConfig( "CONFIG/config.cfg", fileMananger_ );
 
-        config_.Width_ = configFile_.GetScreenWidth();
-        config_.Height_ = configFile_.GetScreenHeight();
-        config_.Fullscreen_ = configFile_.GetFullscreen();
-        config_.vsync_ = configFile_.GetVsync();
+        config_.Width_ = configFile_.getOptionUint("renderer.width", 640);
+        config_.Height_ = configFile_.getOptionUint("renderer.height", 480);
+        config_.Fullscreen_ = configFile_.getOptionBool("renderer.fullscreen", false);
+        config_.vsync_ = configFile_.getOptionBool("renderer.vsync", false);
 
         deviceConfig_ = *deviceConfig;
         deviceConfig_.width_ = config_.Width_;
