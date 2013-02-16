@@ -31,6 +31,10 @@
 
 #include "heart.h"
 
+#ifndef _CRTDBG_MAP_ALLOC
+#   define _CRTDBG_MAP_ALLOC
+#endif
+
 #include "wx/wx.h"
 #ifdef __WXMSW__
 #include "wx/msw/private.h"
@@ -60,6 +64,7 @@
 #include "boost/bimap.hpp"
 
 #define boost_foreach    BOOST_FOREACH
+
 
 #include "viewer_api.h"
 

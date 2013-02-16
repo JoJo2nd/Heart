@@ -119,3 +119,28 @@ void ModuleSystem::initialiseAndLoadPlugins(
         loadedPlugIns_[i].module_->initialise(initData);
     }
 }
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ModuleSystem::shutdown() {
+    for (size_t i=0,c=loadedPlugIns_.size(); i<c; ++i) {
+        loadedPlugIns_[i].module_->deactvate();
+    }
+
+    for (size_t i=0,c=loadedPlugIns_.size(); i<c; ++i) {
+        loadedPlugIns_[i].module_->destroy();
+    }
+
+    for (size_t i=0,c=loadedPlugIns_.size(); i<c; ++i) {
+        delete loadedPlugIns_[i].module_;
+        loadedPlugIns_[i].module_=NULL;
+        delete loadedPlugIns_[i].actionStack_;
+        loadedPlugIns_[i].actionStack_=NULL;
+        delete loadedPlugIns_[i].menuIDProvider_;
+        loadedPlugIns_[i].menuIDProvider_=NULL;
+    }
+
+    loadedPlugIns_.clear();
+}

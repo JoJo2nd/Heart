@@ -96,7 +96,13 @@ namespace Heart
         hdParameterConstantBlock* constBlock;
     };
 
-    typedef hUint16 hMaterialParameterID;
+    struct hDefaultParameterValue
+    {
+        hUint16         dataOffset;
+        hUint16         dataSize;
+        hUint32         parameterNameHash;
+        hChar           parameterName[hMAX_PARAMETER_NAME_LEN];
+    };
 
     class HEART_DLLEXPORT hMaterialInstance
     {
@@ -166,6 +172,7 @@ namespace Heart
         hBool                               bindMaterial(hRenderMaterialManager* matManager);
         hUint32                             GetMatKey() const { return uniqueKey_; }
         void                                AddSamplerParameter(const hSamplerParameter& samp);
+        void                                addDefaultParameterValue(const hChar* paramName, void* data, hUint size);
         
         /* Create Create/DestroyMaterialOverrides()*/
         hMaterialInstance*  createMaterialInstance(hUint32 flags);
@@ -181,14 +188,17 @@ namespace Heart
     private:
 
         HEART_ALLOW_SERIALISE_FRIEND();
-
         friend class hRenderer;
         friend class hRenderMaterialManager;
 
-        typedef hVector< hMaterialGroup >     GroupArrayType;
-        typedef hVector< hMaterialTechnique > TechniqueArrayType;
-        typedef hVector< hBoundConstBlock >   BoundConstBlockArrayType;
-        typedef hVector< hBoundTexture >      BoundTextureArrayType;
+        typedef hVector< hMaterialGroup >           GroupArrayType;
+        typedef hVector< hMaterialTechnique >       TechniqueArrayType;
+        typedef hVector< hBoundConstBlock >         BoundConstBlockArrayType;
+        typedef hVector< hBoundTexture >            BoundTextureArrayType;
+        typedef hVector< hDefaultParameterValue>    DefaultValueArrayType;
+
+        void                                initConstBlockBufferData(
+            const hShaderProgram* prog, const hConstantBlockDesc& desc, void* outinitdata, hUint totaloutsize) const;
 
         hAtomicInt                          instanceCount_;
         hSamplerArrayType                   defaultSamplers_;
@@ -199,6 +209,9 @@ namespace Heart
         GroupArrayType                      groups_;
         TechniqueArrayType*                 activeTechniques_;
 
+        hUint                               defaultDataSize_;
+        hUint8*                             defaultData_;
+        DefaultValueArrayType               defaultValues_;
         BoundConstBlockArrayType            constBlocks_;
         BoundTextureArrayType               boundTextures_;
     };

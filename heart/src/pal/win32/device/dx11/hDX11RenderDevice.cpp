@@ -104,7 +104,7 @@ namespace Heart
     {                                                                     \n\
         PSInput output=(PSInput)0;                                        \n\
         position = float4(input.position.xyz,1);                          \n\
-        position = mul(mul(g_ViewProjection, g_World), position);         \n\
+        position = mul(mul(g_ViewProjection,  g_World), position);         \n\
         output.normal = mul((float3x3)g_World, input.normal);             \n\
         return output;                                                    \n\
     }                                                                     \n\
@@ -1569,23 +1569,23 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks( const hUint32* sizes, hUint32 count )
-    {
+    hdDX11ParameterConstantBlock* hdDX11RenderDevice::CreateConstantBlocks(const hUint32* sizes, void** initdatas, hUint32 count) {
         hdDX11ParameterConstantBlock* constBlocks = hNEW_ARRAY(GetGlobalHeap()/*!heap*/, hdDX11ParameterConstantBlock, count);
-        for ( hUint32 i = 0; i < count; ++i )
-        {
+        for ( hUint32 i = 0; i < count; ++i ) {
             HRESULT hr;
-            D3D11_BUFFER_DESC desc;
-            hZeroMem( &desc, sizeof(desc) );
+            D3D11_BUFFER_DESC desc={0};
+            D3D11_SUBRESOURCE_DATA resdata={0};
+            D3D11_SUBRESOURCE_DATA* initdata=initdatas ? &resdata : NULL;
+            //hZeroMem( &desc, sizeof(desc) );
+            resdata.pSysMem=initdatas ? initdatas[i] : NULL;
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
             desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.ByteWidth = sizes[i];
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            hr = d3d11Device_->CreateBuffer( &desc, NULL, &constBlocks[i].constBuffer_ );
+            hr = d3d11Device_->CreateBuffer( &desc, initdata, &constBlocks[i].constBuffer_ );
             hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", constBlocks[i].constBuffer_);
             hcAssert( SUCCEEDED( hr ) );
             constBlocks[i].size_ = sizes[i];
-            constBlocks[i].mapData_ = hHeapMalloc(GetGlobalHeap(), sizes[i]);
         }
 
         return constBlocks;
@@ -1601,7 +1601,6 @@ namespace Heart
         {
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", constBlocks[i].constBuffer_);
             constBlocks[i].constBuffer_->Release();
-            hHeapFree(GetGlobalHeap(), constBlocks[i].mapData_);
             constBlocks[i].constBuffer_ = NULL;
             constBlocks[i].size_ = 0;
         }

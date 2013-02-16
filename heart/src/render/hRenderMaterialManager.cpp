@@ -263,7 +263,7 @@ namespace Heart
         block.data_ = hHeapMalloc(GetGlobalHeap(), block.dataSize_);
 
         //create the const block
-        block.constBlock_ = m->renderer_->CreateConstantBlocks(&block.dataSize_, 1);
+        block.constBlock_ = m->renderer_->CreateConstantBlocks(&block.dataSize_, NULL, 1);
 
         //Copy data across to str pool
         hChar* strPtr = block.strPool_;

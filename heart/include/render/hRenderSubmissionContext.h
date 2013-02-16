@@ -113,7 +113,6 @@ namespace Heart
         void    Unmap(hTextureMapInfo* outInfo);
         void    Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
         void    Unmap(hConstBlockMapInfo* info);
-        void    Update(hdParameterConstantBlock* cb) { impl_.Update(cb); }
 
     private:
 

@@ -38,7 +38,6 @@ namespace Heart
     {
         ID3D11Buffer*    constBuffer_;
         hUint32          size_;
-        void*            mapData_;
     };
 
     class HEART_DLLEXPORT hdDX11ShaderProgram
@@ -61,8 +60,8 @@ namespace Heart
         hUint32                         GetConstantBlockCount() const;
         void                            GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc);
         hUint32                         GetConstantBlockRegister(hShaderParameterID id) const;
-        hUint32                         GetShaderParameterCount();
-        hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param);
+        hUint32                         GetShaderParameterCount() const;
+        hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param) const;
         hUint32                         GetInputRegister(const hChar* name) const;
         hUint32                         GetInputRegister(hShaderParameterID id) const;
         hdDX11VertexLayout*             createVertexLayout(hInputLayoutDesc* desc, hUint n) const;

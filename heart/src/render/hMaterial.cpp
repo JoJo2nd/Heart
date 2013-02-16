@@ -116,6 +116,9 @@ namespace Heart
                 defaultSamplers_[i].samplerState_ = NULL;
             }
         }
+
+        defaultDataSize_=0;
+        hHeapFreeSafe(memHeap_, defaultData_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -344,9 +347,15 @@ namespace Heart
                                         alreadyAdded = hTrue;
                                     }
                                 }
-                                if (!alreadyAdded && !dontcreatecb) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                                if (!alreadyAdded && !dontcreatecb) {
+                                    void* initdata=hAlloca(desc.size_);
+                                    initConstBlockBufferData(prog, desc, initdata, desc.size_);
+                                    globalCB = renderer_->CreateConstantBlocks(&desc.size_, &initdata, 1);
+                                }
                             }
-                            if (globalCB) matInst->BindConstanstBuffer(cbID, globalCB);
+                            if (globalCB) {
+                                matInst->BindConstanstBuffer(cbID, globalCB);
+                            }
                         }
                     }
                 }
@@ -447,9 +456,13 @@ namespace Heart
                                         alreadyAdded = hTrue;
                                     }
                                 }
-                                if (!alreadyAdded) globalCB = renderer_->CreateConstantBlocks(&desc.size_, 1);
+                                if (!alreadyAdded) {
+                                    globalCB = renderer_->CreateConstantBlocks(&desc.size_, NULL, 1);
+                                }
                             }
-                            if (globalCB) BindConstanstBuffer(cbID, globalCB);
+                            if (globalCB) {
+                                BindConstanstBuffer(cbID, globalCB);
+                            }
                         }
                     }
                 }
@@ -462,6 +475,48 @@ namespace Heart
         }
 
         return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::addDefaultParameterValue(const hChar* paramName, void* data, hUint size) {
+        hcAssert(paramName && data && size > 0);
+        hDefaultParameterValue defVal={0};
+        hStrCopy(defVal.parameterName, hMAX_PARAMETER_NAME_LEN, paramName);
+        defVal.dataOffset=defaultDataSize_;
+        defVal.dataSize=size;
+        defVal.parameterNameHash=hCRC32::StringCRC(defVal.parameterName);
+        defaultDataSize_+=size;
+        defaultData_=(hUint8*)hHeapRealloc(memHeap_, defaultData_, defaultDataSize_);
+        hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, size);
+        defaultValues_.PushBack(defVal);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::initConstBlockBufferData(const hShaderProgram* prog, const hConstantBlockDesc& desc, void* outinitdata, hUint totaloutsize) const {
+        hcAssert(prog && outinitdata);
+        hZeroMem(outinitdata, totaloutsize);
+        for (hUint i=0,n=prog->GetShaderParameterCount(); i<n; ++i) {
+            hShaderParameter sparam;
+            prog->GetShaderParameter(i, &sparam);
+            for (hUint dvi=0,dvn=defaultValues_.GetSize(); dvi<dvn; ++dvi) {
+                if (hStrCmp(defaultValues_[dvi].parameterName, sparam.name_)==0) {
+                    hcAssertMsg(defaultValues_[dvi].dataSize <= sparam.size_, "Parameter default data is larger than actual shader data");
+                    hUint copysize=hMin(defaultValues_[dvi].dataSize, sparam.size_);
+                    hUint8* src=defaultData_+defaultValues_[dvi].dataOffset;
+                    hUint8* dst=(hUint8*)outinitdata+sparam.cReg_;
+                    hcAssertMsg(defaultValues_[dvi].dataOffset+copysize <= totaloutsize, "Input buffer isn't large enough for all data");
+                    if (defaultValues_[dvi].dataOffset+copysize < totaloutsize) {
+                        hMemCpy(dst, src, copysize);
+                    }
+                }
+            }
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

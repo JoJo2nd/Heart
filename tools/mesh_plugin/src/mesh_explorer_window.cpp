@@ -62,7 +62,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     s_defaultPaneInfo.MaximizeButton(true);
     s_defaultPaneInfo.MinimizeButton(true);
     s_defaultPaneInfo.CaptionVisible(true);
-    s_defaultPaneInfo.Show(true);
+    s_defaultPaneInfo.Show(false);
     s_defaultPaneInfo.MinSize(400, 350); 
 
     pkgSystem_=pkgSys;
@@ -506,4 +506,5 @@ int MeshExplorerWindow::getCurrentLodIdx() const {
 const MeshLodLevel* MeshExplorerWindow::getCurrentLod() const {
     return &currentMesh_->getLodLevel(getCurrentLodIdx());
 } 
+
 

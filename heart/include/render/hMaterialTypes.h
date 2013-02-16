@@ -32,12 +32,9 @@ namespace Heart
 {
     enum hParameterType
     {
-        ePTFloat1,
-        ePTFloat2,
-        ePTFloat3,
-        ePTFloat4,
-        ePTFloat3x3,
-        ePTFloat4x4,
+        ePTFloat,
+        ePTInt,
+        ePTColour,
 
         ePTNone = ~0U
     };

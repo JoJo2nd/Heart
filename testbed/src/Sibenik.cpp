@@ -107,8 +107,7 @@ void Sibenik::RenderUnitTest()
 
     drawCtx_.Begin(renderer);
 
-    for (hUint32 i = 0; i < lodobjects; ++i)
-    {
+    for (hUint32 i = 0; i < lodobjects; ++i) {
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 

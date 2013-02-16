@@ -53,8 +53,8 @@ void updateCameraFirstPerson(hFloat delta, const Heart::hdGamepad& pad, Heart::h
     movement =  scale(camRight, pad.GetAxis(HEART_PAD_LEFT_STICKX).anologueVal_*speed);
     movement += scale(dir, pad.GetAxis(HEART_PAD_LEFT_STICKY).anologueVal_*speed);
 
-    movement += (pad.GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(up, -speed) : hVec3Func::zeroVector());
-    movement += (pad.GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(up, speed) : hVec3Func::zeroVector());
+    movement += (pad.GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(up, speed) : hVec3Func::zeroVector());
+    movement += (pad.GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(up, -speed) : hVec3Func::zeroVector());
 
     angleXZ = hMatrixFunc::mult(dir, hMatrixFunc::rotate(angleSpeed*pad.GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, up));
     angleYZ = hMatrixFunc::mult(dir, hMatrixFunc::rotate(angleSpeed*pad.GetAxis(HEART_PAD_RIGHT_STICKY).anologueVal_, camRight));

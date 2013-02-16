@@ -195,6 +195,8 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 
 void ViewerMainFrame::evtClose( wxCloseEvent& evt )
 {
+    moduleSystem_.shutdown();
+
     evt.Skip();
 }
 

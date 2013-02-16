@@ -51,6 +51,7 @@ MeshModule::~MeshModule() {
 void MeshModule::initialise(const vModuleInitStruct& initdata) {
     vMenuIDProvider* idprov=initdata.menuIDProvider;
     wxMenu* menu=new wxMenu();
+    aui_=initdata.aui;
     menu->Append(idprov->aquireMenuID(MENUID_SHOWINSPECTOR), "Show Mesh Explorer");
     menu->Append(idprov->aquireMenuID(MENUID_NEW), "New...");
     menu->Append(idprov->aquireMenuID(MENUID_LOAD), "Load IMF...");
@@ -60,7 +61,8 @@ void MeshModule::initialise(const vModuleInitStruct& initdata) {
     initdata.menu->Append(menu, "Mesh Explorer");
     meshExplorer_=new MeshExplorerWindow(initdata.parent, idprov, menu, initdata.pgkSystem);
     initdata.aui->AddPane(meshExplorer_, MeshExplorerWindow::getDefaultAuiPaneInfo());
-    //TODO:Bind events...
+   
+    menu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshModule::onShow, this, idprov->getMenuID(MENUID_SHOWINSPECTOR));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -117,4 +119,14 @@ void MeshModule::engineRender(Heart::hHeartEngine*) {
 
 void MeshModule::deactvate() {
 
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MeshModule::onShow(wxCommandEvent& evt) {
+    wxAuiPaneInfo& info=aui_->GetPane(MeshExplorerWindow::getDefaultAuiPaneInfo().name);
+    info.Show(true);
+    aui_->Update();
 }

@@ -28,6 +28,7 @@
 #include "plugin_defines.h"
 #include "viewer_api.h"
 
+class wxCommandEvent;
 class MeshExplorerWindow;
 
 class MeshModule : public vModuleBase
@@ -45,5 +46,9 @@ public:
     virtual void engineRender(Heart::hHeartEngine*);
     virtual void deactvate();
 private:
+
+    void onShow(wxCommandEvent& evt);
+
+    wxAuiManager*       aui_;
     MeshExplorerWindow* meshExplorer_;
 };

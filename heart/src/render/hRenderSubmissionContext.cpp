@@ -219,7 +219,7 @@ namespace Heart
     {
         hUint32 size = sizeof( hInstanceConstants );
         renderer_ = renderer;
-        instanceConstantsBlock_ = renderer->CreateConstantBlocks( &size, 1 );
+        instanceConstantsBlock_ = renderer->CreateConstantBlocks(&size, NULL, 1);
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hdDX11ShaderProgram::GetShaderParameterCount()
+    hUint32 hdDX11ShaderProgram::GetShaderParameterCount() const
     {
         hUint32 params = 0;
         D3D11_SHADER_DESC desc;
@@ -53,7 +53,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11ShaderProgram::GetShaderParameter( hUint32 i, hShaderParameter* param )
+    hBool hdDX11ShaderProgram::GetShaderParameter( hUint32 i, hShaderParameter* param ) const
     {
         hcAssert( param );
         HRESULT hr;
@@ -78,7 +78,7 @@ namespace Heart
 
                 hStrCopy(param->name_.GetBuffer(), param->name_.GetMaxSize(), varDesc.Name);
                 param->size_    = varDesc.Size;
-                param->cBuffer_ = bindInfo.BindPoint;
+                param->cBufferBindPoint_ = bindInfo.BindPoint;
                 param->cReg_    = varDesc.StartOffset;
 
                 return hTrue;
@@ -142,7 +142,7 @@ namespace Heart
         constInfo->GetDesc( &bufInfo );
         shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
 
-        ret->reg_ = bindInfo.BindPoint;
+        ret->bindPoint_ = bindInfo.BindPoint;
         ret->size_ = bufInfo.Size;
         hStrCopy(ret->name_, ret->name_.GetMaxSize(), bufInfo.Name);
 

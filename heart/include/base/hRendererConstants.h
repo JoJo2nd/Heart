@@ -125,7 +125,7 @@ namespace Heart
     {
         hArray< hChar, 32 >     name_;
         hUint32                 size_;
-        hUint32                 reg_;
+        hUint32                 bindPoint_;
         hUint32                 hash_;
     };
 
@@ -136,7 +136,7 @@ namespace Heart
         hShaderParameter() 
             : size_(0)
             , cReg_(0)
-            , cBuffer_(0)
+            , cBufferBindPoint_(0)
         {
             hZeroMem(name_,sizeof(name_));
         }
@@ -144,7 +144,7 @@ namespace Heart
         hArray< hChar, 32 >                 name_; 
         hUint32                             size_;
         hUint32                             cReg_;
-        hUint32                             cBuffer_;
+        hUint32                             cBufferBindPoint_;
     };
 
     struct hMipDesc

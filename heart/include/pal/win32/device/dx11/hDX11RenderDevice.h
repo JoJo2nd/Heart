@@ -67,7 +67,7 @@ namespace Heart
         hdDX11ShaderProgram*            compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
         hdDX11ShaderProgram*            CompileShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
         void                            DestroyShader(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
-        hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, hUint32 count);
+        hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, void** initdatas, hUint32 count);
         void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
         void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
         hdDX11Texture*                  CreateTextureDevice( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );

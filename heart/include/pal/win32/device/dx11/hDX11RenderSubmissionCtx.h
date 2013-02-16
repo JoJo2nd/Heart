@@ -158,7 +158,6 @@ namespace Heart
         void    Unmap(hdDX11VertexBuffer* vb, void* ptr);
         void    Map(hdDX11ParameterConstantBlock* vb, hdDX11MappedResourceData* data);
         void    Unmap(hdDX11ParameterConstantBlock* vb, void* ptr);
-        void    Update(hdDX11ParameterConstantBlock* cb);
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
         void                    SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth );

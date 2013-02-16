@@ -59,6 +59,7 @@ public:
     void getModuleList(std::vector< ModuleDesc >* outarray) const;
     void switchToModule();
     boost::shared_ptr< vModuleBase > getActiveModule() const;
+    void shutdown();
 
 private:
 
