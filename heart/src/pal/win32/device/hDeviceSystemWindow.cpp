@@ -172,13 +172,15 @@ namespace Heart
             PostQuitMessage( 0 );
             exitSignal_.Signal();
             return 0;
-        case WM_ACTIVATE:
-            {
-
+        case WM_ACTIVATE: {
+                hasFocus_ = LOWORD(wParam) != WA_INACTIVE;
+                hcPrintf("Window Focus[%s]", hasFocus_ ? "true" : "false");
             }
             return 0;
         case WM_SIZE: {
                 hcPrintf("Size Event: Width %u, Height %u", LOWORD(lParam), HIWORD(lParam));
+                wndWidth_=LOWORD(lParam);
+                wndHeight_=HIWORD(lParam);
             }
             return 0;
         case WM_MOUSEMOVE:

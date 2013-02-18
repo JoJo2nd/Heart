@@ -30,10 +30,7 @@
 
 namespace Heart
 {
-    class hdDX11RenderSubmissionCtx;
-    class hdDX11VertexBuffer;
-    class hdDX11Texture;
-    class hdDX11ShaderProgram;
+    hFUNCTOR_TYPEDEF(void(*)(hUint width, hUint height), hDeviceResizeCallback);
 
     struct HEART_DLLEXPORT hRenderDeviceSetup
     {
@@ -59,7 +56,9 @@ namespace Heart
         
         hUint32                         GetWidth() const { return width_; }
         hUint32                         GetHeight() const { return height_; }
-
+        hdDX11Texture*                  getDeviceBackBuffer() { return &backBufferTex_; }
+        hdDX11Texture*                  getDeviceDepthBuffer() { return &depthBufferTex_; }
+        void                            setResizeCallback(hDeviceResizeCallback cb) { resizeCallback_ = cb; }
         hUint32                         computeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         static hShaderProfile           getProfileFromString(const hChar* str);
         static const hChar*             getShaderProfileString(hShaderProfile profile) { hcAssert(profile < eShaderProfile_Max); return s_shaderProfileNames[profile]; }
@@ -118,6 +117,8 @@ namespace Heart
         ID3D11RenderTargetView*     renderTargetView_;
         ID3D11Texture2D*            depthStencil_;
         ID3D11DepthStencilView*     depthStencilView_;
+        hdDX11Texture               backBufferTex_;
+        hdDX11Texture               depthBufferTex_;
         hdW32Mutex                  resourceMutex_;
         BlendStateMapType           blendStates_;
         RasterizerStateMapType      rasterizerStates_;
@@ -126,6 +127,7 @@ namespace Heart
         ID3D11Query*                timerDisjoint_;
         ID3D11Query*                timerFrameStart_;
         ID3D11Query*                timerFrameEnd_;
+        hDeviceResizeCallback       resizeCallback_;
     };
 
 }

@@ -325,7 +325,6 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
 
         hr = d3d11Device_->CreateRenderTargetView( pBackBuffer, NULL, &renderTargetView_ );
-        pBackBuffer->Release();
         hcAssert( SUCCEEDED( hr ) );
 
         // Create depth stencil texture
@@ -356,6 +355,17 @@ namespace Heart
 
         mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
 
+        //update textures
+        backBufferTex_.shaderResourceView_=NULL;
+        backBufferTex_.depthStencilView_=NULL;
+        backBufferTex_.dx11Texture_=pBackBuffer;
+        backBufferTex_.renderTargetView_=renderTargetView_;
+
+        depthBufferTex_.shaderResourceView_=NULL;
+        depthBufferTex_.depthStencilView_=depthStencilView_;
+        depthBufferTex_.dx11Texture_=depthStencil_;
+        depthBufferTex_.renderTargetView_=NULL;
+
         D3D11_QUERY_DESC qdesc;
         qdesc.MiscFlags = 0;
 
@@ -384,6 +394,15 @@ namespace Heart
         timerFrameStart_->Release();
         timerFrameEnd_->Release();
 
+        if (backBufferTex_.dx11Texture_) {
+            backBufferTex_.dx11Texture_->Release();
+        }
+        if (backBufferTex_.shaderResourceView_) {
+            backBufferTex_.shaderResourceView_->Release();
+        }
+        if (depthBufferTex_.shaderResourceView_) {
+            depthBufferTex_.shaderResourceView_->Release();
+        }
         if( mainDeviceCtx_ ) 
         {
             mainDeviceCtx_->ClearState();
@@ -470,6 +489,84 @@ namespace Heart
             mainDeviceCtx_->End(timerFrameEnd_);
             mainDeviceCtx_->End(timerDisjoint_);
         }
+
+        if (width_ != sysWindow_->getWindowWidth() || height_ != sysWindow_->getWindowHeight()) {
+            if (sysWindow_->getWindowWidth() > 0 && sysWindow_->getWindowHeight() > 0) {
+                HRESULT hr;
+                ID3D11Texture2D* backBufferTex;
+
+                width_ =sysWindow_->getWindowWidth();
+                height_=sysWindow_->getWindowHeight();
+                //Resize the back buffers
+                // Release all outstanding references to the swap chain's buffers. 
+                // Otherwise ResizeBuffers will fail!
+                mainDeviceCtx_->OMSetRenderTargets(0, 0, 0);
+                renderTargetView_->Release();
+                if (backBufferTex_.dx11Texture_) {
+                    backBufferTex_.dx11Texture_->Release();
+                    backBufferTex_.dx11Texture_=NULL;
+                }
+                // Preserve the existing buffer count and format.
+                // Automatically choose the width and height to match the client rect for HWNDs.
+                hr = mainSwapChain_->ResizeBuffers(0, width_, height_, DXGI_FORMAT_UNKNOWN, 0);
+                // TODO:Perform error handling here!
+                // Get buffer and create a render-target-view.
+                hr = mainSwapChain_->GetBuffer(0, __uuidof( ID3D11Texture2D),(void**)&backBufferTex);
+                // TODO: Perform error handling here!
+                hr = d3d11Device_->CreateRenderTargetView(backBufferTex, NULL, &renderTargetView_);
+
+                if ( depthStencilView_ ) {
+                    depthStencilView_->Release();
+                    depthStencilView_=NULL;
+                }
+                if ( depthStencil_ ) {
+                    depthStencil_->Release();
+                    depthStencil_=NULL;
+                }
+                // Create depth stencil texture
+                D3D11_TEXTURE2D_DESC descDepth;
+                ZeroMemory( &descDepth, sizeof(descDepth) );
+                descDepth.Width = width_;
+                descDepth.Height = height_;
+                descDepth.MipLevels = 1;
+                descDepth.ArraySize = 1;
+                descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+                descDepth.SampleDesc.Count = 1;
+                descDepth.SampleDesc.Quality = 0;
+                descDepth.Usage = D3D11_USAGE_DEFAULT;
+                descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+                descDepth.CPUAccessFlags = 0;
+                descDepth.MiscFlags = 0;
+                hr = d3d11Device_->CreateTexture2D(&descDepth, NULL, &depthStencil_);
+                hcAssert( SUCCEEDED( hr ) );
+
+                // Create the depth stencil view
+                D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+                ZeroMemory( &descDSV, sizeof(descDSV) );
+                descDSV.Format = descDepth.Format;
+                descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                descDSV.Texture2D.MipSlice = 0;
+                hr = d3d11Device_->CreateDepthStencilView(depthStencil_, &descDSV, &depthStencilView_);
+                hcAssert( SUCCEEDED( hr ) );
+
+                //update textures
+                backBufferTex_.shaderResourceView_=NULL;
+                backBufferTex_.depthStencilView_=NULL;
+                backBufferTex_.dx11Texture_=backBufferTex;
+                backBufferTex_.renderTargetView_=renderTargetView_;
+               
+                depthBufferTex_.shaderResourceView_=NULL;
+                depthBufferTex_.depthStencilView_=depthStencilView_;
+                depthBufferTex_.dx11Texture_=depthStencil_;
+                depthBufferTex_.renderTargetView_=NULL;
+
+                mainDeviceCtx_->OMSetRenderTargets(1, &renderTargetView_, depthStencilView_);
+
+                if (resizeCallback_.isValid()) {
+                    resizeCallback_(width_, height_);
+                }
+            }
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -484,7 +581,6 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", rsc);
         ctx->SetDeviceCtx( rsc, alloc_, free_ );
-        ctx->SetDefaultTargets( renderTargetView_, depthStencilView_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -505,7 +601,6 @@ namespace Heart
     void hdDX11RenderDevice::InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx )
     {
         ctx->SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
-        ctx->SetDefaultTargets( renderTargetView_, depthStencilView_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -704,7 +799,7 @@ namespace Heart
         case TFORMAT_GR16F:         desc.Format = DXGI_FORMAT_R16G16_FLOAT; break;
         case TFORMAT_ABGR16F:       desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
         case TFORMAT_R32F:          desc.Format = DXGI_FORMAT_R32_FLOAT; break;
-        case TFORMAT_D32F:          desc.Format = DXGI_FORMAT_R32_FLOAT; break;
+        case TFORMAT_D32F:          desc.Format = DXGI_FORMAT_R32_TYPELESS; break;
         case TFORMAT_D24S8F:        desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
         case TFORMAT_L8:            desc.Format = DXGI_FORMAT_A8_UNORM; break;
         case TFORMAT_DXT5:          desc.Format = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
@@ -723,12 +818,15 @@ namespace Heart
 
         D3D11_SUBRESOURCE_DATA* dataptr = (D3D11_SUBRESOURCE_DATA*)hAlloca(sizeof(D3D11_SUBRESOURCE_DATA)*desc.MipLevels+2);
         
-        if ( initialData )
-        {
+        if ( initialData ) {
             for (hUint32 i = 0; i < desc.MipLevels; ++i)
             {
                 D3D11_SUBRESOURCE_DATA& data = dataptr[i];
                 data.pSysMem          = initialData[i].data;
+                if (!data.pSysMem) {
+                    dataptr=NULL;
+                    break;
+                }
                 if ( compressedFormat )
                 {
                     //D3D want the number of 4x4 blocks in the first row of the texture
@@ -747,6 +845,8 @@ namespace Heart
                 }
                 data.SysMemSlicePitch = 0;
             }
+        } else {
+            dataptr=NULL;
         }
 
         hr = d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );

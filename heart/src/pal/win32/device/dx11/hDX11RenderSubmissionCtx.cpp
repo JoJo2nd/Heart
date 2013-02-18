@@ -313,42 +313,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderTarget( hUint32 idx , hdDX11Texture* target )
-    {
-        if ( !target && idx == 0)
-        {
-            renderTargetViews_[0] = defaultRenderView_;
-        }
-        else if ( !target )
-        {
-            renderTargetViews_[idx] = NULL;
-        }
-        else
-        {
-            hcAssertMsg( target->renderTargetView_, "Texture not created with RESOURCE_RENDERTARGET flag" );
-            renderTargetViews_[idx] = target->renderTargetView_;
-        }
-
-        device_->OMSetRenderTargets( 4, renderTargetViews_, depthStencilView_ );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetDepthTarget( hdDX11Texture* depth )
-    {
-        if ( !depth )
-        {
-            depthStencilView_ = defaultDepthView_;
-        }
-        else
-        {
-            depthStencilView_ = depth->depthStencilView_;
-        }
-
-        //if ( depthStencilView_ != depth->depthStencilView_ )
-        device_->OMSetRenderTargets( 4, renderTargetViews_, depthStencilView_ );
+    void hdDX11RenderSubmissionCtx::setTargets(hUint32 n, hdDX11Texture** target, hdDX11Texture* depth) {
+        device_->OMSetRenderTargets(n, renderTargetViews_, depthStencilView_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -389,14 +355,15 @@ namespace Heart
     {
         if ( clearColour )
         {
-            for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i )
-            {
-                if ( renderTargetViews_[i] )
+            for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i ) {
+                if ( renderTargetViews_[i] ) {
                     device_->ClearRenderTargetView( renderTargetViews_[i], (FLOAT*)&colour );
+                }
             }
         }
-        if ( clearZ )
+        if ( clearZ ) {
             device_->ClearDepthStencilView( depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0 );
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -592,18 +559,6 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
     {
         device_->Unmap(cb->constBuffer_, 0);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderSubmissionCtx::SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth )
-    {
-        defaultRenderView_ = target; 
-        defaultDepthView_ = depth;
-        renderTargetViews_[0] = defaultRenderView_;
-        depthStencilView_ = defaultDepthView_;
     }
 
 }

@@ -89,12 +89,10 @@ namespace Heart
 
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         void                  RunCommandBuffer(hdRenderCommandBuffer cmdBuf);
-        //Raw Functions
-
+        
+        void    setTargets(hUint32 n, hTexture** targets, hTexture* depth);
         void    SetInputStreams(hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
         void    SetRenderInputObject(hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
-        void    SetRenderTarget(hUint32 idx , hTexture* pTarget);
-        void    SetDepthTarget(hTexture* depth);
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);

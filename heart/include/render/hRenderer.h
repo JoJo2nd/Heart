@@ -173,6 +173,8 @@ namespace Heart
         hResourceManager*										resourceManager_;
         hRenderMaterialManager                                  materialManager_;
         hRenderSubmissionCtx                                    mainSubmissionCtx_;
+        hTexture*                                               backBuffer_;
+        hTexture*                                               depthBuffer_;
         hShaderProgram*                                         debugShaders_[eDebugShaderMax];
 
         hUint32                                                 scratchBufferSize_;

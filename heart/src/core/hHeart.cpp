@@ -125,7 +125,7 @@ namespace Heart
         RegisterDefaultComponents();
 
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
-        renderer_->GetMaterialManager()->OpenLuaMaterialLib(luaVM_->GetMainState());
+        renderer_->GetMaterialManager()->openLuaMaterialLib(luaVM_->GetMainState());
 
         //Run the start up script
         hIFile* startupscript = fileMananger_->OpenFileRoot("SCRIPT/startup.lua", FILEMODE_READ);

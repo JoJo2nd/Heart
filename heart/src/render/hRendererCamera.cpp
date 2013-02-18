@@ -186,8 +186,8 @@ namespace Heart
         ReleaseRenderTargetSetup();
 
         setup_ = desc;
-        hcAssert( setup_.nTargets_ < MAX_TARGETS );
-        hZeroMem( renderTargets_, sizeof(renderTargets_) );
+        hcAssert(setup_.nTargets_ < MAX_TARGETS);
+        hZeroMem(renderTargets_, sizeof(renderTargets_));
         depthTarget_ = NULL;
 
         for ( hUint32 i = 0; i < setup_.nTargets_; ++i )

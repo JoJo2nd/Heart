@@ -99,7 +99,7 @@ namespace Heart
         hUint32                     cursorOffsetX_;
         hUint32                     cursorOffsetY_;
         WNDPROC                     procChain_;
-
+        hBool                       hasFocus_;
         hBool                       ownWindow_;
         hdKeyboard		            keyboard_;
         hdMouse                     mouse_;

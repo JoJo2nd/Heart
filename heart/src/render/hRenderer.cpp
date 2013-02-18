@@ -101,6 +101,24 @@ namespace Heart
 
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
 
+        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
+        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
+        backBuffer_->SetImpl(getDeviceBackBuffer());
+        depthBuffer_->SetImpl(getDeviceDepthBuffer());
+
+        const hChar* bbalias[] = {
+            "back_buffer",
+            "g_back_buffer",
+        };
+        materialManager_.registerGlobalTexture("back_buffer", backBuffer_, bbalias, hStaticArraySize(bbalias));
+        const hChar* dbalias[] = {
+            "depth_buffer",
+            "g_depth_buffer",
+            "z_buffer",
+            "g_z_buffer",
+        };
+        materialManager_.registerGlobalTexture("depth_buffer", depthBuffer_, dbalias, hStaticArraySize(dbalias));
+
         createDebugShadersInternal();
 
     }
@@ -161,23 +179,22 @@ namespace Heart
 
     void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex )
     {
+        hcAssert(initialData);
         hcAssert(levels > 0);
 
         (*outTex) = hNEW(heap, hTexture)(this, heap);
 
         (*outTex)->nLevels_ = levels;
         (*outTex)->format_ = format;
+        (*outTex)->flags_ = flags;
         (*outTex)->levelDescs_ = levels ? hNEW_ARRAY(heap, hTexture::LevelDesc, levels) : NULL;
 
         for (hUint32 i = 0; i < levels; ++i)
         {
             (*outTex)->levelDescs_[ i ].width_ = initialData[i].width;
             (*outTex)->levelDescs_[ i ].height_ = initialData[i].height;
-            if (initialData)
-            {
-                (*outTex)->levelDescs_[ i ].mipdata_ = initialData[i].data;
-                (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
-            }
+            (*outTex)->levelDescs_[ i ].mipdata_ = initialData[i].data;
+            (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
         }
 
         hdTexture* dt = ParentClass::CreateTextureDevice( width, height, levels, format, initialData, flags );
@@ -359,11 +376,16 @@ namespace Heart
         camera->UpdateParameters(ctx);
         hUint32 retTechMask = camera->GetTechniqueMask();
 
-        ctx->SetRenderTarget(0, camera->GetRenderTarget(0));
-        ctx->SetRenderTarget(1, camera->GetRenderTarget(1));
-        ctx->SetRenderTarget(2, camera->GetRenderTarget(2));
-        ctx->SetRenderTarget(3, camera->GetRenderTarget(3));
-        ctx->SetDepthTarget(camera->GetDepthTarget());
+//         ctx->SetRenderTarget(0, camera->GetRenderTarget(0));
+//         ctx->SetRenderTarget(1, camera->GetRenderTarget(1));
+//         ctx->SetRenderTarget(2, camera->GetRenderTarget(2));
+//         ctx->SetRenderTarget(3, camera->GetRenderTarget(3));
+//         ctx->SetDepthTarget(camera->GetDepthTarget());
+        //TEMP
+        hTexture* targets[] = {
+            backBuffer_
+        };
+        ctx->setTargets(1, targets, depthBuffer_);
         ctx->SetViewport(camera->GetViewport());
 
         return retTechMask;

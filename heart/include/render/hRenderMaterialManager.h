@@ -86,7 +86,12 @@ namespace Heart
         hdParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
         hdParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
         hdParameterConstantBlock*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
-        void                        OpenLuaMaterialLib(lua_State* L);
+        void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount);
+        void                        resizeGlobalTexture(const hChar* name, hUint width, hUint height);
+        void                        updateGlobalTexture(const hChar* name, hTexture* tex);
+        hTexture*                   getGlobalTexture(const hChar* name);
+        hTexture*                   getGlobalTextureByAlias(const hChar* alias);
+        void                        openLuaMaterialLib(lua_State* L);
 
     private:
 
@@ -109,13 +114,33 @@ namespace Heart
             void*                     data_;
         };
 
+        struct hGlobalTexture : public hMapElement< hUint32, hGlobalTexture >
+        {
+            hTexture*     texture_;
+            hUint         strPoolSize_;
+            hChar*        strPool_;
+            const hChar*  name_;
+            hUint32       nameHash_;
+            hUint         aliasCount_;
+            const hChar** aliases_;
+            hUint32*      aliasHashes_;
+        };
+
         typedef hVector< hGlobalConstantBlock > ConstBlockArrayType;
         typedef hMap< hUint32, hGlobalConstantBlock > ConstBlockMapType;
+        typedef hMap< hUint32, hGlobalTexture > GloblaTextureMapType;
 
         static int RegisterParameterBlock(lua_State* L);
         static int RegisterRenderTechnique(lua_State* L);
+        static int registerGlobalTextureLua(lua_State* L);
+        static int registerResizeLua(lua_State* L);
+        static int getWindowSizeLua(lua_State* L);
+        static int resizeGlobalTextureLua(lua_State* L);
+
+        void onWindowResize(hUint width, hUint height);
 
         hRenderer*              renderer_;
+        lua_State*              mainLuaState_;
         hMutex                  accessMutex_;
         hUint32                 nMatKeys_;
         hUint32                 maxKeys_;
@@ -123,6 +148,7 @@ namespace Heart
         TechniqueArrayType      techniques_;
         ConstBlockArrayType     constBlocks_;
         ConstBlockMapType       constBlockLookUp_;
+        GloblaTextureMapType    globalTextures_;
         hMaterial*              wireframeMat_;
         hMaterial*              viewLitMat_;
         hMaterial*              consoleMat_;

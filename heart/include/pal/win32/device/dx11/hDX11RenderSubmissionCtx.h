@@ -139,15 +139,14 @@ namespace Heart
 
         void    SetInputStreams(hdDX11RenderStreamsObject* streams);
         void    SetRenderInputObject(hdDX11RenderInputObject* inputobj);
-        void	SetRenderStateBlock(hdDX11BlendState* st);
-        void	SetRenderStateBlock(hdDX11DepthStencilState* st);
-        void	SetRenderStateBlock(hdDX11RasterizerState* st);
-        void	SetRenderTarget(hUint32 idx , hdDX11Texture* target);
-        void    SetDepthTarget(hdDX11Texture* depth );
-        void	SetViewport(const hViewport& viewport);
-        void	SetScissorRect(const hScissorRect& scissor);
-        void	ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
-        void	DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
+        void    SetRenderStateBlock(hdDX11BlendState* st);
+        void    SetRenderStateBlock(hdDX11DepthStencilState* st);
+        void    SetRenderStateBlock(hdDX11RasterizerState* st);
+        void    setTargets(hUint32 idx, hdDX11Texture** target, hdDX11Texture* depth);
+        void    SetViewport(const hViewport& viewport);
+        void    SetScissorRect(const hScissorRect& scissor);
+        void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
+        void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx);
         void    Map(hdDX11Texture* tex, hUint32 level, hdDX11MappedResourceData* data);
@@ -160,7 +159,6 @@ namespace Heart
         void    Unmap(hdDX11ParameterConstantBlock* vb, void* ptr);
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
-        void                    SetDefaultTargets( ID3D11RenderTargetView* target, ID3D11DepthStencilView* depth );
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
 
     private:
@@ -170,8 +168,6 @@ namespace Heart
         D3D11_PRIMITIVE_TOPOLOGY primType_;
         hTempRenderMemAlloc      alloc_;
         hTempRenderMemFree       free_;
-        ID3D11RenderTargetView*  defaultRenderView_;
-        ID3D11DepthStencilView*  defaultDepthView_;
         ID3D11RenderTargetView*  renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView*  depthStencilView_;
         ID3D11DeviceContext*     device_;
