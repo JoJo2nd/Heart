@@ -150,13 +150,10 @@ void InstanceRenderTest::CreateRenderResources()
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
-    hRenderViewportTargetSetup rtDesc;
-    rtDesc.nTargets_ = 0;
-    rtDesc.width_ = w;
-    rtDesc.height_ = h;
-    rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8_sRGB;
-    rtDesc.hasDepthStencil_ = hFalse;
-    rtDesc.depthFormat_ = Heart::TFORMAT_D24S8F;
+    hRenderViewportTargetSetup rtDesc={0};
+    rtDesc.nTargets_=1;
+    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
+    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
 
     hViewport vp;
     vp.x_ = 0;

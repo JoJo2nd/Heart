@@ -314,7 +314,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hdDX11RenderSubmissionCtx::setTargets(hUint32 n, hdDX11Texture** target, hdDX11Texture* depth) {
-        device_->OMSetRenderTargets(n, renderTargetViews_, depthStencilView_);
+        ID3D11RenderTargetView* rtviews[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
+        for (hUint i=0; i<n; ++i) {
+            rtviews[i]=target[i] ? target[i]->renderTargetView_ : NULL;
+        }
+        device_->OMSetRenderTargets(n, rtviews, depth ? depth->depthStencilView_ : NULL);
     }
 
     //////////////////////////////////////////////////////////////////////////

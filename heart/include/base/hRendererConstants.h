@@ -117,6 +117,7 @@ namespace Heart
 #define HEART_MAX_INPUT_STREAMS                         (15) //Add more if needed
 #define HEART_MAX_RENDER_CAMERAS                        (15)
 #define HEART_MAX_GLOBAL_CONST_BLOCK_NAME_LEN           (64)
+#define HEART_MAX_SIMULTANEOUS_RENDER_TARGETS                               (8)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );
@@ -428,11 +429,11 @@ namespace Heart
 
     enum ResourceFlags
     {
-        RESOURCEFLAG_DYNAMIC				= 1 << 1,
-        RESOURCEFLAG_RENDERTARGET   		= 1 << 2,
-        RESOURCEFLAG_DEPTHTARGET    		= 1 << 3,
-        RESOURCEFLAG_KEEPCPUDATA            = 1 << 4,
-        RESOURCEFLAG_DONTOWNCPUDATA         = 1 << 5,
+        RESOURCEFLAG_DYNAMIC        = 1 << 1,
+        RESOURCEFLAG_RENDERTARGET   = 1 << 2,
+        RESOURCEFLAG_DEPTHTARGET    = 1 << 3,
+        RESOURCEFLAG_KEEPCPUDATA    = 1 << 4,
+        RESOURCEFLAG_DONTOWNCPUDATA = 1 << 5,
     };
 
     enum PrimitiveType

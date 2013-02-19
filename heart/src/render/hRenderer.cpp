@@ -385,7 +385,7 @@ namespace Heart
         hTexture* targets[] = {
             backBuffer_
         };
-        ctx->setTargets(1, targets, depthBuffer_);
+        ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
         ctx->SetViewport(camera->GetViewport());
 
         return retTechMask;
@@ -491,13 +491,10 @@ namespace Heart
 
         //Create viewport/camera for debug drawing
         hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
-        hRenderViewportTargetSetup rtDesc;
-        rtDesc.nTargets_ = 0;
-        rtDesc.width_ = GetWidth();
-        rtDesc.height_ = GetHeight();
-        rtDesc.targetFormat_ = Heart::TFORMAT_ARGB8_sRGB;
-        rtDesc.hasDepthStencil_ = hFalse;
-        rtDesc.depthFormat_ = Heart::TFORMAT_D24S8F;
+        hRenderViewportTargetSetup rtDesc = {0};
+        rtDesc.nTargets_=1;
+        rtDesc.targets_[0]=materialManager_.getGlobalTexture("back_buffer");
+        rtDesc.depth_=materialManager_.getGlobalTexture("depth_buffer");
 
         hViewport vp;
         vp.x_ = 0;

@@ -61,8 +61,7 @@ namespace Heart
         viewport_.width_ = 800;
         viewport_.height_ = 600;
 
-        hZeroMem( renderTargets_, sizeof(renderTargets_) );
-        depthTarget_ = NULL;
+        hZeroMem(&setup_, sizeof(setup_));
 
         cameraConstBlock_ = renderer_->GetMaterialManager()->GetGlobalConstantBlockByAlias("CameraConstants");
     }
@@ -179,26 +178,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRendererCamera::SetRenderTargetSetup( const hRenderViewportTargetSetup& desc )
+    void hRendererCamera::SetRenderTargetSetup(const hRenderViewportTargetSetup& desc)
     {
         hcAssertMsg( renderer_, "Call Initialise first!" );
-
         ReleaseRenderTargetSetup();
-
         setup_ = desc;
-        hcAssert(setup_.nTargets_ < MAX_TARGETS);
-        hZeroMem(renderTargets_, sizeof(renderTargets_));
-        depthTarget_ = NULL;
-
-        for ( hUint32 i = 0; i < setup_.nTargets_; ++i )
-        {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.targetFormat_, RESOURCEFLAG_RENDERTARGET, GetGlobalHeap(), &renderTargets_[i] );
-        }
-
-        if ( setup_.hasDepthStencil_ )
-        {
-            renderer_->CreateTexture( setup_.width_, setup_.height_, 1, NULL, setup_.depthFormat_, RESOURCEFLAG_DEPTHTARGET, GetGlobalHeap(), &depthTarget_ );
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -207,6 +191,7 @@ namespace Heart
 
     void hRendererCamera::ReleaseRenderTargetSetup()
     {
+#if 0
         for (hUint32 i = 0; i < MAX_TARGETS; ++i)
         {
             if (renderTargets_[i])
@@ -220,6 +205,8 @@ namespace Heart
             renderer_->DestroyTexture(depthTarget_);
             depthTarget_ = NULL;
         }
+#endif
+        hZeroMem(&setup_, sizeof(setup_));
     }
 
 }
