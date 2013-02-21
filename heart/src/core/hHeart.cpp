@@ -208,16 +208,16 @@ namespace Heart
             if (mainRender_)
                 (*mainRender_)( this );
             /*
-             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
-             **/
-            GetRenderer()->EndRenderFrame();
-            /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
              **/
             debugMenuManager_->RenderMenus(
                 GetRenderer()->GetMainSubmissionCtx(), 
                 GetRenderer()->GetMaterialManager());
+            /*
+             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
+             **/
+            GetRenderer()->EndRenderFrame();
             
             GetControllerManager()->EndOfFrameUpdate();
             hClock::EndTimer(frameTimer);

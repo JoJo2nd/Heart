@@ -35,6 +35,8 @@ DEFINE_HEART_UNIT_TEST(ComplexMesh1);
 #define RESOURCE_NAME ("LOSTEMPIRE")
 #define ASSET_PATH ("COMPLEXMESH1.LOSTEMPIRE")
 
+#define DO_Z_PRE_PASS 
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -101,34 +103,83 @@ hUint32 ComplexMesh1::RunUnitTest()
 
 void ComplexMesh1::RenderUnitTest()
 {
-    Heart::hRenderer* renderer = engine_->GetRenderer();
-    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
+    using namespace Heart;
+
+    hRenderSubmissionCtx* ctx = engine_->GetRenderer()->GetMainSubmissionCtx();
+    hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
-    const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
 
-    drawCtx_.Begin(renderer);
-
-    for (hUint32 i = 0; i < lodobjects; ++i)
+    const hRenderTechniqueInfo* techinfo = zPassCamera_.getTechniquePass();
+    nDrawCalls_=0;
+#ifdef DO_Z_PRE_PASS
+    for (hUint32 i = 0; i < lodobjects && nDrawCalls_ < MAX_DCS; ++i)
     {
         // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable = &lod->renderObjects_[i];
+        hRenderable* renderable = &lod->renderObjects_[i];
 
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        hFloat dist=hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        if (!tech) {
+            continue;
+        }
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
-            drawCtx_.SubmitDrawCall(drawCall_);
+            drawCall_[nDrawCalls_].sortKey_ = hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
+            hMaterialTechniquePass* passptr = tech->GetPass(pass);
+            drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
+            drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
+            drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
+            drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
+            drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
+            drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
+            drawCall_[nDrawCalls_].instanceCount_=0;
+            ++nDrawCalls_;
+            hcAssert(nDrawCalls_ < MAX_DCS);
+            if (nDrawCalls_ >= MAX_DCS) {
+                break;
+            }
         }
     }
-    drawCtx_.End();
+
+    hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
+    hRenderUtility::submitDrawCalls(ctx, &zPassCamera_, drawCall_, nDrawCalls_, eClearTarget_Depth);
+#endif
+    techinfo = camera_.getTechniquePass();
+    nDrawCalls_=0;
+
+    for (hUint32 i = 0; i < lodobjects && nDrawCalls_ < MAX_DCS; ++i)
+    {
+        // Should a renderable simply store a draw call?
+        hRenderable* renderable = &lod->renderObjects_[i];
+
+        hFloat dist=hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        if (!tech) {
+            continue;
+        }
+        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+            drawCall_[nDrawCalls_].sortKey_ = hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
+            hMaterialTechniquePass* passptr = tech->GetPass(pass);
+            drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
+            drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
+            drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
+            drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
+            drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
+            drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
+            drawCall_[nDrawCalls_].instanceCount_=0;
+            ++nDrawCalls_;
+            hcAssert(nDrawCalls_ < MAX_DCS);
+            if (nDrawCalls_ >= MAX_DCS) {
+                break;
+            }
+        }
+    }
+    
+    hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
+#ifdef DO_Z_PRE_PASS
+    hRenderUtility::submitDrawCalls(ctx, &camera_, drawCall_, nDrawCalls_, eClearTarget_Colour);
+#else
+    hRenderUtility::submitDrawCalls(ctx, &camera_, drawCall_, nDrawCalls_, eClearTarget_Colour|eClearTarget_Depth);
+#endif
 }
 
 
@@ -140,33 +191,52 @@ void ComplexMesh1::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
     rtDesc.nTargets_=1;
     rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
+#ifdef DO_Z_PRE_PASS
+    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("z_pre_pass");
+#else
     rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+#endif
 
     hViewport vp;
     vp.x_ = 0;
     vp.y_ = 0;
     vp.width_ = w;
     vp.height_ = h;
-
     camPos_ = Heart::hVec3(0.f, 40.f, -60.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    camera_.Initialise(renderer);
+    camera_.SetRenderTargetSetup(rtDesc);
+    camera_.SetFieldOfView(45.f);
+    camera_.SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera_.SetViewMatrix(vm);
+    camera_.SetViewport(vp);
+#ifdef DO_Z_PRE_PASS
+    camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("postzmain"));
+#else
+    camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+#endif
 
-    camera->SetRenderTargetSetup(rtDesc);
-    camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
-    camera->SetViewMatrix(vm);
-    camera->SetViewport(vp);
-    camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+    rtDesc.nTargets_=0;
+    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("z_pre_pass");
+    vp.x_ = 0;
+    vp.y_ = 0;
+    vp.width_ = w;
+    vp.height_ = h;
+    zPassCamera_.Initialise(renderer);
+    zPassCamera_.SetRenderTargetSetup(rtDesc);
+    zPassCamera_.SetFieldOfView(45.f);
+    zPassCamera_.SetProjectionParams( aspect, 0.1f, 1000.f);
+    zPassCamera_.SetViewMatrix(vm);
+    zPassCamera_.SetViewport(vp);
+    zPassCamera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("zprepass"));
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
 
@@ -180,10 +250,9 @@ void ComplexMesh1::CreateRenderResources()
 void ComplexMesh1::DestroyRenderResources()
 {
     using namespace Heart;
-    hRenderer* renderer = engine_->GetRenderer();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
 
-    camera->ReleaseRenderTargetSetup();
+    camera_.ReleaseRenderTargetSetup();
+    zPassCamera_.ReleaseRenderTargetSetup();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -193,13 +262,11 @@ void ComplexMesh1::DestroyRenderResources()
 void ComplexMesh1::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
-    hRenderer* renderer = engine_->GetRenderer();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
     hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
     updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    camera_.SetViewMatrix(vm);
+    zPassCamera_.SetViewMatrix(vm);
 }

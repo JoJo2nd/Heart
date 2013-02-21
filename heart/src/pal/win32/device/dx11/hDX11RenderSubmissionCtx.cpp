@@ -215,7 +215,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetInputStreams(hdDX11RenderStreamsObject* streams)
+    void hdDX11RenderSubmissionCtx::SetInputStreams(const hdDX11RenderStreamsObject* streams)
     {
         hcAssert(streams->layout_);
         hcAssertMsg(streams->streamUpper_ >= streams->streamLower_, "Render Stream Object contains an invalid stream count");
@@ -238,11 +238,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderInputObject(hdRenderInputObject* inputobj)
+    void hdDX11RenderSubmissionCtx::SetRenderInputObject(const hdRenderInputObject* inputobj)
     {
         device_->VSSetShader(inputobj->vertexShader_, NULL, 0);
         if (inputobj->vertexShader_) {
-            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
+            const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
             device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -250,7 +250,7 @@ namespace Heart
 
         device_->PSSetShader(inputobj->pixelShader_, NULL, 0);
         if (inputobj->pixelShader_) {
-            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11PixelProg;
+            const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11PixelProg;
             device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->PSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->PSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -258,7 +258,7 @@ namespace Heart
 
         device_->GSSetShader(inputobj->geometryShader_, NULL, 0);
         if (inputobj->geometryShader_) {
-            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11GemoProg;
+            const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11GemoProg;
             device_->GSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->GSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->GSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -266,7 +266,7 @@ namespace Heart
 
         device_->HSSetShader(inputobj->hullShader_, NULL, 0);
         if (inputobj->hullShader_) {
-            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11HullProg;
+            const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11HullProg;
             device_->HSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->HSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->HSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -274,7 +274,7 @@ namespace Heart
 
         device_->DSSetShader(inputobj->domainShader_, NULL, 0);
         if (inputobj->domainShader_) {
-            hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11DomainProg;
+            const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11DomainProg;
             device_->DSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
             device_->DSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
             device_->DSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
@@ -355,25 +355,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::ClearTarget( hBool clearColour, const hColour& colour, hBool clearZ, hFloat z )    
-    {
-        if ( clearColour )
-        {
-            for ( hUint32 i = 0; i < MAX_RENDERTARGE_VIEWS; ++i ) {
-                if ( renderTargetViews_[i] ) {
-                    device_->ClearRenderTargetView( renderTargetViews_[i], (FLOAT*)&colour );
-                }
-            }
-        }
-        if ( clearZ ) {
-            device_->ClearDepthStencilView( depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0 );
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hdDX11RenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 start )
     {
         hUint32 verts;
@@ -429,7 +410,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    Heart::hdDX11CommandBuffer hdDX11RenderSubmissionCtx::SaveToCommandBuffer()
+    hdDX11CommandBuffer hdDX11RenderSubmissionCtx::SaveToCommandBuffer()
     {
         hdDX11CommandBuffer ret;
         //We never save/restore state
@@ -563,6 +544,24 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
     {
         device_->Unmap(cb->constBuffer_, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::clearColour(hdDX11Texture* tex, const hColour& colour) {
+        hcAssert(tex);
+        device_->ClearRenderTargetView(tex->renderTargetView_,  (FLOAT*)&colour);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::clearDepth(hdDX11Texture* tex, hFloat z) {
+        hcAssert(tex);
+        device_->ClearDepthStencilView(tex->depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
     }
 
 }

@@ -82,7 +82,14 @@ namespace hRenderUtility
     hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex, hMemoryHeapBase* heap);
     HEART_DLLEXPORT
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex);
-}																					
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    HEART_DLLEXPORT
+    void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, const hDrawCall* dcs, hUint dcn, hUint32 clearflags);
+    HEART_DLLEXPORT
+    void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn);
+}
 }
 
 #endif // HRRENDERUTILITY_H__

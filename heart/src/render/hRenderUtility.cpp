@@ -768,5 +768,85 @@ namespace hRenderUtility
         rndr->DestroyTexture(tex);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEART_DLLEXPORT
+    void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, 
+    const hDrawCall* dcs, hUint dcn, hUint32 clearflags) {
+        HEART_PROFILE_FUNC();
+        camera->UpdateParameters(ctx);
+        ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
+        ctx->SetViewport(camera->GetViewport());
+        if ((clearflags&eClearTarget_Colour)==eClearTarget_Colour) {
+            // Should clear flags be on the camera?
+            for (hUint i=0; i<camera->getTargetCount(); ++i) {
+                ctx->clearColour(camera->getRenderTarget(i), BLACK);
+            }
+        }
+        if ((clearflags&eClearTarget_Depth)==eClearTarget_Depth) {
+            ctx->clearDepth(camera->getDepthTarget(), 1.f);
+        }
+
+        const hMaterial* material = NULL;
+        hMaterial* materialInst = NULL;
+        hUint32 lastMatKey = 0;
+        hUint32 pass = ~0U;
+        hUint32 tmask = ~0U;
+        for (hUint dc=0; dc < dcn; ++dc)
+        {
+            const hDrawCall* dcall = &dcs[dc];
+            // For masks check hBuildRenderSortKey()
+            hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
+            hUint32 nPass = (dcall->sortKey_&0xF);
+            hUint32 matKey = (dcall->sortKey_&0x3FFFFF); // stored in lower 28 bits
+
+            hBool newMaterial = matKey != lastMatKey;
+            lastMatKey = matKey;
+            //if (newMaterial){ //TODO flush correctly
+            ctx->SetRenderStateBlock(dcall->blendState_);
+            ctx->SetRenderStateBlock(dcall->depthState_);
+            ctx->SetRenderStateBlock(dcall->rasterState_);
+
+            ctx->SetRenderInputObject(dcall->progInput_);
+            ctx->SetInputStreams(&dcall->streams_);
+            if (dcall->instanceCount_) {
+                ctx->DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
+            }else{
+                ctx->DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    static int drawCallCompare(const void* lhs, const void* rhs)
+    {
+#if 1
+        if (((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_) {
+            return -1;
+        } else if ((((hDrawCall*)lhs)->sortKey_ > ((hDrawCall*)rhs)->sortKey_)) {
+            return 1;
+        } else {
+            return 0;
+        }
+#else
+        return (hInt32)((hInt64)((hDrawCall*)rhs)->sortKey_ - (hInt64)((hDrawCall*)lhs)->sortKey_);
+#endif
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    HEART_DLLEXPORT
+    void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn) {
+        HEART_PROFILE_FUNC();
+        qsort(dcs, dcn, sizeof(hDrawCall), drawCallCompare);
+    }
+
 }
 }

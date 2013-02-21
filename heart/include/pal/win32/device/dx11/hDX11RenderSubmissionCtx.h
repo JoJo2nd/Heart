@@ -137,15 +137,16 @@ namespace Heart
         hdDX11CommandBuffer     SaveToCommandBuffer();
         void                    RunSubmissionBuffer(hdDX11CommandBuffer cmdBuf);
 
-        void    SetInputStreams(hdDX11RenderStreamsObject* streams);
-        void    SetRenderInputObject(hdDX11RenderInputObject* inputobj);
+        void    SetInputStreams(const hdDX11RenderStreamsObject* streams);
+        void    SetRenderInputObject(const hdDX11RenderInputObject* inputobj);
         void    SetRenderStateBlock(hdDX11BlendState* st);
         void    SetRenderStateBlock(hdDX11DepthStencilState* st);
         void    SetRenderStateBlock(hdDX11RasterizerState* st);
         void    setTargets(hUint32 idx, hdDX11Texture** target, hdDX11Texture* depth);
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
-        void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
+        void    clearColour(hdDX11Texture* tex, const hColour& colour);
+        void    clearDepth(hdDX11Texture* tex, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx);

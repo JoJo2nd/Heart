@@ -50,12 +50,6 @@ namespace Heart
             if (calls_ == MAX_DC) Flush();
             dcs_[calls_++] = dc;
         }
-        /*
-         * A map lasts the course of a frame. Resoruces are updated from the returned 
-         * pointer just before the submit at the end of a frame.
-         **/
-        void* Map(hVertexBuffer* vb, hUint32 size);
-        void* Map(hIndexBuffer* ib, hUint32 size);
         void End();
 
     private:

@@ -154,6 +154,8 @@ namespace Heart
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
         hAtomic::AtomicSet(drawResourceUpdateCalls_, 0);
+
+        ParentClass::BeginRender(&gpuTime_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -164,13 +166,12 @@ namespace Heart
     {
         HEART_PROFILE_FUNC();
 
-        ParentClass::SwapBuffers();
-        ParentClass::BeginRender(&gpuTime_);
     
         CollectAndSortDrawCalls();
         SubmitDrawCallsMT();
 
         ParentClass::EndRender();
+        ParentClass::SwapBuffers();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -376,15 +377,6 @@ namespace Heart
         camera->UpdateParameters(ctx);
         hUint32 retTechMask = camera->GetTechniqueMask();
 
-//         ctx->SetRenderTarget(0, camera->GetRenderTarget(0));
-//         ctx->SetRenderTarget(1, camera->GetRenderTarget(1));
-//         ctx->SetRenderTarget(2, camera->GetRenderTarget(2));
-//         ctx->SetRenderTarget(3, camera->GetRenderTarget(3));
-//         ctx->SetDepthTarget(camera->GetDepthTarget());
-        //TEMP
-        hTexture* targets[] = {
-            backBuffer_
-        };
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
         ctx->SetViewport(camera->GetViewport());
 

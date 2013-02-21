@@ -117,7 +117,7 @@ namespace Heart
 #define HEART_MAX_INPUT_STREAMS                         (15) //Add more if needed
 #define HEART_MAX_RENDER_CAMERAS                        (15)
 #define HEART_MAX_GLOBAL_CONST_BLOCK_NAME_LEN           (64)
-#define HEART_MAX_SIMULTANEOUS_RENDER_TARGETS                               (8)
+#define HEART_MAX_SIMULTANEOUS_RENDER_TARGETS           (8)
 
     typedef void* (*hTempRenderMemAlloc)( hUint32 size );
     typedef void (*hTempRenderMemFree)( void* ptr );
@@ -452,15 +452,6 @@ namespace Heart
         hIndexBufferType_Max
     };
 
-    enum LightSourceType
-    {
-        LIGHTSOURCETYPE_DIRECTION,
-        LIGHTSOURCETYPE_SPOT,
-        LIGHTSOURCETYPE_POINT,
-
-        LIGHTSOURCETYPE_MAX
-    };
-
     enum hDebugShaderID
     {
         eDebugVertexPosOnly,
@@ -583,6 +574,12 @@ namespace Heart
     {
         hMatInst_DontInstanceConstantBuffers = 1 << 1,
         //hMatInst_DontInstanceConstantBuffers,
+    };
+
+    enum hClearTargetFlags 
+    {
+        eClearTarget_Colour = 1 << 1,
+        eClearTarget_Depth  = 1 << 2,
     };
 }//Heart
 

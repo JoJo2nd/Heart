@@ -60,36 +60,4 @@ namespace Heart
             renderer_->SubmitDrawCallBlock(dcs_.GetBuffer(), calls_);
         calls_ = 0;
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hDrawCallContext::Map( hVertexBuffer* vb, hUint32 size )
-    {
-        void* ret = renderer_->AllocTempRenderMemory(size);
-        hRenderResourceUpdateCmd cmd;
-        cmd.flags_ = hRenderResourceUpdateCmd::eMapTypeVtxBuffer;
-        cmd.size_ = size;
-        cmd.data_ = ret;
-        cmd.vb_ = vb;
-        renderer_->SumbitResourceUpdateCommand(cmd);
-        return ret;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hDrawCallContext::Map( hIndexBuffer* ib, hUint32 size )
-    {
-        void* ret = renderer_->AllocTempRenderMemory(size);
-        hRenderResourceUpdateCmd cmd;
-        cmd.flags_ = hRenderResourceUpdateCmd::eMapTypeIdxBuffer;
-        cmd.size_ = size;
-        cmd.data_ = ret;
-        cmd.ib_ = ib;
-        renderer_->SumbitResourceUpdateCommand(cmd);
-        return ret;
-    }
 }

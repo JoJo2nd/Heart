@@ -65,6 +65,7 @@ namespace Heart
         hFloat                      GetFar() const { return far_; }
         hFloat                      GetNear() const { return near_; }
         void                        SetTechniquePass( const hRenderTechniqueInfo* tech ) { validTechnique_ = tech; }
+        const hRenderTechniqueInfo* getTechniquePass() const { return validTechnique_; }
         hUint32                     GetTechniqueMask() const { return validTechnique_ ? validTechnique_->mask_ : 0; }
         void                        SetRenderTargetSetup( const hRenderViewportTargetSetup& desc );
         void                        ReleaseRenderTargetSetup();

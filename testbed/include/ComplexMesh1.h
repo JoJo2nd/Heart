@@ -58,15 +58,19 @@ private:
         eExit,
     };
 
+    static const hUint MAX_DCS=64;
+
     void        CreateRenderResources();
     void        DestroyRenderResources();
     void        UpdateCamera();
 
     State                   state_;
     hFloat                  timer_;
+    Heart::hRendererCamera  zPassCamera_;
+    Heart::hRendererCamera  camera_;
     Heart::hRenderModel*    renderModel_;
-    Heart::hDrawCall        drawCall_;
-    Heart::hDrawCallContext drawCtx_;
+    hUint                   nDrawCalls_;
+    Heart::hDrawCall        drawCall_[MAX_DCS];
 
     //Camera Control
     Heart::hVec3            camPos_;

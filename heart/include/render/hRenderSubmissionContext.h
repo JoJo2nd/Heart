@@ -91,15 +91,16 @@ namespace Heart
         void                  RunCommandBuffer(hdRenderCommandBuffer cmdBuf);
         
         void    setTargets(hUint32 n, hTexture** targets, hTexture* depth);
-        void    SetInputStreams(hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
-        void    SetRenderInputObject(hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
+        void    SetInputStreams(const hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
+        void    SetRenderInputObject(const hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);
         void    SetRenderStateBlock(hdBlendState* st) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock(hdDepthStencilState* st) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock(hdRasterizerState* st) { impl_.SetRenderStateBlock( st ); }
-        void    ClearTarget(hBool clearColour, const hColour& colour, hBool clearZ, hFloat z);
+        void    clearColour(hTexture* tex, const hColour& colour);
+        void    clearDepth(hTexture* tex, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
