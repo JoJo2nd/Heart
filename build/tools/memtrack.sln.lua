@@ -51,6 +51,11 @@ LibsRelease={}
 solution (SlnName)
     location (SlnDir)
     configurations ({DebugCfgName, ReleaseCfgName})
+    flags {
+        "NoEditAndContinue",
+        "NoMinimalRebuild",
+        "NoIncrementalLink",
+    }
     
     configuration (DebugCfgName)
         targetsuffix(DebugSuffix)

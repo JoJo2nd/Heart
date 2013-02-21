@@ -113,7 +113,11 @@ DebugDefines={
 }
 DebugOptions={
     "Symbols",
-    "NoMinimalRebuild"
+    "NoEditAndContinue",
+    "NoMinimalRebuild",
+    "NoIncrementalLink",
+    "EnableSSE2",
+    "FloatFast",
 }
 ReleaseDefines={
     "NDEBUG",
@@ -122,7 +126,10 @@ ReleaseDefines={
 ReleaseOptions={
     "Optimize",
     "NoEditAndContinue",
-    "NoMinimalRebuild"
+    "NoMinimalRebuild",
+    "NoIncrementalLink",
+    "EnableSSE2",
+    "FloatFast",
 }
 
 LibDirs={

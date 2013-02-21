@@ -135,6 +135,15 @@ namespace Heart
             hDELETE_SAFE(GetGlobalHeap(), debugShaders_[i]);
         }
         ParentClass::Destroy();
+        if (backBuffer_) {
+            backBuffer_->SetImpl(NULL);
+        }
+        hDELETE_SAFE(GetGlobalHeap(), backBuffer_);
+        if (depthBuffer_) {
+            depthBuffer_->SetImpl(NULL);
+        }
+        hDELETE_SAFE(GetGlobalHeap(), depthBuffer_);
+
     }
 
     //////////////////////////////////////////////////////////////////////////

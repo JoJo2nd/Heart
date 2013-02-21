@@ -86,7 +86,7 @@ namespace Heart
         hdParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
         hdParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
         hdParameterConstantBlock*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
-        void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount);
+        void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount, hBool takeTexture=hFalse);
         void                        resizeGlobalTexture(const hChar* name, hUint width, hUint height);
         void                        updateGlobalTexture(const hChar* name, hTexture* tex);
         hTexture*                   getGlobalTexture(const hChar* name);
@@ -124,6 +124,7 @@ namespace Heart
             hUint         aliasCount_;
             const hChar** aliases_;
             hUint32*      aliasHashes_;
+            hBool         ownsTexture_;
         };
 
         typedef hVector< hGlobalConstantBlock > ConstBlockArrayType;

@@ -27,6 +27,19 @@
 
 namespace Heart
 {
+#if defined (HEART_DEBUG)
+#   define HEART_D3D_OBJECT_REPORT(device) {\
+        ID3D11Debug* debuglayer;\
+        device->QueryInterface(__uuidof(ID3D11Debug), (void**)&debuglayer);\
+        debuglayer->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);\
+        debuglayer->Release();\
+    }
+#   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name) obj->SetPrivateData( WKPDID_D3DDebugObjectName, strlen(name), name)
+#else
+#   define HEART_D3D_OBJECT_REPORT(device)
+#   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name)
+#endif
+
 #define COMMON_CONST_BLOCK() "           \
     cbuffer ViewportConstants            \
     {                                    \
@@ -317,6 +330,7 @@ namespace Heart
         {
             hcAssertFailMsg( "Couldn't Create D3D11 context" );
         }
+        HEART_D3D_DEBUG_NAME_OBJECT(mainDeviceCtx_, "main context");
 
         //Grab the back buffer & depth buffer
         // Create a render target view
@@ -326,6 +340,7 @@ namespace Heart
 
         hr = d3d11Device_->CreateRenderTargetView( pBackBuffer, NULL, &renderTargetView_ );
         hcAssert( SUCCEEDED( hr ) );
+        HEART_D3D_DEBUG_NAME_OBJECT(renderTargetView_, "Render Target View");
 
         // Create depth stencil texture
         D3D11_TEXTURE2D_DESC descDepth;
@@ -343,6 +358,7 @@ namespace Heart
         descDepth.MiscFlags = 0;
         hr = d3d11Device_->CreateTexture2D( &descDepth, NULL, &depthStencil_ );
         hcAssert( SUCCEEDED( hr ) );
+        HEART_D3D_DEBUG_NAME_OBJECT(depthStencil_, "Depth Stencil");
 
         // Create the depth stencil view
         D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -352,10 +368,13 @@ namespace Heart
         descDSV.Texture2D.MipSlice = 0;
         hr = d3d11Device_->CreateDepthStencilView( depthStencil_, &descDSV, &depthStencilView_ );
         hcAssert( SUCCEEDED( hr ) );
+        HEART_D3D_DEBUG_NAME_OBJECT(depthStencilView_, "Depth Stencil View");
 
         mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
 
         //update textures
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", pBackBuffer);
+        HEART_D3D_DEBUG_NAME_OBJECT(pBackBuffer, "backbuffer");
         backBufferTex_.shaderResourceView_=NULL;
         backBufferTex_.depthStencilView_=NULL;
         backBufferTex_.dx11Texture_=pBackBuffer;
@@ -382,6 +401,8 @@ namespace Heart
         hcAssert(SUCCEEDED(hr));
 
         frameCounter_ = 0;
+
+        HEART_D3D_OBJECT_REPORT(d3d11Device_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -390,48 +411,36 @@ namespace Heart
 
     void hdDX11RenderDevice::Destroy()
     {
+        HEART_D3D_OBJECT_REPORT(d3d11Device_);
         timerDisjoint_->Release();
         timerFrameStart_->Release();
         timerFrameEnd_->Release();
 
         if (backBufferTex_.dx11Texture_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_.dx11Texture_);
             backBufferTex_.dx11Texture_->Release();
         }
-        if (backBufferTex_.shaderResourceView_) {
-            backBufferTex_.shaderResourceView_->Release();
-        }
-        if (depthBufferTex_.shaderResourceView_) {
-            depthBufferTex_.shaderResourceView_->Release();
-        }
-        if( mainDeviceCtx_ ) 
-        {
+        
+        if( mainDeviceCtx_ ) {
             mainDeviceCtx_->ClearState();
             mainDeviceCtx_->Flush();
             mainDeviceCtx_->Release();
         }
-        if ( renderTargetView_ )
-        {
+        if ( renderTargetView_ ) {
             renderTargetView_->Release();
         }
-        if ( depthStencilView_ )
-        {
+        if ( depthStencilView_ ) {
             depthStencilView_->Release();
         }
-        if ( depthStencil_ )
-        {
+        if ( depthStencil_ ) {
             depthStencil_->Release();
         }
-        if ( mainSwapChain_ )
-        {
+        if ( mainSwapChain_ ) {
             mainSwapChain_->Release();
         }
-        if ( mainDeviceCtx_ )
-        {
-            mainDeviceCtx_->Release();
-        }
-        if ( d3d11Device_ )
-        {
-            d3d11Device_->Release();
+        if ( d3d11Device_ ) {
+            ULONG ref=d3d11Device_->Release();
+            hcPrintf("D3DDevice Ref %u", ref);
         }
     }
 
@@ -503,6 +512,7 @@ namespace Heart
                 mainDeviceCtx_->OMSetRenderTargets(0, 0, 0);
                 renderTargetView_->Release();
                 if (backBufferTex_.dx11Texture_) {
+                    hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_.dx11Texture_);
                     backBufferTex_.dx11Texture_->Release();
                     backBufferTex_.dx11Texture_=NULL;
                 }
@@ -539,6 +549,7 @@ namespace Heart
                 descDepth.MiscFlags = 0;
                 hr = d3d11Device_->CreateTexture2D(&descDepth, NULL, &depthStencil_);
                 hcAssert( SUCCEEDED( hr ) );
+                HEART_D3D_DEBUG_NAME_OBJECT(depthStencil_, "depth Stencil");
 
                 // Create the depth stencil view
                 D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -548,8 +559,11 @@ namespace Heart
                 descDSV.Texture2D.MipSlice = 0;
                 hr = d3d11Device_->CreateDepthStencilView(depthStencil_, &descDSV, &depthStencilView_);
                 hcAssert( SUCCEEDED( hr ) );
+                HEART_D3D_DEBUG_NAME_OBJECT(depthStencilView_, "Depth Stencil View");
 
                 //update textures
+                hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", backBufferTex);
+                HEART_D3D_DEBUG_NAME_OBJECT(backBufferTex, "backbuffer");
                 backBufferTex_.shaderResourceView_=NULL;
                 backBufferTex_.depthStencilView_=NULL;
                 backBufferTex_.dx11Texture_=backBufferTex;
@@ -874,6 +888,7 @@ namespace Heart
             descDSV.Texture2D.MipSlice = 0;
             hr = d3d11Device_->CreateDepthStencilView( texture->dx11Texture_, &descDSV, &texture->depthStencilView_ );
             hcAssert( SUCCEEDED( hr ) );
+            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->depthStencilView_);
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
             hZeroMem( &srvDesc, sizeof(srvDesc) );
@@ -912,6 +927,11 @@ namespace Heart
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->dx11Texture_);
             texture->dx11Texture_->Release();
             texture->dx11Texture_ = NULL;
+        }
+        if (texture->depthStencilView_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->depthStencilView_);
+            texture->depthStencilView_->Release();
+            texture->depthStencilView_ = NULL;
         }
         if (texture->shaderResourceView_) {
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->shaderResourceView_);

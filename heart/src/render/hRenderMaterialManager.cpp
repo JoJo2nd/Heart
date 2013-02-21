@@ -375,13 +375,21 @@ namespace Heart
         constBlockLookUp_.Clear(hFalse);
         constBlocks_.Clear();
 
+        for (hGlobalTexture* i=globalTextures_.GetHead(); i; i=i->GetNext()) {
+            hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->strPool_);
+            hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->aliasHashes_);
+            if (i->ownsTexture_) {
+                renderer_->DestroyTexture(i->texture_);
+            }
+        }
+        globalTextures_.Clear(hTrue);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount) {
+    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount, hBool takeTexture/*=hFalse*/) {
         hcAssert(name && tex && aliases && aliasCount > 0);
         hGlobalTexture* gtex=hNEW(GetGlobalHeap(), hGlobalTexture);
         hUint strsize;
@@ -398,6 +406,7 @@ namespace Heart
         gtex->aliasHashes_=hNEW_ARRAY(GetGlobalHeap(), hUint32, aliasCount);
         gtex->nameHash_=hCRC32::StringCRC(name);
         gtex->texture_=tex;
+        gtex->ownsTexture_=takeTexture;
         hStrCopy(strptr, strsize, name);
         len=hStrLen(name)+1;
         strptr+=len;
@@ -557,7 +566,7 @@ namespace Heart
         }
          m->renderer_->CreateTexture(texdesc.width, texdesc.height, 1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
         lua_pop(L, 2);
-        m->registerGlobalTexture(name, texture, aliases, aliascount);
+        m->registerGlobalTexture(name, texture, aliases, aliascount, hTrue);
         return 0;
     }
 

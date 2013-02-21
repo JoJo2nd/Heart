@@ -36,10 +36,11 @@ namespace Heart
     {
         if (singleAlloc_)
         {
-            hHeapFree(heap_, levelDescs_[0].mipdata_);
-            for (hUint32 i = 0; i < nLevels_; ++i)
-            {
-                levelDescs_[i].mipdata_ = NULL;
+            if (levelDescs_) {
+                hHeapFree(heap_, levelDescs_[0].mipdata_);
+                for (hUint32 i = 0; i < nLevels_; ++i) {
+                    levelDescs_[i].mipdata_ = NULL;
+                }
             }
         }
         else
