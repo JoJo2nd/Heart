@@ -430,14 +430,7 @@ namespace Heart
         hGlobalTexture* gt = globalTextures_.Find(hCRC32::StringCRC(name));
         if (gt) {
             hcAssert(gt->texture_);
-            hTextureFormat tf=gt->texture_->getTextureFormat();
-            hUint32 flags=gt->texture_->getFlags();
-            hMipDesc mipdesc={0};
-
-            renderer_->DestroyTexture(gt->texture_);
-            mipdesc.width=width;
-            mipdesc.height=height;
-            renderer_->CreateTexture(width, height, 1, &mipdesc, tf, flags, GetGlobalHeap(), &gt->texture_);
+            renderer_->resizeTexture(width, height, gt->texture_); 
         }
     }
 
@@ -446,7 +439,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderMaterialManager::updateGlobalTexture(const hChar* name, hTexture* tex) {
-        hcAssert(name && tex)
+        hcAssert(name && tex);
         hGlobalTexture* gt = globalTextures_.Find(hCRC32::StringCRC(name));
         if (gt) {
             gt->texture_=tex;

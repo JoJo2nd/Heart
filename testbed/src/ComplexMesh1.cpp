@@ -108,6 +108,12 @@ void ComplexMesh1::RenderUnitTest()
     hRenderSubmissionCtx* ctx = engine_->GetRenderer()->GetMainSubmissionCtx();
     hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
+    hViewport vp;
+
+    vp.x_=0;
+    vp.y_=0;
+    vp.width_=engine_->GetRenderer()->GetWidth();
+    vp.height_=engine_->GetRenderer()->GetHeight();
 
     const hRenderTechniqueInfo* techinfo = zPassCamera_.getTechniquePass();
     nDrawCalls_=0;
@@ -140,6 +146,7 @@ void ComplexMesh1::RenderUnitTest()
         }
     }
 
+    zPassCamera_.SetViewport(vp);
     hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
     hRenderUtility::submitDrawCalls(ctx, &zPassCamera_, drawCall_, nDrawCalls_, eClearTarget_Depth);
 #endif
@@ -174,6 +181,7 @@ void ComplexMesh1::RenderUnitTest()
         }
     }
     
+    camera_.SetViewport(vp);
     hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
 #ifdef DO_Z_PRE_PASS
     hRenderUtility::submitDrawCalls(ctx, &camera_, drawCall_, nDrawCalls_, eClearTarget_Colour);

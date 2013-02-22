@@ -224,6 +224,45 @@ namespace Heart
         }
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::resizeTexture(hUint32 width, hUint32 height, hTexture* inout)
+    {
+        hcAssert(width > 0 && height > 0 && inout);
+        //TODO: do a down-size render? Atm this is only used for render targets so content is throw away.
+        hMipDesc mipsdata[16];// Based on the largest texture dim is 64K (is that even possible? 13 should be safe)
+        hUint lvls=0;
+        hUint w=width;
+        hUint h=height;
+        hMemoryHeapBase* heap=inout->heap_;
+        while (w >= 1 && h >= 1 && lvls < 16 && lvls < inout->nLevels_) {
+            mipsdata[lvls].width=w;
+            mipsdata[lvls].height=h;
+            mipsdata[lvls].data=NULL;
+            mipsdata[lvls].size=0;
+            w /= 2;
+            h /= 2;
+            ++lvls;
+        }
+
+        hdTexture* dt=ParentClass::CreateTextureDevice(width, height, lvls, inout->format_, mipsdata, inout->flags_);
+        hDELETE_ARRAY_SAFE(heap, inout->levelDescs_);
+        inout->nLevels_ = lvls;
+        inout->levelDescs_ = lvls ? hNEW_ARRAY(heap, hTexture::LevelDesc, lvls) : NULL;
+
+        for (hUint32 i = 0; i < lvls; ++i) {
+            inout->levelDescs_[ i ].width_       = mipsdata[i].width;
+            inout->levelDescs_[ i ].height_      = mipsdata[i].height;
+            inout->levelDescs_[ i ].mipdata_     = mipsdata[i].data;
+            inout->levelDescs_[ i ].mipdataSize_ = mipsdata[i].size;
+        }
+
+        ParentClass::DestroyTextureDevice(inout->pImpl());
+        inout->SetImpl(dt);
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////

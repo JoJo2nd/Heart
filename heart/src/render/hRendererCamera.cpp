@@ -72,6 +72,7 @@ namespace Heart
 
     void hRendererCamera::UpdateParameters(hRenderSubmissionCtx* ctx)
     {
+        SetViewport(viewport_);
         hVec3 eye = hMatrixFunc::getRow( viewMatrix_, 3 );
         hVec3 dir = hMatrixFunc::getRow( viewMatrix_, 2 );
         hVec3 up  = hMatrixFunc::getRow( viewMatrix_, 1 );
@@ -84,8 +85,8 @@ namespace Heart
         viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
         viewportConstants_.viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
         viewportConstants_.viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_.viewProjection_);
-        viewportConstants_.viewportSize_[0]=viewport_.x_;
-        viewportConstants_.viewportSize_[1]=viewport_.y_;
+        viewportConstants_.viewportSize_[0]=viewport_.width_;
+        viewportConstants_.viewportSize_[1]=viewport_.height_;
         viewportConstants_.viewportSize_[2]=0.f;
         viewportConstants_.viewportSize_[3]=0.f;
 

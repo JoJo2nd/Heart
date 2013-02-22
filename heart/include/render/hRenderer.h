@@ -123,6 +123,7 @@ namespace Heart
             pimpl methods
         */
         void													CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex );
+        void                                                    resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
         void													DestroyTexture( hTexture* pOut );
         void													CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
         void													DestroyIndexBuffer(hIndexBuffer* pOut);
