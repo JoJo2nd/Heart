@@ -56,10 +56,10 @@ namespace Heart
         fov = hmPI / 4.0f;//45.0f
         viewMatrix_ = hMatrixFunc::identity();
         isOrtho_ = hFalse;
-        viewport_.x_ = 0;
-        viewport_.y_ = 0;
-        viewport_.width_ = 800;
-        viewport_.height_ = 600;
+        viewport_.x = 0.f;
+        viewport_.y = 0.f;
+        viewport_.w = 1.f;
+        viewport_.h = 1.f;
 
         hZeroMem(&setup_, sizeof(setup_));
 
@@ -72,7 +72,7 @@ namespace Heart
 
     void hRendererCamera::UpdateParameters(hRenderSubmissionCtx* ctx)
     {
-        SetViewport(viewport_);
+        hViewport vp=getTargetViewport();
         hVec3 eye = hMatrixFunc::getRow( viewMatrix_, 3 );
         hVec3 dir = hMatrixFunc::getRow( viewMatrix_, 2 );
         hVec3 up  = hMatrixFunc::getRow( viewMatrix_, 1 );
@@ -85,8 +85,8 @@ namespace Heart
         viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
         viewportConstants_.viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
         viewportConstants_.viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_.viewProjection_);
-        viewportConstants_.viewportSize_[0]=viewport_.width_;
-        viewportConstants_.viewportSize_[1]=viewport_.height_;
+        viewportConstants_.viewportSize_[0]=vp.width_;
+        viewportConstants_.viewportSize_[1]=vp.height_;
         viewportConstants_.viewportSize_[2]=0.f;
         viewportConstants_.viewportSize_[3]=0.f;
 
@@ -94,6 +94,27 @@ namespace Heart
         ctx->Map(cameraConstBlock_, &map);
         hMemCpy(map.ptr, &viewportConstants_, sizeof(viewportConstants_));
         ctx->Unmap(&map);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    Heart::hViewport hRendererCamera::getTargetViewport() const {
+        if (setup_.nTargets_) {
+            //base on first target
+            hUint w=setup_.targets_[0]->getWidth();
+            hUint h=setup_.targets_[0]->getHeight();
+            return hViewport(w*viewport_.x, h*viewport_.y, w*viewport_.w, h*viewport_.h);
+        } else if (setup_.depth_){
+            //base on depth
+            hUint w=setup_.depth_->getWidth();
+            hUint h=setup_.depth_->getHeight();
+            return hViewport(w*viewport_.x, h*viewport_.y, w*viewport_.w, h*viewport_.h);
+        } else {
+            //zero out
+            return hViewport(0, 0, 1, 1);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -162,6 +183,7 @@ namespace Heart
     {
         hVec4 ret;
         hMatrix view, proj,viewProj;
+        hViewport vp=getTargetViewport();
 
         view = GetViewMatrix();
         proj = GetProjectionMatrix();
@@ -171,7 +193,7 @@ namespace Heart
         //hVec3 r2( ((ret.x/ret.w) * viewport_.width_ / 2), ((ret.y/ret.w) * viewport_.height_ / 2), ret.z/ret.w );
         hVec3 r2( hVec3Func::div( (hVec3)ret, hVec128SplatW( ret ) ) );
         
-        return hVec3Func::componentMult( r2, hVec3( viewport_.width_ / 2.f, viewport_.height_ / 2.f, 1.f ) );
+        return hVec3Func::componentMult( r2, hVec3( vp.width_ / 2.f, vp.height_ / 2.f, 1.f ) );
 
     }
 

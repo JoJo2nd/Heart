@@ -41,6 +41,7 @@
 #include "ComplexMesh2.h"
 #include "DebugPrimsTest.h"
 #include "Sibenik.h"
+#include "ComputeTest.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -64,6 +65,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(ComplexMesh2)
         REGISTER_UNIT_TEST(DebugPrimsTest)
         REGISTER_UNIT_TEST(Sibenik)
+        REGISTER_UNIT_TEST(ComputeTest)
     };
 
     void consoleStateEvent(hFloat secs) 

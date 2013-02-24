@@ -66,8 +66,8 @@ namespace Cmd
             hUint32 mipdataSize_;
         };
 
-        hUint32                 Width( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].width_; }
-        hUint32                 Height( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].height_; }
+        hUint32                 getWidth( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].width_; }
+        hUint32                 getHeight( hUint32 level = 0 ) { hcAssert( level < nLevels_ ); return levelDescs_[ level ].height_; }
         void                    ReleaseCPUTextureData();
         hColour                 ReadPixel(hUint32 x, hUint32 y);
         void                    SetKeepCPU(hBool val) { keepcpu_ = val; }

@@ -244,8 +244,15 @@ namespace Heart
         if (inputobj->vertexShader_) {
             const hdRenderInputObject::RendererInputs* inputs = inputobj->inputData_+hdRenderInputObject::hdDX11VertexProg;
             device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, inputs->programInputs_);
-            device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
-            device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+            // Putting if guards here reduced GPU time on test scene dramatically (x3-x4 faster)
+            // Seems that setting textures/shader resources on VS is expensive (ATI chips)
+            // however PS it seems super cheap. Common case optimization?
+            if (inputs->samplerCount_) {
+                device_->VSSetSamplers(0, inputs->samplerCount_, inputs->samplerState_);
+            }
+            if (inputs->resourceViewCount_) {
+                device_->VSSetShaderResources(0, inputs->resourceViewCount_, inputs->resourceViews_);
+            }
         }
 
         device_->PSSetShader(inputobj->pixelShader_, NULL, 0);
@@ -307,6 +314,20 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11RasterizerState* st )
     {
         device_->RSSetState( st->stateObj_ );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setComputeInput(const hdDX11ComputeInputObject* ci) {
+        hcAssert(ci);
+        device_->CSSetShader(ci->computeShader_, NULL, 0);
+        if (ci->computeShader_) {
+            device_->CSSetConstantBuffers(0, ci->constCount_, ci->programInputs_);
+            device_->CSSetSamplers(0, ci->samplerCount_, ci->samplerState_);
+            device_->CSSetShaderResources(0, ci->resourceViewCount_, ci->resourceViews_);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -404,6 +425,14 @@ namespace Heart
             verts = nPrims + 2; break;
         }
         device_->DrawIndexedInstanced(verts, instanceCount, startVtx, 0, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::dispatch(hUint x, hUint y, hUint z) {
+        device_->Dispatch(x, y, z);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -562,6 +591,72 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::clearDepth(hdDX11Texture* tex, hFloat z) {
         hcAssert(tex);
         device_->ClearDepthStencilView(tex->depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11ComputeInputObject::bindShaderProgram(hdDX11ShaderProgram* prog) {
+        if (prog) {
+            boundComputeProg_=prog;
+            computeShader_=prog->computeShader_;
+        } else {
+            boundComputeProg_=NULL;
+            computeShader_=NULL;
+        }
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11ComputeInputObject::bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv) {
+        if (computeShader_) {
+            hUint32 idx = boundComputeProg_->GetInputRegister(paramID);
+            if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                return hFalse;
+            }
+            samplerState_[idx] = srv->stateObj_;
+            samplerCount_ = (hUint16)hMax(idx+1, samplerCount_);
+            return hTrue;
+        }
+        return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11ComputeInputObject::bindResourceView(hShaderParameterID paramID, hdDX11Texture* view) {
+        if (computeShader_) {
+            hUint32 idx = boundComputeProg_->GetInputRegister(paramID);
+            if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                return hFalse;
+            }
+            resourceViews_[idx] = view->shaderResourceView_;
+            resourceViewCount_ = (hUint16)hMax(idx+1, resourceViewCount_);
+            return hTrue;
+        }
+        return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdDX11ComputeInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer) {
+        if (computeShader_) {
+            hUint32 idx = boundComputeProg_->GetInputRegister(paramID);
+            if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                return hFalse;
+            }
+            programInputs_[idx] = buffer->constBuffer_;
+            constCount_ = (hUint16)hMax(idx+1, constCount_);
+            return hTrue;
+        }
+        return hFalse;
     }
 
 }

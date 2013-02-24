@@ -58,7 +58,7 @@ namespace Heart
 
     Heart::hColour hTexture::ReadPixel(hUint32 x, hUint32 y)
     {
-        hcAssert(x < Width() && y < Height());
+        hcAssert(x < getWidth() && y < getHeight());
         if (!levelDescs_[0].mipdata_)
         {
             hcPrintf("Attempt was made to read a pixel (%u, %u) from a texture where the CPU resource data"

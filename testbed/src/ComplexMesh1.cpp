@@ -108,12 +108,6 @@ void ComplexMesh1::RenderUnitTest()
     hRenderSubmissionCtx* ctx = engine_->GetRenderer()->GetMainSubmissionCtx();
     hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
-    hViewport vp;
-
-    vp.x_=0;
-    vp.y_=0;
-    vp.width_=engine_->GetRenderer()->GetWidth();
-    vp.height_=engine_->GetRenderer()->GetHeight();
 
     const hRenderTechniqueInfo* techinfo = zPassCamera_.getTechniquePass();
     nDrawCalls_=0;
@@ -146,7 +140,6 @@ void ComplexMesh1::RenderUnitTest()
         }
     }
 
-    zPassCamera_.SetViewport(vp);
     hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
     hRenderUtility::submitDrawCalls(ctx, &zPassCamera_, drawCall_, nDrawCalls_, eClearTarget_Depth);
 #endif
@@ -181,7 +174,6 @@ void ComplexMesh1::RenderUnitTest()
         }
     }
     
-    camera_.SetViewport(vp);
     hRenderUtility::sortDrawCalls(drawCall_, nDrawCalls_);
 #ifdef DO_Z_PRE_PASS
     hRenderUtility::submitDrawCalls(ctx, &camera_, drawCall_, nDrawCalls_, eClearTarget_Colour);
@@ -211,11 +203,11 @@ void ComplexMesh1::CreateRenderResources()
     rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
 #endif
 
-    hViewport vp;
-    vp.x_ = 0;
-    vp.y_ = 0;
-    vp.width_ = w;
-    vp.height_ = h;
+    hRelativeViewport vp;
+    vp.x= 0.f;
+    vp.y= 0.f;
+    vp.w= 1.f;
+    vp.h= 1.f;
     camPos_ = Heart::hVec3(0.f, 40.f, -60.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
@@ -225,7 +217,7 @@ void ComplexMesh1::CreateRenderResources()
     camera_.SetFieldOfView(45.f);
     camera_.SetProjectionParams( aspect, 0.1f, 1000.f);
     camera_.SetViewMatrix(vm);
-    camera_.SetViewport(vp);
+    camera_.setViewport(vp);
 #ifdef DO_Z_PRE_PASS
     camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("postzmain"));
 #else
@@ -234,16 +226,12 @@ void ComplexMesh1::CreateRenderResources()
 
     rtDesc.nTargets_=0;
     rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("z_pre_pass");
-    vp.x_ = 0;
-    vp.y_ = 0;
-    vp.width_ = w;
-    vp.height_ = h;
     zPassCamera_.Initialise(renderer);
     zPassCamera_.SetRenderTargetSetup(rtDesc);
     zPassCamera_.SetFieldOfView(45.f);
     zPassCamera_.SetProjectionParams( aspect, 0.1f, 1000.f);
     zPassCamera_.SetViewMatrix(vm);
-    zPassCamera_.SetViewport(vp);
+    zPassCamera_.setViewport(vp);
     zPassCamera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("zprepass"));
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));

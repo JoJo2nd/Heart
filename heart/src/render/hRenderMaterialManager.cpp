@@ -379,7 +379,7 @@ namespace Heart
             hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->strPool_);
             hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->aliasHashes_);
             if (i->ownsTexture_) {
-                renderer_->DestroyTexture(i->texture_);
+                renderer_->destroyTexture(i->texture_);
             }
         }
         globalTextures_.Clear(hTrue);
@@ -557,7 +557,7 @@ namespace Heart
         } else {
             flags |= RESOURCEFLAG_RENDERTARGET;
         }
-         m->renderer_->CreateTexture(texdesc.width, texdesc.height, 1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
+         m->renderer_->createTexture(1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
         lua_pop(L, 2);
         m->registerGlobalTexture(name, texture, aliases, aliascount, hTrue);
         return 0;

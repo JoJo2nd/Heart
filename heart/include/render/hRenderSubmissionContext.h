@@ -93,6 +93,10 @@ namespace Heart
         void    setTargets(hUint32 n, hTexture** targets, hTexture* depth);
         void    SetInputStreams(const hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
         void    SetRenderInputObject(const hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
+        void    setComputeInput(const hComputeObject* cInput) { 
+            hcAssert(cInput);
+            impl_.setComputeInput(&cInput->inputs_); 
+        }
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);
@@ -104,6 +108,7 @@ namespace Heart
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
+        void    dispatch(hUint x, hUint y, hUint z) { impl_.dispatch(x, y, z); }
         void    Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo);
         void    Unmap(hIndexBufferMapInfo* outInfo);
         void    Map(hVertexBuffer* ib, hVertexBufferMapInfo* outInfo);

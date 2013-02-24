@@ -155,11 +155,11 @@ void InstanceRenderTest::CreateRenderResources()
     rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
     rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
 
-    hViewport vp;
-    vp.x_ = 0;
-    vp.y_ = 0;
-    vp.width_ = w;
-    vp.height_ = h;
+    hRelativeViewport vp;
+    vp.x=0.f;
+    vp.y=0.f;
+    vp.w=1.f;
+    vp.h=1.f;
 
     camPos_ = Heart::hVec3(0.f, 120.f, -650.f);
     camDir_ = Heart::hVec3(.022f, -.22f, 1.f);
@@ -171,7 +171,7 @@ void InstanceRenderTest::CreateRenderResources()
     camera->SetFieldOfView(45.f);
     camera->SetProjectionParams( aspect, 0.1f, 2000.f);
     camera->SetViewMatrix(vm);
-    camera->SetViewport(vp);
+    camera->setViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource("INSTANCETEST.BOCO"));

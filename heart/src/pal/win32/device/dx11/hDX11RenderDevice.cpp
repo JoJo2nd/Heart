@@ -448,6 +448,39 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    DXGI_FORMAT hdDX11RenderDevice::toDXGIFormat(hTextureFormat format, hBool* compressed) {
+        DXGI_FORMAT fmt = DXGI_FORMAT_UNKNOWN;
+        hBool compressedFormat=hFalse;
+        switch ( format )
+        {
+        case TFORMAT_ARGB8:         fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case TFORMAT_ARGB8_sRGB:    fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case TFORMAT_XRGB8:         fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case TFORMAT_XRGB8_sRGB:    fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case TFORMAT_R16F:          fmt = DXGI_FORMAT_R16_FLOAT; break;
+        case TFORMAT_GR16F:         fmt = DXGI_FORMAT_R16G16_FLOAT; break;
+        case TFORMAT_ABGR16F:       fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+        case TFORMAT_R32F:          fmt = DXGI_FORMAT_R32_FLOAT; break;
+        case TFORMAT_D32F:          fmt = DXGI_FORMAT_R32_TYPELESS; break;
+        case TFORMAT_D24S8F:        fmt = DXGI_FORMAT_R24G8_TYPELESS; break;
+        case TFORMAT_L8:            fmt = DXGI_FORMAT_A8_UNORM; break;
+        case TFORMAT_DXT5:          fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT3:          fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
+        case TFORMAT_DXT1:          fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
+        case TFORMAT_DXT5_sRGB:     fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
+        case TFORMAT_DXT3_sRGB:     fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
+        case TFORMAT_DXT1_sRGB:     fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
+        }
+        if(compressed) {
+            *compressed=compressedFormat;
+        }
+        return fmt;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderDevice::BeginRender(hFloat* gpuTime)
     {
         //get prev GPU timer
@@ -790,48 +823,30 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextureDevice( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags )
+    hdDX11Texture* hdDX11RenderDevice::CreateTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags)
     {
+        hcAssert(levels > 0 && initialData);
         HRESULT hr;
         hdDX11Texture* texture = hNEW(GetGlobalHeap(), hdDX11Texture);
         hBool compressedFormat = hFalse;
 
         D3D11_TEXTURE2D_DESC desc;
         hZeroMem( &desc, sizeof(desc) );
-        desc.Height             = height;
-        desc.Width              = width;
+        desc.Height             = initialData[0].height;
+        desc.Width              = initialData[0].width;
         desc.MipLevels          = levels;
         desc.ArraySize          = 1;
         desc.SampleDesc.Count   = 1;
-        switch ( format )
-        {
-        case TFORMAT_ARGB8:         desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_ARGB8_sRGB:    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case TFORMAT_XRGB8:         desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_XRGB8_sRGB:    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case TFORMAT_R16F:          desc.Format = DXGI_FORMAT_R16_FLOAT; break;
-        case TFORMAT_GR16F:         desc.Format = DXGI_FORMAT_R16G16_FLOAT; break;
-        case TFORMAT_ABGR16F:       desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-        case TFORMAT_R32F:          desc.Format = DXGI_FORMAT_R32_FLOAT; break;
-        case TFORMAT_D32F:          desc.Format = DXGI_FORMAT_R32_TYPELESS; break;
-        case TFORMAT_D24S8F:        desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
-        case TFORMAT_L8:            desc.Format = DXGI_FORMAT_A8_UNORM; break;
-        case TFORMAT_DXT5:          desc.Format = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT3:          desc.Format = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT1:          desc.Format = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
-        case TFORMAT_DXT5_sRGB:     desc.Format = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
-        case TFORMAT_DXT3_sRGB:     desc.Format = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
-        case TFORMAT_DXT1_sRGB:     desc.Format = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
-        }
+        desc.Format = toDXGIFormat(format, &compressedFormat);
         desc.Usage = (flags & RESOURCEFLAG_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         desc.BindFlags |= (flags & RESOURCEFLAG_RENDERTARGET) ? D3D11_BIND_RENDER_TARGET : 0; 
         desc.BindFlags |= (flags & RESOURCEFLAG_DEPTHTARGET) ? D3D11_BIND_DEPTH_STENCIL : 0;
+        desc.BindFlags |= (flags & RESOURCEFLAG_UNORDEREDACCESS) ? D3D11_BIND_UNORDERED_ACCESS : 0;
         desc.CPUAccessFlags  = (flags & RESOURCEFLAG_DYNAMIC) ? (D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE) : 0;
         desc.MiscFlags = 0;//(flags & RESOURCEFLAG_DEPTHTARGET) ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
         D3D11_SUBRESOURCE_DATA* dataptr = (D3D11_SUBRESOURCE_DATA*)hAlloca(sizeof(D3D11_SUBRESOURCE_DATA)*desc.MipLevels+2);
-        
         if ( initialData ) {
             for (hUint32 i = 0; i < desc.MipLevels; ++i)
             {
@@ -1746,4 +1761,29 @@ namespace Heart
         return s_debugSrcs[shaderid];
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::createComputeUAV(hdDX11Texture* res, hTextureFormat viewformat, hUint mip, hdDX11ComputeUAV* outres) {
+        hcAssert(res && outres);
+        D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+        hZeroMem(&desc, sizeof(desc));
+        desc.Format=toDXGIFormat(viewformat, NULL);
+        desc.Texture2D.MipSlice=mip;
+        d3d11Device_->CreateUnorderedAccessView(res->dx11Texture_, &desc, &outres->uav_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderDevice::destroyComputeUAV(hdDX11ComputeUAV* uav) {
+        hcAssert(uav);
+        if (uav->uav_) {
+            uav->uav_->Release();
+            uav->uav_=NULL;
+        }
+    }
+    
 }

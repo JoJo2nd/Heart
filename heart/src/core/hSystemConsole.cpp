@@ -28,7 +28,7 @@
 namespace Heart
 {
 
-    hFloat              hSystemConsole::s_fontSize = .5f;
+    hFloat              hSystemConsole::s_fontSize = .75f;
     hConsoleOutputProc  hSystemConsole::s_consoleOutputCallback = NULL;
     void*               hSystemConsole::s_consoleOutputUser = NULL;
 
@@ -82,7 +82,7 @@ namespace Heart
             };
 
             hSamplerStateDesc ssdesc;
-            ssdesc.filter_        = SSV_POINT;
+            ssdesc.filter_        = SSV_LINEAR;
             ssdesc.addressU_      = SSV_CLAMP;
             ssdesc.addressV_      = SSV_CLAMP;
             ssdesc.addressW_      = SSV_CLAMP;

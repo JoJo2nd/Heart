@@ -104,7 +104,20 @@ namespace Heart
         backBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
         depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
         backBuffer_->SetImpl(getDeviceBackBuffer());
+        backBuffer_->nLevels_=1;
+        backBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
+        backBuffer_->levelDescs_->mipdata_=NULL;
+        backBuffer_->levelDescs_->mipdataSize_=0;
+        backBuffer_->levelDescs_->width_ = GetWidth();
+        backBuffer_->levelDescs_->height_ = GetHeight();
         depthBuffer_->SetImpl(getDeviceDepthBuffer());
+        depthBuffer_->nLevels_=1;
+        depthBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
+        depthBuffer_->levelDescs_->mipdata_=NULL;
+        depthBuffer_->levelDescs_->mipdataSize_=0;
+        depthBuffer_->levelDescs_->width_ = GetWidth();
+        depthBuffer_->levelDescs_->height_ = GetHeight();
+
 
         const hChar* bbalias[] = {
             "back_buffer",
@@ -135,10 +148,12 @@ namespace Heart
             hDELETE_SAFE(GetGlobalHeap(), debugShaders_[i]);
         }
         ParentClass::Destroy();
+        hDELETE_ARRAY_SAFE(GetGlobalHeap(), backBuffer_->levelDescs_);
         if (backBuffer_) {
             backBuffer_->SetImpl(NULL);
         }
         hDELETE_SAFE(GetGlobalHeap(), backBuffer_);
+        hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
         if (depthBuffer_) {
             depthBuffer_->SetImpl(NULL);
         }
@@ -181,13 +196,18 @@ namespace Heart
 
         ParentClass::EndRender();
         ParentClass::SwapBuffers();
+
+        backBuffer_->levelDescs_->width_ = GetWidth();
+        backBuffer_->levelDescs_->height_ = GetHeight();
+        depthBuffer_->levelDescs_->width_ = GetWidth();
+        depthBuffer_->levelDescs_->height_ = GetHeight();
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::CreateTexture( hUint32 width, hUint32 height, hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex )
+    void hRenderer::createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex)
     {
         hcAssert(initialData);
         hcAssert(levels > 0);
@@ -207,7 +227,7 @@ namespace Heart
             (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
         }
 
-        hdTexture* dt = ParentClass::CreateTextureDevice( width, height, levels, format, initialData, flags );
+        hdTexture* dt = ParentClass::CreateTextureDevice(levels, format, initialData, flags );
         hcAssert(dt);
         (*outTex)->SetImpl( dt );
 
@@ -247,7 +267,7 @@ namespace Heart
             ++lvls;
         }
 
-        hdTexture* dt=ParentClass::CreateTextureDevice(width, height, lvls, inout->format_, mipsdata, inout->flags_);
+        hdTexture* dt=ParentClass::CreateTextureDevice(lvls, inout->format_, mipsdata, inout->flags_);
         hDELETE_ARRAY_SAFE(heap, inout->levelDescs_);
         inout->nLevels_ = lvls;
         inout->levelDescs_ = lvls ? hNEW_ARRAY(heap, hTexture::LevelDesc, lvls) : NULL;
@@ -267,7 +287,7 @@ namespace Heart
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyTexture( hTexture* pOut )
+    void hRenderer::destroyTexture(hTexture* pOut)
     {
         //hcAssert( IsRenderThread() );
 
@@ -426,7 +446,7 @@ namespace Heart
         hUint32 retTechMask = camera->GetTechniqueMask();
 
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
-        ctx->SetViewport(camera->GetViewport());
+        ctx->SetViewport(camera->getTargetViewport());
 
         return retTechMask;
     }
@@ -536,17 +556,17 @@ namespace Heart
         rtDesc.targets_[0]=materialManager_.getGlobalTexture("back_buffer");
         rtDesc.depth_=materialManager_.getGlobalTexture("depth_buffer");
 
-        hViewport vp;
-        vp.x_ = 0;
-        vp.y_ = 0;
-        vp.width_ = GetWidth();
-        vp.height_ = GetHeight();
+        hRelativeViewport vp;
+        vp.x=0.f;
+        vp.y=0.f;
+        vp.w=1.f;
+        vp.h=1.f;
 
         camera->SetRenderTargetSetup(rtDesc);
         camera->SetFieldOfView(45.f);
         camera->SetOrthoParams(0.f, 0.f, (hFloat)GetWidth(), (hFloat)GetHeight(), 0.1f, 100.f);
         camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
-        camera->SetViewport(vp);
+        camera->setViewport(vp);
         camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
     }
 

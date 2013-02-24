@@ -187,11 +187,11 @@ void DebugPrimsTest::CreateRenderResources()
     rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
     rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
 
-    hViewport vp;
-    vp.x_ = 0;
-    vp.y_ = 0;
-    vp.width_ = w;
-    vp.height_ = h;
+    hRelativeViewport vp;
+    vp.x=0.f;
+    vp.y=0.f;
+    vp.w=1.f;
+    vp.h=1.f;
 
     camPos_ = Heart::hVec3(0.f, 0.f, -7.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
@@ -203,7 +203,7 @@ void DebugPrimsTest::CreateRenderResources()
     camera->SetFieldOfView(45.f);
     camera->SetProjectionParams(aspect, 0.1f, 1000.f);
     camera->SetViewMatrix(vm);
-    camera->SetViewport(vp);
+    camera->setViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     Heart::hRenderUtility::buildDebugCubeMesh(renderer, GetGlobalHeap(), &cubeVB_);

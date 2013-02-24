@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	DeviceDX11RenderDevice.h	
-	
-	Copyright (c) 18:12:2011 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	DeviceDX11RenderDevice.h	
+    
+    Copyright (c) 18:12:2011 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 
@@ -69,7 +69,7 @@ namespace Heart
         hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, void** initdatas, hUint32 count);
         void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
         void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
-        hdDX11Texture*                  CreateTextureDevice( hUint32 width, hUint32 height, hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags );
+        hdDX11Texture*                  CreateTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags);
         void                            DestroyTextureDevice( hdDX11Texture* texture );
         hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );
         void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
@@ -86,7 +86,8 @@ namespace Heart
         hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
         void                            DestroySamplerState( hdDX11SamplerState* state );
         void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
-
+        void                            createComputeUAV(hdDX11Texture* res, hTextureFormat viewformat, hUint mip, hdDX11ComputeUAV* outres);
+        void                            destroyComputeUAV(hdDX11ComputeUAV* uav);
     protected:
 
         const hChar*                getDebugShaderSource(hDebugShaderID shaderid);
@@ -100,6 +101,7 @@ namespace Heart
         typedef hMap< hUint32, hdDX11VertexLayout >       VertexLayoutMapType;
 
         hUint32                     BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements);
+        DXGI_FORMAT                 toDXGIFormat(hTextureFormat format, hBool* compressed);
 
         static const hChar*         s_shaderProfileNames[];
 

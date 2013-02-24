@@ -53,6 +53,14 @@ namespace Heart
         {}
         hUint32 x_,y_,width_,height_;
     };
+    struct hRelativeViewport 
+    {
+        hRelativeViewport() {}
+        hRelativeViewport(hFloat fx, hFloat fy, hFloat fw, hFloat fh)
+            : x(fx), y(fy), w(fw), h(fh)
+        {}
+        hFloat x, y, w, h;
+    };
 
     typedef hRect hScissorRect;
 
@@ -429,11 +437,12 @@ namespace Heart
 
     enum ResourceFlags
     {
-        RESOURCEFLAG_DYNAMIC        = 1 << 1,
-        RESOURCEFLAG_RENDERTARGET   = 1 << 2,
-        RESOURCEFLAG_DEPTHTARGET    = 1 << 3,
-        RESOURCEFLAG_KEEPCPUDATA    = 1 << 4,
-        RESOURCEFLAG_DONTOWNCPUDATA = 1 << 5,
+        RESOURCEFLAG_DYNAMIC         = 1 << 1,
+        RESOURCEFLAG_RENDERTARGET    = 1 << 2,
+        RESOURCEFLAG_DEPTHTARGET     = 1 << 3,
+        RESOURCEFLAG_KEEPCPUDATA     = 1 << 4,
+        RESOURCEFLAG_DONTOWNCPUDATA  = 1 << 5,
+        RESOURCEFLAG_UNORDEREDACCESS = 1 << 6
     };
 
     enum PrimitiveType

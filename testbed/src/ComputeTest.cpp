@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   ComplexMesh2.cpp  
+    filename:   ComputeTest.cpp  
     
-    Copyright (c) 30:1:2013 James Moran
+    Copyright (c) 24:2:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,20 +25,40 @@
 
 *********************************************************************/
 #include "testbed_precompiled.h"
-#include "ComplexMesh2.h"
+#include "ComputeTest.h"
 #include "TestUtils.h"
 
-DEFINE_HEART_UNIT_TEST(ComplexMesh2);
+DEFINE_HEART_UNIT_TEST(ComputeTest);
 
-#define PACKAGE_NAME ("COMPLEXMESH2")
-#define RESOURCE_NAME ("HOUSE")
-#define ASSET_PATH ("COMPLEXMESH2.HOUSE")
+#define PACKAGE_NAME ("MATERIALS")
+#define RESOURCE_NAME ("MATERIALS")
+#define ASSET_PATH ("MATERIALS.PERLIN_CS")
+
+#define NOISE_PER       (0.333f)
+#define NOISE_OCTAVES   (8)
+#define NOISE_SEED      (2013)
+#define NOISE_STEP      (0.05f)
+
+#define NOISE_SIZE_X    (8192)
+#define NOISE_SIZE_Y    (8192)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ComplexMesh2::RunUnitTest()
+__declspec(align(16))
+struct cbNoise {
+    hFloat persistence;
+    hUint  octaves;
+    hFloat scale;
+    hUint  seed;
+};
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint32 ComputeTest::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
@@ -98,17 +118,17 @@ hUint32 ComplexMesh2::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::RenderUnitTest()
+void ComputeTest::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
+#if 0
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
 
     drawCtx_.Begin(renderer);
 
-    for (hUint32 i = 0; i < lodobjects; ++i)
-    {
+    for (hUint32 i = 0; i < lodobjects; ++i) {
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
@@ -128,6 +148,10 @@ void ComplexMesh2::RenderUnitTest()
         }
     }
     drawCtx_.End();
+#endif
+    Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
+    ctx->setComputeInput(&computeParams_);
+    ctx->dispatch(32, 32, 1);
 }
 
 
@@ -135,7 +159,7 @@ void ComplexMesh2::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::CreateRenderResources()
+void ComputeTest::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
@@ -154,11 +178,15 @@ void ComplexMesh2::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 40.f, -10.f);
+    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    hMipDesc resTexInit={
+        8192, 8192, NULL, 0
+    };
+    hUint32 cbSizes=sizeof(cbNoise);
 
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
@@ -167,16 +195,30 @@ void ComplexMesh2::CreateRenderResources()
     camera->setViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+    computeProg_ = static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+    renderer->createTexture(1, &resTexInit, TFORMAT_R32F, RESOURCEFLAG_UNORDEREDACCESS, GetGlobalHeap(), &resTex_);
+    noiseParams_=renderer->CreateConstantBlocks(&cbSizes, NULL, 1);
 
-    hcAssert(renderModel_);
+    computeParams_.bindShaderProgram(computeProg_);
+    computeParams_.bindResourceView(hCRC32::StringCRC("g_textureOut"), resTex_);
+    computeParams_.bindConstantBuffer(hCRC32::StringCRC("cbNoise"), noiseParams_);
+
+    hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
+    hConstBlockMapInfo mapinfo;
+    ctx->Map(noiseParams_, &mapinfo);
+    cbNoise* ncb=(cbNoise*)mapinfo.ptr;
+    ncb->persistence = NOISE_PER;
+    ncb->octaves = NOISE_OCTAVES;
+    ncb->scale = NOISE_STEP;
+    ncb->seed = NOISE_SEED;
+    ctx->Unmap(&mapinfo);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::DestroyRenderResources()
+void ComputeTest::DestroyRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
@@ -189,7 +231,7 @@ void ComplexMesh2::DestroyRenderResources()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::UpdateCamera()
+void ComputeTest::UpdateCamera()
 {
     using namespace Heart;
     using namespace Heart::hVec3Func;

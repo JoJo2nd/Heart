@@ -60,8 +60,9 @@ namespace Heart
         const hMatrix&              GetProjectionMatrix() { return projectionMatrix_; }
         hViewFrustum*               ViewFrustum() { return &frustum_; }
         hVec3                       ProjectTo2D( const hVec3& point );
-        void                        SetViewport( const hViewport& vp ) { viewport_ = vp; }
-        hViewport                   GetViewport() const { return viewport_; }
+        void                        setViewport( const hRelativeViewport& vp ) { viewport_ = vp; }
+        hRelativeViewport           getViewport() const { return viewport_; }
+        hViewport                   getTargetViewport() const;
         hFloat                      GetFar() const { return far_; }
         hFloat                      GetNear() const { return near_; }
         void                        SetTechniquePass( const hRenderTechniqueInfo* tech ) { validTechnique_ = tech; }
@@ -88,7 +89,7 @@ namespace Heart
         hMatrix                     viewMatrix_;
         hMatrix                     projectionMatrix_;
         hViewFrustum                frustum_;
-        hViewport                   viewport_;
+        hRelativeViewport           viewport_;
         hRenderer*                  renderer_;
         hRenderViewportTargetSetup  setup_;
         hdParameterConstantBlock*   cameraConstBlock_;

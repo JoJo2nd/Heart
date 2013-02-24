@@ -42,6 +42,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "device/dx11/hDX11VertexLayout.h"
+#include "device/dx11/hDX11ComputeTypes.h"
 #include "device/dx11/hDX11ShaderProgram.h"
 #include "device/dx11/hDX11IndexBuffer.h"
 #include "device/dx11/hDX11VertexBuffer.h"

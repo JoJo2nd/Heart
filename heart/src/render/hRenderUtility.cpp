@@ -753,7 +753,7 @@ namespace hRenderUtility
         hMipDesc mipsdesc[] = {
             {low_res_fnt_width, low_res_fnt_height, (hByte*)low_res_fnt_data, low_res_fnt_data_len},
         };
-        rndr->CreateTexture(low_res_fnt_width, low_res_fnt_height, 1, mipsdesc, TFORMAT_L8, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
+        rndr->createTexture(1, mipsdesc, TFORMAT_L8, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
 
         return outfont;
     }
@@ -765,7 +765,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
-        rndr->DestroyTexture(tex);
+        rndr->destroyTexture(tex);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -778,7 +778,7 @@ namespace hRenderUtility
         HEART_PROFILE_FUNC();
         camera->UpdateParameters(ctx);
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
-        ctx->SetViewport(camera->GetViewport());
+        ctx->SetViewport(camera->getTargetViewport());
         if ((clearflags&eClearTarget_Colour)==eClearTarget_Colour) {
             // Should clear flags be on the camera?
             for (hUint i=0; i<camera->getTargetCount(); ++i) {

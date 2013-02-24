@@ -404,7 +404,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
     //Read Texture data
     infile->Read(textureData, totalTextureSize);
 
-    renderer->CreateTexture(header.width, header.height, header.mipCount, mips, header.format, header.flags, memalloc->resourcePakHeap_, &texutre);
+    renderer->createTexture(header.mipCount, mips, header.format, header.flags, memalloc->resourcePakHeap_, &texutre);
 
     return texutre;
 }
@@ -612,7 +612,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 DLL_EXPORT
 void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
-    engine->GetRenderer()->DestroyTexture(static_cast<hTexture*>(resource));
+    engine->GetRenderer()->destroyTexture(static_cast<hTexture*>(resource));
 }
 
 //////////////////////////////////////////////////////////////////////////
