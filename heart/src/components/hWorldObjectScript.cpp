@@ -32,6 +32,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+#if 0
     void hWorldScriptObject::ParseFromXML(const hXMLDocument& xml, const hEntityFactory* entityFactory, hResourceManager* resManager)
     {
         //Get all world object types and pack into list/array
@@ -159,4 +160,5 @@ namespace Heart
         }
     }
 
+#endif
 }

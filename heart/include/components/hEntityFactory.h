@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hEntityFactory.h	
-	
-	Copyright (c) 23:1:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hEntityFactory.h	
+    
+    Copyright (c) 23:1:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 #ifndef HENTITYFACTORY_H__
@@ -43,7 +43,6 @@ namespace Heart
 
         hEntityFactory()
             : fileSystem_(NULL)
-            , activeScript_(NULL)
         {
 
         }
@@ -52,43 +51,37 @@ namespace Heart
 
         }
 
-        void                    Initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, hHeartEngine* engine);
-        void RegisterComponent( 
+        void                    initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, hHeartEngine* engine);
+        void registerComponent( 
             const hChar* componentName, 
-            hUint32 outComponentID, 
+            hUint32 outComponentHash, 
             const hComponentProperty* props, 
-            hUint32 propCount, 
             ComponentCreateCallback createFunc, 
             ComponentDestroyCallback destroyFunc );
-        hComponentFactory*         GetCompontFactory(const hString& name) const;
-        hBool                      ActivateWorldScriptObject(hWorldScriptObject* script);
-        hWorldScriptObject*        DeactivateWorldScriptObject();
-        hEntity*                   CreateWorldObject(const hChar* worldTypeName, const hChar* objectName, hUint32 id=hErrorCode);
-        hEntity*                   CreateEmptyWorldObject(const hChar* objectName, hUint32 id=hErrorCode);
-        hEntity*                   CreateWorldObject(hEntityInstanceDefinition* entityDef);
-        hEntity*                   FindWorldObjectByID(hUint32 id);
-        hEntity*                   FindWorldObjectByName(const hChar* name);
-        hResourceClassBase*        OnWorldObjectScriptLoad(const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager);
-        hUint32                    OnWorldObjectScriptUnload(const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager);
+        hComponentFactory*         getCompontFactory(hUint32 compHash) const;
+        hEntity*                   createWorldObject(const hChar* wotName, const hChar* wantedObjectName);
+        hEntity*                   createWorldObject(const hChar** componentNames, hUint compCount, const hChar* wantedObjectName);
+        void                       registerObjectTemplate(const hWorldObjectTemplate& wot);
 
     private:
 
         hEntityFactory( const hEntityFactory& rhs );
         hEntityFactory& operator = ( const hEntityFactory& rhs );
 
-        typedef hMap< hString, hComponentFactory > ComponentFactoryMapType;
-        typedef hVector< hEntity >                 EntityArray;
+        typedef hMap< hUint32, hComponentFactory >      ComponentFactoryMapType;
+        typedef hMap< hUint32, hWorldObjectTemplate >   WorldObjectTemplateMapType;
+        typedef hMap< hUint32, hEntity >                EntityLookupMap;
 
-        hHeartEngine*                engine_;
+        hHeartEngine*               engine_;
         hResourceManager*           resourceManager_;
         hIFileSystem*               fileSystem_;
         ComponentFactoryMapType     factoryMap_;
-        hWorldScriptObject*         activeScript_;
-        EntityArray                 entityArray_;
+        WorldObjectTemplateMapType  objectTemplates_;
+        EntityLookupMap             entityLookUp_;
     };
 
 #define HEART_REGISTER_COMPONENT_FACTORY( ef, c, createFunc, destroyFunc ) \
-    ef->RegisterComponent( c::GetComponentName(), c::GetComponentID(), c::GetPropertyArray(), c::GetPropertyCount(), createFunc, destroyFunc );
+    ef->registerComponent( c::GetComponentName(), c::GetComponentHash(), c::GetPropertyArray(), createFunc, destroyFunc );
 }
 
 #endif // HENTITYFACTORY_H__

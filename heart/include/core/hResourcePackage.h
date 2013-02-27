@@ -35,7 +35,21 @@ namespace Heart
 
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
 
-    typedef hUint64 hResourceID;
+    //typedef hUint64 hResourceID;
+    struct hResourceID
+    {
+        hUint64 hash_;
+
+        hResourceID() : hash_(0) {}
+        explicit hResourceID(hUint64 v) : hash_(v) {}
+        hResourceID(const hResourceID& rhs) : hash_(rhs.hash_) {}
+        hBool operator == (const hResourceID& rhs) const { return hash_ == rhs.hash_; }
+        hBool operator != (const hResourceID& rhs) const { return hash_ != rhs.hash_; }
+        hResourceID& operator = (const hResourceID& rhs) { hash_ = rhs.hash_; return *this; }
+        operator hUint64() { return hash_; }
+    };
+
+    
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

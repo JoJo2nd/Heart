@@ -85,6 +85,7 @@ namespace Heart
         HEART_ALLOW_SERIALISE_FRIEND();
 
         friend class hRenderer;
+        friend class hMaterial;
 
         static const hUint32 s_maxPrograms = 5;
 
@@ -103,17 +104,10 @@ namespace Heart
                 hShaderProgram* domainProgram_;
             };
         };
-        union
+        struct
         {
-            hResourceID     programIDs_[s_maxPrograms];
-            struct
-            {
-                hResourceID vertexProgramID_;
-                hResourceID fragmentProgramID_;
-                hResourceID geometryProgramID_;
-                hResourceID hullProgramID_;
-                hResourceID domainProgramID_;
-            };
+            hResourceID vertexProgramID_;
+            hResourceID fragmentProgramID_;
         };
 
         /*

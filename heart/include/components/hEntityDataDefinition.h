@@ -1,27 +1,27 @@
 /********************************************************************
 
-	filename: 	hEntityDataDefinition.h	
-	
-	Copyright (c) 23:1:2012 James Moran
-	
-	This software is provided 'as-is', without any express or implied
-	warranty. In no event will the authors be held liable for any damages
-	arising from the use of this software.
-	
-	Permission is granted to anyone to use this software for any purpose,
-	including commercial applications, and to alter it and redistribute it
-	freely, subject to the following restrictions:
-	
-	1. The origin of this software must not be misrepresented; you must not
-	claim that you wrote the original software. If you use this software
-	in a product, an acknowledgment in the product documentation would be
-	appreciated but is not required.
-	
-	2. Altered source versions must be plainly marked as such, and must not be
-	misrepresented as being the original software.
-	
-	3. This notice may not be removed or altered from any source
-	distribution.
+    filename: 	hEntityDataDefinition.h	
+    
+    Copyright (c) 23:1:2012 James Moran
+    
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+    
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+    
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+    
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+    
+    3. This notice may not be removed or altered from any source
+    distribution.
 
 *********************************************************************/
 #ifndef HENTITYDATADEFINITION_H__
@@ -34,14 +34,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    typedef hFunctor< hComponent*(*)( hEntity* ) >::type	ComponentCreateCallback;
-    typedef hFunctor< void (*)(hComponent*) >::type	    ComponentDestroyCallback;
+    hFUNCTOR_TYPEDEF(hComponent*(*)(hEntity*), ComponentCreateCallback);
+    hFUNCTOR_TYPEDEF(void (*)(hComponent*), ComponentDestroyCallback);
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hComponentFactory : public hMapElement< hString, hComponentFactory >
+    class hComponentFactory : public hMapElement< hUint32, hComponentFactory >
     {
     public:
 
@@ -52,14 +52,11 @@ namespace Heart
         ComponentCreateCallback   createFunc_;
         ComponentDestroyCallback  destroyFunc_;
 
-        const hComponentProperty*       GetProperty(const hChar* name) const
+        const hComponentProperty*       GetProperty(hUint32 hash) const
         {
-            hcAssertMsg( hStrCmp("__id__",name), "Property __id__ is read only");
-            for (hUint32 i = 0; i< componentPropCount_; ++i)
-            {
-                if (hStrCmp(componentProperties_[i].name_,name) == 0)
-                {
-                    return &componentProperties_[i];
+            for (hUint32 i = 0; i< componentPropCount_; ++i) {
+                if (componentProperties_[i].nameHash_ == hash) {
+                    return componentProperties_+i;
                 }
             }
 
@@ -67,107 +64,124 @@ namespace Heart
         }
     };
 
-    class hComponentPropertyValue
-    {
-    public:
-        hComponentPropertyValue()
-            : type_(NULL)
-        {
-
-        }
-
-        ~hComponentPropertyValue()
-        {
-
-        }
-
-        const hComponentProperty*   type_;
-        hUint32                     size_;
-        union
-        {
-            hBool                   boolValue_;
-            hUint32                 uintValue_;
-            hInt32                  intValue_;
-            hFloat                  floatValue_;
-            hChar*                  stringValue_;
-            hResourceClassBase*     resourcePointer_;
-        }values_;
-    };
-
-    class hComponentPropertyValueOverride : public hComponentPropertyValue
-    {
-    public:
-        hComponentPropertyValueOverride()
-            : hComponentPropertyValue()
-            , compFactory_(NULL)
-        {
-
-        }
-
-        hComponentFactory*  compFactory_;
-    };
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
     class hComponentDataDefinition
     {
     public:
-        hComponentDataDefinition()
-            : baseFactory_(NULL)
+        hComponentDataDefinition(hMemoryHeapBase* heap, hComponentFactory* base)
+            : heap_(heap)
+            , properties_(heap)
+            , baseFactory_(base)
         {
+        }
+        hComponentDataDefinition(const hComponentDataDefinition& rhs)
+        {
+            heap_=rhs.heap_;
+            dataSize_=rhs.dataSize_;
+            baseFactory_=rhs.baseFactory_;
+            rhs.properties_.CopyTo(&properties_);
+            overrideData_=(hUint8*)hHeapMalloc(heap_, dataSize_);
+            hMemCpy(overrideData_, rhs.overrideData_, dataSize_);
+        }
+        hComponentDataDefinition& operator = (const hComponentDataDefinition& rhs)
+        {
+            heap_=rhs.heap_;
+            dataSize_=rhs.dataSize_;
+            baseFactory_=rhs.baseFactory_;
+            rhs.properties_.CopyTo(&properties_);
+            overrideData_=(hUint8*)hHeapMalloc(heap_, dataSize_);
+            hMemCpy(overrideData_, rhs.overrideData_, dataSize_);
+            return *this;
         }
         ~hComponentDataDefinition()
-        {}
+        {
+            hHeapFreeSafe(heap_, overrideData_);
+        }
 
-        void SetComponent(hComponentFactory* base) { baseFactory_ = base; }
         hComponentFactory* GetComponentFactory() const { return baseFactory_; }
-        void SetPropertyCount(hUint32 count){ properties_.Resize(count); }
-        hUint32 GetPropertyCount() const { return properties_.GetSize(); }
-        hComponentPropertyValue* GetComponentPropertyDefinition(hUint32 idx) { return &properties_[idx]; }
+        void SetOverrideCount(hUint count){ properties_.Resize(count); }
+        hUint32 GetOverrideCount() const { return properties_.GetSize(); }
+        void* GetOverrideData(hUint idx) { return overrideData_+properties_[idx].dataOffset_; }
+        hUint32 GetOverrideHash(hUint idx) { return properties_[idx].overrideHash_; }
+        hUint16 GetOverrideSize(hUint idx) { return properties_[idx].size_; }
+        void SetOverrideData(hUint32 propHash, void* data, hUint size)
+        {
+            hcAssertMsg(baseFactory_->GetProperty(propHash), "Couldn't find property hash 0x%08x", propHash);
+            hUint oldsize=dataSize_;
+            dataSize_+=size;
+            overrideData_=(hUint8*)hHeapRealloc(heap_, overrideData_, dataSize_);
+            hMemCpy(overrideData_+oldsize, data, size);
+            hComponentPropertyDefault cpd;
+            cpd.overrideHash_=propHash;
+            cpd.dataOffset_=oldsize;
+            cpd.size_=size;
+            properties_.PushBack(cpd);
+        }
 
     private:
 
-        hComponentDataDefinition( const hComponentDataDefinition& rhs );
-        hComponentDataDefinition& operator = ( const hComponentDataDefinition& rhs );
+        struct hComponentPropertyDefault
+        {
+            hComponentPropertyDefault()
+                : overrideHash_(0)
+                , dataOffset_(0)
+                , size_(0)
+            {
 
-        hVector< hComponentPropertyValue >      properties_;
+            }
+
+            hUint32 overrideHash_;
+            hUint16 dataOffset_;
+            hUint16 size_;
+        };
+
+        hMemoryHeapBase*                        heap_;
+        hVector< hComponentPropertyDefault >    properties_;
         hComponentFactory*                      baseFactory_;
+        hUint                                   dataSize_;
+        hUint8*                                 overrideData_;
     };
 
-    class hWorldObjectDefinition : public hMapElement< hUint32, hWorldObjectDefinition >
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    class hWorldObjectTemplate : public hMapElement< hUint32, hWorldObjectTemplate >
     {
     public:
-        hWorldObjectDefinition()
+        hWorldObjectTemplate()
         {
 
         }
-        ~hWorldObjectDefinition()
+        hWorldObjectTemplate( const hWorldObjectTemplate& rhs )
+        {
+            entityTypeName_=rhs.entityTypeName_;
+            rhs.componentDefinitions_.CopyTo(&componentDefinitions_);
+        }
+        hWorldObjectTemplate& operator = ( const hWorldObjectTemplate& rhs )
+        {
+            entityTypeName_=rhs.entityTypeName_;
+            rhs.componentDefinitions_.CopyTo(&componentDefinitions_);
+            return *this;
+        }
+        ~hWorldObjectTemplate()
         {
 
         }
 
-        void                        SetName(const hChar* name) { entityTypeName_ = name; }
-        const hChar*                GetName() const { return entityTypeName_.c_str(); }
-        void                        SetComponentCount(hUint32 count) { componentDefinitions_.Resize(count); }
-        hUint32                     GetComponentCount() const { return componentDefinitions_.GetSize(); }
-        hComponentDataDefinition*   GetComponentDefinition(hUint32 idx) { return &componentDefinitions_[idx]; }
+        void                        setName(const hChar* name) { entityTypeName_ = name; }
+        const hChar*                getName() const { return entityTypeName_.c_str(); }
+        hUint32                     getComponentCount() const { return componentDefinitions_.GetSize(); }
+        void                        appendComponentDef(const hComponentDataDefinition& compDef) { componentDefinitions_.PushBack(compDef); }
+        hComponentDataDefinition*   getComponentDefinition(hUint32 idx) { return &componentDefinitions_[idx]; }
 
     private:
-
-        hWorldObjectDefinition( const hWorldObjectDefinition& rhs );
-        hWorldObjectDefinition& operator = ( const hWorldObjectDefinition& rhs );
 
         hString                                 entityTypeName_;
         hVector< hComponentDataDefinition >     componentDefinitions_;
-    };
-
-    class hEntityInstanceDefinition
-    {
-    public:
-        
-        hString                                     name_;
-        hString                                     worldType_;
-        hUint32                                     id_;                     // will be hErrorCode if not given
-        hVector< hComponentPropertyValueOverride >  propertyOverrides;   // array of overrides
-
     };
 
 }

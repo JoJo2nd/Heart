@@ -47,7 +47,10 @@ namespace Heart
     template< typename _Ty >
     inline hUint32 hCalcArrayAllocHeader()
     {
-        //TODO: check is _Ty is pod (see boost) and return zero is this case
+        if (hIs_pod< _Ty >::value) {
+            return 0;
+        }
+
         hUint32 align = hAlignOf(_Ty);
         return align > 4 ? align : 4;
     }
@@ -78,9 +81,18 @@ namespace Heart
         return newptr;
     }
 }
-
-#define hPRIVATE_DESTRUCTOR()\
-    template< typename _Ty > friend void Heart::hDestroyObjects(_Ty*, hUint32);
+#ifdef HEART_PLAT_WINDOWS
+#   if _MSC_VER >= 1500
+#       define hPRIVATE_DESTRUCTOR()\
+            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32); \
+            template < typename t_ty > friend struct std::tr1::_Get_align; //MSVC-Secret hidden type that needs exposing
+#   else
+#       define hPRIVATE_DESTRUCTOR()\
+            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32);
+#   endif
+#else
+#   pragma error ("Unknow platform")
+#endif
 
 #ifndef HEART_USE_DEFAULT_MEM_ALLOC
 

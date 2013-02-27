@@ -27,7 +27,7 @@
 #ifndef hcTypes_h__
 #define hcTypes_h__
 
-#include <type_traits>
+#include "hTypeTraits.h"
 
 typedef	char				hChar;
 typedef unsigned char		hByte;
@@ -124,10 +124,14 @@ namespace Heart
     #define NULL 0
 #endif
 
-#ifdef HEART_PLAT_WINDOWS
-    #define hAlignOf(x) __alignof(x)
+#ifdef HEART_PLAT_WINDOWS 
+#   if _MSC_VER < 1500
+#       define hAlignOf(x) __alignof(x)
+#   else
+#       define hAlignOf(x) hAlignment_of<##x>::value
+#   endif
 #else
-    #define hAlignOf(x) std::alignment_of<double>::value>
+#   error ("Unknown platform ")
 #endif
 
 #ifndef hFORCEINLINE

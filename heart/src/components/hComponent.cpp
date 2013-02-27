@@ -27,13 +27,4 @@
 
 namespace Heart
 {
-    extern const hChar* ComponentPropertyName[] =
-    {
-        "Bool",
-        "Int",
-        "UInt",
-        "Float",
-        "String",
-        "ResourceAsset",
-    };
 }

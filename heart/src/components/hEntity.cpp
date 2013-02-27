@@ -36,7 +36,7 @@ namespace Heart
     {
         for (hUint32 i = 0; i < components_.GetSize(); ++i)
         {
-            if(components_[i].componentID_ == id)
+            if(components_[i].componentHash_ == id)
                 return components_[i].component_;
         }
 
@@ -53,7 +53,7 @@ namespace Heart
 
         hComponentContainer c;
         c.component_ = component;
-        c.componentID_ = component->GetID();
+        c.componentHash_ = component->GetID();
         components_.PushBack(c);
     }
 

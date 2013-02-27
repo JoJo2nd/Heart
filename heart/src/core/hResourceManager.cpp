@@ -380,16 +380,16 @@ namespace Heart
     Heart::hResourceID hResourceManager::BuildResourceID( const hChar* fullPath )
     {
         if (!fullPath)
-            return 0;
+            return hResourceID();
 
         const hChar* resName = hStrChr(fullPath, '.');
         if (!resName)
-            return 0;
+            return hResourceID();
         
         hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
         hUint32 resCRC = hCRC32::StringCRC(resName+1);
 
-        return ((hUint64)pakCRC << 32) | ((hUint64)resCRC);
+        return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -399,12 +399,12 @@ namespace Heart
     Heart::hResourceID hResourceManager::BuildResourceID( const hChar* package, const hChar* resourceName )
     {
         if (!package || !resourceName)
-            return 0;
+            return hResourceID();
 
         hUint32 pakCRC = hCRC32::StringCRC(package);
         hUint32 resCRC = hCRC32::StringCRC(resourceName);
 
-        return ((hUint64)pakCRC << 32) | ((hUint64)resCRC);
+        return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
     }
 
     //////////////////////////////////////////////////////////////////////////

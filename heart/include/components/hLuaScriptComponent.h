@@ -37,7 +37,7 @@ namespace Heart
     public:
 
         hLuaScriptComponent( hEntity* owner, hLuaThreadState* luaThread )
-            : hComponent( owner, GetComponentID() )
+            : hComponent( owner, GetComponentHash() )
             , luaThread_( luaThread )
             , autoLoadScript_(hFalse)
             , resource_(NULL)
