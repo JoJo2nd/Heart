@@ -741,8 +741,8 @@ namespace hRenderUtility
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
         outfont->SetFontWidth(0);
         outfont->SetPageCount(g_debugpageCount);
-        outfont->SetPageResourceID(0);
-        outfont->SetMaterialResourceID(0);
+        outfont->SetPageResourceID(hResourceID());
+        outfont->SetMaterialResourceID(hResourceID());
         outfont->SetFontCharacterLimit(g_debugglyphCount);
 
         for (hUint32 i = 0; i < g_debugglyphCount; ++i) {

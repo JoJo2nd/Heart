@@ -327,7 +327,7 @@ namespace Heart
     {
         hBool dontcreatecb=(hMatInst_DontInstanceConstantBuffers&flags) == hMatInst_DontInstanceConstantBuffers;;
         hMaterialInstance* matInst = hNEW(memHeap_, hMaterialInstance) (memHeap_, this);
-        activeTechniques_->CopyTo(&matInst->techniques_);
+        matInst->techniques_=*activeTechniques_;
 
         for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
             for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {

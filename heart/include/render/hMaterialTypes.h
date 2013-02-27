@@ -51,7 +51,6 @@ namespace Heart
             , rasterizerState_(NULL)
         {
             hZeroMem(programs_, sizeof(programs_));
-            hZeroMem(programIDs_, sizeof(programIDs_));
         }
 
         hShaderProgram*         GetVertexShader() { return vertexProgram_; }
@@ -129,13 +128,21 @@ namespace Heart
         {
             hZeroMem( name_, MAX_NAME_LEN );
         }
+        hMaterialTechnique(const hMaterialTechnique& rhs)
+        {
+            name_ = rhs.name_;
+            transparent_ = rhs.transparent_;
+            layer_ = rhs.layer_;
+            mask_ = rhs.mask_;
+            passes_=rhs.passes_;
+        }
         hMaterialTechnique&             operator = ( const hMaterialTechnique& rhs )
         {
             name_ = rhs.name_;
             transparent_ = rhs.transparent_;
             layer_ = rhs.layer_;
             mask_ = rhs.mask_;
-            rhs.passes_.CopyTo( &passes_ );
+            passes_=rhs.passes_;
 
             return *this;
         }

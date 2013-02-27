@@ -107,14 +107,22 @@ namespace Heart
             , size_( 0 )
             , reserve_( 0 )
         {}
+        hVector( const hVector& rhs )
+        {
+            rhs.CopyTo( this );
+        }
+        hVector& operator = ( const hVector& rhs )
+        {
+            rhs.CopyTo( this );
 
+            return *this;
+        }
         hVector(hMemoryHeapBase* heap)
             : heap_(heap)
             , values_( NULL )
             , size_( 0 )
             , reserve_( 0 )
         {}
-
         ~hVector()
         {
             Clear();
@@ -123,8 +131,9 @@ namespace Heart
         template< typename _Uy, hUint32 _OtherGranularity >
         void CopyTo( hVector< _Uy, _OtherGranularity >* rhs ) const
         {
+            rhs->Shrink(0);
             if (rhs->heap_!=heap_) {
-                rhs->~SelfType();
+                rhs->Clear();
             }
             rhs->heap_=heap_;
             rhs->Reserve( size_ );
@@ -180,8 +189,10 @@ namespace Heart
 
         void Clear() 
         {
-            Shrink( 0 );
-            hHeapFree(heap_, values_);
+            if (heap_) {
+                Shrink( 0 );
+                hHeapFree(heap_, values_);
+            }
             values_ = NULL;
             reserve_ = 0;
         }
@@ -203,23 +214,6 @@ namespace Heart
         const TypePtr GetBuffer() const { return values_; }
 
     private:
-
-        template< typename _Ty >
-        friend void SerialiseMethod( Heart::hSerialiser* , const Heart::hVector< _Ty >& );
-        template< typename _Ty >
-        friend void DeserialiseMethod( Heart::hSerialiser* , Heart::hVector< _Ty >& );
-
-        // Hidden to prevent mistaken copies. If a copy is need use explict Copy() function
-        hVector( const hVector& rhs )
-        {
-            rhs.CopyTo( this );
-        }
-        hVector& operator = ( const hVector& rhs )
-        {
-            rhs.CopyTo( this );
-
-            return *this;
-        }
         
         void ReserveGran( hSizeT size )
         {
@@ -259,33 +253,6 @@ namespace Heart
         hSizeT              size_;
         hSizeT              reserve_;
     };
-
-    template< typename _Ty >
-    inline void SerialiseMethod( Heart::hSerialiser* ser, const Heart::hVector< _Ty >& data )
-    {
-        SERIALISE_ELEMENT( data.size_ );
-        SERIALISE_ELEMENT_COUNT( data.values_, data.size_ );
-    }
-
-    template< typename _Ty >
-    inline void DeserialiseMethod( Heart::hSerialiser* ser, Heart::hVector< _Ty >& data )
-    {
-        DESERIALISE_ELEMENT( data.size_ );
-        DESERIALISE_ELEMENT( data.values_ );
-        data.reserve_ = data.size_;
-    }
-
-    template< typename _Ty, hUint32 arraySize >
-    inline void SerialiseMethod( Heart::hSerialiser* ser, const Heart::hArray< _Ty, arraySize >& data )
-    {
-        SERIALISE_ELEMENT( data.values_ );
-    }
-
-    template< typename _Ty, hUint32 arraySize >
-    inline void DeserialiseMethod( Heart::hSerialiser* ser, Heart::hArray< _Ty, arraySize >& data )
-    {
-        DESERIALISE_ELEMENT( data.values_ );
-    }
 
 }
 
