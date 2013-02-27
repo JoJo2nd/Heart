@@ -71,6 +71,10 @@ namespace Heart
     class hComponentDataDefinition
     {
     public:
+        hComponentDataDefinition()
+            : heap_(NULL)
+        {
+        }
         hComponentDataDefinition(hMemoryHeapBase* heap, hComponentFactory* base)
             : heap_(heap)
             , properties_(heap)

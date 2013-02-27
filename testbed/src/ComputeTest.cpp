@@ -121,34 +121,6 @@ hUint32 ComputeTest::RunUnitTest()
 void ComputeTest::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
-#if 0
-    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
-    hUint32 lodobjects = lod->renderObjects_.GetSize();
-    const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
-
-    drawCtx_.Begin(renderer);
-
-    for (hUint32 i = 0; i < lodobjects; ++i) {
-        // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable = &lod->renderObjects_[i];
-
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
-        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
-            drawCtx_.SubmitDrawCall(drawCall_);
-        }
-    }
-    drawCtx_.End();
-#endif
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     ctx->setComputeInput(&computeParams_);
     ctx->dispatch(32, 32, 1);
@@ -224,6 +196,14 @@ void ComputeTest::DestroyRenderResources()
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
+    if (resTex_) {
+        renderer->destroyTexture(resTex_);
+        resTex_=NULL;
+    }
+    if (noiseParams_) {
+        renderer->DestroyConstantBlocks(noiseParams_, 1);
+        noiseParams_=NULL;
+    }
     camera->ReleaseRenderTargetSetup();
 }
 

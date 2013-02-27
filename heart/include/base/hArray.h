@@ -174,7 +174,7 @@ namespace Heart
         // TODO: possible to do this automagically with std::is_trivially_constructible (Cx11)
         void ResizeNoConstruct(hSizeT size) { 
             if (size>size_) {
-                GrowNoConstruct(size);
+                Grow(size);
             }
             else {
                 Shrink(size);
@@ -183,7 +183,7 @@ namespace Heart
 
         void PushBack( const _Ty& val )
         {
-            GrowNoConstruct(size_ + 1);
+            Grow(size_ + 1);
             values_[size_-1] = val;
         }
 
@@ -231,12 +231,6 @@ namespace Heart
             //Construct
             for ( hUint32 i = size_; i < size; ++i )
                 new ( values_+i ) _Ty;
-            size_ = size;
-        }
-        
-        void GrowNoConstruct(hSizeT size)
-        {
-            ReserveGran( size );
             size_ = size;
         }
 
