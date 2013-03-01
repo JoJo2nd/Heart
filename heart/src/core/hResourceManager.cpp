@@ -316,6 +316,7 @@ namespace Heart
                 handler.packageLink_            = (OnPackageLoadComplete)   hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
                 handler.packageUnlink_          = (OnResourceDataUnload)    hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnlink");
                 handler.resourceDataUnload_     = (OnPackageUnloadComplete) hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
+                handler.getBuildVersion_        = (hGetBuilderVersion)      hd_GetFunctionAddress(handler.loaderLib_, "HeartGetBuilderVersion");
 
                 if ( handler.binLoader_           &&
                      handler.packageLink_         &&

@@ -60,6 +60,7 @@ namespace Heart
     typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
     typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
     typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
+    typedef void                (*hGetBuilderVersion)       (hUint32* verMaj, hUint32* verMin);
     typedef hTime               (*GetTimestamp)             ();
 
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
@@ -72,6 +73,7 @@ namespace Heart
         OnResourceDataUnload    resourceDataUnload_;
         OnPackageUnloadComplete packageUnlink_;
         GetTimestamp            getTimestamp_;
+        hGetBuilderVersion       getBuildVersion_;
     };
 
     typedef hMap< hResourceType, hResourceHandler > hResourceHandlerMap;

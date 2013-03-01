@@ -126,7 +126,9 @@ namespace Heart
                         const hChar* resName, 
                         const hChar* resourcePath, 
                         hUint32 parameterHash,
-                        hTime libTimeStamp);
+                        hTime libTimeStamp,
+                        hUint32 libVerMajor,
+                        hUint32 libVerMinor);
 
         ~hBuiltDataCache()
         {
@@ -144,6 +146,8 @@ namespace Heart
         void                AppendFileTimestampToCache( hIFile* file, const hChar* filepath );
 
         hXMLDocument        doc_;
+        hUint32             libVerMajor_;
+        hUint32             libVerMinor_;
         hTime               libTimestamp_;
         hUint32             parameterHash_;
         hIFileSystem*       fileSystem_;

@@ -295,13 +295,18 @@ namespace Heart
                 hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
                 hDataParameterSet paramSet(&currentResource_);
 #ifdef HEART_ALLOW_DATA_COMPILE
+                hUint32 verMajor=~0,verMinor=~0;
+                if (handler->getBuildVersion_) {
+                    handler->getBuildVersion_(&verMajor, &verMinor);
+                }
                 hBuiltDataCache dataCache(
                     fileSystem_,
                     packageName_,
                     currentResource_.GetAttributeString("name"),
                     currentResource_.GetAttributeString("input"),
                     paramSet.GetParameterHash(),
-                    hd_GetSharedLibTimestamp(handler->loaderLib_));
+                    hd_GetSharedLibTimestamp(handler->loaderLib_),
+                    verMajor, verMinor);
 #endif//HEART_ALLOW_DATA_COMPILE
                 hResourceClassBase* res = NULL;
                 hUint32 crc = hCRC32::StringCRC(currentResource_.GetAttributeString("name"));

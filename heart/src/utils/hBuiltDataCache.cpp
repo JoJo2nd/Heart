@@ -57,7 +57,9 @@ namespace Heart
             const hChar* resName, 
             const hChar* resourcePath, 
             hUint32 parameterHash,
-            hTime libTimeStamp) 
+            hTime libTimeStamp,
+            hUint32 libVerMajor,
+            hUint32 libVerMinor) 
         : parameterHash_(parameterHash)
         , libTimestamp_(libTimeStamp)
         , fileSystem_(fileSystem)
@@ -66,6 +68,8 @@ namespace Heart
         , resourcePath_(resourcePath)
         , checkedCache_(hFalse)
         , validCache_(hFalse)
+        , libVerMajor_(libVerMajor)
+        , libVerMinor_(libVerMinor)
     {
         using namespace rapidxml;
         hChar* cacheDir;
@@ -88,11 +92,21 @@ namespace Heart
             doc_.append_node(filenode);
 
             hChar mdatestr[32];
+            hChar vermajstr[32];
+            hChar verminstr[32];
             hTime mdate = libTimeStamp;
             hStrPrintf( mdatestr, 32, "0x%016llX", mdate );
+            hStrPrintf(vermajstr, 32, "%u", libVerMajor_);
+            hStrPrintf(verminstr, 32, "%u", libVerMinor_);
             xmlstr = doc_.allocate_string(mdatestr);
             filenode = doc_.allocate_node(node_element, "builder", NULL);
             xml_attribute<>* timestamp = doc_.allocate_attribute("mdate", xmlstr);
+            xml_attribute<>* verMaj = doc_.allocate_attribute("verMajor", doc_.allocate_string(vermajstr));
+            xml_attribute<>* verMin = doc_.allocate_attribute("verMinor", doc_.allocate_string(verminstr));
+            if (libVerMajor_!=~0 && libVerMinor_!=~0) {
+                filenode->append_attribute(verMaj);
+                filenode->append_attribute(verMin);
+            }
             filenode->append_attribute(timestamp);
             doc_.append_node(filenode);
         }
@@ -216,31 +230,43 @@ namespace Heart
                 return hFalse;
             }
 
-            node.SetNode(doc_.first_node("builder"));
-            {
-                const hChar* mdatestr = node.GetAttributeString("mdate");
-                hTime mdate;
-                if (node.ToNode()->value())
+            // If no version function exists in the builder dll, use the
+            // timestamp on the dll to force flushes
+            if (libVerMajor_==~0 && libVerMinor_==~0) {
+                node.SetNode(doc_.first_node("builder"));
                 {
-                    hIFile* file = fileSystem_->OpenFile(node.ToNode()->value(), FILEMODE_READ);
-                    if (mdatestr == NULL ||
-                        sscanf(mdatestr, "0x%016llX", &mdate) != 1 ||
-                        mdate != libTimestamp_)
+                    const hChar* mdatestr = node.GetAttributeString("mdate");
+                    hTime mdate;
+                    if (node.ToNode()->value())
+                    {
+                        hIFile* file = fileSystem_->OpenFile(node.ToNode()->value(), FILEMODE_READ);
+                        if (mdatestr == NULL ||
+                            sscanf(mdatestr, "0x%016llX", &mdate) != 1 ||
+                            mdate != libTimestamp_)
+                        {
+                            validCache_ = hFalse;
+                        }
+                        fileSystem_->CloseFile(file);
+                    }
+                    else
                     {
                         validCache_ = hFalse;
                     }
-                    fileSystem_->CloseFile(file);
                 }
-                else
-                {
-                    validCache_ = hFalse;
+            }
+            else {
+                node.SetNode(doc_.first_node("builder"));
+                for (; node.ToNode() && validCache_; node = node.NextSibling()) {
+                    hUint32 verMajor=node.GetAttributeInt("verMajor", -1);
+                    hUint32 verMinor=node.GetAttributeInt("verMinor", -1);
+                    validCache_ = verMajor == libVerMajor_ && verMinor == libVerMinor_;
                 }
             }
 
             node.SetNode(doc_.first_node("file"));
 
-            for (; node.ToNode() && validCache_; node = node.NextSibling())
-            {
+
+            for (; node.ToNode() && validCache_; node = node.NextSibling()) {
                 const hChar* mdatestr = node.GetAttributeString("mdate");
                 hTime mdate;
                 if (node.ToNode()->value())
@@ -264,6 +290,7 @@ namespace Heart
                     validCache_ = hFalse;
                 }
             }
+
         }
 
         return validCache_;
