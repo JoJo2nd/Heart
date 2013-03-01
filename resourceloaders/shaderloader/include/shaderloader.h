@@ -49,6 +49,8 @@ extern "C"
     void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
     DLL_EXPORT
     void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
+    DLL_EXPORT 
+    void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
 };
 
 #endif // SHADERLOADER_H__
