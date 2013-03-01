@@ -139,6 +139,8 @@ namespace Heart
         */
         void													BeginRenderFrame();
         void													EndRenderFrame();
+        void                                                    rendererFrameSubmit();
+
         hUint32													CurrentFPS() { return FPS_; }
         hFloat                                                  GetLastGPUTime() { return gpuTime_; }
         hShaderProgram*                                         getDebugShader(hDebugShaderID shaderID);

@@ -39,10 +39,7 @@ namespace Heart
     template< typename _Ty >
     inline void hDestroyObjects(_Ty* ptr, hUint32 elements)
     {
-        if (hIs_pod< _Ty >::value) {
-            return;
-        }
-        if ( !ptr ) {
+        if (hIs_pod< _Ty >::value || !ptr ) {
             return;
         }
         for ( hUint32 i = 0; i < elements; ++i )

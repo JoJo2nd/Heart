@@ -171,15 +171,6 @@ namespace Heart
             else
                 Shrink( size );
         }
-        // TODO: possible to do this automagically with std::is_trivially_constructible (Cx11)
-        void ResizeNoConstruct(hSizeT size) { 
-            if (size>size_) {
-                Grow(size);
-            }
-            else {
-                Shrink(size);
-            }
-        }
 
         void PushBack( const _Ty& val )
         {

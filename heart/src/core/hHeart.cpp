@@ -207,6 +207,8 @@ namespace Heart
             GetRenderer()->BeginRenderFrame();
             if (mainRender_)
                 (*mainRender_)( this );
+
+            GetRenderer()->rendererFrameSubmit();
             /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
@@ -260,10 +262,7 @@ namespace Heart
              * Begin new frame of draw calls
              **/
             GetRenderer()->BeginRenderFrame();
-            /*
-             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
-             **/
-            GetRenderer()->EndRenderFrame();
+            GetRenderer()->rendererFrameSubmit();
             /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
@@ -271,6 +270,10 @@ namespace Heart
             debugMenuManager_->RenderMenus(
                 GetRenderer()->GetMainSubmissionCtx(), 
                 GetRenderer()->GetMaterialManager());
+            /*
+             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
+             **/
+            GetRenderer()->EndRenderFrame();
 
             GetControllerManager()->EndOfFrameUpdate();
         }

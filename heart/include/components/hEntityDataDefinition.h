@@ -72,7 +72,7 @@ namespace Heart
     {
     public:
         hComponentDataDefinition()
-            : heap_(NULL)
+            : heap_(GetGlobalHeap())
         {
         }
         hComponentDataDefinition(hMemoryHeapBase* heap, hComponentFactory* base)

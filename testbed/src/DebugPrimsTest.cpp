@@ -52,7 +52,7 @@ hUint32 DebugPrimsTest::RunUnitTest()
     case eRender: {
             UpdateCamera();
             if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ ||
-                kb->GetButton(VK_SPACE).raisingEdge_)
+                kb->GetButton(VK_F8).raisingEdge_)
             {
                 state_ = eExit;
             }

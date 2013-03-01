@@ -190,10 +190,6 @@ namespace Heart
     {
         HEART_PROFILE_FUNC();
 
-    
-        CollectAndSortDrawCalls();
-        SubmitDrawCallsMT();
-
         ParentClass::EndRender();
         ParentClass::SwapBuffers();
 
@@ -625,6 +621,13 @@ namespace Heart
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhiteViewLit]);
+    }
+
+    void hRenderer::rendererFrameSubmit()
+    {
+        HEART_PROFILE_FUNC();
+        CollectAndSortDrawCalls();
+        SubmitDrawCallsMT();
     }
 
 }

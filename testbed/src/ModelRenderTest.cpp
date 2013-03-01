@@ -69,7 +69,7 @@ hUint32 ModelRenderTest::RunUnitTest()
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
             if (pad->GetButton(HEART_PAD_BACK).buttonVal_ ||
-                kb->GetButton(VK_SPACE).raisingEdge_)
+                kb->GetButton(VK_F8).raisingEdge_)
             {
                 state_ = eBeginUnload;
             }

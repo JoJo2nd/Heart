@@ -98,15 +98,22 @@ namespace Heart
             }
             void   pushChar(const hChar& x)
             {
-                if (x == '\n') ++newLines_;
+                if (x == '\n') {
+                    ++newLines_;
+                }
                 *write_ = x;
                 ++write_;
-                if (write_ >= (ring_+t_size)) write_ = ring_;
-                if (write_ == read_) 
-                {
-                    if (*read_ == '\n') --newLines_;
+                if (write_ >= (ring_+t_size)) {
+                    write_ = ring_;
+                }
+                if (write_ == read_) {
+                    if (*read_ == '\n') {
+                        --newLines_;
+                    }
                     ++read_;
-                    if (read_ >= (ring_+t_size)) write_ = ring_;
+                    if (read_ >= (ring_+t_size)) {
+                        read_ = ring_;
+                    }
                 }
             }
             hChar* getHead() const
