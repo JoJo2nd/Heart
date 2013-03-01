@@ -58,8 +58,7 @@ hUint32 ResourceLoadTest::RunUnitTest()
     case eWait:
         {
             timer_ += Heart::hClock::Delta();
-            if (timer_ > 1.f)
-            {
+            if (getForceExitFlag()) {
                 state_ = eBeginUnload;
             }
         }

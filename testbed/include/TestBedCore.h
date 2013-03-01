@@ -56,9 +56,8 @@ private:
 
     static UnitTestCreator                  unitTests_[];
 
-	Heart::hHeartEngine*						pEngine_;
+	Heart::hHeartEngine*                    pEngine_;
     IUnitTest*                              currentTest_;
     UnitTestFactory*                        factory_;
-    hBool                                   testRun_;
     hUint32                                 currentTestIdx_;
 };

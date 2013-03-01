@@ -68,9 +68,7 @@ hUint32 InstanceRenderTest::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
-            if (pad->GetButton(HEART_PAD_BACK).buttonVal_ ||
-                kb->GetButton(VK_F8).raisingEdge_)
-            {
+            if (getForceExitFlag()) {
                 state_ = eBeginUnload;
             }
         }

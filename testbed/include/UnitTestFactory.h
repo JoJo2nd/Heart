@@ -37,7 +37,8 @@
     {
     public:
         IUnitTest(Heart::hHeartEngine* engine) 
-            : exitCode_(UNIT_TEST_EXIT_CODE_RUNNING)
+            : startExit_(hFalse)
+            , exitCode_(UNIT_TEST_EXIT_CODE_RUNNING)
             , engine_(engine)
             , canRender_(hFalse)
         {
@@ -48,18 +49,20 @@
         virtual void        BeginUnitTest() {};
         virtual hUint32     RunUnitTest() = 0;
         virtual void        RenderUnitTest() {};
-        virtual void        ForceExitTest() {};
+        void                forceExitTest() { startExit_=hTrue; }
         hUint32             GetExitCode() const { return exitCode_; }
         hBool               GetCanRender() const { return canRender_; }
     protected:
         
         void                SetExitCode(hUint32 ecode) { exitCode_ = ecode; }
         void                SetCanRender(hBool val) { canRender_ = val; }
+        hBool               getForceExitFlag() const { return startExit_; }
 
         Heart::hHeartEngine* engine_;
 
     private:
 
+        hBool               startExit_;
         hUint32             exitCode_;
         hBool               canRender_;
     };

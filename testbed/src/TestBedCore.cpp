@@ -53,12 +53,12 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     UnitTestCreator TestBedCore::unitTests_[] =
     {
+        REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(Base64)
         REGISTER_UNIT_TEST(ListTest)
         REGISTER_UNIT_TEST(MapTest)
         REGISTER_UNIT_TEST(JobManagerTest)
         REGISTER_UNIT_TEST(ResourceLoadTest)
-        REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(EventTest)
         REGISTER_UNIT_TEST(InstanceRenderTest)
         REGISTER_UNIT_TEST(ComplexMesh1)
@@ -106,8 +106,6 @@ DEFINE_HEART_UNIT_TEST(Base64);
         pEngine_ = pEngine;
 
         static const luaL_Reg funcs[] = {
-            {"dotest",     luaDoTest},
-            {"doalltests", luaDoAllTests},
             {"printtests", luaPrintTests},
             {NULL, NULL}
         };
@@ -128,30 +126,20 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        static hFloat s_timer = 0.f;
-        static hFloat s_counts = 0.f;
-        s_timer+=delta;
-        if (s_timer > 1.f) {
-            s_timer -= 1.f;
-            ++s_counts;
-            //g_consterSecEvent(pEngine->GetMainEventPublisher(), s_counts);
+        Heart::hdGamepad* pad = pEngine->GetControllerManager()->GetGamepad(0);
+        Heart::hdKeyboard* kb = pEngine->GetControllerManager()->GetSystemKeyboard();
+
+        if (!currentTest_) {
+            currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
         }
-        if ( currentTest_ )
-        {
+        if ( currentTest_ ) {
+            if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ || kb->GetButton(VK_F6).raisingEdge_) {
+                currentTest_->forceExitTest();
+            }
             currentTest_->RunUnitTest();
-
-            if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING)
-            {
+            if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
                 hDELETE_SAFE(Heart::GetGlobalHeap(), currentTest_);
-
-                if (testRun_)
-                {
-                    ++currentTestIdx_;
-                    if (currentTestIdx_ < hStaticArraySize(unitTests_))
-                    {
-                        currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
-                    }
-                }
+                currentTestIdx_=(currentTestIdx_+1)%hStaticArraySize(unitTests_);
             }
         }
     }
@@ -162,8 +150,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        if ( currentTest_ && currentTest_->GetCanRender() )
-        {
+        if ( currentTest_ && currentTest_->GetCanRender() ) {
             currentTest_->RenderUnitTest();
         }
     }
@@ -174,12 +161,10 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     bool TestBedCore::EngineShutdownRequest( Heart::hHeartEngine* pEngine )
     {
-        // We always lets the engine shutdown right away
-        // May not be the case if saving...
-        if ( currentTest_ )
-        {
-            currentTest_->ForceExitTest();
-            hDELETE_SAFE(Heart::GetGlobalHeap(), currentTest_);
+        // Wait for current test to finish before OK-ing the exit
+        if ( currentTest_ ) {
+            currentTest_->forceExitTest();
+            return false;
         }
         return true;
     }
@@ -194,34 +179,6 @@ DEFINE_HEART_UNIT_TEST(Base64);
             hDELETE_SAFE(Heart::GetGlobalHeap(), currentTest_);
         }
         hDELETE_SAFE(Heart::GetGlobalHeap(), factory_);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    int TestBedCore::luaDoTest( lua_State* L )
-    {
-        LUA_GET_TESTBED(L);
-        testbed->currentTest_ = testbed->factory_->CreateUnitTest(luaL_checkstring(L,-1));
-        if (!testbed->currentTest_)
-        {
-            luaL_error(L, "Unit Test \"%s\" not found", luaL_checkstring(L,-1));
-        }
-        return 0;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    int TestBedCore::luaDoAllTests( lua_State* L )
-    {
-        LUA_GET_TESTBED(L);
-        testbed->testRun_ = true;
-        testbed->currentTestIdx_ = 0;
-
-        testbed->currentTest_ = testbed->factory_->CreateUnitTest(testbed->unitTests_[testbed->currentTestIdx_].testName_);
-        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
