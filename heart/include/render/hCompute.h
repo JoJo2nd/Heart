@@ -44,7 +44,7 @@ namespace Heart
             return inputs_.bindSamplerInput(paramID, srv);
         }
         hBool   bindResourceView(hShaderParameterID paramID, hTexture* view) {
-            return inputs_.bindResourceView(paramID, view ? view->pImpl() : NULL);
+            return inputs_.bindResourceView(paramID, view);
         }
         hBool   bindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer) {
             return inputs_.bindConstantBuffer(paramID, buffer);

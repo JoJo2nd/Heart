@@ -275,7 +275,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::Create( hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup )
+    void hdDX11RenderDevice::Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup)
     {
         HRESULT hr;
 
@@ -284,6 +284,10 @@ namespace Heart
         height_ = height;
         alloc_ = setup.alloc_;
         free_ = setup.free_;
+        backBufferTex_ = setup.backBufferTex_;
+        depthBufferTex_= setup.depthBufferTex_;
+
+        hcAssert(backBufferTex_ && depthBufferTex_);
 
         D3D_FEATURE_LEVEL featureLevels[] =
         {
@@ -375,15 +379,15 @@ namespace Heart
         //update textures
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", pBackBuffer);
         HEART_D3D_DEBUG_NAME_OBJECT(pBackBuffer, "backbuffer");
-        backBufferTex_.shaderResourceView_=NULL;
-        backBufferTex_.depthStencilView_=NULL;
-        backBufferTex_.dx11Texture_=pBackBuffer;
-        backBufferTex_.renderTargetView_=renderTargetView_;
+        backBufferTex_->shaderResourceView_=NULL;
+        backBufferTex_->depthStencilView_=NULL;
+        backBufferTex_->dx11Texture_=pBackBuffer;
+        backBufferTex_->renderTargetView_=renderTargetView_;
 
-        depthBufferTex_.shaderResourceView_=NULL;
-        depthBufferTex_.depthStencilView_=depthStencilView_;
-        depthBufferTex_.dx11Texture_=depthStencil_;
-        depthBufferTex_.renderTargetView_=NULL;
+        depthBufferTex_->shaderResourceView_=NULL;
+        depthBufferTex_->depthStencilView_=depthStencilView_;
+        depthBufferTex_->dx11Texture_=depthStencil_;
+        depthBufferTex_->renderTargetView_=NULL;
 
         D3D11_QUERY_DESC qdesc;
         qdesc.MiscFlags = 0;
@@ -416,9 +420,9 @@ namespace Heart
         timerFrameStart_->Release();
         timerFrameEnd_->Release();
 
-        if (backBufferTex_.dx11Texture_) {
-            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_.dx11Texture_);
-            backBufferTex_.dx11Texture_->Release();
+        if (backBufferTex_->dx11Texture_) {
+            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_->dx11Texture_);
+            backBufferTex_->dx11Texture_->Release();
         }
         
         if( mainDeviceCtx_ ) {
@@ -544,10 +548,10 @@ namespace Heart
                 // Otherwise ResizeBuffers will fail!
                 mainDeviceCtx_->OMSetRenderTargets(0, 0, 0);
                 renderTargetView_->Release();
-                if (backBufferTex_.dx11Texture_) {
-                    hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_.dx11Texture_);
-                    backBufferTex_.dx11Texture_->Release();
-                    backBufferTex_.dx11Texture_=NULL;
+                if (backBufferTex_->dx11Texture_) {
+                    hTRACK_CUSTOM_ADDRESS_FREE("DirectX", backBufferTex_->dx11Texture_);
+                    backBufferTex_->dx11Texture_->Release();
+                    backBufferTex_->dx11Texture_=NULL;
                 }
                 // Preserve the existing buffer count and format.
                 // Automatically choose the width and height to match the client rect for HWNDs.
@@ -597,15 +601,15 @@ namespace Heart
                 //update textures
                 hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", backBufferTex);
                 HEART_D3D_DEBUG_NAME_OBJECT(backBufferTex, "backbuffer");
-                backBufferTex_.shaderResourceView_=NULL;
-                backBufferTex_.depthStencilView_=NULL;
-                backBufferTex_.dx11Texture_=backBufferTex;
-                backBufferTex_.renderTargetView_=renderTargetView_;
+                backBufferTex_->shaderResourceView_=NULL;
+                backBufferTex_->depthStencilView_=NULL;
+                backBufferTex_->dx11Texture_=backBufferTex;
+                backBufferTex_->renderTargetView_=renderTargetView_;
                
-                depthBufferTex_.shaderResourceView_=NULL;
-                depthBufferTex_.depthStencilView_=depthStencilView_;
-                depthBufferTex_.dx11Texture_=depthStencil_;
-                depthBufferTex_.renderTargetView_=NULL;
+                depthBufferTex_->shaderResourceView_=NULL;
+                depthBufferTex_->depthStencilView_=depthStencilView_;
+                depthBufferTex_->dx11Texture_=depthStencil_;
+                depthBufferTex_->renderTargetView_=NULL;
 
                 mainDeviceCtx_->OMSetRenderTargets(1, &renderTargetView_, depthStencilView_);
 
@@ -823,11 +827,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11Texture* hdDX11RenderDevice::CreateTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags)
+    hdDX11Texture* hdDX11RenderDevice::createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture)
     {
         hcAssert(levels > 0 && initialData);
         HRESULT hr;
-        hdDX11Texture* texture = hNEW(GetGlobalHeap(), hdDX11Texture);
         hBool compressedFormat = hFalse;
 
         D3D11_TEXTURE2D_DESC desc;
@@ -936,7 +939,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyTextureDevice( hdDX11Texture* texture )
+    void hdDX11RenderDevice::destroyTextureDevice(hdDX11Texture* texture)
     {
         if (texture->dx11Texture_) {
             hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->dx11Texture_);
@@ -958,16 +961,14 @@ namespace Heart
             texture->renderTargetView_->Release();
             texture->renderTargetView_ = NULL;
         }
-        hDELETE_SAFE(GetGlobalHeap()/*!heap*/, texture);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11IndexBuffer* hdDX11RenderDevice::CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags )
+    hdDX11IndexBuffer* hdDX11RenderDevice::createIndexBufferDevice( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11IndexBuffer* idxBuf )
     {
-        hdDX11IndexBuffer* idxBuf = hNEW( GetGlobalHeap()/*!heap*/, hdDX11IndexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -995,12 +996,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer )
+    void hdDX11RenderDevice::destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer)
     {
         hTRACK_CUSTOM_ADDRESS_FREE("DirectX", indexBuffer->buffer_);
         indexBuffer->buffer_->Release();
         indexBuffer->buffer_ = NULL;
-        hDELETE(GetGlobalHeap()/*!heap*/, indexBuffer);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1037,9 +1037,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11VertexBuffer* hdDX11RenderDevice::CreateVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags)
+    hdDX11VertexBuffer* hdDX11RenderDevice::createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11VertexBuffer* vtxBuf)
     {
-        hdDX11VertexBuffer* vtxBuf = hNEW( GetGlobalHeap()/*!heap*/, hdDX11VertexBuffer );
         HRESULT hr;
         D3D11_BUFFER_DESC bufdesc;
         D3D11_SUBRESOURCE_DATA initData;
@@ -1070,12 +1069,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::DestroyVertexBufferDevice( hdDX11VertexBuffer* vtxBuf )
+    void hdDX11RenderDevice::destroyVertexBufferDevice(hdDX11VertexBuffer* vtxBuf)
     {
         hTRACK_CUSTOM_ADDRESS_FREE("DirectX", vtxBuf->buffer_);
         vtxBuf->buffer_->Release();
         vtxBuf->buffer_ = NULL;
-        hDELETE(GetGlobalHeap()/*!heap*/, vtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1785,5 +1783,4 @@ namespace Heart
             uav->uav_=NULL;
         }
     }
-    
 }

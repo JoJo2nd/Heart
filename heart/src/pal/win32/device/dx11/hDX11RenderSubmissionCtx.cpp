@@ -144,7 +144,7 @@ namespace Heart
         hBool setlb = false;
 
         boundStreams_[stream] = vertexbuffer;
-        streams_[stream] = vertexbuffer->buffer_;
+        streams_[stream] = vertexbuffer ? vertexbuffer->buffer_ : NULL;
         strides_[stream] = stride;
         for (hUint16 i = 0; i < HEART_MAX_INPUT_STREAMS; ++i) {
             if (streams_[i]) {

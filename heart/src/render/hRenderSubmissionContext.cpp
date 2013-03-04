@@ -98,10 +98,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Map( hIndexBuffer* ib, hIndexBufferMapInfo* outInfo )
+    void hRenderSubmissionCtx::Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo)
     {
         hdMappedData md;
-        impl_.Map( ib->pImpl(), &md );
+        impl_.Map(ib, &md);
         outInfo->ib_ = ib;
         outInfo->ptr_ = md.pData;
         outInfo->size_ = 0;
@@ -114,7 +114,7 @@ namespace Heart
     void hRenderSubmissionCtx::Map( hVertexBuffer* vb, hVertexBufferMapInfo* outInfo )
     {
         hdMappedData md;
-        impl_.Map( vb->pImpl(), &md );
+        impl_.Map(vb, &md);
         outInfo->vb_ = vb;
         outInfo->ptr_ = md.pData;
         outInfo->size_ = 0;
@@ -127,7 +127,7 @@ namespace Heart
     void hRenderSubmissionCtx::Map( hTexture* tex, hUint32 level, hTextureMapInfo* outInfo )
     {
         hdMappedData md;
-        impl_.Map( tex->pImpl(), level, &md );
+        impl_.Map(tex, level, &md);
         outInfo->tex_ = tex;
         outInfo->ptr_ = md.pData;
         outInfo->pitch_ = md.RowPitch;
@@ -152,7 +152,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap( hIndexBufferMapInfo* outInfo )
     {
-        impl_.Unmap( outInfo->ib_->pImpl(), outInfo->ptr_ );
+        impl_.Unmap(outInfo->ib_, outInfo->ptr_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -161,16 +161,16 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap( hVertexBufferMapInfo* outInfo )
     {
-        impl_.Unmap( outInfo->vb_->pImpl(), outInfo->ptr_ );
+        impl_.Unmap(outInfo->vb_, outInfo->ptr_);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Unmap( hTextureMapInfo* outInfo )
+    void hRenderSubmissionCtx::Unmap(hTextureMapInfo* outInfo)
     {
-        impl_.Unmap( outInfo->tex_->pImpl(), outInfo->level_, outInfo->ptr_ );
+        impl_.Unmap( outInfo->tex_, outInfo->level_, outInfo->ptr_ );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -214,9 +214,9 @@ namespace Heart
     void hRenderSubmissionCtx::setTargets(hUint32 n, hTexture** targets, hTexture* depth) {
         hdTexture* dtargets[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
         for (hUint i=0; i<n; ++i) {
-            dtargets[i]=targets[i] ? targets[i]->pImpl() : NULL;
+            dtargets[i]=targets[i];
         }
-        impl_.setTargets(n, dtargets, depth ? depth->pImpl() : NULL);
+        impl_.setTargets(n, dtargets, depth);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -225,7 +225,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::clearColour(hTexture* tex, const hColour& colour) {
         hcAssert(tex);
-        impl_.clearColour(tex->pImpl(), colour);
+        impl_.clearColour(tex, colour);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -234,7 +234,7 @@ namespace Heart
 
     void hRenderSubmissionCtx::clearDepth(hTexture* tex, hFloat z) {
         hcAssert(tex);
-        impl_.clearDepth(tex->pImpl(), z);
+        impl_.clearDepth(tex, z);
     }
 
 }

@@ -37,6 +37,9 @@ namespace Heart
         {}
         ~hdDX11VertexBuffer() {}
 
+        hUint                   getDescCount() const { return streamDescCount_; }
+        const hInputLayoutDesc* getLayoutDesc() const { return streamLayoutDesc_; }
+
         ID3D11Buffer*       buffer_;
         hUint32             flags_;
         hUint32             dataSize_;

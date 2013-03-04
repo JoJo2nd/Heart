@@ -40,7 +40,7 @@ namespace Cmd
 }
 
     class HEART_DLLEXPORT hTexture : public hResourceClassBase,
-                                     public hPtrImpl< hdTexture >
+                                     public hdTexture
     {
     public:
 
@@ -79,9 +79,7 @@ namespace Cmd
 
     private:
 
-        friend class Heart::hRenderer;
-        friend class ::TextureBuilder;
-        friend class Cmd::FlushTextureLevel;
+        friend class hRenderer;
 
         HEART_ALLOW_SERIALISE_FRIEND();
 

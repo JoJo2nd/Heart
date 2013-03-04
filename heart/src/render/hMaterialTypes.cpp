@@ -70,7 +70,7 @@ namespace Heart
 
     hBool hMaterialTechniquePass::BindResourceView(hShaderParameterID paramID, hTexture* view)
     {
-        return renderInput_.BindResourceView(paramID, view ? view->pImpl() : NULL);
+        return renderInput_.BindResourceView(paramID, view);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -88,10 +88,10 @@ namespace Heart
 
     hBool hMaterialTechniquePass::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt) {
         boundStreams_.setPrimType(type);
-        boundStreams_.bindIndexVertex(idx ? idx->pImpl() : NULL, idx ? idx->getIndexBufferType() : hIndexBufferType_Index16);
+        boundStreams_.bindIndexVertex(idx, idx ? idx->getIndexBufferType() : hIndexBufferType_Index16);
         for(hUint i=0; i<streamcnt; ++i) {
             if (vtx[i]) {
-                boundStreams_.bindVertexStream(i, vtx[i]->pImpl(), vtx[i]->getStride());
+                boundStreams_.bindVertexStream(i, vtx[i], vtx[i]->getStride());
             }
         }
         boundStreams_.bindVertexFetch(vertexProgram_);
@@ -105,7 +105,7 @@ namespace Heart
     hBool hMaterialTechniquePass::bindInputStream(hUint slot, hVertexBuffer* vtx) {
         hcAssert(slot < HEART_MAX_INPUT_STREAMS);
         if (vtx) {
-            boundStreams_.bindVertexStream(slot, vtx->pImpl(), vtx->getStride());
+            boundStreams_.bindVertexStream(slot, vtx, vtx->getStride());
         } else {
             boundStreams_.bindVertexStream(slot, NULL, 0);
         }

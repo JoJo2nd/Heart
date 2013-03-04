@@ -94,23 +94,24 @@ namespace Heart
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 
+        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
+        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
+
         hRenderDeviceSetup setup;
         setup.alloc_ = RnTmpMalloc;
         setup.free_ = RnTmpFree;
-        ParentClass::Create( system_, width_, height_, bpp_, shaderVersion_, fullscreen_, vsync_, setup );
+        setup.backBufferTex_ = backBuffer_;
+        setup.depthBufferTex_= depthBuffer_;
+        ParentClass::Create( system_, width_, height_, fullscreen_, vsync_, setup );
 
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
 
-        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
-        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
-        backBuffer_->SetImpl(getDeviceBackBuffer());
         backBuffer_->nLevels_=1;
         backBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
         backBuffer_->levelDescs_->mipdata_=NULL;
         backBuffer_->levelDescs_->mipdataSize_=0;
         backBuffer_->levelDescs_->width_ = GetWidth();
         backBuffer_->levelDescs_->height_ = GetHeight();
-        depthBuffer_->SetImpl(getDeviceDepthBuffer());
         depthBuffer_->nLevels_=1;
         depthBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
         depthBuffer_->levelDescs_->mipdata_=NULL;
@@ -149,16 +150,9 @@ namespace Heart
         }
         ParentClass::Destroy();
         hDELETE_ARRAY_SAFE(GetGlobalHeap(), backBuffer_->levelDescs_);
-        if (backBuffer_) {
-            backBuffer_->SetImpl(NULL);
-        }
         hDELETE_SAFE(GetGlobalHeap(), backBuffer_);
         hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
-        if (depthBuffer_) {
-            depthBuffer_->SetImpl(NULL);
-        }
         hDELETE_SAFE(GetGlobalHeap(), depthBuffer_);
-
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -223,9 +217,7 @@ namespace Heart
             (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
         }
 
-        hdTexture* dt = ParentClass::CreateTextureDevice(levels, format, initialData, flags );
-        hcAssert(dt);
-        (*outTex)->SetImpl( dt );
+        ParentClass::createTextureDevice(levels, format, initialData, flags, (*outTex));
 
         if ((flags & (RESOURCEFLAG_KEEPCPUDATA|RESOURCEFLAG_DONTOWNCPUDATA)) == 0) {
             (*outTex)->ReleaseCPUTextureData();
@@ -263,7 +255,8 @@ namespace Heart
             ++lvls;
         }
 
-        hdTexture* dt=ParentClass::CreateTextureDevice(lvls, inout->format_, mipsdata, inout->flags_);
+        ParentClass::destroyTextureDevice(inout);
+        ParentClass::createTextureDevice(lvls, inout->format_, mipsdata, inout->flags_, inout);
         hDELETE_ARRAY_SAFE(heap, inout->levelDescs_);
         inout->nLevels_ = lvls;
         inout->levelDescs_ = lvls ? hNEW_ARRAY(heap, hTexture::LevelDesc, lvls) : NULL;
@@ -274,9 +267,6 @@ namespace Heart
             inout->levelDescs_[ i ].mipdata_     = mipsdata[i].data;
             inout->levelDescs_[ i ].mipdataSize_ = mipsdata[i].size;
         }
-
-        ParentClass::DestroyTextureDevice(inout->pImpl());
-        inout->SetImpl(dt);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,11 +275,7 @@ namespace Heart
 
     void hRenderer::destroyTexture(hTexture* pOut)
     {
-        //hcAssert( IsRenderThread() );
-
-        ParentClass::DestroyTextureDevice(pOut->pImpl());
-        pOut->SetImpl(NULL);
-
+        ParentClass::destroyTextureDevice(pOut);
         hDELETE_SAFE(pOut->heap_, pOut);
     }
 
@@ -300,12 +286,12 @@ namespace Heart
     void hRenderer::CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
     {
         hUint elementSize= nIndices > 0xFFFF ? sizeof(hUint32) : sizeof(hUint16);
-        hIndexBuffer* pdata = hNEW(GetGlobalHeap()/*!heap*/, hIndexBuffer)(this);
+        hIndexBuffer* pdata = hNEW(GetGlobalHeap(), hIndexBuffer)(this);
         pdata->pIndices_ = NULL;
         pdata->nIndices_ = nIndices;
         pdata->type_= nIndices > 0xFFFF ? hIndexBufferType_Index32 : hIndexBufferType_Index16;
 
-        pdata->SetImpl(ParentClass::CreateIndexBufferDevice(nIndices*elementSize, pIndices, flags));
+        ParentClass::createIndexBufferDevice(nIndices*elementSize, pIndices, flags, pdata);
 
         *outIB = pdata;
     }
@@ -317,8 +303,7 @@ namespace Heart
     void hRenderer::DestroyIndexBuffer(hIndexBuffer* ib)
     {
         hcAssert(ib);
-        ParentClass::DestroyIndexBufferDevice(ib->pImpl());
-        ib->SetImpl(NULL);
+        ParentClass::destroyIndexBufferDevice(ib);
         hDELETE_SAFE(GetGlobalHeap(), ib);
     }
 
@@ -331,7 +316,7 @@ namespace Heart
         hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
-        pdata->SetImpl( ParentClass::CreateVertexBufferDevice( desc, desccount, nElements*pdata->stride_, initData, flags ) );
+        ParentClass::createVertexBufferDevice(desc, desccount, nElements*pdata->stride_, initData, flags, pdata);
         *outVB = pdata;
     }
 
@@ -343,8 +328,7 @@ namespace Heart
     {
         hcAssert(vb);
         hMemoryHeapBase* heap = vb->heap_;
-        ParentClass::DestroyVertexBufferDevice(vb->pImpl());
-        vb->SetImpl(NULL);
+        ParentClass::destroyVertexBufferDevice(vb);
         hDELETE_SAFE(heap, vb);
     }
 

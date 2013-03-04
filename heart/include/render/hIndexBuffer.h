@@ -36,7 +36,7 @@ namespace Cmd
 	class FlushIndexBufferData;
 }
 
-	class hIndexBuffer : public hPtrImpl< hdIndexBuffer >, public hResourceClassBase
+	class hIndexBuffer : public hdIndexBuffer
 	{
 	public:
 		hIndexBuffer( hRenderer* prenderer ) 

@@ -36,6 +36,8 @@ namespace Heart
     {
         hTempRenderMemAlloc     alloc_;
         hTempRenderMemFree      free_;
+        hdDX11Texture*          backBufferTex_;
+        hdDX11Texture*          depthBufferTex_;
     };
 
     class HEART_DLLEXPORT hdDX11RenderDevice
@@ -44,7 +46,7 @@ namespace Heart
         hdDX11RenderDevice();
         ~hdDX11RenderDevice();
 
-        void                            Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hUint32 bbp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup );
+        void                            Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup);
         void                            Destroy();
         void                            ActiveContext() {}
         void                            BeginRender(hFloat* gpuTime);
@@ -56,8 +58,6 @@ namespace Heart
         
         hUint32                         GetWidth() const { return width_; }
         hUint32                         GetHeight() const { return height_; }
-        hdDX11Texture*                  getDeviceBackBuffer() { return &backBufferTex_; }
-        hdDX11Texture*                  getDeviceDepthBuffer() { return &depthBufferTex_; }
         void                            setResizeCallback(hDeviceResizeCallback cb) { resizeCallback_ = cb; }
         hUint32                         computeVertexLayoutStride(hInputLayoutDesc* desc, hUint32 desccount);
         static hShaderProfile           getProfileFromString(const hChar* str);
@@ -69,14 +69,14 @@ namespace Heart
         hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, void** initdatas, hUint32 count);
         void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
         void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
-        hdDX11Texture*                  CreateTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags);
-        void                            DestroyTextureDevice( hdDX11Texture* texture );
-        hdDX11IndexBuffer*              CreateIndexBufferDevice( hUint32 sizeInBytes, void* initialData, hUint32 flags );
-        void                            DestroyIndexBufferDevice( hdDX11IndexBuffer* indexBuffer );
+        hdDX11Texture*                  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
+        void                            destroyTextureDevice( hdDX11Texture* texture );
+        hdDX11IndexBuffer*              createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
+        void                            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);
         hdDX11VertexLayout*             CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen);
         void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
-        hdDX11VertexBuffer*             CreateVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags);
-        void                            DestroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
+        hdDX11VertexBuffer*             createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
+        void                            destroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
         hdDX11BlendState*               CreateBlendState( const hBlendStateDesc& desc );
         void                            DestroyBlendState( hdDX11BlendState* state );
         hdDX11RasterizerState*          CreateRasterizerState( const hRasterizerStateDesc& desc );
@@ -119,8 +119,8 @@ namespace Heart
         ID3D11RenderTargetView*     renderTargetView_;
         ID3D11Texture2D*            depthStencil_;
         ID3D11DepthStencilView*     depthStencilView_;
-        hdDX11Texture               backBufferTex_;
-        hdDX11Texture               depthBufferTex_;
+        hdDX11Texture*              backBufferTex_;
+        hdDX11Texture*              depthBufferTex_;
         hdW32Mutex                  resourceMutex_;
         BlendStateMapType           blendStates_;
         RasterizerStateMapType      rasterizerStates_;
