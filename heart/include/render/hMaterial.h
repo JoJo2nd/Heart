@@ -116,6 +116,8 @@ namespace Heart
         /* Bind interface - return false if not set on any programs */
         hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
         hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
+        hBool bindTexture(hShaderParameterID id, hTexture* tex);
+        hBool bindSampler(hShaderParameterID id, hdSamplerState* samplerState);
         hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
         hBool bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
         /* Allow access to parameter blocks and updating of parameters */
@@ -170,6 +172,8 @@ namespace Heart
         void                                SetActiveGroup(const hChar* name);
         hBool                               Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hBool                               bindMaterial(hRenderMaterialManager* matManager);
+        hBool                               bindTexture(hShaderParameterID id, hTexture* tex);
+        hBool                               bindSampler(hShaderParameterID id, hdSamplerState* samplerState);
         hUint32                             GetMatKey() const { return uniqueKey_; }
         void                                AddSamplerParameter(const hSamplerParameter& samp);
         void                                addDefaultParameterValue(const hChar* paramName, void* data, hUint size);

@@ -471,6 +471,8 @@ namespace Heart
         eDebugFontPixel,
         eDebugVertexPosNormal,
         eDebugPixelWhiteViewLit,
+        eDebugTexVertex,
+        eDebugTexPixel,
 
         eDebugShaderMax
     };

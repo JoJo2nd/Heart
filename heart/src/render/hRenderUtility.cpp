@@ -715,8 +715,19 @@ namespace hRenderUtility
         pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
         pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
+        hSamplerStateDesc sampDesc;
+        sampDesc.filter_        = SSV_LINEAR;
+        sampDesc.addressU_      = SSV_CLAMP;
+        sampDesc.addressV_      = SSV_CLAMP;
+        sampDesc.addressW_      = SSV_CLAMP;
+        sampDesc.mipLODBias_    = 0;
+        sampDesc.maxAnisotropy_ = 16;
+        sampDesc.borderColour_  = WHITE;
+        sampDesc.minLOD_        = -FLT_MAX;
+        sampDesc.maxLOD_        = FLT_MAX;  
         ddrawmat->SetActiveGroup("low_detail");
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), rndr->CreateSamplerState(sampDesc));
 
         return ddrawmat;
     }
@@ -727,7 +738,69 @@ namespace hRenderUtility
 
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugTexMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
-        return NULL;
+        hcAssert(rndr && ddrawmat);
+        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
+
+        group->techniques_.Resize(1);
+        hMaterialTechnique* tech=&group->techniques_[0];
+        tech->SetName("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        tech->AppendPass(hMaterialTechniquePass());
+        hMaterialTechniquePass* pass=tech->GetPass(0);
+        hBlendStateDesc blendDesc;
+        blendDesc.blendEnable_           = RSV_ENABLE;
+        blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
+        blendDesc.destBlend_             = RSV_BLEND_OP_INVSRC_ALPHA;
+        blendDesc.blendOp_               = RSV_BLEND_FUNC_ADD;
+        blendDesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
+        blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
+        blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
+        blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
+        pass->SetBlendState(rndr->CreateBlendState(blendDesc));
+        hDepthStencilStateDesc depthDesc;
+        depthDesc.depthEnable_         = RSV_ENABLE;       //
+        depthDesc.depthWriteMask_      = RSV_DISABLE;       //
+        depthDesc.depthFunc_           = RSV_Z_CMP_LESS;   //
+        depthDesc.stencilEnable_       = RSV_DISABLE;      //
+        depthDesc.stencilReadMask_     = ~0U;              //
+        depthDesc.stencilWriteMask_    = ~0U;              //
+        depthDesc.stencilFailOp_       = RSV_SO_KEEP;      //
+        depthDesc.stencilDepthFailOp_  = RSV_SO_KEEP;      //
+        depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
+        depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
+        depthDesc.stencilRef_          = 0;                //
+        pass->SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hRasterizerStateDesc rastDesc;
+        rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
+        rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
+        rastDesc.frontCounterClockwise_ = RSV_ENABLE;                 //
+        rastDesc.depthBias_             = 0;                          //
+        rastDesc.depthBiasClamp_        = 0.f;                        //
+        rastDesc.slopeScaledDepthBias_  = 0.f;                        //
+        rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
+        rastDesc.scissorEnable_         = RSV_DISABLE;                //
+        pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hSamplerStateDesc sampDesc;
+        sampDesc.filter_        = SSV_LINEAR;
+        sampDesc.addressU_      = SSV_CLAMP;
+        sampDesc.addressV_      = SSV_CLAMP;
+        sampDesc.addressW_      = SSV_CLAMP;
+        sampDesc.mipLODBias_    = 0;
+        sampDesc.maxAnisotropy_ = 16;
+        sampDesc.borderColour_  = WHITE;
+        sampDesc.minLOD_        = -FLT_MAX;
+        sampDesc.maxLOD_        = FLT_MAX;  
+
+        pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
+        pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
+        ddrawmat->SetActiveGroup("low_detail");
+        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), rndr->CreateSamplerState(sampDesc));
+
+        return ddrawmat;
     }
 
     //////////////////////////////////////////////////////////////////////////

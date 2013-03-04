@@ -172,8 +172,7 @@ namespace Heart
         float4 colour   : COLOR0;                                           \n\
     };                                                                      \n\
                                                                             \n\
-    struct PSInput                                                          \n\
-    {                                                                       \n\
+    struct PSInput {                                                        \n\
         float4 colour   : COLOR0;                                           \n\
     };                                                                      \n\
                                                                             \n\
@@ -242,6 +241,41 @@ namespace Heart
         "
     };
 
+        const hChar s_debugTexture[] = {
+        COMMON_CONST_BLOCK()
+        "                                                              \n\
+        Texture2D   g_texture;                                         \n\
+        SamplerState g_sampler= sampler_state{};                       \n\
+                                                                       \n\
+        struct VSInput                                                 \n\
+        {                                                              \n\
+            float3 position : POSITION;                                \n\
+            float2 uv 		: TEXCOORD0;                               \n\
+        };                                                             \n\
+                                                                       \n\
+        struct PSInput                                                 \n\
+        {                                                              \n\
+            float4 position : SV_POSITION;                             \n\
+            float2 uv 		: TEXCOORD0;                               \n\
+        };                                                             \n\
+                                                                       \n\
+        PSInput mainVP( VSInput input )                                \n\
+        {                                                              \n\
+            PSInput output;                                            \n\
+            float4 pos = float4(input.position.xyz,1);                 \n\
+            output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
+            output.uv = input.uv;                                      \n\
+            return output;                                             \n\
+        }                                                              \n\
+                                                                       \n\
+        float4 mainFP( PSInput input ) : SV_TARGET0                    \n\
+        {                                                              \n\
+            float4 c = g_sampler.Sample(g_texture, input.uv).rgba;     \n\
+            return float4(c.rgb,c.a);                                  \n\
+        }                                                              \n\
+        "
+    };
+
     static const hChar* s_debugSrcs[eDebugShaderMax] = {
         s_debugVertex,
         s_debugVertex,
@@ -251,6 +285,8 @@ namespace Heart
         s_debugFont,
         s_debugVertexLit,
         s_debugVertexLit,
+        s_debugTexture, 
+        s_debugTexture,
     };
 
     //////////////////////////////////////////////////////////////////////////

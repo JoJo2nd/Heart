@@ -605,6 +605,16 @@ namespace Heart
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhiteViewLit]);
+        debugShaders_[eDebugTexVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugTexVertex),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugTexVertex)),
+            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugTexVertex]);
+        debugShaders_[eDebugTexPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        ParentClass::compileShaderFromSource(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugTexPixel),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugTexPixel)),
+            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugTexPixel]);
     }
 
     void hRenderer::rendererFrameSubmit()
