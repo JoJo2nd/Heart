@@ -111,6 +111,24 @@ namespace Heart
             }
         }
         if (renderer_) {
+            for (hUint i=0,n=boundTextures_.GetSize(); i<n; ++i) {
+                for (hUint j=0,nj=defaultSamplers_.GetSize(); j<nj; ++j) {
+                    if (defaultSamplers_[j].samplerState_==boundTextures_[i].state) {
+                        boundTextures_[i].state=NULL;
+                    }
+                    if (defaultSamplers_[j].boundTexture_==boundTextures_[i].texture) {
+                        boundTextures_[i].texture=NULL;
+                    }
+                }
+                if (boundTextures_[i].texture!=NULL) {
+                    renderer_->destroyTexture(boundTextures_[i].texture);
+                    boundTextures_[i].texture=NULL;
+                }
+                if (boundTextures_[i].state!=NULL) {
+                    renderer_->DestroySamplerState(boundTextures_[i].state);
+                    boundTextures_[i].state=NULL;
+                }
+            }
             for (hUint32 i = 0, c = defaultSamplers_.GetSize(); i < c; ++i) {
                 renderer_->DestroySamplerState(defaultSamplers_[i].samplerState_);
                 defaultSamplers_[i].samplerState_ = NULL;

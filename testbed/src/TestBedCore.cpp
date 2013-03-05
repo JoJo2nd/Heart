@@ -43,6 +43,7 @@
 #include "Sibenik.h"
 #include "ComputeTest.h"
 #include "TexturedPlane.h"
+#include "ComputeBlur.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
 DEFINE_HEART_UNIT_TEST(MapTest);
@@ -54,6 +55,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     UnitTestCreator TestBedCore::unitTests_[] =
     {
+        REGISTER_UNIT_TEST(ComputeBlur)
         REGISTER_UNIT_TEST(TexturedPlane)
         REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(Base64)
