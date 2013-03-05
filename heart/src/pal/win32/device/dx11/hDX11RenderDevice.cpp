@@ -241,7 +241,7 @@ namespace Heart
         "
     };
 
-        const hChar s_debugTexture[] = {
+    const hChar s_debugTexture[] = {
         COMMON_CONST_BLOCK()
         "                                                              \n\
         Texture2D   g_texture;                                         \n\
@@ -270,7 +270,7 @@ namespace Heart
                                                                        \n\
         float4 mainFP( PSInput input ) : SV_TARGET0                    \n\
         {                                                              \n\
-            float4 c = g_sampler.Sample(g_texture, input.uv).rgba;     \n\
+            float4 c = g_texture.Sample(g_sampler, input.uv).rgba;     \n\
             return float4(c.rgb,c.a);                                  \n\
         }                                                              \n\
         "

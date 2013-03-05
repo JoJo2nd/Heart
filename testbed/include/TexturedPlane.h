@@ -65,7 +65,10 @@ private:
     hFloat                           timer_;
     Heart::hRendererCamera           camera_;
     Heart::hTexture*                 resTex_;
+    Heart::hdParameterConstantBlock* modelMtxCB_;
     Heart::hMaterialInstance*        materialInstance_;
+    Heart::hIndexBuffer*             quadIB_;
+    Heart::hVertexBuffer*            quadVB_;
 
     //Camera Control
     Heart::hVec3            camPos_;

@@ -49,21 +49,10 @@ hUint32 TexturedPlane::RunUnitTest()
     {
     case eBeginLoad:
         {
-            hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
-            engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
-            state_ = eLoading;
-        }
-        break;
-    case eLoading:
-        {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded(PACKAGE_NAME))
-            {
-                hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
-                state_ = eRender;
-                timer_ = 0.f;
-                CreateRenderResources();
-                SetCanRender(hTrue);
-            }
+            state_ = eRender;
+            timer_ = 0.f;
+            CreateRenderResources();
+            SetCanRender(hTrue);
         }
         break;
     case eRender:
@@ -79,15 +68,9 @@ hUint32 TexturedPlane::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage(PACKAGE_NAME);
-            hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
-            state_ = eExit;
-        }
-        break;
-    case eExit:
-        {
             hcPrintf("End unit test %s.", s_className_);
             SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+            state_ = eExit;
         }
         break;
     }
@@ -103,7 +86,27 @@ void TexturedPlane::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
-    
+    const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
+    Heart::hConstBlockMapInfo mapinfo;
+
+    camera_.UpdateParameters(ctx);
+    ctx->setTargets(camera_.getTargetCount(), camera_.getTargets(), camera_.getDepthTarget());
+    ctx->SetViewport(camera_.getTargetViewport());
+    for (hUint i=0; i<camera_.getTargetCount(); ++i) {
+        ctx->clearColour(camera_.getRenderTarget(i), Heart::hColour(.5f, .5f, .5f, 1.f));
+    }
+    ctx->clearDepth(camera_.getDepthTarget(), 1.f);
+
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = Heart::hMatrixFunc::identity();
+    ctx->Unmap(&mapinfo);
+
+    Heart::hMaterialTechnique* tech=materialInstance_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(quadIB_->GetIndexCount()/3, 0);
+    }
 }
 
 
@@ -115,14 +118,15 @@ void TexturedPlane::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
+    hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
     hRendererCamera* camera = &camera_;
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+    rtDesc.targets_[0]=matMgr->getGlobalTexture("back_buffer");
+    rtDesc.depth_=matMgr->getGlobalTexture("depth_buffer");
 
     hRelativeViewport vp;
     vp.x=0.f;
@@ -135,7 +139,7 @@ void TexturedPlane::CreateRenderResources()
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
     hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    Heart::hMatrix vm = Heart::hMatrixFunc::identity();//Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
     hMipDesc resTexInit={
         TEST_TEXTURE_WIDTH, 
         TEST_TEXTURE_HEIGHT, 
@@ -148,31 +152,36 @@ void TexturedPlane::CreateRenderResources()
         for (hUint w=0; w<TEST_TEXTURE_WIDTH; ++w, ++ptr) {
             if (h < TEST_TEXTURE_HEIGHT/2) {
                 if (w < TEST_TEXTURE_WIDTH/2) {
-                    *ptr= 0xFFFF0000;
+                    *ptr= 0xFF0000FF; //RED
                 } else {
-                    *ptr= 0xFF00FF00;
+                    *ptr= 0xFF00FF00; //GREEN
                 }
             } else {
                 if (w < TEST_TEXTURE_WIDTH/2) {
-                    *ptr= 0xFF0000FF;
+                    *ptr= 0xFFFF0000; // BLUE
                 } else {
-                    *ptr= 0xFFFFFFFF;
+                    *ptr= 0xFFFFFFFF; // WHITE
                 }
             }
         }
     }
 
+    camera->Initialise(renderer);
     camera->SetRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera->SetOrthoParams(0.f, 2.f, 2.f, 0.f, 0.f, 1000.f);
     camera->SetViewMatrix(vm);
     camera->setViewport(vp);
-    camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+    camera->SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
 
     renderer->createTexture(1, &resTexInit, TFORMAT_XRGB8, 0, GetGlobalHeap(), &resTex_);
-    materialInstance_=renderer->GetMaterialManager()->getDebugTexMaterial()->createMaterialInstance(0);
+    hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
+    materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
 
     materialInstance_->bindTexture(hCRC32::StringCRC("g_texture"), resTex_);
+    materialInstance_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
+
+    modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -192,6 +201,14 @@ void TexturedPlane::DestroyRenderResources()
     hMaterialInstance::destroyMaterialInstance(materialInstance_);
     materialInstance_=NULL;
     camera->ReleaseRenderTargetSetup();
+    if (quadIB_) {
+        renderer->DestroyIndexBuffer(quadIB_);
+        quadIB_=NULL;
+    }
+    if (quadVB_) {
+        renderer->DestroyVertexBuffer(quadVB_);
+        quadVB_=NULL;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////

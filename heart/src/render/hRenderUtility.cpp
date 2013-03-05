@@ -238,13 +238,13 @@ namespace hRenderUtility
             {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
         };
         hFloat uvxstep=1.f/wdivs;
-        hFloat uvystep=1.f/hdivs;
+        hFloat uvystep=-1.f/hdivs;
         hFloat xstep=width/wdivs;
         hFloat ystep=height/hdivs;
         hFloat xc=0.f;
         hFloat yc=0.f;
         hFloat u=0.f;
-        hFloat v=0.f;
+        hFloat v=1.f;
         hUint16 currIdx=0;
 
         void* verts=hAlloca(sizeof(hFloat)*5*(wdivs+1)*(hdivs+1));
@@ -794,8 +794,8 @@ namespace hRenderUtility
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;  
 
-        pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
+        pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
+        pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
         ddrawmat->SetActiveGroup("low_detail");
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), rndr->CreateSamplerState(sampDesc));
