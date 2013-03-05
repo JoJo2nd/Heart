@@ -56,6 +56,7 @@ hUint32 ComputeBlur::RunUnitTest()
             if (resMgr->mtIsPackageLoaded(PACKAGE_NAME)) {
                 CreateRenderResources();
                 SetCanRender(hTrue);
+                state_=eRender;
             }
         } break;
     case eRender: {
