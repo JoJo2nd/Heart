@@ -89,6 +89,7 @@ namespace Heart
     typedef hdDX11SamplerState           hdSamplerState;
     typedef hdDX11MappedResourceData     hdMappedData;
     typedef hdDX11CommandBuffer          hdRenderCommandBuffer;
+    typedef hdDX11ComputeUAV             hdComputeUAV;
 }
 
 

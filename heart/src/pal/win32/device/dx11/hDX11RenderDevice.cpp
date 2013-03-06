@@ -1802,10 +1802,13 @@ namespace Heart
     void hdDX11RenderDevice::createComputeUAV(hdDX11Texture* res, hTextureFormat viewformat, hUint mip, hdDX11ComputeUAV* outres) {
         hcAssert(res && outres);
         D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+        HRESULT hr;
         hZeroMem(&desc, sizeof(desc));
         desc.Format=toDXGIFormat(viewformat, NULL);
+        desc.ViewDimension=D3D11_UAV_DIMENSION_TEXTURE2D;
         desc.Texture2D.MipSlice=mip;
-        d3d11Device_->CreateUnorderedAccessView(res->dx11Texture_, &desc, &outres->uav_);
+        hr = d3d11Device_->CreateUnorderedAccessView(res->dx11Texture_, &desc, &outres->uav_);
+        hcAssertMsg(SUCCEEDED(hr), "Failed to create Unorder Access View");
     }
 
     //////////////////////////////////////////////////////////////////////////

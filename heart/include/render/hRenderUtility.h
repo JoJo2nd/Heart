@@ -86,6 +86,8 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     HEART_DLLEXPORT
+    void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera);
+    HEART_DLLEXPORT
     void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, const hDrawCall* dcs, hUint dcn, hUint32 clearflags);
     HEART_DLLEXPORT
     void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn);

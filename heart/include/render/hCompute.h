@@ -49,7 +49,10 @@ namespace Heart
         hBool   bindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer) {
             return inputs_.bindConstantBuffer(paramID, buffer);
         }
-    private:
+        hBool   bindUAV(hShaderParameterID paramID, hComputeUAV* computeUAV) {
+            return inputs_.bindUAV(paramID, computeUAV);
+        }
+    private:    
         friend class hRenderSubmissionCtx;
 
         hdDX11ComputeInputObject inputs_;

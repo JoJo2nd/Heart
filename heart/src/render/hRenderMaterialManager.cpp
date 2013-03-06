@@ -560,8 +560,16 @@ namespace Heart
         } else {
             flags |= RESOURCEFLAG_RENDERTARGET;
         }
-         m->renderer_->createTexture(1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
-        lua_pop(L, 2);
+        lua_pop(L, 1);
+        lua_getfield(L, -1, "uav");
+        if (lua_type(L, -1) == LUA_TBOOLEAN) {
+            if (lua_toboolean(L, -1)) {
+                flags |= RESOURCEFLAG_UNORDEREDACCESS;
+            }
+        }
+        lua_pop(L, 1);
+        m->renderer_->createTexture(1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
+        lua_pop(L, 1);
         m->registerGlobalTexture(name, texture, aliases, aliascount, hTrue);
         return 0;
     }

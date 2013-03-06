@@ -92,26 +92,31 @@ namespace Heart
             , resourceViewCount_(0)
             , samplerCount_(0)
             , constCount_(0)
+            , uavCount_(0)
         {
             hZeroMem(resourceViews_, sizeof(resourceViews_));
             hZeroMem(samplerState_, sizeof(samplerState_));
             hZeroMem(programInputs_, sizeof(programInputs_));
+            hZeroMem(unorderdAccessView_, sizeof(unorderdAccessView_));
         }
         hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
         hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
         hBool   bindResourceView(hShaderParameterID paramID, hdDX11Texture* view);
         hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
+        hBool   bindUAV(hShaderParameterID paramID, hdDX11ComputeUAV* uav);
     private:
         friend class hdDX11RenderSubmissionCtx;
 
-        hdDX11ShaderProgram*      boundComputeProg_;
-        ID3D11ComputeShader*      computeShader_;
-        hUint16                   resourceViewCount_;
-        hUint16                   samplerCount_;
-        hUint16                   constCount_;
-        ID3D11ShaderResourceView* resourceViews_[HEART_MAX_RESOURCE_INPUTS];
-        ID3D11SamplerState*       samplerState_[HEART_MAX_RESOURCE_INPUTS];
-        ID3D11Buffer*             programInputs_[HEART_MAX_CONSTANT_BLOCKS];
+        hdDX11ShaderProgram*       boundComputeProg_;
+        ID3D11ComputeShader*       computeShader_;
+        hUint16                    resourceViewCount_;
+        hUint16                    samplerCount_;
+        hUint16                    constCount_;
+        hUint16                    uavCount_;
+        ID3D11ShaderResourceView*  resourceViews_[HEART_MAX_RESOURCE_INPUTS];
+        ID3D11SamplerState*        samplerState_[HEART_MAX_RESOURCE_INPUTS];
+        ID3D11Buffer*              programInputs_[HEART_MAX_CONSTANT_BLOCKS];
+        ID3D11UnorderedAccessView* unorderdAccessView_[HEART_MAX_RESOURCE_INPUTS];
     };
 
     class HEART_DLLEXPORT hdDX11RenderStreamsObject

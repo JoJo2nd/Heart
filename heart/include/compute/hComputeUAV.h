@@ -31,7 +31,7 @@
 
 namespace Heart
 {
-
+    typedef hdComputeUAV hComputeUAV;
 }
 
 #endif // HCOMPUTEUAV_H__

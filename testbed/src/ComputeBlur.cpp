@@ -38,6 +38,19 @@ DEFINE_HEART_UNIT_TEST(ComputeBlur);
 #define TEST_TEXTURE_WIDTH  (265)
 #define TEST_TEXTURE_HEIGHT (265)
 
+namespace ComputeBlurData
+{
+__declspec(align(16))
+struct cbParams
+{
+    hUint numApproxPasses;
+    float halfBoxFilterWidth;			// w/2
+    float fracHalfBoxFilterWidth;		// frac(w/2+0.5)
+    float invFracHalfBoxFilterWidth;	// 1-frac(w/2+0.5)
+    float rcpBoxFilterWidth;			// 1/w
+};
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -90,20 +103,43 @@ void ComputeBlur::RenderUnitTest()
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
     Heart::hConstBlockMapInfo mapinfo;
-
-    camera_.UpdateParameters(ctx);
-    ctx->setTargets(camera_.getTargetCount(), camera_.getTargets(), camera_.getDepthTarget());
-    ctx->SetViewport(camera_.getTargetViewport());
-    for (hUint i=0; i<camera_.getTargetCount(); ++i) {
-        ctx->clearColour(camera_.getRenderTarget(i), Heart::hColour(.5f, .5f, .5f, 1.f));
-    }
-    ctx->clearDepth(camera_.getDepthTarget(), 1.f);
+    ComputeBlurData::cbParams* cbblur=NULL;
 
     ctx->Map(modelMtxCB_, &mapinfo);
     *(Heart::hMatrix*)mapinfo.ptr = Heart::hMatrixFunc::identity();
     ctx->Unmap(&mapinfo);
+    ctx->Map(blurParamCB_, &mapinfo);
+    cbblur=(ComputeBlurData::cbParams*)mapinfo.ptr;
+    cbblur->numApproxPasses=3;
+    cbblur->halfBoxFilterWidth=50.f;		
+    cbblur->fracHalfBoxFilterWidth=0.f;	
+    cbblur->invFracHalfBoxFilterWidth=1.f;
+    cbblur->rcpBoxFilterWidth=1.f/50.f;		
+    ctx->Unmap(&mapinfo);
+
+    //Submit to blur target
+    Heart::hRenderUtility::setCameraParameters(ctx, &blurCamera_);
+    ctx->clearDepth(camera_.getDepthTarget(), 1.f);
 
     Heart::hMaterialTechnique* tech=materialInstance_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(quadIB_->GetIndexCount()/3, 0);
+    }
+
+    ctx->setComputeInput(&blurHozCObj_);
+    ctx->dispatch(blurCamera_.getRenderTarget(0)->getWidth(), 1, 1);
+
+    ctx->setComputeInput(&blurVertCObj_);
+    ctx->dispatch(blurCamera_.getRenderTarget(0)->getHeight(), 1, 1);
+
+    // Submit to back buffer
+    Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
+    ctx->clearColour(camera_.getRenderTarget(0), Heart::hColour(.5f, .5f, .5f, 1.f));
+    ctx->clearDepth(camera_.getDepthTarget(), 1.f);
+
+    tech=blurToScreen_->GetTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -121,6 +157,7 @@ void ComputeBlur::CreateRenderResources()
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
+    hResourceManager* resMgr=engine_->GetResourceManager();
     hRendererCamera* camera = &camera_;
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
@@ -152,6 +189,7 @@ void ComputeBlur::CreateRenderResources()
     hUint32* ptr=inittexdata;
     for (hUint h=0; h<TEST_TEXTURE_HEIGHT; ++h) {
         for (hUint w=0; w<TEST_TEXTURE_WIDTH; ++w, ++ptr) {
+#if 1
             if (h < TEST_TEXTURE_HEIGHT/2) {
                 if (w < TEST_TEXTURE_WIDTH/2) {
                     *ptr= 0xFF0000FF; //RED
@@ -165,6 +203,13 @@ void ComputeBlur::CreateRenderResources()
                     *ptr= 0xFFFFFFFF; // WHITE
                 }
             }
+#else
+            hUint r=w % 4;
+            static hUint32 colarr[] = {
+                0xFF0000FF, 0xFF00FF00, 0xFFFF0000, 0xFFFFFFFF
+            };
+            *ptr= colarr[r];
+#endif
         }
     }
 
@@ -176,14 +221,50 @@ void ComputeBlur::CreateRenderResources()
     camera->setViewport(vp);
     camera->SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
 
+    hMemSet(&rtDesc, 0, sizeof(rtDesc));
+    rtDesc.nTargets_=1;
+    rtDesc.targets_[0]=matMgr->getGlobalTexture("blur_target");
+    rtDesc.depth_=matMgr->getGlobalTexture("back_buffer");
+    blurCamera_.Initialise(renderer);
+    blurCamera_.SetRenderTargetSetup(rtDesc);
+    blurCamera_.SetFieldOfView(45.f);
+    blurCamera_.SetOrthoParams(0.f, 2.f, 2.f, 0.f, 0.f, 1000.f);
+    blurCamera_.SetViewMatrix(vm);
+    blurCamera_.setViewport(vp);
+    blurCamera_.SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
+
     renderer->createTexture(1, &resTexInit, TFORMAT_XRGB8, 0, GetGlobalHeap(), &resTex_);
     hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
     materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+    blurToScreen_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+    
+    Heart::hTexture* blurTex=matMgr->getGlobalTexture("blur_target");
 
     materialInstance_->bindTexture(hCRC32::StringCRC("g_texture"), resTex_);
     materialInstance_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
+    blurToScreen_->bindTexture(hCRC32::StringCRC("g_texture"), blurTex);
+    blurToScreen_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
 
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
+    hUint32 cbSizes[]={
+        sizeof(ComputeBlurData::cbParams)
+    };
+    blurParamCB_=renderer->CreateConstantBlocks(cbSizes, NULL, 1);
+
+    blurHCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_ROW));
+    blurVCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_COL));
+    hcAssert(blurHCS_ && blurVCS_);
+
+    renderer->createComputeUAV(blurTex, TFORMAT_ABGR16F, 0, &blurUAV_);
+    blurHozCObj_.bindShaderProgram(blurHCS_);
+    blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTex);
+    blurHozCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
+    blurHozCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
+
+    blurVertCObj_.bindShaderProgram(blurHCS_);
+    blurVertCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTex);
+    blurVertCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
+    blurVertCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -196,11 +277,12 @@ void ComputeBlur::DestroyRenderResources()
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = &camera_;
 
+    renderer->destroyComputeUAV(&blurUAV_);
+    hMaterialInstance::destroyMaterialInstance(materialInstance_);
     if (resTex_) {
         renderer->destroyTexture(resTex_);
         resTex_=NULL;
     }
-    hMaterialInstance::destroyMaterialInstance(materialInstance_);
     materialInstance_=NULL;
     camera->ReleaseRenderTargetSetup();
     if (quadIB_) {

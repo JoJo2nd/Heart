@@ -921,5 +921,14 @@ namespace hRenderUtility
         qsort(dcs, dcn, sizeof(hDrawCall), drawCallCompare);
     }
 
+    HEART_DLLEXPORT
+    void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera)
+    {
+        HEART_PROFILE_FUNC();
+        camera->UpdateParameters(ctx);
+        ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
+        ctx->SetViewport(camera->getTargetViewport());
+    }
+
 }
 }

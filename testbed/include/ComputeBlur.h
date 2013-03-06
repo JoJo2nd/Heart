@@ -63,11 +63,19 @@ private:
 
     State                            state_;
     Heart::hRendererCamera           camera_;
+    Heart::hRendererCamera           blurCamera_;
     Heart::hTexture*                 resTex_;
     Heart::hdParameterConstantBlock* modelMtxCB_;
     Heart::hMaterialInstance*        materialInstance_;
+    Heart::hMaterialInstance*        blurToScreen_;
     Heart::hIndexBuffer*             quadIB_;
     Heart::hVertexBuffer*            quadVB_;
+    Heart::hShaderProgram*           blurHCS_;
+    Heart::hShaderProgram*           blurVCS_;
+    Heart::hComputeObject            blurHozCObj_;
+    Heart::hComputeObject            blurVertCObj_;
+    Heart::hComputeUAV               blurUAV_;
+    Heart::hdParameterConstantBlock* blurParamCB_;
 
     //Camera Control
     Heart::hVec3            camPos_;
