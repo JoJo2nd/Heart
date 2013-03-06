@@ -243,6 +243,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 #endif
     ID3DBlob* errors;
     ID3DBlob* result;
+    hUint definecount=params->getBuildParameterCount("DEFINE");
     const hChar* progTypeMacros[] = {
         "HEART_COMPILE_VERTEX_PROG"  ,
         "HEART_COMPILE_FRAGMENT_PROG",
@@ -252,13 +253,19 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         "HEART_COMPILE_COMPUTE_PROG" ,
         "HEART_COMPILE_UNKNOWN"      ,
     };
-    D3D_SHADER_MACRO macros[] =
+    D3D_SHADER_MACRO defaultmacros[] =
     {
         { "HEART_USING_HLSL", "1" },
         { "HEART_ENGINE", "1" },
         { progTypeMacros[progtype], "1" },
         { NULL, NULL }
     };
+    D3D_SHADER_MACRO* fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
+    for (hUint i=0; i<definecount; ++i) {
+        fullmacros[i].Name=params->getBuildParameter("DEFINE", i, "__NULL_DEF");
+        fullmacros[i].Definition=params->getBuildParameterAttrib("DEFINE", i, "value", NULL);
+    }
+    hMemCpy(fullmacros+definecount, defaultmacros, sizeof(defaultmacros));
 
     hUint pathlen=hStrLen(params->GetInputFilePath())+1;//+1 for NULL
     hChar* path=(hChar*)hAlloca(pathlen);
@@ -283,7 +290,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         sourcedata, 
         sourcedatalen, 
         params->GetInputFilePath(),
-        macros, 
+        fullmacros, 
         &includeHandler, //Includes
         entry,
         profile, 

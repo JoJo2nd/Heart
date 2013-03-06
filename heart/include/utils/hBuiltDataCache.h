@@ -50,6 +50,30 @@ namespace Heart
             const hChar* ret = root_->FirstChild(name).ToNode()->value();
             return ret != NULL ? ret : defaultValue;
         }
+        const hUint getBuildParameterCount(const hChar* name) const {
+            hUint i=0;
+            for (hXMLGetter xi(root_->FirstChild(name)); xi.ToNode(); xi=xi.NextSibling(), ++i) {
+            }
+            return i;
+        }
+        const hChar* getBuildParameter(const hChar* name, hUint idx, const hChar* defaultValue) const {
+            hUint i=0;
+            for (hXMLGetter xi(root_->FirstChild(name)); xi.ToNode(); xi=xi.NextSibling(), ++i) {
+                if (i==idx) {
+                    return xi.GetValueString(defaultValue);
+                }
+            }
+            return defaultValue;
+        }
+        const hChar* getBuildParameterAttrib(const hChar* name, hUint idx, const hChar* attrib, const hChar* defaultValue) const {
+            hUint i=0;
+            for (hXMLGetter xi(root_->FirstChild(name)); xi.ToNode(); xi=xi.NextSibling(), ++i) {
+                if (i==idx) {
+                    return xi.GetAttributeString(attrib, defaultValue);
+                }
+            }
+            return defaultValue;
+        }
         hUint32      GetParameterHash() const
         {
             hUint32 ret;

@@ -37,6 +37,9 @@ namespace Heart
         virtual const hChar* GetResourceName() const = 0;
         virtual const hChar* GetInputFilePath() const = 0;
         virtual const hChar* GetBuildParameter(const hChar* name, const hChar* defaultValue) const = 0;
+        virtual const hUint  getBuildParameterCount(const hChar* name) const = 0;
+        virtual const hChar* getBuildParameter(const hChar* name, hUint idx, const hChar* defaultValue) const = 0;
+        virtual const hChar* getBuildParameterAttrib(const hChar* name, hUint idx, const hChar* attrib, const hChar* defaultValue) const = 0;
         virtual hUint32      GetParameterHash() const = 0;
     };
 
