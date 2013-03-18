@@ -65,7 +65,7 @@ private:
     Heart::hRendererCamera           camera_;
     Heart::hRendererCamera           blurCamera_;
     Heart::hTexture*                 resTex_;
-    Heart::hdParameterConstantBlock* modelMtxCB_;
+    Heart::hParameterConstantBlock* modelMtxCB_;
     Heart::hMaterialInstance*        materialInstance_;
     Heart::hMaterialInstance*        blurToScreen_;
     Heart::hIndexBuffer*             quadIB_;
@@ -75,7 +75,9 @@ private:
     Heart::hComputeObject            blurHozCObj_;
     Heart::hComputeObject            blurVertCObj_;
     Heart::hComputeUAV               blurUAV_;
-    Heart::hdParameterConstantBlock* blurParamCB_;
+    Heart::hShaderResourceView*      blurTexSRV_;
+    Heart::hShaderResourceView*      computeBlurTexSRV_;
+    Heart::hParameterConstantBlock* blurParamCB_;
 
     //Camera Control
     Heart::hVec3            camPos_;

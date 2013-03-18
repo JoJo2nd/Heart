@@ -38,7 +38,7 @@ HEART_DLLEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
-#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!:"x, __VA_ARGS__ ); }
+#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!: "x, __VA_ARGS__ ); }
 
 HEART_DLLEXPORT void HEART_API hcOutputStringRaw(const hChar* msg, ...);
 HEART_DLLEXPORT void HEART_API hcOutputString(const hChar* msg, ...);

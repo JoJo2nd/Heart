@@ -145,13 +145,35 @@ void InstanceRenderTest::CreateRenderResources()
 
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
+    hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
+    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hRenderTargetView* rtv=NULL;
+    hDepthStencilView* dsv=NULL;
+    hRenderTargetViewDesc rtvd;
+    hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=db->getTextureFormat();
+    dsvd.resourceType_=db->getRenderType();
+    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
     vp.x=0.f;
@@ -165,7 +187,7 @@ void InstanceRenderTest::CreateRenderResources()
 
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
 
-    camera->SetRenderTargetSetup(rtDesc);
+    camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
     camera->SetProjectionParams( aspect, 0.1f, 2000.f);
     camera->SetViewMatrix(vm);
@@ -190,12 +212,15 @@ void InstanceRenderTest::CreateRenderResources()
         }
     }
 
-    renderer->CreateVertexBuffer(
+    renderer->createVertexBuffer(
         positions, INSTANCE_COUNT, instLayout, hStaticArraySize(instLayout), 
         Heart::RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &instanceStream_);
 
 
     renderModel_->bindVertexStream(1, instanceStream_);
+    // The camera hold refs to this
+    rtv->DecRef();
+    dsv->DecRef();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -208,8 +233,8 @@ void InstanceRenderTest::DestroyRenderResources()
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
-    camera->ReleaseRenderTargetSetup();
-    renderer->DestroyVertexBuffer(instanceStream_);
+    camera->releaseRenderTargetSetup();
+    instanceStream_->DecRef();
     instanceStream_=NULL;
 }
 

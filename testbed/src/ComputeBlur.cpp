@@ -34,9 +34,12 @@ DEFINE_HEART_UNIT_TEST(ComputeBlur);
 #define RESOURCE_NAME ("MATERIALS")
 #define ASSET_PATH_COL ("MATERIALS.GAUSSIAN_BLUR_COL")
 #define ASSET_PATH_ROW ("MATERIALS.GAUSSIAN_BLUR_ROW")
+#define ASSET_PATH_TEXTURE ("MATERIALS.NARUTO_TEST")
 
 #define TEST_TEXTURE_WIDTH  (265)
 #define TEST_TEXTURE_HEIGHT (265)
+
+#define CREATE_TEXTURE
 
 namespace ComputeBlurData
 {
@@ -129,10 +132,10 @@ void ComputeBlur::RenderUnitTest()
     }
 
     ctx->setComputeInput(&blurHozCObj_);
-    ctx->dispatch(blurCamera_.getRenderTarget(0)->getWidth(), 1, 1);
+    ctx->dispatch(TEST_TEXTURE_WIDTH/*blurCamera_.getRenderTarget(0)->getWidth()*/, 1, 1);
 
     ctx->setComputeInput(&blurVertCObj_);
-    ctx->dispatch(blurCamera_.getRenderTarget(0)->getHeight(), 1, 1);
+    ctx->dispatch(TEST_TEXTURE_HEIGHT/*blurCamera_.getRenderTarget(0)->getHeight()*/, 1, 1);
 
     // Submit to back buffer
     Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
@@ -163,9 +166,31 @@ void ComputeBlur::CreateRenderResources()
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
+    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hRenderTargetView* rtv=NULL;
+    hRenderTargetView* brtv=NULL;
+    hDepthStencilView* dsv=NULL;
+    hRenderTargetViewDesc rtvd;
+    hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=db->getTextureFormat();
+    dsvd.resourceType_=db->getRenderType();
+    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=matMgr->getGlobalTexture("back_buffer");
-    rtDesc.depth_=matMgr->getGlobalTexture("depth_buffer");
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
     vp.x=0.f;
@@ -176,9 +201,10 @@ void ComputeBlur::CreateRenderResources()
     camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
-    hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
     Heart::hMatrix vm = Heart::hMatrixFunc::identity();//Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+
+#ifdef CREATE_TEXTURE
+    hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
     hMipDesc resTexInit={
         TEST_TEXTURE_WIDTH, 
         TEST_TEXTURE_HEIGHT, 
@@ -212,59 +238,79 @@ void ComputeBlur::CreateRenderResources()
 #endif
         }
     }
+#endif //CREATE_TEXTURE
 
     camera->Initialise(renderer);
-    camera->SetRenderTargetSetup(rtDesc);
+    camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
     camera->SetOrthoParams(0.f, 2.f, 2.f, 0.f, 0.f, 1000.f);
     camera->SetViewMatrix(vm);
     camera->setViewport(vp);
     camera->SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
 
+
+#ifdef CREATE_TEXTURE
+    renderer->createTexture(1, &resTexInit, TFORMAT_R32_TYPELESS, RESOURCEFLAG_RENDERTARGET, GetGlobalHeap(), &resTex_);
+#else
+    resTex_=static_cast<Heart::hTexture*>(resMgr->mtGetResource(ASSET_PATH_TEXTURE));
+    resTex_->AddRef();
+#endif
+    hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
+    materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+    blurToScreen_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+
+    rtvd.format_=TFORMAT_R32UINT;
+    renderer->createRenderTargetView(resTex_, rtvd, &brtv);
     hMemSet(&rtDesc, 0, sizeof(rtDesc));
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=matMgr->getGlobalTexture("blur_target");
-    rtDesc.depth_=matMgr->getGlobalTexture("back_buffer");
+    rtDesc.targetTex_=db;
+    rtDesc.targets_[0]=brtv;
     blurCamera_.Initialise(renderer);
-    blurCamera_.SetRenderTargetSetup(rtDesc);
+    blurCamera_.bindRenderTargetSetup(rtDesc);
     blurCamera_.SetFieldOfView(45.f);
     blurCamera_.SetOrthoParams(0.f, 2.f, 2.f, 0.f, 0.f, 1000.f);
     blurCamera_.SetViewMatrix(vm);
     blurCamera_.setViewport(vp);
     blurCamera_.SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
-
-    renderer->createTexture(1, &resTexInit, TFORMAT_XRGB8, 0, GetGlobalHeap(), &resTex_);
-    hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
-    materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
-    blurToScreen_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
     
+    hShaderParameterID textureid=hCRC32::StringCRC("g_texture");
     Heart::hTexture* blurTex=matMgr->getGlobalTexture("blur_target");
+    hShaderResourceViewDesc srvd;
+    hZeroMem(&srvd, sizeof(srvd));
+    srvd.format_=blurTex->getTextureFormat();
+    srvd.resourceType_=eRenderResourceType_Tex2D;
+    srvd.tex2D_.topMip_=0;
+    srvd.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(blurTex, srvd, &blurTexSRV_);
+    srvd.format_=blurTex->getTextureFormat();
+    renderer->createShaderResourceView(blurTex, srvd, &computeBlurTexSRV_);
 
-    materialInstance_->bindTexture(hCRC32::StringCRC("g_texture"), resTex_);
+    materialInstance_->bindResource(textureid, blurTexSRV_);
     materialInstance_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
-    blurToScreen_->bindTexture(hCRC32::StringCRC("g_texture"), blurTex);
+    blurToScreen_->bindResource(textureid, blurTexSRV_);
     blurToScreen_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
 
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
-    hUint32 cbSizes[]={
-        sizeof(ComputeBlurData::cbParams)
-    };
-    blurParamCB_=renderer->CreateConstantBlocks(cbSizes, NULL, 1);
+    renderer->createConstantBlock(sizeof(ComputeBlurData::cbParams), NULL, &blurParamCB_);
 
     blurHCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_ROW));
     blurVCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_COL));
     hcAssert(blurHCS_ && blurVCS_);
 
-    renderer->createComputeUAV(blurTex, TFORMAT_ABGR16F, 0, &blurUAV_);
+    renderer->createComputeUAV(blurTex, TFORMAT_ABGR16F_sRGB, 0, &blurUAV_);
     blurHozCObj_.bindShaderProgram(blurHCS_);
-    blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTex);
+    blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), computeBlurTexSRV_);
     blurHozCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
     blurHozCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
 
     blurVertCObj_.bindShaderProgram(blurHCS_);
-    blurVertCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTex);
+    blurVertCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), computeBlurTexSRV_);
     blurVertCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
     blurVertCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
+
+    rtv->DecRef();
+    brtv->DecRef();
+    dsv->DecRef();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -280,17 +326,17 @@ void ComputeBlur::DestroyRenderResources()
     renderer->destroyComputeUAV(&blurUAV_);
     hMaterialInstance::destroyMaterialInstance(materialInstance_);
     if (resTex_) {
-        renderer->destroyTexture(resTex_);
+        resTex_->DecRef();
         resTex_=NULL;
     }
     materialInstance_=NULL;
-    camera->ReleaseRenderTargetSetup();
+    camera->releaseRenderTargetSetup();
     if (quadIB_) {
-        renderer->DestroyIndexBuffer(quadIB_);
+        quadIB_->DecRef();
         quadIB_=NULL;
     }
     if (quadVB_) {
-        renderer->DestroyVertexBuffer(quadVB_);
+        quadVB_->DecRef();
         quadVB_=NULL;
     }
 }

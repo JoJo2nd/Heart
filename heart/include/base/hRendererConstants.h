@@ -178,6 +178,20 @@ namespace Heart
         ShaderType_FORCE_DWORD = ~0U
     };
 
+    enum hRenderResourceType 
+    {
+        eRenderResourceType_Buffer,
+        eRenderResourceType_Tex1D,
+        eRenderResourceType_Tex2D,
+        eRenderResourceType_Tex3D,
+        eRenderResourceType_TexCube,
+        eRenderResourceType_ArrayMask = 0x70000000,
+        eRenderResourceType_Tex1DArray   = eRenderResourceType_Tex1D    | eRenderResourceType_ArrayMask,
+        eRenderResourceType_Tex2DArray   = eRenderResourceType_Tex2D    | eRenderResourceType_ArrayMask,
+        eRenderResourceType_TexCubeArray = eRenderResourceType_TexCube  | eRenderResourceType_ArrayMask,
+        eRenderResourceType_Invalid = ~0
+    };
+
     enum hShaderProfile 
     {
         eShaderProfile_vs4_0,
@@ -206,10 +220,13 @@ namespace Heart
     {
         TFORMAT_ARGB8,
         TFORMAT_XRGB8,
+        TFORMAT_ARGB8_TYPELESS,
         TFORMAT_R16F,
         TFORMAT_GR16F,
         TFORMAT_ABGR16F,
         TFORMAT_R32F,
+        TFORMAT_R32_TYPELESS,
+        TFORMAT_R32UINT,
         TFORMAT_D32F,
         TFORMAT_D24S8F,
         TFORMAT_L8,
@@ -567,7 +584,7 @@ namespace Heart
             maxAnisotropy_ = 16;
             borderColour_  = WHITE;
             minLOD_        = -FLT_MAX;
-            maxLOD_        = FLT_MAX;             
+            maxLOD_        = FLT_MAX;
         }
 
         hSAMPLER_STATE_VALUE    filter_;
@@ -579,6 +596,91 @@ namespace Heart
         hColour                 borderColour_;
         hFloat                  minLOD_;
         hFloat                  maxLOD_;
+    };
+
+    struct hBufferSRV
+    {
+        hUint firstElement_;
+        hUint elementOffset_;
+        hUint numElements_;
+        hUint elementWidth_;
+    };
+    typedef hBufferSRV hBufferRTV;
+    typedef hBufferSRV hBufferDSV;
+
+    struct hTex1DSRV
+    {
+        hUint topMip_;
+        hUint mipLevels_;
+    };
+    typedef hTex1DSRV hTex1DRTV;
+    typedef hTex1DSRV hTex1DDSV;
+
+    struct hTex1DArraySRV
+    {
+        hUint topMip_;
+        hUint mipLevels_;
+        hUint arraySize_;
+        hUint arrayStart_;
+    };
+    typedef hTex1DArraySRV hTex1DArrayRTV;
+    typedef hTex1DArraySRV hTex1DArrayDSV;
+
+    struct hTex2DSRV
+    {
+        hUint topMip_;
+        hUint mipLevels_;
+    };
+    typedef hTex2DSRV hTex2DRTV;
+    typedef hTex2DSRV hTex2DDSV;
+
+    struct hTex2DArraySRV
+    {
+        hUint topMip_;
+        hUint mipLevels_;
+        hUint arraySize_;
+        hUint arrayStart_;
+    };
+    typedef hTex2DArraySRV hTex2DArrayRTV;
+    typedef hTex2DArraySRV hTex2DArrayDSV;
+
+    struct hShaderResourceViewDesc
+    {
+        hTextureFormat  format_;
+        hRenderResourceType   resourceType_;
+        union {
+            hBufferSRV      buffer_;
+            hTex1DSRV       tex1D_;
+            hTex1DArraySRV  tex1DArray_;
+            hTex2DSRV       tex2D_;
+            hTex2DArraySRV  tex2DArray_;
+        };
+    };
+
+    struct hRenderTargetViewDesc
+    {
+        hTextureFormat      format_;
+        hRenderResourceType resourceType_;
+        union {
+            hBufferRTV      buffer_;
+            hTex1DRTV       tex1D_;
+            hTex1DArrayRTV  tex1DArray_;
+            hTex2DRTV       tex2D_;
+            hTex2DArrayRTV  tex2DArray_;
+        };
+    };
+
+    struct hDepthStencilViewDesc
+    {
+        hTextureFormat      format_;
+        hRenderResourceType resourceType_;
+        union {
+            hBufferDSV      buffer_;
+            hTex1DDSV       tex1D_;
+            hTex1DArrayDSV  tex1DArray_;
+            hTex2DDSV       tex2D_;
+            hTex2DArrayDSV  tex2DArray_;
+        };
     };
 
     enum hMaterialInstanceFlags

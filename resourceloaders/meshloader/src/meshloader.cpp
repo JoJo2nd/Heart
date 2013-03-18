@@ -170,7 +170,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
             aabb = hAABB::computeFromPointSet(bounds, 2);
 
             inStream->Read(tmpBuffer, rHeader.ibSize);
-            renderer->CreateIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
+            renderer->createIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
 
             renderable->SetStartIndex(rHeader.startIndex);
             renderable->SetPrimativeCount(rHeader.nPrimatives);
@@ -202,7 +202,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
                     }
                 }
 
-                renderer->CreateVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
+                renderer->createVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
                 renderable->SetVertexBuffer(sHeader.index, vb);
             }
         }
@@ -493,10 +493,11 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
             for (hUint32 s = 0, sc=HEART_MAX_INPUT_STREAMS; s < sc; ++s) {
                 hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
                 if (vb) {
-                    renderer->DestroyVertexBuffer(vb);
+                    vb->DecRef();
+                    vb=NULL;
                 }
             }
-            renderer->DestroyIndexBuffer(lod->renderObjects_[rIdx].GetIndexBuffer());
+            lod->renderObjects_[rIdx].GetIndexBuffer()->DecRef();
         }
     }
 

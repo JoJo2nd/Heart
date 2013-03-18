@@ -189,17 +189,41 @@ void ComplexMesh1::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
+    hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
-    rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
+    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
 #ifdef DO_Z_PRE_PASS
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("z_pre_pass");
+    hTexture* db=matMgr->getGlobalTexture("z_pre_pass");
+    hTextureFormat dfmt=TFORMAT_D32F;
 #else
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hTextureFormat dfmt=TFORMAT_D24S8F;
 #endif
+    hRenderTargetView* rtv=NULL;
+    hDepthStencilView* dsv=NULL;
+    hRenderTargetViewDesc rtvd;
+    hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=dfmt;
+    dsvd.resourceType_=db->getRenderType();
+    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
+    rtDesc.nTargets_=1;
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
     vp.x= 0.f;
@@ -211,7 +235,7 @@ void ComplexMesh1::CreateRenderResources()
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
     camera_.Initialise(renderer);
-    camera_.SetRenderTargetSetup(rtDesc);
+    camera_.bindRenderTargetSetup(rtDesc);
     camera_.SetFieldOfView(45.f);
     camera_.SetProjectionParams( aspect, 0.1f, 1000.f);
     camera_.SetViewMatrix(vm);
@@ -223,9 +247,9 @@ void ComplexMesh1::CreateRenderResources()
 #endif
 
     rtDesc.nTargets_=0;
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("z_pre_pass");
+    rtDesc.depth_=dsv;
     zPassCamera_.Initialise(renderer);
-    zPassCamera_.SetRenderTargetSetup(rtDesc);
+    zPassCamera_.bindRenderTargetSetup(rtDesc);
     zPassCamera_.SetFieldOfView(45.f);
     zPassCamera_.SetProjectionParams( aspect, 0.1f, 1000.f);
     zPassCamera_.SetViewMatrix(vm);
@@ -233,6 +257,10 @@ void ComplexMesh1::CreateRenderResources()
     zPassCamera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("zprepass"));
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+
+    // The camera hold refs to this
+    rtv->DecRef();
+    dsv->DecRef();
 
     hcAssert(renderModel_);
 }
@@ -245,8 +273,8 @@ void ComplexMesh1::DestroyRenderResources()
 {
     using namespace Heart;
 
-    camera_.ReleaseRenderTargetSetup();
-    zPassCamera_.ReleaseRenderTargetSetup();
+    camera_.releaseRenderTargetSetup();
+    zPassCamera_.releaseRenderTargetSetup();
 }
 
 //////////////////////////////////////////////////////////////////////////

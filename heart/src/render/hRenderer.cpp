@@ -94,8 +94,10 @@ namespace Heart
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 
-        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
-        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(this, GetGlobalHeap());
+        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(
+            hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
+        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(
+            hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
 
         hRenderDeviceSetup setup;
         setup.alloc_ = RnTmpMalloc;
@@ -106,12 +108,14 @@ namespace Heart
 
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
 
+        backBuffer_->format_=TFORMAT_ARGB8_sRGB;
         backBuffer_->nLevels_=1;
         backBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
         backBuffer_->levelDescs_->mipdata_=NULL;
         backBuffer_->levelDescs_->mipdataSize_=0;
         backBuffer_->levelDescs_->width_ = GetWidth();
         backBuffer_->levelDescs_->height_ = GetHeight();
+        depthBuffer_->format_=TFORMAT_D24S8F;
         depthBuffer_->nLevels_=1;
         depthBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
         depthBuffer_->levelDescs_->mipdata_=NULL;
@@ -143,16 +147,19 @@ namespace Heart
 
     void hRenderer::Destroy()
     {
+        for (hUint32 i = 0; i < HEART_MAX_RENDER_CAMERAS; ++i)
+        {
+            GetRenderCamera(i)->releaseRenderTargetSetup();
+        }
         materialManager_.destroyRenderResources();
         for (hUint i=0; i<eDebugShaderMax; ++i) {
-            DestroyShader(GetGlobalHeap(), debugShaders_[i]);
-            hDELETE_SAFE(GetGlobalHeap(), debugShaders_[i]);
+            debugShaders_[i]->DecRef();
         }
-        ParentClass::Destroy();
         hDELETE_ARRAY_SAFE(GetGlobalHeap(), backBuffer_->levelDescs_);
-        hDELETE_SAFE(GetGlobalHeap(), backBuffer_);
         hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
-        hDELETE_SAFE(GetGlobalHeap(), depthBuffer_);
+        backBuffer_->DecRef();
+        depthBuffer_->DecRef();
+        ParentClass::Destroy();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -202,7 +209,9 @@ namespace Heart
         hcAssert(initialData);
         hcAssert(levels > 0);
 
-        (*outTex) = hNEW(heap, hTexture)(this, heap);
+        (*outTex) = hNEW(heap, hTexture)(
+            hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this),
+            eRenderResourceType_Tex2D, heap);
 
         (*outTex)->nLevels_ = levels;
         (*outTex)->format_ = format;
@@ -275,6 +284,7 @@ namespace Heart
 
     void hRenderer::destroyTexture(hTexture* pOut)
     {
+        hcAssert(pOut->GetRefCount() == 0);
         ParentClass::destroyTextureDevice(pOut);
         hDELETE_SAFE(pOut->heap_, pOut);
     }
@@ -283,16 +293,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
+    void hRenderer::createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
     {
         hUint elementSize= nIndices > 0xFFFF ? sizeof(hUint32) : sizeof(hUint16);
-        hIndexBuffer* pdata = hNEW(GetGlobalHeap(), hIndexBuffer)(this);
+        hIndexBuffer* pdata = hNEW(GetGlobalHeap(), hIndexBuffer)(
+            hFUNCTOR_BINDMEMBER(hIndexBuffer::hZeroProc, hRenderer, destroyIndexBuffer, this));
         pdata->pIndices_ = NULL;
         pdata->nIndices_ = nIndices;
         pdata->type_= nIndices > 0xFFFF ? hIndexBufferType_Index32 : hIndexBufferType_Index16;
-
         ParentClass::createIndexBufferDevice(nIndices*elementSize, pIndices, flags, pdata);
-
         *outIB = pdata;
     }
 
@@ -300,7 +309,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyIndexBuffer(hIndexBuffer* ib)
+    void hRenderer::destroyIndexBuffer(hIndexBuffer* ib)
     {
         hcAssert(ib);
         ParentClass::destroyIndexBufferDevice(ib);
@@ -311,9 +320,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB)
+    void hRenderer::createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB)
     {
-        hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap);
+        hVertexBuffer* pdata = hNEW(heap, hVertexBuffer)(heap,
+            hFUNCTOR_BINDMEMBER(hVertexBuffer::hZeroProc, hRenderer, destroyVertexBuffer, this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
         ParentClass::createVertexBufferDevice(desc, desccount, nElements*pdata->stride_, initData, flags, pdata);
@@ -324,7 +334,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyVertexBuffer(hVertexBuffer* vb)
+    void hRenderer::destroyVertexBuffer(hVertexBuffer* vb)
     {
         hcAssert(vb);
         hMemoryHeapBase* heap = vb->heap_;
@@ -370,23 +380,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::SumbitResourceUpdateCommand( const hRenderResourceUpdateCmd& cmd )
-    {
-        hcAssertMsg(drawResourceUpdateCalls_.value_ < s_resoruceUpdateLimit, "Too many resource updates calls");
-        if (drawResourceUpdateCalls_.value_ >= s_resoruceUpdateLimit)
-            return;
-
-        hUint32 wIdx;
-        hAtomic::AtomicAddWithPrev(drawResourceUpdateCalls_, 1, &wIdx);
-
-        //copy calls
-        drawResourceUpdates_[wIdx] = cmd;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hRenderer::SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
     {
         hcAssertMsg(drawCallBlockIdx_.value_+count < MAX_DCBLOCKS, "Too many draw calls");
@@ -408,7 +401,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hRenderer::AllocTempRenderMemory( hUint32 size )
+    void* hRenderer::allocTempRenderMemory( hUint32 size )
     {
         hUint32 ret;
         hAtomic::AtomicAddWithPrev(scratchPtrOffset_, size, &ret);
@@ -529,12 +522,34 @@ namespace Heart
             GetRenderCamera(i)->Initialise(this);
         }
 
+        hTexture* bb=materialManager_.getGlobalTexture("back_buffer");
+        hTexture* db=materialManager_.getGlobalTexture("depth_buffer");
+        hRenderTargetView* rtv=NULL;
+        hDepthStencilView* dsv=NULL;
+        hRenderTargetViewDesc rtvd;
+        hDepthStencilViewDesc dsvd;
+        hZeroMem(&rtvd, sizeof(rtvd));
+        hZeroMem(&dsvd, sizeof(dsvd));
+        rtvd.format_=bb->getTextureFormat();
+        rtvd.resourceType_=bb->getRenderType();
+        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+        rtvd.tex2D_.topMip_=0;
+        rtvd.tex2D_.mipLevels_=~0;
+        dsvd.format_=db->getTextureFormat();
+        dsvd.resourceType_=db->getRenderType();
+        hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+        dsvd.tex2D_.topMip_=0;
+        dsvd.tex2D_.mipLevels_=~0;
+        createRenderTargetView(bb, rtvd, &rtv);
+        createDepthStencilView(db, dsvd, &dsv);
+
         //Create viewport/camera for debug drawing
         hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
         hRenderViewportTargetSetup rtDesc = {0};
         rtDesc.nTargets_=1;
-        rtDesc.targets_[0]=materialManager_.getGlobalTexture("back_buffer");
-        rtDesc.depth_=materialManager_.getGlobalTexture("depth_buffer");
+        rtDesc.targetTex_=bb;
+        rtDesc.targets_[0]=rtv;
+        rtDesc.depth_=dsv;
 
         hRelativeViewport vp;
         vp.x=0.f;
@@ -542,12 +557,15 @@ namespace Heart
         vp.w=1.f;
         vp.h=1.f;
 
-        camera->SetRenderTargetSetup(rtDesc);
+        camera->bindRenderTargetSetup(rtDesc);
         camera->SetFieldOfView(45.f);
         camera->SetOrthoParams(0.f, 0.f, (hFloat)GetWidth(), (hFloat)GetHeight(), 0.1f, 100.f);
         camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
         camera->setViewport(vp);
         camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
+
+        rtv->DecRef();
+        dsv->DecRef();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -564,54 +582,64 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createDebugShadersInternal() {
-        debugShaders_[eDebugPixelWhite]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugPixelWhite]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelWhite),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhite)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhite]);
-        debugShaders_[eDebugVertexPosOnly]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugVertexPosOnly]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugVertexPosOnly),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosOnly)),
             "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosOnly]);
-        debugShaders_[eConsoleVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
+        debugShaders_[eConsoleVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         debugShaders_[eConsoleVertex]->shaderType_=ShaderType_VERTEXPROG;
-        ParentClass::compileShaderFromSource(
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eConsoleVertex),
             hStrLen(ParentClass::getDebugShaderSource(eConsoleVertex)),
             "mainVP", eShaderProfile_vs4_0, debugShaders_[eConsoleVertex]);
-        debugShaders_[eConsolePixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eConsolePixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eConsolePixel),
             hStrLen(ParentClass::getDebugShaderSource(eConsolePixel)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eConsolePixel]);
-        debugShaders_[eDebugFontVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugFontVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugFontVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontVertex)),
             "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugFontVertex]);
-        debugShaders_[eDebugFontPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugFontPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugFontPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontPixel)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugFontPixel]);
-        debugShaders_[eDebugVertexPosNormal]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugVertexPosNormal]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugVertexPosNormal),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosNormal)),
             "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosNormal]);
-        debugShaders_[eDebugPixelWhiteViewLit]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugPixelWhiteViewLit]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhiteViewLit]);
-        debugShaders_[eDebugTexVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugTexVertex]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugTexVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexVertex)),
             "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugTexVertex]);
-        debugShaders_[eDebugTexPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this);
-        ParentClass::compileShaderFromSource(
+        debugShaders_[eDebugTexPixel]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugTexPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexPixel)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugTexPixel]);
@@ -622,6 +650,290 @@ namespace Heart
         HEART_PROFILE_FUNC();
         CollectAndSortDrawCalls();
         SubmitDrawCallsMT();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+        (*outsrv) = hNEW(GetGlobalHeap(), hShaderResourceView)(
+            hFUNCTOR_BINDMEMBER(hShaderResourceView::hZeroRefProc, hRenderer, destroyShaderResourceView, this));
+        ParentClass::createShaderResourseViewDevice(tex, desc, *outsrv);
+        (*outsrv)->refType_=desc.resourceType_;
+        (*outsrv)->refTex_=tex;
+        tex->AddRef();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createShaderResourceView(hParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+        (*outsrv) = hNEW(GetGlobalHeap(), hShaderResourceView)(
+            hFUNCTOR_BINDMEMBER(hShaderResourceView::hZeroRefProc, hRenderer, destroyShaderResourceView, this));
+        ParentClass::createShaderResourseViewDevice(cb, desc, *outsrv);
+        (*outsrv)->refType_=desc.resourceType_;
+        (*outsrv)->refCB_=cb;
+        //cb->AddRef();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyShaderResourceView(hShaderResourceView* srv) {
+        hcAssert(srv);
+        hcAssert(srv->GetRefCount() == 0);
+        ParentClass::destroyShaderResourceViewDevice(srv);
+        hDELETE_SAFE(GetGlobalHeap(), srv);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv) {
+        (*outrtv) = hNEW(GetGlobalHeap(), hRenderTargetView)(
+            hFUNCTOR_BINDMEMBER(hRenderTargetView::hZeroRefProc, hRenderer, destroyRenderTargetView, this));
+        ParentClass::createRenderTargetViewDevice(tex, rtvd, *outrtv);
+        (*outrtv)->bindTexture(tex);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv) {
+        (*outdsv) = hNEW(GetGlobalHeap(), hDepthStencilView)(
+            hFUNCTOR_BINDMEMBER(hDepthStencilView::hZeroRefProc, hRenderer, destroyDepthStencilView, this));
+        ParentClass::createDepthStencilViewDevice(tex, dsvd, *outdsv);
+        (*outdsv)->bindTexture(tex);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyRenderTargetView(hRenderTargetView* view) {
+        hcAssert(view);
+        hcAssert(view->GetRefCount() == 0);
+        ParentClass::destroyRenderTargetViewDevice(view);
+        hDELETE_SAFE(GetGlobalHeap(), view);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyDepthStencilView(hDepthStencilView* view) {
+        hcAssert(view);
+        hcAssert(view->GetRefCount() == 0);
+        ParentClass::destroyDepthStencilViewDevice(view);
+        hDELETE_SAFE(GetGlobalHeap(), view);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBlendState* hRenderer::createBlendState(const hBlendStateDesc& desc) {
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+        resourceMutex_.Lock();
+        hBlendState* state = blendStates_.Find(stateKey);
+        if ( !state ) {
+            state = hNEW(GetGlobalHeap(), hBlendState)(
+                hFUNCTOR_BINDMEMBER(hBlendState::hZeroRefProc, hRenderer, destroyBlendState, this));
+            ParentClass::createBlendStateDevice(desc, state);
+            blendStates_.Insert(stateKey, state);
+        }
+        else {
+            state->AddRef();
+        }
+        resourceMutex_.Unlock();
+        return state;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyBlendState(hBlendState* state) {
+        hcAssert(state->GetRefCount() == 0);
+        resourceMutex_.Lock();
+        blendStates_.Remove(state->GetKey());
+        ParentClass::destroyBlendStateDevice(state);
+        hDELETE(GetGlobalHeap(), state);
+        resourceMutex_.Unlock();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hRasterizerState* hRenderer::createRasterizerState(const hRasterizerStateDesc& desc) {
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+        resourceMutex_.Lock();
+        hRasterizerState* state = rasterizerStates_.Find(stateKey);
+        if ( !state ) {
+            state = hNEW(GetGlobalHeap(), hRasterizerState)(
+                hFUNCTOR_BINDMEMBER(hRasterizerState::hZeroRefProc, hRenderer, destoryRasterizerState, this));
+            ParentClass::createRasterizerStateDevice(desc, state);
+            rasterizerStates_.Insert(stateKey, state);
+        }
+        else {
+            state->AddRef();
+        }
+        resourceMutex_.Unlock();
+        return state;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destoryRasterizerState(hRasterizerState* state) {
+        hcAssert(state->GetRefCount() == 0);
+        resourceMutex_.Lock();
+        rasterizerStates_.Remove(state->GetKey());
+        ParentClass::destroyRasterizerStateDevice(state);
+        hDELETE(GetGlobalHeap(), state);
+        resourceMutex_.Unlock();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hDepthStencilState* hRenderer::createDepthStencilState(const hDepthStencilStateDesc& desc) {
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+        resourceMutex_.Lock();
+        hDepthStencilState* state = depthStencilStates_.Find(stateKey);
+        if ( !state ) {
+            state = hNEW(GetGlobalHeap(), hDepthStencilState)(
+                hFUNCTOR_BINDMEMBER(hDepthStencilState::hZeroRefProc, hRenderer, destroyDepthStencilState, this));
+            ParentClass::createDepthStencilStateDevice(desc, state);
+            depthStencilStates_.Insert(stateKey, state);
+        }
+        else {
+            state->AddRef();
+        }
+        resourceMutex_.Unlock();
+        return state;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyDepthStencilState(hDepthStencilState* state) {
+        hcAssert(state->GetRefCount() == 0);
+        resourceMutex_.Lock();
+        depthStencilStates_.Remove(state->GetKey());
+        ParentClass::destroyDepthStencilStateDevice(state);
+        hDELETE(GetGlobalHeap(), state);
+        resourceMutex_.Unlock();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hSamplerState* hRenderer::createSamplerState(const hSamplerStateDesc& desc) {
+        //Build state key
+        hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
+        resourceMutex_.Lock();
+        hSamplerState* state = samplerStateMap_.Find(stateKey);
+        if ( !state ) {
+            state = hNEW(GetGlobalHeap(), hSamplerState)(
+                hFUNCTOR_BINDMEMBER(hSamplerState::hZeroRefProc, hRenderer, destroySamplerState, this));
+            ParentClass::createSamplerStateDevice(desc, state);
+            samplerStateMap_.Insert(stateKey, state);
+        }
+        else {
+            state->AddRef();
+        }
+        resourceMutex_.Unlock();
+        return state;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroySamplerState(hSamplerState* state) {
+        hcAssert(state->GetRefCount() == 0);
+        resourceMutex_.Lock();
+        samplerStateMap_.Remove(state->GetKey());
+        ParentClass::destroySamplerStateDevice(state);
+        hDELETE(GetGlobalHeap(), state);
+        resourceMutex_.Unlock();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createConstantBlock(hUint size, void* data, hParameterConstantBlock** outcb) {
+        (*outcb) = hNEW(GetGlobalHeap(), hParameterConstantBlock)(
+            hFUNCTOR_BINDMEMBER(hParameterConstantBlock::hZeroRefProc, hRenderer, destroyConstantBlock, this));
+        ParentClass::createConstantBlockDevice(size, data, *outcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyConstantBlock(hParameterConstantBlock* block) {
+        ParentClass::destroyConstantBlockDevice(block);
+        hDELETE(GetGlobalHeap(), block);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, 
+    const hChar* entry, hShaderProfile profile, hShaderProgram** out) {
+        (*out) = hNEW(heap, hShaderProgram)(this, heap,
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(heap, shaderProg, len, entry, profile, *out);
+        if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
+            (*out)->SetShaderType(ShaderType_VERTEXPROG);
+        } else if (profile >= eShaderProfile_ps4_0 && profile <= eShaderProfile_ps5_0) {
+            (*out)->SetShaderType(ShaderType_FRAGMENTPROG);
+        } else if (profile >= eShaderProfile_gs4_0 && profile <= eShaderProfile_gs5_0) {
+            (*out)->SetShaderType(ShaderType_GEOMETRYPROG);
+        } else if (profile >= eShaderProfile_cs4_0 && profile <= eShaderProfile_cs5_0) {
+            (*out)->SetShaderType(ShaderType_COMPUTEPROG);
+        } else if (profile == eShaderProfile_hs5_0) {
+            (*out)->SetShaderType(ShaderType_HULLPROG);
+        } else if (profile == eShaderProfile_ds5_0) {
+            (*out)->SetShaderType(ShaderType_DOMAINPROG);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::createShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out) {
+        (*out) = hNEW(heap, hShaderProgram)(this, heap,
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderDevice(heap, shaderProg, len, type, *out);
+        (*out)->SetShaderType(type);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::destroyShader(hShaderProgram* prog) {
+        ParentClass::destroyShaderDevice(prog->heap_, prog);
+        hDELETE(prog->heap_, prog);
     }
 
 }

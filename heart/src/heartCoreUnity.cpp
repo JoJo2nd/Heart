@@ -81,8 +81,10 @@
 // Renderer //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#include "render/hViews.cpp"
 #include "render/hIndexBuffer.cpp"
 #include "render/hMaterialTypes.cpp"
+#include "render/hParameterConstBlock.cpp"
 #include "render/hRenderShaderProgram.cpp"
 #include "render/hRenderer.cpp"
 #include "render/hRendererCamera.cpp"

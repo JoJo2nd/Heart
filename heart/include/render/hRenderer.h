@@ -122,17 +122,37 @@ namespace Heart
         /*
             pimpl methods
         */
-        void													createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex);
-        void                                                    resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
-        void													destroyTexture(hTexture* pOut);
-        void													CreateIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
-        void													DestroyIndexBuffer(hIndexBuffer* pOut);
-        void													CreateVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
-        void													DestroyVertexBuffer(hVertexBuffer* pOut);
-        
-        void                                                    SumbitResourceUpdateCommand(const hRenderResourceUpdateCmd& cmd);
-        void                                                    SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
-        void*													AllocTempRenderMemory( hUint32 size );
+        void  compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram** out);
+        void  createShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out);
+        void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex);
+        void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
+        void  createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
+        void  createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
+        void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+        void  createShaderResourceView(hParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+        void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
+        void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
+        hBlendState*        createBlendState( const hBlendStateDesc& desc );
+        hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
+        hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
+        hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
+        void  createConstantBlock(hUint size, void* data, hParameterConstantBlock** outcb);
+    private:  
+        void  destroyShader(hShaderProgram* prog);
+        void  destroyTexture(hTexture* pOut);
+        void  destroyIndexBuffer(hIndexBuffer* pOut);
+        void  destroyVertexBuffer(hVertexBuffer* pOut);
+        void  destroyShaderResourceView(hShaderResourceView* srv);  
+        void  destroyRenderTargetView(hRenderTargetView* view);
+        void  destroyDepthStencilView(hDepthStencilView* view);
+        void  destroyBlendState( hBlendState* state );
+        void  destoryRasterizerState( hRasterizerState* state );
+        void  destroyDepthStencilState( hDepthStencilState* state );
+        void  destroySamplerState( hSamplerState* state );
+        void  destroyConstantBlock(hParameterConstantBlock* block);
+    public:
+        void  SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
+        void* allocTempRenderMemory( hUint32 size );
 
         /*
             end new engine design methods
@@ -152,8 +172,10 @@ namespace Heart
         static bool												IsRenderThread();
 
     private:
-
-        friend class hVertexDeclarationManager;
+        typedef hMap< hUint32, hBlendState >         BlendStateMapType;
+        typedef hMap< hUint32, hRasterizerState >    RasterizerStateMapType;
+        typedef hMap< hUint32, hDepthStencilState >  DepthStencilStateMapType;
+        typedef hMap< hUint32, hSamplerState >       SamplerStateMapType;
 
         //
         void                                                    CollectAndSortDrawCalls();
@@ -171,14 +193,20 @@ namespace Heart
         hBool													vsync_;
         hFloat                                                  gpuTime_;
 
-        hRendererCamera                                         renderCameras_[HEART_MAX_RENDER_CAMERAS];
-        hRenderState*											renderStateCache_;
-        hResourceManager*										resourceManager_;
-        hRenderMaterialManager                                  materialManager_;
-        hRenderSubmissionCtx                                    mainSubmissionCtx_;
-        hTexture*                                               backBuffer_;
-        hTexture*                                               depthBuffer_;
-        hShaderProgram*                                         debugShaders_[eDebugShaderMax];
+        hMutex                   resourceMutex_;
+        BlendStateMapType        blendStates_;
+        RasterizerStateMapType   rasterizerStates_;
+        DepthStencilStateMapType depthStencilStates_;
+        SamplerStateMapType      samplerStateMap_;
+
+        hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
+        hRenderState*           renderStateCache_;
+        hResourceManager*       resourceManager_;
+        hRenderMaterialManager  materialManager_;
+        hRenderSubmissionCtx    mainSubmissionCtx_;
+        hTexture*               backBuffer_;
+        hTexture*               depthBuffer_;
+        hShaderProgram*         debugShaders_[eDebugShaderMax];
 
         hUint32                                                 scratchBufferSize_;
         hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];
@@ -193,7 +221,7 @@ namespace Heart
         hRenderFrameStatsCollection								rendererStats_[2];
         hUint32													statPass_;
         
-        static void*											pRenderThreadID_;    
+        static void*											pRenderThreadID_;
     };
 
 }

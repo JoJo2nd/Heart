@@ -50,8 +50,7 @@ namespace Heart
     };
 
 
-    class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >,
-                                               public hIReferenceCounted
+    class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >
     {
     public:
         hResourceClassBase() 
@@ -68,8 +67,6 @@ namespace Heart
         hBool                   GetIsLinked() const { return linked_; }
 
     protected:
-
-        void    OnZeroRef() const;
 
         friend class hResourceManager;
         friend class hResoucePackageV2;

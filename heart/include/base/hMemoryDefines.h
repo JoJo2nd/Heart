@@ -87,7 +87,7 @@ namespace Heart
 #   if _MSC_VER >= 1500
 #       define hPRIVATE_DESTRUCTOR()\
             template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32); \
-            template < typename t_ty > friend struct std::tr1::_Get_align; //MSVC-Secret hidden type that needs exposing
+            template < typename t_ty > friend struct std::tr1::_Get_align; /*MSVC-Secret hidden type that needs exposing*/
 #   else
 #       define hPRIVATE_DESTRUCTOR()\
             template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32);

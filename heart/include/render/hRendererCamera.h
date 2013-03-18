@@ -34,21 +34,22 @@ namespace Heart
 
     struct HEART_DLLEXPORT hRenderViewportTargetSetup
     {
-        hUint           nTargets_;
-        hTexture*       targets_[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
-        hTexture*       depth_;
+        hUint               nTargets_;
+        hTexture*           targetTex_; // used for dims- must not be NULL
+        hRenderTargetView*  targets_[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
+        hDepthStencilView*  depth_;
     };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    
+
     class HEART_DLLEXPORT hRendererCamera
     {
     public:
 
         hRendererCamera();
-        virtual	~hRendererCamera();
+        virtual ~hRendererCamera();
 
         void                        Initialise( hRenderer* renderer );
         void                        SetFieldOfView( hFloat fovDegrees ) { fov = hmDegToRad( fovDegrees ); }
@@ -68,15 +69,15 @@ namespace Heart
         void                        SetTechniquePass( const hRenderTechniqueInfo* tech ) { validTechnique_ = tech; }
         const hRenderTechniqueInfo* getTechniquePass() const { return validTechnique_; }
         hUint32                     GetTechniqueMask() const { return validTechnique_ ? validTechnique_->mask_ : 0; }
-        void                        SetRenderTargetSetup( const hRenderViewportTargetSetup& desc );
-        void                        ReleaseRenderTargetSetup();
+        void                        bindRenderTargetSetup( const hRenderViewportTargetSetup& desc );
+        void                        releaseRenderTargetSetup();
         hUint                       getTargetCount() const { return setup_.nTargets_; }
-        hTexture**                  getTargets() { return setup_.targets_; }
-        hTexture*                   getRenderTarget( hUint32 idx ) const { 
+        hRenderTargetView**         getTargets() { return setup_.targets_; }
+        hRenderTargetView*          getRenderTarget( hUint32 idx ) const { 
             hcAssert(idx < setup_.nTargets_);
             return setup_.targets_[idx]; 
         }
-        hTexture*                   getDepthTarget() const { return setup_.depth_; }
+        hDepthStencilView*          getDepthTarget() const { return setup_.depth_; }
         hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
         void                        UpdateParameters(hRenderSubmissionCtx* ctx);
     private:
@@ -92,7 +93,7 @@ namespace Heart
         hRelativeViewport           viewport_;
         hRenderer*                  renderer_;
         hRenderViewportTargetSetup  setup_;
-        hdParameterConstantBlock*   cameraConstBlock_;
+        hParameterConstantBlock*   cameraConstBlock_;
         hViewportShaderConstants    viewportConstants_;
     };
     

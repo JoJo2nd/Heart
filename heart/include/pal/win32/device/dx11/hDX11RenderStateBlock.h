@@ -27,8 +27,7 @@
 
 namespace Heart
 {
-    struct HEART_DLLEXPORT hdDX11BlendState : public hIReferenceCounted,
-                              public hMapElement< hUint32, hdDX11BlendState >
+    struct HEART_DLLEXPORT hdDX11BlendState
     {
         hdDX11BlendState() 
             : stateObj_(NULL)
@@ -38,8 +37,7 @@ namespace Heart
         ID3D11BlendState*       stateObj_;
     };
 
-    struct HEART_DLLEXPORT hdDX11RasterizerState : public hIReferenceCounted,
-                                   public hMapElement< hUint32, hdDX11RasterizerState >
+    struct HEART_DLLEXPORT hdDX11RasterizerState
     {
         hdDX11RasterizerState()
             : stateObj_(NULL)
@@ -49,8 +47,7 @@ namespace Heart
         ID3D11RasterizerState*   stateObj_;
     };
 
-    struct HEART_DLLEXPORT hdDX11DepthStencilState : public hIReferenceCounted,
-                                     public hMapElement< hUint32, hdDX11DepthStencilState >
+    struct HEART_DLLEXPORT hdDX11DepthStencilState
     {
         hdDX11DepthStencilState()
             : stateObj_(NULL)
@@ -61,19 +58,7 @@ namespace Heart
         hUint32                  stencilRef_;
     };
 
-    struct HEART_DLLEXPORT hdDX11InputState : public hIReferenceCounted,
-                              public hMapElement< hUint32, hdDX11InputState >
-    {
-        hdDX11InputState()
-            : stateObj_(NULL)
-        {
-
-        }
-        ID3D11InputLayout*       stateObj_;
-    };
-
-    struct HEART_DLLEXPORT hdDX11SamplerState : public hIReferenceCounted,
-                                public hMapElement< hUint32, hdDX11SamplerState >
+    struct HEART_DLLEXPORT hdDX11SamplerState
     {
         hdDX11SamplerState()
             : stateObj_(NULL)

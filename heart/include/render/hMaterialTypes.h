@@ -61,20 +61,29 @@ namespace Heart
         void                    SetFragmentShaderResID(hResourceID id) { fragmentProgramID_ = id; }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
         hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i];}
-        hdBlendState*           GetBlendState() { return blendState_; }
-        hdDepthStencilState*    GetDepthStencilState() { return depthStencilState_; }
-        hdRasterizerState*      GetRasterizerState() { return rasterizerState_; }
+        hBlendState*            GetBlendState() { return blendState_; }
+        hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
+        hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
         hdRenderInputObject*    GetRenderInputObject() { return &renderInput_; }
         hdRenderStreamsObject*  getRenderStreamsObject() { return &boundStreams_; }
-        void                    SetBlendState(hdBlendState* state) { blendState_ = state; }
-        void                    SetDepthStencilState(hdDepthStencilState* state) { depthStencilState_ = state; }
-        void                    SetRasterizerState(hdRasterizerState* state) { rasterizerState_ = state; }
+        void                    bindBlendState(hBlendState* state) { 
+            state->AddRef();
+            blendState_ = state; 
+        }
+        void                    bindDepthStencilState(hDepthStencilState* state) { 
+            state->AddRef();
+            depthStencilState_ = state;
+        }
+        void                    bindRasterizerState(hRasterizerState* state) { 
+            state->AddRef();
+            rasterizerState_ = state;
+        }
         void                    ReleaseResources(hRenderer* renderer);
 
-        hBool   BindShaderProgram(hdShaderProgram* prog);
-        hBool   BindSamplerInput(hShaderParameterID paramID, hdSamplerState* srv);
-        hBool   BindResourceView(hShaderParameterID paramID, hTexture* view);
-        hBool   BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer);
+        hBool   bindShaderProgram(hdShaderProgram* prog);
+        hBool   setSamplerInput(hShaderParameterID paramID, hSamplerState* srv);
+        hBool   setResourceView(hShaderParameterID paramID, hShaderResourceView* view);
+        hBool   setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer);
         hBool   bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt);
         hBool   bindInputStream(hUint slot, hVertexBuffer* vtx);
         void    unbind();
@@ -112,9 +121,9 @@ namespace Heart
         /*
          * Previous should be in an array
          **/
-        hdBlendState*                       blendState_;
-        hdDepthStencilState*                depthStencilState_;
-        hdRasterizerState*                  rasterizerState_;
+        hBlendState*                        blendState_;
+        hDepthStencilState*                 depthStencilState_;
+        hRasterizerState*                   rasterizerState_;
         hdRenderInputObject                 renderInput_;
         hdRenderStreamsObject               boundStreams_;
     };

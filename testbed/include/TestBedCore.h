@@ -60,4 +60,5 @@ private:
     IUnitTest*                              currentTest_;
     UnitTestFactory*                        factory_;
     hUint32                                 currentTestIdx_;
+    hBool                                   exiting_;
 };

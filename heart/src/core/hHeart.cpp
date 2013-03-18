@@ -356,7 +356,7 @@ namespace Heart
         // Create debug menus ////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
 #ifdef HEART_DEBUG
-#pragma message ("TODO")
+#pragma message ("TODO- Real time profiler menu")
 /*        hRTProfilerMenu* rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer());
         rtProfileMenu_->SetHidden(hTrue);
         debugMenuManager_->RegisterMenu("rtp", rtProfileMenu_);

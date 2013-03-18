@@ -59,6 +59,7 @@ namespace Heart
             , hWnd_( NULL )
             , ownWindow_(hFalse)
             , procChain_(NULL)
+            , exitSignal_(hFalse)
         {
             wndTitle_[0] = 0;
         }
@@ -72,7 +73,7 @@ namespace Heart
         hdKeyboard*             GetSystemKeyboard() { return &keyboard_; }
         hdMouse*                GetSystemMouse()    { return &mouse_; }
         void                    SignalExit() { exitSignal_.Signal(); }
-        hBool                   ExitSignaled() { return exitSignal_.TryWait(); }
+        hBool                   ExitSignaled() { return exitSignal_.TryWait();}
         hUint32                 getWindowWidth() const { return wndWidth_; }
         hUint32                 getWindowHeight() const { return wndHeight_; }
         hBool                   getOwnWindow() const { return ownWindow_; }

@@ -47,10 +47,10 @@ namespace Heart
             hZeroMem(inputData_, sizeof(inputData_));
         }
 
-        hBool   BindShaderProgram(hdDX11ShaderProgram* prog);
-        hBool   BindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
-        hBool   BindResourceView(hShaderParameterID paramID, hdDX11Texture* view);
-        hBool   BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
+        hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
+        hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
+        hBool   bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view);
+        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
 
         enum hdDX11ShaderProgTypes
         {
@@ -101,7 +101,7 @@ namespace Heart
         }
         hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
         hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
-        hBool   bindResourceView(hShaderParameterID paramID, hdDX11Texture* view);
+        hBool   bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view);
         hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
         hBool   bindUAV(hShaderParameterID paramID, hdDX11ComputeUAV* uav);
     private:
@@ -179,11 +179,11 @@ namespace Heart
         void    SetRenderStateBlock(hdDX11DepthStencilState* st);
         void    SetRenderStateBlock(hdDX11RasterizerState* st);
         void    setComputeInput(const hdDX11ComputeInputObject* ci);
-        void    setTargets(hUint32 idx, hdDX11Texture** target, hdDX11Texture* depth);
+        void    setTargets(hUint32 idx, hdDX11RenderTargetView** target, hdDX11DepthStencilView* depth);
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
-        void    clearColour(hdDX11Texture* tex, const hColour& colour);
-        void    clearDepth(hdDX11Texture* tex, hFloat z);
+        void    clearColour(hdDX11RenderTargetView* view, const hColour& colour);
+        void    clearDepth(hdDX11DepthStencilView* view, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx);

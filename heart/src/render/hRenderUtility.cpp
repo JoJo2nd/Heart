@@ -170,8 +170,8 @@ namespace hRenderUtility
             }
         }
 
-        rndr->CreateIndexBuffer(indices, idxCnt, 0, outIdxBuf);
-        rndr->CreateVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createIndexBuffer(indices, idxCnt, 0, outIdxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -274,8 +274,8 @@ namespace hRenderUtility
             }
         }
 
-        rndr->CreateIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
-        rndr->CreateVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
+        rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,7 +352,7 @@ namespace hRenderUtility
             vtx+=3;
         }
 
-        rndr->CreateVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
 
@@ -422,7 +422,7 @@ namespace hRenderUtility
              .5f,  .5f,  .5f,   0.f, 0.f, 1.f,
              .5f, -.5f,  .5f,   0.f, 0.f, 1.f,
         };
-        rndr->CreateVertexBuffer(verts, PRIM_COUNT, desc, hStaticArraySize(desc), 0, heap, retVB);
+        rndr->createVertexBuffer(verts, PRIM_COUNT, desc, hStaticArraySize(desc), 0, heap, retVB);
         return *retVB;
     }
 #undef PRIM_COUNT
@@ -453,7 +453,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass.SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass.bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_ENABLE;       //
@@ -466,7 +468,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass.SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* dss=rndr->createDepthStencilState(depthDesc);
+        pass.bindDepthStencilState(dss);
+        dss->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_WIREFRAME;    //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -476,7 +480,9 @@ namespace hRenderUtility
         rastDesc.slopeScaledDepthBias_  = 0.f;                        //
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
-        pass.SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass.bindRasterizerState(rs);
+        rs->DecRef();
         pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosOnly));
         pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhite));
         tech->AppendPass(pass);
@@ -512,7 +518,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass->SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass->bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_ENABLE;       //
@@ -525,7 +533,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass->SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -536,7 +546,9 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
 
-        pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosOnly));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelWhite));
 
@@ -571,7 +583,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass.SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass.bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_ENABLE;       //
@@ -584,7 +598,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass.SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
+        pass.bindDepthStencilState(ds);
+        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -594,7 +610,9 @@ namespace hRenderUtility
         rastDesc.slopeScaledDepthBias_  = 0.f;                        //
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
-        pass.SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass.bindRasterizerState(rs);
+        rs->DecRef();
         pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosNormal));
         pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhiteViewLit));
         tech->AppendPass(pass);
@@ -630,7 +648,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass->SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass->bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -643,7 +663,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass->SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -653,7 +675,9 @@ namespace hRenderUtility
         rastDesc.slopeScaledDepthBias_  = 0.f;                        //
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
-        pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eConsoleVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eConsolePixel));
         ddrawmat->SetActiveGroup("low_detail");
@@ -689,7 +713,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass->SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass->bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -702,7 +728,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass->SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -712,7 +740,9 @@ namespace hRenderUtility
         rastDesc.slopeScaledDepthBias_  = 0.f;                        //
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
-        pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
         hSamplerStateDesc sampDesc;
@@ -727,7 +757,9 @@ namespace hRenderUtility
         sampDesc.maxLOD_        = FLT_MAX;  
         ddrawmat->SetActiveGroup("low_detail");
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
-        ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), rndr->CreateSamplerState(sampDesc));
+        hSamplerState* ss=rndr->createSamplerState(sampDesc);
+        ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), ss);
+        ss->DecRef();
 
         return ddrawmat;
     }
@@ -759,7 +791,9 @@ namespace hRenderUtility
         blendDesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        pass->SetBlendState(rndr->CreateBlendState(blendDesc));
+        hBlendState* bs=rndr->createBlendState(blendDesc);
+        pass->bindBlendState(bs);
+        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -772,7 +806,9 @@ namespace hRenderUtility
         depthDesc.stencilPassOp_       = RSV_SO_KEEP;      //
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
-        pass->SetDepthStencilState(rndr->CreateDepthStencilState(depthDesc));
+        hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -782,7 +818,9 @@ namespace hRenderUtility
         rastDesc.slopeScaledDepthBias_  = 0.f;                        //
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
-        pass->SetRasterizerState(rndr->CreateRasterizerState(rastDesc));
+        hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_LINEAR;
         sampDesc.addressU_      = SSV_CLAMP;
@@ -798,7 +836,9 @@ namespace hRenderUtility
         pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
         ddrawmat->SetActiveGroup("low_detail");
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
-        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), rndr->CreateSamplerState(sampDesc));
+        hSamplerState* ss=rndr->createSamplerState(sampDesc);
+        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
+        ss->DecRef();
 
         return ddrawmat;
     }
@@ -838,7 +878,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
-        rndr->destroyTexture(tex);
+        tex->DecRef();
     }
 
     //////////////////////////////////////////////////////////////////////////

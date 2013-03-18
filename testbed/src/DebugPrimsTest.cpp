@@ -181,9 +181,30 @@ void DebugPrimsTest::CreateRenderResources()
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
+    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hRenderTargetView* rtv=NULL;
+    hDepthStencilView* dsv=NULL;
+    hRenderTargetViewDesc rtvd;
+    hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=db->getTextureFormat();
+    dsvd.resourceType_=db->getRenderType();
+    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
     vp.x=0.f;
@@ -197,7 +218,7 @@ void DebugPrimsTest::CreateRenderResources()
 
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
 
-    camera->SetRenderTargetSetup(rtDesc);
+    camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
     camera->SetProjectionParams(aspect, 0.1f, 1000.f);
     camera->SetViewMatrix(vm);
@@ -239,9 +260,9 @@ void DebugPrimsTest::DestroyRenderResources()
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
-    camera->ReleaseRenderTargetSetup();
+    camera->releaseRenderTargetSetup();
     if(cubeVB_) {
-        renderer->DestroyVertexBuffer(cubeVB_);
+        cubeVB_->DecRef();
         cubeVB_=NULL;
     }
     if (wireCubeMat_) {
@@ -253,11 +274,11 @@ void DebugPrimsTest::DestroyRenderResources()
         viewLitCubeMat_=NULL;
     }
     if (sphereIB_) {
-        renderer->DestroyIndexBuffer(sphereIB_);
+        sphereIB_->DecRef();
         sphereIB_=NULL;
     }
     if (sphereVB_) {
-        renderer->DestroyVertexBuffer(sphereVB_);
+        sphereVB_->DecRef();
         sphereVB_=NULL;
     }
     if (wireSphereMat_) {
@@ -269,7 +290,7 @@ void DebugPrimsTest::DestroyRenderResources()
         viewLitSphereMat_=NULL;
     }
     if(coneVB_) {
-        renderer->DestroyVertexBuffer(coneVB_);
+        coneVB_->DecRef();
         coneVB_=NULL;
     }
     if (wireConeMat_) {
@@ -285,11 +306,11 @@ void DebugPrimsTest::DestroyRenderResources()
         wirePlaneMat_=NULL;
     }
     if (planeIB_) {
-        renderer->DestroyIndexBuffer(planeIB_);
+        planeIB_->DecRef();
         planeIB_=NULL;
     }
     if (planeVB_) {
-        renderer->DestroyVertexBuffer(planeVB_);
+        planeVB_->DecRef();
         planeVB_=NULL;
     }
 }

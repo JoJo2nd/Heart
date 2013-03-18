@@ -184,11 +184,11 @@ namespace Heart
         void    UpdateConsole();
         void    ClearConsoleBuffer();
 
-        hRenderer*                                          renderer_;
-        hResourceManager*									resourceManager_;
-        const hdKeyboard*                                   keyboard_;
-        hBool												visible_;
-        hPublisherContext*                                  evtCtx_;
+        hRenderer*          renderer_;
+        hResourceManager*   resourceManager_;
+        const hdKeyboard*   keyboard_;
+        hBool               visible_;
+        hPublisherContext*  evtCtx_;
 
         hConsoleLogType consoleLog_;
         hUint           cursorPos_;
@@ -196,8 +196,8 @@ namespace Heart
         hChar           prevInputs_[MAX_PREV_COMMAND_LOGS][INPUT_BUFFER_LEN];
 
         //Display UI
-        hControllerManager*                                 controllerManager_;
-        hConsoleUI*                                         consoleWindow_;
+        hControllerManager*     controllerManager_;
+        hConsoleUI*             consoleWindow_;
 
         //command processing
         hLuaStateManager*   vm_;

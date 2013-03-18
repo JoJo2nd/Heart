@@ -101,15 +101,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     Heart::hViewport hRendererCamera::getTargetViewport() const {
-        if (setup_.nTargets_) {
-            //base on first target
-            hUint w=setup_.targets_[0]->getWidth();
-            hUint h=setup_.targets_[0]->getHeight();
-            return hViewport(w*viewport_.x, h*viewport_.y, w*viewport_.w, h*viewport_.h);
-        } else if (setup_.depth_){
-            //base on depth
-            hUint w=setup_.depth_->getWidth();
-            hUint h=setup_.depth_->getHeight();
+        if (setup_.targetTex_){
+            hUint w=setup_.targetTex_->getWidth();
+            hUint h=setup_.targetTex_->getHeight();
             return hViewport(w*viewport_.x, h*viewport_.y, w*viewport_.w, h*viewport_.h);
         } else {
             //zero out
@@ -201,34 +195,40 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRendererCamera::SetRenderTargetSetup(const hRenderViewportTargetSetup& desc)
+    void hRendererCamera::bindRenderTargetSetup(const hRenderViewportTargetSetup& desc)
     {
         hcAssertMsg( renderer_, "Call Initialise first!" );
-        ReleaseRenderTargetSetup();
+        hcAssertMsg(desc.targetTex_, "Must supply a target texture, can be depth or colour target");
+        releaseRenderTargetSetup();
         setup_ = desc;
+        setup_.targetTex_->AddRef();
+        for (hUint32 i = 0; i < setup_.nTargets_; ++i) {
+            if (setup_.targets_[i]) {
+                setup_.targets_[i]->AddRef();
+            }
+        }
+        if (setup_.depth_) {
+            setup_.depth_->AddRef();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRendererCamera::ReleaseRenderTargetSetup()
+    void hRendererCamera::releaseRenderTargetSetup()
     {
-#if 0
-        for (hUint32 i = 0; i < MAX_TARGETS; ++i)
-        {
-            if (renderTargets_[i])
-            {
-                renderer_->DestroyTexture(renderTargets_[i]);
-                renderTargets_[i] = NULL;
+        if (setup_.targetTex_) {
+            setup_.targetTex_->DecRef();
+        }
+        for (hUint32 i = 0; i < setup_.nTargets_; ++i) {
+            if (setup_.targets_[i]) {
+                setup_.targets_[i]->DecRef();
             }
         }
-        if (depthTarget_)
-        {
-            renderer_->DestroyTexture(depthTarget_);
-            depthTarget_ = NULL;
+        if (setup_.depth_) {
+            setup_.depth_->DecRef();
         }
-#endif
         hZeroMem(&setup_, sizeof(setup_));
     }
 

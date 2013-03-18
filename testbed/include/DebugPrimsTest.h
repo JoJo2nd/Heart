@@ -74,8 +74,8 @@ private:
     Heart::hIndexBuffer*             planeIB_;
     Heart::hVertexBuffer*            planeVB_;
     Heart::hMaterialInstance*        wirePlaneMat_;
-    Heart::hdParameterConstantBlock* viewportCB_;
-    Heart::hdParameterConstantBlock* modelMtxCB_;
+    Heart::hParameterConstantBlock* viewportCB_;
+    Heart::hParameterConstantBlock* modelMtxCB_;
     Heart::hMatrix                   modelMtx_;
 
     //Camera Control

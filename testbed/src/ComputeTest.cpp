@@ -135,13 +135,35 @@ void ComputeTest::CreateRenderResources()
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
+    hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
+    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hRenderTargetView* rtv=NULL;
+    hDepthStencilView* dsv=NULL;
+    hRenderTargetViewDesc rtvd;
+    hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=db->getTextureFormat();
+    dsvd.resourceType_=db->getRenderType();
+    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
     rtDesc.nTargets_=1;
-    rtDesc.targets_[0]=renderer->GetMaterialManager()->getGlobalTexture("back_buffer");
-    rtDesc.depth_=renderer->GetMaterialManager()->getGlobalTexture("depth_buffer");
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
     vp.x=0.f;
@@ -159,7 +181,7 @@ void ComputeTest::CreateRenderResources()
     };
     hUint32 cbSizes=sizeof(cbNoise);
 
-    camera->SetRenderTargetSetup(rtDesc);
+    camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
     camera->SetProjectionParams( aspect, 0.1f, 1000.f);
     camera->SetViewMatrix(vm);
@@ -168,10 +190,17 @@ void ComputeTest::CreateRenderResources()
 
     computeProg_ = static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
     renderer->createTexture(1, &resTexInit, TFORMAT_R32F, RESOURCEFLAG_UNORDEREDACCESS, GetGlobalHeap(), &resTex_);
-    noiseParams_=renderer->CreateConstantBlocks(&cbSizes, NULL, 1);
+    renderer->createConstantBlock(cbSizes, NULL, &noiseParams_);
+    hShaderResourceViewDesc srvd;
+    hZeroMem(&srvd, sizeof(srvd));
+    srvd.format_=resTex_->getTextureFormat();
+    srvd.resourceType_=resTex_->getRenderType();
+    srvd.tex2D_.topMip_=0;
+    srvd.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(resTex_, srvd, &resTexSRV_);
 
     computeParams_.bindShaderProgram(computeProg_);
-    computeParams_.bindResourceView(hCRC32::StringCRC("g_textureOut"), resTex_);
+    computeParams_.bindResourceView(hCRC32::StringCRC("g_textureOut"), resTexSRV_);
     computeParams_.bindConstantBuffer(hCRC32::StringCRC("cbNoise"), noiseParams_);
 
     hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
@@ -196,14 +225,14 @@ void ComputeTest::DestroyRenderResources()
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     if (resTex_) {
-        renderer->destroyTexture(resTex_);
+        resTex_->DecRef();
         resTex_=NULL;
     }
     if (noiseParams_) {
-        renderer->DestroyConstantBlocks(noiseParams_, 1);
+        noiseParams_->DecRef();
         noiseParams_=NULL;
     }
-    camera->ReleaseRenderTargetSetup();
+    camera->releaseRenderTargetSetup();
 }
 
 //////////////////////////////////////////////////////////////////////////

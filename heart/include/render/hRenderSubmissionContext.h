@@ -69,7 +69,7 @@ namespace Heart
 
     struct hConstBlockMapInfo
     {
-        hdParameterConstantBlock* cb;
+        hParameterConstantBlock* cb;
         void* ptr;
     };
 
@@ -90,7 +90,7 @@ namespace Heart
         hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         void                  RunCommandBuffer(hdRenderCommandBuffer cmdBuf);
         
-        void    setTargets(hUint32 n, hTexture** targets, hTexture* depth);
+        void    setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth);
         void    SetInputStreams(const hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
         void    SetRenderInputObject(const hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
         void    setComputeInput(const hComputeObject* cInput) { 
@@ -103,8 +103,8 @@ namespace Heart
         void    SetRenderStateBlock(hdBlendState* st) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock(hdDepthStencilState* st) { impl_.SetRenderStateBlock( st ); }
         void    SetRenderStateBlock(hdRasterizerState* st) { impl_.SetRenderStateBlock( st ); }
-        void    clearColour(hTexture* tex, const hColour& colour);
-        void    clearDepth(hTexture* tex, hFloat z);
+        void    clearColour(hRenderTargetView* view, const hColour& colour);
+        void    clearDepth(hDepthStencilView* view, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
@@ -115,7 +115,7 @@ namespace Heart
         void    Unmap(hVertexBufferMapInfo* outInfo);
         void    Map(hTexture* ib, hUint32 level, hTextureMapInfo* outInfo);
         void    Unmap(hTextureMapInfo* outInfo);
-        void    Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
+        void    Map(hParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
         void    Unmap(hConstBlockMapInfo* info);
 
     private:
@@ -127,9 +127,9 @@ namespace Heart
         hMaterialInstance*              currentMaterial_;
         hMaterialTechnique*             currentTechnique_;
         const hViewportShaderConstants* viewportConstants_;
-        hdParameterConstantBlock*       viewportConstantsBlock_;
+        hParameterConstantBlock*       viewportConstantsBlock_;
         hInstanceConstants*             instanceConstants_;
-        hdParameterConstantBlock*       instanceConstantsBlock_; 
+        hParameterConstantBlock*       instanceConstantsBlock_; 
         hdRenderSubmissionCtx           impl_;
     };
 

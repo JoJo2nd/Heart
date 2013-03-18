@@ -47,7 +47,7 @@ void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
 #endif
         initBaseHeap(!threadLocal);
     }
-#pragma message ("TODO")
+#pragma message ("TODO- Register memory heaps with debug menu")
     //hMemoryViewMenu::RegisterMemoryHeap(this);
     lock_.Unlock();
 }
@@ -69,7 +69,7 @@ void hMemoryHeap::destroy()
 {
     if ( localMspace_ != 0 )
     {
-#pragma message ("TODO")
+#pragma message ("TODO- unregister memory heap with debug memory view menu")
         //hMemoryViewMenu::UnregisterMemoryHeap(this);
 
         hMH_PRE_ACTION();

@@ -106,7 +106,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlock(hUint32 id)
+    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlock(hUint32 id)
     {
         hGlobalConstantBlock* gcb = constBlockLookUp_.Find(id);
         return gcb ? gcb->constBlock_ : NULL;
@@ -270,7 +270,7 @@ namespace Heart
         block.data_ = hHeapMalloc(GetGlobalHeap(), block.dataSize_);
 
         //create the const block
-        block.constBlock_ = m->renderer_->CreateConstantBlocks(&block.dataSize_, NULL, 1);
+        m->renderer_->createConstantBlock(block.dataSize_, NULL, &block.constBlock_);
 
         //Copy data across to str pool
         hChar* strPtr = block.strPool_;
@@ -316,7 +316,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockByAlias(const hChar* name)
+    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockByAlias(const hChar* name)
     {
         return GetGlobalConstantBlockParameterID(hCRC32::StringCRC(name));
     }
@@ -325,7 +325,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
+    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             for (hUint32 a = 0, ac = constBlocks_[i].aliasCount_; a < ac; ++a) {
@@ -368,12 +368,12 @@ namespace Heart
         hDELETE_SAFE(GetGlobalHeap(), debugTexMat_);
 
         for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+            constBlocks_[i].constBlock_->DecRef();
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliasHashes_);
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliases_);
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].strPool_);
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].data_);
             hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].params_);
-            renderer_->DestroyConstantBlocks(constBlocks_[i].constBlock_, 1);
         }
         constBlockLookUp_.Clear(hFalse);
         constBlocks_.Clear();
@@ -381,9 +381,7 @@ namespace Heart
         for (hGlobalTexture* i=globalTextures_.GetHead(); i; i=i->GetNext()) {
             hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->strPool_);
             hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->aliasHashes_);
-            if (i->ownsTexture_) {
-                renderer_->destroyTexture(i->texture_);
-            }
+            i->texture_->DecRef();
         }
         globalTextures_.Clear(hTrue);
     }
@@ -409,7 +407,7 @@ namespace Heart
         gtex->aliasHashes_=hNEW_ARRAY(GetGlobalHeap(), hUint32, aliasCount);
         gtex->nameHash_=hCRC32::StringCRC(name);
         gtex->texture_=tex;
-        gtex->ownsTexture_=takeTexture;
+        gtex->texture_->AddRef();
         hStrCopy(strptr, strsize, name);
         len=hStrLen(name)+1;
         strptr+=len;
@@ -480,33 +478,40 @@ namespace Heart
         hMipDesc texdesc={0};
         hTextureFormat tformat;
         hTexture* texture;
+
         static const hChar* formatnames[] = {
-            "rgba8"        ,//TFORMAT_ARGB8,
-            "rgb8"         ,//TFORMAT_XRGB8,
-            "r16_float"    ,//TFORMAT_R16F,
-            "rg16_float"   ,//TFORMAT_GR16F,
-            "rgba16_float" ,//TFORMAT_ABGR16F,
-            "r32_float"    ,//TFORMAT_R32F,
-            "d32"          ,//TFORMAT_D32F,
-            "d28s8"        ,//TFORMAT_D24S8F,
-            "l8"           ,//TFORMAT_L8,
-            "dxt5"         ,//TFORMAT_DXT5,
-            "dxt3"         ,//TFORMAT_DXT3,
-            "dxt1"         ,//TFORMAT_DXT1,
-            "rgba8_srgb"   ,//TFORMAT_ARGB8_sRGB
-            "rgb8_srgb"    ,//TFORMAT_XRGB8_sRGB
-            "dxt5_srgb"    ,//TFORMAT_DXT5_sRGB
-            "dxt3_srgb"    ,//TFORMAT_DXT3_sRGB
-            "dxt1_srgb"    ,//TFORMAT_DXT1_sRGB
+            "rgba8"         ,// TFORMAT_ARGB8,
+            "rgb8"          ,// TFORMAT_XRGB8,
+            "rgba8_typeless",// TFORMAT_ARGB8_TYPELESS,
+            "r16_float"     ,// TFORMAT_R16F,
+            "rg16_float"    ,// TFORMAT_GR16F,
+            "rgba16_float"  ,// TFORMAT_ABGR16F,
+            "r32_float"     ,// TFORMAT_R32F,
+            "r32_typeless"  ,// TFORMAT_R32_TYPELESS,
+            "r32_uint"      ,// TFORMAT_R32UINT,
+            "d32"           ,// TFORMAT_D32F,
+            "d28s8"         ,// TFORMAT_D24S8F,
+            "l8"            ,// TFORMAT_L8,
+            "dxt5"          ,// TFORMAT_DXT5,
+            "dxt3"          ,// TFORMAT_DXT3,
+            "dxt1"          ,// TFORMAT_DXT1,
+            "rgba8_srgb"    ,// TFORMAT_ARGB8_sRGB    
+            "rgb8_srgb"     ,// TFORMAT_XRGB8_sRGB    
+            "dxt5_srgb"     ,// TFORMAT_DXT5_sRGB     
+            "dxt3_srgb"     ,// TFORMAT_DXT3_sRGB     
+            "dxt1_srgb"     ,// TFORMAT_DXT1_sRGB     
             NULL
         };
         static const hTextureFormat formats[] = {
             TFORMAT_ARGB8,
             TFORMAT_XRGB8,
+            TFORMAT_ARGB8_TYPELESS,
             TFORMAT_R16F,
             TFORMAT_GR16F,
             TFORMAT_ABGR16F,
             TFORMAT_R32F,
+            TFORMAT_R32_TYPELESS,
+            TFORMAT_R32UINT,
             TFORMAT_D32F,
             TFORMAT_D24S8F,
             TFORMAT_L8,
@@ -555,11 +560,6 @@ namespace Heart
         lua_getfield(L, -1, "format");
         tformat=formats[luaL_checkoption(L, -1, NULL, formatnames)];
         hUint32 flags=0;
-        if (tformat == TFORMAT_D24S8F || tformat == TFORMAT_D32F) {
-            flags |= RESOURCEFLAG_DEPTHTARGET;
-        } else {
-            flags |= RESOURCEFLAG_RENDERTARGET;
-        }
         lua_pop(L, 1);
         lua_getfield(L, -1, "uav");
         if (lua_type(L, -1) == LUA_TBOOLEAN) {
@@ -568,9 +568,25 @@ namespace Heart
             }
         }
         lua_pop(L, 1);
+        lua_getfield(L, -1, "depth");
+        if (lua_type(L, -1) == LUA_TBOOLEAN) {
+            if (lua_toboolean(L, -1)) {
+                flags |= RESOURCEFLAG_DEPTHTARGET;
+            }
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, -1, "rendertarget");
+        if (lua_type(L, -1) == LUA_TBOOLEAN) {
+            if (lua_toboolean(L, -1)) {
+                flags |= RESOURCEFLAG_RENDERTARGET;
+            }
+        }
+        lua_pop(L, 1);
         m->renderer_->createTexture(1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
         lua_pop(L, 1);
         m->registerGlobalTexture(name, texture, aliases, aliascount, hTrue);
+        //reg global texture takes a ref so dicard our references
+        texture->DecRef();
         return 0;
     }
 

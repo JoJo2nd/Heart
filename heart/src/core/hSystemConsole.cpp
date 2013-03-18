@@ -91,26 +91,35 @@ namespace Heart
             ssdesc.borderColour_  = WHITE;
             ssdesc.minLOD_        = -FLT_MAX;
             ssdesc.maxLOD_        = FLT_MAX;  
-            fontSamplerState_=renderer->CreateSamplerState(ssdesc);
+            fontSamplerState_=renderer->createSamplerState(ssdesc);
 
-            renderer->CreateVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
+            renderer->createVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
             hMaterial* backdropMat = matManager->getConsoleMat();
             backdropMat_ = backdropMat->createMaterialInstance(0);
             backdropMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &backdropPlane_, 1);
 
-            renderer->CreateVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
-            renderer->CreateVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
+            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
+            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
             consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
             hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
+            hShaderResourceViewDesc srvd;
+            hZeroMem(&srvd, sizeof(srvd));
+            srvd.format_=consoleTex_->getTextureFormat();
+            srvd.resourceType_=eRenderResourceType_Tex2D;
+            srvd.tex2D_.topMip_=0;
+            srvd.tex2D_.mipLevels_=~0;
+            renderer->createShaderResourceView(consoleTex_, srvd, &consoleTexSRV_);
             hMaterial* fontMat=matManager->getDebugFontMat();
+            hShaderParameterID fontsamplerid=hCRC32::StringCRC("fontSampler");
             logMat_ = fontMat->createMaterialInstance(0);
             logMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &logBuffer_, 1);
-            logMat_->BindTexture(hCRC32::StringCRC("fontSampler"), consoleTex_, fontSamplerState_);
+            logMat_->bindResource(fontsamplerid, consoleTexSRV_);
+            logMat_->bindSampler(fontsamplerid, fontSamplerState_);
             inputMat_=fontMat->createMaterialInstance(hMatInst_DontInstanceConstantBuffers);
             inputMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &textBuffer_, 1);
 
             fontCB_ = logMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
-            inputMat_->BindConstanstBuffer(hCRC32::StringCRC("FontParams"), fontCB_);
+            inputMat_->bindConstanstBuffer(hCRC32::StringCRC("FontParams"), fontCB_);
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
         }
@@ -122,16 +131,18 @@ namespace Heart
             hMaterialInstance::destroyMaterialInstance(backdropMat_);
             hMaterialInstance::destroyMaterialInstance(logMat_);
             hMaterialInstance::destroyMaterialInstance(inputMat_);
-            renderer->DestroySamplerState(fontSamplerState_);
+            fontSamplerState_->DecRef();
             fontSamplerState_=NULL;
             backdropMat_ = NULL;
             logMat_ = NULL;
+            consoleTexSRV_->DecRef();
+            consoleTexSRV_=NULL;
 
-            renderer->DestroyVertexBuffer(backdropPlane_);
+            backdropPlane_->DecRef();
             backdropPlane_ = NULL;
-            renderer->DestroyVertexBuffer(textBuffer_);
+            textBuffer_->DecRef();
             textBuffer_ = NULL;
-            renderer->DestroyVertexBuffer(logBuffer_);
+            logBuffer_->DecRef();
             logBuffer_ = NULL;
             consoleFont_ = NULL;
             logMat_ = NULL;
@@ -144,7 +155,7 @@ namespace Heart
             windowOffset_ = hMax(windowOffset_, .5f);
             windowOffset_ = hMin(windowOffset_, 1.f);
         }
-        void Render(hRenderSubmissionCtx* ctx, hdParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
+        void Render(hRenderSubmissionCtx* ctx, hParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
         {
             hFixedPoolStackMemoryHeap stackHeap(32*1024, hAlloca(32*1024));
             hFloat intprt = 0.f;
@@ -318,8 +329,9 @@ namespace Heart
         hMaterialInstance*       backdropMat_;
         hFont*                   consoleFont_;
         hTexture*                consoleTex_;
-        hdSamplerState*          fontSamplerState_;
-        hdParameterConstantBlock* fontCB_;
+        hShaderResourceView*     consoleTexSRV_;
+        hSamplerState*           fontSamplerState_;
+        hParameterConstantBlock* fontCB_;
         hMaterialInstance*       logMat_;
         hMaterialInstance*       inputMat_;
         hFloat                   windowOffset_;

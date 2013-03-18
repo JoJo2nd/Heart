@@ -32,7 +32,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11RenderInputObject::BindShaderProgram(hdDX11ShaderProgram* prog)
+    hBool hdDX11RenderInputObject::bindShaderProgram(hdDX11ShaderProgram* prog)
     {
         if (!prog) return false;
         switch(prog->type_)
@@ -66,7 +66,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11RenderInputObject::BindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
+    hBool hdDX11RenderInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
     {
         hcAssert(paramID != 0);
         hcAssert(buffer);
@@ -88,7 +88,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11RenderInputObject::BindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* ss)
+    hBool hdDX11RenderInputObject::bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* ss)
     {
         hUint32 idx;
         hBool succ = false;
@@ -108,7 +108,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11RenderInputObject::BindResourceView(hShaderParameterID paramID, hdDX11Texture* view)
+    hBool hdDX11RenderInputObject::bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view)
     {
         hUint32 idx;
         hBool succ = false;
@@ -117,7 +117,7 @@ namespace Heart
             if (!boundProgs_[p]) continue;
             idx = boundProgs_[p]->GetInputRegister(paramID);
             if (idx > HEART_MAX_RESOURCE_INPUTS) continue;
-            inputData_[p].resourceViews_[idx] = view ? view->shaderResourceView_ : NULL;
+            inputData_[p].resourceViews_[idx] = view ? view->srv_ : NULL;
             inputData_[p].resourceViewCount_ = hMax(idx+1, inputData_[p].resourceViewCount_);
             succ = true;
         }
@@ -334,11 +334,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::setTargets(hUint32 n, hdDX11Texture** target, hdDX11Texture* depth) {
+    void hdDX11RenderSubmissionCtx::setTargets(hUint32 n, hdDX11RenderTargetView** target, hdDX11DepthStencilView* depth) {
         ID3D11RenderTargetView* rtviews[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
         void* nullout[HEART_MAX_RESOURCE_INPUTS] = {0};
         for (hUint i=0; i<n; ++i) {
-            rtviews[i]=target[i] ? target[i]->renderTargetView_ : NULL;
+            rtviews[i]=target[i] ? target[i]->rtv_ : NULL;
         }
         device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
         device_->PSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
@@ -358,7 +358,7 @@ namespace Heart
         device_->CSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
         device_->CSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
         device_->CSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->OMSetRenderTargets(n, rtviews, depth ? depth->depthStencilView_ : NULL);
+        device_->OMSetRenderTargets(n, rtviews, depth ? depth->dsv_ : NULL);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -598,18 +598,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::clearColour(hdDX11Texture* tex, const hColour& colour) {
-        hcAssert(tex);
-        device_->ClearRenderTargetView(tex->renderTargetView_,  (FLOAT*)&colour);
+    void hdDX11RenderSubmissionCtx::clearColour(hdDX11RenderTargetView* target, const hColour& colour) {
+        hcAssert(target);
+        device_->ClearRenderTargetView(target->rtv_,  (FLOAT*)&colour);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::clearDepth(hdDX11Texture* tex, hFloat z) {
-        hcAssert(tex);
-        device_->ClearDepthStencilView(tex->depthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
+    void hdDX11RenderSubmissionCtx::clearDepth(hdDX11DepthStencilView* view, hFloat z) {
+        hcAssert(view);
+        device_->ClearDepthStencilView(view->dsv_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -648,13 +648,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11ComputeInputObject::bindResourceView(hShaderParameterID paramID, hdDX11Texture* view) {
+    hBool hdDX11ComputeInputObject::bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view) {
         if (computeShader_) {
             hUint32 idx = boundComputeProg_->GetInputRegister(paramID);
             if (idx > HEART_MAX_RESOURCE_INPUTS) {
                 return hFalse;
             }
-            resourceViews_[idx] = view->shaderResourceView_;
+            resourceViews_[idx] = view->srv_;
             resourceViewCount_ = (hUint16)hMax(idx+1, resourceViewCount_);
             return hTrue;
         }

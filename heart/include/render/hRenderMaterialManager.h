@@ -83,9 +83,9 @@ namespace Heart
         void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
         const hRenderTechniqueInfo* GetRenderTechniqueInfo( const hChar* name );
-        hdParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
-        hdParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
-        hdParameterConstantBlock*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
+        hParameterConstantBlock*   GetGlobalConstantBlock(hUint32 id);
+        hParameterConstantBlock*   GetGlobalConstantBlockByAlias(const hChar* name);
+        hParameterConstantBlock*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
         void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount, hBool takeTexture=hFalse);
         void                        resizeGlobalTexture(const hChar* name, hUint width, hUint height);
         void                        updateGlobalTexture(const hChar* name, hTexture* tex);
@@ -102,7 +102,7 @@ namespace Heart
         {
             const hChar*              name_;
             hUint32                   nameHash_; // CRC32 of block name
-            hdParameterConstantBlock* constBlock_;
+            hParameterConstantBlock* constBlock_;
             hUint                     strPoolSize_;
             hChar*                    strPool_;
             hUint                     aliasCount_;

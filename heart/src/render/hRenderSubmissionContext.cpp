@@ -138,7 +138,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Map(hdParameterConstantBlock* cb, hConstBlockMapInfo* outInfo)
+    void hRenderSubmissionCtx::Map(hParameterConstantBlock* cb, hConstBlockMapInfo* outInfo)
     {
         hdMappedData md;
         impl_.Map(cb, &md);
@@ -192,7 +192,7 @@ namespace Heart
     {
         hUint32 size = sizeof( hInstanceConstants );
         renderer_ = renderer;
-        instanceConstantsBlock_ = renderer->CreateConstantBlocks(&size, NULL, 1);
+        renderer->createConstantBlock(size, NULL, &instanceConstantsBlock_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -201,9 +201,8 @@ namespace Heart
 
     hRenderSubmissionCtx::~hRenderSubmissionCtx()
     {
-        if (renderer_ && instanceConstantsBlock_)
-        {
-            renderer_->DestroyConstantBlocks(instanceConstantsBlock_, 1);
+        if (instanceConstantsBlock_) {
+            instanceConstantsBlock_->DecRef();
         }
     }
 
@@ -211,8 +210,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::setTargets(hUint32 n, hTexture** targets, hTexture* depth) {
-        hdTexture* dtargets[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
+    void hRenderSubmissionCtx::setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth) {
+        hdRenderTargetView* dtargets[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
         for (hUint i=0; i<n; ++i) {
             dtargets[i]=targets[i];
         }
@@ -223,18 +222,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::clearColour(hTexture* tex, const hColour& colour) {
-        hcAssert(tex);
-        impl_.clearColour(tex, colour);
+    void hRenderSubmissionCtx::clearColour(hRenderTargetView* view, const hColour& colour) {
+        hcAssert(view);
+        impl_.clearColour(view, colour);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::clearDepth(hTexture* tex, hFloat z) {
-        hcAssert(tex);
-        impl_.clearDepth(tex, z);
+    void hRenderSubmissionCtx::clearDepth(hDepthStencilView* view, hFloat z) {
+        hcAssert(view);
+        impl_.clearDepth(view, z);
     }
 
 }

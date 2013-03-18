@@ -35,14 +35,17 @@ namespace Heart
     {
         vertexProgram_ = NULL;
         fragmentProgram_ = NULL;
-        if (blendState_)
-            renderer->DestroyBlendState(blendState_);
+        if (blendState_) {
+            blendState_->DecRef();
+        }
         blendState_ = NULL;
-        if (depthStencilState_)
-            renderer->DestoryDepthStencilState(depthStencilState_);
+        if (depthStencilState_) {
+            depthStencilState_->DecRef();
+        }
         depthStencilState_ = NULL;
-        if (rasterizerState_)
-            renderer->DestoryRasterizerState(rasterizerState_);
+        if (rasterizerState_) {
+            rasterizerState_->DecRef();
+        }
         rasterizerState_ = NULL;
     }
 
@@ -50,36 +53,36 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::BindConstantBuffer(hShaderParameterID paramID, hdParameterConstantBlock* buffer)
+    hBool hMaterialTechniquePass::setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer)
     {
-        return renderInput_.BindConstantBuffer(paramID, buffer);
+        return renderInput_.bindConstantBuffer(paramID, buffer);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::BindSamplerInput(hShaderParameterID paramID, hdSamplerState* srv)
+    hBool hMaterialTechniquePass::setSamplerInput(hShaderParameterID paramID, hSamplerState* srv)
     {
-        return renderInput_.BindSamplerInput(paramID, srv);
+        return renderInput_.bindSamplerInput(paramID, srv);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::BindResourceView(hShaderParameterID paramID, hTexture* view)
+    hBool hMaterialTechniquePass::setResourceView(hShaderParameterID paramID, hShaderResourceView* view)
     {
-        return renderInput_.BindResourceView(paramID, view);
+        return renderInput_.bindResourceView(paramID, view);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::BindShaderProgram(hdShaderProgram* prog)
+    hBool hMaterialTechniquePass::bindShaderProgram(hdShaderProgram* prog)
     {
-        return renderInput_.BindShaderProgram(prog);
+        return renderInput_.bindShaderProgram(prog);
     }
 
     //////////////////////////////////////////////////////////////////////////

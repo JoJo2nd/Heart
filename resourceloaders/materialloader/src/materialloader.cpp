@@ -371,7 +371,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
         
         sampler.defaultTextureID_ = samplerDef.defaultTextureID;
         hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), samplerDef.samplerName);
-        sampler.samplerState_ = renderer->CreateSamplerState(samplerDef.samplerState);
+        sampler.samplerState_ = renderer->createSamplerState(samplerDef.samplerState);
 
         material->AddSamplerParameter(sampler);
     }
@@ -419,12 +419,17 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
                 inFile->Read(&passDef, sizeof(passDef));
                 
-                pass.SetBlendState(renderer->CreateBlendState(passDef.blendState));
-                pass.SetDepthStencilState(renderer->CreateDepthStencilState(passDef.depthState));
-                pass.SetRasterizerState(renderer->CreateRasterizerState(passDef.rasterizerState));
+                hBlendState* bs=renderer->createBlendState(passDef.blendState);
+                hDepthStencilState* ds=renderer->createDepthStencilState(passDef.depthState);
+                hRasterizerState* rs=renderer->createRasterizerState(passDef.rasterizerState);
+                pass.bindBlendState(bs);
+                pass.bindDepthStencilState(ds);
+                pass.bindRasterizerState(rs);
                 pass.SetVertexShaderResID(passDef.vertexProgramID);
                 pass.SetFragmentShaderResID(passDef.fragmentProgramID);
-
+                bs->DecRef();
+                ds->DecRef();
+                rs->DecRef();
                 tech->AppendPass(pass);
             }
         }
@@ -508,7 +513,10 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 DLL_EXPORT
 void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
-
+    using namespace Heart;
+    hcAssert(resource);
+    hMaterial* mat = static_cast<hMaterial*>(resource);
+    mat->unbind();
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   hCompute.h  
+    filename:   hDX11View.h  
     
-    Copyright (c) 24:2:2013 James Moran
+    Copyright (c) 10:3:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -27,38 +27,29 @@
 
 #pragma once
 
-#ifndef HCOMPUTE_H__
-#define HCOMPUTE_H__
+#ifndef HDX11VIEW_H__
+#define HDX11VIEW_H__
 
 namespace Heart
 {
-    class hComputeObject
+
+    class HEART_DLLEXPORT hdDX11ShaderResourceView 
     {
     public:
-        hComputeObject() 
-        {}
-        hBool   bindShaderProgram(hShaderProgram* prog) {
-            return inputs_.bindShaderProgram(prog);
-        }
-        hBool   bindSamplerInput(hShaderParameterID paramID, hSamplerState* srv) {
-            return inputs_.bindSamplerInput(paramID, srv);
-        }
-        hBool   bindResourceView(hShaderParameterID paramID, hShaderResourceView* view) {
-            return inputs_.bindResourceView(paramID, view);
-        }
-        hBool   bindConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer) {
-            return inputs_.bindConstantBuffer(paramID, buffer);
-        }
-        hBool   bindUAV(hShaderParameterID paramID, hComputeUAV* computeUAV) {
-            return inputs_.bindUAV(paramID, computeUAV);
-        }
-    private:    
-        friend class hRenderSubmissionCtx;
+        ID3D11ShaderResourceView*   srv_;
+    };
 
-        hdDX11ComputeInputObject inputs_;
+    class HEART_DLLEXPORT hdDX11DepthStencilView
+    {
+    public:
+        ID3D11DepthStencilView* dsv_;
+    };
 
-        //TODO: store bound objects...
+    class HEART_DLLEXPORT hdDX11RenderTargetView
+    {
+    public:
+        ID3D11RenderTargetView* rtv_;
     };
 }
 
-#endif // HCOMPUTE_H__
+#endif // HDX11VIEW_H__

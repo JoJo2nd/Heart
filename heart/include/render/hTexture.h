@@ -33,23 +33,21 @@ class TextureBuilder;
 namespace Heart
 {
     class hRenderer;
-
-namespace Cmd
-{
-    class FlushTextureLevel;
-}
+    class hTexture;
 
     class HEART_DLLEXPORT hTexture : public hResourceClassBase,
-                                     public hdTexture
+                                     public hdTexture,
+                                     public hIReferenceCounted
     {
     public:
-
-        hTexture(hRenderer* prenderer, hMemoryHeapBase* heap) 
+        hFUNCTOR_TYPEDEF(void(*)(hTexture*), hZeroRefProc);
+        hTexture(hZeroRefProc zeroproc, hRenderResourceType type, hMemoryHeapBase* heap) 
             : heap_(heap)
-            , renderer_( prenderer )
+            , zeroProc_(zeroproc)
             , keepcpu_(hFalse)
             , singleAlloc_(hTrue)
             , levelDescs_(NULL)
+            , type_(type)
         {}
         ~hTexture()
         {
@@ -74,6 +72,7 @@ namespace Cmd
         hBool                   GetKeepCPU() const { return keepcpu_; }
         hTextureFormat          getTextureFormat() const { return format_; }
         hUint32                 getFlags() const { return flags_; }
+        hRenderResourceType     getRenderType() const { return type_; }
 
         static hUint32          GetDXTTextureSize( hBool dxt1, hUint32 width, hUint32 height );
 
@@ -81,13 +80,14 @@ namespace Cmd
 
         friend class hRenderer;
 
-        HEART_ALLOW_SERIALISE_FRIEND();
+        void OnZeroRef();
 
         hTexture( const hTexture& c );
         hTexture& operator = ( const hTexture& rhs );
 
         hMemoryHeapBase*        heap_;
-        hRenderer*              renderer_;
+        hZeroRefProc            zeroProc_;
+        hRenderResourceType     type_;
         hTextureFormat          format_;
         hUint32                 nLevels_;
         LevelDesc*              levelDescs_;

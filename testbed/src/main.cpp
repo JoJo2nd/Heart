@@ -48,9 +48,9 @@ void HEART_API HeartAppMainRender(Heart::hHeartEngine* engine)
     g_TestCore.EngineRenderTick(Heart::hClock::Delta(), engine);
 }
 
-hBool HEART_API HeartAppShutdownUpdate(Heart::hHeartEngine*)
+hBool HEART_API HeartAppShutdownUpdate(Heart::hHeartEngine* engine)
 {
-    return hTrue;
+    return g_TestCore.EngineShutdownRequest(engine);
 }
 
 void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine)
@@ -70,6 +70,8 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.mainRender_ = HeartAppMainRender;
     callbacks.shutdownUpdate_ = HeartAppShutdownUpdate;
     callbacks.onShutdown_ = HeartAppOnShutdown;
+
+    while (strstr(lpCmdLine, "-debug")) {}
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
     

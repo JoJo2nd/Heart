@@ -134,8 +134,8 @@ namespace Heart
         hViewportShaderConstants* camData;
         hMatrix view, proj;
         hViewport viewport;
-        hdParameterConstantBlock* camCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("CameraConstants"));
-        hdParameterConstantBlock* instCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
+        hParameterConstantBlock* camCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("CameraConstants"));
+        hParameterConstantBlock* instCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
         hcAssertMsg(camCB, "Couldn't find global constant block \"CameraConstants\"");
         hcAssertMsg(instCB, "Couldn't find global constant block \"InstanceConstants\"");
 

@@ -41,6 +41,7 @@
 // Device Includes ///////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+#include "device/dx11/hDX11View.h"
 #include "device/dx11/hDX11VertexLayout.h"
 #include "device/dx11/hDX11ComputeTypes.h"
 #include "device/dx11/hDX11ShaderProgram.h"
@@ -90,6 +91,9 @@ namespace Heart
     typedef hdDX11MappedResourceData     hdMappedData;
     typedef hdDX11CommandBuffer          hdRenderCommandBuffer;
     typedef hdDX11ComputeUAV             hdComputeUAV;
+    typedef hdDX11ShaderResourceView     hdShaderResourceView;
+    typedef hdDX11DepthStencilView       hdDepthStencilView;
+    typedef hdDX11RenderTargetView       hdRenderTargetView;
 }
 
 

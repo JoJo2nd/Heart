@@ -55,9 +55,9 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     UnitTestCreator TestBedCore::unitTests_[] =
     {
+        REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(ComputeBlur)
         REGISTER_UNIT_TEST(TexturedPlane)
-        REGISTER_UNIT_TEST(ModelRenderTest)
         REGISTER_UNIT_TEST(Base64)
         REGISTER_UNIT_TEST(ListTest)
         REGISTER_UNIT_TEST(MapTest)
@@ -85,6 +85,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         : pEngine_(NULL)
         , currentTest_(NULL)
         , factory_(NULL)
+        , exiting_(hFalse)
     {
     }
 
@@ -133,7 +134,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         Heart::hdGamepad* pad = pEngine->GetControllerManager()->GetGamepad(0);
         Heart::hdKeyboard* kb = pEngine->GetControllerManager()->GetSystemKeyboard();
 
-        if (!currentTest_) {
+        if (!currentTest_ && !exiting_) {
             currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
         }
         if ( currentTest_ ) {
@@ -166,6 +167,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     bool TestBedCore::EngineShutdownRequest( Heart::hHeartEngine* pEngine )
     {
         // Wait for current test to finish before OK-ing the exit
+        exiting_=hTrue;
         if ( currentTest_ ) {
             currentTest_->forceExitTest();
             return false;

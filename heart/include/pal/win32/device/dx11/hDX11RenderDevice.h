@@ -63,45 +63,47 @@ namespace Heart
         static hShaderProfile           getProfileFromString(const hChar* str);
         static const hChar*             getShaderProfileString(hShaderProfile profile) { hcAssert(profile < eShaderProfile_Max); return s_shaderProfileNames[profile]; }
         //Resource Create Calls
-        hdDX11ShaderProgram*            compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
-        hdDX11ShaderProgram*            CompileShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
-        void                            DestroyShader(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
-        hdDX11ParameterConstantBlock*   CreateConstantBlocks(const hUint32* sizes, void** initdatas, hUint32 count);
-        void                            CreateConstantBlocks(hdDX11ParameterConstantBlock* outarray, const hUint32* sizes, hUint32 count);
-        void                            DestroyConstantBlocks(hdDX11ParameterConstantBlock* constBlocks, hUint32 count, hBool inPlace = false);
-        hdDX11Texture*                  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
-        void                            destroyTextureDevice( hdDX11Texture* texture );
-        hdDX11IndexBuffer*              createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
-        void                            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);
         hdDX11VertexLayout*             CreateVertexLayout(const hInputLayoutDesc* inputdesc, hUint32 desccount, const void* shaderProg, hUint32 progLen);
         void                            DestroyVertexLayout( hdDX11VertexLayout* layout );
-        hdDX11VertexBuffer*             createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
-        void                            destroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
-        hdDX11BlendState*               CreateBlendState( const hBlendStateDesc& desc );
-        void                            DestroyBlendState( hdDX11BlendState* state );
-        hdDX11RasterizerState*          CreateRasterizerState( const hRasterizerStateDesc& desc );
-        void                            DestoryRasterizerState( hdDX11RasterizerState* state );
-        hdDX11DepthStencilState*        CreateDepthStencilState( const hDepthStencilStateDesc& desc );
-        void                            DestoryDepthStencilState( hdDX11DepthStencilState* state );
-        hdDX11SamplerState*             CreateSamplerState( const hSamplerStateDesc& desc );
-        void                            DestroySamplerState( hdDX11SamplerState* state );
         void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
         void                            createComputeUAV(hdDX11Texture* res, hTextureFormat viewformat, hUint mip, hdDX11ComputeUAV* outres);
         void                            destroyComputeUAV(hdDX11ComputeUAV* uav);
+
     protected:
 
-        const hChar*                getDebugShaderSource(hDebugShaderID shaderid);
+        const hChar*    getDebugShaderSource(hDebugShaderID shaderid);
+        hdDX11ShaderProgram* compileShaderFromSourceDevice(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
+        hdDX11ShaderProgram* compileShaderDevice(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hdDX11ShaderProgram* out);
+        void                 destroyShaderDevice(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
+        hdDX11Texture*  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
+        void            destroyTextureDevice( hdDX11Texture* texture );
+        void            createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
+        void            destroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
+        void            createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
+        void            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);
+        void            createShaderResourseViewDevice(hdDX11Texture* texture, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
+        void            createShaderResourseViewDevice(hdDX11ParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
+        void            destroyShaderResourceViewDevice(hdDX11ShaderResourceView* srv);
+        void            createRenderTargetViewDevice(hdDX11Texture* texture, const hRenderTargetViewDesc& desc, hdDX11RenderTargetView* outrtv);
+        void            destroyRenderTargetViewDevice(hdDX11RenderTargetView* outrtv);
+        void            createDepthStencilViewDevice(hdDX11Texture* texture, const hDepthStencilViewDesc& desc, hdDX11DepthStencilView* outdsv);
+        void            destroyDepthStencilViewDevice(hdDX11DepthStencilView* outdsv);
+        void            createBlendStateDevice(const hBlendStateDesc& desc, hdDX11BlendState* out);
+        void            destroyBlendStateDevice(hdDX11BlendState* state);
+        void            createRasterizerStateDevice(const hRasterizerStateDesc& desc, hdDX11RasterizerState* out);
+        void            destroyRasterizerStateDevice(hdDX11RasterizerState* state);
+        void            createDepthStencilStateDevice(const hDepthStencilStateDesc& desc, hdDX11DepthStencilState* out);
+        void            destroyDepthStencilStateDevice(hdDX11DepthStencilState* state);
+        void            createSamplerStateDevice(const hSamplerStateDesc& desc, hdDX11SamplerState* out);
+        void            destroySamplerStateDevice(hdDX11SamplerState* state);
+        void            createConstantBlockDevice(hUint size, void* initdata, hdDX11ParameterConstantBlock* block);
+        void            destroyConstantBlockDevice(hdDX11ParameterConstantBlock* constBlock);
 
     private:
 
-        typedef hMap< hUint32, hdDX11BlendState >         BlendStateMapType;
-        typedef hMap< hUint32, hdDX11RasterizerState >    RasterizerStateMapType;
-        typedef hMap< hUint32, hdDX11DepthStencilState >  DepthStencilStateMapType;
-        typedef hMap< hUint32, hdDX11SamplerState >       SamplerStateMapType;
-        typedef hMap< hUint32, hdDX11VertexLayout >       VertexLayoutMapType;
-
         hUint32                     BuildVertexFormatArray(const hInputLayoutDesc* desc, hUint32 desccount, hUint32* stride, hUint32* fmtID, D3D11_INPUT_ELEMENT_DESC* elements);
         DXGI_FORMAT                 toDXGIFormat(hTextureFormat format, hBool* compressed);
+        void                        createShaderResourseViewDevice(ID3D11Resource* texture, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
 
         static const hChar*         s_shaderProfileNames[];
 
@@ -121,11 +123,6 @@ namespace Heart
         ID3D11DepthStencilView*     depthStencilView_;
         hdDX11Texture*              backBufferTex_;
         hdDX11Texture*              depthBufferTex_;
-        hdW32Mutex                  resourceMutex_;
-        BlendStateMapType           blendStates_;
-        RasterizerStateMapType      rasterizerStates_;
-        DepthStencilStateMapType    depthStencilStates_;
-        SamplerStateMapType         samplerStateMap_;
         ID3D11Query*                timerDisjoint_;
         ID3D11Query*                timerFrameStart_;
         ID3D11Query*                timerFrameEnd_;

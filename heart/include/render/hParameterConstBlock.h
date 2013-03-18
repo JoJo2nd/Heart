@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	DeviceDX11Texture.h	
+    filename:   hParameterConstBlock.h  
     
-    Copyright (c) 18:12:2011 James Moran
+    Copyright (c) 16:3:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,31 +25,30 @@
 
 *********************************************************************/
 
+#pragma once
+
+#ifndef HPARAMETERCONSTBLOCK_H__
+#define HPARAMETERCONSTBLOCK_H__
+
 namespace Heart
 {
-    class HEART_DLLEXPORT hdDX11Texture
+
+class HEART_DLLEXPORT hParameterConstantBlock : public hIReferenceCounted,
+    public hdParameterConstantBlock
+{
+public:
+    hFUNCTOR_TYPEDEF(void(*)(hParameterConstantBlock*), hZeroRefProc);
+    hParameterConstantBlock(hZeroRefProc zeroproc)
+        : zeroProc_(zeroproc)
     {
-    public:
-        hdDX11Texture() 
-            : dx11Texture_(NULL)
-//             , renderTargetView_(NULL)
-//             , depthStencilView_(NULL)
-//             , shaderResourceView_(NULL)
-        {}
-        ~hdDX11Texture() 
-        {}
+    }
+private:
+    void OnZeroRef() {
+        zeroProc_(this);
+    }
+    hZeroRefProc zeroProc_;
+};
 
-    private:
-
-        friend class hdDX11RenderDevice;
-        friend class hdDX11RenderSubmissionCtx;
-        friend class hdDX11ComputeInputObject;
-        friend class hdDX11RenderInputObject;
-
-        ID3D11Texture2D*            dx11Texture_;
-//         ID3D11RenderTargetView*     renderTargetView_;
-//         ID3D11DepthStencilView*     depthStencilView_;
-//         ID3D11ShaderResourceView*   shaderResourceView_;
-
-    };
 }
+
+#endif // HPARAMETERCONSTBLOCK_H__

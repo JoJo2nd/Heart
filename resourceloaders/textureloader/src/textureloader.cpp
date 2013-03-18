@@ -167,7 +167,7 @@ hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourc
 DLL_EXPORT 
 void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
     *verMajor = 0;
-    *verMinor = 91;
+    *verMinor = 92;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -347,7 +347,10 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 DLL_EXPORT
 void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
-    engine->GetRenderer()->destroyTexture(static_cast<hTexture*>(resource));
+    hTexture* tex=static_cast<hTexture*>(resource);
+    // Package should be the only thing hold ref at this point...
+    hcAssertMsg(tex->GetRefCount() == 1, "Texture ref count is %u, it should be 1", tex->GetRefCount());
+    tex->DecRef();
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -170,7 +170,7 @@ namespace Heart
         { 
         case WM_CLOSE:
             PostQuitMessage( 0 );
-            exitSignal_.Signal();
+            SignalExit();
             return 0;
         case WM_ACTIVATE: {
                 hasFocus_ = LOWORD(wParam) != WA_INACTIVE;

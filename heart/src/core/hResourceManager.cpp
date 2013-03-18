@@ -36,6 +36,7 @@ namespace Heart
 
     hResourceManager::hResourceManager() 
         : requireAssetsReady_(hFalse)
+        , exitSignal_(hFalse)
     {
     }
 
@@ -133,7 +134,6 @@ namespace Heart
                             toload = hNEW(GetGlobalHeap(), hResourcePackage)(engine_, filesystem_, &resourceHandlers_);
 
                             toload->LoadPackageDescription(loadmsg.path_);
-                            toload->AddRef();
 
                             ltLoadedPackages_.Insert(key, toload);
                         }
@@ -183,7 +183,7 @@ namespace Heart
                     if (pack->ToUnload())
                     {
                         hMutexAutoScope autoLock(&ltAccessMutex_);
-                        if (ltPackageLoadCompleteQueue_.isEmpty()) {
+                        if (ltPackageLoadCompleteQueue_.isEmpty() || exitSignal_.TryWait()) {
                             ltLoadedPackages_.Remove(pack);
                             hDELETE(GetGlobalHeap(), pack);
                         }

@@ -78,7 +78,8 @@ namespace Heart
         hArray<hChar, hMAX_PARAMETER_NAME_LEN> name_;
         hResourceID                         defaultTextureID_;
         hTexture*                           boundTexture_;
-        hdSamplerState*                     samplerState_;
+        hSamplerState*                      samplerState_;
+        hShaderResourceView*                resView_;
     };
 
     typedef hVector< hSamplerParameter >  hSamplerArrayType;
@@ -87,13 +88,25 @@ namespace Heart
     {
         hShaderParameterID paramid;
         hTexture* texture;
-        hdSamplerState* state;
+        hSamplerState* state;
+    };
+
+    struct hBoundSampler 
+    {
+        hShaderParameterID paramid;
+        hSamplerState* state;
+    };
+
+    struct hBoundResource
+    {
+        hShaderParameterID paramid;
+        hShaderResourceView* srv;
     };
 
     struct hBoundConstBlock
     {
         hShaderParameterID paramid;
-        hdParameterConstantBlock* constBlock;
+        hParameterConstantBlock* constBlock;
     };
 
     struct hDefaultParameterValue
@@ -114,14 +127,13 @@ namespace Heart
         hMaterialTechnique* GetTechniqueByName( const hChar* name );
         hMaterialTechnique* GetTechniqueByMask( hUint32 mask );
         /* Bind interface - return false if not set on any programs */
-        hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
-        hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
-        hBool bindTexture(hShaderParameterID id, hTexture* tex);
-        hBool bindSampler(hShaderParameterID id, hdSamplerState* samplerState);
+        hBool bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb);
+        hBool bindResource(hShaderParameterID id, hShaderResourceView* view);
+        hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
         hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
         hBool bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
         /* Allow access to parameter blocks and updating of parameters */
-        hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+        hParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
         static void destroyMaterialInstance(hMaterialInstance* inst);
 
     private:
@@ -131,7 +143,8 @@ namespace Heart
 
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
         typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
-        typedef hVector< hBoundTexture > BoundTextureArrayType;
+        typedef hVector< hBoundResource > BoundResourceArrayType;
+        typedef hVector< hBoundSampler > BoundSamplerArrayType;
 
         hMaterialInstance(hMemoryHeapBase* heap, hMaterial* parent)
             : memHeap_(heap)
@@ -139,7 +152,8 @@ namespace Heart
             , manager_(NULL)
             , techniques_(heap)
             , constBlocks_(heap)
-            , boundTextures_(heap)
+            , boundResources_(heap)
+            , boundSamplers_(heap)
         {
         }
         HEART_PRIVATE_COPY(hMaterialInstance);
@@ -151,7 +165,8 @@ namespace Heart
         hRenderMaterialManager*     manager_;
         TechniqueArrayType          techniques_;
         BoundConstBlockArrayType    constBlocks_;
-        BoundTextureArrayType       boundTextures_;
+        BoundResourceArrayType      boundResources_;
+        BoundSamplerArrayType       boundSamplers_;
         hUint32                     flags_;
     };
 
@@ -162,32 +177,32 @@ namespace Heart
         hMaterial(hMemoryHeapBase* heap, hRenderer* renderer);
         ~hMaterial();
 
-        hUint32                             GetTechniqueCount() const { hcAssert(activeTechniques_); return activeTechniques_->GetSize(); }
-        hMaterialTechnique*                 GetTechnique( hUint32 idx ) { hcAssert(activeTechniques_ && activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
-        hMaterialTechnique*                 GetTechniqueByName( const hChar* name );
-        hMaterialTechnique*                 GetTechniqueByMask( hUint32 mask );
-        hRenderMaterialManager*             GetManager() const { return manager_; }
-        void                                SetManager(hRenderMaterialManager* val) { manager_ = val; }
-        hMaterialGroup*                     AddGroup(const hChar* name);
-        void                                SetActiveGroup(const hChar* name);
-        hBool                               Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
-        hBool                               bindMaterial(hRenderMaterialManager* matManager);
-        hBool                               bindTexture(hShaderParameterID id, hTexture* tex);
-        hBool                               bindSampler(hShaderParameterID id, hdSamplerState* samplerState);
-        hUint32                             GetMatKey() const { return uniqueKey_; }
-        void                                AddSamplerParameter(const hSamplerParameter& samp);
-        void                                addDefaultParameterValue(const hChar* paramName, void* data, hUint size);
+        hUint32                 GetTechniqueCount() const { hcAssert(activeTechniques_); return activeTechniques_->GetSize(); }
+        hMaterialTechnique*     GetTechnique( hUint32 idx ) { hcAssert(activeTechniques_ && activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
+        hMaterialTechnique*     GetTechniqueByName( const hChar* name );
+        hMaterialTechnique*     GetTechniqueByMask( hUint32 mask );
+        hRenderMaterialManager* GetManager() const { return manager_; }
+        void                    SetManager(hRenderMaterialManager* val) { manager_ = val; }
+        hMaterialGroup*         AddGroup(const hChar* name);
+        void                    SetActiveGroup(const hChar* name);
+        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
+        hUint32                 GetMatKey() const { return uniqueKey_; }
+        void                    AddSamplerParameter(const hSamplerParameter& samp);
+        void                    addDefaultParameterValue(const hChar* paramName, void* data, hUint size);
         
         /* Create Create/DestroyMaterialOverrides()*/
         hMaterialInstance*  createMaterialInstance(hUint32 flags);
         void                destroyMaterialInstance(hMaterialInstance*);
 
         /* Bind interface - return false if not set on any programs */
-        hBool BindConstanstBuffer(hShaderParameterID id, hdParameterConstantBlock* cb);
-        hBool BindTexture(hShaderParameterID id, hTexture* tex, hdSamplerState* samplerState);
+        hBool bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb);
+        hBool bindMaterial(hRenderMaterialManager* matManager);
+        hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);
+        hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
+        void  unbind();
 
         /* Allow access to parameter blocks and updating of parameters */
-        hdParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+        hParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
 
     private:
 
@@ -197,11 +212,12 @@ namespace Heart
 
         typedef hVector< hMaterialGroup >           GroupArrayType;
         typedef hVector< hMaterialTechnique >       TechniqueArrayType;
+        typedef hVector< hDefaultParameterValue >   DefaultValueArrayType;
         typedef hVector< hBoundConstBlock >         BoundConstBlockArrayType;
-        typedef hVector< hBoundTexture >            BoundTextureArrayType;
-        typedef hVector< hDefaultParameterValue>    DefaultValueArrayType;
+        typedef hVector< hBoundResource >           BoundResourceArrayType;
+        typedef hVector< hBoundSampler >            BoundSamplerArrayType;
 
-        void                                initConstBlockBufferData(
+        void initConstBlockBufferData(
             const hShaderProgram* prog, const hConstantBlockDesc& desc, void* outinitdata, hUint totaloutsize) const;
 
         hAtomicInt                          instanceCount_;
@@ -217,7 +233,8 @@ namespace Heart
         hUint8*                             defaultData_;
         DefaultValueArrayType               defaultValues_;
         BoundConstBlockArrayType            constBlocks_;
-        BoundTextureArrayType               boundTextures_;
+        BoundResourceArrayType              boundResources_;
+        BoundSamplerArrayType               boundSamplers_;
     };
 }
 
