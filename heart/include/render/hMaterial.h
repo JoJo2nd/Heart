@@ -66,8 +66,9 @@ namespace Heart
     {
         hSamplerParameter()
             : boundTexture_(NULL)
-            , defaultTextureID_(0)
             , samplerState_(NULL)
+            , resView_(NULL)
+            , defaultTextureID_(0)
         {
             hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
         }

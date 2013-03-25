@@ -181,6 +181,7 @@ namespace Heart
     {
         D3D11_SHADER_DESC desc;
         D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        D3D11_SIGNATURE_PARAMETER_DESC inputInfo;
 
         shaderInfo_->GetDesc(&desc);
 

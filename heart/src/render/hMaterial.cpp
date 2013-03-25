@@ -486,7 +486,7 @@ namespace Heart
                     added = hTrue;
                 }
             }
-            if (!added) {
+            if (!added && srv) {
                 hBoundResource bt;
                 bt.paramid = id;
                 bt.srv = srv;
@@ -528,7 +528,7 @@ namespace Heart
                     added = hTrue;
                 }
             }
-            if (!added) {
+            if (!added && samplerState) {
                 hBoundSampler bt;
                 bt.paramid = id;
                 bt.state = samplerState;
@@ -708,7 +708,7 @@ namespace Heart
                     added = hTrue;
                 }
             }
-            if (!added) {
+            if (!added && samplerState) {
                 hBoundSampler bt;
                 bt.paramid = id;
                 bt.state = samplerState;
@@ -746,7 +746,7 @@ namespace Heart
                     added = hTrue;
                 }
             }
-            if (!added) {
+            if (!added && view) {
                 hBoundResource bt;
                 bt.paramid = id;
                 bt.srv = view;

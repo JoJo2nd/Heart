@@ -233,8 +233,10 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     FXIncludeHandler includeHandler;
     HRESULT hr;
     hUint32 compileFlags = 0;
-#if _DEBUG
+#if 1//_DEBUG
     compileFlags |= D3DCOMPILE_DEBUG;
+    compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
+    compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
     ID3DBlob* errors;
     ID3DBlob* result;
@@ -294,13 +296,16 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         &result, 
         &errors);
 
-    if (FAILED(hr) && errors)
-    {
-        hcPrintf("Shader Compile failed! Error Msg :: %s", errors->GetBufferPointer());
+    if (FAILED(hr) && errors) {
+        hcPrintf("Shader Compile failed! Error Msg ::\n%s", errors->GetBufferPointer());
         errors->Release();
         errors = NULL;
         hHeapFreeSafe(memalloc->tempHeap_, sourcedata);
         return hFalse;
+    } else if (errors) {
+        hcPrintf("Shader Compile output ::\n%s", errors->GetBufferPointer());
+        errors->Release();
+        errors = NULL;
     }
 
     hHeapFreeSafe(memalloc->tempHeap_, sourcedata);

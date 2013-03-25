@@ -327,6 +327,7 @@ namespace Heart
             device_->CSSetConstantBuffers(0, ci->constCount_, ci->programInputs_);
             device_->CSSetSamplers(0, ci->samplerCount_, ci->samplerState_);
             device_->CSSetShaderResources(0, ci->resourceViewCount_, ci->resourceViews_);
+            device_->CSSetUnorderedAccessViews(0, ci->uavCount_, ci->unorderdAccessView_, NULL);
         }
     }
 
@@ -358,6 +359,7 @@ namespace Heart
         device_->CSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
         device_->CSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
         device_->CSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
+        device_->CSSetUnorderedAccessViews(0, HEART_MAX_UAV_INPUTS, (ID3D11UnorderedAccessView**)&nullout, NULL);
         device_->OMSetRenderTargets(n, rtviews, depth ? depth->dsv_ : NULL);
     }
 

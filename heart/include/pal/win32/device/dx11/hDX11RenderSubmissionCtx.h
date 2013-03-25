@@ -116,7 +116,7 @@ namespace Heart
         ID3D11ShaderResourceView*  resourceViews_[HEART_MAX_RESOURCE_INPUTS];
         ID3D11SamplerState*        samplerState_[HEART_MAX_RESOURCE_INPUTS];
         ID3D11Buffer*              programInputs_[HEART_MAX_CONSTANT_BLOCKS];
-        ID3D11UnorderedAccessView* unorderdAccessView_[HEART_MAX_RESOURCE_INPUTS];
+        ID3D11UnorderedAccessView* unorderdAccessView_[HEART_MAX_UAV_INPUTS];
     };
 
     class HEART_DLLEXPORT hdDX11RenderStreamsObject

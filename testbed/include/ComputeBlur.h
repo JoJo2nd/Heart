@@ -65,7 +65,8 @@ private:
     Heart::hRendererCamera           camera_;
     Heart::hRendererCamera           blurCamera_;
     Heart::hTexture*                 resTex_;
-    Heart::hParameterConstantBlock* modelMtxCB_;
+    Heart::hTexture*                 rwTexture_;
+    Heart::hParameterConstantBlock*  modelMtxCB_;
     Heart::hMaterialInstance*        materialInstance_;
     Heart::hMaterialInstance*        blurToScreen_;
     Heart::hIndexBuffer*             quadIB_;

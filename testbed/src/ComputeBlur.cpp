@@ -35,17 +35,20 @@ DEFINE_HEART_UNIT_TEST(ComputeBlur);
 #define ASSET_PATH_COL ("MATERIALS.GAUSSIAN_BLUR_COL")
 #define ASSET_PATH_ROW ("MATERIALS.GAUSSIAN_BLUR_ROW")
 #define ASSET_PATH_TEXTURE ("MATERIALS.NARUTO_TEST")
+#define ASSET_BLIT_MAT ("MATERIALS.BLUR_BLIT")
 
 #define TEST_TEXTURE_WIDTH  (265)
 #define TEST_TEXTURE_HEIGHT (265)
 
-#define CREATE_TEXTURE
+//#define CREATE_TEXTURE
 
 namespace ComputeBlurData
 {
 __declspec(align(16))
 struct cbParams
 {
+    hUint inputDataSize;              // 
+    hUint inputDataSizeLog2;          //
     hUint numApproxPasses;
     float halfBoxFilterWidth;			// w/2
     float fracHalfBoxFilterWidth;		// frac(w/2+0.5)
@@ -113,11 +116,13 @@ void ComputeBlur::RenderUnitTest()
     ctx->Unmap(&mapinfo);
     ctx->Map(blurParamCB_, &mapinfo);
     cbblur=(ComputeBlurData::cbParams*)mapinfo.ptr;
+    cbblur->inputDataSize=renderer->GetWidth();
+    cbblur->inputDataSizeLog2=hUint(logf(renderer->GetWidth())/logf(2));
     cbblur->numApproxPasses=3;
-    cbblur->halfBoxFilterWidth=50.f;		
+    cbblur->halfBoxFilterWidth=8.f;		
     cbblur->fracHalfBoxFilterWidth=0.f;	
     cbblur->invFracHalfBoxFilterWidth=1.f;
-    cbblur->rcpBoxFilterWidth=1.f/50.f;		
+    cbblur->rcpBoxFilterWidth=1.f/8.f;		
     ctx->Unmap(&mapinfo);
 
     //Submit to blur target
@@ -131,17 +136,27 @@ void ComputeBlur::RenderUnitTest()
         ctx->DrawIndexedPrimitive(quadIB_->GetIndexCount()/3, 0);
     }
 
-    ctx->setComputeInput(&blurHozCObj_);
-    ctx->dispatch(TEST_TEXTURE_WIDTH/*blurCamera_.getRenderTarget(0)->getWidth()*/, 1, 1);
+    /*
+        Bind the back buffer against the device, unbinds the result buffer and 
+        allow the target to be read by the compute shaders
+    */
+    Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
 
     ctx->setComputeInput(&blurVertCObj_);
-    ctx->dispatch(TEST_TEXTURE_HEIGHT/*blurCamera_.getRenderTarget(0)->getHeight()*/, 1, 1);
+    ctx->dispatch(renderer->GetHeight(), 1, 1);
+
+//     ctx->setComputeInput(&blurHozCObj_);
+//     ctx->dispatch(TEST_TEXTURE_WIDTH/128, 1, 1);
 
     // Submit to back buffer
-    Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
     ctx->clearColour(camera_.getRenderTarget(0), Heart::hColour(.5f, .5f, .5f, 1.f));
     ctx->clearDepth(camera_.getDepthTarget(), 1.f);
 
+    /*
+        Bind the back buffer against the device, unbinds the result buffer and 
+        allow the target to be read by the compute shaders
+    */
+    Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
     tech=blurToScreen_->GetTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
@@ -218,15 +233,15 @@ void ComputeBlur::CreateRenderResources()
 #if 1
             if (h < TEST_TEXTURE_HEIGHT/2) {
                 if (w < TEST_TEXTURE_WIDTH/2) {
-                    *ptr= 0xFF0000FF; //RED
+                    *ptr= 0xFF00000A; //RED
                 } else {
-                    *ptr= 0xFF00FF00; //GREEN
+                    *ptr= 0xFF000A00; //GREEN
                 }
             } else {
                 if (w < TEST_TEXTURE_WIDTH/2) {
-                    *ptr= 0xFFFF0000; // BLUE
+                    *ptr= 0xFF0A0000; // BLUE
                 } else {
-                    *ptr= 0xFFFFFFFF; // WHITE
+                    *ptr= 0xFF0A0A0A; // WHITE
                 }
             }
 #else
@@ -238,6 +253,7 @@ void ComputeBlur::CreateRenderResources()
 #endif
         }
     }
+    hHeapFreeSafe(GetGlobalHeap(), inittexdata);
 #endif //CREATE_TEXTURE
 
     camera->Initialise(renderer);
@@ -250,17 +266,19 @@ void ComputeBlur::CreateRenderResources()
 
 
 #ifdef CREATE_TEXTURE
-    renderer->createTexture(1, &resTexInit, TFORMAT_R32_TYPELESS, RESOURCEFLAG_RENDERTARGET, GetGlobalHeap(), &resTex_);
+    renderer->createTexture(1, &resTexInit, TFORMAT_XRGB8, 0, GetGlobalHeap(), &resTex_);
 #else
     resTex_=static_cast<Heart::hTexture*>(resMgr->mtGetResource(ASSET_PATH_TEXTURE));
     resTex_->AddRef();
 #endif
     hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
+    hMaterial* blitmat=static_cast<Heart::hMaterial*>(resMgr->mtGetResource(ASSET_BLIT_MAT));
     materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
-    blurToScreen_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+    blurToScreen_=blitmat->createMaterialInstance(0);
 
-    rtvd.format_=TFORMAT_R32UINT;
-    renderer->createRenderTargetView(resTex_, rtvd, &brtv);
+    Heart::hTexture* blurTarget=matMgr->getGlobalTexture("blur_target");
+    rtvd.format_=blurTarget->getTextureFormat();
+    renderer->createRenderTargetView(blurTarget, rtvd, &brtv);
     hMemSet(&rtDesc, 0, sizeof(rtDesc));
     rtDesc.nTargets_=1;
     rtDesc.targetTex_=db;
@@ -274,21 +292,27 @@ void ComputeBlur::CreateRenderResources()
     blurCamera_.SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
     
     hShaderParameterID textureid=hCRC32::StringCRC("g_texture");
-    Heart::hTexture* blurTex=matMgr->getGlobalTexture("blur_target");
+    hTexture* rwtex=matMgr->getGlobalTexture("blur_rw_texture");
     hShaderResourceViewDesc srvd;
+    hShaderResourceView* mockSceneSRV;
     hZeroMem(&srvd, sizeof(srvd));
-    srvd.format_=blurTex->getTextureFormat();
+    srvd.format_=resTex_->getTextureFormat();
     srvd.resourceType_=eRenderResourceType_Tex2D;
     srvd.tex2D_.topMip_=0;
     srvd.tex2D_.mipLevels_=~0;
-    renderer->createShaderResourceView(blurTex, srvd, &blurTexSRV_);
-    srvd.format_=blurTex->getTextureFormat();
-    renderer->createShaderResourceView(blurTex, srvd, &computeBlurTexSRV_);
+    renderer->createShaderResourceView(resTex_, srvd, &mockSceneSRV);
+    srvd.format_=blurTarget->getTextureFormat();
+    renderer->createShaderResourceView(blurTarget, srvd, &blurTexSRV_);
+    srvd.format_=rwtex->getTextureFormat();
+    renderer->createShaderResourceView(rwtex, srvd, &computeBlurTexSRV_);
 
-    materialInstance_->bindResource(textureid, blurTexSRV_);
+    materialInstance_->bindResource(textureid, mockSceneSRV);
     materialInstance_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
-    blurToScreen_->bindResource(textureid, blurTexSRV_);
+    textureid=hCRC32::StringCRC("texColorInput");
+    blurToScreen_->bindResource(textureid, computeBlurTexSRV_);
     blurToScreen_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
+
+    mockSceneSRV->DecRef();
 
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
     renderer->createConstantBlock(sizeof(ComputeBlurData::cbParams), NULL, &blurParamCB_);
@@ -297,14 +321,14 @@ void ComputeBlur::CreateRenderResources()
     blurVCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_COL));
     hcAssert(blurHCS_ && blurVCS_);
 
-    renderer->createComputeUAV(blurTex, TFORMAT_ABGR16F_sRGB, 0, &blurUAV_);
+    renderer->createComputeUAV(rwtex, TFORMAT_R32UINT, 0, &blurUAV_);
     blurHozCObj_.bindShaderProgram(blurHCS_);
-    blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), computeBlurTexSRV_);
+    blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTexSRV_);
     blurHozCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
     blurHozCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
 
     blurVertCObj_.bindShaderProgram(blurHCS_);
-    blurVertCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), computeBlurTexSRV_);
+    blurVertCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTexSRV_);
     blurVertCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);
     blurVertCObj_.bindConstantBuffer(hCRC32::StringCRC("cbParams"), blurParamCB_);
 
@@ -325,6 +349,7 @@ void ComputeBlur::DestroyRenderResources()
 
     renderer->destroyComputeUAV(&blurUAV_);
     hMaterialInstance::destroyMaterialInstance(materialInstance_);
+    hMaterialInstance::destroyMaterialInstance(blurToScreen_);
     if (resTex_) {
         resTex_->DecRef();
         resTex_=NULL;
