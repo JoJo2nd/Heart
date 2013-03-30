@@ -30,8 +30,33 @@
 
 namespace Heart
 {
-
+#if defined (HEART_USE_XNAMATH)
     typedef XMFLOAT3 hCPUVec3;
+#else
+    typedef DirectX::XMFLOAT3 hCPUVec3;
+    using DirectX::XMVectorZero;
+    using DirectX::XMVector3Length;
+    using DirectX::XMVector3LengthEst;
+    using DirectX::XMVector3LengthSq;
+    using DirectX::XMVector3Normalize;
+    using DirectX::XMVector3NormalizeEst;
+    using DirectX::XMVectorAdd;
+    using DirectX::XMVectorSubtract;
+    using DirectX::XMVectorScale;
+    using DirectX::XMVectorDivide;
+    using DirectX::XMVector3Dot;
+    using DirectX::XMVectorNegate;
+    using DirectX::XMVector3Cross;
+    using DirectX::XMVectorSet;
+    using DirectX::XMVector3Equal;
+    using DirectX::XMStoreFloat3;
+    using DirectX::XMLoadFloat3;
+    using DirectX::XMVector3Greater;
+    using DirectX::XMVector3GreaterOrEqual;
+    using DirectX::XMVector3Less;
+    using DirectX::XMVector3LessOrEqual;
+    using DirectX::XMVectorMultiply;
+#endif
 
     struct hVec3
     {
@@ -130,27 +155,47 @@ namespace hVec3Func
 
     hFORCEINLINE hBool equal( const hVec3& a, const hVec3& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector3Equal( a.v, b.v ) > 0;
+#else
+        return XMVector3Equal( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE hBool Less( const hVec3& a, const hVec3& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector3Less( a.v, b.v ) > 0;
+#else
+        return XMVector3Less( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE hBool LessEqual( const hVec3& a, const hVec3& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector3LessOrEqual( a.v, b.v ) > 0;
+#else
+        return XMVector3LessOrEqual( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE hBool Greater( const hVec3& a, const hVec3& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector3Greater( a.v, b.v ) > 0;
+#else
+        return XMVector3Greater( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE hBool GreaterEqual( const hVec3& a, const hVec3& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector3GreaterOrEqual( a.v, b.v ) > 0;
+#else
+        return XMVector3GreaterOrEqual( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE void store( const hVec3& a, hCPUVec3* b )

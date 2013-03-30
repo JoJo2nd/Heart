@@ -48,7 +48,7 @@ namespace Cmd
         {
         }
 
-        hUint16			 GetIndexCount() const { return nIndices_; }
+        hUint32			 GetIndexCount() const { return nIndices_; }
         hIndexBufferType getIndexBufferType() const { return type_; }
 
     private:
@@ -62,7 +62,7 @@ namespace Cmd
 
         hZeroProc           zeroProc_;
         hUint16*            pIndices_;//< only valid on disk based resources
-        hUint16             nIndices_;
+        hUint32             nIndices_;
         hIndexBufferType    type_;
     };
 

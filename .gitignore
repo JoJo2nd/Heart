@@ -6,3 +6,4 @@
 /built_projects/
 /nvidia-texture-tools/
 /*.lnk
+/cmake_build/

@@ -33,11 +33,42 @@
 
 namespace Heart
 {
-
     //////////////////////////////////////////////////////////////////////////
     // NOTE: all rotations for these matrices will be in XYZ order!!! ////////
     //////////////////////////////////////////////////////////////////////////
+#if defined (HEART_USE_XNAMATH)
 	typedef XMMATRIX hMatrix;
+#else
+    typedef DirectX::XMMATRIX hMatrix;
+    using DirectX::XMMatrixLookAtLH;
+    using DirectX::XMMatrixOrthographicLH;
+    using DirectX::XMMatrixOrthographicOffCenterLH;
+    using DirectX::XMMatrixPerspectiveFovLH;
+    using DirectX::XMMatrixPerspectiveOffCenterLH;
+    using DirectX::XMMatrixRotationRollPitchYaw;
+    using DirectX::XMMatrixRotationAxis;
+    using DirectX::XMMatrixRotationX;
+    using DirectX::XMMatrixRotationY;
+    using DirectX::XMMatrixRotationZ;
+    using DirectX::XMMatrixTranslationFromVector;
+    using DirectX::XMMatrixDeterminant;
+    using DirectX::XMMatrixTranspose;
+    using DirectX::XMMatrixInverse;
+    using DirectX::XMMatrixIsIdentity;
+    using DirectX::XMMatrixIdentity;
+    using DirectX::XMMatrixMultiply;
+    using DirectX::XMVector2Transform;
+    using DirectX::XMVector2TransformNormal;
+    using DirectX::XMVector3Transform;
+    using DirectX::XMVector3TransformNormal;
+    using DirectX::XMVector4Transform;
+    using DirectX::XMMatrixRotationQuaternion;
+    using DirectX::XMMatrixScaling;
+    using DirectX::XMMatrixIsInfinite;
+    using DirectX::XMMatrixIsNaN;
+    using DirectX::XMMatrixDecompose;
+
+#endif
 
 namespace hMatrixFunc
 {
@@ -84,12 +115,12 @@ namespace hMatrixFunc
 
     hFORCEINLINE hMatrix RotationY( hFloat theta )
     {
-        return XMMatrixRotationX( theta );
+        return XMMatrixRotationY( theta );
     }
 
     hFORCEINLINE hMatrix RotationZ( hFloat theta )
     {
-        return XMMatrixRotationX( theta );
+        return XMMatrixRotationZ( theta );
     }
 
 	hFORCEINLINE hMatrix translation( const hVec3& tran )
@@ -115,7 +146,11 @@ namespace hMatrixFunc
 
 	hFORCEINLINE hBool isIdentity( const hMatrix& in )
 	{
+#if defined (HEART_USE_XNAMATH)
         return XMMatrixIsIdentity( in ) > 0;
+#else
+        return XMMatrixIsIdentity( in );
+#endif 
 	}
 
 	hFORCEINLINE hMatrix identity()

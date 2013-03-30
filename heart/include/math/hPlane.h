@@ -31,6 +31,10 @@
 namespace Heart
 {
 	struct hAABB;
+#if !defined (HEART_USE_XNAMATH)
+    using DirectX::XMPlaneDotCoord;
+    using DirectX::XMPlaneFromPoints;
+#endif
 
 	struct hPlane
 	{

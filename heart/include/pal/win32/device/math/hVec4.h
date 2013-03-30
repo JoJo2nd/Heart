@@ -30,8 +30,28 @@
 
 namespace Heart
 {
-
+#ifdef HEART_USE_XNAMATH
     typedef XMFLOAT4 hCPUVec4;
+#else
+    typedef DirectX::XMFLOAT4 hCPUVec4;
+    using DirectX::XMVectorZero;
+    using DirectX::XMVector4Length;
+    using DirectX::XMVector4LengthEst;
+    using DirectX::XMVector4LengthSq;
+    using DirectX::XMVector4Normalize;
+    using DirectX::XMVector4NormalizeEst;
+    using DirectX::XMVectorAdd;
+    using DirectX::XMVectorSubtract;
+    using DirectX::XMVectorScale;
+    using DirectX::XMVectorDivide;
+    using DirectX::XMVector4Dot;
+    using DirectX::XMVectorNegate;
+    using DirectX::XMVector4Cross;
+    using DirectX::XMVectorSet;
+    using DirectX::XMVector4Equal;
+    using DirectX::XMStoreFloat4;
+    using DirectX::XMLoadFloat4;
+#endif
 
     struct hVec4
     {
@@ -126,7 +146,11 @@ namespace hVec4Func
 
     hFORCEINLINE hBool compare( const hVec4& a, const hVec4& b )
     {
+#if defined (HEART_USE_XNAMATH)
         return XMVector4Equal( a.v, b.v ) > 0;
+#else
+        return XMVector4Equal( a.v, b.v );
+#endif
     }
 
     hFORCEINLINE void store( const hVec4& a, hCPUVec4* b )

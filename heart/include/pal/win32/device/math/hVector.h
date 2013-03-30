@@ -28,7 +28,38 @@
 #ifndef MATH_VECTOR_H__
 #define MATH_VECTOR_H__
 
-typedef XMVECTOR            hVec128;
+#if defined (HEART_USE_XNAMATH)
+    typedef XMVECTOR            hVec128;
+#else
+    typedef DirectX::XMVECTOR   hVec128;
+    using DirectX::XMLoadFloat;
+    using DirectX::XMStoreFloat;
+    using DirectX::XMVectorGetX;
+    using DirectX::XMVectorGetY;
+    using DirectX::XMVectorGetZ;
+    using DirectX::XMVectorGetW;
+    using DirectX::XMVectorSetX;
+    using DirectX::XMVectorSetY;
+    using DirectX::XMVectorSetZ;
+    using DirectX::XMVectorSetW;
+    using DirectX::XMVectorSplatX;
+    using DirectX::XMVectorSplatY;
+    using DirectX::XMVectorSplatZ;
+    using DirectX::XMVectorSplatW;
+    using DirectX::XMVectorAbs;
+    using DirectX::XMVectorMin;
+    using DirectX::XMVectorMax;
+    using DirectX::XMVectorLess;
+    using DirectX::XMVectorLessOrEqual;
+    using DirectX::XMVectorEqual;
+    using DirectX::XMVectorEqualR;
+    using DirectX::XMVectorGreaterOrEqualR;
+    using DirectX::XMComparisonAllFalse;
+    using DirectX::XMVectorGreaterOrEqual;
+    using DirectX::XMVectorGreater;
+    using DirectX::XMVectorGreaterR;
+    using DirectX::XMComparisonAllTrue;
+#endif
 
 namespace Heart
 {

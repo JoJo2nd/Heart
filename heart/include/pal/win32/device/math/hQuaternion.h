@@ -30,12 +30,30 @@
 
 namespace Heart
 {
-
+#if defined (HEART_USE_XNAMATH)
     typedef XMFLOAT4 hCPUQuaternion;
+#else
+    typedef DirectX::XMFLOAT4 hCPUQuaternion;
+    using DirectX::XMQuaternionIdentity;
+    using DirectX::XMQuaternionRotationAxis;
+    using DirectX::XMQuaternionRotationRollPitchYaw;
+    using DirectX::XMQuaternionMultiply;
+    using DirectX::XMVector3Rotate;
+    using DirectX::XMQuaternionNormalize;
+    using DirectX::XMQuaternionLength;
+    using DirectX::XMQuaternionLengthSq;
+    using DirectX::XMQuaternionDot;
+    using DirectX::XMQuaternionConjugate;
+    using DirectX::XMQuaternionSlerp;
+    using DirectX::XMQuaternionIsIdentity;
+    using DirectX::XMStoreFloat4;
+    using DirectX::XMLoadFloat4;
+    using DirectX::XMQuaternionRotationRollPitchYawFromVector;
+#endif
 
     struct hQuaternion
     {
-        XMVECTOR q;
+        hVec128 q;
 
         hQuaternion() {}
         hQuaternion( const hVec128& rhs );
@@ -143,7 +161,11 @@ namespace hQuaternionFunc
 
     hFORCEINLINE hBool IsIdentity( const hQuaternion& q )
 	{
+#if defined (HEART_USE_XNAMATH)
 		return XMQuaternionIsIdentity( q.q ) > 0;
+#else
+        return XMQuaternionIsIdentity( q.q );
+#endif
 	}
 
     hFORCEINLINE void store( const hQuaternion& a, hCPUQuaternion* b )
@@ -187,8 +209,6 @@ namespace hQuaternionFunc
         hQuaternionFunc::store( *this, &r );
         return r;
     }
-        
-    SERIALISE_WORKER_TYPE_SPECIALISATION( hQuaternion, hSerialisedElementHeader::Type_User );
 }
 
 #endif // HMQUATERNION_H__
