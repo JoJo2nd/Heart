@@ -37,6 +37,8 @@ set( LUA_FILESYSTEM_SRC_FILES
 source_group(include FILES ${LUA_FILESYSTEM_HDR_FILES})
 source_group(source  FILES ${LUA_FILESYSTEM_SRC_FILES})
 
+add_definitions(-DLUA_CORE)
+
 include_directories(${LUA_FILESYSTEM_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_library(lua_filesystem SHARED ${LUA_FILESYSTEM_SRC_FILES} ${LUA_FILESYSTEM_HDR_FILES})
 target_link_libraries(lua_filesystem lua ${Boost_LIBRARIES})

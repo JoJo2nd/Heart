@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- Load LuaSocket from dynamic library
 -----------------------------------------------------------------------------
-local socket = requirelib("luasocket", "luaopen_socket", getfenv(1))
+local socket = require("luasocket")
 
 -----------------------------------------------------------------------------
 -- Auxiliar functions

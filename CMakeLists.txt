@@ -67,7 +67,7 @@ endif()
 if (USE_OLD_DXSDK)
     add_definitions(-DHEART_USE_DXSDK)
 endif()
-add_definitions(-DHEART_LUA_LIBS)
+add_definitions(-DHEART_LUA_LIBS -DLUA_COMPAT_MODULE -DLUA_BUILD_AS_DLL)
 
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")

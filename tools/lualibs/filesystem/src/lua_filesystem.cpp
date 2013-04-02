@@ -44,7 +44,7 @@ static int fs_modifiedDate(lua_State* L) {
     boost::system::error_code ec;
     boost::filesystem::path filepath(lua_tostring(L, -1));
     time_t t=boost::filesystem::last_write_time(filepath, ec);
-    if (ec!=0) {
+    if (!ec) {
         lua_pushnumber(L, (lua_Number)t);
     } else {
         lua_pushnil(L);
@@ -59,10 +59,10 @@ static int fs_exists(lua_State* L) {
     boost::system::error_code ec;
     boost::filesystem::path filepath(lua_tostring(L, -1));
     bool r=boost::filesystem::exists(filepath, ec);
-    if (ec!=0) {
+    if (!ec) {
         lua_pushboolean(L, r);
     } else {
-        lua_pushnil(L);
+        lua_pushboolean(L, false);
     }
     return 1;
 }
@@ -74,10 +74,10 @@ static int fs_isFile(lua_State* L) {
     boost::system::error_code ec;
     boost::filesystem::path filepath(lua_tostring(L, -1));
     bool r=boost::filesystem::is_regular_file(filepath, ec);
-    if (ec!=0) {
+    if (!ec) {
         lua_pushboolean(L, r);
     } else {
-        lua_pushnil(L);
+        lua_pushboolean(L, false);
     }
     return 1;
 }
@@ -89,10 +89,10 @@ static int fs_isDirectory(lua_State* L) {
     boost::system::error_code ec;
     boost::filesystem::path filepath(lua_tostring(L, -1));
     bool r=boost::filesystem::is_directory(filepath, ec);
-    if (ec!=0) {
+    if (!ec) {
         lua_pushboolean(L, r);
     } else {
-        lua_pushnil(L);
+        lua_pushboolean(L, false);
     }
     return 1;
 }
@@ -108,6 +108,7 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {NULL, NULL}
     };
     luaL_newlib(L, filesystemlib);
+    lua_setglobal(L, "filesystem");
     return 1;
 }
 };

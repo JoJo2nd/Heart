@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- Load other required modules
 -----------------------------------------------------------------------------
-local mime = requirelib("mime", "luaopen_mime", getfenv(1))
+local mime = require("luasocket")
 local ltn12 = require("ltn12")
 
 -- encode, decode and wrap algorithm tables

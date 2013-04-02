@@ -78,12 +78,10 @@ set( LUA_SRC_FILES
     "${LUA_SRC_DIR}/src/lzio.c"
 )
 
-add_definitions(-DLUA_COMPAT_MODULE)
-
 source_group(include FILES ${LUA_HDR_FILES})
 source_group(source  FILES ${LUA_SRC_FILES})
 
 #set_source_files_properties(${LUA_SRC_FILES} PROPERTIES LANGUAGE CXX)
 
 include_directories(${LUA_INCLUDE_DIRS})
-add_library(lua ${LUA_SRC_FILES} ${LUA_HDR_FILES})
+add_library(lua SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
