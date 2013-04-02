@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(HEART)
 
-#config vars
-set(CMAKE_USE_RELATIVE_PATHS ON)
-
 #TODO: execute_process -> to build files? 
 
 # set project directories
@@ -13,35 +10,22 @@ set(heart_BINARY_DIR "${HEART_SOURCE_DIR}/../bin/heart")
 # heart include directorys
 set( HEART_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}
-    "${HEART_SOURCE_DIR}/include"
-    "${HEART_SOURCE_DIR}/../external/zlib/include"
-    "${HEART_SOURCE_DIR}/../external/lua/src"
-    "${HEART_SOURCE_DIR}/../external/crypto/include"
-    "${HEART_SOURCE_DIR}/../external/rapidxml-1.13/include"
-    "${HEART_SOURCE_DIR}/../external/openal/include"
-    "${HEART_SOURCE_DIR}/../external/minizip/include"
-    "${HEART_SOURCE_DIR}/../external/libogg/include"
-    "${HEART_SOURCE_DIR}/../external/libvorbis/include"
+    "${HEART_SRC_ROOT}/include"
+    "${EXTERNAL_SRC_ROOT}/zlib/include"
+    "${EXTERNAL_SRC_ROOT}/lua/src"
+    "${EXTERNAL_SRC_ROOT}/crypto/include"
+    "${EXTERNAL_SRC_ROOT}/rapidxml-1.13/include"
+    "${EXTERNAL_SRC_ROOT}/openal/include"
+    "${EXTERNAL_SRC_ROOT}/minizip/include"
+    "${EXTERNAL_SRC_ROOT}/libogg/include"
+    "${EXTERNAL_SRC_ROOT}/libvorbis/include"
 )
-
-#platform headers
+set(HEART_LIB_DIRS)
 if (WIN32)
-    set( HEART_INCLUDE_DIRS
-        ${HEART_INCLUDE_DIRS}
-        "${HEART_SOURCE_DIR}/include/pal/win32"
-    )
-    if (USE_OLD_DXSDK)
-        set( HEART_INCLUDE_DIRS 
-            ${HEART_INCLUDE_DIRS}
-            "$ENV{DXSDK_DIR}/include"
-        )
-    endif()
-    if (USE_XNAMATH)
-        set( HEART_INCLUDE_DIRS 
-            ${HEART_INCLUDE_DIRS}
-            "$ENV{DXSDK_DIR}/include"
-        )
-    endif()
+	set(HEART_LIB_DIRS
+		${HEART_LIB_DIRS}
+		"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
+	)
 endif()
 
 # heart include directorys
@@ -81,6 +65,7 @@ set( HEART_GEN_FILES
 if (WIN32)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
+		"${HEART_SOURCE_DIR}/include/pal/win32"
         "${HEART_SOURCE_DIR}/src/pal/win32"
     )
 	set( HEART_SRC_FILES
@@ -108,6 +93,15 @@ set( HEART_NON_UNITY_FILES
     ${HEART_BASE_FILES} 
     ${HEART_DEVICE_MATH_FILES}
 )
+#common vars to pass up to parent directory
+set( LIBHEART_INCLUDES
+    ${HEART_INCLUDE_DIRS}
+    PARENT_SCOPE
+)
+set( LIBHEART_LIB_DIRS
+	${HEART_LIB_DIRS}
+	PARENT_SCOPE
+)
 
 source_group(unity FILES ${HEART_SRC_FILES})
 source_group(base FILES ${HEART_BASE_FILES})
@@ -117,5 +111,6 @@ set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)
 
 include_directories(${HEART_INCLUDE_DIRS})
+link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib lua minizip)
+target_link_libraries(heart zlib crypto lua minizip libogg libvorbis ${PLATFORM_LIBS})

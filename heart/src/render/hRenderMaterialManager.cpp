@@ -633,8 +633,8 @@ namespace Heart
 
     void hRenderMaterialManager::onWindowResize(hUint width, hUint height) {
         lua_getfield(mainLuaState_, LUA_REGISTRYINDEX, "_hgfx_resize");
-        lua_pushnumber(mainLuaState_, width);
-        lua_pushnumber(mainLuaState_, height);
+        lua_pushnumber(mainLuaState_, (lua_Number)width);
+        lua_pushnumber(mainLuaState_, (lua_Number)height);
         lua_pcall(mainLuaState_, 2, 0, 0);
     }
 
@@ -647,8 +647,8 @@ namespace Heart
         if (!m) {
             luaL_error(L, "Unable to grab engine pointer" );
         }
-        lua_pushnumber(L, m->renderer_->GetWidth());
-        lua_pushnumber(L, m->renderer_->GetHeight());
+        lua_pushnumber(L, (lua_Number)m->renderer_->GetWidth());
+        lua_pushnumber(L, (lua_Number)m->renderer_->GetHeight());
         return 2;
     }
 }

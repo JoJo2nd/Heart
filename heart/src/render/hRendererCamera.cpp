@@ -85,8 +85,8 @@ namespace Heart
         viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
         viewportConstants_.viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
         viewportConstants_.viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_.viewProjection_);
-        viewportConstants_.viewportSize_[0]=vp.width_;
-        viewportConstants_.viewportSize_[1]=vp.height_;
+        viewportConstants_.viewportSize_[0]=(hFloat)vp.width_;
+        viewportConstants_.viewportSize_[1]=(hFloat)vp.height_;
         viewportConstants_.viewportSize_[2]=0.f;
         viewportConstants_.viewportSize_[3]=0.f;
 
@@ -104,7 +104,7 @@ namespace Heart
         if (setup_.targetTex_){
             hUint w=setup_.targetTex_->getWidth();
             hUint h=setup_.targetTex_->getHeight();
-            return hViewport(w*viewport_.x, h*viewport_.y, w*viewport_.w, h*viewport_.h);
+            return hViewport((hUint)(w*viewport_.x), (hUint)(h*viewport_.y), (hUint)(w*viewport_.w), (hUint)(h*viewport_.h));
         } else {
             //zero out
             return hViewport(0, 0, 1, 1);

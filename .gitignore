@@ -7,3 +7,4 @@
 /nvidia-texture-tools/
 /*.lnk
 /cmake_build/
+/deploy/

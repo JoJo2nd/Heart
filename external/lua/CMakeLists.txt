@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
+if (MSVC)
+    # Lua is using float (not doubles, which is it's normal mode) so 
+    # it generates alot of warnings, hide them for the time being.
+    add_definitions(/wd"4244")
+    add_definitions(/wd"4146")
+    add_definitions(/wd"4305")
+endif()
+
 set(LUA_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -65,14 +73,17 @@ set( LUA_SRC_FILES
     "${LUA_SRC_DIR}/src/ltable.c"
     "${LUA_SRC_DIR}/src/ltablib.c"
     "${LUA_SRC_DIR}/src/ltm.c"
-    "${LUA_SRC_DIR}/src/lua.c"
     "${LUA_SRC_DIR}/src/lundump.c"
     "${LUA_SRC_DIR}/src/lvm.c"
     "${LUA_SRC_DIR}/src/lzio.c"
 )
 
+add_definitions(-DLUA_COMPAT_MODULE)
+
 source_group(include FILES ${LUA_HDR_FILES})
 source_group(source  FILES ${LUA_SRC_FILES})
+
+#set_source_files_properties(${LUA_SRC_FILES} PROPERTIES LANGUAGE CXX)
 
 include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua ${LUA_SRC_FILES} ${LUA_HDR_FILES})

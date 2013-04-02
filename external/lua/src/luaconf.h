@@ -569,10 +569,5 @@
 
 #endif
 
-#if defined (_MSC_VER) && !defined (LUA_NUMBER_DOUBLE)
-/* disable the "possible loss of data" warning from double to float */
-#pragma warning (disable:4244)
-#endif
-
 #endif
 
