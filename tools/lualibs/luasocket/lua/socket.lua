@@ -1,49 +1,66 @@
 -----------------------------------------------------------------------------
 -- LuaSocket helper module
 -- Author: Diego Nehab
--- RCS ID: $Id: socket.lua,v 1.9 2004/07/26 04:03:55 diego Exp $
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- Load LuaSocket from dynamic library
+-- Declare module and import dependencies
 -----------------------------------------------------------------------------
-local socket = require("luasocket")
+local base = _G
+local string = require("string")
+local math = require("math")
+local socket = require("socket.core")
+module("socket")
 
 -----------------------------------------------------------------------------
--- Auxiliar functions
+-- Exported auxiliar functions
 -----------------------------------------------------------------------------
-function socket.connect(address, port, laddress, lport)
-    local sock, err = socket.tcp()
-    if not sock then return nil, err end
-    if laddress then 
-        local res, err = sock:bind(laddress, lport, -1)
-        if not res then return nil, err end
+function connect4(address, port, laddress, lport)
+    return socket.connect(address, port, laddress, lport, "inet")
+end
+
+function connect6(address, port, laddress, lport)
+    return socket.connect(address, port, laddress, lport, "inet6")
+end
+
+function bind(host, port, backlog)
+    if host == "*" then host = "0.0.0.0" end
+    local addrinfo, err = socket.dns.getaddrinfo(host);
+    if not addrinfo then return nil, err end
+    local sock, res
+    err = "no info on address"
+    for i, alt in base.ipairs(addrinfo) do
+        if alt.family == "inet" then
+            sock, err = socket.tcp()
+        else
+            sock, err = socket.tcp6()
+        end
+        if not sock then return nil, err end
+        sock:setoption("reuseaddr", true)
+        res, err = sock:bind(alt.addr, port)
+        if not res then 
+            sock:close()
+        else 
+            res, err = sock:listen(backlog)
+            if not res then 
+                sock:close()
+            else
+                return sock
+            end
+        end 
     end
-    local res, err = sock:connect(address, port)
-    if not res then return nil, err end
-    return sock
+    return nil, err
 end
 
-function socket.bind(host, port, backlog)
-    local sock, err = socket.tcp()
-    if not sock then return nil, err end
-    sock:setoption("reuseaddr", true)
-    local res, err = sock:bind(host, port)
-    if not res then return nil, err end
-    res, err = sock:listen(backlog)
-    if not res then return nil, err end
-    return sock
-end
+try = newtry()
 
-socket.try = socket.newtry()
-
-function socket.choose(table)
+function choose(table)
     return function(name, opt1, opt2)
-        if type(name) ~= "string" then
+        if base.type(name) ~= "string" then
             name, opt1, opt2 = "default", name, opt1
         end
         local f = table[name or "nil"]
-        if not f then error("unknown key (" .. tostring(name) .. ")", 3)
+        if not f then base.error("unknown key (".. base.tostring(name) ..")", 3)
         else return f(opt1, opt2) end
     end
 end
@@ -52,31 +69,18 @@ end
 -- Socket sources and sinks, conforming to LTN12
 -----------------------------------------------------------------------------
 -- create namespaces inside LuaSocket namespace
-socket.sourcet = {}
-socket.sinkt = {}
+sourcet = {}
+sinkt = {}
 
-socket.BLOCKSIZE = 2048
+BLOCKSIZE = 2048
 
-socket.sinkt["http-chunked"] = function(sock)
-    return setmetatable({
+sinkt["close-when-done"] = function(sock)
+    return base.setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
-    }, { 
+    }, {
         __call = function(self, chunk, err)
-            if not chunk then return sock:send("0\r\n\r\n") end
-            local size = string.format("%X\r\n", string.len(chunk))
-            return sock:send(size, chunk, "\r\n")
-        end
-    })
-end
-
-socket.sinkt["close-when-done"] = function(sock)
-    return setmetatable({
-        getfd = function() return sock:getfd() end,
-        dirty = function() return sock:dirty() end
-    }, { 
-        __call = function(self, chunk, err)
-            if not chunk then 
+            if not chunk then
                 sock:close()
                 return 1
             else return sock:send(chunk) end
@@ -84,11 +88,11 @@ socket.sinkt["close-when-done"] = function(sock)
     })
 end
 
-socket.sinkt["keep-open"] = function(sock)
-    return setmetatable({
+sinkt["keep-open"] = function(sock)
+    return base.setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
-    }, { 
+    }, {
         __call = function(self, chunk, err)
             if chunk then return sock:send(chunk)
             else return 1 end
@@ -96,15 +100,15 @@ socket.sinkt["keep-open"] = function(sock)
     })
 end
 
-socket.sinkt["default"] = socket.sinkt["keep-open"]
+sinkt["default"] = sinkt["keep-open"]
 
-socket.sink = socket.choose(socket.sinkt)
+sink = choose(sinkt)
 
-socket.sourcet["by-length"] = function(sock, length)
-    return setmetatable({
+sourcet["by-length"] = function(sock, length)
+    return base.setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
-    }, { 
+    }, {
         __call = function()
             if length <= 0 then return nil end
             local size = math.min(socket.BLOCKSIZE, length)
@@ -116,54 +120,27 @@ socket.sourcet["by-length"] = function(sock, length)
     })
 end
 
-socket.sourcet["until-closed"] = function(sock)
+sourcet["until-closed"] = function(sock)
     local done
-    return setmetatable({
+    return base.setmetatable({
         getfd = function() return sock:getfd() end,
         dirty = function() return sock:dirty() end
-    }, { 
+    }, {
         __call = function()
             if done then return nil end
             local chunk, err, partial = sock:receive(socket.BLOCKSIZE)
             if not err then return chunk
-            elseif err == "closed" then 
+            elseif err == "closed" then
                 sock:close()
                 done = 1
                 return partial
-            else return nil, err end 
+            else return nil, err end
         end
     })
 end
 
-socket.sourcet["http-chunked"] = function(sock)
-    return setmetatable({
-        getfd = function() return sock:getfd() end,
-        dirty = function() return sock:dirty() end
-    }, { 
-        __call = function()
-            -- get chunk size, skip extention
-            local line, err = sock:receive()
-            if err then return nil, err end 
-            local size = tonumber(string.gsub(line, ";.*", ""), 16)
-            if not size then return nil, "invalid chunk size" end
-            -- was it the last chunk?
-            if size <= 0 then 
-                -- skip trailer headers, if any
-                local line, err = sock:receive()
-                while not err and line ~= "" do
-                    line, err = sock:receive()
-                end
-                return nil, err
-            else
-                -- get chunk and skip terminating CRLF
-                local chunk, err = sock:receive(size)
-                if chunk then sock:receive() end 
-                return chunk, err
-            end
-        end
-    })
-end
 
-socket.sourcet["default"] = socket.sourcet["until-closed"]
+sourcet["default"] = sourcet["until-closed"]
 
-socket.source = socket.choose(socket.sourcet)
+source = choose(sourcet)
+

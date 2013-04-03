@@ -24,11 +24,9 @@
 *
 * With these two function, it's easy to write functions that throw
 * exceptions on error, but that don't interrupt the user script. 
-*
-* RCS ID: $Id: except.h,v 1.1 2004/06/15 06:24:00 diego Exp $
 \*=========================================================================*/
 
-#include <lua.h>
+#include "lua.h"
 
 int except_open(lua_State *L);
 

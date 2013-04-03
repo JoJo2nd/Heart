@@ -24,7 +24,6 @@ set( LUASOCKET_HDR_FILES
     "${LUASOCKET_SRC_DIR}/src/inet.h"
     "${LUASOCKET_SRC_DIR}/src/io.h"
     "${LUASOCKET_SRC_DIR}/src/luasocket.h"
-    "${LUASOCKET_SRC_DIR}/src/mime.h"
     "${LUASOCKET_SRC_DIR}/src/options.h"
     "${LUASOCKET_SRC_DIR}/src/select.h"
     "${LUASOCKET_SRC_DIR}/src/socket.h"
@@ -41,7 +40,6 @@ set( LUASOCKET_SRC_FILES
     "${LUASOCKET_SRC_DIR}/src/inet.c"
     "${LUASOCKET_SRC_DIR}/src/io.c"
     "${LUASOCKET_SRC_DIR}/src/luasocket.c"
-    "${LUASOCKET_SRC_DIR}/src/mime.c"
     "${LUASOCKET_SRC_DIR}/src/options.c"
     "${LUASOCKET_SRC_DIR}/src/select.c"
     "${LUASOCKET_SRC_DIR}/src/tcp.c"
@@ -53,7 +51,6 @@ set( LUASOCKET_LUA_FILES
     "${LUASOCKET_SRC_DIR}/lua/ftp.lua"
     "${LUASOCKET_SRC_DIR}/lua/http.lua"
     "${LUASOCKET_SRC_DIR}/lua/ltn12.lua"
-    "${LUASOCKET_SRC_DIR}/lua/mime.lua"
     "${LUASOCKET_SRC_DIR}/lua/smtp.lua"
     "${LUASOCKET_SRC_DIR}/lua/socket.lua"
     "${LUASOCKET_SRC_DIR}/lua/tp.lua"
@@ -73,4 +70,12 @@ endif()
 include_directories(${LUASOCKET_INCLUDE_DIRS})
 add_library(lua_socket SHARED ${LUASOCKET_SRC_FILES} ${LUASOCKET_HDR_FILES} ${LUASOCKET_LUA_FILES})
 target_link_libraries(lua_socket lua ${PLAT_SOCKET_LIB})
-set_target_properties(lua_socket PROPERTIES OUTPUT_NAME luasocket)
+set_target_properties(lua_socket PROPERTIES OUTPUT_NAME core)
+
+ADD_CUSTOM_COMMAND(
+	TARGET lua_socket
+    POST_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" core "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/socket"
+	COMMAND ROBOCOPY "${LUASOCKET_SRC_DIR}/lua" "${CMAKE_SOURCE_DIR}/deploy/builder/lua" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+	COMMAND ROBOCOPY "${LUASOCKET_SRC_DIR}/lua" "${CMAKE_SOURCE_DIR}/deploy/builder/socket" "headers.lua" "tp.lua" "url.lua" ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+)

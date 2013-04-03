@@ -11,11 +11,9 @@
 *
 * The module socket.h implements this interface, and thus the module tcp.h
 * is very simple.
-*
-* RCS ID: $Id: io.h,v 1.9 2004/07/26 04:03:55 diego Exp $
 \*=========================================================================*/
 #include <stdio.h>
-#include <lua.h>
+#include "lua.h"
 
 #include "timeout.h"
 
@@ -24,8 +22,7 @@ enum {
     IO_DONE = 0,        /* operation completed successfully */
     IO_TIMEOUT = -1,    /* operation timed out */
     IO_CLOSED = -2,     /* the connection has been closed */
-    IO_CLIPPED = -3,    /* maxium bytes count reached */
-	IO_UNKNOWN = -4
+	IO_UNKNOWN = -3
 };
 
 /* interface to error message function */
@@ -40,7 +37,7 @@ typedef int (*p_send) (
     const char *data,   /* pointer to buffer with data to send */
     size_t count,       /* number of bytes to send from buffer */
     size_t *sent,       /* number of bytes sent uppon return */
-    p_tm tm             /* timeout control */
+    p_timeout tm        /* timeout control */
 );
 
 /* interface to recv function */
@@ -49,7 +46,7 @@ typedef int (*p_recv) (
     char *data,         /* pointer to buffer where data will be writen */
     size_t count,       /* number of bytes to receive into buffer */
     size_t *got,        /* number of bytes received uppon return */
-    p_tm tm             /* timeout control */
+    p_timeout tm        /* timeout control */
 );
 
 /* IO driver definition */

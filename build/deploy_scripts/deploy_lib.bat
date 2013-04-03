@@ -1,18 +1,18 @@
 @echo off
 rem usage deploy_lib [lib name] [source folder] [dest folder]
 
-call ../init_vis_studio_env.bat
+REM call ../init_vis_studio_env.bat
 
 set SRC_FOLDER=%~2
 set DEST_FOLDER=%~3
 set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np
 
-if exist "%SRC_FOLDER%/%1_?.dll" ( 
+if exist "%SRC_FOLDER%/%1*.dll" ( 
   echo Copying DLL
-  set CPYEXT="%1_?.dll" "%1_?.pdb"
-) else if exist "%SRC_FOLDER%/%1_?.exe" ( 
+  set CPYEXT="%1*.dll" "%1*.pdb"
+) else if exist "%SRC_FOLDER%/%1*.exe" ( 
   echo Copying EXE
-  set CPYEXT="%1_?.exe" "%1_?.pdb"
+  set CPYEXT="%1*.exe" "%1*.pdb"
 ) else (
   echo Nothing to copy
   goto :EXIT

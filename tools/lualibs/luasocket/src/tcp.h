@@ -13,20 +13,19 @@
 * objects are tcp objects bound to some local address. Client objects are
 * tcp objects either connected to some address or returned by the accept
 * method of a server object.
-*
-* RCS ID: $Id: tcp.h,v 1.5 2004/02/04 14:29:10 diego Exp $
 \*=========================================================================*/
-#include <lua.h>
+#include "lua.h"
 
 #include "buffer.h"
 #include "timeout.h"
 #include "socket.h"
 
 typedef struct t_tcp_ {
-    t_sock sock;
+    t_socket sock;
     t_io io;
-    t_buf buf;
-    t_tm tm;
+    t_buffer buf;
+    t_timeout tm;
+    int family;
 } t_tcp;
 
 typedef t_tcp *p_tcp;

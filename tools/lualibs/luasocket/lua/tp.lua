@@ -2,14 +2,16 @@
 -- Unified SMTP/FTP subsystem
 -- LuaSocket toolkit.
 -- Author: Diego Nehab
--- RCS ID: $Id: tp.lua,v 1.12 2004/06/18 21:41:44 diego Exp $
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- Load required modules
+-- Declare module and import dependencies
 -----------------------------------------------------------------------------
+local base = _G
+local string = require("string")
 local socket = require("socket")
 local ltn12 = require("ltn12")
+module("socket.tp")
 
 -----------------------------------------------------------------------------
 -- Program constants
@@ -34,7 +36,7 @@ local function get_reply(c)
             current, sep = socket.skip(2, string.find(line, "^(%d%d%d)(.?)"))
             reply = reply .. "\n" .. line
         -- reply ends with same code
-        until code == current and sep == " " 
+        until code == current and sep == " "
     end
     return code, reply
 end
@@ -45,22 +47,28 @@ local metat = { __index = {} }
 function metat.__index:check(ok)
     local code, reply = get_reply(self.c)
     if not code then return nil, reply end
-    if type(ok) ~= "function" then
-        if type(ok) == "table" then 
-            for i, v in ipairs(ok) do
-                if string.find(code, v) then return tonumber(code), reply end
+    if base.type(ok) ~= "function" then
+        if base.type(ok) == "table" then
+            for i, v in base.ipairs(ok) do
+                if string.find(code, v) then
+                    return base.tonumber(code), reply
+                end
             end
             return nil, reply
         else
-            if string.find(code, ok) then return tonumber(code), reply 
+            if string.find(code, ok) then return base.tonumber(code), reply
             else return nil, reply end
         end
-    else return ok(tonumber(code), reply) end
+    else return ok(base.tonumber(code), reply) end
 end
 
 function metat.__index:command(cmd, arg)
-    if arg then return self.c:send(cmd .. " " .. arg.. "\r\n")
-    else return self.c:send(cmd .. "\r\n") end
+    cmd = string.upper(cmd)
+    if arg then
+        return self.c:send(cmd .. " " .. arg.. "\r\n")
+    else
+        return self.c:send(cmd .. "\r\n")
+    end
 end
 
 function metat.__index:sink(snk, pat)
@@ -90,24 +98,26 @@ end
 
 function metat.__index:source(source, step)
     local sink = socket.sink("keep-open", self.c)
-    return ltn12.pump.all(source, sink, step or ltn12.pump.step)
+    local ret, err = ltn12.pump.all(source, sink, step or ltn12.pump.step)
+    return ret, err
 end
 
 -- closes the underlying c
 function metat.__index:close()
     self.c:close()
-	return 1
+    return 1
 end
 
 -- connect with server and return c object
-function connect(host, port, timeout)
-    local c, e = socket.tcp()
+function connect(host, port, timeout, create)
+    local c, e = (create or socket.tcp)()
     if not c then return nil, e end
     c:settimeout(timeout or TIMEOUT)
     local r, e = c:connect(host, port)
-    if not r then 
-        c:close() 
+    if not r then
+        c:close()
         return nil, e
     end
-    return setmetatable({c = c}, metat)
+    return base.setmetatable({c = c}, metat)
 end
+

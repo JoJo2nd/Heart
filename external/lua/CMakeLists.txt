@@ -85,3 +85,9 @@ source_group(source  FILES ${LUA_SRC_FILES})
 
 include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
+
+ADD_CUSTOM_COMMAND(
+	TARGET lua
+    POST_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" lua "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder"
+)

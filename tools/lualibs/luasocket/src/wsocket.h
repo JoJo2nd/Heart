@@ -3,19 +3,23 @@
 /*=========================================================================*\
 * Socket compatibilization module for Win32
 * LuaSocket toolkit
-*
-* RCS ID: $Id: wsocket.h,v 1.3 2004/02/11 03:31:53 diego Exp $
 \*=========================================================================*/
 
 /*=========================================================================*\
 * WinSock include files
 \*=========================================================================*/
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 typedef int socklen_t;
-typedef SOCKET t_sock;
-typedef t_sock *p_sock;
+typedef SOCKADDR_STORAGE t_sockaddr_storage;
+typedef SOCKET t_socket;
+typedef t_socket *p_socket;
 
-#define SOCK_INVALID (INVALID_SOCKET)
+#define SOCKET_INVALID (INVALID_SOCKET)
+
+#ifndef SO_REUSEPORT
+#define SO_REUSEPORT SO_REUSEADDR
+#endif
 
 #endif /* WSOCKET_H */

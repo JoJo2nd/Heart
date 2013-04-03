@@ -17,9 +17,18 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
     LIST(APPEND ${SourcesVar} ${PrecompiledSource} ${PrecompiledHeader})
   ENDIF(MSVC)
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
+MACRO(GET_BASE_FILENAMES destVar sourceVar)
+	set(destVar)
+	foreach(FILEPATH ${sourceVar})
+		get_filename_component(FILENAME ${FILEPATH} NAME)
+		set(descVar ${destVar} ${FILENAME})
+	endforeach(FILEPATH)
+ENDMACRO(GET_BASE_FILENAMES)
 
 #config vars
 set(CMAKE_USE_RELATIVE_PATHS ON)
+set(CMAKE_DEBUG_POSTFIX "_d")
+set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np)
 
 #build options
 option(USE_XNAMATH "Use old XNA math libraries" OFF)
@@ -83,3 +92,4 @@ endif()
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")
 add_subdirectory("tools/lualibs/luasocket")
+add_subdirectory("tools/lualibs/mime")

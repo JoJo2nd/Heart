@@ -2,8 +2,15 @@
 -- LTN12 - Filters, sources, sinks and pumps.
 -- LuaSocket toolkit.
 -- Author: Diego Nehab
--- RCS ID: $Id: ltn12.lua,v 1.13 2004/06/17 06:23:12 diego Exp $
 -----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- Declare module
+-----------------------------------------------------------------------------
+local string = require("string")
+local table = require("table")
+local base = _G
+module("ltn12")
 
 filter = {}
 source = {}
@@ -12,13 +19,14 @@ pump = {}
 
 -- 2048 seems to be better in windows...
 BLOCKSIZE = 2048
+_VERSION = "LTN12 1.0.2"
 
 -----------------------------------------------------------------------------
 -- Filter stuff
 -----------------------------------------------------------------------------
 -- returns a high level filter that cycles a low-level filter
 function filter.cycle(low, ctx, extra)
-    assert(low)
+    base.assert(low)
     return function(chunk)
         local ret
         ret, ctx = low(ctx, chunk, extra)
@@ -26,38 +34,36 @@ function filter.cycle(low, ctx, extra)
     end
 end
 
--- chains two filters together
-local function chain2(f1, f2)
-    assert(f1 and f2)
-    local co = coroutine.create(function(chunk)
-        while true do
-            local filtered1 = f1(chunk)
-            local filtered2 = f2(filtered1)
-            local done2 = filtered1 and ""
-            while true do
-                if filtered2 == "" or filtered2 == nil then break end
-                coroutine.yield(filtered2)
-                filtered2 = f2(done2)
-            end
-            if filtered1 == "" then chunk = coroutine.yield(filtered1)
-            elseif filtered1 == nil then return nil
-            else chunk = chunk and "" end
-        end
-    end)
-    return function(chunk)
-        local ret, a, b  = coroutine.resume(co, chunk)
-        if ret then return a, b
-        else return nil, a end
-    end
-end
-
 -- chains a bunch of filters together
+-- (thanks to Wim Couwenberg)
 function filter.chain(...)
-    local f = arg[1]
-    for i = 2, table.getn(arg) do
-        f = chain2(f, arg[i])
+    local arg = {...}
+    local n = #arg
+    local top, index = 1, 1
+    local retry = ""
+    return function(chunk)
+        retry = chunk and retry
+        while true do
+            if index == top then
+                chunk = arg[index](chunk)
+                if chunk == "" or top == n then return chunk
+                elseif chunk then index = index + 1
+                else
+                    top = top+1
+                    index = top
+                end
+            else
+                chunk = arg[index](chunk or "")
+                if chunk == "" then
+                    index = index - 1
+                    chunk = retry
+                elseif chunk then
+                    if index == n then return chunk
+                    else index = index + 1 end
+                else base.error("filter returned inappropriate nil") end
+            end
+        end
     end
-    return f
 end
 
 -----------------------------------------------------------------------------
@@ -92,7 +98,7 @@ end
 
 -- turns a fancy source into a simple source
 function source.simplify(src)
-    assert(src)
+    base.assert(src)
     return function()
         local chunk, err_or_new = src()
         src = err_or_new or src
@@ -116,7 +122,7 @@ end
 
 -- creates rewindable source
 function source.rewind(src)
-    assert(src)
+    base.assert(src)
     local t = {}
     return function(chunk)
         if not chunk then
@@ -129,45 +135,66 @@ function source.rewind(src)
     end
 end
 
--- chains a source with a filter
 function source.chain(src, f)
-    assert(src and f)
-    local co = coroutine.create(function()
-        while true do 
-            local chunk, err = src()
-            if err then return nil, err end
-            local filtered = f(chunk)
-            local done = chunk and ""
-            while true do
-                coroutine.yield(filtered)
-                if filtered == done then break end
-                filtered = f(done)
+    base.assert(src and f)
+    local last_in, last_out = "", ""
+    local state = "feeding"
+    local err
+    return function()
+        if not last_out then
+            base.error('source is empty!', 2)
+        end
+        while true do
+            if state == "feeding" then
+                last_in, err = src()
+                if err then return nil, err end
+                last_out = f(last_in)
+                if not last_out then
+                    if last_in then
+                        base.error('filter returned inappropriate nil')
+                    else
+                        return nil
+                    end
+                elseif last_out ~= "" then
+                    state = "eating"
+                    if last_in then last_in = "" end
+                    return last_out
+                end
+            else
+                last_out = f(last_in)
+                if last_out == "" then
+                    if last_in == "" then
+                        state = "feeding"
+                    else
+                        base.error('filter returned ""')
+                    end
+                elseif not last_out then
+                    if last_in then
+                        base.error('filter returned inappropriate nil')
+                    else
+                        return nil
+                    end
+                else
+                    return last_out
+                end
             end
         end
-    end)
-    return function()
-        local ret, a, b  = coroutine.resume(co)
-        if ret then return a, b
-        else return nil, a end
     end
 end
 
 -- creates a source that produces contents of several sources, one after the
 -- other, as if they were concatenated
+-- (thanks to Wim Couwenberg)
 function source.cat(...)
-    local co = coroutine.create(function()
-        local i = 1
-        while i <= table.getn(arg) do
-            local chunk, err = arg[i]()
-            if chunk then coroutine.yield(chunk)
-            elseif err then return nil, err 
-            else i = i + 1 end 
-        end
-    end)
+    local arg = {...}
+    local src = table.remove(arg, 1)
     return function()
-        local ret, a, b  = coroutine.resume(co)
-        if ret then return a, b
-        else return nil, a end
+        while src do
+            local chunk, err = src()
+            if chunk then return chunk end
+            if err then return nil, err end
+            src = table.remove(arg, 1)
+        end
     end
 end
 
@@ -186,7 +213,7 @@ end
 
 -- turns a fancy sink into a simple sink
 function sink.simplify(snk)
-    assert(snk)
+    base.assert(snk)
     return function(chunk, err)
         local ret, err_or_new = snk(chunk, err)
         if not ret then return nil, err_or_new end
@@ -199,7 +226,7 @@ end
 function sink.file(handle, io_err)
     if handle then
         return function(chunk, err)
-            if not chunk then 
+            if not chunk then
                 handle:close()
                 return 1
             else return handle:write(chunk) end
@@ -223,18 +250,20 @@ function sink.error(err)
     end
 end
 
--- chains a sink with a filter 
+-- chains a sink with a filter
 function sink.chain(f, snk)
-    assert(f and snk)
+    base.assert(f and snk)
     return function(chunk, err)
-        local filtered = f(chunk)
-        local done = chunk and ""
-        while true do
-            local ret, snkerr = snk(filtered, err)
-            if not ret then return nil, snkerr end
-            if filtered == done then return 1 end
-            filtered = f(done)
-        end
+        if chunk ~= "" then
+            local filtered = f(chunk)
+            local done = chunk and ""
+            while true do
+                local ret, snkerr = snk(filtered, err)
+                if not ret then return nil, snkerr end
+                if filtered == done then return 1 end
+                filtered = f(done)
+            end
+        else return 1 end
     end
 end
 
@@ -245,15 +274,20 @@ end
 function pump.step(src, snk)
     local chunk, src_err = src()
     local ret, snk_err = snk(chunk, src_err)
-    return chunk and ret and not src_err and not snk_err, src_err or snk_err
+    if chunk and ret then return 1
+    else return nil, src_err or snk_err end
 end
 
 -- pumps all data from a source to a sink, using a step function
 function pump.all(src, snk, step)
-    assert(src and snk)
+    base.assert(src and snk)
     step = step or pump.step
     while true do
         local ret, err = step(src, snk)
-        if not ret then return not err, err end
+        if not ret then
+            if err then return nil, err
+            else return 1 end
+        end
     end
 end
+

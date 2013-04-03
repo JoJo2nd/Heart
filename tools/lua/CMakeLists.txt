@@ -27,5 +27,12 @@ source_group(source  FILES ${LUA_SA_SRC_FILES})
 include_directories(${LUA_SA_INCLUDE_DIRS})
 add_executable(lua_standalone ${LUA_SA_SRC_FILES} ${LUA_SA_HDR_FILES})
 target_link_libraries(lua_standalone lua)
+set_property(TARGET lua_standalone PROPERTY DEBUG_POSTFIX _d)
 
-set_target_properties(lua_standalone PROPERTIES OUTPUT_NAME lua)
+set_target_properties(lua_standalone PROPERTIES OUTPUT_NAME luai)
+
+ADD_CUSTOM_COMMAND(
+	TARGET lua_standalone
+    POST_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" luai "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder"
+)
