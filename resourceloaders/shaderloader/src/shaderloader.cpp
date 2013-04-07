@@ -574,7 +574,7 @@ int SB_API shaderPreprocess(lua_State* L) {
     }
 
     lua_newtable(L); // push table of files files that where included by 
-    hUint idx=0;
+    hUint idx=1;
     for (FXIncludeHandler::IncludeMap::iterator i=includeHandler.includedFiles_.begin(), n=includeHandler.includedFiles_.end(); i!=n; ++i) {
         lua_pushstring(L, i->second.fullpath_.generic_string().c_str());
         lua_rawseti(L, -2, idx);
