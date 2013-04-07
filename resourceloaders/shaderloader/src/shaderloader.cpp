@@ -26,6 +26,12 @@
 *********************************************************************/
 
 #include "shaderloader.h"
+#include "heart.h"
+#include <d3d11.h>
+#include <boost/filesystem.hpp>
+#include <boost/smart_ptr.hpp>
+#include <string>
+#include <map>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -49,96 +55,66 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
 
 struct FXIncludeHandler : public ID3DInclude 
 {
-    struct FXIncludePath : Heart::hLinkedListElement< FXIncludePath >
+    struct Include 
     {
-        Heart::hString path_;
-
+        boost::filesystem::path     fullpath_;
+        boost::filesystem::path     basepath_;
+        boost::shared_ptr<hByte>    data_;
     };
-    typedef Heart::hLinkedList< FXIncludePath > IncludePathArray;
+    typedef std::map<void*, Include> IncludeMap;
 
     FXIncludeHandler() {}
-    ~FXIncludeHandler() {
-        while (includePaths_.GetHead()) {
-            FXIncludePath* inc=includePaths_.GetHead();
-            includePaths_.Remove(inc);
-            hDELETE(Heart::GetGlobalHeap(), inc); 
-        }
-    }
+    ~FXIncludeHandler() {}
 
     void addDefaultPath(const hChar* path) {
-        FXIncludePath* inc=hNEW(Heart::GetGlobalHeap(), FXIncludePath)();
-        inc->path_=path;
-        includePaths_.PushBack(inc);
+        Include inc;
+        inc.fullpath_=path;
+        inc.basepath_=inc.fullpath_.parent_path();
+        includedFiles_.insert(IncludeMap::value_type(hNullptr, inc));
     }
 
-    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) 
-    {
+    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
         using namespace Heart;
+        using namespace boost;
 
-        includePaths_.SetAutoDelete(hFalse);
+        system::error_code ec;
 
-        FXIncludePath* i = NULL;
-        do
-        {
-            hString str;
-            if (i)
-            {
-                str = (i->path_);
-                str += "/";
-                i = i->GetNext();
-            }
-            else
-            {
-                i = includePaths_.GetHead();
-            }
-            str += pFileName;
-            Heart::hIDataCacheFile* f = fileAccess_->OpenFile( str.c_str() );
-
-            if ( !f )
-            {
+        for (IncludeMap::iterator i=includedFiles_.begin(), n=includedFiles_.end(); i!=n; ++i) {
+            filesystem::path srcfile=i->second.basepath_ / filesystem::path(pFileName);
+            bool exist=filesystem::exists(srcfile, ec);
+            if (ec) {
                 continue;
             }
+            if (exist) {
+                hUint filesize=(hUint)filesystem::file_size(srcfile, ec);
+                if (ec) {
+                    continue;
+                }
+                shared_ptr<hByte> readbuffer(new hByte[filesize+1]);
+                memset(readbuffer.get(), 0, filesize+1);
+                FILE* f = fopen(srcfile.generic_string().c_str(), "rt");
+                fread(readbuffer.get(), 1, filesize, f);
+                fclose(f);
+                Include inc;
+                inc.fullpath_=srcfile;
+                inc.basepath_=inc.fullpath_.parent_path();
+                inc.data_=readbuffer;
+                includedFiles_.insert(IncludeMap::value_type(readbuffer.get(), inc));
 
-            FXIncludePath* ptr = (FXIncludePath*)hNEW_ARRAY(GetGlobalHeap(), hChar, f->Lenght()+1+sizeof(FXIncludePath));
-            hPLACEMENT_NEW(ptr) FXIncludePath;
-
-            hByte* buffer = (hByte*)(ptr+1);
-            f->Seek(0, hIDataCacheFile::BEGIN);
-            f->Read( buffer, f->Lenght() );
-            buffer[f->Lenght()] = 0;
-
-            *ppData = buffer;
-            *pBytes = (UINT)f->Lenght();
-
-            str.RemoveAfterLastInc('/');
-            ptr->path_ = str;
-
-            includePaths_.PushBack(ptr);
-
-            fileAccess_->CloseFile(f);
-
-            return S_OK;
+                *ppData = readbuffer.get();
+                *pBytes = (UINT)filesize;
+                return S_OK;
+            }
         }
-        while (i);
-
         return E_FAIL;
     }
 
-    STDMETHOD(Close)(THIS_ LPCVOID pData)
-    {
-        using namespace Heart;
-
-        FXIncludePath* str = (FXIncludePath*)(((hByte*)pData)-sizeof(FXIncludePath));
-        hChar* buf = (hChar*)str;
-        includePaths_.Remove(str);
-        str->~FXIncludePath();
-        hDELETE_ARRAY(GetGlobalHeap(), buf);
-
+    STDMETHOD(Close)(THIS_ LPCVOID pData) {
+        //includedFiles_.erase((hByte*)pData);
         return S_OK;
     }
 
-    Heart::hIBuiltDataCache* fileAccess_;
-    IncludePathArray         includePaths_;
+    IncludeMap    includedFiles_;
 };
 
 
@@ -160,12 +136,13 @@ struct ShaderHeader
 
 #pragma pack(pop)
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT 
-void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
+void SB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
     *verMajor = 1;
     *verMinor = 0;
 }
@@ -202,20 +179,74 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
     return shaderProg;
 }
 
+#endif
+Heart::hShaderProfile getProfileFromString(const hChar* str) {
+    static const hChar* s_shaderProfileNames[] = {
+        "vs_4_0",   //eShaderProfile_vs4_0,
+        "vs_4_1",   //eShaderProfile_vs4_1,
+        "vs_5_0",   //eShaderProfile_vs5_0,
+        //
+        "ps_4_0",   //eShaderProfile_ps4_0,
+        "ps_4_1",   //eShaderProfile_ps4_1,
+        "ps_5_0",   //eShaderProfile_ps5_0,
+        //
+        "gs_4_0",   //eShaderProfile_gs4_0,
+        "gs_4_1",   //eShaderProfile_gs4_1,
+        "gs_5_0",   //eShaderProfile_gs5_0,
+        //
+        "cs_4_0",   //eShaderProfile_cs4_0,
+        "cs_4_1",   //eShaderProfile_cs4_1,
+        "cs_5_0",   //eShaderProfile_cs5_0,
+        //
+        "hs_5_0",   //eShaderProfile_hs5_0,
+        "ds_5_0",   //eShaderProfile_ds5_0,
+    };
+
+    for (hUint i=0; i<hStaticArraySize(s_shaderProfileNames); ++i) {
+        if (_stricmp(s_shaderProfileNames[i],str) == 0) {
+            return (Heart::hShaderProfile)i;
+        }
+    }
+    return Heart::eShaderProfile_Max;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
+/*Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput*/
 
 DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
-{
+int SB_API shaderCompiler(lua_State* L) {
     using namespace Heart;
+    using namespace boost;
+    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    luaL_checktype(L, 4, LUA_TSTRING);
+    const hChar* outputpath=lua_tostring(L, 4);
 
+    system::error_code ec;
     Heart::hShaderType progtype;
-    const char* entry = params->GetBuildParameter("ENTRY","main");
-    const char* profile = params->GetBuildParameter("PROFILE","vs_5_0");
-    hShaderProfile profileType=hRenderer::getProfileFromString(profile);
+    const char* entry = hNullptr;/*params->GetBuildParameter("ENTRY","main")*/;
+    const char* profile = hNullptr;//params->GetBuildParameter("PROFILE","vs_5_0");
+    lua_getfield(L, 3, "entry");
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "entry parameter is not a string or missing");
+        return 0;
+    }
+    entry=lua_tostring(L, -1);
+    lua_pop(L, 1);
+    lua_getfield(L, 3, "profile");
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "profile parameter is not a string or missing");
+        return 0;
+    }
+    profile=lua_tostring(L, -1);
+    lua_pop(L, 1);
 
+    hShaderProfile profileType=getProfileFromString(profile);
     if (profileType >= eShaderProfile_vs4_0 && profileType <= eShaderProfile_vs5_0) {
         progtype = ShaderType_VERTEXPROG;
     } else if (profileType >= eShaderProfile_ps4_0 && profileType <= eShaderProfile_ps5_0) {
@@ -228,19 +259,33 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         progtype = ShaderType_HULLPROG;    
     } else if (profileType == eShaderProfile_ds5_0) {
         progtype = ShaderType_DOMAINPROG;
+    } else {
+        luaL_error(L, "Unable to build GPU profile %s", profile);
+        return 0;
     }
 
     FXIncludeHandler includeHandler;
     HRESULT hr;
-    hUint32 compileFlags = 0;
-#if 1//_DEBUG
-    compileFlags |= D3DCOMPILE_DEBUG;
-    compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
-    compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
     ID3DBlob* errors;
     ID3DBlob* result;
-    hUint definecount=params->getBuildParameterCount("DEFINE");
+    hUint32 compileFlags = 0;
+    lua_getfield(L, 3, "debug");
+    if (lua_toboolean(L, -1)) {
+        compileFlags |= D3DCOMPILE_DEBUG;
+        compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
+        compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+    }
+    lua_pop(L, 1);
+
+    hUint definecount=0;
+    hBool hasdefines=hFalse;
+    lua_getfield(L, 3, "defines");
+    if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
+        luaL_error(L, "defines unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
+    }
+    if (!lua_isnil(L, -1)) {
+        hasdefines=hTrue;
+    }
     const hChar* progTypeMacros[] = {
         "HEART_COMPILE_VERTEX_PROG"  ,
         "HEART_COMPILE_FRAGMENT_PROG",
@@ -257,36 +302,62 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         { progTypeMacros[progtype], "1" },
         { NULL, NULL }
     };
-    D3D_SHADER_MACRO* fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
-    for (hUint i=0; i<definecount; ++i) {
-        fullmacros[i].Name=params->getBuildParameter("DEFINE", i, "__NULL_DEF");
-        fullmacros[i].Definition=params->getBuildParameterAttrib("DEFINE", i, "value", NULL);
-    }
-    hMemCpy(fullmacros+definecount, defaultmacros, sizeof(defaultmacros));
 
-    hUint pathlen=hStrLen(params->GetInputFilePath())+1;//+1 for NULL
-    hChar* path=(hChar*)hAlloca(pathlen);
-    hChar* pathrootend=NULL;
-    hStrCopy(path, pathlen, params->GetInputFilePath());
-    if ((pathrootend=hStrRChr(path, '\\')) != NULL || (pathrootend=hStrRChr(path, '/')) != NULL) {
-        *(pathrootend+1)=0;
-    } else {
-        *path=0;
+    D3D_SHADER_MACRO* fullmacros=hNullptr;
+    if (hasdefines) {
+        definecount=lua_rawlen(L, -1);
     }
+    fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
+    if (hasdefines) {
+        hUint i=0;
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            /* uses 'key' (at index -2) and 'value' (at index -1) */
+            if (!lua_isstring(L,-2) && !lua_isstring(L,-1)) {
+                luaL_error(L, "DEFINE table entry unexpected type(got [%s]=%s; expected [%s]=%s)", 
+                    lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
+                return 0;
+            }
+            fullmacros[i].Name=lua_tostring(L,-2);
+            fullmacros[i].Definition=lua_tostring(L, -1);
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+            ++i;
+        }
+    }
+    memcpy(fullmacros+definecount, defaultmacros, sizeof(defaultmacros));
+    lua_pop(L, 1);
 
-    includeHandler.fileAccess_ = fileCache;
+    lua_rawgeti(L, 1, 1);
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "input file is not a string");
+        return 0;
+    }
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, -2);
+    lua_call(L, 1, 1);
+    const hChar* path=lua_tostring(L, -1);
     includeHandler.addDefaultPath(path);
-
-    hChar* sourcedata = NULL;
-    hUint32 sourcedatalen = inFile->Lenght();
-    sourcedata = (hChar*)hHeapRealloc(memalloc->tempHeap_, sourcedata, sourcedatalen+1);
-    inFile->Read(sourcedata, sourcedatalen);
+    hUint filesize=(hUint)filesystem::file_size(path, ec);
+    if (ec) {
+        luaL_error(L, "Unable to read filesize of shader input %s", path);
+        return 0;
+    }
+    shared_array<hChar> sourcedata;
+    hUint sourcedatalen = filesize;
+    sourcedata = shared_array<hChar>(new hChar[sourcedatalen+1]);
+    memset(sourcedata.get(), 0, sourcedatalen);
+    FILE* f=fopen(path, "rt");
+    if (!f) {
+        luaL_error(L, "Unable to open shader input file %s", path);
+        return 0;
+    }
+    fread(sourcedata.get(), 1, sourcedatalen, f);
     sourcedata[sourcedatalen] = 0;
-
     hr = D3DCompile( 
-        sourcedata, 
+        sourcedata.get(), 
         sourcedatalen, 
-        params->GetInputFilePath(),
+        path,
         fullmacros, 
         &includeHandler, //Includes
         entry,
@@ -295,40 +366,42 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         0, 
         &result, 
         &errors);
+    lua_pop(L, 1);
 
     if (FAILED(hr) && errors) {
-        hcPrintf("Shader Compile failed! Error Msg ::\n%s", errors->GetBufferPointer());
+        std::string err=(hChar*)errors->GetBufferPointer();
         errors->Release();
         errors = NULL;
-        hHeapFreeSafe(memalloc->tempHeap_, sourcedata);
-        return hFalse;
+        luaL_error(L, "Shader Compile failed! Error Msg ::\n%s", err.c_str());
     } else if (errors) {
-        hcPrintf("Shader Compile output ::\n%s", errors->GetBufferPointer());
+        lua_getglobal(L, "print");
+        lua_pushstring(L, "Shader Compile output:\n");
+        lua_pushstring(L, (hChar*)errors->GetBufferPointer());
         errors->Release();
         errors = NULL;
+        lua_call(L, 2, 0);
     }
 
-    hHeapFreeSafe(memalloc->tempHeap_, sourcedata);
-
     ID3D11ShaderReflection* reflect;
-    hr = D3DReflect( result->GetBufferPointer(), result->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect );
-    if ( FAILED( hr ) )
-    {
-        hcAssertFailMsg( "Couldn't create reflection information." );
-        return hFalse;
+    hr = D3DReflect(result->GetBufferPointer(), result->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
+    if (FAILED( hr )) {
+        luaL_error(L, "Couldn't create reflection information.");
+        return 0;
     }
 
     D3D11_SHADER_DESC desc;
-
-    reflect->GetDesc( &desc );
-
     ShaderHeader header = {0};
     Heart::hInputLayoutDesc* inLayout = NULL;
+    reflect->GetDesc( &desc );
     if (progtype == ShaderType_VERTEXPROG)
     {
         inLayout = (Heart::hInputLayoutDesc*)hAlloca(sizeof(Heart::hInputLayoutDesc)*desc.InputParameters);
         header.vertexLayout = 0;
         header.inputLayoutElements = ParseVertexInputFormat(desc, reflect, inLayout, desc.InputParameters);
+        if (header.inputLayoutElements == hErrorCode) {
+            luaL_error(L, "Failed to parse vertex input format from shader");
+            return 0;
+        }
     }
 
     header.resHeader.resourceType = SHADER_MAGIC_NUM;
@@ -336,14 +409,27 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     header.type = progtype;
     header.shaderBlobSize = result->GetBufferSize();
 
-    binoutput->Write(&header, sizeof(header));
+    outputpath=lua_tostring(L, 4);
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 4);
+    lua_call(L, 1, 1);
+    outputpath=lua_tostring(L, -1);
+    FILE* outf=fopen(outputpath, "wb");
+    if (!outf) {
+        luaL_error(L, "Unable to open output file %s", outputpath);
+        return 0;
+    }
+    fwrite(&header, 1, sizeof(header), outf);
     if (header.inputLayoutElements)
     {
-        binoutput->Write(inLayout, sizeof(Heart::hInputLayoutDesc)*header.inputLayoutElements);
+        fwrite(inLayout, 1, sizeof(Heart::hInputLayoutDesc)*header.inputLayoutElements, outf);
     }
-    binoutput->Write(result->GetBufferPointer(), result->GetBufferSize());
+    fwrite(result->GetBufferPointer(), 1, result->GetBufferSize(), outf);
+    fclose(outf);
+    lua_pop(L, 1);
 
-    return hTrue;
+    lua_newtable(L); // push empty table of resources this is dependent on (which is always none)
+    return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -351,7 +437,159 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+int SB_API shaderPreprocess(lua_State* L) {
+    using namespace Heart;
+    using namespace boost;
+    /* Args from Lua (1: input file, 2: parameter table)*/
+    luaL_checktype(L, 1, LUA_TSTRING);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    system::error_code ec;
+    FXIncludeHandler includeHandler;
+    const hChar* profile=hNullptr;
+    hShaderType progtype;
+    HRESULT hr;
+    ID3DBlob* errors;
+    ID3DBlob* result;
+    hUint32 compileFlags = 0;
+
+    lua_getfield(L, 2, "profile");
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "PROFILE parameter is not a string or missing");
+        return 0;
+    }
+    profile=lua_tostring(L, -1);
+    lua_pop(L, 1);
+
+    hShaderProfile profileType=getProfileFromString(profile);
+    if (profileType >= eShaderProfile_vs4_0 && profileType <= eShaderProfile_vs5_0) {
+        progtype = ShaderType_VERTEXPROG;
+    } else if (profileType >= eShaderProfile_ps4_0 && profileType <= eShaderProfile_ps5_0) {
+        progtype = ShaderType_FRAGMENTPROG;
+    } else if (profileType >= eShaderProfile_gs4_0 && profileType <= eShaderProfile_gs5_0) {
+        progtype = ShaderType_GEOMETRYPROG;
+    } else if (profileType >= eShaderProfile_cs4_0 && profileType <= eShaderProfile_cs5_0) {
+        progtype = ShaderType_COMPUTEPROG;
+    } else if (profileType == eShaderProfile_hs5_0) {
+        progtype = ShaderType_HULLPROG;    
+    } else if (profileType == eShaderProfile_ds5_0) {
+        progtype = ShaderType_DOMAINPROG;
+    } else {
+        luaL_error(L, "Unable to build GPU profile %s", profile);
+        return 0;
+    }
+    hUint definecount=0;
+    hBool hasdefines=hFalse;
+    lua_getfield(L, 2, "defines");
+    if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
+        luaL_error(L, "DEFINES unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
+    }
+    if (!lua_isnil(L, -1)) {
+        hasdefines=hTrue;
+    }
+    const hChar* progTypeMacros[] = {
+        "HEART_COMPILE_VERTEX_PROG"  ,
+        "HEART_COMPILE_FRAGMENT_PROG",
+        "HEART_COMPILE_GEOMETRY_PROG",
+        "HEART_COMPILE_HULL_PROG"    ,
+        "HEART_COMPILE_DOMAIN_PROG"  ,
+        "HEART_COMPILE_COMPUTE_PROG" ,
+        "HEART_COMPILE_UNKNOWN"      ,
+    };
+    D3D_SHADER_MACRO defaultmacros[] =
+    {
+        { "HEART_USING_HLSL", "1" },
+        { "HEART_ENGINE", "1" },
+        { progTypeMacros[progtype], "1" },
+        { NULL, NULL }
+    };
+
+    D3D_SHADER_MACRO* fullmacros=hNullptr;
+    if (hasdefines) {
+        definecount=lua_rawlen(L, -1);
+    }
+    fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
+    if (hasdefines) {
+        hUint i=0;
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            /* uses 'key' (at index -2) and 'value' (at index -1) */
+            if (!lua_isstring(L,-2) && !lua_isstring(L,-1)) {
+                luaL_error(L, "DEFINE table entry unexpected type(got [%s]=%s; expected [%s]=%s)", 
+                    lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
+                return 0;
+            }
+            fullmacros[i].Name=lua_tostring(L,-2);
+            fullmacros[i].Definition=lua_tostring(L, -1);
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+            ++i;
+        }
+        lua_pop(L, 1);// pop the final key
+    }
+    memcpy(fullmacros+definecount, defaultmacros, sizeof(defaultmacros));
+    lua_pop(L, 1);
+
+    if (!lua_isstring(L, 1)) {
+        luaL_error(L, "input file is not a string");
+        return 0;
+    }
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 1);
+    lua_call(L, 1, 1);
+    const hChar* path=lua_tostring(L, -1);
+    includeHandler.addDefaultPath(path);
+    hUint filesize=(hUint)filesystem::file_size(path, ec);
+    if (ec) {
+        luaL_error(L, "Unable to read filesize of shader input %s", path);
+        return 0;
+    }
+    shared_array<hChar> sourcedata;
+    hUint sourcedatalen = filesize;
+    sourcedata = shared_array<hChar>(new hChar[sourcedatalen+1]);
+    FILE* f=fopen(path, "rt");
+    if (!f) {
+        luaL_error(L, "Unable to open shader input file %s", path);
+        return 0;
+    }
+    fread(sourcedata.get(), 1, sourcedatalen, f);
+    sourcedata[sourcedatalen] = 0;
+    hr = D3DPreprocess( 
+        sourcedata.get(), 
+        sourcedatalen, 
+        path,
+        fullmacros, 
+        &includeHandler, //Includes
+        &result, 
+        &errors);
+    lua_pop(L, 1);
+
+    if (errors) {
+        lua_getglobal(L, "print");
+        lua_pushstring(L, "Shader Preprocess output:\n");
+        lua_pushstring(L, (hChar*)errors->GetBufferPointer());
+        errors->Release();
+        errors = NULL;
+        lua_call(L, 2, 0);
+    }
+
+    lua_newtable(L); // push table of files files that where included by 
+    hUint idx=0;
+    for (FXIncludeHandler::IncludeMap::iterator i=includeHandler.includedFiles_.begin(), n=includeHandler.includedFiles_.end(); i!=n; ++i) {
+        lua_pushstring(L, i->second.fullpath_.generic_string().c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 1;
+}
+
+#if 0
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+DLL_EXPORT
+hBool SB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     return hTrue;
 }
@@ -361,7 +599,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void SB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
 
 }
@@ -371,14 +609,14 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void SB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
 
     hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
     sp->DecRef();
 }
-
+#endif
 hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::hInputLayoutDesc* output, hUint32 maxOut)
 {
     hUint32 vertexInputLayoutFlags = 0;
@@ -395,36 +633,36 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
             inputStr[0] = inputDesc.SemanticName[0];
             inputStr[1] = inputDesc.SemanticName[1];
             inputStr[2] = inputDesc.SemanticName[2];
-            streamIdx = Heart::hAtoI(inputStr+1);
+            streamIdx = atoi(inputStr+1);
         }
 
         vid->instanceDataRepeat_ = 0;
         
-        if ( Heart::hStrCmp( inputDesc.SemanticName, "POSITION" ) == 0 )
+        if ( strcmp( inputDesc.SemanticName, "POSITION" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_POSITION;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "NORMAL" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "NORMAL" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_NORMAL;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "TANGENT" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "TANGENT" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_TANGENT;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "BITANGENT" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "BITANGENT" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_BITANGENT;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "COLOR" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "COLOR" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_COLOUR;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "TEXCOORD" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "TEXCOORD" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_TEXCOORD;
         }
-        else if ( Heart::hStrCmp( inputDesc.SemanticName, "INSTANCE" ) == 0 )
+        else if ( strcmp( inputDesc.SemanticName, "INSTANCE" ) == 0 )
         {
             vid->semantic_ = Heart::eIS_INSTANCE;
             //TODO: encode this in semantic?
@@ -432,7 +670,7 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
         }
         else
         {
-            hcAssertFailMsg( "Unknown input semantic %s for vertex program", inputDesc.SemanticName );
+            return hErrorCode;
         }
 
         vid->semIndex_ = inputDesc.SemanticIndex;
@@ -445,7 +683,7 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
             case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
             case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
             case 0x0F: vid->typeFormat_ = Heart::eIF_FLOAT4; break;
-            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            default: return hErrorCode;
             }
         }
         else if (inputDesc.ComponentType == D3D10_REGISTER_COMPONENT_UINT32)
@@ -457,7 +695,7 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
             //case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
             //case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
             case 0x0F: vid->typeFormat_ = Heart::eIF_UBYTE4_UNORM; break;
-            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            default: return hErrorCode;
             }
         }
         else if (inputDesc.ComponentType == D3D10_REGISTER_COMPONENT_SINT32)
@@ -469,7 +707,7 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
                 //case 0x03: vid->typeFormat_ = Heart::eIF_FLOAT2; break;
                 //case 0x07: vid->typeFormat_ = Heart::eIF_FLOAT3; break;
             case 0x0F: vid->typeFormat_ = Heart::eIF_UBYTE4_SNORM; break;
-            default: hcAssertFailMsg("Invalid write mask %u", inputDesc.Mask);
+            default: return hErrorCode;
             }
         }
 
@@ -478,3 +716,17 @@ hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflec
 
     return desc.InputParameters;
 }
+
+extern "C" {
+//Lua entry point calls
+DLL_EXPORT int SB_API luaopen_gpuprogram(lua_State *L) {
+    static const luaL_Reg gpuproglib[] = {
+        {"compile",shaderCompiler},
+        {"preprocess",shaderPreprocess},
+        {NULL, NULL}
+    };
+    luaL_newlib(L, gpuproglib);
+    //lua_setglobal(L, "gpuprogram");
+    return 1;
+}
+};

@@ -127,8 +127,10 @@ namespace Heart
 #ifdef HEART_PLAT_WINDOWS 
 #   if _MSC_VER < 1500
 #       define hAlignOf(x) __alignof(x)
+#       define hNullptr     (NULL)
 #   else
-#       define hAlignOf(x) hAlignment_of<##x>::value
+#       define hAlignOf(x)  hAlignment_of<##x>::value
+#       define hNullptr     (std::nullptr_t())
 #   endif
 #else
 #   error ("Unknown platform ")

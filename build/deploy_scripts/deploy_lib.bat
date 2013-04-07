@@ -5,7 +5,7 @@ REM call ../init_vis_studio_env.bat
 
 set SRC_FOLDER=%~2
 set DEST_FOLDER=%~3
-set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np
+set ROBOCOPY_OPTIONS=/XO /XX /njh /njs /ndl /nc /ns /np /W:2
 
 if exist "%SRC_FOLDER%/%1*.dll" ( 
   echo Copying DLL

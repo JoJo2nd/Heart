@@ -96,6 +96,22 @@ static int fs_isDirectory(lua_State* L) {
     }
     return 1;
 }
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_makeDirectories(lua_State* L) {
+    luaL_checkstring(L, -1);
+    std::string p=lua_tostring(L, -1);
+    boost::system::error_code ec;
+    boost::filesystem::path filepath(p);
+    bool r=boost::filesystem::create_directories(filepath, ec);
+    if (!ec) {
+        lua_pushboolean(L, r);
+    } else {
+        lua_pushboolean(L, false);
+    }
+    return 1;
+}
 
 extern "C" {
 //Lua entry point calls
@@ -105,10 +121,11 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"exists",fs_exists},
         {"isfile",fs_isFile},
         {"isdirectory",fs_isDirectory},
+        {"makedirectories",fs_makeDirectories},
         {NULL, NULL}
     };
     luaL_newlib(L, filesystemlib);
-    lua_setglobal(L, "filesystem");
+    //lua_setglobal(L, "filesystem");
     return 1;
 }
 };

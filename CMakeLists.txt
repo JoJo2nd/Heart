@@ -28,7 +28,7 @@ ENDMACRO(GET_BASE_FILENAMES)
 #config vars
 set(CMAKE_USE_RELATIVE_PATHS ON)
 set(CMAKE_DEBUG_POSTFIX "_d")
-set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np)
+set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 
 #build options
 option(USE_XNAMATH "Use old XNA math libraries" OFF)
@@ -88,6 +88,8 @@ add_subdirectory ("heart")
 if (BUILD_HEART_TESTBED)
 	add_subdirectory ("testbed")
 endif()
+
+add_subdirectory("resourceloaders/shaderloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

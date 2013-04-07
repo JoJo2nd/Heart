@@ -29,9 +29,9 @@
 
 #include <stdio.h>
 #include <vector>
-#include "Heart.h"
 
-#if defined (SHADER_LOADER_COMPILE_DLL)
+#define SB_API __cdecl
+#if defined (shader_builder_EXPORTS)
     #define DLL_EXPORT __declspec(dllexport)
 #else
     #define DLL_EXPORT __declspec(dllimport)
@@ -39,18 +39,20 @@
 
 extern "C"
 {
+#if 0
     DLL_EXPORT
-    Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine*);
+    Heart::hResourceClassBase* SB_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine*);
     DLL_EXPORT
-    hBool HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput);
+    hBool SB_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput);
     DLL_EXPORT
-    hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
+    hBool SB_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
     DLL_EXPORT
-    void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
+    void SB_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
     DLL_EXPORT
-    void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
+    void SB_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
     DLL_EXPORT 
-    void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
+    void SB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
+#endif
 };
 
 #endif // SHADERLOADER_H__
