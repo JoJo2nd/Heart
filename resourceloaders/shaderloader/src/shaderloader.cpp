@@ -110,7 +110,6 @@ struct FXIncludeHandler : public ID3DInclude
     }
 
     STDMETHOD(Close)(THIS_ LPCVOID pData) {
-        //includedFiles_.erase((hByte*)pData);
         return S_OK;
     }
 
@@ -225,8 +224,7 @@ int SB_API shaderCompiler(lua_State* L) {
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
-    const hChar* outputpath=lua_tostring(L, 4);
-
+    
     system::error_code ec;
     Heart::hShaderType progtype;
     const char* entry = hNullptr;/*params->GetBuildParameter("ENTRY","main")*/;
@@ -409,11 +407,10 @@ int SB_API shaderCompiler(lua_State* L) {
     header.type = progtype;
     header.shaderBlobSize = result->GetBufferSize();
 
-    outputpath=lua_tostring(L, 4);
     lua_getglobal(L, "buildpathresolve");
     lua_pushvalue(L, 4);
     lua_call(L, 1, 1);
-    outputpath=lua_tostring(L, -1);
+    const hChar* outputpath=lua_tostring(L, -1);
     FILE* outf=fopen(outputpath, "wb");
     if (!outf) {
         luaL_error(L, "Unable to open output file %s", outputpath);

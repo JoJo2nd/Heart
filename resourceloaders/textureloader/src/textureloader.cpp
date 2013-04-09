@@ -26,9 +26,10 @@
 *********************************************************************/
 
 #include "textureloader.h"
-#include "png.h"
-#include "libtga/tga.h"
-#include "nvtt/nvtt.h"
+//#include "nvtt/nvtt.h"
+#include <boost/filesystem.hpp>
+#include <boost/smart_ptr.hpp>
+#include <fstream>
 
 using namespace Heart;
 
@@ -66,7 +67,7 @@ struct TextureHeader
 
 struct RawTextureData
 {
-    void*                   data_;      //Assumes RGBA or L8 format based on bytesPerPixel
+    boost::shared_ptr<void> data_;      //Assumes RGBA or L8 format based on bytesPerPixel
     hUint32                 width_;
     hUint32                 pitch_;
     hUint32                 height_;
@@ -91,7 +92,7 @@ struct RawTextureData
 #define DDPF_RGB	        (0x40)      //Texture contains uncompressed RGB data; dwRGBBitCount and the RGB masks (dwRBitMask, dwRBitMask, dwRBitMask) contain valid data.	0x40
 #define DDPF_YUV	        (0x200)     //Used in some older DDS files for YUV uncompressed data (dwRGBBitCount contains the YUV bit count; dwRBitMask contains the Y mask, dwGBitMask contains the U mask, dwBBitMask contains the V mask)	0x200
 #define DDPF_LUMINANCE	    (0x20000)   //Used in some older DDS files for single channel color uncompressed data (dwRGBBitCount contains the luminance channel bit count; dwRBitMask contains the channel mask). Can be combined with DDPF_ALPHAPIXELS for a two channel DDS file.	0x20000
-
+#if 0
 struct TexFormatEnumName
 {
     const hChar*            name_;
@@ -120,8 +121,7 @@ TexFormatEnumName g_formatNames[] =
     {"BC4" , nvtt::Format_BC4 , Heart::TFORMAT_DXT5},     // ATI1       - NOTE: WRONG!
     {"BC5" , nvtt::Format_BC5 , Heart::TFORMAT_DXT5},     // 3DC, ATI2  - NOTE: WRONG!
 };
-
-#define GetPitchFromWidth(w,bitsPerPixel) (( w * bitsPerPixel + 7 ) / 8)
+#endif
 
 #pragma pack ( push, 1 )
 
@@ -158,14 +158,23 @@ struct DDSHeader
 
 #pragma pack ( pop )
 
-hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc);
+hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData);
+#define getPitchFromWidth(w,bitsPerPixel) (( w * bitsPerPixel + 7 ) / 8)
+hUint32 getDXTTextureSize(hBool dxt1, hUint32 width, hUint32 height)
+{
+    // compute the storage requirements
+    int blockcount = ( ( width + 3 )/4 ) * ( ( height + 3 )/4 );
+    int blocksize = (dxt1) ? 8 : 16;
+    return blockcount*blocksize;
+}
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT 
-void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
+void TB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
     *verMajor = 0;
     *verMinor = 92;
 }
@@ -175,7 +184,7 @@ void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
+Heart::hResourceClassBase* TB_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
 {
     Heart::hTexture* texutre;
     Heart::hRenderer* renderer = engine->GetRenderer();
@@ -213,31 +222,57 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream* in
     return texutre;
 }
 
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
+int TB_API textureCompile(lua_State* L)
+/*Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput*/ 
 {
+    using namespace Heart;
+    using namespace boost;
+    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    luaL_checktype(L, 4, LUA_TSTRING);
 
     RawTextureData textureData;
-    hUint32 len = Heart::hStrLen(params->GetInputFilePath());
+    const hChar* filepath=hNullptr;
     hBool gammaCorrect = hFalse;
     hBool buildMips = hFalse;
     hBool keepcpu = hFalse;
     hBool ddsInput = hFalse;
 
-    ReadDDSFileData(inFile, &textureData, memalloc);
+    lua_getglobal(L, "buildpathresolve");
+    lua_rawgeti(L, 1, 1);
+    if(!lua_isstring(L, -1)) {
+        luaL_error(L, "input path is not a string");
+        return 0;
+    }
+    lua_call(L, 1, 1);
+    filepath=lua_tostring(L, -1);
+    lua_pop(L, 1);
+
+    if (!ReadDDSFileData(filepath, &textureData)) {
+        luaL_error(L, "Unable to read DDS file");
+        return 0;
+    }
     ddsInput = hTrue;
 
-    if (Heart::hStrICmp(params->GetBuildParameter("sRGB", "true"),"true") == 0) {
+    lua_getfield(L, 3, "sRGB");
+    if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
         gammaCorrect = hTrue;
     }
+    lua_pop(L, 1);
 
-    if (Heart::hStrICmp(params->GetBuildParameter("KEEPCPU", "false"),"true") == 0) {
-        keepcpu = hTrue;
+    lua_getfield(L, 3, "keepcpu");
+    if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
+        keepcpu=hTrue;
     }
+    lua_pop(L, 1);
 
     Heart::hMipDesc* mips;
     hUint32 mipCount;
@@ -247,15 +282,15 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         hUint32 bitsPerPixel = textureData.bytesPerPixel_*8;
         hUint32 w = textureData.width_;
         hUint32 h = textureData.height_;
-        hUint32 size = textureData.compressed_ ? Heart::hTexture::GetDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : GetPitchFromWidth(w,bitsPerPixel)*h;
-        hByte* ptr = (hByte*)textureData.data_;
+        hUint32 size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
+        hByte* ptr = (hByte*)textureData.data_.get();
 
         mips = (Heart::hMipDesc*)hAlloca(sizeof(Heart::hMipDesc)*textureData.mips_);
         for (hUint32 i = 0; i < textureData.mips_; ++i)
         {
             mips[i].width = w;
             mips[i].height = h;
-            mips[i].data = hNEW_ARRAY(memalloc->tempHeap_, hByte, size);
+            mips[i].data = new hByte[size];
             mips[i].size = size;
 
             Heart::hMemCpy(mips[i].data, ptr, size);
@@ -275,15 +310,25 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
             ptr += mips[i].size;
             w = hMax(w >> 1, 1);
             h = hMax(h >> 1, 1);
-            size = textureData.compressed_ ? Heart::hTexture::GetDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : GetPitchFromWidth(w,bitsPerPixel)*h;
+            size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
         }
-
-        hHeapFreeSafe(memalloc->tempHeap_, textureData.data_);
     }
 
     if (gammaCorrect)
     {
         textureData.format_ = (Heart::hTextureFormat)(textureData.format_ | Heart::TFORMAT_GAMMA_sRGB);
+    }
+
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 4);
+    lua_call(L, 1, 1);
+    const hChar* outputpath=lua_tostring(L, -1);
+    std::ofstream output;
+    output.open(outputpath);
+
+    if (!output.is_open()) {
+        luaL_error(L, "Unable to open output file %s for writing", outputpath);
+        return 0;
     }
 
     //Write Header
@@ -297,7 +342,7 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
     header.format = textureData.format_;
     header.flags = keepcpu ? Heart::RESOURCEFLAG_KEEPCPUDATA : (Heart::ResourceFlags)0;
 
-    binoutput->Write(&header, sizeof(header));
+    output.write((hChar*)&header, sizeof(header));
 
     //Write mip info
     for (hUint32 i = 0; i < header.mipCount; ++i)
@@ -305,26 +350,27 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         Heart::hMipDesc mdesc;
         mdesc = mips[i];
         mdesc.data = 0;
-        binoutput->Write(&mdesc, sizeof(mdesc));
+        output.write((hChar*)&mdesc, sizeof(mdesc));
     }
 
     //Write Texture data
     for (hUint32 i = 0; i < header.mipCount; ++i)
     {
-        binoutput->Write(mips[i].data, mips[i].size);
+        output.write((hChar*)mips[i].data, mips[i].size);
         //Release Data
-        hDELETE_ARRAY_SAFE(memalloc->tempHeap_, mips[i].data);
+        delete[] mips[i].data;
     }
-
-    return hTrue;
+    output.close();
+    lua_newtable(L); // push empty table, this resource won't have any dependencies
+    return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
+#if 0
 DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+hBool TB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     //Nothing to do
     return hTrue;
@@ -335,7 +381,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void TB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     //Nothing to do
 }
@@ -345,27 +391,35 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void TB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     hTexture* tex=static_cast<hTexture*>(resource);
     // Package should be the only thing hold ref at this point...
     hcAssertMsg(tex->GetRefCount() == 1, "Texture ref count is %u, it should be 1", tex->GetRefCount());
     tex->DecRef();
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourceMemAlloc* memalloc)
+hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData)
 {
     DDSHeader header;
-    hUint32 textureSize = inFile->Lenght() - sizeof(header);
-    inFile->Read(&header, sizeof(header));
+    boost::system::error_code ec;
+    hUint filesize=(hUint)boost::filesystem::file_size(filepath, ec);
+    if (ec) {
+        return hFalse;
+    }
+    hUint32 textureSize = filesize - sizeof(header);
+    std::ifstream file;
+    file.open(filepath);
+    if (!file.is_open()) {
+        return hFalse;
+    }
+    file.read((hChar*)&header, sizeof(header));
 
-    if (header.dwMagic != 0x20534444)
-    {
-        hcAssertFailMsg("Incorrect magic number for DDS file");
+    if (header.dwMagic != 0x20534444) {
         return hFalse;
     }
 
@@ -374,49 +428,47 @@ hBool ReadDDSFileData(hIDataCacheFile* inFile, RawTextureData* outData, hResourc
     outData->pitch_         = (header.dwFlags & DDSD_PITCH) ? header.dwPitchOrLinearSize : header.dwWidth;
     outData->mips_          = (header.dwFlags & DDSD_MIPMAPCOUNT) ? header.dwMipMapCount : 1;
     outData->compressed_    = hFalse;
-    if ((header.ddspf.dwFlags & DDPF_FOURCC) == 0)
-    {
+    if ((header.ddspf.dwFlags & DDPF_FOURCC) == 0) {
         outData->bytesPerPixel_ = header.ddspf.dwRGBBitCount / 8;
-        if (outData->bytesPerPixel_ == 1)
-        {
+        if (outData->bytesPerPixel_ == 1) {
             outData->format_        = Heart::TFORMAT_L8;
-        }
-        else if (outData->bytesPerPixel_ = 4)
-        {
+        } else if (outData->bytesPerPixel_ = 4) {
             outData->format_ = (header.ddspf.dwFlags & DDPF_ALPHA) ? Heart::TFORMAT_ARGB8 : Heart::TFORMAT_XRGB8;
+        } else {
+            return hFalse;
         }
-        else
-        {
-            hcAssertFailMsg("Incorrect format");
-        }
-    }
-    else
-    {
+    } else {
         outData->bytesPerPixel_ = 0;
         outData->compressed_    = hTrue;
         if ((MAKEFOURCC('D','X','T','1') == header.ddspf.dwFourCC) ||
-            (MAKEFOURCC('D','X','T','2') == header.ddspf.dwFourCC))
-        {
+            (MAKEFOURCC('D','X','T','2') == header.ddspf.dwFourCC)) {
             outData->format_ = Heart::TFORMAT_DXT1;
-        }
-        else if ((MAKEFOURCC('D','X','T','3') == header.ddspf.dwFourCC) ||
-                 (MAKEFOURCC('D','X','T','4') == header.ddspf.dwFourCC))
-        {
+        } else if ((MAKEFOURCC('D','X','T','3') == header.ddspf.dwFourCC) ||
+                 (MAKEFOURCC('D','X','T','4') == header.ddspf.dwFourCC)) {
             outData->format_ = Heart::TFORMAT_DXT3;
-        }
-        else if ((MAKEFOURCC('D','X','T','5') == header.ddspf.dwFourCC))
-        {
+        } else if ((MAKEFOURCC('D','X','T','5') == header.ddspf.dwFourCC)) {
             outData->format_ = Heart::TFORMAT_DXT5;
-        }
-        else
-        {
-            hcAssertFailMsg("Incorrect Compressed format");
+        } else {
+            return hFalse;
         }
     }
 
 
-    outData->data_ = hHeapMalloc(memalloc->tempHeap_, textureSize);
-    inFile->Read(outData->data_, textureSize);
+    outData->data_ = boost::shared_ptr<void>(new hByte[textureSize]);
+    file.read((hChar*)outData->data_.get(), textureSize);
 
+    file.close();
     return hTrue;
+}
+
+extern "C" {
+//Lua entry point calls
+DLL_EXPORT int TB_API luaopen_texture(lua_State *L) {
+    static const luaL_Reg texturelib[] = {
+        {"compile",textureCompile},
+        {NULL, NULL}
+    };
+    luaL_newlib(L, texturelib);
+    return 1;
+}
 }

@@ -30,16 +30,15 @@
 
 #include <stdio.h>
 #include <vector>
-#include "png.h"
 #include "Heart.h"
 
-#if defined (TEXTURE_LOADER_COMPILE_DLL)
+#if defined (texture_builder_EXPORTS)
     #define DLL_EXPORT __declspec(dllexport)
 #else
     #define DLL_EXPORT __declspec(dllimport)
 #endif
 
-#define HEART_API __cdecl
+#define TB_API __cdecl
 
 /*
 "HeartBinLoader");
@@ -56,7 +55,7 @@ void                (*OnPackageLoadComplete)    (hResourceClassBase*);
 void                (*OnResourceDataUnload)     (hResourceClassBase*);
 void                (*OnPackageUnloadComplete)  (hResourceClassBase*);
 void                (*SaveBinaryOutput)         (hResourceClassBase*, hISerialiseStream*);
-*/
+
 extern "C"
 {
     DLL_EXPORT
@@ -72,6 +71,6 @@ extern "C"
     DLL_EXPORT 
     void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
 };
-
+*/
 
 #endif // TextureBuilder_h__

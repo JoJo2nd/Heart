@@ -90,6 +90,7 @@ if (BUILD_HEART_TESTBED)
 endif()
 
 add_subdirectory("resourceloaders/shaderloader")
+add_subdirectory("resourceloaders/textureloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

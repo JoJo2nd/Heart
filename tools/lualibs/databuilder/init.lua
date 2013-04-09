@@ -58,7 +58,7 @@ local function addResource(resopt)
     local deppaths = {}
     local params = {}
     for k, i in pairs(resopt.inputfiles) do
-        inputpaths[k]=strsub(i, "src://", sourceRootDir_)
+        inputpaths[k]=i
     end
     if resopt.parameters ~= nil then
         for k, i in pairs(resopt.parameters) do
@@ -67,7 +67,7 @@ local function addResource(resopt)
     end
     if resopt.depfiles ~= nil then
         for k, i in pairs(resopt.depfiles) do
-            deppaths[k]=strsub(i, "src://", sourceRootDir_)
+            deppaths[k]=i
         end
     end
     resources_[fullresname] = {
@@ -161,7 +161,7 @@ local function generateResourcesForBuild(matchopt)
 			G.print(strfmt("Adding resource %s for building", res.respath))
         end
     end
-	G.print("Found "..#resources.." resource(s) to build.")
+	G.print("Finished looking for resources to build.")
     return resources
 end
 
@@ -204,14 +204,16 @@ local function buildResources(matchopts, scriptpath)
         local packdir="dest://"..v.package.."/"
         local fullrespath=packdir..v.name
         local realpath=G.buildpathresolve(packdir)
-        G.print(strfmt("Creating directory %s->%s", packdir, realpath))
+        G.print(strfmt("Creating directory %s -> %s", packdir, realpath))
         filesystem.makedirectories(realpath)
-		G.print(strfmt("Building %s resource %s to %s...", v.restype, v.respath, fullrespath))
+		G.print(strfmt("Building \"%s\" resource %s to %s ", v.restype, v.respath, fullrespath))
 		local depres = builders_[v.restype](v.inputfiles, v.depfiles, v.parameters, fullrespath)
 	end
 
+    G.print("Build finished")
     G.print=oldprint
     G.buildpathresolve=nil
+    logfile:flush()
 end
 
 _ENV=G
