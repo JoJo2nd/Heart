@@ -27,20 +27,9 @@
 
 #include "meshloader.h"
 #include "MeshDataStructs.h"
-
-// Removed, needs to be selectable
-/*aiProcess_MakeLeftHanded |*/
-
-#define MESH_AI_FLAGS (\
-    aiProcess_CalcTangentSpace |\
-    aiProcess_JoinIdenticalVertices |\
-    aiProcess_Triangulate |\
-    aiProcess_GenSmoothNormals |\
-    aiProcess_SplitLargeMeshes |\
-    aiProcess_RemoveRedundantMaterials |\
-    aiProcess_OptimizeMeshes |\
-    aiProcess_OptimizeGraph |\
-    aiProcess_SortByPType)
+#include "cryptoBase64.h"
+#include <boost/smart_ptr.hpp>
+#include <boost/filesystem.hpp>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -60,12 +49,12 @@ struct MaterialMap
 
 struct StreamInfo
 {
-    Heart::hInputLayoutDesc desc;
-    hUint                   count;
-    const void*             encodedData;
-    hUint                   encodedDataSize;
-    void*                   decodedData;
-    hUint                   decodedDataSize;
+    Heart::hInputLayoutDesc   desc;
+    hUint                     count;
+    const char*               encodedData;
+    hUint                     encodedDataSize;
+    boost::shared_array<char> decodedData;
+    hUint                     decodedDataSize;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -96,19 +85,20 @@ Heart::hXMLEnumReamp g_semanticTypes[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, Heart::hISerialiseStream* binoutput, Heart::hMemoryHeapBase* heap);
+void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, std::ofstream* binoutput, std::list< std::string >* depres);
 void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFloat* max);
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT 
-void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
+void MB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
     *verMajor = 0;
     *verMinor = 7;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -118,13 +108,13 @@ int inputDescQsortCompar(const void* a, const void* b) {
     StreamInfo* rhs=(StreamInfo*)b;
     return ((0xFF-(lhs->desc.inputStream_-rhs->desc.inputStream_)) << 16) | (0xFF-(lhs->desc.semantic_-rhs->desc.semantic_));
 }
-
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+Heart::hResourceClassBase* MB_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
 
     using namespace Heart;
@@ -212,35 +202,80 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
     return rmodel;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, 
-Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
+int MB_API meshCompile(lua_State* L)
 {
     using namespace Heart;
-    MeshHeader header = {0};
-    hXMLDocument xmldoc;
-    hChar* xmlmem = NULL;
-    LODInfo* lodInfo = NULL;
-    hUint32 lodIdx;
-    hChar* pathroot = (hChar*)hAlloca(hStrLen(params->GetInputFilePath()));
+    using namespace boost;
+    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    luaL_checktype(L, 4, LUA_TSTRING);
 
-    hChar* end = hStrRChr(pathroot, '/');
+    lua_rawgeti(L, 1, 1);
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "input file is not a string");
+        return 0;
+    }
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, -2);
+    lua_call(L, 1, 1);
+    const hChar* filepath=lua_tostring(L, -1);
+    hUint filesize;
+    MeshHeader header = {0};
+    system::error_code ec;
+    rapidxml::xml_document<> xmldoc;
+    shared_array<hChar> xmlmem;
+    shared_array<LODInfo> lodInfo;
+    hUint32 lodIdx;
+    std::list< std::string > dependentres;
+    hChar* pathroot = (hChar*)hAlloca(strlen(filepath));
+
+    hChar* end = strrchr(pathroot, '/');
     if (end == NULL) 
         pathroot[0] = 0;
     else 
         end = NULL;
-    
-    xmlmem = (hChar*)hHeapMalloc(memalloc->tempHeap_, inFile->Lenght()+1);
-    inFile->Read(xmlmem, inFile->Lenght());
-    xmlmem[inFile->Lenght()] = 0;
+    filesize=(hUint)filesystem::file_size(filepath, ec);
+    if (ec) {
+        luaL_error(L, "Failed to read % file size", filepath);
+        return 0;
+    }
+    std::ifstream infile;
 
-    if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, memalloc->tempHeap_) == hFalse)
-        return hFalse;
+    infile.open(filepath);
+    if (!infile.is_open()) {
+        luaL_error(L, "Couldn't open file %s", filepath);
+        return 0;
+    }
+
+    xmlmem = shared_array<hChar>(new hChar[filesize+1]);
+    infile.read(xmlmem.get(), filesize);
+    xmlmem[filesize] = 0;
+    infile.close();
+
+    try {
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+    } catch (...) {
+        luaL_error(L, "XML parse failed");
+        return 0;
+    }
+
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 4);
+    lua_call(L, 1, 1);
+    const hChar* outputpath=lua_tostring(L, -1);
+    std::ofstream outfile;
+    outfile.open(outputpath);
+    if (!outfile.is_open()) {
+        luaL_error(L, "Failed to open output file %s", outputpath);
+        return 0;
+    }
 
     header.resHeader.resourceType = MESH_MAGIC_NUM;
     header.version = MESH_VERSION;
@@ -248,27 +283,27 @@ Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hH
 
     hXMLGetter xLODGetter = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
     for (hUint32 i = 0;xLODGetter.ToNode(); xLODGetter = xLODGetter.NextSibling(), ++i) ++header.lodCount;
-    lodInfo = (LODInfo*)hAlloca(sizeof(LODInfo)*header.lodCount);
+    lodInfo = shared_array<LODInfo>(new LODInfo[header.lodCount]);
     xLODGetter = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
     for (hUint32 i = 0;xLODGetter.ToNode(); xLODGetter = xLODGetter.NextSibling(), ++i)
     {
         lodInfo[i].maxRange = xLODGetter.GetAttributeFloat("range",1000.f);
     }
 
-    binoutput->Write(&header, sizeof(header));
+    outfile.write((char*)&header, sizeof(header));
 
     lodIdx = 0;
     hXMLGetter xLODData = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
     for (; xLODData.ToNode(); xLODData = xLODData.NextSibling(), ++lodIdx )
     {
-        hUint64 writeOffset = binoutput->Tell();
+        hUint64 writeOffset = outfile.tellp();
         LODHeader lodHeader = {0};
         lodHeader.minRange = lodIdx == 0 ? 0.0f : lodInfo[lodIdx-1].maxRange;
         lodHeader.maxRange = lodInfo[lodIdx].maxRange;
 
         // Write a dummy header, WriteLODRenderables will fill the correct data
         // for the header and we'll write it again
-        binoutput->Write(&lodHeader, sizeof(lodHeader));
+        outfile.write((char*)&lodHeader, sizeof(lodHeader));
         
         for (hUint32 i = 0; i < 3; ++i)
         {
@@ -276,57 +311,66 @@ Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hH
             lodHeader.boundsMin[i] = -FLT_MAX;
         }
 
-        WriteLODRenderables(xLODData, &lodHeader, binoutput, memalloc->tempHeap_);
+        WriteLODRenderables(xLODData, &lodHeader, &outfile, &dependentres);
 
         // Write out with the correct data
-        binoutput->Seek(writeOffset, hISerialiseStream::eBegin);
-        binoutput->Write(&lodHeader, sizeof(lodHeader));
+        outfile.seekp(writeOffset);
+        outfile.write((char*)&lodHeader, sizeof(lodHeader));
 
-        binoutput->Seek(0, hISerialiseStream::eEnd);
+        outfile.seekp(0, std::ios_base::end);
     }
 
-    return hTrue;
+    //Return a list of resources this material is dependent on
+    dependentres.unique();
+    lua_newtable(L);
+    hUint idx=1;
+    for (std::list< std::string >::iterator i=dependentres.begin(),n=dependentres.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, Heart::hISerialiseStream* binoutput, Heart::hMemoryHeapBase* heap) {
-    hcAssert(header && binoutput && heap);
+void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, std::ofstream* binoutput, std::list< std::string >* depres) {
+    using namespace boost;
+
     Heart::hXMLGetter renderablenode = xLODData.FirstChild("renderable");
     header->renderableCount = 0;
-    header->renderableOffset = binoutput->Tell();
+    header->renderableOffset = binoutput->tellp();
 
     for (; renderablenode.ToNode(); renderablenode=renderablenode.NextSibling()) {
         RenderableHeader renderableHeader = {0};
-        hUint64 writeOffset = binoutput->Tell();
+        hUint64 writeOffset = binoutput->tellp();
         Heart::hXMLGetter indexnode=renderablenode.FirstChild("index");
-        void* indexData=NULL;
         hUint streamcount=0;
         for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling()) ++streamcount;
         StreamInfo posStream;
-        Heart::hXMLGetter* streamnodes=(Heart::hXMLGetter*)hAlloca(sizeof(Heart::hXMLGetter)*streamcount);
-        StreamInfo* streaminfos=(StreamInfo*)hAlloca(sizeof(StreamInfo)*streamcount);
-        for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling(), ++streaminfos) {
-            *streamnodes=s;
-            streaminfos->encodedData=s.GetValueString();
-            streaminfos->encodedDataSize=s.GetValueStringLen();
-            streaminfos->decodedDataSize=Heart::hBase64::DecodeCalcRequiredSize(streaminfos->encodedData, streaminfos->encodedDataSize);
-            streaminfos->decodedData=hHeapMalloc(heap, streaminfos->decodedDataSize);
-            streaminfos->count=s.GetAttributeInt("count", 0);
-            streaminfos->desc.inputStream_=s.GetAttributeInt("sindex", 0);
-            streaminfos->desc.semIndex_=s.GetAttributeInt("index", 0);
-            streaminfos->desc.semantic_=s.GetAttributeEnum("semantic", g_semanticTypes, Heart::eIS_POSITION);
-            streaminfos->desc.typeFormat_=s.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT1);
-            streaminfos->desc.instanceDataRepeat_=0;
-            Heart::hBase64::Decode(streaminfos->encodedData, streaminfos->encodedDataSize, 
-                streaminfos->decodedData, streaminfos->decodedDataSize);
-            if (streaminfos->desc.semantic_==Heart::eIS_POSITION) {
-                posStream=*streaminfos;
+        scoped_array<Heart::hXMLGetter> streamnodes(new Heart::hXMLGetter[streamcount]);
+        scoped_array<StreamInfo> streaminfos(new StreamInfo[streamcount]);
+        hUint streamidx=0;
+        for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling(), ++streamidx) {
+            streamnodes[streamidx]=s;
+            streaminfos[streamidx].encodedData=s.GetValueString();
+            streaminfos[streamidx].encodedDataSize=s.GetValueStringLen();
+            streaminfos[streamidx].decodedDataSize=cyBase64DecodeCalcRequiredSize(streaminfos[streamidx].encodedData, streaminfos[streamidx].encodedDataSize);
+            streaminfos[streamidx].decodedData= shared_array<char>(new char[streaminfos[streamidx].decodedDataSize]);
+            streaminfos[streamidx].count=s.GetAttributeInt("count", 0);
+            streaminfos[streamidx].desc.inputStream_=s.GetAttributeInt("sindex", 0);
+            streaminfos[streamidx].desc.semIndex_=(hByte)s.GetAttributeInt("index", 0);
+            streaminfos[streamidx].desc.semantic_=s.GetAttributeEnum("semantic", g_semanticTypes, Heart::eIS_POSITION);
+            streaminfos[streamidx].desc.typeFormat_=s.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT1);
+            streaminfos[streamidx].desc.instanceDataRepeat_=0;
+            cyBase64Decode(streaminfos[streamidx].encodedData, streaminfos[streamidx].encodedDataSize, 
+                streaminfos[streamidx].decodedData.get(), streaminfos[streamidx].decodedDataSize);
+            if (streaminfos[streamidx].desc.semantic_==Heart::eIS_POSITION) {
+                posStream=streaminfos[streamidx];
             }
         }
-        streaminfos-=streamcount;
         ++header->renderableCount;
 
         renderableHeader.flags=0;
@@ -342,7 +386,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         }
 
         // Update bounds
-        GetMeshBounds((hFloat*)posStream.decodedData, (posStream.desc.typeFormat_-Heart::eIF_FLOAT1)+1, 
+        GetMeshBounds((hFloat*)posStream.decodedData.get(), (posStream.desc.typeFormat_-Heart::eIF_FLOAT1)+1, 
             posStream.count, renderableHeader.boundsMin, renderableHeader.boundsMax);
         for (hUint32 i = 0; i < 3; ++i)
         {
@@ -351,23 +395,22 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         }
 
         hUint vertexStreamCount=0;
-        StreamInfo* inputDesc = (StreamInfo*)hAlloca(sizeof(StreamInfo)*streamcount);
-        Heart::hMemCpy(inputDesc, streaminfos, sizeof(StreamInfo)*streamcount);
-        qsort(inputDesc, streamcount, sizeof(StreamInfo), inputDescQsortCompar); //Sort by vertex stream index
+        scoped_array<StreamInfo> inputDesc(new StreamInfo[streamcount]);
+        Heart::hMemCpy(inputDesc.get(), streaminfos.get(), sizeof(StreamInfo)*streamcount);
+        qsort(inputDesc.get(), streamcount, sizeof(StreamInfo), inputDescQsortCompar); //Sort by vertex stream index
         vertexStreamCount=inputDesc[streamcount-1].desc.inputStream_+1;
-        binoutput->Write(&renderableHeader, sizeof(renderableHeader));
+        binoutput->write((char*)&renderableHeader, sizeof(renderableHeader));
         for (hUint i=0; i<streamcount; ++i) {
-            binoutput->Write(&inputDesc[i].desc, sizeof(Heart::hInputLayoutDesc));
+            binoutput->write((char*)&inputDesc[i].desc, sizeof(Heart::hInputLayoutDesc));
         }
-        renderableHeader.ibOffset = binoutput->Tell();
+        renderableHeader.ibOffset = binoutput->tellp();
         if (indexnode.ToNode()) {
-            hUint ibsize=Heart::hBase64::DecodeCalcRequiredSize(indexnode.GetValueString(), indexnode.GetValueStringLen());
-            indexData=hHeapMalloc(heap, ibsize);
-            Heart::hBase64::Decode(indexnode.GetValueString(), indexnode.GetValueStringLen(), indexData, ibsize);
-            binoutput->Write(indexData, ibsize);
-            hHeapFreeSafe(heap, indexData);
+            hUint ibsize=cyBase64DecodeCalcRequiredSize(indexnode.GetValueString(), indexnode.GetValueStringLen());
+            scoped_ptr<char> indexData(new char[ibsize]);
+            cyBase64Decode(indexnode.GetValueString(), indexnode.GetValueStringLen(), indexData.get(), ibsize);
+            binoutput->write(indexData.get(), ibsize);
             renderableHeader.ibSize=ibsize;
-            hcAssert(renderableHeader.nPrimatives*3*sizeof(hUint32) == ibsize || renderableHeader.nPrimatives*3*sizeof(hUint16) == ibsize);
+            //hcAssert(renderableHeader.nPrimatives*3*sizeof(hUint32) == ibsize || renderableHeader.nPrimatives*3*sizeof(hUint16) == ibsize);
         } else {
             renderableHeader.ibSize=0;
         }
@@ -377,9 +420,9 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
         renderableHeader.streams = vertexStreamCount;
 
         for (hUint streamIdx = 0; streamIdx < vertexStreamCount; ++streamIdx) {
-            hUint64 streamOffset = binoutput->Tell();
+            hUint64 streamOffset = binoutput->tellp();
             StreamHeader streamHeader = {streamIdx, 0};
-            binoutput->Write(&streamHeader, sizeof(streamHeader));
+            binoutput->write((char*)&streamHeader, sizeof(streamHeader));
             for (hUint vtxIdx = 0; vtxIdx < posStream.count; ++vtxIdx) {
                 for (hUint32 inElem = 0; inElem < streamcount; ++inElem) {
                     if (inputDesc[inElem].desc.inputStream_ != streamIdx) {
@@ -387,23 +430,19 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, H
                     }
                     hUint eleSize=inputDesc[inElem].decodedDataSize/inputDesc[inElem].count;
                     hUint offset=eleSize*vtxIdx;
-                    binoutput->Write(((hByte*)inputDesc[inElem].decodedData)+offset, eleSize);
+                    binoutput->write(((char*)inputDesc[inElem].decodedData.get())+offset, eleSize);
                     streamHeader.size+=eleSize;
                 }
             }
 
-            binoutput->Seek(streamOffset, Heart::hISerialiseStream::eBegin);
-            binoutput->Write(&streamHeader, sizeof(streamHeader));
-            binoutput->Seek(0, Heart::hISerialiseStream::eEnd);
-
-            for (hUint ine=0,inen=streamcount; ine<inen; ++ine) {
-                hHeapFreeSafe(heap, inputDesc[ine].decodedData);
-            }
+            binoutput->seekp(streamOffset);
+            binoutput->write((char*)&streamHeader, sizeof(streamHeader));
+            binoutput->seekp(0, std::ios_base::end);
         }
 
-        binoutput->Seek(writeOffset, Heart::hISerialiseStream::eBegin);
-        binoutput->Write(&renderableHeader, sizeof(renderableHeader));
-        binoutput->Seek(0, Heart::hISerialiseStream::eEnd);
+        binoutput->seekp(writeOffset, Heart::hISerialiseStream::eBegin);
+        binoutput->write((char*)&renderableHeader, sizeof(renderableHeader));
+        binoutput->seekp(0, std::ios_base::end);
     }
 }
 
@@ -428,13 +467,12 @@ void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFlo
         }
     }
 }
-
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+hBool MB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
 
@@ -464,8 +502,7 @@ hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hR
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void MB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
     hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
@@ -480,8 +517,7 @@ void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::h
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
+void MB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
 {
     using namespace Heart;
     hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
@@ -502,5 +538,17 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     }
 
     hDELETE_SAFE(memalloc->resourcePakHeap_, resource);
+}
+#endif
+extern "C" {
+//Lua entry point calls
+DLL_EXPORT int MB_API luaopen_mesh(lua_State *L) {
+    static const luaL_Reg meshlib[] = {
+        {"compile"      , meshCompile},
+        {NULL, NULL}
+    };
+    luaL_newlib(L, meshlib);
+    return 1;
+}
 }
 
