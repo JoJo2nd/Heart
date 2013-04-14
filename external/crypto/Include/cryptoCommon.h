@@ -50,4 +50,7 @@ typedef char                cyChar;
 
 #define CY_MD5_LEN      (16)
 
+#define cyMin( x, y ) (( x < y ) ? x : y)
+#define cyMax( x, y ) (( x > y ) ? x : y)
+
 #endif // CRYPTOCOMMON_H__

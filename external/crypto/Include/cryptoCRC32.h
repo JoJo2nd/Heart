@@ -24,6 +24,10 @@
 	distribution.
 
 *********************************************************************/
+#pragma once
+
+#ifndef CRYPTOCRC32_H__
+#define CRYPTOCRC32_H__
 
 #include "cryptoCommon.h"
 #include <string.h>
@@ -32,14 +36,16 @@
 extern "C" {
 #endif//
 
-CY_DLLEXPORT cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len );
-CY_DLLEXPORT void     CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
-CY_DLLEXPORT void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
-CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );
+    CY_DLLEXPORT cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len );
+    CY_DLLEXPORT void     CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
+    CY_DLLEXPORT void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
+    CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );
 
 #define cyStringCRC32( string ) cyFullCRC32( string, strlen( string ) )
 
 #ifdef __cplusplus
 };
 #endif
+
+#endif // CRYPTOCRC32_H__
 
