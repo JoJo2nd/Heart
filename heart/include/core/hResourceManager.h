@@ -79,9 +79,28 @@ namespace Heart
         hBool                           Initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources);
         hBool                           RequiredResourcesReady();
         void                            MainThreadUpdate();
-        static hUint32                  BuildResourceCRC( const hChar* resourceName );
-        static hResourceID              BuildResourceID(const hChar* fullPath);
-        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName);
+        static hResourceID              BuildResourceID(const hChar* fullPath){
+            if (!fullPath)
+                return hResourceID();
+
+            const hChar* resName = hStrChr(fullPath, '.');
+            if (!resName)
+                return hResourceID();
+
+            hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
+            hUint32 resCRC = hCRC32::StringCRC(resName+1);
+
+            return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
+        }
+        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName){
+            if (!package || !resourceName)
+                return hResourceID();
+
+            hUint32 pakCRC = hCRC32::StringCRC(package);
+            hUint32 resCRC = hCRC32::StringCRC(resourceName);
+
+            return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
+        }
         void                            Shutdown( hRenderer* prenderer );
         hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
         hRenderer*                      GetRederer() { return renderer_; }

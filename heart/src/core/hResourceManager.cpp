@@ -52,15 +52,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourceManager::BuildResourceCRC( const hChar* resourceName )
-    {
-        return hCRC32::FullCRC( resourceName, strlen( resourceName ) - 4 );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     hBool hResourceManager::Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
     {
         hUint32 nRequiredResources = 0;
@@ -372,40 +363,6 @@ namespace Heart
             msg.package_ = pk->package_;
             mtUnloadRequest_.push(msg);
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    Heart::hResourceID hResourceManager::BuildResourceID( const hChar* fullPath )
-    {
-        if (!fullPath)
-            return hResourceID();
-
-        const hChar* resName = hStrChr(fullPath, '.');
-        if (!resName)
-            return hResourceID();
-        
-        hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
-        hUint32 resCRC = hCRC32::StringCRC(resName+1);
-
-        return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    Heart::hResourceID hResourceManager::BuildResourceID( const hChar* package, const hChar* resourceName )
-    {
-        if (!package || !resourceName)
-            return hResourceID();
-
-        hUint32 pakCRC = hCRC32::StringCRC(package);
-        hUint32 resCRC = hCRC32::StringCRC(resourceName);
-
-        return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -91,8 +91,10 @@ endif()
 
 add_subdirectory("resourceloaders/shaderloader")
 add_subdirectory("resourceloaders/textureloader")
+add_subdirectory("resourceloaders/materialloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")
 add_subdirectory("tools/lualibs/luasocket")
 add_subdirectory("tools/lualibs/mime")
+add_subdirectory("tools/lualibs/luaxml")

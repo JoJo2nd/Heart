@@ -2,6 +2,7 @@ local M = {}
 local G = _G
 -- pull in local modules
 local filesystem = require "filesystem"
+local xml = require "LuaXml"
 local string = string
 local io = io
 local os = os
@@ -22,6 +23,7 @@ _ENV=nil
 --local internal vars
 local resources_={}
 local builders_={}
+local packages_={}
 local sourceRootDir_=""
 local destRootDir_=""
 local logfile=nil
@@ -77,8 +79,14 @@ local function addResource(resopt)
         restype=resopt.restype,
         inputfiles=inputpaths,
         depfiles=deppaths,
-        parameters=params
+        parameters=params,
+        dependentpackages={}
     }
+    if packages_[resopt.package] == nil then
+        packages_[resopt.package] = {}
+        packages_[resopt.package].resources = {}
+    end
+    G.table.insert(packages_[resopt.package].resources, resources_[fullresname])
 end
 
 local function resetDataBuild()
@@ -199,6 +207,7 @@ local function buildResources(matchopts, scriptpath)
 	end
 
     local resourcestobuild=generateResourcesForBuild(matchopts)
+    local packagestouched={}
 
 	for k, v in pairs(resourcestobuild) do
         local packdir="dest://"..v.package.."/"
@@ -207,8 +216,47 @@ local function buildResources(matchopts, scriptpath)
         G.print(strfmt("Creating directory %s -> %s", packdir, realpath))
         filesystem.makedirectories(realpath)
 		G.print(strfmt("Building \"%s\" resource %s to %s ", v.restype, v.respath, fullrespath))
+        v.dependentpackages={}
 		local depres = builders_[v.restype](v.inputfiles, v.depfiles, v.parameters, fullrespath)
+        for _, drespath in pairs(depres) do
+            local dpkg, dres = string.match(drespath, "(%u+)%.(%u+)")
+            G.print(strfmt("Adding dependent resource %s to resource %s", drespath, v.respath))
+            G.table.insert(v.dependentpackages, dpkg)
+        end
+        packagestouched[v.package]=1
 	end
+    
+    for pkgname, _ in pairs(packagestouched) do
+        G.print("Updating package info for "..pkgname)
+        local packdir=G.buildpathresolve("dest://"..pkgname.."/DAT")
+        local deppkgs={}
+        local pkgxmlroot=xml.new()
+        local resxmlnode=xml.new()
+        local linkxmlnode=xml.new()
+        pkgxmlroot:tag("package")
+        resxmlnode:tag("resources")
+        linkxmlnode:tag("packagelinks")
+        for _, pkgres in pairs(packages_[pkgname].resources) do
+            local resnode = xml.new({name=pkgres.name})
+            resnode:tag("resource")
+            resxmlnode:append(resnode)
+            G.print(strfmt("Adding resource %s to package info", pkgres.name))
+            if pkgres.dependentpackages ~= nil then
+                for _, deppkg in pairs(pkgres.dependentpackages) do
+                    deppkgs[deppkg]=1
+                end
+            end
+        end
+        for deppkg, _ in pairs(deppkgs) do
+            local linknode=xml.new({name=deppkg})
+            linknode:tag("link")
+            linkxmlnode:append(linknode)
+            G.print(strfmt("Adding package link %s to package info", deppkg))
+        end
+        pkgxmlroot:append(linkxmlnode)
+        pkgxmlroot:append(resxmlnode)
+        pkgxmlroot:save(packdir)
+    end
 
     G.print("Build finished")
     G.print=oldprint

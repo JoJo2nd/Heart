@@ -26,8 +26,14 @@
 *********************************************************************/
 
 #include "materialloader.h"
+#include "rapidxml/rapidxml.hpp"
+#include <boost/smart_ptr.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
+#include <vector>
+#include <string>
 
-
+typedef std::vector< std::string > StrVectorType;
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -114,49 +120,40 @@ struct PassDefintion
 
 #pragma pack(pop)
 
-class TechniqueData : public Heart::hLinkedListElement< TechniqueData >
+class TechniqueData
 {
 public:
-    TechniqueData(Heart::hMemoryHeapBase* heap)
-        : heap_(heap)
-        , passes_(heap)
+    TechniqueData()
     {
     }
-    HEART_PRIVATE_COPY(TechniqueData);
 public:
-    typedef Heart::hVector< PassDefintion > PassArrayType;
+    typedef std::vector< PassDefintion > PassArrayType;
 
-    Heart::hMemoryHeapBase* heap_;
     TechniqueDefinition     techDef_;
     PassArrayType           passes_;
 };
 
-class GroupData : public Heart::hLinkedListElement< GroupData >
+class GroupData
 {
 public:
-    GroupData(Heart::hMemoryHeapBase* heap) 
-        : heap_(heap)
-        , techniques_(heap)
+    GroupData()
     {}
-    HEART_PRIVATE_COPY(GroupData);
 public:
-    typedef Heart::hLinkedList< TechniqueData > TechniqueListType;
+    typedef std::vector< TechniqueData > TechniqueListType;
 
     TechniqueData* addTechnique(){
-        TechniqueData* data=hNEW(heap_, TechniqueData)(heap_);
-        techniques_.PushBack(data);
-        return data;
+        techniques_.push_back(TechniqueData());
+        return &techniques_[techniques_.size()-1];
     }
     TechniqueData* getTechnique(const hChar* name) {
-        for (TechniqueData* i=techniques_.GetHead(); i; i=i->GetNext()) {
-            if (Heart::hStrCmp(name, i->techDef_.technqiueName)==0) {
-                return i;
+        for (hUint i=0, n=techniques_.size(); i<n; ++i) {
+            if (Heart::hStrCmp(name, techniques_[i].techDef_.technqiueName)==0) {
+                return &techniques_[i];
             }
         }
-        return NULL;
+        return hNullptr;
     }
 
-    Heart::hMemoryHeapBase* heap_;
     GroupDefinition         groupDef_;
     TechniqueListType       techniques_;
 };
@@ -164,33 +161,27 @@ public:
 class MaterialData
 {
 public:
-    MaterialData(Heart::hMemoryHeapBase* heap)
-        : heap_(heap)
-        , samplers_(heap)
-        , groups_(heap)
-        , parameters_(heap)
+    MaterialData()
     {}
-    HEART_PRIVATE_COPY(MaterialData);
 public:
-    typedef Heart::hVector< SamplerDefinition >     SamplerArrayType;
-    typedef Heart::hVector< ParameterDefinition >   ParamArrayType;
-    typedef Heart::hLinkedList< GroupData >         GroupListType;
+    typedef std::vector< SamplerDefinition >    SamplerArrayType;
+    typedef std::vector< ParameterDefinition >  ParamArrayType;
+    typedef std::vector< GroupData >            GroupListType;
 
     GroupData* addGroup() {
-        GroupData* data=hNEW(heap_, GroupData)(heap_);
-        groups_.PushBack(data);
-        return data;
+        groups_.push_back(GroupData());
+        return &groups_[groups_.size()-1];
     }
     GroupData* getGroup(const hChar* name) {
-        for (GroupData* i=groups_.GetHead(); i; i=i->GetNext()) {
-            if (Heart::hStrCmp(name, i->groupDef_.groupName)==0) {
-                return i;
+        for (hUint i=0, n=groups_.size(); i<n; ++i) {
+            if (Heart::hStrCmp(name, groups_[i].groupDef_.groupName)==0) {
+                return &groups_[i];
             }
         }
         return NULL;
     }
     SamplerDefinition* getSamplerByName(const hChar* name) {
-        for (hUint i=0,n=samplers_.GetSize(); i<n; ++i) {
+        for (hUint i=0,n=samplers_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, samplers_[i].samplerName)==0) {
                 return &samplers_[i];
             }
@@ -198,7 +189,7 @@ public:
         return NULL;
     }
     ParameterDefinition* getParameterByName(const hChar* name) {
-        for (hUint i=0,n=parameters_.GetSize(); i<n; ++i) {
+        for (hUint i=0,n=parameters_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, parameters_[i].parameterName)==0) {
                 return &parameters_[i];
             }
@@ -206,7 +197,6 @@ public:
         return NULL;
     }
 
-    Heart::hMemoryHeapBase* heap_;
     MaterialHeader          header_;
     SamplerArrayType        samplers_;
     ParamArrayType          parameters_;
@@ -332,9 +322,9 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const Heart::hXMLDocument& xmldoc, const hChar* xmlpath, 
-Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* mat);
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, MaterialData* mat, StrVectorType* includes, StrVectorType* deps);
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -439,61 +429,180 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
     return material;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
-{
+int MB_API materialCompile(lua_State* L) {
     using namespace Heart;
+
+    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    luaL_checktype(L, 4, LUA_TSTRING);
+
     MaterialHeader matHeader = {0};
-    MaterialData matData(memalloc->tempHeap_);
+    MaterialData matData;
+    boost::system::error_code ec;
+    const hChar* filepath=hNullptr;
+    rapidxml::xml_document<> xmldoc;
+    hUint filesize=0;
+    StrVectorType depresnames;
+    StrVectorType includes;
 
-    binoutput->Seek(0, hISerialiseStream::eBegin);
+    lua_getglobal(L, "buildpathresolve");
+    lua_rawgeti(L, 1, 1);
+    if(!lua_isstring(L, -1)) {
+        luaL_error(L, "input path is not a string");
+        return 0;
+    }
+    lua_call(L, 1, 1);
+    filepath=lua_tostring(L, -1);
+    lua_pop(L, 1);
 
-    hXMLDocument xmldoc;
-    hChar* xmlmem = (hChar*)hHeapMalloc(memalloc->tempHeap_, inFile->Lenght()+1);
-    inFile->Read(xmlmem, inFile->Lenght());
-    xmlmem[inFile->Lenght()] = 0;
+    filesize=(hUint)boost::filesystem::file_size(filepath, ec);
+    if (ec) {
+        luaL_error(L, "Unable to get file size for file %s", filepath);
+        return 0;
+    }
 
-    if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, memalloc->tempHeap_) == hFalse)
-        return NULL;
+    boost::shared_array<hChar> xmlmem = boost::shared_array<hChar>(new hChar[filesize+1]);
+    std::ifstream infile;
+    infile.open(filepath);
+    if (!infile.is_open()) {
+        luaL_error(L, "Unable to open file %s", filepath);
+        return 0;
+    }
+    memset(xmlmem.get(), 0, filesize+1);
+    infile.read(xmlmem.get(), filesize);
+    infile.close();
 
-    readMaterialXMLToMaterialData(xmldoc, params->GetInputFilePath(), fileCache, memalloc->tempHeap_, &matData);
+    try {
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+    } catch (...) {
+        luaL_error(L, "Failed to parse material file");
+        return 0;
+    }
 
-    matData.header_.samplerCount=matData.samplers_.GetSize();
+    readMaterialXMLToMaterialData(xmldoc, filepath, &matData, &includes, &depresnames);
+
+    matData.header_.samplerCount=matData.samplers_.size();
     matData.header_.samplerOffset=0;
-    matData.header_.parameterCount=matData.parameters_.GetSize();
+    matData.header_.parameterCount=matData.parameters_.size();
     matData.header_.parameterOffset=0;
-    matData.header_.groupCount=matData.groups_.GetSize();
+    matData.header_.groupCount=matData.groups_.size();
     matData.header_.groupOffset=0;
-    binoutput->Write(&matData.header_, sizeof(matData.header_));
+
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 4);
+    lua_call(L, 1, 1);
+    const hChar* outputpath=lua_tostring(L, -1);
+    std::ofstream output;
+    output.open(outputpath);
+
+    if (!output.is_open()) {
+        luaL_error(L, "Unable to open output file %s for writing", outputpath);
+        return 0;
+    }
+
+    output.write((char*)&matData.header_, sizeof(matData.header_));
 
     for (hUint samp=0,sampn=matData.header_.samplerCount; samp<sampn; ++samp) {
-        binoutput->Write(&matData.samplers_[samp], sizeof(SamplerDefinition));
+        output.write((char*)&matData.samplers_[samp], sizeof(SamplerDefinition));
     }
 
     for (hUint param=0, paramn=matData.header_.parameterCount; param<paramn; ++param) {
-        binoutput->Write(&matData.parameters_[param], sizeof(ParameterDefinition));
+        output.write((char*)&matData.parameters_[param], sizeof(ParameterDefinition));
     }
 
-    for (GroupData* grpData=matData.groups_.GetHead(); grpData; grpData=grpData->GetNext()) {
-        grpData->groupDef_.techniques=grpData->techniques_.GetSize();
-        binoutput->Write(&grpData->groupDef_, sizeof(grpData->groupDef_));
-        for (TechniqueData* techData=grpData->techniques_.GetHead(); techData; techData=techData->GetNext()) {
-            techData->techDef_.passes=techData->passes_.GetSize();
-            binoutput->Write(&techData->techDef_, sizeof(techData->techDef_));
-            for (hUint passidx=0,passidxn=techData->passes_.GetSize(); passidx<passidxn; ++passidx) {
-                binoutput->Write(&techData->passes_[passidx], sizeof(PassDefintion));
+    for (hUint grp=0, grpn=matData.groups_.size(); grp<grpn; ++grp) {
+        matData.groups_[grp].groupDef_.techniques=(hUint16)matData.groups_[grp].techniques_.size();
+        output.write((char*)&matData.groups_[grp].groupDef_, sizeof(matData.groups_[grp].groupDef_));
+        for (hUint tech=0, techn=matData.groups_[grp].techniques_.size(); tech<techn; ++tech) {
+            matData.groups_[grp].techniques_[tech].techDef_.passes=matData.groups_[grp].techniques_[tech].passes_.size();
+            output.write((char*)&matData.groups_[grp].techniques_[tech].techDef_, sizeof(matData.groups_[grp].techniques_[tech].techDef_));
+            for (hUint passidx=0,passidxn=matData.groups_[grp].techniques_[tech].passes_.size(); passidx<passidxn; ++passidx) {
+                output.write((char*)&matData.groups_[grp].techniques_[tech].passes_[passidx], sizeof(PassDefintion));
             }
         }
     }
 
-    return hTrue;
+    output.close();
+
+    //Return a list of resources this material is dependent on
+    lua_newtable(L);
+    hUint idx=1;
+    for (StrVectorType::iterator i=depresnames.begin(),n=depresnames.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+
+    // return 1 list
+    return 1;
 }
 
+int MB_API materialScanIncludes(lua_State* L) {
+    /* Args from Lua (1: input file)*/
+    luaL_checktype(L, 1, LUA_TSTRING);
+
+    MaterialHeader matHeader = {0};
+    MaterialData matData;
+    boost::system::error_code ec;
+    const hChar* filepath=hNullptr;
+    rapidxml::xml_document<> xmldoc;
+    hUint filesize=0;
+    StrVectorType depresnames;
+    StrVectorType includes;
+
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 1);
+    lua_call(L, 1, 1);
+    filepath=lua_tostring(L, -1);
+    lua_pop(L, 1);
+
+    filesize=(hUint)boost::filesystem::file_size(filepath, ec);
+    if (ec) {
+        luaL_error(L, "Unable to get file size for file %s", filepath);
+        return 0;
+    }
+
+    boost::shared_array<hChar> xmlmem = boost::shared_array<hChar>(new hChar[filesize+1]);
+    std::ifstream infile;
+    infile.open(filepath);
+    if (!infile.is_open()) {
+        luaL_error(L, "Unable to open file %s", filepath);
+        return 0;
+    }
+    memset(xmlmem.get(), 0, filesize+1);
+    infile.read(xmlmem.get(), filesize);
+    infile.close();
+
+    try {
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+    } catch (...) {
+        luaL_error(L, "Failed to parse material file");
+        return 0;
+    }
+
+    readMaterialXMLToMaterialData(xmldoc, filepath, &matData, &includes, &depresnames);
+
+    //Return a list of resources this material is dependent on
+    lua_newtable(L);
+    hUint idx=1;
+    for (StrVectorType::iterator i=includes.begin(),n=includes.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+
+    // return 1 list
+    return 1;
+}
+
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -532,42 +641,52 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     hDELETE(memalloc->resourcePakHeap_, mat);
 }
 
+#endif
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const Heart::hXMLDocument& xmldoc, const hChar* xmlpath, 
-Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* mat) {
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, MaterialData* mat, StrVectorType* includes, StrVectorType* deps) {
     using namespace Heart;
 
     mat->header_.resHeader.resourceType = hMAKE_FOURCC('X','X','X','X');//Write a invalid four cc, we'll write a correct one later
     mat->header_.version = MATERIAL_VERSION;
     mat->header_.resHeader.resourceType = MATERIAL_MAGIC_NUM;
-    hStrCopy(mat->header_.defaultGroupName, MATERIAL_STRING_MAX_LEN, hXMLGetter(&xmldoc).FirstChild("material").FirstChild("defaultgroup").GetValueString("lowdetail"));
+    strcpy_s(mat->header_.defaultGroupName, MATERIAL_STRING_MAX_LEN, hXMLGetter(&xmldoc).FirstChild("material").FirstChild("defaultgroup").GetValueString("lowdetail"));
 
     if (hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit")) {
         //Load the base first
-        hXMLDocument xmldocbase;
         const hChar* basepathrel=hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit");
-        hUint pathlen=hStrLen(basepathrel)+hStrLen(xmlpath)+1;//+1 for NULL
+        hUint pathlen=strlen(basepathrel)+strlen(xmlpath)+1;//+1 for NULL
         hChar* fullbasepath=(hChar*)hAlloca(pathlen);
         hChar* pathSep=NULL;
-        hStrCopy(fullbasepath, pathlen, xmlpath);
-        pathSep=hStrRChr(fullbasepath, '/');
+        strcpy_s(fullbasepath, pathlen, xmlpath);
+        pathSep=strrchr(fullbasepath, '/');
         if (pathSep) {
             *(pathSep+1)=0;
-            hStrCat(fullbasepath, pathlen, basepathrel);
+            strcat_s(fullbasepath, pathlen, basepathrel);
         } else {
-            hStrCopy(fullbasepath, pathlen, basepathrel);
+            strcpy_s(fullbasepath, pathlen, basepathrel);
         }
-        hIDataCacheFile* file=fileCache->OpenFile(fullbasepath);
-        if (file) {
-            hChar* ptr=(hChar*)hHeapMalloc(heap, file->Lenght()+1);
-            hZeroMem(ptr, file->Lenght()+1);
-            file->Read(ptr, file->Lenght());
-            xmldocbase.ParseSafe< rapidxml::parse_default >(ptr, heap);
-            fileCache->CloseFile(file);
-            readMaterialXMLToMaterialData(xmldocbase, fullbasepath, fileCache, heap, mat);
+        boost::shared_array<hChar> ptr;
+        std::ifstream incfile;
+        boost::system::error_code ec;
+        hUint incfilesize=(hUint)boost::filesystem::file_size(fullbasepath, ec);
+        incfile.open(fullbasepath);
+        if (incfile.is_open()) {
+            rapidxml::xml_document<> xmldocbase;
+            ptr=boost::shared_array<hChar>(new hChar[incfilesize+1]);
+            memset(ptr.get(), 0, incfilesize);
+            incfile.read(ptr.get(), incfilesize);
+            try {
+                xmldocbase.parse< rapidxml::parse_default >(ptr.get());
+            } catch (...){
+                return;
+            }
+            incfile.close();
+            includes->push_back(fullbasepath);
+            readMaterialXMLToMaterialData(xmldocbase, fullbasepath, mat, includes, deps);
         }
     }
 
@@ -579,7 +698,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
         SamplerDefinition* sampDef= orgSampDef ? orgSampDef : &newSampDef;
 
         if (xSampler.GetAttribute("name") || !orgSampDef) {
-            hStrCopy(sampDef->samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
+            strcpy_s(sampDef->samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
         }
         if (xSampler.FirstChild("texture").ToNode() || !orgSampDef) {
             sampDef->defaultTextureID = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
@@ -613,7 +732,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
         }
 
         if (!orgSampDef) {
-            mat->samplers_.PushBack(*sampDef);
+            mat->samplers_.push_back(*sampDef);
         }
     }
 
@@ -625,7 +744,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
         ParameterDefinition* paramDef=orgParamDef ? orgParamDef : &newParamDef;
 
         if (xParameter.GetAttribute("name") || !orgParamDef) {
-            hStrCopy(paramDef->parameterName, MATERIAL_PARAM_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
+            strcpy_s(paramDef->parameterName, MATERIAL_PARAM_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
         }
         if (xParameter.GetAttribute("type") || !orgParamDef) {
             paramDef->type = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
@@ -648,7 +767,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
         }
 
         if (!orgParamDef) {
-            mat->parameters_.PushBack(newParamDef);
+            mat->parameters_.push_back(newParamDef);
         }
     }
 
@@ -660,7 +779,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
         GroupDefinition* groupDef=&destGroup->groupDef_;
 
         if (xGroup.GetAttribute("name") || !orgGroupDef) {
-            hStrCopy(groupDef->groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
+            strcpy_s(groupDef->groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
         }
 
         hXMLGetter xTech = xGroup.FirstChild("technique");
@@ -671,7 +790,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
             TechniqueDefinition* techDef=&destTech->techDef_;
 
             if (xTech.GetAttribute("name") || !orgTechDef) {
-                hStrCopy(techDef->technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
+                strcpy_s(techDef->technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
             }
             if (xTech.FirstChild("sort").ToNode() || !orgTechDef) {
                 techDef->transparent = hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0;
@@ -683,7 +802,7 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
             hXMLGetter xPass = xTech.FirstChild("pass");
             for (hUint passIdx=0; xPass.ToNode(); xPass = xPass.NextSibling(), ++passIdx)
             {
-                hBool newpass=passIdx >= destTech->passes_.GetSize();
+                hBool newpass=passIdx >= destTech->passes_.size();
                 PassDefintion newPassDef = {0};
                 PassDefintion& passDef= newpass ? newPassDef : destTech->passes_[passIdx];
 
@@ -769,24 +888,53 @@ Heart::hIBuiltDataCache* fileCache, Heart::hMemoryHeapBase* heap, MaterialData* 
 
                 if (xPass.FirstChild("vertex").ToNode() || newpass) {
                     passDef.vertexProgramID   = hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString());
+                    if (passDef.vertexProgramID) {
+                        deps->push_back(xPass.FirstChild("vertex").GetValueString());
+                    }
                 }
                 if (xPass.FirstChild("fragment").ToNode() || newpass) {
                     passDef.fragmentProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString());
+                    if (passDef.fragmentProgramID) {
+                        deps->push_back(xPass.FirstChild("fragment").GetValueString());
+                    }
                 }
                 if (xPass.FirstChild("geometry").ToNode() || newpass) {
                     passDef.geometryProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString());
+                    if (passDef.geometryProgramID) {
+                        deps->push_back(xPass.FirstChild("geometry").GetValueString());
+                    }
                 }
                 if (xPass.FirstChild("hull").ToNode() || newpass) {
                     passDef.hullProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("hull").GetValueString());
+                    if (passDef.hullProgramID) {
+                        deps->push_back(xPass.FirstChild("hull").GetValueString());
+                    }
                 }
                 if (xPass.FirstChild("domain").ToNode() || newpass) {
                     passDef.domainProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("domain").GetValueString());
+                    if (passDef.domainProgramID) {
+                        deps->push_back(xPass.FirstChild("domain").GetValueString());
+                    }
                 }
 
                 if (newpass)  {
-                    destTech->passes_.PushBack(passDef);
+                    destTech->passes_.push_back(passDef);
                 }
             }
         }
     }
 }
+
+extern "C" {
+//Lua entry point calls
+DLL_EXPORT int MB_API luaopen_material(lua_State *L) {
+    static const luaL_Reg materiallib[] = {
+        {"compile"      , materialCompile},
+        {"scanincludes" , materialScanIncludes},
+        {NULL, NULL}
+    };
+    luaL_newlib(L, materiallib);
+    return 1;
+}
+}
+
