@@ -146,7 +146,7 @@ public:
         return &techniques_[techniques_.size()-1];
     }
     TechniqueData* getTechnique(const hChar* name) {
-        for (hUint i=0, n=techniques_.size(); i<n; ++i) {
+        for (hUint i=0, n=(hUint)techniques_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, techniques_[i].techDef_.technqiueName)==0) {
                 return &techniques_[i];
             }
@@ -173,7 +173,7 @@ public:
         return &groups_[groups_.size()-1];
     }
     GroupData* getGroup(const hChar* name) {
-        for (hUint i=0, n=groups_.size(); i<n; ++i) {
+        for (hUint i=0, n=(hUint)groups_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, groups_[i].groupDef_.groupName)==0) {
                 return &groups_[i];
             }
@@ -181,7 +181,7 @@ public:
         return NULL;
     }
     SamplerDefinition* getSamplerByName(const hChar* name) {
-        for (hUint i=0,n=samplers_.size(); i<n; ++i) {
+        for (hUint i=0,n=(hUint)samplers_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, samplers_[i].samplerName)==0) {
                 return &samplers_[i];
             }
@@ -189,7 +189,7 @@ public:
         return NULL;
     }
     ParameterDefinition* getParameterByName(const hChar* name) {
-        for (hUint i=0,n=parameters_.size(); i<n; ++i) {
+        for (hUint i=0,n=(hUint)parameters_.size(); i<n; ++i) {
             if (Heart::hStrCmp(name, parameters_[i].parameterName)==0) {
                 return &parameters_[i];
             }
@@ -488,12 +488,25 @@ int MB_API materialCompile(lua_State* L) {
 
     readMaterialXMLToMaterialData(xmldoc, filepath, &matData, &includes, &depresnames);
 
-    matData.header_.samplerCount=matData.samplers_.size();
+    matData.header_.samplerCount=(hByte)matData.samplers_.size();
     matData.header_.samplerOffset=0;
-    matData.header_.parameterCount=matData.parameters_.size();
+    matData.header_.parameterCount=(hUint16)matData.parameters_.size();
     matData.header_.parameterOffset=0;
-    matData.header_.groupCount=matData.groups_.size();
+    matData.header_.groupCount=(hByte)matData.groups_.size();
     matData.header_.groupOffset=0;
+
+    if (matData.header_.samplerCount != matData.samplers_.size()) {
+        luaL_error(L, "sampler count is too large (greater than 255)");
+        return 0;
+    }
+    if (matData.header_.groupCount != matData.groups_.size()) {
+        luaL_error(L, "sampler count is too large (greater than 255)");
+        return 0;
+    }
+    if (matData.header_.parameterCount != matData.parameters_.size()) {
+        luaL_error(L, "parameter count is too large (greater than 65535)");
+        return 0;
+    }
 
     lua_getglobal(L, "buildpathresolve");
     lua_pushvalue(L, 4);
@@ -517,13 +530,13 @@ int MB_API materialCompile(lua_State* L) {
         output.write((char*)&matData.parameters_[param], sizeof(ParameterDefinition));
     }
 
-    for (hUint grp=0, grpn=matData.groups_.size(); grp<grpn; ++grp) {
+    for (hUint grp=0, grpn=(hUint)matData.groups_.size(); grp<grpn; ++grp) {
         matData.groups_[grp].groupDef_.techniques=(hUint16)matData.groups_[grp].techniques_.size();
         output.write((char*)&matData.groups_[grp].groupDef_, sizeof(matData.groups_[grp].groupDef_));
-        for (hUint tech=0, techn=matData.groups_[grp].techniques_.size(); tech<techn; ++tech) {
-            matData.groups_[grp].techniques_[tech].techDef_.passes=matData.groups_[grp].techniques_[tech].passes_.size();
+        for (hUint tech=0, techn=(hUint)matData.groups_[grp].techniques_.size(); tech<techn; ++tech) {
+            matData.groups_[grp].techniques_[tech].techDef_.passes=(hUint16)matData.groups_[grp].techniques_[tech].passes_.size();
             output.write((char*)&matData.groups_[grp].techniques_[tech].techDef_, sizeof(matData.groups_[grp].techniques_[tech].techDef_));
-            for (hUint passidx=0,passidxn=matData.groups_[grp].techniques_[tech].passes_.size(); passidx<passidxn; ++passidx) {
+            for (hUint passidx=0,passidxn=(hUint)matData.groups_[grp].techniques_[tech].passes_.size(); passidx<passidxn; ++passidx) {
                 output.write((char*)&matData.groups_[grp].techniques_[tech].passes_[passidx], sizeof(PassDefintion));
             }
         }
@@ -658,7 +671,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
     if (hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit")) {
         //Load the base first
         const hChar* basepathrel=hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit");
-        hUint pathlen=strlen(basepathrel)+strlen(xmlpath)+1;//+1 for NULL
+        hUint pathlen=(hUint)strlen(basepathrel)+(hUint)strlen(xmlpath)+1;//+1 for NULL
         hChar* fullbasepath=(hChar*)hAlloca(pathlen);
         hChar* pathSep=NULL;
         strcpy_s(fullbasepath, pathlen, xmlpath);

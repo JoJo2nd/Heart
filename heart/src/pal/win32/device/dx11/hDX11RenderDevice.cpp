@@ -34,7 +34,7 @@ namespace Heart
         debuglayer->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);\
         debuglayer->Release();\
     }
-#   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name) obj->SetPrivateData( WKPDID_D3DDebugObjectName, strlen(name), name)
+#   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name) obj->SetPrivateData( WKPDID_D3DDebugObjectName, hStrLen(name), name)
 #else
 #   define HEART_D3D_OBJECT_REPORT(device)
 #   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name)
@@ -692,7 +692,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(hMemoryHeapBase* heap, 
-    const hChar* shaderProg, hUint32 len, const hChar* entry, 
+    const hChar* shaderProg, hSizeT len, const hChar* entry, 
     hShaderProfile profile, hdDX11ShaderProgram* out) {
         HRESULT hr;
         hdDX11ShaderProgram* shader=out;
@@ -734,7 +734,7 @@ namespace Heart
 
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderDevice(
         hMemoryHeapBase* heap, const hChar* shaderProg, 
-        hUint32 len, hShaderType type, hdDX11ShaderProgram* out)
+        hSizeT len, hShaderType type, hdDX11ShaderProgram* out)
     {
         HRESULT hr;
         hdDX11ShaderProgram* shader = out;
@@ -760,9 +760,10 @@ namespace Heart
 
             hr = D3DGetInputSignatureBlob(shaderProg, len, &inputBlob);
             hcAssert(SUCCEEDED(hr));
-            shader->blobLen_= inputBlob->GetBufferSize();
-            shader->shaderBlob_= hNEW_ARRAY(heap, hUint8, inputBlob->GetBufferSize());
-            hMemCpy(shader->shaderBlob_, inputBlob->GetBufferPointer(), inputBlob->GetBufferSize());
+            shader->blobLen_= (hUint)inputBlob->GetBufferSize();
+            hcAssert(shader->blobLen_ == inputBlob->GetBufferSize());
+            shader->shaderBlob_= hNEW_ARRAY(heap, hUint8, shader->blobLen_);
+            hMemCpy(shader->shaderBlob_, inputBlob->GetBufferPointer(), shader->blobLen_);
             inputBlob->Release();
         } else if (type==ShaderType_GEOMETRYPROG) {
             hr=d3d11Device_->CreateGeometryShader(shaderProg, len, NULL, &shader->geomShader_);

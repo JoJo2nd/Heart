@@ -389,7 +389,7 @@ namespace Heart
     void hResourceManager::ltLoadPackage(const hChar* name) {
         hMutexAutoScope autoLock(&ltAccessMutex_);
         ResourcePackageLoadMsg loadMsg;
-        hStrCopy(loadMsg.path_, hStaticArraySize(loadMsg.path_), name);
+        hStrCopy(loadMsg.path_, (hUint32)hStaticArraySize(loadMsg.path_), name);
         ltLoadRequests_.push(loadMsg);
         loaderSemaphone_.Post();
     }

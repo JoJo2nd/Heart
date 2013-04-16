@@ -28,6 +28,10 @@ set(TEXTURE_BUILDER_LIB_DIRS
 source_group(include FILES ${TEXTURE_BUILDER_HDR_FILES})
 source_group(source  FILES ${TEXTURE_BUILDER_SRC_FILES})
 
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
+
 include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${TEXTURE_BUILDER_LIB_DIRS})
 add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES} ${TEXTURE_BUILDER_HDR_FILES})

@@ -52,17 +52,17 @@ namespace Heart
 
         }
 
-        void                        create(hUint32 sizeInBytes, hBool threadLocal);
+        void                        create(hSizeT sizeInBytes, hBool threadLocal);
         void		                destroy();
-        void*		                alloc( hUint32 size );
-        void*		                alloc( hUint32 size, const hChar* file, hUint32 line );
-        void*		                realloc( void* ptr, hUint32 size );
-        void*		                realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line );
-        void*		                alignAlloc( hUint32 size, hUint32 alignment );
-        void*		                alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line );
+        void*		                alloc( hSizeT size );
+        void*		                alloc( hSizeT size, const hChar* file, hSizeT line );
+        void*		                realloc( void* ptr, hSizeT size );
+        void*		                realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line );
+        void*		                alignAlloc( hSizeT size, hSizeT alignment );
+        void*		                alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
         void		                release( void* ptr );
         hMemoryHeapBase::HeapInfo	usage();
-        hUint32                     totalAllocationCount() const { return alloced_; }
+        hSizeT                      totalAllocationCount() const { return alloced_; }
         hBool		                pointerBelongsToMe( void* ptr );
 
     private:
@@ -72,8 +72,8 @@ namespace Heart
         hMemoryHeapBase*    baseHeap_;
         void*               basePtr_;
         hByte*              ptr_;
-        hUint32				size_;
-        hUint32				alloced_;
+        hSizeT				size_;
+        hSizeT				alloced_;
     };
 
     class hFixedPoolStackMemoryHeap : public hMemoryHeapBase
@@ -81,11 +81,11 @@ namespace Heart
         HEART_MEMORY_HEAP_CLASS;
         struct AllocHdr 
         {
-            hUint32 size_;
+            hSizeT size_;
         };
     public:
 
-        hFixedPoolStackMemoryHeap(hUint32 sizeInBytes, void* ptr) 
+        hFixedPoolStackMemoryHeap(hSizeT sizeInBytes, void* ptr) 
             : hMemoryHeapBase("FixedPoolStackHeap")
             , alloced_(0)
             , sizeBytes_(sizeInBytes)
@@ -99,9 +99,9 @@ namespace Heart
 
         }
 
-        void                        create(hUint32 /*sizeInBytes*/, hBool /*threadLocal*/) {}
+        void                        create(hSizeT /*sizeInBytes*/, hBool /*threadLocal*/) {}
         void		                destroy() {}
-        void*		                alloc( hUint32 size ) 
+        void*		                alloc( hSizeT size ) 
         { 
             void* ptr = ((hUint8*)basePtr_)+alloced_;
             alloced_ += size+sizeof(AllocHdr);
@@ -110,24 +110,24 @@ namespace Heart
             ((AllocHdr*)ptr)->size_ = size;
             return (void*)((hUint8*)ptr+sizeof(AllocHdr));
         }
-        void*		                alloc( hUint32 size, const hChar* /*file*/, hUint32 /*line*/ ) 
+        void*		                alloc( hSizeT size, const hChar* /*file*/, hSizeT /*line*/ ) 
         { 
             return alloc(size); 
         }
-        void*		                realloc(void* ptr, hUint32 size)  
+        void*		                realloc(void* ptr, hSizeT size)  
         { 
             void* newptr = alloc(size); 
             if (ptr) {
-                hUint32 oldSize = ((AllocHdr*)((hUint8*)ptr-sizeof(AllocHdr)))->size_;
+                hSizeT oldSize = ((AllocHdr*)((hUint8*)ptr-sizeof(AllocHdr)))->size_;
                 hMemCpy(newptr, ptr, oldSize);
             }
             return newptr;
         }
-        void*		                realloc( void* ptr, hUint32 size, const hChar* /*file*/, hUint32 /*line*/ ) 
+        void*		                realloc( void* ptr, hSizeT size, const hChar* /*file*/, hSizeT /*line*/ ) 
         {
             return realloc(ptr, size); 
         }
-        void*		                alignAlloc( hUint32 size, hUint32 alignment )
+        void*		                alignAlloc( hSizeT size, hSizeT alignment )
         {
             void* ptr = ((hUint8*)basePtr_)+alloced_;
             alloced_ += size+sizeof(AllocHdr)+alignment;
@@ -138,7 +138,7 @@ namespace Heart
             ((AllocHdr*)ptr)->size_ = size;
             return (void*)((hUint8*)ptr+sizeof(AllocHdr));
         }
-        void*		                alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line )
+        void*		                alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
         {
             return alignAlloc(size, alignment);
         }
@@ -149,16 +149,16 @@ namespace Heart
             info.totalBytesAllocated_ = alloced_;
             return info; 
         }
-        hUint32                     totalAllocationCount() const { return alloced_; }
+        hSizeT                     totalAllocationCount() const { return alloced_; }
         hBool		                pointerBelongsToMe( void* ptr ) { return hFalse; }
 
     private:
 
         hFixedPoolStackMemoryHeap( const hMemoryHeap& c );
 
-        hUint32				alloced_;
+        hSizeT              alloced_;
         void*               basePtr_;
-        hUint32             sizeBytes_;
+        hSizeT              sizeBytes_;
     };
 }
 

@@ -221,7 +221,7 @@ namespace Heart
     void HEART_API hdEnumerateFiles( const hChar* path, hdEnumerateFilesCallback fn )
     {
         WIN32_FIND_DATA found;
-        hUint32 searchPathLen = strlen(path) + 3;
+        hUint32 searchPathLen = hStrLen(path) + 3;
         hChar* searchPath = (hChar*)alloca( searchPathLen );
 
         hStrCopy( searchPath, searchPathLen, path );

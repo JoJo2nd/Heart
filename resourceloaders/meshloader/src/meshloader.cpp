@@ -377,6 +377,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, s
         renderableHeader.primType = Heart::PRIMITIVETYPE_TRILIST;
         renderableHeader.startIndex = 0;
         renderableHeader.materialID = Heart::hResourceManager::BuildResourceID(renderablenode.GetAttributeString("material"));
+        depres->push_back(renderablenode.GetAttributeString("material"));
         if (indexnode.ToNode()) {
             renderableHeader.nPrimatives = indexnode.GetAttributeInt("count",0);
             renderableHeader.nPrimatives /= 3;
@@ -440,7 +441,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, s
             binoutput->seekp(0, std::ios_base::end);
         }
 
-        binoutput->seekp(writeOffset, Heart::hISerialiseStream::eBegin);
+        binoutput->seekp(writeOffset);
         binoutput->write((char*)&renderableHeader, sizeof(renderableHeader));
         binoutput->seekp(0, std::ios_base::end);
     }
@@ -449,7 +450,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, s
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
+#
 void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFloat* max)
 {
     for (hUint i = 0; i < 3; ++i)

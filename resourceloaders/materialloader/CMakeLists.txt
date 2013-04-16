@@ -28,6 +28,10 @@ set(MATERIAL_BUILDER_LIB_DIRS
 source_group(include FILES ${MATERIAL_BUILDER_HDR_FILES})
 source_group(source  FILES ${MATERIAL_BUILDER_SRC_FILES})
 
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
+
 include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${MATERIAL_BUILDER_LIB_DIRS})
 add_library(material_builder SHARED ${MATERIAL_BUILDER_SRC_FILES} ${MATERIAL_BUILDER_HDR_FILES})

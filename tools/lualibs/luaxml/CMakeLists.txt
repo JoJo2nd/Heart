@@ -24,6 +24,10 @@ set( LUAMIME_LUA_FILES
 source_group(source  FILES ${LUAXML_SRC_FILES})
 source_group(lua	 FILES ${LUAXML_LUA_FILES})
 
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
+
 include_directories(${LUAXML_INCLUDE_DIRS})
 add_library(lua_xml SHARED  ${LUAXML_SRC_FILES} ${LUAXML_LUA_FILES})
 target_link_libraries(lua_xml lua)

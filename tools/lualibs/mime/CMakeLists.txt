@@ -35,6 +35,7 @@ source_group(lua	 FILES ${LUAMIME_LUA_FILES})
 
 if (WIN32)
 	set(PLAT_SOCKET_LIB ws2_32) #winsock2
+	add_definitions(/WX) # Warnings as errors
 endif()
 
 include_directories(${LUASOCKET_INCLUDE_DIRS})

@@ -218,14 +218,14 @@ void FlushSymbolsToLogFile();
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API TrackAlloc( const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag )
+    void HEART_API TrackAlloc( const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag )
     {
 #ifdef HEART_TRACK_MEMORY_ALLOCS
         if (g_open)
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%LLX)\nheap(%s,%LLX)\nsize(%u)\nfile(%s)\nline(%u)\n", ptr, heaptag, heap, size, tag, line);
+                "address(%LLX)\nheap(%s,%LLX)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, size, tag, line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }
@@ -237,14 +237,14 @@ void FlushSymbolsToLogFile();
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API TrackRealloc( const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag )
+    void HEART_API TrackRealloc( const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag )
     {
 #ifdef HEART_TRACK_MEMORY_ALLOCS
         if (g_open)
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%LLX)\nheap(%s,%LLX)\nsize(%u)\nfile(%s)\nline(%u)\n", ptr, heaptag, heap, size, tag, line);
+                "address(%LLX)\nheap(%s,%LLX)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, size, tag, line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }

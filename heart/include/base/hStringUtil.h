@@ -33,13 +33,13 @@ namespace Heart
     HEART_DLLEXPORT
     inline hUint32 HEART_API hStrLen( const hChar* s1 )
     {
-        return strlen( s1 );
+        return (hUint32)strlen( s1 );
     }
 
     HEART_DLLEXPORT
     inline void HEART_API hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
-        hcAssert( hStrLen( src ) < destlen );
+        hcAssert( (hUint32)hStrLen( src ) < destlen );
         strcpy( dest, src );
     }
 
@@ -53,12 +53,12 @@ namespace Heart
     HEART_DLLEXPORT
     inline void HEART_API hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
     {
-        hcAssert( destlen - hStrLen( dest ) <= destlen );
+        hcAssert( destlen - (hUint32)hStrLen( dest ) <= destlen );
         strcat( dest, src );
     }
 
     HEART_DLLEXPORT
-    inline hUint32 HEART_API hStrCmp( const hChar* s1, const hChar* s2 )
+    inline hInt HEART_API hStrCmp( const hChar* s1, const hChar* s2 )
     {
         return strcmp( s1, s2 );
     }
@@ -128,7 +128,7 @@ namespace Heart
     int HEART_API hStrWildcardMatch(const hChar *wildcard, const hChar *target);
 
     HEART_DLLEXPORT
-    inline int HEART_API hIsSpace(hChar c)
+    inline hInt HEART_API hIsSpace(hChar c)
     {
         return isspace(c);
     }

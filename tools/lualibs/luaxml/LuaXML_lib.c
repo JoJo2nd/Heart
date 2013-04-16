@@ -293,7 +293,7 @@ int Xml_eval(lua_State *L) {
 	lua_settop(L,0);
 	while((token=Tokenizer_next(tok))!=0) if(token[0]==OPN) { // new tag found
 		if(lua_gettop(L)) {
-			newIndex=lua_rawlen(L,-1)+1;
+			newIndex=((int)lua_rawlen(L,-1))+1;
 			lua_pushnumber(L,newIndex);
 			lua_newtable(L);
 			lua_settable(L, -3);

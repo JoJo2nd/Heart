@@ -93,13 +93,13 @@ namespace Heart
             ssdesc.maxLOD_        = FLT_MAX;  
             fontSamplerState_=renderer->createSamplerState(ssdesc);
 
-            renderer->createVertexBuffer(consolePlane, 6, layout, hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
+            renderer->createVertexBuffer(consolePlane, 6, layout, (hUint32)hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
             hMaterial* backdropMat = matManager->getConsoleMat();
             backdropMat_ = backdropMat->createMaterialInstance(0);
             backdropMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &backdropPlane_, 1);
 
-            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
-            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
+            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
+            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
             consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
             hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
             hShaderResourceViewDesc srvd;

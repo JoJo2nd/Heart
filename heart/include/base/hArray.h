@@ -143,19 +143,19 @@ namespace Heart
             }
         }
 
-        hFORCEINLINE _Ty& operator [] ( hInt i )
+        hFORCEINLINE _Ty& operator [] ( hSizeT i )
         {
-            hcAssert( i >= 0 && (hSizeT)i < size_ );
+            hcAssert( i >= 0 && i < size_ );
             return values_[ i ];
         }
 
-        hFORCEINLINE const _Ty& operator [] ( hInt i ) const
+        hFORCEINLINE const _Ty& operator [] ( hSizeT i ) const
         {
-            hcAssert( i>= 0 && (hSizeT)i < size_ );
+            hcAssert( i>= 0 && i < size_ );
             return values_[ i ];
         }
 
-        void Reserve( hSizeT size )
+        void Reserve( hUint32 size )
         {
             if ( size > reserve_ )
             {
@@ -164,7 +164,7 @@ namespace Heart
             }
         }
 
-        void Resize( hSizeT size )
+        void Resize( hUint32 size )
         {
             if ( size > size_ )
                 Grow( size );
@@ -206,7 +206,7 @@ namespace Heart
 
     private:
         
-        void ReserveGran( hSizeT size )
+        void ReserveGran( hUint32 size )
         {
             if ( size > reserve_ )
             {
@@ -216,7 +216,7 @@ namespace Heart
             }
         }
 
-        void Grow( hSizeT size ) 
+        void Grow( hUint32 size ) 
         {
             ReserveGran( size );
             //Construct
@@ -225,7 +225,7 @@ namespace Heart
             size_ = size;
         }
 
-        void Shrink( hSizeT size )
+        void Shrink( hUint32 size )
         {
             //Destruct
             for ( hUint32 i = size; i < size_; ++i )
@@ -235,8 +235,8 @@ namespace Heart
 
         hMemoryHeapBase*    heap_;
         TypePtr	            values_;
-        hSizeT              size_;
-        hSizeT              reserve_;
+        hUint32             size_;
+        hUint32             reserve_;
     };
 
 }

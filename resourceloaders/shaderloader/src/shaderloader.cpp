@@ -303,7 +303,7 @@ int SB_API shaderCompiler(lua_State* L) {
 
     D3D_SHADER_MACRO* fullmacros=hNullptr;
     if (hasdefines) {
-        definecount=lua_rawlen(L, -1);
+        definecount=(hUint)lua_rawlen(L, -1);
     }
     fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
     if (hasdefines) {
@@ -405,7 +405,11 @@ int SB_API shaderCompiler(lua_State* L) {
     header.resHeader.resourceType = SHADER_MAGIC_NUM;
     header.version = SHADER_VERSION;
     header.type = progtype;
-    header.shaderBlobSize = result->GetBufferSize();
+    header.shaderBlobSize = (hUint32)result->GetBufferSize();
+    if (header.shaderBlobSize != result->GetBufferSize()) {
+        luaL_error(L, "Shader blob is too large (larger than 2GB?");
+        return 0;
+    }
 
     lua_getglobal(L, "buildpathresolve");
     lua_pushvalue(L, 4);
@@ -503,7 +507,7 @@ int SB_API shaderPreprocess(lua_State* L) {
 
     D3D_SHADER_MACRO* fullmacros=hNullptr;
     if (hasdefines) {
-        definecount=lua_rawlen(L, -1);
+        definecount=(hUint)lua_rawlen(L, -1);
     }
     fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
     if (hasdefines) {

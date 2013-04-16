@@ -37,28 +37,28 @@ namespace Heart
 {
 
     template< typename _Ty >
-    inline void hDestroyObjects(_Ty* ptr, hUint32 elements)
+    inline void hDestroyObjects(_Ty* ptr, hSizeT elements)
     {
         if (hIs_pod< _Ty >::value || !ptr ) {
             return;
         }
-        for ( hUint32 i = 0; i < elements; ++i )
+        for ( hSizeT i = 0; i < elements; ++i )
             ptr[i].~_Ty();
     }
 
     template< typename _Ty >
-    inline hUint32 hCalcArrayAllocHeader()
+    inline hSizeT hCalcArrayAllocHeader()
     {
         if (hIs_pod< _Ty >::value) {
             return 0;
         }
 
-        hUint32 align = hAlignOf(_Ty);
+        hSizeT align = hAlignOf(_Ty);
         return align > 4 ? align : 4;
     }
 
     template< typename _Ty >
-    inline hUint32 hCalcArrayAllocCount(_Ty* ptr)
+    inline hSizeT hCalcArrayAllocCount(_Ty* ptr)
     {
         if (!ptr) return 0;
         return *((hUint32*)(((hByte*)ptr)-hCalcArrayAllocHeader<_Ty>()));
@@ -72,12 +72,14 @@ namespace Heart
     }
 
     template< typename _Ty >
-    inline _Ty* hConstructArray(_Ty* ptr, hUint32 count)
+    inline _Ty* hConstructArray(_Ty* ptr, hSizeT count)
     {
         _Ty* newptr = (_Ty*)((hByte*)ptr+hCalcArrayAllocHeader< _Ty >());
-        *((hUint32*)ptr) = count;
+        if (newptr != ptr) {
+            *((hSizeT*)ptr) = count;
+        }
 
-        for (hUint32 i = 0; i < count; ++i)
+        for (hSizeT i = 0; i < count; ++i)
             hPLACEMENT_NEW((void*)(newptr+i)) _Ty;
 
         return newptr;
@@ -86,15 +88,15 @@ namespace Heart
 #ifdef HEART_PLAT_WINDOWS
 #   if _MSC_VER >= 1700
 #       define hPRIVATE_DESTRUCTOR()\
-            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32);\
+            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hSizeT);\
             template < typename t_ty > friend struct std::_Get_align; /*MSVC-Secret hidden type that needs exposing*/
 #   elif _MSC_VER >= 1500
 #       define hPRIVATE_DESTRUCTOR()\
-            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32); \
+            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hSizeT); \
             template < typename t_ty > friend struct std::tr1::_Get_align; /*MSVC-Secret hidden type that needs exposing*/
 #   else
 #       define hPRIVATE_DESTRUCTOR()\
-            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hUint32);
+            template< typename t_ty > friend void Heart::hDestroyObjects(t_ty*, hSizeT);
 #   endif
 #else
 #   pragma error ("Unknow platform")

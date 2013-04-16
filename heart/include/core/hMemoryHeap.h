@@ -43,17 +43,17 @@ namespace Heart
 
 	    ~hMemoryHeap();
 
-        void        create(hUint32 sizeInBytes, hBool threadLocal);
+        void        create(hSizeT sizeInBytes, hBool threadLocal);
 	    void		destroy();
-	    void*		alloc( hUint32 size );
-	    void*		alloc( hUint32 size, const hChar* file, hUint32 line );
-	    void*		realloc( void* ptr, hUint32 size );
-	    void*		realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line );
-	    void*		alignAlloc( hUint32 size, hUint32 alignment );
-	    void*		alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line );
+	    void*		alloc( hSizeT size );
+	    void*		alloc( hSizeT size, const hChar* file, hSizeT line );
+	    void*		realloc( void* ptr, hSizeT size );
+	    void*		realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line );
+	    void*		alignAlloc( hSizeT size, hSizeT alignment );
+	    void*		alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
 	    void		release( void* ptr );
         hMemoryHeapBase::HeapInfo	usage();
-        hUint32     totalAllocationCount() const;
+        hSizeT      totalAllocationCount() const;
 	    hBool		pointerBelongsToMe( void* ptr );
         void        printLeaks(const hChar* heapname);
 
@@ -62,8 +62,8 @@ namespace Heart
 	    hMemoryHeap( const hMemoryHeap& c );
         
 	    mspace									localMspace_;
-	    hUint32									size_;//ZERO when localMspace is destoryed 
-	    hUint32									alloced_;
+	    hSizeT									size_;//ZERO when localMspace is destoryed 
+	    hSizeT									alloced_;
     };
 
 }

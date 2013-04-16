@@ -107,7 +107,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         hcPrintf( "cmd line: %s\n", pCmdLine );
         hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
-        factory_ = hNEW(Heart::GetGlobalHeap(), UnitTestFactory)(pEngine, unitTests_, hStaticArraySize(unitTests_));
+        factory_ = hNEW(Heart::GetGlobalHeap(), UnitTestFactory)(pEngine, unitTests_, (hUint)hStaticArraySize(unitTests_));
         pEngine_ = pEngine;
 
         static const luaL_Reg funcs[] = {

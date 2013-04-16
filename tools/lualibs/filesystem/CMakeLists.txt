@@ -41,6 +41,10 @@ source_group(include FILES ${LUA_FILESYSTEM_HDR_FILES})
 source_group(source  FILES ${LUA_FILESYSTEM_SRC_FILES})
 source_group("lua/databuilder" FILES ${LUA_BUIDLER_FILES})
 
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
+
 add_definitions(-DLUA_CORE)
 
 include_directories(${LUA_FILESYSTEM_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})

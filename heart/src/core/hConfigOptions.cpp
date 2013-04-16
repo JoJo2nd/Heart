@@ -75,7 +75,7 @@ namespace Heart
             && node.getName() && node.getNameLen() > 0) {
                 hUint32 crc;
                 hChar namebuf[2048]={0};
-                hUint len=hStaticArraySize(namebuf);
+                hUint len=(hUint)hStaticArraySize(namebuf);
                 buildStringKey(node, namebuf, &len);
                 crc=hCRC32::StringCRC(namebuf);
                 hOption* op=config_.Find(crc); 

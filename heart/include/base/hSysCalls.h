@@ -45,10 +45,10 @@ namespace hMemTracking
     void HEART_API InitMemTracking();
 
     HEART_DLLEXPORT
-    void HEART_API TrackAlloc(const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag);
+    void HEART_API TrackAlloc(const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag);
 
     HEART_DLLEXPORT
-    void HEART_API TrackRealloc(const hChar* tag, hUint32 line, void* heap, void* ptr, hUint32 size, const hChar* heaptag);
+    void HEART_API TrackRealloc(const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag);
 
     HEART_DLLEXPORT
     void HEART_API TrackFree(void* heap, void* ptr, const hChar* heaptag);

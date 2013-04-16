@@ -111,17 +111,17 @@ public:
     }
     virtual ~hMemoryHeapBase() {};
 
-    virtual void        create(hUint32 sizeInBytes, hBool threadLocal) = 0;
+    virtual void        create(hSizeT sizeInBytes, hBool threadLocal) = 0;
     virtual void		destroy() = 0;
-    virtual void*		alloc( hUint32 size ) = 0;
-    virtual void*		alloc( hUint32 size, const hChar* file, hUint32 line ) = 0;
-    virtual void*		realloc( void* ptr, hUint32 size ) = 0;
-    virtual void*		realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line ) = 0;
-    virtual void*		alignAlloc( hUint32 size, hUint32 alignment ) = 0;
-    virtual void*		alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line ) = 0;
+    virtual void*		alloc( hSizeT size ) = 0;
+    virtual void*		alloc( hSizeT size, const hChar* file, hSizeT line ) = 0;
+    virtual void*		realloc( void* ptr, hSizeT size ) = 0;
+    virtual void*		realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line ) = 0;
+    virtual void*		alignAlloc( hSizeT size, hSizeT alignment ) = 0;
+    virtual void*		alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line ) = 0;
     virtual void		release( void* ptr ) = 0;
     virtual HeapInfo	usage() = 0;
-    virtual hUint32     totalAllocationCount() const = 0;
+    virtual hSizeT      totalAllocationCount() const = 0;
     virtual hBool		pointerBelongsToMe( void* ptr ) = 0;
     const hChar*        getHeapName() const { return name_; }
 
@@ -140,8 +140,8 @@ protected:
     hChar               name_[32];
     hBool				useLocks_;
     void*				lastThreadID_;
-    hUint32				allocNum_;
-    hUint32				debugAlloc_;
+    hSizeT				allocNum_;
+    hSizeT				debugAlloc_;
 };
 
 HEART_DLLEXPORT void               HEART_API SetGlobalHeap(hMemoryHeapBase*);

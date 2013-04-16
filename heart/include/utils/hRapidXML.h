@@ -280,7 +280,7 @@ namespace Heart
             } else if (!node_->value()) {
                 return 0;
             } else {
-                return node_->value_size();
+                return (hUint)node_->value_size();
             }
         }
         template < typename t_type >
@@ -337,7 +337,7 @@ namespace Heart
             return node_->name();
         }
         hUint getNameLen() const {
-            return node_->name_size();
+            return (hUint)node_->name_size();
         }
 
     private:

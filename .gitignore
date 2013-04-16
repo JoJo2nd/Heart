@@ -8,3 +8,5 @@
 /*.lnk
 /cmake_build/
 /deploy/
+/platform_win32/
+/platform_win64/

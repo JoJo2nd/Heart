@@ -171,7 +171,7 @@ namespace hRenderUtility
         }
 
         rndr->createIndexBuffer(indices, idxCnt, 0, outIdxBuf);
-        rndr->createVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -275,7 +275,7 @@ namespace hRenderUtility
         }
 
         rndr->createIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
-        rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,7 +352,7 @@ namespace hRenderUtility
             vtx+=3;
         }
 
-        rndr->createVertexBuffer(verts, vtxCnt, desc, hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
     }
 
 
@@ -422,7 +422,7 @@ namespace hRenderUtility
              .5f,  .5f,  .5f,   0.f, 0.f, 1.f,
              .5f, -.5f,  .5f,   0.f, 0.f, 1.f,
         };
-        rndr->createVertexBuffer(verts, PRIM_COUNT, desc, hStaticArraySize(desc), 0, heap, retVB);
+        rndr->createVertexBuffer(verts, PRIM_COUNT, desc, (hUint32)hStaticArraySize(desc), 0, heap, retVB);
         return *retVB;
     }
 #undef PRIM_COUNT
@@ -864,7 +864,7 @@ namespace hRenderUtility
         outfont->SortCharacters();
 
         hMipDesc mipsdesc[] = {
-            {low_res_fnt_width, low_res_fnt_height, (hByte*)low_res_fnt_data, low_res_fnt_data_len},
+            {(hUint32)low_res_fnt_width, (hUint32)low_res_fnt_height, (hByte*)low_res_fnt_data, (hUint)low_res_fnt_data_len},
         };
         rndr->createTexture(1, mipsdesc, TFORMAT_L8, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
 

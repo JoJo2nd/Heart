@@ -57,9 +57,9 @@ public:
 
         hcPrintf(__FUNCTION__" Generating Data");
 
-        GenRandomNumbers(data1, hStaticArraySize(data1));
-        GenRandomNumbers(data2, hStaticArraySize(data2));
-        GenRandomNumbers(data3, hStaticArraySize(data3));
+        GenRandomNumbers(data1, (hUint)hStaticArraySize(data1));
+        GenRandomNumbers(data2, (hUint)hStaticArraySize(data2));
+        GenRandomNumbers(data3, (hUint)hStaticArraySize(data3));
 
         hcPrintf(__FUNCTION__" Encoding Data");
 

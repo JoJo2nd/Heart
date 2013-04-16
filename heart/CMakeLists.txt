@@ -22,10 +22,17 @@ set( HEART_INCLUDE_DIRS
 )
 set(HEART_LIB_DIRS)
 if (WIN32)
-	set(HEART_LIB_DIRS
-		${HEART_LIB_DIRS}
-		"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
-	)
+	if (BUILD_64_BIT)
+		set(HEART_LIB_DIRS
+			${HEART_LIB_DIRS}
+			"${EXTERNAL_SRC_ROOT}/openal/libs/Win64"
+		)
+	else()
+		set(HEART_LIB_DIRS
+			${HEART_LIB_DIRS}
+			"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
+		)
+	endif()
 endif()
 
 # heart include directorys
@@ -102,6 +109,10 @@ set( LIBHEART_LIB_DIRS
 	${HEART_LIB_DIRS}
 	PARENT_SCOPE
 )
+
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
 
 source_group(unity FILES ${HEART_SRC_FILES})
 source_group(base FILES ${HEART_BASE_FILES})

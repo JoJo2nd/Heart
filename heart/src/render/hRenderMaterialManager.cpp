@@ -215,13 +215,13 @@ namespace Heart
         if (lua_type(L, -1) != LUA_TSTRING) luaL_error(L, "block.name must be a string type");
         block.name_ = lua_tostring(L, -1);
         block.nameHash_ = hCRC32::StringCRC(block.name_);
-        block.strPoolSize_ = lua_rawlen(L, -1)+1;// get string len
+        block.strPoolSize_ = (hUint)lua_rawlen(L, -1)+1;// get string len
         lua_pop(L, 1); // remove block.name
         
         lua_getfield(L, -1, "aliases");// push alias table to stack top
         if (lua_type(L, -1) != LUA_TTABLE) luaL_error(L, "block.aliases must be a table type");
         // create space for alias names, we get the pointers to these and copy them later
-        block.aliasCount_ = lua_rawlen(L,-1);
+        block.aliasCount_ = (hUint)lua_rawlen(L,-1);
         block.aliases_ = (const hChar**)hHeapMalloc(GetGlobalHeap(), sizeof(hChar*)*block.aliasCount_);
         block.aliasHashes_ = (hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*block.aliasCount_);
         for (hUint32 i = 0; i < block.aliasCount_; ++i)
@@ -230,14 +230,14 @@ namespace Heart
             if (lua_type(L, -1) != LUA_TSTRING) luaL_error(L, "alias must be a string");
             block.aliases_[i] = lua_tostring(L, -1);
             block.aliasHashes_[i] = hCRC32::StringCRC(block.aliases_[i]);
-            block.strPoolSize_ += lua_rawlen(L, -1)+1;// get string len
+            block.strPoolSize_ += (hUint)lua_rawlen(L, -1)+1;// get string len
             lua_pop(L, 1);
         }
         lua_pop(L, 1);// Pop aliases table
 
         lua_getfield(L, -1, "parameters");// get parameters table
         if (lua_type(L, -1) != LUA_TTABLE) luaL_error(L, "expected parameter table");
-        block.paramCount_ = lua_rawlen(L, -1);// get parameter count
+        block.paramCount_ = (hUint)lua_rawlen(L, -1);// get parameter count
         block.params_ = (hConstBlockParam*)hHeapMalloc(GetGlobalHeap(), sizeof(hConstBlockParam)*block.paramCount_);
         
         block.dataSize_ = 0;
@@ -250,7 +250,7 @@ namespace Heart
                 lua_getfield(L, -1, "name");// Get block.parameter.name
                 if (lua_type(L, -1) != LUA_TSTRING) luaL_error(L, "parameter name field not found");
                 block.params_[i].name_ = lua_tostring(L, -1);
-                block.strPoolSize_ += lua_rawlen(L, -1)+1;// get string len
+                block.strPoolSize_ += (hUint)lua_rawlen(L, -1)+1;// get string len
                 block.params_[i].nameHash_ = hCRC32::StringCRC(block.params_[i].name_);
 
                 lua_getfield(L, -2, "size");// Get block.parameter.size
@@ -263,7 +263,6 @@ namespace Heart
             }
             lua_pop(L, 1);// removes 'value'; keeps 'key' for next iteration
         }
-        lua_pop(L, 2);// pop last key from enumeration and parameter table 
         
         //build the string pools
         block.strPool_ = (hChar*)hHeapMalloc(GetGlobalHeap(), block.strPoolSize_);
@@ -390,7 +389,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hUint aliasCount, hBool takeTexture/*=hFalse*/) {
+    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSizeT aliasCount, hBool takeTexture/*=hFalse*/) {
         hcAssert(name && tex && aliases && aliasCount > 0);
         hGlobalTexture* gtex=hNEW(GetGlobalHeap(), hGlobalTexture);
         hUint strsize;
@@ -537,7 +536,7 @@ namespace Heart
         if(lua_type(L, -1) != LUA_TTABLE) {
             luaL_error(L, "globaltexture.aliases expected a table type");
         }
-        aliascount=lua_rawlen(L, -1);
+        aliascount=(hUint)lua_rawlen(L, -1);
         aliases=(const hChar**)hAlloca(sizeof(hChar*)*aliascount);
         for (hUint i=0; i<aliascount; ++i) {
             lua_rawgeti(L, -1, (i+1));// push table entry onto stack (entries start at 1)

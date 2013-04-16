@@ -44,7 +44,11 @@ HEART_DLLEXPORT void HEART_API hcOutputStringRaw(const hChar* msg, ...);
 HEART_DLLEXPORT void HEART_API hcOutputString(const hChar* msg, ...);
 HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
-#define hcBreak					__asm { int 3 } 
+#ifdef HEART_64BIT
+#   define hcBreak __debugbreak()
+#else
+#   define hcBreak __asm { int 3 } 
+#endif
 
 #elif defined HEART_RELEASE
 //#else

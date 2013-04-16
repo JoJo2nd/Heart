@@ -26,6 +26,9 @@
 *********************************************************************/
 
 #include "fontloader.h"
+#include <boost/smart_ptr.hpp>
+#include <boost/filesystem.hpp>
+#include <fstream>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -54,6 +57,7 @@ struct FontHeader
 
 #pragma pack(pop)
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -99,24 +103,69 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
     return font;
 }
-
+#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput )
-{
+int fontCompile(lua_State* L) {
     using namespace Heart;
-    FontHeader header = {0};
-    hFloat fontScale = hAtoF(params->GetBuildParameter("SCALE", "1"));
-    hXMLDocument xmldoc;
-    hChar* xmlmem = (hChar*)hHeapMalloc(memalloc->tempHeap_, inFile->Lenght()+1);
-    inFile->Read(xmlmem, inFile->Lenght());
-    xmlmem[inFile->Lenght()] = 0;
+    using namespace boost;
+    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 3, LUA_TTABLE);
+    luaL_checktype(L, 4, LUA_TSTRING);
 
-    if (xmldoc.ParseSafe< rapidxml::parse_default >(xmlmem, memalloc->tempHeap_) == hFalse)
-        return NULL;
+    system::error_code ec;
+    FontHeader header = {0};
+    hFloat fontScale=1.f;// = hAtoF(params->GetBuildParameter("SCALE", "1"));
+    hUint cheaderoutput=false;
+    lua_getfield(L, 3, "scale");
+    if (lua_isnumber(L, -1)) {
+        fontScale=lua_tonumber(L, -1);
+    }
+    lua_pop(L, 1);
+    lua_getfield(L, 3, "headeroutput");
+    if (lua_isboolean(L, -1)) {
+        cheaderoutput=lua_toboolean(L, -1);
+    }
+    lua_pop(L, 1);
+
+    lua_rawgeti(L, 1, 1);
+    if (!lua_isstring(L, -1)) {
+        luaL_error(L, "input file is not a string");
+        return 0;
+    }
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, -2);
+    lua_call(L, 1, 1);
+    const hChar* filepath=lua_tostring(L, -1);
+    hUint filesize;
+    std::ifstream infile;
+    rapidxml::xml_document<> xmldoc;
+
+    filesize=(hUint)filesystem::file_size(filepath, ec);
+    if (!ec) {
+        luaL_error(L, "failed to read file size of file %s", filepath);
+        return 0;
+    }
+    infile.open(filepath);
+    if (!infile.is_open()) {
+        luaL_error(L, "failed to opn file %s", filepath);
+        return 0;
+    }
+
+    scoped_array<hChar> xmlmem(new hChar[filesize+1]);
+    infile.read(xmlmem.get(), filesize);
+    xmlmem[filesize] = 0;
+
+    try{
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+    } catch (...) {
+        luaL_error(L, "Error parsing XML file");
+        return 0;
+    }
 
     header.resHeader.resourceType = FONT_MAGIC_NUM;
     header.version = FONT_VERSION;
@@ -138,18 +187,35 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
 
     hXMLGetter glyphs = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("chars");
     hUint32 characterCount = glyphs.GetAttributeInt("count");
-
     header.glyphCount = characterCount;
-    binoutput->Write(&header, sizeof(header));
 
-#ifdef FONT_CPP_OUTPUT
-    hcPrintf("/////\n");
-    hcPrintf("// FontHeader\n");
-    hcPrintf("const float g_debugfontHeight = %ff;\n", header.fontHeight);
-    hcPrintf("const unsigned int g_debugpageCount = %d;\n", header.pageCount);
-    hcPrintf("const unsigned int g_debugglyphCount = %d;\n", header.glyphCount);
-    hcPrintf("\nconst Heart::hFontCharacter g_debugglyphs[] = {\n");
-#endif
+    std::ofstream outfile;
+    lua_getglobal(L, "buildpathresolve");
+    lua_pushvalue(L, 4);
+    lua_call(L, 1, 1);
+    const hChar* outputpath=lua_tostring(L, -1);
+    outfile.open(outputpath);
+    if (!outfile.is_open()) {
+        luaL_error(L, "Failed to open output file %s", outputpath);
+        return 0;
+    }
+    outfile.write((char*)&header, sizeof(header));
+
+    std::ofstream headerfile;
+    if (cheaderoutput) {
+        std::string headerpath=filepath;
+        headerpath+=".h";
+        headerfile.open(headerpath);
+        cheaderoutput = headerfile.is_open();
+    }
+    if (cheaderoutput) {
+        headerfile << "/////\n";
+        headerfile << "// FontHeader\n";
+        headerfile << "const float g_debugfontHeight = " << header.fontHeight << ";\n";
+        headerfile << "const unsigned int g_debugpageCount = " << header.pageCount << ";\n";
+        headerfile << "const unsigned int g_debugglyphCount = " << header.glyphCount << ";\n";
+        headerfile << "\nconst Heart::hFontCharacter g_debugglyphs[] = {\n";
+    }
 
     for (hXMLGetter glyph = glyphs.FirstChild("char"); glyph.ToNode(); glyph = glyph.NextSibling())
     {
@@ -173,23 +239,31 @@ hBool HEART_API HeartDataCompiler( Heart::hIDataCacheFile* inFile, Heart::hIBuil
         newchar.xOffset_ *= fontScale;
         newchar.xAdvan_ *= fontScale;
 
-#ifdef FONT_CPP_OUTPUT
-        hcPrintf("{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},",
-            newchar.page_, newchar.unicode_, newchar.x_, newchar.y_,
-            newchar.height_, newchar.width_, newchar.xOffset_, newchar.yOffset_, 
-            newchar.xAdvan_, newchar.UV1_.x, newchar.UV1_.y, newchar.UV2_.x, newchar.UV2_.y);
-#endif
+        if (cheaderoutput) {
+            hChar tmpbuf[1024];
+            sprintf_s(tmpbuf, 1024, "{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},",
+                newchar.page_, newchar.unicode_, newchar.x_, newchar.y_,
+                newchar.height_, newchar.width_, newchar.xOffset_, newchar.yOffset_, 
+                newchar.xAdvan_, newchar.UV1_.x, newchar.UV1_.y, newchar.UV2_.x, newchar.UV2_.y);
+            headerfile.write(tmpbuf, strlen(tmpbuf));
+        }
 
-        binoutput->Write(&newchar, sizeof(hFontCharacter));
+        outfile.write((char*)&newchar, sizeof(hFontCharacter));
     }
 
-#ifdef FONT_CPP_OUTPUT
-    hcPrintf("}; //const hFontCharacter g_debugglyphs[]\n");
-#endif
+    if (cheaderoutput) {
+        headerfile << "}; //const hFontCharacter g_debugglyphs[]\n";
+        headerfile.close();
+    }
 
-    return hTrue;
+    // link the dependent resource
+    lua_newtable(L);
+    lua_pushstring(L, pageResName);
+    lua_rawseti(L, -2, 1);
+    return 1;
 }
 
+#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -223,5 +297,18 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
 
     hFont* font = static_cast<hFont*>(resource);
     hDELETE(memalloc->resourcePakHeap_, font);
+}
+#endif
+
+extern "C" {
+//Lua entry point calls
+DLL_EXPORT int FB_API luaopen_font(lua_State *L) {
+    static const luaL_Reg fontlib[] = {
+        {"compile"      , fontCompile},
+        {NULL, NULL}
+    };
+    luaL_newlib(L, fontlib);
+    return 1;
+}
 }
 

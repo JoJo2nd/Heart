@@ -25,6 +25,13 @@ MACRO(GET_BASE_FILENAMES destVar sourceVar)
 	endforeach(FILEPATH)
 ENDMACRO(GET_BASE_FILENAMES)
 
+if( ${CMAKE_SIZEOF_VOID_P} MATCHES 4 )
+	set( BUILD_64_BIT 0 )
+else()
+	set( BUILD_64_BIT 1 )
+	add_definitions(-DBUILD_64_BIT)
+endif()
+
 #config vars
 set(CMAKE_USE_RELATIVE_PATHS ON)
 set(CMAKE_DEBUG_POSTFIX "_d")
@@ -35,6 +42,11 @@ option(USE_XNAMATH "Use old XNA math libraries" OFF)
 option(USE_OLD_DXSDK "Use old DirectX SDK. Will cause issues with Windows 8 SDK" OFF)
 option(BUILD_HEART_TESTBED "Build testbed for heart" OFF)
 option(BUILD_BUILDER_PROJECT "Build builder lib and stand alone" ON)
+
+#cache vars
+set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
+set(assimp_LIB_DIR "C:/assimp_sdk_folder/lib" CACHE PATH "Directory for assimp libraries")
+set(assimp_INCLUDE_DIR "C:/assimp_sdk_folder/include" CACHE PATH "Directory for assimp includes")
 
 #Common var
 set(EXTERNAL_SRC_ROOT
@@ -92,6 +104,8 @@ endif()
 add_subdirectory("resourceloaders/shaderloader")
 add_subdirectory("resourceloaders/textureloader")
 add_subdirectory("resourceloaders/materialloader")
+add_subdirectory("resourceloaders/meshloader")
+add_subdirectory("resourceloaders/fontloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

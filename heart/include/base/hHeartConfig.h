@@ -101,6 +101,12 @@
 
 #define HEART_BASECLASS(x) typedef x ParentClass;
 
+#if defined BUILD_64_BIT
+#   define HEART_64BIT
+#else
+#   define HEART_32BIT
+#endif
+
 #ifdef WIN32
 #   define HEART_API   __cdecl
 #else

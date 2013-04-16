@@ -561,6 +561,11 @@
 #   endif
 #   define LUA_NUMBER	float
 
+#ifdef LUA_INTEGER
+#   undef LUA_INTEGER
+#   define LUA_INTEGER  int
+#endif
+
 /*
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
 @* over a number.

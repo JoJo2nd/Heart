@@ -29,28 +29,15 @@
 
 #include <stdio.h>
 #include <vector>
+#include "rapidxml/rapidxml.hpp"
 #include "Heart.h"
 
-#if defined (FONT_LOADER_COMPILE_DLL)
+#if defined (font_builder_EXPORTS)
     #define DLL_EXPORT __declspec(dllexport)
 #else
     #define DLL_EXPORT __declspec(dllimport)
 #endif
 
-extern "C"
-{
-    DLL_EXPORT
-        Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine*);
-    DLL_EXPORT
-        hBool HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput);
-    DLL_EXPORT
-        hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT
-        void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT
-        void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT 
-        void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
-};
+#define FB_API __cdecl
 
 #endif // FONTLOADER_H__

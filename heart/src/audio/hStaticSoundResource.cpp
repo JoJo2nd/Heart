@@ -72,16 +72,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    size_t hStaticSoundSource::OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource)
+    hSizeT hStaticSoundSource::OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource)
     {
         hPlaybackInfo* ctx = (hPlaybackInfo*)datasource;
-        hUint32 s = hMin( size, ctx->tell_ - ctx->source_->oggDataSize_ );
+        hSizeT s = hMin( size, ctx->tell_ - ctx->source_->oggDataSize_ );
         hMemCpy( ptr, ctx->source_->oggData_+ctx->tell_, s );
         ctx->tell_ += s;
         return s;
     }
 
-    int    hStaticSoundSource::OGGSeekFunc(void *datasource, ogg_int64_t offset, int whence)
+    int hStaticSoundSource::OGGSeekFunc(void *datasource, ogg_int64_t offset, int whence)
     {
         hPlaybackInfo* ctx = (hPlaybackInfo*)datasource;
         int ret = 0;
@@ -106,13 +106,13 @@ namespace Heart
 
         ctx->tell_ = hMin( ctx->tell_, ctx->source_->oggDataSize_ );
 
-        return ret;
+        return (int)ret;
     }
 
-    long   hStaticSoundSource::OGGTellFunc(void *datasource)
+    long hStaticSoundSource::OGGTellFunc(void *datasource)
     {
         hPlaybackInfo* ctx = (hPlaybackInfo*)datasource;
-        return ctx->tell_;
+        return (long)ctx->tell_;
     }
 
     //////////////////////////////////////////////////////////////////////////

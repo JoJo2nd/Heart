@@ -24,6 +24,10 @@ set( LUA_SA_SRC_FILES
 source_group(include FILES ${LUA_SA_HDR_FILES})
 source_group(source  FILES ${LUA_SA_SRC_FILES})
 
+if (MSVC)
+	add_definitions(/WX) # Warnings as errors
+endif()
+
 include_directories(${LUA_SA_INCLUDE_DIRS})
 add_executable(lua_standalone ${LUA_SA_SRC_FILES} ${LUA_SA_HDR_FILES})
 target_link_libraries(lua_standalone lua)

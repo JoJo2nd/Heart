@@ -79,7 +79,8 @@ namespace Heart
             wndWidth_ = C.right;
             wndHeight_ = C.bottom;
 
-            procChain_ = (WNDPROC)SetWindowLong(hWnd_, GWL_WNDPROC, (LONG)&hdSystemWindow::WindowProc);
+            //procChain_ = (WNDPROC)SetWindowLong(hWnd_, GWL_WNDPROC, (LONG)&hdSystemWindow::WindowProc);
+            procChain_= (WNDPROC)SetWindowLongPtr(hWnd_, GWLP_WNDPROC, (LONG_PTR)&hdSystemWindow::WindowProc);
         }
 
         RECT w,C;
@@ -192,12 +193,12 @@ namespace Heart
             }
         case WM_KEYDOWN:
             {
-                keyboard_.SetButton(wParam, hButtonState_IS_DOWN);
+                keyboard_.SetButton((hdInputID)wParam, hButtonState_IS_DOWN);
             }
             break;
         case WM_KEYUP:
             {
-                keyboard_.SetButton(wParam, hButtonState_IS_UP); 
+                keyboard_.SetButton((hdInputID)wParam, hButtonState_IS_UP); 
             }
             break;
         case WM_MOUSEWHEEL:

@@ -561,7 +561,7 @@ improvement at the expense of carrying around more memory.
 #define FOOTERS 0
 #endif  /* FOOTERS */
 #ifndef ABORT
-#define ABORT  __asm{ int 3 }
+#define ABORT  __debugbreak()
 #endif  /* ABORT */
 #ifndef ABORT_ON_ASSERT_FAILURE
 #define ABORT_ON_ASSERT_FAILURE 1

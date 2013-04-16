@@ -81,10 +81,10 @@ namespace Heart
 
             for (hXMLGetter i(root_->FirstChild(NULL)); i.ToNode(); i = i.NextSiblingAny())
             {
-                hCRC32::ContinueCRC32(&ret, i.ToNode()->name(), i.ToNode()->name_size());
+                hCRC32::ContinueCRC32(&ret, i.ToNode()->name(), (hUint32)i.ToNode()->name_size());
                 if (i.ToNode()->value())
                 {
-                    hCRC32::ContinueCRC32(&ret, i.ToNode()->value(), i.ToNode()->value_size());
+                    hCRC32::ContinueCRC32(&ret, i.ToNode()->value(), (hUint32)i.ToNode()->value_size());
                 }
             }
 

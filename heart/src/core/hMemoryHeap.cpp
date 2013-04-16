@@ -32,7 +32,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
+void hMemoryHeap::create( hSizeT sizeInBytes, hBool threadLocal )
 {
     lock_.Lock();
     if (!localMspace_)
@@ -75,8 +75,8 @@ void hMemoryHeap::destroy()
         hMH_PRE_ACTION();
         mallinfo mi = mspace_mallinfo(localMspace_);
         hcAssertMsg(alloced_ == 0, "%u allocation(s) have not been released from heap %s", alloced_, getHeapName());
-        DWORD r = usage().currBytesReserved_;
-        DWORD f = destroy_mspace( localMspace_ );
+        hSizeT r = usage().currBytesReserved_;
+        hSizeT f = destroy_mspace( localMspace_ );
         size_ = 0;
         localMspace_ = 0;
         hMH_POST_ACTION();
@@ -88,11 +88,11 @@ void hMemoryHeap::destroy()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hUint32 size )
+void* hMemoryHeap::alloc( hSizeT size )
 {
     hMH_PRE_ACTION();
     void* r = mspace_malloc( localMspace_, size );
-    size_t s = mspace_allocate_size( r );
+    hSizeT s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
     hMH_POST_ACTION();
@@ -103,11 +103,11 @@ void* hMemoryHeap::alloc( hUint32 size )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
+void* hMemoryHeap::alloc( hSizeT size, const hChar* file, hSizeT line )
 {
     hMH_PRE_ACTION();
     void* r = mspace_malloc( localMspace_, size );
-    size_t s = mspace_allocate_size( r );
+    hSizeT s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
     hMH_POST_ACTION();
@@ -118,7 +118,7 @@ void* hMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hUint32 size )
+void* hMemoryHeap::realloc( void* ptr, hSizeT size )
 {
     hMH_PRE_ACTION();
     size_t s = mspace_allocate_size(ptr);
@@ -141,7 +141,7 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line )
+void* hMemoryHeap::realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line )
 {
     hMH_PRE_ACTION();
     size_t s = mspace_allocate_size(ptr);
@@ -164,7 +164,7 @@ void* hMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
+void* hMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment )
 {
     hMH_PRE_ACTION();
     void* r = mspace_memalign( localMspace_, alignment, size );
@@ -179,7 +179,7 @@ void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line )
+void* hMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
 {
     hMH_PRE_ACTION();
     void* r = mspace_memalign( localMspace_, alignment, size );
@@ -212,7 +212,7 @@ void hMemoryHeap::release( void* ptr )
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-hUint32 hMemoryHeap::totalAllocationCount() const
+hSizeT hMemoryHeap::totalAllocationCount() const
 {
     hAtomic::LWMemoryBarrier();
     return alloced_;

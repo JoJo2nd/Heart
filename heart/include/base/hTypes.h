@@ -46,6 +46,7 @@ typedef float				hFloat;
 typedef double				hDouble;
 typedef bool				hBool;
 typedef time_t              hTime;
+typedef uintptr_t           hUintptr_t;
 
 class hNullType {};
 struct hcEmptyType {};
@@ -100,11 +101,11 @@ namespace Heart
 #define	hTrue				(true)
 #define hErrorCode			(~0)
 
-#define hAlignPower2( x, align ) ( ( (hUint32)x + (hUint32)align - 1 ) & ~((hUint32)align - 1) )
+#define hAlignPower2( x, align ) ( ( (hUintptr_t)x + (hUintptr_t)align - 1 ) & ~((hUintptr_t)align - 1) )
 #define hPadPower2( x, align ) ( (align + ((x - 1) & ~(align - 1))) - x )
-#define hAlign( x, align ) ( (hUint32)(x) + align - ((hUint32)(x) % align) )
+#define hAlign( x, align ) ( (hUintptr_t)(x) + align - ((hUintptr_t)(x) % align) )
 #define hAlloca( x ) alloca( x )
-#define hOffsetOf( s, m ) (hUint32)(&(((s*)0)->m))
+#define hOffsetOf( s, m ) (hUintptr_t)(&(((s*)0)->m))
 #define MAX_LUA_FILESYSTEMS  (6)
 
 //#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
@@ -137,9 +138,7 @@ namespace Heart
 #endif
 
 #ifndef hFORCEINLINE
-
-#define hFORCEINLINE __forceinline
-
+#   define hFORCEINLINE __forceinline
 #endif
 
 #define hMAKE_FOURCC(a,b,c,d) \

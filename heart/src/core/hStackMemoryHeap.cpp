@@ -32,7 +32,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hStackMemoryHeap::create( hUint32 sizeInBytes, hBool threadLocal )
+    void hStackMemoryHeap::create( hSizeT sizeInBytes, hBool threadLocal )
     {
         hMH_PRE_ACTION();
 
@@ -70,7 +70,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alloc( hUint32 size )
+    void* hStackMemoryHeap::alloc( hSizeT size )
     {
         hMH_PRE_ACTION();
         void* ret = ptr_;
@@ -89,7 +89,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alloc( hUint32 size, const hChar* file, hUint32 line )
+    void* hStackMemoryHeap::alloc( hSizeT size, const hChar* file, hSizeT line )
     {
         // Don't support tracking on stack heap.
         return alloc(size);
@@ -99,7 +99,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::realloc( void* ptr, hUint32 size )
+    void* hStackMemoryHeap::realloc( void* ptr, hSizeT size )
     {
         // Don't support realloc but allow to be used as alloc in case where ptr == NULL or release 
         // via size => zero
@@ -119,7 +119,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::realloc( void* ptr, hUint32 size, const hChar* file, hUint32 line )
+    void* hStackMemoryHeap::realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line )
     {
         // Don't support tracking or realloc on stack heap.
         return realloc(ptr, size);
@@ -129,7 +129,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment )
+    void* hStackMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment )
     {
         hMH_PRE_ACTION();
         hByte* ret = ptr_;
@@ -149,7 +149,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alignAlloc( hUint32 size, hUint32 alignment, const hChar* file, hUint32 line )
+    void* hStackMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
     {
         // Don't support tracking on stack heap.
         return alignAlloc(size, alignment);
