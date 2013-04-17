@@ -52,8 +52,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourceManager::Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources )//< NEEDS FileSystem??
-    {
+    hBool hResourceManager::Initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources ) {
         hUint32 nRequiredResources = 0;
         hChar pluginpath[2048];
         filesystem_ = pFileSystem;
@@ -65,7 +64,6 @@ namespace Heart
         hStrPrintf(pluginpath, 2048, "%sPLUGIN/", engine->GetWorkingDir());
         hd_AddSharedLibSearchDir(pluginpath);
 
-        LoadGamedataDesc();
         loaderSemaphone_.Create(0, 128);
         resourceLoaderThread_.create(
             "hResource Loader hThread",
@@ -79,8 +77,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::Shutdown( hRenderer* prenderer )
-    {
+    void hResourceManager::Shutdown( hRenderer* prenderer ) {
         //remove references to loaded packages from the main thread
         mtLoadedPackages_.Clear(hTrue);
         // Signals the loader thread to finish up
@@ -95,8 +92,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourceManager::LoadedThreadFunc( void* )
-    {
+    hUint32 hResourceManager::LoadedThreadFunc( void* ) {
         hBool stuffToDo = hFalse;
         resourceThreadID_ = Device::GetCurrentThreadID();
 
@@ -240,8 +236,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::MainThreadUpdate()
-    {
+    void hResourceManager::MainThreadUpdate() {
         HEART_PROFILE_FUNC();
         hMutexAutoScope autoLock(&ltAccessMutex_);
 
@@ -277,58 +272,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::LoadGamedataDesc()
-    {
-        hIFile* f = filesystem_->OpenFileRoot("CONFIG/LOADERS", FILEMODE_READ);
-        hcAssertMsg(f, "config/loaders failed to load, this is fatal");
-        void* xmldata = hHeapMalloc(GetGlobalHeap(), (hUint32)(f->Length()+1));
-        f->Read(xmldata, (hUint32)f->Length());
-        ((hChar*)xmldata)[f->Length()] = 0;
-        filesystem_->CloseFile(f);
-        gamedataDescXML_.ParseSafe< rapidxml::parse_default >((hChar*)xmldata,GetGlobalHeap());
-
-        for (hXMLGetter e = hXMLGetter(&gamedataDescXML_).FirstChild("gamedata").FirstChild("loader"); e.ToNode() != NULL; e = e.NextSibling())
-        {
-            hResourceHandler handler;
-            hStrCopy(handler.type_.ext, 4, e.GetAttributeString("type") );
-            hUint32 fullPathSize = hStrLen(e.GetAttributeString("libpath"))+hStrLen(HEART_SUFFIX)+hStrLen(HEART_SHARED_LIB_EXT);
-            hChar* fullLibPath = (hChar*)hAlloca(fullPathSize+1);
-            hStrCopy(fullLibPath, fullPathSize, e.GetAttributeString("libpath"));
-            hStrCat(fullLibPath, fullPathSize, HEART_SUFFIX);
-            hStrCat(fullLibPath, fullPathSize, HEART_SHARED_LIB_EXT);
-
-            handler.loaderLib_ = hd_OpenSharedLib(fullLibPath);
-            hcAssertMsg(handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS, 
-                "Failed to load %s.This will cause data to fail to load", fullLibPath);
-            if (handler.loaderLib_ != HEART_SHAREDLIB_INVALIDADDRESS)
-            {
-                handler.binLoader_              = (OnResourceDataLoad)      hd_GetFunctionAddress(handler.loaderLib_,"HeartBinLoader");
-                handler.rawCompiler_            = (OnResourceDataCompile)   hd_GetFunctionAddress(handler.loaderLib_,"HeartDataCompiler");
-                handler.packageLink_            = (OnPackageLoadComplete)   hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageLink");
-                handler.packageUnlink_          = (OnResourceDataUnload)    hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnlink");
-                handler.resourceDataUnload_     = (OnPackageUnloadComplete) hd_GetFunctionAddress(handler.loaderLib_,"HeartPackageUnload");
-                handler.getBuildVersion_        = (hGetBuilderVersion)      hd_GetFunctionAddress(handler.loaderLib_, "HeartGetBuilderVersion");
-
-                if ( handler.binLoader_           &&
-                     handler.packageLink_         &&
-                     handler.resourceDataUnload_  &&
-                     handler.packageUnlink_       )
-                {
-                    //Add
-                    hResourceHandler* toadd = hNEW(GetGlobalHeap(), hResourceHandler)();
-                    *toadd = handler;
-                    resourceHandlers_.Insert(handler.type_, toadd);
-                }
-            }
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::mtLoadPackage( const hChar* name )
-    {
+    void hResourceManager::mtLoadPackage( const hChar* name ) {
         hUint32 pkcrc = hCRC32::StringCRC(name);
         //Add to be loaded
         ResourcePackageLoadMsg msg;
@@ -340,8 +284,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourceManager::mtIsPackageLoaded( const hChar* name )
-    {
+    hBool hResourceManager::mtIsPackageLoaded( const hChar* name ) {
         hLoadedResourcePackages* pk = mtLoadedPackages_.Find(hCRC32::StringCRC(name));
         return (pk && pk->package_) ? hTrue : hFalse;
     }
@@ -479,6 +422,14 @@ namespace Heart
             pack->printResourceInfo();
         }
         hcPrintf("=== Loaded Package Info End ===");
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourceManager::registerResourceHandler(hResourceType restype, hResourceHandler handler) {
+
     }
 
 }

@@ -117,7 +117,7 @@ namespace Heart
             return -1;
         }
 
-        const hChar* memuse = hXMLGetter(&descXML_).FirstChild("memory").GetAttributeString("alloc", NULL);
+        const hChar* memuse = hXMLGetter(&descXML_).FirstChild("package").FirstChild("memory").GetAttributeString("alloc", NULL);
         hUint32 sizeBytes = 0;
         if (memuse)
         {
@@ -157,16 +157,16 @@ namespace Heart
         resourceMap_.SetHeap(packageHeap_);
 
         links_.Reserve(16);
-        for (hXMLGetter i = hXMLGetter(descXML_.first_node("packagelinks")).FirstChild("link"); i.ToNode(); i = i.NextSibling())
+        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling())
         {
             links_.PushBack(i.ToNode()->value());
         }
 
-        currentResource_.SetNode(hXMLGetter(descXML_.first_node("resources")).FirstChild("resource").ToNode());
+        currentResource_.SetNode(hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource").ToNode());
 
         loadedResources_ = 0;
         totalResources_ = 0;
-        for (hXMLGetter i = hXMLGetter(descXML_.first_node("resources")).FirstChild("resource"); i.ToNode(); i = i.NextSibling())
+        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource"); i.ToNode(); i = i.NextSibling())
         {
             ++totalResources_;
         }
@@ -285,83 +285,32 @@ namespace Heart
         if (currentResource_.ToNode())
         {
             //hIFile* file, const hChar* packagePath, const hChar* resName, const hChar* resourcePath, hUint32 parameterHash
-            if (currentResource_.GetAttributeString("name") &&
-                currentResource_.GetAttributeString("input") && 
-                currentResource_.GetAttributeString("type"))
+            if (currentResource_.GetAttributeString("name"))
             {
                 hResourceType typehandler;
-                hStrCopy(typehandler.ext, 4, currentResource_.GetAttributeString("type"));
-                hResourceHandler* handler = handlerMap_->Find(typehandler);
-                hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
-                hDataParameterSet paramSet(&currentResource_);
-#ifdef HEART_ALLOW_DATA_COMPILE
-                hUint32 verMajor=~0,verMinor=~0;
-                if (handler->getBuildVersion_) {
-                    handler->getBuildVersion_(&verMajor, &verMinor);
-                }
-                hBuiltDataCache dataCache(
-                    fileSystem_,
-                    packageName_,
-                    currentResource_.GetAttributeString("name"),
-                    currentResource_.GetAttributeString("input"),
-                    paramSet.GetParameterHash(),
-                    hd_GetSharedLibTimestamp(handler->loaderLib_),
-                    verMajor, verMinor);
-#endif//HEART_ALLOW_DATA_COMPILE
                 hResourceClassBase* res = NULL;
                 hUint32 crc = hCRC32::StringCRC(currentResource_.GetAttributeString("name"));
 
                 hChar* binFilepath;
                 hBuildResFilePath(binFilepath, packageName_, currentResource_.GetAttributeString("name"));
-#ifdef HEART_ALLOW_DATA_COMPILE
-                if (!dataCache.IsCacheValid())
+                hIFile* file=hNullptr;
+                file=fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
+
+                if (file)
                 {
-                    hBool success = hFalse;
-                    while (!success)
-                    {
-                        hSerialiserFileStream outStream;
-                        outStream.Open(binFilepath, hTrue, fileSystem_);
-                        hIDataCacheFile* infile = dataCache.OpenFile(currentResource_.GetAttributeString("input"));
-                        if (infile && outStream.IsOpen())
-                        {
-                            hTimer timer;
-                            hcPrintf("Compiling Resource %s", binFilepath);
-                            hClock::BeginTimer(timer);
-                            hcAssertMsg(handler->rawCompiler_, "Data compiler not loaded!!");
-                            success = (*handler->rawCompiler_)(infile, &dataCache, &paramSet, &memAlloc, engine_, &outStream);
-                            hClock::EndTimer(timer);
-                            if (success)
-                            {
-                                hcPrintf("Compile Time = %f Secs", timer.ElapsedMS()/1000.0f);
-                            }
-                        }
-
-                        if (infile)
-                            dataCache.CloseFile(infile);
-                        if (outStream.IsOpen())
-                            outStream.Close();
-
-                        if (!success)
-                        {
-                            // Wait ~5 seconds and try again...
-                            // TODO: Add a file watch?
-                            Device::ThreadSleep(5000);
-                        }
-                    }
-                }
-#endif // HEART_ALLOW_DATA_COMPILE
-                hSerialiserFileStream inStream;
-                inStream.Open(binFilepath, hFalse, fileSystem_);
-
-                if (inStream.IsOpen())
-                {
+                    hResourceBinHeader resourceHeader={0};
+                    file->Read(&resourceHeader, sizeof(resourceHeader));
+                    typehandler=resourceHeader.resourceType;
+                    file->Seek(0, SEEKOFFSET_BEGIN);
+                    hResourceHandler* handler = handlerMap_->Find(typehandler);
+                    hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
                     // Load the binary file
                     hTimer timer;
                     hcPrintf("Loading %s (crc:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
                     hClock::BeginTimer(timer);
-                    res = (*handler->binLoader_)(&inStream, &paramSet, &memAlloc, engine_);
+                    res = handler->loadProc_(file, &memAlloc);
                     hClock::EndTimer(timer);
-                    inStream.Close();
+                    fileSystem_->CloseFile(file);
                     hcPrintf("Load Time = %f Secs", timer.ElapsedMS()/1000.0f);
                 }
 
@@ -399,7 +348,7 @@ namespace Heart
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             if (!res->GetIsLinked())
             {
-                if ((*handler->packageLink_)(res, &memAlloc, engine_))
+                if (handler->linkProc_(res, &memAlloc))
                 {
                     hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
                     res->SetIsLinked(hTrue);
@@ -423,7 +372,7 @@ namespace Heart
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            (*handler->packageUnlink_)(res, &memAlloc, engine_);
+            handler->unlinkProc_(res, &memAlloc);
         }
     }
 
@@ -438,7 +387,7 @@ namespace Heart
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             resourceMap_.Erase(res, &next);
-            (*handler->resourceDataUnload_)(res, &memAlloc, engine_);
+            handler->unloadProc_(res, &memAlloc);
             res = next;
         }
     }

@@ -55,14 +55,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    typedef hResourceClassBase* (*OnResourceDataLoad)       (hISerialiseStream*, hIDataParameterSet*, hResourceMemAlloc*, hHeartEngine*);
-    typedef hBool               (*OnResourceDataCompile)    (hIDataCacheFile*, hIBuiltDataCache*, hIDataParameterSet*, hResourceMemAlloc*, hHeartEngine*, hISerialiseStream*);
-    typedef hBool               (*OnPackageLoadComplete)    (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
-    typedef void                (*OnResourceDataUnload)     (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
-    typedef void                (*OnPackageUnloadComplete)  (hResourceClassBase*, hResourceMemAlloc*, hHeartEngine*);
-    typedef void                (*hGetBuilderVersion)       (hUint32* verMaj, hUint32* verMin);
-    typedef hTime               (*GetTimestamp)             ();
-
     hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(hIFile*,             hResourceMemAlloc*), hResourceLoadProc);
     hFUNCTOR_TYPEDEF(hBool               (*)(hResourceClassBase*, hResourceMemAlloc*), hResourceLinkProc);
     hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*, hResourceMemAlloc*), hResourceUnlinkProc);
@@ -70,16 +62,6 @@ namespace Heart
 
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
     {
-        hResourceType           type_;
-        hSharedLibAddress       loaderLib_;
-        OnResourceDataLoad      binLoader_;
-        OnResourceDataCompile   rawCompiler_;
-        OnPackageLoadComplete   packageLink_;
-        OnResourceDataUnload    resourceDataUnload_;
-        OnPackageUnloadComplete packageUnlink_;
-        GetTimestamp            getTimestamp_;
-        hGetBuilderVersion       getBuildVersion_;
-
         hResourceLoadProc       loadProc_;
         hResourceLinkProc       linkProc_;
         hResourceUnlinkProc     unlinkProc_;

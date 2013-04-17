@@ -206,14 +206,12 @@ set(HEART_THREAD_FILES
 )
 set(HEART_UTILS_FILES
     "${HEART_SOURCE_DIR}/include/utils/hBase64.h"
-    "${HEART_SOURCE_DIR}/include/utils/hBuiltDataCache.h"
     "${HEART_SOURCE_DIR}/include/utils/hMemoryViewMenu.h"
     "${HEART_SOURCE_DIR}/include/utils/hRapidXML.h"
     "${HEART_SOURCE_DIR}/include/utils/hRealTimeProfilerMenu.h"
     "${HEART_SOURCE_DIR}/include/utils/hTextFormatting.h"
     
     "${HEART_SOURCE_DIR}/src/utils/hBase64.cpp"
-    "${HEART_SOURCE_DIR}/src/utils/hBuiltDataCache.cpp"
     "${HEART_SOURCE_DIR}/src/utils/hMemoryViewMenu.cpp"
     "${HEART_SOURCE_DIR}/src/utils/hRapidXML.cpp"
     "${HEART_SOURCE_DIR}/src/utils/hRealTimeProfilerMenu.cpp"

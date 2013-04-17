@@ -33,19 +33,19 @@ namespace Heart
 {
     struct hResourceType
     {
-        hChar						ext[4];
+        union{
+            hChar   ext[4];
+            hUint32 fourCC;
+        }
 
-        hBool						operator == ( const hResourceType& b ) const 
-        {
-            return strcmp( ext, b.ext ) == 0;
+        hBool operator == ( const hResourceType& b ) const {
+            return fourCC == b.fourCC;
         }
-        hBool						operator != ( const hResourceType& b ) const 
-        {
-            return strcmp( ext, b.ext ) != 0;
+        hBool operator != ( const hResourceType& b ) const {
+            return fourCC != b.fourCC;
         }
-        hBool						operator < ( const hResourceType& b ) const
-        {
-            return strcmp( ext, b.ext ) < 0;
+        hBool operator < ( const hResourceType& b ) const {
+            return fourCC < b.fourCC;
         }
     };
 

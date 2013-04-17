@@ -78,6 +78,7 @@ namespace Heart
 
         hBool                           Initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources);
         hBool                           RequiredResourcesReady();
+        void                            registerResourceHandler(hResourceType restype, hResourceHandler handler);
         void                            MainThreadUpdate();
         static hResourceID              BuildResourceID(const hChar* fullPath){
             if (!fullPath)
@@ -148,8 +149,7 @@ namespace Heart
         typedef hQueue< ResourcePackageQueueMsg, QUEUE_MAX_SIZE >   ResourceMsgQueue;
 
         hUint32                         LoadedThreadFunc( void* );
-        void                            LoadGamedataDesc();
-        void loaderThreadPrintResourceInfo();
+        void                            loaderThreadPrintResourceInfo();
         static void*                    resourceThreadID_;
 
         hBool                           requireAssetsReady_;
