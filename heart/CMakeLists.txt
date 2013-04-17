@@ -64,6 +64,161 @@ set(HEART_BASE_FILES
     "${HEART_SOURCE_DIR}/src/base/hUTF8.cpp"
     "${HEART_SOURCE_DIR}/src/base/hWildcard.cpp"
 )
+set(HEART_COMPONENTS_FILES
+    "${HEART_SOURCE_DIR}/include/components/hComponent.h"
+    "${HEART_SOURCE_DIR}/include/components/hEntity.h"
+    "${HEART_SOURCE_DIR}/include/components/hEntityDataDefinition.h"
+    "${HEART_SOURCE_DIR}/include/components/hEntityFactory.h"
+    "${HEART_SOURCE_DIR}/include/components/hLuaScriptComponent.h"
+    "${HEART_SOURCE_DIR}/include/components/hSceneNodeComponent.h"
+    "${HEART_SOURCE_DIR}/include/components/hWorldObjectScript.h"
+    "${HEART_SOURCE_DIR}/src/components/hComponent.cpp"
+    "${HEART_SOURCE_DIR}/src/components/hEntity.cpp"
+    "${HEART_SOURCE_DIR}/src/components/hEntityFactory.cpp"
+    "${HEART_SOURCE_DIR}/src/components/hLuaScriptComponent.cpp"
+    "${HEART_SOURCE_DIR}/src/components/hSceneNodeComponent.cpp"
+    "${HEART_SOURCE_DIR}/src/components/hWorldObjectScript.cpp"
+)
+set(HEART_COMPUTE_FILES 
+    "${HEART_SOURCE_DIR}/include/compute/hComputeUAV.h"
+)
+set(HEART_CORE_FILES
+    "${HEART_SOURCE_DIR}/include/core/hConfigOptions.h"
+    "${HEART_SOURCE_DIR}/include/core/hDeferredReturn.h"
+    "${HEART_SOURCE_DIR}/include/core/hDriveFile.h"
+    "${HEART_SOURCE_DIR}/include/core/hDriveFileSystem.h"
+    "${HEART_SOURCE_DIR}/include/core/hHeart.h"
+    "${HEART_SOURCE_DIR}/include/core/hIFile.h"
+    "${HEART_SOURCE_DIR}/include/core/hIFileSystem.h"
+    "${HEART_SOURCE_DIR}/include/core/hMemoryHeap.h"
+    "${HEART_SOURCE_DIR}/include/core/hResource.h"
+    "${HEART_SOURCE_DIR}/include/core/hResourceManager.h"
+    "${HEART_SOURCE_DIR}/include/core/hResourcePackage.h"
+    "${HEART_SOURCE_DIR}/include/core/hSerialiserFileStream.h"
+    "${HEART_SOURCE_DIR}/include/core/hStateBase.h"
+    "${HEART_SOURCE_DIR}/include/core/hStackMemoryHeap.h"
+    "${HEART_SOURCE_DIR}/include/core/hSystem.h"
+    "${HEART_SOURCE_DIR}/include/core/hSystemConsole.h"
+    "${HEART_SOURCE_DIR}/include/core/hTypePoolMemoryHeap.h"
+    "${HEART_SOURCE_DIR}/include/core/hZipFile.h"
+    "${HEART_SOURCE_DIR}/include/core/hZipFileSystem.h"
+    
+    "${HEART_SOURCE_DIR}/src/core/hDriveFile.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hDriveFileSystem.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hHeart.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hMemoryHeap.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hResource.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hResourceManager.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hResourcePackage.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hStateBase.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hStackMemoryHeap.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hSystem.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hSystemConsole.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hWildcard.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hZipFile.cpp"
+    "${HEART_SOURCE_DIR}/src/core/hZipFileSystem.cpp"
+)
+set(HEART_DEBUG_FILES
+    "${HEART_SOURCE_DIR}/include/debug/hDebugMenuManager.h"
+    
+    "${HEART_SOURCE_DIR}/src/debug/hDebugMenuManager.cpp"
+)
+set(HEART_EVENTS_FILES
+    "${HEART_SOURCE_DIR}/include/events/hEventManager.h"
+    
+    "${HEART_SOURCE_DIR}/src/events/hEventManager.cpp"
+)
+set(HEART_INPUT_FILES
+    "${HEART_SOURCE_DIR}/include/input/hController.h"
+    "${HEART_SOURCE_DIR}/include/input/hControllerManager.h"
+    
+    "${HEART_SOURCE_DIR}/src/input/hController.cpp"
+    "${HEART_SOURCE_DIR}/src/input/hControllerManager.cpp"
+)
+set(HEART_LUA_FILES
+    "${HEART_SOURCE_DIR}/include/lua/hLuaHeartLib.h"
+    "${HEART_SOURCE_DIR}/include/lua/hLuaStateManager.h"
+    
+    "${HEART_SOURCE_DIR}/src/lua/hLuaHeartLib.cpp"
+    "${HEART_SOURCE_DIR}/src/lua/hLuaStateManager.cpp"
+)
+set(HEART_MATH_FILES
+    "${HEART_SOURCE_DIR}/include/math/hAABB.h"
+    "${HEART_SOURCE_DIR}/include/math/hMathUtil.h"
+    "${HEART_SOURCE_DIR}/include/math/hPlane.h"
+    "${HEART_SOURCE_DIR}/include/math/hPoly2.h"
+    "${HEART_SOURCE_DIR}/include/math/hViewFrustum.h"
+    
+    "${HEART_SOURCE_DIR}/src/math/hCollision.cpp"
+    "${HEART_SOURCE_DIR}/src/math/hViewFrustum.cpp"
+)
+set(HEART_RENDER_FILES
+    "${HEART_SOURCE_DIR}/include/render/hCompute.h"
+    "${HEART_SOURCE_DIR}/include/render/hDrawCallContext.h"
+    "${HEART_SOURCE_DIR}/include/render/hFont.h"
+    "${HEART_SOURCE_DIR}/include/render/hGeometryObject.h"
+    "${HEART_SOURCE_DIR}/include/render/hIndexBuffer.h"
+    "${HEART_SOURCE_DIR}/include/render/hMaterial.h"
+    "${HEART_SOURCE_DIR}/include/render/hMaterialTypes.h"
+    "${HEART_SOURCE_DIR}/include/render/hParameterConstBlock.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderable.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderer.h"
+    "${HEART_SOURCE_DIR}/include/render/hRendererCamera.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderMaterialManager.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderModel.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderShaderProgram.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderStateBlock.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderSubmissionContext.h"
+    "${HEART_SOURCE_DIR}/include/render/hRenderUtility.h"
+    "${HEART_SOURCE_DIR}/include/render/hTexture.h"
+    "${HEART_SOURCE_DIR}/include/render/hVertexBuffer.h"
+    "${HEART_SOURCE_DIR}/include/render/hViews.h"
+    
+    "${HEART_SOURCE_DIR}/src/render/hDebugFontData.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hDrawCallContext.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hFont.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hIndexBuffer.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hMaterial.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hMaterialTypes.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hParameterConstBlock.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderable.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderer.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRendererCamera.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderMaterialManager.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderModel.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderShaderProgram.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderSubmissionContext.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hRenderUtility.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hTexture.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hVertexBuffer.cpp"
+    "${HEART_SOURCE_DIR}/src/render/hViews.cpp"
+)
+set(HEART_SCENE_FILES
+    "${HEART_SOURCE_DIR}/include/scene/hSceneBundle.h"
+    "${HEART_SOURCE_DIR}/include/scene/hSceneDefinition.h"
+)
+set(HEART_THREAD_FILES
+    "${HEART_SOURCE_DIR}/include/threading/hJobManager.h"
+    "${HEART_SOURCE_DIR}/include/threading/hLocklessComPipe.h"
+    "${HEART_SOURCE_DIR}/include/threading/hMutexAutoScope.h"
+    
+    "${HEART_SOURCE_DIR}/src/threading/hJobManager.cpp"
+)
+set(HEART_UTILS_FILES
+    "${HEART_SOURCE_DIR}/include/utils/hBase64.h"
+    "${HEART_SOURCE_DIR}/include/utils/hBuiltDataCache.h"
+    "${HEART_SOURCE_DIR}/include/utils/hMemoryViewMenu.h"
+    "${HEART_SOURCE_DIR}/include/utils/hRapidXML.h"
+    "${HEART_SOURCE_DIR}/include/utils/hRealTimeProfilerMenu.h"
+    "${HEART_SOURCE_DIR}/include/utils/hTextFormatting.h"
+    
+    "${HEART_SOURCE_DIR}/src/utils/hBase64.cpp"
+    "${HEART_SOURCE_DIR}/src/utils/hBuiltDataCache.cpp"
+    "${HEART_SOURCE_DIR}/src/utils/hMemoryViewMenu.cpp"
+    "${HEART_SOURCE_DIR}/src/utils/hRapidXML.cpp"
+    "${HEART_SOURCE_DIR}/src/utils/hRealTimeProfilerMenu.cpp"
+    "${HEART_SOURCE_DIR}/src/utils/hTextFormatting.cpp"
+)
 set( HEART_GEN_FILES
     "${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h"
 )
@@ -94,10 +249,63 @@ if (WIN32)
         ${HEART_SRC_FILES}
         "${HEART_SOURCE_DIR}/src/pal/win32/heartWin32Unity.cpp"
     )
+    set(HEART_PLATFORM_NON_UNITY_FILES
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceConfig.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceFileSystem.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceInput.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceInputDeviceManager.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceKeyboard.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceMouse.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSoundCore.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSoundVoice.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSystemWindow.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceThread.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hEvent.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hMalloc.h"
+        #"${HEART_SOURCE_DIR}/include/pal/win32/device/hMiniDumper.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/hMutex.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11ComputeTypes.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11IndexBuffer.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderDevice.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderStateBlock.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderSubmissionCtx.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11ShaderProgram.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11Texture.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11VertexBuffer.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11VertexLayout.h"
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11View.h"
+        
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceFileSystem.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceInputDeviceManager.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceKeyboard.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceMouse.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundCore.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundUtil.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundVoice.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSystemWindow.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceThread.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/hMalloc.c"
+        #"${HEART_SOURCE_DIR}/src/pal/win32/device/hMiniDumper.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11RenderDevice.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11RenderSubmissionCtx.cpp"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11ShaderProgram.cpp"
+    )
 endif (WIN32)
 
 set( HEART_NON_UNITY_FILES
     ${HEART_BASE_FILES} 
+    ${HEART_COMPONENTS_FILES}
+    ${HEART_COMPUTE_FILES}
+    ${HEART_CORE_FILES}
+    ${HEART_DEBUG_FILES}
+    ${HEART_EVENTS_FILES}
+    ${HEART_INPUT_FILES}
+    ${HEART_LUA_FILES}
+    ${HEART_MATH_FILES}
+    ${HEART_RENDER_FILES}
+    ${HEART_SCENE_FILES}
+    ${HEART_THREAD_FILES}
+    ${HEART_UTILS_FILES}
     ${HEART_DEVICE_MATH_FILES}
 )
 #common vars to pass up to parent directory
@@ -117,6 +325,18 @@ endif()
 source_group(unity FILES ${HEART_SRC_FILES})
 source_group(base FILES ${HEART_BASE_FILES})
 source_group(math FILES ${HEART_DEVICE_MATH_FILES})
+source_group(components FILES ${HEART_COMPONENTS_FILES})
+source_group(compute FILES ${HEART_COMPUTE_FILES})
+source_group(core FILES ${HEART_CORE_FILES})
+source_group(debug FILES ${HEART_DEBUG_FILES})
+source_group(events FILES ${HEART_EVENTS_FILES})
+source_group(input FILES ${HEART_INPUT_FILES})
+source_group(lua FILES ${HEART_LUA_FILES})
+source_group(math FILES ${HEART_MATH_FILES})
+source_group(render FILES ${HEART_RENDER_FILES})
+source_group(scene FILES ${HEART_SCENE_FILES})
+source_group(thread FILES ${HEART_THREAD_FILES})
+source_group(utils FILES ${HEART_UTILS_FILES})
 
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)
