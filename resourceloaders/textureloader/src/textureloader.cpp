@@ -33,37 +33,11 @@
 
 using namespace Heart;
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 #ifndef MAKEFOURCC
 #   define MAKEFOURCC(ch0, ch1, ch2, ch3)                           \
         ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) |           \
         ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
 #endif /* defined(MAKEFOURCC) */
-
-#define TEXTURE_MAGIC_NUM              hMAKE_FOURCC('h','T','E','X')
-#define TEXTURE_STRING_MAX_LEN         (32)
-#define TEXTURE_MAJOR_VERSION          (((hUint16)1))
-#define TEXTURE_MINOR_VERSION          (((hUint16)0))
-#define TEXTURE_VERSION                ((TEXTURE_MAJOR_VERSION << 16)|TEXTURE_MINOR_VERSION)
-
-#pragma pack(push, 1)
-
-struct TextureHeader
-{
-    Heart::hResourceBinHeader   resHeader;
-    hUint32                     version;
-    hUint32                     width;
-    hUint32                     height;
-    hUint32                     depth;
-    hUint32                     mipCount;
-    Heart::hTextureFormat       format;
-    Heart::ResourceFlags        flags;
-};
-
-#pragma pack(pop)
 
 struct RawTextureData
 {
@@ -160,77 +134,18 @@ struct DDSHeader
 
 hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData);
 #define getPitchFromWidth(w,bitsPerPixel) (( w * bitsPerPixel + 7 ) / 8)
-hUint32 getDXTTextureSize(hBool dxt1, hUint32 width, hUint32 height)
-{
+hUint32 getDXTTextureSize(hBool dxt1, hUint32 width, hUint32 height) {
     // compute the storage requirements
     int blockcount = ( ( width + 3 )/4 ) * ( ( height + 3 )/4 );
     int blocksize = (dxt1) ? 8 : 16;
     return blockcount*blocksize;
 }
 
-#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT 
-void TB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
-    *verMajor = 0;
-    *verMinor = 92;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-Heart::hResourceClassBase* TB_API HeartBinLoader(Heart::hISerialiseStream* infile, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
-{
-    Heart::hTexture* texutre;
-    Heart::hRenderer* renderer = engine->GetRenderer();
-    Heart::hMipDesc* mips = NULL;
-    hUint32 totalTextureSize = 0;
-    hByte* textureData = NULL;
-    TextureHeader header = {0};
-
-    infile->Read(&header, sizeof(header));
-
-    mips = (Heart::hMipDesc*)hAlloca(header.mipCount*sizeof(Heart::hMipDesc));
-
-    //Read mip info
-    infile->Read(mips, header.mipCount*sizeof(Heart::hMipDesc));
-
-    //Add up the size need for textures
-    for (hUint32 i = 0; i < header.mipCount; ++i)
-    {
-        mips[i].data = (hByte*)totalTextureSize;
-        totalTextureSize += mips[i].size;
-    }
-
-    textureData = (hByte*)hHeapMalloc(memalloc->resourcePakHeap_, totalTextureSize);
-
-    for (hUint32 i = 0; i < header.mipCount; ++i)
-    {
-        mips[i].data = textureData + (hUint32)(mips[i].data);
-    }
-
-    //Read Texture data
-    infile->Read(textureData, totalTextureSize);
-
-    renderer->createTexture(header.mipCount, mips, header.format, header.flags, memalloc->resourcePakHeap_, &texutre);
-
-    return texutre;
-}
-
-#endif
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-int TB_API textureCompile(lua_State* L)
-/*Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput*/ 
-{
+int TB_API textureCompile(lua_State* L) {
     using namespace Heart;
     using namespace boost;
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
@@ -368,43 +283,8 @@ int TB_API textureCompile(lua_State* L)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-#if 0
-DLL_EXPORT
-hBool TB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    //Nothing to do
-    return hTrue;
-}
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void TB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    //Nothing to do
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void TB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    hTexture* tex=static_cast<hTexture*>(resource);
-    // Package should be the only thing hold ref at this point...
-    hcAssertMsg(tex->GetRefCount() == 1, "Texture ref count is %u, it should be 1", tex->GetRefCount());
-    tex->DecRef();
-}
-#endif
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData)
-{
+hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData) {
     DDSHeader header;
     boost::system::error_code ec;
     hUint filesize=(hUint)boost::filesystem::file_size(filepath, ec);

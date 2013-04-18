@@ -157,8 +157,8 @@ namespace Heart
         /*
             end new engine design methods
         */
-        void													BeginRenderFrame();
-        void													EndRenderFrame();
+        void                                                    BeginRenderFrame();
+        void                                                    EndRenderFrame();
         void                                                    rendererFrameSubmit();
 
         hUint32													CurrentFPS() { return FPS_; }
@@ -169,7 +169,7 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
 
-        static bool												IsRenderThread();
+        static bool                                             IsRenderThread();
 
     private:
         typedef hMap< hUint32, hBlendState >         BlendStateMapType;
@@ -182,6 +182,29 @@ namespace Heart
         void                                                    SubmitDrawCallsMT();
         void                                                    SubmitDrawCallsST();
         void                                                    createDebugShadersInternal();
+
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        hResourceClassBase*  textureResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
+        hBool                textureResourceLink(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
+        void                 textureResourceUnlink(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
+        void                 textureResourceUnload(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
+
+        hResourceClassBase*  shaderResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
+        hBool                shaderResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 shaderResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 shaderResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+
+        hResourceClassBase*  materialResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
+        hBool                materialResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 materialResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 materialResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+
+        hResourceClassBase*  meshResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
+        hBool                meshResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 meshResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        void                 meshResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
 
         // Init params
         hSystem*												system_;

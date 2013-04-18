@@ -225,7 +225,7 @@ void FlushSymbolsToLogFile();
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%LLX)\nheap(%s,%LLX)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, size, tag, line);
+                "address(%p)\nheap(%s,%p)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, &size, tag, &line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }
@@ -244,7 +244,7 @@ void FlushSymbolsToLogFile();
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%LLX)\nheap(%s,%LLX)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, size, tag, line);
+                "address(%p)\nheap(%s,%p)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, &size, tag, &line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }
@@ -263,7 +263,7 @@ void FlushSymbolsToLogFile();
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! FREE\n"
-                "heap(%s,%LLX)\naddress(%LLX)\n", heaptag, heap, ptr);
+                "heap(%s,%p)\naddress(%p)\n", heaptag, heap, ptr);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }

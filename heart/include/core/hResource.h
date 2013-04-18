@@ -33,10 +33,14 @@ namespace Heart
 {
     struct hResourceType
     {
+        hResourceType() {}
+        explicit hResourceType(hUint32 cc)
+            : fourCC(cc)
+        {}
         union{
             hChar   ext[4];
             hUint32 fourCC;
-        }
+        };
 
         hBool operator == ( const hResourceType& b ) const {
             return fourCC == b.fourCC;

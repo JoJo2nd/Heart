@@ -139,6 +139,33 @@ namespace Heart
 
         createDebugShadersInternal();
 
+        hResourceHandler texreshandler;
+        texreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   textureResourceLoader, this);
+        texreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   textureResourceLink,   this);
+        texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, textureResourceUnlink, this);
+        texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, textureResourceUnload, this);
+        resourceManager_->registerResourceHandler(hResourceType(TEXTURE_MAGIC_NUM), texreshandler);
+
+        hResourceHandler shaderreshandler;
+        shaderreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   shaderResourceLoader, this);
+        shaderreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   shaderResourceLink,   this);
+        shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, shaderResourceUnlink, this);
+        shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, shaderResourceUnload, this);
+        resourceManager_->registerResourceHandler(hResourceType(SHADER_MAGIC_NUM), shaderreshandler);
+
+        hResourceHandler matreshandler;
+        matreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   materialResourceLoader, this);
+        matreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   materialResourceLink,   this);
+        matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, materialResourceUnlink, this);
+        matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, materialResourceUnload, this);
+        resourceManager_->registerResourceHandler(hResourceType(MATERIAL_MAGIC_NUM), matreshandler);
+
+        hResourceHandler meshreshandler;
+        meshreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
+        meshreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   meshResourceLink,   this);
+        meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, meshResourceUnlink, this);
+        meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
+        resourceManager_->registerResourceHandler(hResourceType(MESH_MAGIC_NUM), meshreshandler);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -935,5 +962,375 @@ namespace Heart
         ParentClass::destroyShaderDevice(prog->heap_, prog);
         hDELETE(prog->heap_, prog);
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hRenderer::textureResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
+        Heart::hTexture* texutre;
+        Heart::hMipDesc* mips = NULL;
+        hUint32 totalTextureSize = 0;
+        hByte* textureData = NULL;
+        TextureHeader header = {0};
+
+        file->Read(&header, sizeof(header));
+        mips = (Heart::hMipDesc*)hAlloca(header.mipCount*sizeof(Heart::hMipDesc));
+        //Read mip info
+        file->Read(mips, header.mipCount*sizeof(Heart::hMipDesc));
+        //Add up the size need for textures
+        for (hUint32 i = 0; i < header.mipCount; ++i) {
+            mips[i].data = (hByte*)totalTextureSize;
+            totalTextureSize += mips[i].size;
+        }
+        textureData = (hByte*)hHeapMalloc(memalloc->resourcePakHeap_, totalTextureSize);
+        for (hUint32 i = 0; i < header.mipCount; ++i) {
+            mips[i].data = textureData + (hUint32)(mips[i].data);
+        }
+        //Read Texture data
+        file->Read(textureData, totalTextureSize);
+        createTexture(header.mipCount, mips, header.format, header.flags, memalloc->resourcePakHeap_, &texutre);
+        return texutre;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hRenderer::textureResourceLink(hResourceClassBase* texture, hResourceMemAlloc* memalloc) {
+        return hTrue; //Nothing to do
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::textureResourceUnlink(hResourceClassBase* texture, hResourceMemAlloc* memalloc) {
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::textureResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hTexture* tex=static_cast<hTexture*>(resource);
+        // Package should be the only thing hold ref at this point...
+        hcAssertMsg(tex->GetRefCount() == 1, "Texture ref count is %u, it should be 1", tex->GetRefCount());
+        tex->DecRef();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hRenderer::shaderResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
+        hShaderProgram* shaderProg=NULL;
+        ShaderHeader header;
+        hInputLayoutDesc* inLayout = NULL;
+        void* shaderBlob = NULL;
+        file->Read(&header, sizeof(ShaderHeader));
+        hcAssert(header.version == SHADER_VERSION);
+        if (header.inputLayoutElements) {
+            inLayout = (hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*header.inputLayoutElements);
+            file->Read(inLayout, sizeof(hInputLayoutDesc)*header.inputLayoutElements);
+        }
+
+        shaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
+        file->Read(shaderBlob, header.shaderBlobSize);
+
+        createShader(
+            memalloc->resourcePakHeap_,
+            (hChar*)shaderBlob, header.shaderBlobSize,
+            header.type, &shaderProg);
+
+        hHeapFreeSafe(memalloc->tempHeap_, shaderBlob);
+
+        return shaderProg;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hRenderer::shaderResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::shaderResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::shaderResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
+        sp->DecRef();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hRenderer::materialResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
+        hMaterial* material = hNEW(memalloc->resourcePakHeap_, hMaterial)(memalloc->resourcePakHeap_, this);
+        MaterialHeader header;
+        file->Read(&header, sizeof(header));
+        //TODO: handle this...
+        hcAssert(header.version == MATERIAL_VERSION);
+        //Read samplers
+        for (hUint32 i = 0, imax = header.samplerCount; i < imax; ++i)
+        {
+            SamplerDefinition samplerDef;
+            hSamplerParameter sampler;
+            file->Read(&samplerDef, sizeof(samplerDef));
+
+            sampler.defaultTextureID_ = samplerDef.defaultTextureID;
+            hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), samplerDef.samplerName);
+            sampler.samplerState_ = createSamplerState(samplerDef.samplerState);
+
+            material->AddSamplerParameter(sampler);
+        }
+        //Read parameters
+        for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
+        {
+            ParameterDefinition paramDef;
+            //hMaterialParameterID id;
+            file->Read(&paramDef, sizeof(paramDef));
+            void* dataptr=paramDef.floatData;
+            hUint dataelesize=0;
+            if (paramDef.type==ePTFloat || paramDef.type==ePTInt || paramDef.type==ePTColour) {
+                dataelesize=4;
+            }
+            material->addDefaultParameterValue(paramDef.parameterName, dataptr, paramDef.count*dataelesize);
+        }
+        //Add Groups, Techniques & Passes
+        for (hUint32 groupidx = 0, groupCount = header.groupCount; groupidx < groupCount; ++groupidx)
+        {
+            GroupDefinition groupDef;
+            hMaterialGroup* group = NULL;
+            file->Read(&groupDef, sizeof(groupDef));
+
+            group = material->AddGroup(groupDef.groupName);
+
+            group->techniques_.Reserve(groupDef.techniques);
+            group->techniques_.Resize(groupDef.techniques);
+            for (hUint32 techniqueIdx = 0, techniqueCount = groupDef.techniques; techniqueIdx < techniqueCount; ++techniqueIdx)
+            {
+                TechniqueDefinition techDef;
+                file->Read(&techDef, sizeof(techDef));
+                hMaterialTechnique* tech = &group->techniques_[techniqueIdx];
+
+                tech->SetName(techDef.technqiueName);
+                tech->SetPasses(techDef.passes);
+                tech->SetLayer(techDef.layer);
+                tech->SetSort(techDef.transparent > 0);
+
+                for (hUint32 passIdx = 0, passCount = techDef.passes; passIdx < passCount; ++passIdx)
+                {
+                    PassDefintion passDef;
+                    hMaterialTechniquePass pass;
+
+                    file->Read(&passDef, sizeof(passDef));
+
+                    hBlendState* bs=createBlendState(passDef.blendState);
+                    hDepthStencilState* ds=createDepthStencilState(passDef.depthState);
+                    hRasterizerState* rs=createRasterizerState(passDef.rasterizerState);
+                    pass.bindBlendState(bs);
+                    pass.bindDepthStencilState(ds);
+                    pass.bindRasterizerState(rs);
+                    pass.SetVertexShaderResID(passDef.vertexProgramID);
+                    pass.SetFragmentShaderResID(passDef.fragmentProgramID);
+                    bs->DecRef();
+                    ds->DecRef();
+                    rs->DecRef();
+                    tech->AppendPass(pass);
+                }
+            }
+        }
+        material->SetActiveGroup(header.defaultGroupName);
+        return material;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hRenderer::materialResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hMaterial* mat = static_cast< hMaterial* >(resource);
+        return mat->Link(resourceManager_, this, &materialManager_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::materialResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hcAssert(resource);
+        hMaterial* mat = static_cast<hMaterial*>(resource);
+        mat->unbind();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::materialResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hMaterial* mat = static_cast<hMaterial*>(resource);
+        hDELETE(memalloc->resourcePakHeap_, mat);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hResourceClassBase* hRenderer::meshResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
+        MeshHeader header = {0};
+        hRenderModel* rmodel = hNEW(memalloc->resourcePakHeap_, hRenderModel)();
+        hInputLayoutDesc inputDesc[32];
+        hInputLayoutDesc streamInputDesc[32];
+        void* tmpBuffer = NULL;
+        hUint32 tmpbufsize = 0;
+
+        file->Read(&header, sizeof(header));
+
+        rmodel->SetLODCount(header.lodCount);
+
+        for (hUint32 lIdx = 0; lIdx < header.lodCount; ++lIdx)
+        {
+            LODHeader lodHeader;
+            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
+            file->Read(&lodHeader, sizeof(lodHeader));
+
+            lod->minRange_ = lodHeader.minRange;
+            lod->renderObjects_.Resize(lodHeader.renderableCount);
+
+            for (hUint32 rIdx = 0; rIdx < lodHeader.renderableCount; ++rIdx)
+            {
+                RenderableHeader rHeader;
+                hRenderable* renderable = &lod->renderObjects_[rIdx];
+                hIndexBuffer* ib;
+                hVertexBuffer* vb;
+                hVec3 bounds[2];//min,max;
+                hAABB aabb;
+
+                file->Read(&rHeader, sizeof(rHeader));
+                hcAssert(rHeader.inputElements < 32);
+                file->Read(inputDesc, sizeof(hInputLayoutDesc)*rHeader.inputElements);
+
+                tmpbufsize = hMax(tmpbufsize, rHeader.ibSize);
+                tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
+
+                bounds[0] = hVec3(rHeader.boundsMin[0], rHeader.boundsMin[1], rHeader.boundsMin[2]);
+                bounds[1] = hVec3(rHeader.boundsMax[0], rHeader.boundsMax[1], rHeader.boundsMax[2]);
+                aabb = hAABB::computeFromPointSet(bounds, 2);
+
+                file->Read(tmpBuffer, rHeader.ibSize);
+                createIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
+
+                renderable->SetStartIndex(rHeader.startIndex);
+                renderable->SetPrimativeCount(rHeader.nPrimatives);
+                renderable->SetPrimativeType((PrimitiveType)rHeader.primType);
+                renderable->SetAABB(aabb);
+                renderable->SetIndexBuffer(ib);
+                renderable->SetMaterialResourceID(rHeader.materialID);
+
+                hUint32 streams = rHeader.streams;
+                for (hUint32 streamIdx = 0; streamIdx < streams; ++streamIdx)
+                {
+                    StreamHeader sHeader = {0};
+                    file->Read(&sHeader, sizeof(sHeader));
+
+                    tmpbufsize = hMax(tmpbufsize, sHeader.size);
+                    tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
+
+                    file->Read(tmpBuffer, sHeader.size);
+
+                    //Builder stream inputDesc
+                    hUint32 sidc = rHeader.inputElements;
+                    hUint32 side = 0;
+                    for (hUint32 sid = 0; sid < sidc; ++sid)
+                    {
+                        if (inputDesc[sid].inputStream_ == sHeader.index)
+                        {
+                            streamInputDesc[side] = inputDesc[sid];
+                            ++side;
+                        }
+                    }
+
+                    createVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
+                    renderable->SetVertexBuffer(sHeader.index, vb);
+                }
+            }
+        }
+
+        hHeapFreeSafe(memalloc->tempHeap_, tmpBuffer);
+        return rmodel;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hRenderer::meshResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
+        hUint32 lodcount = rmodel->GetLODCount();
+        for(hUint32 i = 0; i < lodcount; ++i) {
+            hGeomLODLevel* lod = rmodel->GetLOD(i);
+            hUint32 objcount = lod->renderObjects_.GetSize();
+            for (hUint32 j = 0; j < objcount; ++j) {
+                if (lod->renderObjects_[j].GetMaterial() == 0) {
+                    hMaterial* mat = static_cast<hMaterial*>(resourceManager_->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
+                    // Possible the material won't have loaded just yet...
+                    if (!mat) return hFalse; 
+                    lod->renderObjects_[j].SetMaterial(mat->createMaterialInstance(0));
+                    lod->renderObjects_[j].bind();
+                }
+            }
+        }
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::meshResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
+        for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
+            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
+            for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
+                hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hRenderer::meshResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+        hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
+        for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
+            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
+            for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
+                for (hUint32 s = 0, sc=HEART_MAX_INPUT_STREAMS; s < sc; ++s) {
+                    hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
+                    if (vb) {
+                        vb->DecRef();
+                        vb=NULL;
+                    }
+                }
+                lod->renderObjects_[rIdx].GetIndexBuffer()->DecRef();
+            }
+        }
+        hDELETE_SAFE(memalloc->resourcePakHeap_, resource);
+    }
+
 
 }

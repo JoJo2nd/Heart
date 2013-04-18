@@ -19,6 +19,8 @@ set( HEART_INCLUDE_DIRS
     "${EXTERNAL_SRC_ROOT}/minizip/include"
     "${EXTERNAL_SRC_ROOT}/libogg/include"
     "${EXTERNAL_SRC_ROOT}/libvorbis/include"
+
+	"${PROJECT_SOURCE_DIR}/resourceloaders/textureloader/include"
 )
 set(HEART_LIB_DIRS)
 if (WIN32)
@@ -220,6 +222,12 @@ set(HEART_UTILS_FILES
 set( HEART_GEN_FILES
     "${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h"
 )
+set(HEART_RESOURCE_FILES
+    "${HEART_SOURCE_DIR}/include/resourcedata/hTextureResourceData.h"
+	"${HEART_SOURCE_DIR}/include/resourcedata/hShaderResourceData.h"
+	"${HEART_SOURCE_DIR}/include/resourcedata/hMaterialResourceData.h"
+	"${HEART_SOURCE_DIR}/include/resourcedata/hMeshResourceData.h"
+)
 
 #platform headers
 if (WIN32)
@@ -305,6 +313,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_THREAD_FILES}
     ${HEART_UTILS_FILES}
     ${HEART_DEVICE_MATH_FILES}
+	${HEART_RESOURCE_FILES}
 )
 #common vars to pass up to parent directory
 set( LIBHEART_INCLUDES
@@ -335,6 +344,7 @@ source_group(render FILES ${HEART_RENDER_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
 source_group(thread FILES ${HEART_THREAD_FILES})
 source_group(utils FILES ${HEART_UTILS_FILES})
+source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)

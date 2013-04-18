@@ -26,7 +26,6 @@
 *********************************************************************/
 
 #include "meshloader.h"
-#include "MeshDataStructs.h"
 #include "cryptoBase64.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -88,17 +87,6 @@ Heart::hXMLEnumReamp g_semanticTypes[] =
 void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, std::ofstream* binoutput, std::list< std::string >* depres);
 void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFloat* max);
 
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT 
-void MB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
-    *verMajor = 0;
-    *verMinor = 7;
-}
-#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -108,101 +96,7 @@ int inputDescQsortCompar(const void* a, const void* b) {
     StreamInfo* rhs=(StreamInfo*)b;
     return ((0xFF-(lhs->desc.inputStream_-rhs->desc.inputStream_)) << 16) | (0xFF-(lhs->desc.semantic_-rhs->desc.semantic_));
 }
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-Heart::hResourceClassBase* MB_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-
-    using namespace Heart;
-    MeshHeader header = {0};
-    hRenderer* renderer = engine->GetRenderer();
-    hRenderModel* rmodel = hNEW(memalloc->resourcePakHeap_, hRenderModel)();
-    hInputLayoutDesc inputDesc[32];
-    hInputLayoutDesc streamInputDesc[32];
-    void* tmpBuffer = NULL;
-    hUint32 tmpbufsize = 0;
-
-    inStream->Read(&header, sizeof(header));
-    
-    rmodel->SetLODCount(header.lodCount);
-
-    for (hUint32 lIdx = 0; lIdx < header.lodCount; ++lIdx)
-    {
-        LODHeader lodHeader;
-        hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-        inStream->Read(&lodHeader, sizeof(lodHeader));
-
-        lod->minRange_ = lodHeader.minRange;
-        lod->renderObjects_.Resize(lodHeader.renderableCount);
-
-        for (hUint32 rIdx = 0; rIdx < lodHeader.renderableCount; ++rIdx)
-        {
-            RenderableHeader rHeader;
-            hRenderable* renderable = &lod->renderObjects_[rIdx];
-            hIndexBuffer* ib;
-            hVertexBuffer* vb;
-            hVec3 bounds[2];//min,max;
-            hAABB aabb;
-
-            inStream->Read(&rHeader, sizeof(rHeader));
-            hcAssert(rHeader.inputElements < 32);
-            inStream->Read(inputDesc, sizeof(hInputLayoutDesc)*rHeader.inputElements);
-
-            tmpbufsize = hMax(tmpbufsize, rHeader.ibSize);
-            tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
-            
-            bounds[0] = hVec3(rHeader.boundsMin[0], rHeader.boundsMin[1], rHeader.boundsMin[2]);
-            bounds[1] = hVec3(rHeader.boundsMax[0], rHeader.boundsMax[1], rHeader.boundsMax[2]);
-            aabb = hAABB::computeFromPointSet(bounds, 2);
-
-            inStream->Read(tmpBuffer, rHeader.ibSize);
-            renderer->createIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
-
-            renderable->SetStartIndex(rHeader.startIndex);
-            renderable->SetPrimativeCount(rHeader.nPrimatives);
-            renderable->SetPrimativeType((PrimitiveType)rHeader.primType);
-            renderable->SetAABB(aabb);
-            renderable->SetIndexBuffer(ib);
-            renderable->SetMaterialResourceID(rHeader.materialID);
-
-            hUint32 streams = rHeader.streams;
-            for (hUint32 streamIdx = 0; streamIdx < streams; ++streamIdx)
-            {
-                StreamHeader sHeader = {0};
-                inStream->Read(&sHeader, sizeof(sHeader));
-
-                tmpbufsize = hMax(tmpbufsize, sHeader.size);
-                tmpBuffer = hHeapRealloc(memalloc->tempHeap_, tmpBuffer, tmpbufsize);
-
-                inStream->Read(tmpBuffer, sHeader.size);
-
-                //Builder stream inputDesc
-                hUint32 sidc = rHeader.inputElements;
-                hUint32 side = 0;
-                for (hUint32 sid = 0; sid < sidc; ++sid)
-                {
-                    if (inputDesc[sid].inputStream_ == sHeader.index)
-                    {
-                        streamInputDesc[side] = inputDesc[sid];
-                        ++side;
-                    }
-                }
-
-                renderer->createVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, memalloc->resourcePakHeap_, &vb);
-                renderable->SetVertexBuffer(sHeader.index, vb);
-            }
-        }
-    }
-
-    hHeapFreeSafe(memalloc->tempHeap_, tmpBuffer);
-
-    return rmodel;
-}
-#endif
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -450,7 +344,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, s
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-#
+
 void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFloat* max)
 {
     for (hUint i = 0; i < 3; ++i)
@@ -468,79 +362,7 @@ void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFlo
         }
     }
 }
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
-hBool MB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-
-    hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-
-    hUint32 lodcount = rmodel->GetLODCount();
-    for(hUint32 i = 0; i < lodcount; ++i)
-    {
-        hGeomLODLevel* lod = rmodel->GetLOD(i);
-        hUint32 objcount = lod->renderObjects_.GetSize();
-        for (hUint32 j = 0; j < objcount; ++j)
-        {
-            if (lod->renderObjects_[j].GetMaterial() == 0) {
-                hMaterial* mat = static_cast<hMaterial*>(engine->GetResourceManager()->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
-                // Possible the material won't have loaded just yet...
-                if (!mat) return hFalse; 
-                lod->renderObjects_[j].SetMaterial(mat->createMaterialInstance(0));
-                lod->renderObjects_[j].bind();
-            }
-        }
-    }
-
-    return hTrue;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-    hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-    for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
-        hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-        for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-            hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
-        }
-    }
-}
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-    hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-    hRenderer* renderer = engine->GetRenderer();
-
-    for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
-        hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-        for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-            for (hUint32 s = 0, sc=HEART_MAX_INPUT_STREAMS; s < sc; ++s) {
-                hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
-                if (vb) {
-                    vb->DecRef();
-                    vb=NULL;
-                }
-            }
-            lod->renderObjects_[rIdx].GetIndexBuffer()->DecRef();
-        }
-    }
-
-    hDELETE_SAFE(memalloc->resourcePakHeap_, resource);
-}
-#endif
 extern "C" {
 //Lua entry point calls
 DLL_EXPORT int MB_API luaopen_mesh(lua_State *L) {

@@ -17,7 +17,6 @@ set( MESH_BUILDER_INCLUDE_DIRS
 )
 set( MESH_BUILDER_HDR_FILES 
     "${MESH_BUILDER_SRC_DIR}/include/meshloader.h"
-	"${MESH_BUILDER_SRC_DIR}/include/MeshDataStructs.h"
 )
 set( MESH_BUILDER_SRC_FILES
     "${MESH_BUILDER_SRC_DIR}/src/meshloader.cpp"

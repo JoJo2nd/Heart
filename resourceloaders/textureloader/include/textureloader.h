@@ -40,37 +40,5 @@
 
 #define TB_API __cdecl
 
-/*
-"HeartBinLoader");
-"HeartRawLoader");
-"HeartPackageLink");
-"HeartDataUnload");
-"HeartPackageUnload");
-"HeartSaveBinaryOutput");
-
-
-hResourceClassBase* (*OnResourceDataLoad)       (hIDataCacheFile*, hIBuiltDataCache*);
-hResourceClassBase* (*OnResourceDataLoadRaw)    (hIDataCacheFile*, hIBuiltDataCache*);
-void                (*OnPackageLoadComplete)    (hResourceClassBase*);
-void                (*OnResourceDataUnload)     (hResourceClassBase*);
-void                (*OnPackageUnloadComplete)  (hResourceClassBase*);
-void                (*SaveBinaryOutput)         (hResourceClassBase*, hISerialiseStream*);
-
-extern "C"
-{
-    DLL_EXPORT
-        Heart::hResourceClassBase* HEART_API HeartBinLoader(Heart::hISerialiseStream*, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine*);
-    DLL_EXPORT
-        hBool HEART_API HeartDataCompiler(Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput);
-    DLL_EXPORT
-        hBool HEART_API HeartPackageLink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT
-        void HEART_API HeartPackageUnlink(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT
-        void HEART_API HeartPackageUnload(Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine);
-    DLL_EXPORT 
-    void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor);
-};
-*/
 
 #endif // TextureBuilder_h__

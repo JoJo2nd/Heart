@@ -429,7 +429,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hResourceManager::registerResourceHandler(hResourceType restype, hResourceHandler handler) {
-
+        hResourceHandler* newhandler=hNEW(GetGlobalHeap(), hResourceHandler)();
+        *newhandler=handler;
+        resourceHandlers_.Insert(restype, newhandler);
     }
 
 }

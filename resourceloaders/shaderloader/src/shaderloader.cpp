@@ -37,16 +37,6 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-#define SHADER_MAGIC_NUM              hMAKE_FOURCC('h','G','P','U')
-#define SHADER_STRING_MAX_LEN         (32)
-#define SHADER_MAJOR_VERSION          (((hUint16)1))
-#define SHADER_MINOR_VERSION          (((hUint16)0))
-#define SHADER_VERSION                ((SHADER_MAJOR_VERSION << 16)|SHADER_MINOR_VERSION)
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::hInputLayoutDesc* output, hUint32 maxOut);
 
 //////////////////////////////////////////////////////////////////////////
@@ -116,69 +106,10 @@ struct FXIncludeHandler : public ID3DInclude
     IncludeMap    includedFiles_;
 };
 
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-#pragma pack(push, 1)
-
-struct ShaderHeader
-{
-    Heart::hResourceBinHeader   resHeader;
-    hUint32                     version;
-    Heart::hShaderType           type;
-    hUint32                     vertexLayout;
-    hUint32                     shaderBlobSize;
-    hUint32                     inputLayoutElements;
-};
-
-#pragma pack(pop)
-
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT 
-void SB_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
-    *verMajor = 1;
-    *verMinor = 0;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inFile, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine)
-{
-    using namespace Heart;
-    hShaderProgram* shaderProg=NULL;
-    ShaderHeader header;
-    hInputLayoutDesc* inLayout = NULL;
-    void* shaderBlob = NULL;
-    inFile->Read(&header, sizeof(ShaderHeader));
-    hcAssert(header.version == SHADER_VERSION);
-    if (header.inputLayoutElements) {
-        inLayout = (hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*header.inputLayoutElements);
-        inFile->Read(inLayout, sizeof(hInputLayoutDesc)*header.inputLayoutElements);
-    }
-
-    shaderBlob = hHeapMalloc(memalloc->tempHeap_, header.shaderBlobSize);
-    inFile->Read(shaderBlob, header.shaderBlobSize);
-
-    engine->GetRenderer()->createShader(
-        memalloc->resourcePakHeap_,
-        (hChar*)shaderBlob, header.shaderBlobSize,
-        header.type, &shaderProg);
-
-    hHeapFreeSafe(memalloc->tempHeap_, shaderBlob);
-
-    return shaderProg;
-}
-
-#endif
 Heart::hShaderProfile getProfileFromString(const hChar* str) {
     static const hChar* s_shaderProfileNames[] = {
         "vs_4_0",   //eShaderProfile_vs4_0,
@@ -213,9 +144,6 @@ Heart::hShaderProfile getProfileFromString(const hChar* str) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-/*Heart::hIDataCacheFile* inFile, Heart::hIBuiltDataCache* fileCache, Heart::hIDataParameterSet* params, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine, Heart::hISerialiseStream* binoutput*/
-
-DLL_EXPORT
 int SB_API shaderCompiler(lua_State* L) {
     using namespace Heart;
     using namespace boost;
@@ -437,7 +365,6 @@ int SB_API shaderCompiler(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
 int SB_API shaderPreprocess(lua_State* L) {
     using namespace Heart;
     using namespace boost;
@@ -584,40 +511,10 @@ int SB_API shaderPreprocess(lua_State* L) {
     return 1;
 }
 
-#if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-DLL_EXPORT
-hBool SB_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    return hTrue;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void SB_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void SB_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-
-    hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
-    sp->DecRef();
-}
-#endif
 hUint32 ParseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::hInputLayoutDesc* output, hUint32 maxOut)
 {
     hUint32 vertexInputLayoutFlags = 0;

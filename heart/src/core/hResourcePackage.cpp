@@ -96,7 +96,7 @@ namespace Heart
 
         hStrCopy(packageName_, MAX_PACKAGE_NAME, packname);
         hStrCopy(zipname, MAX_PACKAGE_NAME, packname);
-        hStrCat(zipname,MAX_PACKAGE_NAME,"/PKG.XML");
+        hStrCat(zipname,MAX_PACKAGE_NAME,"/DAT");
 
         hIFile* pakDesc = fileSystem_->OpenFile(zipname, FILEMODE_READ);
 
@@ -159,7 +159,9 @@ namespace Heart
         links_.Reserve(16);
         for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling())
         {
-            links_.PushBack(i.ToNode()->value());
+            if (hStrCmp(i.GetAttributeString("name"), packname)) {
+                links_.PushBack(i.GetAttributeString("name"));
+            }
         }
 
         currentResource_.SetNode(hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource").ToNode());
@@ -300,7 +302,7 @@ namespace Heart
                 {
                     hResourceBinHeader resourceHeader={0};
                     file->Read(&resourceHeader, sizeof(resourceHeader));
-                    typehandler=resourceHeader.resourceType;
+                    typehandler.fourCC=resourceHeader.resourceType;
                     file->Seek(0, SEEKOFFSET_BEGIN);
                     hResourceHandler* handler = handlerMap_->Find(typehandler);
                     hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
