@@ -28,7 +28,7 @@
 namespace Heart
 {
 
-    hFloat              hSystemConsole::s_fontSize = .75f;
+    hFloat              hSystemConsole::s_fontSize = 1.f;
     hConsoleOutputProc  hSystemConsole::s_consoleOutputCallback = NULL;
     void*               hSystemConsole::s_consoleOutputUser = NULL;
 

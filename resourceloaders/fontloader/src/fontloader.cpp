@@ -120,15 +120,15 @@ int fontCompile(lua_State* L) {
     system::error_code ec;
     FontHeader header = {0};
     hFloat fontScale=1.f;// = hAtoF(params->GetBuildParameter("SCALE", "1"));
-    hUint cheaderoutput=false;
+    const hChar* cheaderoutput=NULL;
     lua_getfield(L, 3, "scale");
     if (lua_isnumber(L, -1)) {
         fontScale=lua_tonumber(L, -1);
     }
     lua_pop(L, 1);
     lua_getfield(L, 3, "headeroutput");
-    if (lua_isboolean(L, -1)) {
-        cheaderoutput=lua_toboolean(L, -1);
+    if (lua_isstring(L, -1)) {
+        cheaderoutput=lua_tostring(L, -1);
     }
     lua_pop(L, 1);
 
@@ -146,24 +146,28 @@ int fontCompile(lua_State* L) {
     rapidxml::xml_document<> xmldoc;
 
     filesize=(hUint)filesystem::file_size(filepath, ec);
-    if (!ec) {
+    if (ec) {
         luaL_error(L, "failed to read file size of file %s", filepath);
         return 0;
     }
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_error(L, "failed to opn file %s", filepath);
+        luaL_error(L, "failed to open file %s", filepath);
         return 0;
     }
 
     scoped_array<hChar> xmlmem(new hChar[filesize+1]);
+    memset(xmlmem.get(), 0, filesize);
     infile.read(xmlmem.get(), filesize);
     xmlmem[filesize] = 0;
 
     try{
         xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+    } catch (rapidxml::parse_error e) {
+        luaL_error(L, "Error parsing XML file - %s", e.what());
+        return 0;
     } catch (...) {
-        luaL_error(L, "Error parsing XML file");
+        luaL_error(L, "Error parsing XML file: Unknown error");
         return 0;
     }
 
@@ -194,7 +198,7 @@ int fontCompile(lua_State* L) {
     lua_pushvalue(L, 4);
     lua_call(L, 1, 1);
     const hChar* outputpath=lua_tostring(L, -1);
-    outfile.open(outputpath);
+    outfile.open(outputpath, std::ios_base::out|std::ios_base::binary);
     if (!outfile.is_open()) {
         luaL_error(L, "Failed to open output file %s", outputpath);
         return 0;
@@ -203,10 +207,13 @@ int fontCompile(lua_State* L) {
 
     std::ofstream headerfile;
     if (cheaderoutput) {
-        std::string headerpath=filepath;
-        headerpath+=".h";
-        headerfile.open(headerpath);
-        cheaderoutput = headerfile.is_open();
+        lua_getglobal(L, "buildpathresolve");
+        lua_pushstring(L, cheaderoutput);
+        lua_call(L, 1, 1);
+        const hChar* headerfilepath=lua_tostring(L, -1);
+        headerfile.open(headerfilepath);
+        cheaderoutput = headerfile.is_open() ? cheaderoutput : NULL;
+        lua_pop(L, 1);
     }
     if (cheaderoutput) {
         headerfile << "/////\n";
@@ -241,7 +248,7 @@ int fontCompile(lua_State* L) {
 
         if (cheaderoutput) {
             hChar tmpbuf[1024];
-            sprintf_s(tmpbuf, 1024, "{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},",
+            sprintf_s(tmpbuf, 1024, "{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},\n",
                 newchar.page_, newchar.unicode_, newchar.x_, newchar.y_,
                 newchar.height_, newchar.width_, newchar.xOffset_, newchar.yOffset_, 
                 newchar.xAdvan_, newchar.UV1_.x, newchar.UV1_.y, newchar.UV2_.x, newchar.UV2_.y);

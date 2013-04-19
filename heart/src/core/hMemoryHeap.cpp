@@ -229,7 +229,7 @@ hMemoryHeapBase::HeapInfo hMemoryHeap::usage()
     hMH_PRE_ACTION();
     info.allocs_ = alloced_;
     mspace_malloc_stats( localMspace_, &info.peakBytesReserved_, &info.currBytesReserved_, &info.totalBytesAllocated_ );
-    hMemCpy(&info.exData_, &mspace_mallinfo(localMspace_), sizeof(mallinfo));
+    //hMemCpy(&info.exData_, &mspace_mallinfo(localMspace_), sizeof(mallinfo));
 
     hMH_POST_ACTION();
 #endif

@@ -55,7 +55,10 @@ namespace Heart
 {
     struct hResourceBinHeader
     {
-        hUint32 resourceType;
+        union{
+            hUint32 resourceType;
+            hChar   fourCC[4];
+        };
         hUint64 key;
         hUint32 pad;
     };

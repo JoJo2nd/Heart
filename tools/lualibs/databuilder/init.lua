@@ -92,6 +92,7 @@ end
 local function resetDataBuild()
     resources_ = {}
     builders_ = {}
+    packages_ = {}
     sourceRootDir_=nil
     destRootDir_=nil
 end

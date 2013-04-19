@@ -142,28 +142,28 @@ namespace Heart
         hResourceHandler texreshandler;
         texreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   textureResourceLoader, this);
         texreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   textureResourceLink,   this);
-        texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, textureResourceUnlink, this);
+        texreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, textureResourceUnlink, this);
         texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, textureResourceUnload, this);
         resourceManager_->registerResourceHandler(hResourceType(TEXTURE_MAGIC_NUM), texreshandler);
 
         hResourceHandler shaderreshandler;
         shaderreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   shaderResourceLoader, this);
         shaderreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   shaderResourceLink,   this);
-        shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, shaderResourceUnlink, this);
+        shaderreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, shaderResourceUnlink, this);
         shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, shaderResourceUnload, this);
         resourceManager_->registerResourceHandler(hResourceType(SHADER_MAGIC_NUM), shaderreshandler);
 
         hResourceHandler matreshandler;
         matreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   materialResourceLoader, this);
         matreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   materialResourceLink,   this);
-        matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, materialResourceUnlink, this);
+        matreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, materialResourceUnlink, this);
         matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, materialResourceUnload, this);
         resourceManager_->registerResourceHandler(hResourceType(MATERIAL_MAGIC_NUM), matreshandler);
 
         hResourceHandler meshreshandler;
         meshreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
         meshreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   meshResourceLink,   this);
-        meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, meshResourceUnlink, this);
+        meshreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, meshResourceUnlink, this);
         meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
         resourceManager_->registerResourceHandler(hResourceType(MESH_MAGIC_NUM), meshreshandler);
     }
@@ -1212,7 +1212,7 @@ namespace Heart
 
             for (hUint32 rIdx = 0; rIdx < lodHeader.renderableCount; ++rIdx)
             {
-                RenderableHeader rHeader;
+                RenderableHeader rHeader={0};
                 hRenderable* renderable = &lod->renderObjects_[rIdx];
                 hIndexBuffer* ib;
                 hVertexBuffer* vb;

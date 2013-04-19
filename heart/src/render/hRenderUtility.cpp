@@ -746,7 +746,7 @@ namespace hRenderUtility
         pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
         hSamplerStateDesc sampDesc;
-        sampDesc.filter_        = SSV_LINEAR;
+        sampDesc.filter_        = SSV_POINT;
         sampDesc.addressU_      = SSV_CLAMP;
         sampDesc.addressV_      = SSV_CLAMP;
         sampDesc.addressW_      = SSV_CLAMP;

@@ -165,7 +165,7 @@ int MB_API meshCompile(lua_State* L)
     lua_call(L, 1, 1);
     const hChar* outputpath=lua_tostring(L, -1);
     std::ofstream outfile;
-    outfile.open(outputpath);
+    outfile.open(outputpath, std::ios_base::out|std::ios_base::binary);
     if (!outfile.is_open()) {
         luaL_error(L, "Failed to open output file %s", outputpath);
         return 0;

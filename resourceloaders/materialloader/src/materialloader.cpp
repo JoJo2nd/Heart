@@ -321,7 +321,7 @@ int MB_API materialCompile(lua_State* L) {
     lua_call(L, 1, 1);
     const hChar* outputpath=lua_tostring(L, -1);
     std::ofstream output;
-    output.open(outputpath);
+    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
 
     if (!output.is_open()) {
         luaL_error(L, "Unable to open output file %s for writing", outputpath);
