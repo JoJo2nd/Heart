@@ -23,6 +23,7 @@ _ENV=nil
 --local internal vars
 local resources_={}
 local builders_={}
+local globaltypeoptions_={}
 local packages_={}
 local sourceRootDir_=""
 local destRootDir_=""
@@ -38,6 +39,11 @@ local function addBuilder(boptions)
         error("builder has not builder function")
     end
     builders_[boptions.typename]=boptions.buildfunc
+    if type(boptions.parameters) == "table" then 
+        globaltypeoptions_[boptions.typename] = boptions.parameters
+    else
+        globaltypeoptions_[boptions.typename] = {}
+    end
 end
 
 local function addResource(resopt)
@@ -93,6 +99,7 @@ local function resetDataBuild()
     resources_ = {}
     builders_ = {}
     packages_ = {}
+    globaltypeoptions_ = {}
     sourceRootDir_=nil
     destRootDir_=nil
 end
@@ -214,11 +221,20 @@ local function buildResources(matchopts, scriptpath)
         local packdir="dest://"..v.package.."/"
         local fullrespath=packdir..v.name
         local realpath=G.buildpathresolve(packdir)
+        local localparameters={}
         G.print(strfmt("Creating directory %s -> %s", packdir, realpath))
         filesystem.makedirectories(realpath)
 		G.print(strfmt("Building \"%s\" resource %s to %s ", v.restype, v.respath, fullrespath))
+        --copy parameters, global first then resource ones over write
+        for paramname, param in pairs(globaltypeoptions_[v.restype]) do
+            localparameters[paramname] = param
+        end
+        for paramname, param in pairs(v.parameters) do
+            localparameters[paramname] = param
+        end
+        --
         v.dependentpackages={}
-		local depres = builders_[v.restype](v.inputfiles, v.depfiles, v.parameters, fullrespath)
+		local depres = builders_[v.restype](v.inputfiles, v.depfiles, localparameters, fullrespath)
         for _, drespath in pairs(depres) do
             local dpkg, dres = string.match(drespath, "(%u+)%.(%u+)")
             G.print(strfmt("Adding dependent resource %s to resource %s", drespath, v.respath))
