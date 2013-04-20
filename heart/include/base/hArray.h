@@ -160,7 +160,7 @@ namespace Heart
             if ( size > reserve_ )
             {
                 reserve_ = size;
-                values_ = (_Ty*)hHeapRealloc(heap_, values_, sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hHeapAlignRealloc(heap_, values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
             }
         }
 
@@ -212,7 +212,7 @@ namespace Heart
             {
                 reserve_ = hAlign( size, _Granularity );
                 hcAssert( reserve_ >= size );
-                values_ = (_Ty*)hHeapRealloc(heap_, values_, sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hHeapAlignRealloc(heap_, values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
             }
         }
 

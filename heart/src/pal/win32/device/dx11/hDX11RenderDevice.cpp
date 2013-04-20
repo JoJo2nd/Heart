@@ -583,11 +583,14 @@ namespace Heart
                 // Preserve the existing buffer count and format.
                 // Automatically choose the width and height to match the client rect for HWNDs.
                 hr = mainSwapChain_->ResizeBuffers(0, width_, height_, DXGI_FORMAT_UNKNOWN, 0);
+                hcAssertMsg(SUCCEEDED(hr), "mainSwapChain::ResizeBuffers failed 0x%x", hr);
                 // TODO:Perform error handling here!
                 // Get buffer and create a render-target-view.
                 hr = mainSwapChain_->GetBuffer(0, __uuidof( ID3D11Texture2D),(void**)&backBufferTex);
+                hcAssertMsg(SUCCEEDED(hr), "mainSwapChain::ResizeBuffers failed 0x%x", hr);
                 // TODO: Perform error handling here!
                 hr = d3d11Device_->CreateRenderTargetView(backBufferTex, NULL, &renderTargetView_);
+                hcAssertMsg(SUCCEEDED(hr), "mainSwapChain::ResizeBuffers failed 0x%x", hr);
 
                 if ( depthStencilView_ ) {
                     depthStencilView_->Release();
@@ -700,6 +703,11 @@ namespace Heart
         ID3DBlob* codeBlob;
         ID3DBlob* errorBlob;
         hShaderType type=ShaderType_MAX;
+        DWORD compileflags = 0;
+#ifdef HEART_DEBUG
+        compileflags |= D3DCOMPILE_DEBUG;
+        compileflags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
 
         if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
             type=ShaderType_VERTEXPROG;
@@ -715,7 +723,7 @@ namespace Heart
             type=ShaderType_DOMAINPROG;
         }
 
-        hr=D3DCompile(shaderProg, len, "memory", NULL, NULL, entry, profileStr, 0, 0, &codeBlob, &errorBlob);
+        hr=D3DCompile(shaderProg, len, "memory", NULL, NULL, entry, profileStr, compileflags, 0, &codeBlob, &errorBlob);
         if (errorBlob) {
             hcPrintf("Shader Output:\n%s", errorBlob->GetBufferPointer());
             errorBlob->Release();

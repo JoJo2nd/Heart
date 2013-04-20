@@ -45,12 +45,10 @@ namespace Heart
 
         void        create(hSizeT sizeInBytes, hBool threadLocal);
 	    void		destroy();
-	    void*		alloc( hSizeT size );
-	    void*		alloc( hSizeT size, const hChar* file, hSizeT line );
-	    void*		realloc( void* ptr, hSizeT size );
-	    void*		realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line );
-	    void*		alignAlloc( hSizeT size, hSizeT alignment );
-	    void*		alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
+	    void*		alloc( hSizeT size, hSizeT alignment );
+	    void*		alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
+	    void*		realloc( void* ptr, hSizeT alignment, hSizeT size );
+	    void*		realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line );
 	    void		release( void* ptr );
         hMemoryHeapBase::HeapInfo	usage();
         hSizeT      totalAllocationCount() const;

@@ -54,12 +54,10 @@ namespace Heart
 
         void                        create(hSizeT sizeInBytes, hBool threadLocal);
         void		                destroy();
-        void*		                alloc( hSizeT size );
-        void*		                alloc( hSizeT size, const hChar* file, hSizeT line );
-        void*		                realloc( void* ptr, hSizeT size );
-        void*		                realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line );
-        void*		                alignAlloc( hSizeT size, hSizeT alignment );
-        void*		                alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
+        void*		                alloc( hSizeT size, hSizeT alignment );
+        void*		                alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line );
+        void*		                realloc( void* ptr, hSizeT alignment, hSizeT size );
+        void*		                realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line );
         void		                release( void* ptr );
         hMemoryHeapBase::HeapInfo	usage();
         hSizeT                      totalAllocationCount() const { return alloced_; }
@@ -99,36 +97,9 @@ namespace Heart
 
         }
 
-        void                        create(hSizeT /*sizeInBytes*/, hBool /*threadLocal*/) {}
-        void		                destroy() {}
-        void*		                alloc( hSizeT size ) 
-        { 
-            void* ptr = ((hUint8*)basePtr_)+alloced_;
-            alloced_ += size+sizeof(AllocHdr);
-            if (alloced_ > sizeBytes_) ptr = NULL;
-            hcAssertMsg(ptr, "Couldn't allocate from stack");
-            ((AllocHdr*)ptr)->size_ = size;
-            return (void*)((hUint8*)ptr+sizeof(AllocHdr));
-        }
-        void*		                alloc( hSizeT size, const hChar* /*file*/, hSizeT /*line*/ ) 
-        { 
-            return alloc(size); 
-        }
-        void*		                realloc(void* ptr, hSizeT size)  
-        { 
-            void* newptr = alloc(size); 
-            if (ptr) {
-                hSizeT oldSize = ((AllocHdr*)((hUint8*)ptr-sizeof(AllocHdr)))->size_;
-                hMemCpy(newptr, ptr, oldSize);
-            }
-            return newptr;
-        }
-        void*		                realloc( void* ptr, hSizeT size, const hChar* /*file*/, hSizeT /*line*/ ) 
-        {
-            return realloc(ptr, size); 
-        }
-        void*		                alignAlloc( hSizeT size, hSizeT alignment )
-        {
+        void create(hSizeT /*sizeInBytes*/, hBool /*threadLocal*/) {}
+        void destroy() {}
+        void* alloc( hSizeT size, hSizeT alignment ) {
             void* ptr = ((hUint8*)basePtr_)+alloced_;
             alloced_ += size+sizeof(AllocHdr)+alignment;
             if (alloced_ > sizeBytes_) ptr = NULL;
@@ -138,19 +109,28 @@ namespace Heart
             ((AllocHdr*)ptr)->size_ = size;
             return (void*)((hUint8*)ptr+sizeof(AllocHdr));
         }
-        void*		                alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
-        {
-            return alignAlloc(size, alignment);
+        void* alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line ) {
+            return alloc(size, alignment);
+        }
+        void*		                realloc(void* ptr, hSizeT alignment, hSizeT size)  { 
+            void* newptr = alloc(size, alignment); 
+            if (ptr) {
+                hSizeT oldSize = ((AllocHdr*)((hUint8*)ptr-sizeof(AllocHdr)))->size_;
+                hMemCpy(newptr, ptr, oldSize);
+            }
+            return newptr;
+        }
+        void* realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* /*file*/, hSizeT /*line*/ ) {
+            return realloc(ptr, alignment, size); 
         }
         void		                release(void* /*ptr*/) {}
-        hMemoryHeapBase::HeapInfo	usage() 
-        { 
+        hMemoryHeapBase::HeapInfo	usage() { 
             hMemoryHeapBase::HeapInfo info = {0};
             info.totalBytesAllocated_ = alloced_;
             return info; 
         }
         hSizeT                     totalAllocationCount() const { return alloced_; }
-        hBool		                pointerBelongsToMe( void* ptr ) { return hFalse; }
+        hBool                      pointerBelongsToMe( void* ptr ) { return hFalse; }
 
     private:
 

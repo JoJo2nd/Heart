@@ -105,25 +105,29 @@ namespace Heart
 #ifndef HEART_USE_DEFAULT_MEM_ALLOC
 
 #ifdef HEART_DEBUG
-    #define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alignAlloc( s, a, __FILE__, __LINE__ )
+    #define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alloc( s, a, __FILE__, __LINE__ )
     #define hMalloc( s ) hAlignMalloc( s, 16 )
-    #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, s, __FILE__, __LINE__ )
+    #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, 16, s, __FILE__, __LINE__ )
+    #define hAlignRealloc( p, a, s ) Heart::GetGlobalHeap()->realloc( p, a, s, __FILE__, __LINE__ )
     #define hFree( p ) Heart::GetGlobalHeap()->release( p )
     #define hFreeSafe( p ) Heart::GetGlobalHeap()->release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  (h)->alignAlloc( s, a, __FILE__, __LINE__ )
-    #define hHeapMalloc( h, s ) (h)->alignAlloc( s, 16, __FILE__, __LINE__ )
-    #define hHeapRealloc( h, p, s ) (h)->realloc( p, s, __FILE__, __LINE__ )
+    #define hHeapAlignMalloc( h, s, a )  (h)->alloc( s, a, __FILE__, __LINE__ )
+    #define hHeapMalloc( h, s ) (h)->alloc( s, 16, __FILE__, __LINE__ )
+    #define hHeapRealloc( h, p, s ) (h)->realloc( p, 16, s, __FILE__, __LINE__ )
+    #define hHeapAlignRealloc( h, p, a, s ) (h)->realloc( p, a, s, __FILE__, __LINE__ )
     #define hHeapFree( h, p ) (h)->release( p )
     #define hHeapFreeSafe( h, p ) (h)->release( p ); p = NULL
 #else
-    #define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alignAlloc( s, a )
+    #define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alloc( s, a )
     #define hMalloc( s ) hAlignMalloc( s, 16 )
-    #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, s )
+    #define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, 16, s )
+    #define hAlignRealloc( p, a, s ) Heart::GetGlobalHeap()->realloc( p, a, s )
     #define hFree( p ) Heart::GetGlobalHeap()->release( p )
     #define hFreeSafe( p ) Heart::GetGlobalHeap()->release( p ); p = NULL
-    #define hHeapAlignMalloc( h, s, a )  (h)->alignAlloc( s, a )
-    #define hHeapMalloc( h, s ) (h)->alignAlloc( s, 16 )
-    #define hHeapRealloc( h, p, s ) (h)->realloc( p, s )
+    #define hHeapAlignMalloc( h, s, a )  (h)->alloc( s, a )
+    #define hHeapMalloc( h, s ) (h)->alloc( s, 16 )
+    #define hHeapRealloc( h, p, s ) (h)->realloc( p, 16, s )
+    #define hHeapAlignRealloc( h, p, a, s ) (h)->realloc( p, a, s )
     #define hHeapFree( h, p ) (h)->release( p )
     #define hHeapFreeSafe( h, p ) (h)->release( p ); p = NULL
 #endif

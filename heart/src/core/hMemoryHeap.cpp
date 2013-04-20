@@ -88,10 +88,10 @@ void hMemoryHeap::destroy()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hSizeT size )
+void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment )
 {
     hMH_PRE_ACTION();
-    void* r = mspace_malloc( localMspace_, size );
+    void* r = mspace_memalign( localMspace_, alignment, size );
     hSizeT s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
@@ -103,10 +103,10 @@ void* hMemoryHeap::alloc( hSizeT size )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hSizeT size, const hChar* file, hSizeT line )
+void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
 {
     hMH_PRE_ACTION();
-    void* r = mspace_malloc( localMspace_, size );
+    void* r = mspace_memalign( localMspace_, alignment, size );
     hSizeT s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
@@ -118,18 +118,21 @@ void* hMemoryHeap::alloc( hSizeT size, const hChar* file, hSizeT line )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hSizeT size )
+void* hMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size )
 {
     hMH_PRE_ACTION();
-    size_t s = mspace_allocate_size(ptr);
-    if (ptr != NULL)
-    {
+    size_t s = 0;
+    if (ptr != NULL) {
+        s=mspace_allocate_size(ptr);
         hMH_RELEASE_TRACK_INFO( ptr, s );
     }
-    void* r = mspace_realloc( localMspace_, ptr, size );
+    void* r = mspace_memalign(localMspace_, alignment, size);
+    if (ptr){
+        hMemCpy(r, ptr, hMin(s, size));
+    }
+    mspace_free(localMspace_, ptr);
     s = mspace_allocate_size( r );
-    if (ptr == 0)
-    {
+    if (ptr == 0) {
         ++alloced_;
     }
     hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
@@ -141,50 +144,23 @@ void* hMemoryHeap::realloc( void* ptr, hSizeT size )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line )
+void* hMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line )
 {
     hMH_PRE_ACTION();
-    size_t s = mspace_allocate_size(ptr);
-    if (ptr != NULL)
-    {
+    size_t s = 0;
+    if (ptr != NULL) {
+        s=mspace_allocate_size(ptr);
         hMH_RELEASE_TRACK_INFO( ptr, s );
     }
-    void* r = mspace_realloc( localMspace_, ptr, size );
+    void* r = mspace_memalign(localMspace_, alignment, size);
+    if (ptr){
+        hMemCpy(r, ptr, hMin(s, size));
+    }
+    mspace_free(localMspace_, ptr);
     s = mspace_allocate_size( r );
-    if (ptr == 0)
-    {
+    if (ptr == 0) {
         ++alloced_;
     }
-    hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
-    hMH_POST_ACTION();
-    return r;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void* hMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment )
-{
-    hMH_PRE_ACTION();
-    void* r = mspace_memalign( localMspace_, alignment, size );
-    size_t s = mspace_allocate_size( r );
-    ++alloced_;
-    hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
-    hMH_POST_ACTION();
-    return r;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void* hMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
-{
-    hMH_PRE_ACTION();
-    void* r = mspace_memalign( localMspace_, alignment, size );
-    size_t s = mspace_allocate_size( r );
-    ++alloced_;
     hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
     hMH_POST_ACTION();
     return r;

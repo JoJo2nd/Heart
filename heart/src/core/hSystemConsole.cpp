@@ -216,8 +216,8 @@ namespace Heart
                 fontParams[2]=.0f;
                 fontParams[3]=1.f;
                 //offset
-                fontParams[4]=2.f;
-                fontParams[5]=-2.f;
+                fontParams[4]=1.f;
+                fontParams[5]=-1.f;
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);
@@ -278,8 +278,8 @@ namespace Heart
                 fontParams[2]=.0f;
                 fontParams[3]=1.f;
                 //offset
-                fontParams[4]=2.f;
-                fontParams[5]=-2.f;
+                fontParams[4]=1.f;
+                fontParams[5]=-1.f;
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);

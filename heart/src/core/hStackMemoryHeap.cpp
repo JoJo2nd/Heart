@@ -41,7 +41,7 @@ namespace Heart
         initBaseHeap(!threadLocal);
 
         size_    = sizeInBytes;
-        basePtr_ = baseHeap_->alloc(size_);
+        basePtr_ = baseHeap_->alloc(size_, 16);
         ptr_     = (hByte*)basePtr_;
         alloced_ = 0;
 
@@ -70,66 +70,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alloc( hSizeT size )
-    {
-        hMH_PRE_ACTION();
-        void* ret = ptr_;
-        if (alloced_ + size > size_)
-        {
-            // Assert here?
-            return NULL;
-        }
-        ptr_ += size;
-        hMH_POST_ACTION();
-
-        return ret;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hStackMemoryHeap::alloc( hSizeT size, const hChar* file, hSizeT line )
-    {
-        // Don't support tracking on stack heap.
-        return alloc(size);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hStackMemoryHeap::realloc( void* ptr, hSizeT size )
-    {
-        // Don't support realloc but allow to be used as alloc in case where ptr == NULL or release 
-        // via size => zero
-        if (ptr == NULL)
-        {
-            return alloc(size);
-        }
-        if (size == 0)
-            return ptr;
-
-        hcAssertFailMsg("Can't realloc a ptr from Stack heap (calling initially with NULL is ok however)");
-        // return NULL to force any usage errors out of caller (that is no NULL pointer handling)
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hStackMemoryHeap::realloc( void* ptr, hSizeT size, const hChar* file, hSizeT line )
-    {
-        // Don't support tracking or realloc on stack heap.
-        return realloc(ptr, size);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void* hStackMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment )
+    void* hStackMemoryHeap::alloc( hSizeT size, hSizeT alignment )
     {
         hMH_PRE_ACTION();
         hByte* ret = ptr_;
@@ -149,10 +90,40 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alignAlloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
+    void* hStackMemoryHeap::alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
     {
         // Don't support tracking on stack heap.
-        return alignAlloc(size, alignment);
+        return alloc(size, alignment);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hStackMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size )
+    {
+        // Don't support realloc but allow to be used as alloc in case where ptr == NULL or release 
+        // via size => zero
+        if (ptr == NULL)
+        {
+            return alloc(size, alignment);
+        }
+        if (size == 0)
+            return ptr;
+
+        hcAssertFailMsg("Can't realloc a ptr from Stack heap (calling initially with NULL is ok however)");
+        // return NULL to force any usage errors out of caller (that is no NULL pointer handling)
+        return NULL;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hStackMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line )
+    {
+        // Don't support tracking or realloc on stack heap.
+        return realloc(ptr, alignment, size);
     }
 
     //////////////////////////////////////////////////////////////////////////

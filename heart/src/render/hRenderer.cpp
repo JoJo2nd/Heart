@@ -42,7 +42,7 @@ namespace Heart
     
     void* RnTmpMalloc( hUint32 size )
     {
-        return GetGlobalHeap()/*!heap*/->alignAlloc( size, 16 );
+        return GetGlobalHeap()->alloc( size, 16 );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ namespace Heart
     
     void RnTmpFree( void* ptr )
     {
-        GetGlobalHeap()/*!heap*/->release( ptr );
+        GetGlobalHeap()->release( ptr );
     }
 
     //////////////////////////////////////////////////////////////////////////
