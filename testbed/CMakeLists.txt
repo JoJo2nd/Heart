@@ -57,7 +57,25 @@ ADD_MSVC_PRECOMPILED_HEADER(
 	TESTBED_PRECOMPILED_SRC_FILES
 )
 
+if (NOT DEFINED ENV{WindowsSDKDir})
+	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
+	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
+endif()
+if (NOT ${BUILD_64_BIT} MATCHES 1)
+	set(PLATTYPE x86)
+else()
+	set(PLATTYPE x64)
+endif()
+
 include_directories(${TESTBED_INCLUDE_DIRS})
 link_directories(${LIBHEART_LIB_DIRS})
 add_executable(heart_testbed WIN32 ${TESTBED_HDR_FILES} ${TESTBED_SRC_FILES} ${TESTBED_PRECOMPILED_SRC_FILES})
+set_property(TARGET heart_testbed PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(heart_testbed heart)
+
+ADD_CUSTOM_COMMAND(
+	TARGET heart_testbed
+    POST_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" heart_testbed "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/game"
+	COMMAND ROBOCOPY "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" "${CMAKE_SOURCE_DIR}/deploy/game" D3DCompiler*.DLL ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+)
