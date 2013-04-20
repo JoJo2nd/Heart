@@ -1,1 +1,5 @@
 /GAMEDATA/*
+/*.dll
+/*.exe
+/*.pdb
+/*.txt
