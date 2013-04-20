@@ -1,0 +1,109 @@
+local infiles=nil
+local depfiles=nil
+local progparams=nil
+local materialpath=nil
+
+--
+-- SIBENIK
+--
+materialpath="src://materials/sibenik_vcol.mfx"
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMENBASE",
+    restype="mat_fx",
+    inputfiles={materialpath,},
+    depfiles=material.scanincludes(materialpath),
+}
+materialpath="src://materials/sibenik_brick.mfx"
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMENBRICK",
+    restype="mat_fx",
+    inputfiles={materialpath,},
+    depfiles=material.scanincludes(materialpath),
+}
+materialpath="src://materials/sibenik_red_carpet.mfx"
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMENRED",
+    restype="mat_fx",
+    inputfiles={materialpath,},
+    depfiles=material.scanincludes(materialpath),
+}
+materialpath="src://materials/sibenik_stup.mfx"
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMENSTUP",
+    restype="mat_fx",
+    inputfiles={materialpath,},
+    depfiles=material.scanincludes(materialpath),
+}
+materialpath="src://materials/sibenik_tiles.mfx"
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMENTILES",
+    restype="mat_fx",
+    inputfiles={materialpath,},
+    depfiles=material.scanincludes(materialpath),
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMEN",
+    restype="texture",
+    inputfiles={
+        "src://mesh/sibenik/kamen.dds"
+    },
+    parameters={
+        sRGB=true
+    },
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMEN-BUMP",
+    restype="texture",
+    inputfiles={
+        "src://mesh/sibenik/kamen-bump.dds"
+    },
+    parameters={
+        sRGB=false
+    },
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="KAMEN-STUP",
+    restype="texture",
+    inputfiles={
+        "src://mesh/sibenik/kamen-stup.dds"
+    },
+    parameters={
+        sRGB=true
+    },
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="MRAMOR6X6",
+    restype="texture",
+    inputfiles={
+        "src://mesh/sibenik/mramor6x6.dds"
+    },
+    parameters={
+        sRGB=true
+    },
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="MRAMOR6X6-BUMP",
+    restype="texture",
+    inputfiles={
+        "src://mesh/sibenik/mramor6x6-bump.dds"
+    },
+    parameters={
+        sRGB=false
+    },
+}
+databuilder.addresource{
+    package="SIBENIK",
+    resname="SIBENIK",
+    restype="mesh",
+    inputfiles={"src://mesh/sibenik.mdf"},
+}
