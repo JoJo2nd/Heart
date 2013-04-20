@@ -90,4 +90,5 @@ ADD_CUSTOM_COMMAND(
 	TARGET lua
     POST_BUILD
     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" lua "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder"
+	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" lua "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/game"
 )
