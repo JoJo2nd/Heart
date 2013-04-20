@@ -1,0 +1,14 @@
+/databuilder/
+/filesystem/
+/font/
+/LuaXML_lib/
+/lua/
+/material/
+/mesh/
+/mime/
+/socket/
+/texture/
+/*.dll
+/*.pdb
+/*.exe
+/*.txt
