@@ -54,6 +54,9 @@ private:
     static int								luaDoAllTests(lua_State* L);
     static int								luaPrintTests(lua_State* L);
 
+    void createRenderResources();
+    void destroyRenderResources();
+
     static UnitTestCreator                  unitTests_[];
 
 	Heart::hHeartEngine*                    pEngine_;
@@ -61,4 +64,5 @@ private:
     UnitTestFactory*                        factory_;
     hUint32                                 currentTestIdx_;
     hBool                                   exiting_;
+    hBool                                   createdDummyTarget_;
 };

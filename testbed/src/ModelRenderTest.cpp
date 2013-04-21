@@ -152,12 +152,13 @@ void ModelRenderTest::CreateRenderResources()
     hDepthStencilViewDesc dsvd;
     hZeroMem(&rtvd, sizeof(rtvd));
     hZeroMem(&dsvd, sizeof(dsvd));
+    camera->setClearScreenFlag(hTrue);
     rtvd.format_=bb->getTextureFormat();
     rtvd.resourceType_=bb->getRenderType();
     hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=db->getTextureFormat();
+    dsvd.format_=TFORMAT_D32F;//db->getTextureFormat();
     dsvd.resourceType_=db->getRenderType();
     hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;

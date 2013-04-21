@@ -1,6 +1,6 @@
 /********************************************************************
 
-    filename:   ComplexMesh2.cpp  
+    filename:   LoadTextureTest.cpp  
     
     Copyright (c) 30:1:2013 James Moran
     
@@ -24,21 +24,22 @@
     distribution.
 
 *********************************************************************/
+
 #include "testbed_precompiled.h"
-#include "ComplexMesh2.h"
+#include "LoadTextureTest.h"
 #include "TestUtils.h"
 
-DEFINE_HEART_UNIT_TEST(ComplexMesh2);
+DEFINE_HEART_UNIT_TEST(LoadTextureTest);
 
-#define PACKAGE_NAME ("COMPLEXMESH2")
-#define RESOURCE_NAME ("HOUSE")
-#define ASSET_PATH ("COMPLEXMESH2.HOUSE")
+#define PACKAGE_NAME ("MATERIALS")
+#define RESOURCE_NAME ("NARUTO_TEST")
+#define ASSET_PATH ("MATERIALS.NARUTO_TEST")
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 ComplexMesh2::RunUnitTest()
+hUint32 LoadTextureTest::RunUnitTest()
 {
     Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
@@ -96,36 +97,33 @@ hUint32 ComplexMesh2::RunUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::RenderUnitTest()
+void LoadTextureTest::RenderUnitTest()
 {
+    using namespace Heart;
+
     Heart::hRenderer* renderer = engine_->GetRenderer();
-    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
-    hUint32 lodobjects = lod->renderObjects_.GetSize();
-    const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
+    Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
+    const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
+    Heart::hConstBlockMapInfo mapinfo;
 
-    drawCtx_.Begin(renderer);
-
-    for (hUint32 i = 0; i < lodobjects; ++i)
-    {
-        // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable = &lod->renderObjects_[i];
-
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
-        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
-            drawCtx_.SubmitDrawCall(drawCall_);
-        }
+    camera_.UpdateParameters(ctx);
+    ctx->setTargets(camera_.getTargetCount(), camera_.getTargets(), camera_.getDepthTarget());
+    ctx->SetViewport(camera_.getTargetViewport());
+    for (hUint i=0; i<camera_.getTargetCount(); ++i) {
+        ctx->clearColour(camera_.getRenderTarget(i), Heart::hColour(.5f, .5f, .5f, 1.f));
     }
-    drawCtx_.End();
+    ctx->clearDepth(camera_.getDepthTarget(), 1.f);
+
+    ctx->Map(modelMtxCB_, &mapinfo);
+    *(Heart::hMatrix*)mapinfo.ptr = Heart::hMatrixFunc::identity();
+    ctx->Unmap(&mapinfo);
+
+    Heart::hMaterialTechnique* tech=materialInstance_->GetTechniqueByMask(techinfo->mask_);
+    for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+        Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
+        ctx->SetMaterialPass(passptr);
+        ctx->DrawIndexedPrimitive(quadIB_->GetIndexCount()/3, 0);
+    }
 }
 
 
@@ -133,18 +131,18 @@ void ComplexMesh2::RenderUnitTest()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::CreateRenderResources()
+void LoadTextureTest::CreateRenderResources()
 {
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
     hUint32 w = renderer->GetWidth();
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
     hTexture* bb=matMgr->getGlobalTexture("back_buffer");
     hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    hTextureFormat dfmt=TFORMAT_D32F;
     hRenderTargetView* rtv=NULL;
     hDepthStencilView* dsv=NULL;
     hRenderTargetViewDesc rtvd;
@@ -156,7 +154,7 @@ void ComplexMesh2::CreateRenderResources()
     hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=TFORMAT_D32F;
+    dsvd.format_=dfmt;
     dsvd.resourceType_=db->getRenderType();
     hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;
@@ -169,60 +167,82 @@ void ComplexMesh2::CreateRenderResources()
     rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
-    vp.x=0.f;
-    vp.y=0.f;
-    vp.w=1.f;
-    vp.h=1.f;
-
-    camPos_ = Heart::hVec3(0.f, 0.f, -70.f);
+    vp.x= 0.f;
+    vp.y= 0.f;
+    vp.w= 1.f;
+    vp.h= 1.f;
+    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
     camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
     camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
+    Heart::hMatrix vm = Heart::hMatrixFunc::identity();;
+    camera_.Initialise(renderer);
+    camera_.bindRenderTargetSetup(rtDesc);
+    camera_.SetFieldOfView(45.f);
+    camera_.SetOrthoParams(0.f, 1.f, 2.f, -1.f, 0.f, 1000.f);
+    camera_.SetViewMatrix(vm);
+    camera_.setViewport(vp);
+    camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    rtDesc.nTargets_=0;
+    rtDesc.depth_=dsv;
 
-    camera->bindRenderTargetSetup(rtDesc);
-    camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
-    camera->SetViewMatrix(vm);
-    camera->setViewport(vp);
-    camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+    resTex_=static_cast<hTexture*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+    hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
+    materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
+    hShaderResourceViewDesc srvd;
+    hZeroMem(&srvd, sizeof(srvd));
+    srvd.format_=resTex_->getTextureFormat();
+    srvd.resourceType_=resTex_->getRenderType();
+    srvd.tex2D_.topMip_=0;
+    srvd.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(resTex_, srvd, &resTesSRV_);
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
+    materialInstance_->bindResource(hCRC32::StringCRC("g_texture"), resTesSRV_);
+    materialInstance_->bindInputStreams(PRIMITIVETYPE_TRILIST, quadIB_, &quadVB_, 1);
+
+    modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
 
     // The camera hold refs to this
     rtv->DecRef();
     dsv->DecRef();
-
-    hcAssert(renderModel_);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::DestroyRenderResources()
+void LoadTextureTest::DestroyRenderResources()
 {
     using namespace Heart;
-    hRenderer* renderer = engine_->GetRenderer();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
 
-    camera->releaseRenderTargetSetup();
+    camera_.releaseRenderTargetSetup();
+    if (resTex_) {
+        resTex_->DecRef();
+        resTex_=NULL;
+    }
+    hMaterialInstance::destroyMaterialInstance(materialInstance_);
+    materialInstance_=NULL;
+    if (quadIB_) {
+        quadIB_->DecRef();
+        quadIB_=NULL;
+    }
+    if (quadVB_) {
+        quadVB_->DecRef();
+        quadVB_=NULL;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ComplexMesh2::UpdateCamera()
+void LoadTextureTest::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
-    hRenderer* renderer = engine_->GetRenderer();
-    hRendererCamera* camera = renderer->GetRenderCamera(0);
     hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
     updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
     Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    camera_.SetViewMatrix(vm);
 }

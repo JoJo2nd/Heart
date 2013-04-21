@@ -43,6 +43,7 @@
 #include "Sibenik.h"
 #include "ComputeTest.h"
 #include "TexturedPlane.h"
+#include "LoadTextureTest.h"
 #include "ComputeBlur.h"
 
 DEFINE_HEART_UNIT_TEST(ListTest);
@@ -58,6 +59,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(ModelRenderTest)
         //REGISTER_UNIT_TEST(ComputeBlur)
         REGISTER_UNIT_TEST(TexturedPlane)
+        REGISTER_UNIT_TEST(LoadTextureTest)
         REGISTER_UNIT_TEST(Base64)
         REGISTER_UNIT_TEST(ListTest)
         REGISTER_UNIT_TEST(MapTest)
@@ -86,6 +88,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         , currentTest_(NULL)
         , factory_(NULL)
         , exiting_(hFalse)
+        , createdDummyTarget_(hFalse)
     {
     }
 
@@ -123,6 +126,88 @@ DEFINE_HEART_UNIT_TEST(Base64);
         lua_pushlightuserdata(L, this);
         luaL_setfuncs(L,funcs,1);
         lua_pop(L, 1);// pop heart module table
+
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    void TestBedCore::createRenderResources()
+    {
+        using namespace Heart;
+        hRenderer* renderer = pEngine_->GetRenderer();
+        hRendererCamera* camera = renderer->GetRenderCamera(0);
+        hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
+        hUint32 w = renderer->GetWidth();
+        hUint32 h = renderer->GetHeight();
+        hFloat aspect = (hFloat)w/(hFloat)h;
+        hRenderViewportTargetSetup rtDesc={0};
+        hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+        hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+        hRenderTargetView* rtv=NULL;
+        hDepthStencilView* dsv=NULL;
+        hRenderTargetViewDesc rtvd;
+        hDepthStencilViewDesc dsvd;
+        hZeroMem(&rtvd, sizeof(rtvd));
+        hZeroMem(&dsvd, sizeof(dsvd));
+        camera->setClearScreenFlag(hTrue);
+        rtvd.format_=bb->getTextureFormat();
+        rtvd.resourceType_=bb->getRenderType();
+        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+        rtvd.tex2D_.topMip_=0;
+        rtvd.tex2D_.mipLevels_=~0;
+        dsvd.format_=TFORMAT_D32F;//db->getTextureFormat();
+        dsvd.resourceType_=db->getRenderType();
+        hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+        dsvd.tex2D_.topMip_=0;
+        dsvd.tex2D_.mipLevels_=~0;
+        renderer->createRenderTargetView(bb, rtvd, &rtv);
+        renderer->createDepthStencilView(db, dsvd, &dsv);
+        rtDesc.nTargets_=1;
+        rtDesc.targetTex_=bb;
+        rtDesc.targets_[0]=rtv;
+        rtDesc.depth_=dsv;;
+
+        hRelativeViewport vp;
+        vp.x=0.f;
+        vp.y=0.f;
+        vp.w=1.f;
+        vp.h=1.f;
+
+        hVec3 camPos_ = Heart::hVec3(0.f, 0.f, 0.f);
+        hVec3 camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
+        hVec3 camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
+
+        Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+
+        camera->bindRenderTargetSetup(rtDesc);
+        camera->SetFieldOfView(45.f);
+        camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+        camera->SetViewMatrix(vm);
+        camera->setViewport(vp);
+        camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+
+        // The camera hold refs to this
+        rtv->DecRef();
+        dsv->DecRef();
+
+        createdDummyTarget_=hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void TestBedCore::destroyRenderResources()
+    {
+        using namespace Heart;
+        hRenderer* renderer = pEngine_->GetRenderer();
+        hRendererCamera* camera = renderer->GetRenderCamera(0);
+
+        camera->releaseRenderTargetSetup();
+        createdDummyTarget_=hFalse;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +241,15 @@ DEFINE_HEART_UNIT_TEST(Base64);
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
         if ( currentTest_ && currentTest_->GetCanRender() ) {
+            if (createdDummyTarget_) {
+                createdDummyTarget_=hFalse;
+            }
             currentTest_->RenderUnitTest();
+        } else {
+            if (!createdDummyTarget_) {
+                createRenderResources();
+            }
+            pEngine->GetRenderer()->beginCameraRender(pEngine->GetRenderer()->GetMainSubmissionCtx(), 0);
         }
     }
 

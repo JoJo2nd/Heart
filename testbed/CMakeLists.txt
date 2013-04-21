@@ -30,6 +30,7 @@ set( TESTBED_HDR_FILES
     "${TESTBED_SOURCE_DIR}/include/TestUtils.h"
     "${TESTBED_SOURCE_DIR}/include/TexturedPlane.h"
     "${TESTBED_SOURCE_DIR}/include/UnitTestFactory.h"
+	"${TESTBED_SOURCE_DIR}/include/LoadTextureTest.h"
 )
 set( TESTBED_SRC_FILES
     "${TESTBED_SOURCE_DIR}/src/ComplexMesh1.cpp"
@@ -50,6 +51,7 @@ set( TESTBED_SRC_FILES
     "${TESTBED_SOURCE_DIR}/src/TestUtils.cpp"
     "${TESTBED_SOURCE_DIR}/src/TexturedPlane.cpp"
     "${TESTBED_SOURCE_DIR}/src/UnitTestFactory.cpp"
+	"${TESTBED_SOURCE_DIR}/src/LoadTextureTest.cpp"
 )
 ADD_MSVC_PRECOMPILED_HEADER(
 	"${TESTBED_SOURCE_DIR}/include/testbed_precompiled.h" 
