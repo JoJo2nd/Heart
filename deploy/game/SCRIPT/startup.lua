@@ -2,6 +2,8 @@ require "util"
 
 function rendererResize(width, height)
     print("Lua resize call ", width, "x", height)
+    heart.resizeGlobalTexture("back_buffer", width, height);
+    heart.resizeGlobalTexture("depth_buffer", width, height);
     heart.resizeGlobalTexture("z_pre_pass", width, height);
     heart.resizeGlobalTexture("blur_target", width, height);
     heart.resizeGlobalTexture("blur_rw_texture", width, height);
@@ -10,6 +12,30 @@ end
 function registerGlobalTextures()
     local rndrWidth,rndrHeight=heart.getWindowWidthHeight()
 
+    heart.registerGlobalTexture {
+        name="back_buffer",
+        aliases={
+            "back_buffer",
+            "g_back_buffer",
+        },
+        width=rndrWidth,
+        height=rndrHeight,
+        format="rgba8_srgb",
+        rendertarget=true,
+    }
+    heart.registerGlobalTexture {
+        name="depth_buffer",
+        aliases = {
+            "depth_buffer",
+            "g_depth_buffer",
+            "z_buffer",
+            "g_z_buffer",
+        },
+        width=rndrWidth,
+        height=rndrHeight,
+        format="r32_typeless",
+        depth=true,
+    }
     heart.registerGlobalTexture {
         name="z_pre_pass",
         aliases = {

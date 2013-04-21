@@ -1,3 +1,5 @@
+/*.txt
+/*.dll
 /databuilder/
 /filesystem/
 /font/
@@ -8,7 +10,5 @@
 /mime/
 /socket/
 /texture/
-/*.dll
 /*.pdb
 /*.exe
-/*.txt
