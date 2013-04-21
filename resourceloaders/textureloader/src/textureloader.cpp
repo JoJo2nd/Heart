@@ -293,7 +293,7 @@ hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData) {
     }
     hUint32 textureSize = filesize - sizeof(header);
     std::ifstream file;
-    file.open(filepath);
+    file.open(filepath, std::ios_base::in|std::ios_base::binary);
     if (!file.is_open()) {
         return hFalse;
     }
