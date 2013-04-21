@@ -35,6 +35,7 @@ namespace Heart
     hRendererCamera::hRendererCamera() 
         : renderer_(NULL)
         , validTechnique_(NULL)
+        , clear_(hFalse)
     {
     }
 

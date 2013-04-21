@@ -36,7 +36,6 @@ namespace Heart
     {
         hTempRenderMemAlloc     alloc_;
         hTempRenderMemFree      free_;
-        hdDX11Texture*          backBufferTex_;
         hdDX11Texture*          depthBufferTex_;
     };
 
@@ -51,7 +50,7 @@ namespace Heart
         void                            ActiveContext() {}
         void                            BeginRender(hFloat* gpuTime);
         void                            EndRender();
-        void	                        SwapBuffers();
+        void	                        SwapBuffers(hdDX11Texture* buffer);
         void                            InitialiseRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         void                            DestroyRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
         void                            InitialiseMainRenderSubmissionCtx( hdDX11RenderSubmissionCtx* ctx );
@@ -68,6 +67,8 @@ namespace Heart
         void                            ReleaseCommandBuffer( hdDX11CommandBuffer cmdBuf );
         void                            createComputeUAV(hdDX11Texture* res, hTextureFormat viewformat, hUint mip, hdDX11ComputeUAV* outres);
         void                            destroyComputeUAV(hdDX11ComputeUAV* uav);
+
+        static void                     clearDeviceInputs(ID3D11DeviceContext* device);
 
     protected:
 
@@ -119,14 +120,15 @@ namespace Heart
         ID3D11DeviceContext*        mainDeviceCtx_;
         D3D_FEATURE_LEVEL           featureLevel_;
         ID3D11RenderTargetView*     renderTargetView_;
-        ID3D11Texture2D*            depthStencil_;
-        ID3D11DepthStencilView*     depthStencilView_;
-        hdDX11Texture*              backBufferTex_;
-        hdDX11Texture*              depthBufferTex_;
+        //ID3D11Texture2D*            depthStencil_;
+        //ID3D11DepthStencilView*     depthStencilView_;
+        //hdDX11Texture*              depthBufferTex_;
         ID3D11Query*                timerDisjoint_;
         ID3D11Query*                timerFrameStart_;
         ID3D11Query*                timerFrameEnd_;
         hDeviceResizeCallback       resizeCallback_;
+
+        ID3D11Texture2D*            pBackBuffer;
     };
 
 }

@@ -415,8 +415,8 @@ namespace Heart
     {
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
             hcPrintf("  Resource %s:"
-                " Type: %s | Linked: %s | crc: 0x%08X", 
-                res->GetName(), res->GetType().ext, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
+                " Type: %.*s | Linked: %s | crc: 0x%08X", 
+                res->GetName(), 4, res->GetType().ext, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
         }
     }
 
@@ -427,13 +427,15 @@ namespace Heart
     const hChar* hResourcePackage::getPackageStateString() const
     {
         static const hChar* stateStr [] = {
-            "State_Load_WaitDeps",
-            "State_Load_Reources",
-            "State_Link_Resources",
-            "State_Loaded",// a.k.a State_Ready
-            "State_Unlink_Resoruces",
-            "State_Unload_Resources",
-            "State_Unloaded",
+            "State_Load_DepPkgs"     ,
+            "State_Load_WaitDeps"    ,
+            "State_Load_Reources"    ,
+            "State_Link_Resources"   ,
+            "State_Ready"            ,
+            "State_Unlink_Resoruces" ,
+            "State_Unload_Resources" ,
+            "State_Unload_DepPkg"    ,
+            "State_Unloaded"         ,
         };
         return stateStr[packageState_];
     }

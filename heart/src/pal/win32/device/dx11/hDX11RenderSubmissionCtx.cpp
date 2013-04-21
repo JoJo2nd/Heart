@@ -76,7 +76,7 @@ namespace Heart
         for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
             if (!boundProgs_[p]) continue;
             cbidx = boundProgs_[p]->GetConstantBlockRegister(paramID);
-            if (cbidx > HEART_MAX_CONSTANT_BLOCKS) continue;
+            if (cbidx >= HEART_MAX_CONSTANT_BLOCKS) continue;
             inputData_[p].programInputs_[cbidx] = buffer->constBuffer_;
             succ = true;
         }
@@ -96,7 +96,7 @@ namespace Heart
         for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
             if (!boundProgs_[p]) continue;
             idx = boundProgs_[p]->GetInputRegister(paramID);
-            if (idx > HEART_MAX_RESOURCE_INPUTS) continue;
+            if (idx >= HEART_MAX_RESOURCE_INPUTS) continue;
             inputData_[p].samplerState_[idx] = ss->stateObj_;
             inputData_[p].samplerCount_ = hMax(idx+1, inputData_[p].samplerCount_);
             succ = true;
@@ -116,7 +116,7 @@ namespace Heart
         for (hUint32 p = 0; p < hdDX11ProgMax; ++p) {
             if (!boundProgs_[p]) continue;
             idx = boundProgs_[p]->GetInputRegister(paramID);
-            if (idx > HEART_MAX_RESOURCE_INPUTS) continue;
+            if (idx >= HEART_MAX_RESOURCE_INPUTS) continue;
             inputData_[p].resourceViews_[idx] = view ? view->srv_ : NULL;
             inputData_[p].resourceViewCount_ = hMax(idx+1, inputData_[p].resourceViewCount_);
             succ = true;
@@ -337,29 +337,10 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::setTargets(hUint32 n, hdDX11RenderTargetView** target, hdDX11DepthStencilView* depth) {
         ID3D11RenderTargetView* rtviews[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
-        void* nullout[HEART_MAX_RESOURCE_INPUTS] = {0};
         for (hUint i=0; i<n; ++i) {
             rtviews[i]=target[i] ? target[i]->rtv_ : NULL;
         }
-        device_->PSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->PSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->PSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->VSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->VSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->VSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->GSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->GSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->GSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->DSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->DSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->DSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->HSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->HSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->HSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->CSSetConstantBuffers(0, HEART_MAX_CONSTANT_BLOCKS, (ID3D11Buffer**)&nullout);
-        device_->CSSetSamplers(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11SamplerState**)&nullout);
-        device_->CSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
-        device_->CSSetUnorderedAccessViews(0, HEART_MAX_UAV_INPUTS, (ID3D11UnorderedAccessView**)&nullout, NULL);
+        hdDX11RenderDevice::clearDeviceInputs(device_);
         device_->OMSetRenderTargets(n, rtviews, depth ? depth->dsv_ : NULL);
     }
 

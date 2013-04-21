@@ -80,6 +80,8 @@ namespace Heart
         hDepthStencilView*          getDepthTarget() const { return setup_.depth_; }
         hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
         void                        UpdateParameters(hRenderSubmissionCtx* ctx);
+        void                        setClearScreenFlag(hBool val) { clear_=val;}
+        hBool                       getClearScreenFlag() const { return clear_;}
     private:
         const hRenderTechniqueInfo* validTechnique_;
         hFloat                      fov;
@@ -87,6 +89,7 @@ namespace Heart
         hFloat                      near_;
         hFloat                      far_;
         hBool                       isOrtho_;
+        hBool                       clear_;
         hMatrix                     viewMatrix_;
         hMatrix                     projectionMatrix_;
         hViewFrustum                frustum_;

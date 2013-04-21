@@ -90,52 +90,44 @@ namespace Heart
         vsync_			= vsync;
         resourceManager_ = pResourceManager;
         system_			=  pSystem;
+        backBuffer_     = hNullptr;
 
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 
-        backBuffer_=hNEW(GetGlobalHeap(), hTexture)(
-            hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
-        depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(
-            hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
+        //depthBuffer_=hNEW(GetGlobalHeap(), hTexture)(
+        //    hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
 
         hRenderDeviceSetup setup;
         setup.alloc_ = RnTmpMalloc;
         setup.free_ = RnTmpFree;
-        setup.backBufferTex_ = backBuffer_;
-        setup.depthBufferTex_= depthBuffer_;
+        setup.depthBufferTex_ = hNullptr;
+        //setup.depthBufferTex_= depthBuffer_;
         ParentClass::Create( system_, width_, height_, fullscreen_, vsync_, setup );
 
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
 
-        backBuffer_->format_=TFORMAT_ARGB8_sRGB;
-        backBuffer_->nLevels_=1;
-        backBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
-        backBuffer_->levelDescs_->mipdata_=NULL;
-        backBuffer_->levelDescs_->mipdataSize_=0;
-        backBuffer_->levelDescs_->width_ = GetWidth();
-        backBuffer_->levelDescs_->height_ = GetHeight();
-        depthBuffer_->format_=TFORMAT_D24S8F;
-        depthBuffer_->nLevels_=1;
-        depthBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
-        depthBuffer_->levelDescs_->mipdata_=NULL;
-        depthBuffer_->levelDescs_->mipdataSize_=0;
-        depthBuffer_->levelDescs_->width_ = GetWidth();
-        depthBuffer_->levelDescs_->height_ = GetHeight();
+//         depthBuffer_->format_=TFORMAT_D24S8F;
+//         depthBuffer_->nLevels_=1;
+//         depthBuffer_->levelDescs_=hNEW_ARRAY(GetGlobalHeap(), hTexture::LevelDesc, 1);
+//         depthBuffer_->levelDescs_->mipdata_=NULL;
+//         depthBuffer_->levelDescs_->mipdataSize_=0;
+//         depthBuffer_->levelDescs_->width_ = GetWidth();
+//         depthBuffer_->levelDescs_->height_ = GetHeight();
 
 
-        const hChar* bbalias[] = {
-            "back_buffer",
-            "g_back_buffer",
-        };
-        materialManager_.registerGlobalTexture("back_buffer", backBuffer_, bbalias, hStaticArraySize(bbalias));
-        const hChar* dbalias[] = {
-            "depth_buffer",
-            "g_depth_buffer",
-            "z_buffer",
-            "g_z_buffer",
-        };
-        materialManager_.registerGlobalTexture("depth_buffer", depthBuffer_, dbalias, hStaticArraySize(dbalias));
+//         const hChar* bbalias[] = {
+//             "back_buffer",
+//             "g_back_buffer",
+//         };
+//         materialManager_.registerGlobalTexture("back_buffer", backBuffer_, bbalias, hStaticArraySize(bbalias));
+//         const hChar* dbalias[] = {
+//             "depth_buffer",
+//             "g_depth_buffer",
+//             "z_buffer",
+//             "g_z_buffer",
+//         };
+//         materialManager_.registerGlobalTexture("depth_buffer", depthBuffer_, dbalias, hStaticArraySize(dbalias));
 
         createDebugShadersInternal();
 
@@ -182,10 +174,8 @@ namespace Heart
         for (hUint i=0; i<eDebugShaderMax; ++i) {
             debugShaders_[i]->DecRef();
         }
-        hDELETE_ARRAY_SAFE(GetGlobalHeap(), backBuffer_->levelDescs_);
-        hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
-        backBuffer_->DecRef();
-        depthBuffer_->DecRef();
+        //hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
+        //depthBuffer_->DecRef();
         ParentClass::Destroy();
     }
 
@@ -217,14 +207,12 @@ namespace Heart
     void hRenderer::EndRenderFrame()
     {
         HEART_PROFILE_FUNC();
+        if (!backBuffer_) {
+            backBuffer_=materialManager_.getGlobalTexture("back_buffer");
+        }
 
         ParentClass::EndRender();
-        ParentClass::SwapBuffers();
-
-        backBuffer_->levelDescs_->width_ = GetWidth();
-        backBuffer_->levelDescs_->height_ = GetHeight();
-        depthBuffer_->levelDescs_->width_ = GetWidth();
-        depthBuffer_->levelDescs_->height_ = GetHeight();
+        ParentClass::SwapBuffers(backBuffer_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -276,6 +264,9 @@ namespace Heart
     {
         hcAssert(width > 0 && height > 0 && inout);
         //TODO: do a down-size render? Atm this is only used for render targets so content is throw away.
+        if (inout == backBuffer_) {
+            backBuffer_=hNullptr;
+        }
         hMipDesc mipsdata[16];// Based on the largest texture dim is 64K (is that even possible? 13 should be safe)
         hUint lvls=0;
         hUint w=width;
@@ -447,6 +438,12 @@ namespace Heart
 
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
         ctx->SetViewport(camera->getTargetViewport());
+        if (camera->getClearScreenFlag()) {
+            for (hUint t=0, n=camera->getTargetCount(); t<n; ++t) {
+                ctx->clearColour(camera->getTargets()[t], BLACK);
+            }
+            ctx->clearDepth(camera->getDepthTarget(), 1.f);
+        }
 
         return retTechMask;
     }
@@ -562,7 +559,7 @@ namespace Heart
         hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
         rtvd.tex2D_.topMip_=0;
         rtvd.tex2D_.mipLevels_=~0;
-        dsvd.format_=db->getTextureFormat();
+        dsvd.format_=TFORMAT_D32F;//db->getTextureFormat();
         dsvd.resourceType_=db->getRenderType();
         hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
         dsvd.tex2D_.topMip_=0;

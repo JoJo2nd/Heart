@@ -313,6 +313,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_THREAD_FILES}
     ${HEART_UTILS_FILES}
     ${HEART_DEVICE_MATH_FILES}
+	${HEART_PLATFORM_NON_UNITY_FILES}
 	${HEART_RESOURCE_FILES}
 )
 #common vars to pass up to parent directory
@@ -345,6 +346,7 @@ source_group(scene FILES ${HEART_SCENE_FILES})
 source_group(thread FILES ${HEART_THREAD_FILES})
 source_group(utils FILES ${HEART_UTILS_FILES})
 source_group(resource_data FILES ${HEART_RESOURCE_FILES})
+source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)

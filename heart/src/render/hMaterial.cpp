@@ -462,12 +462,12 @@ namespace Heart
 
     hBool hMaterial::bindResource(hShaderParameterID id, hShaderResourceView* srv)
     {
-        hBool succ = true;
+        hBool succ = hFalse;
         for (hUint group=0; group < groups_.GetSize(); ++group) {
             for (hUint32 tech = 0, nTech = groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
                 for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                     hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
-                    succ &= pass->setResourceView(id, srv);
+                    succ |= pass->setResourceView(id, srv);
                 }
             }
         }
@@ -509,7 +509,7 @@ namespace Heart
             for (hUint32 tech = 0, nTech = groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
                 for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                     hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
-                    succ &= pass->setSamplerInput(id, samplerState);
+                    succ |= pass->setSamplerInput(id, samplerState);
                 }
             }
         }
@@ -646,11 +646,11 @@ namespace Heart
     {
         hcAssert(id);
         hcAssert(cb);
-        hBool succ = true;
+        hBool succ = hFalse;
         for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
             for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                 hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ &= pass->setConstantBuffer(id, cb);
+                succ |= pass->setConstantBuffer(id, cb);
             }
         }
 
@@ -686,11 +686,11 @@ namespace Heart
 
     hBool hMaterialInstance::bindSampler(hShaderParameterID id, hSamplerState* samplerState)
     {
-        hBool succ = true;
+        hBool succ = hFalse;
         for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
             for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                 hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ &= pass->setSamplerInput(id, samplerState);
+                succ |= pass->setSamplerInput(id, samplerState);
             }
         }
 
@@ -724,11 +724,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hMaterialInstance::bindResource(hShaderParameterID id, hShaderResourceView* view) {
-        hBool succ = true;
+        hBool succ = hFalse;
         for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
             for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                 hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ &= pass->setResourceView(id, view);
+                succ |= pass->setResourceView(id, view);
             }
         }
 

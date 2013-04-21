@@ -117,6 +117,8 @@ namespace Heart
             logMat_->bindSampler(fontsamplerid, fontSamplerState_);
             inputMat_=fontMat->createMaterialInstance(hMatInst_DontInstanceConstantBuffers);
             inputMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &textBuffer_, 1);
+            inputMat_->bindResource(fontsamplerid, consoleTexSRV_);
+            inputMat_->bindSampler(fontsamplerid, fontSamplerState_);
 
             fontCB_ = logMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
             inputMat_->bindConstanstBuffer(hCRC32::StringCRC("FontParams"), fontCB_);
