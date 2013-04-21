@@ -34,6 +34,14 @@ DEFINE_HEART_UNIT_TEST(Sibenik);
 #define RESOURCE_NAME ("SIBENIK")
 #define ASSET_PATH ("SIBENIK.SIBENIK")
 
+namespace {
+    struct MaterialConstants {
+        Heart::hVec4 matColour;
+        Heart::hVec4 matSpecColour;
+        hFloat       matSpecPower;
+    };
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -187,8 +195,24 @@ void Sibenik::CreateRenderResources()
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
-
     hcAssert(renderModel_);
+    Heart::hParameterConstantBlock* constblock_;
+    MaterialConstants initdata = {
+        Heart::hVec4(1.f, 1.f, 1.f, 1.f),
+        Heart::hVec4(1.f, 1.f, 1.f, 1.f),
+        64.f
+    };
+    renderer->createConstantBlock(sizeof(MaterialConstants), &initdata, &constblock_);
+
+    for (hUint i=0, n=renderModel_->GetLODCount(); i<n; ++i) {
+        hGeomLODLevel* lod=renderModel_->GetLOD(i);
+        for(hUint ri=0, rn=lod->renderObjects_.GetSize(); ri<rn; ++ri) {
+            lod->renderObjects_[ri].GetMaterial()->bindConstanstBuffer(Heart::hCRC32::StringCRC("MaterialConstants"), constblock_);
+        }
+    }
+
+    //material hold this so let go
+    constblock_->DecRef();
 
     // The camera hold refs to this
     rtv->DecRef();

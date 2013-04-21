@@ -248,6 +248,8 @@ void DebugPrimsTest::CreateRenderResources()
 
     viewportCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("ViewportConstants"));
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
+
+    timer_ = 0.f;
 }
 
 //////////////////////////////////////////////////////////////////////////
