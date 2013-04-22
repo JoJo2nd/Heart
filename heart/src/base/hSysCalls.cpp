@@ -29,6 +29,11 @@
 
 //#define HEART_PRINT_SYMBOLS
 #define HEART_MEMTRACK_FULL_STACKTRACK
+#ifdef HEART_64BIT
+#   define size_t_fmt "%llu"
+#else
+#   define size_t_fmt "%lu"
+#endif
 
 namespace Heart
 {
@@ -155,8 +160,11 @@ void FlushSymbolsToLogFile();
         for (hUint32 i = 0; i < g_symbolsCount; ++i)
         {
             SymFromAddr(process, (DWORD64)(g_symbols[i]), 0, symbol);
-            SymGetLineFromAddr64(process, (DWORD64)(g_symbols[i]), &dwDisplacement, &line);
-            fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], symbol->Name, line.LineNumber);
+            if (SymGetLineFromAddr64(process, (DWORD64)(g_symbols[i]), &dwDisplacement, &line)) {
+                fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], symbol->Name, line.LineNumber);
+            } else {
+                fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], "[ERROR: Failed to read symbol address]", 0);
+            }
         }
     }
 
@@ -225,7 +233,7 @@ void FlushSymbolsToLogFile();
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%p)\nheap(%s,%p)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, &size, tag, &line);
+                "address(%p)\nheap(%s,%p)\nsize("size_t_fmt")\nfile(%s)\nline("size_t_fmt")\n", ptr, heaptag, heap, size, tag, line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }
@@ -244,7 +252,7 @@ void FlushSymbolsToLogFile();
         {
             EnterCriticalSection(&g_access);
             fprintf(g_file, "!! ALLOC\n"
-                "address(%p)\nheap(%s,%p)\nsize(%z)\nfile(%s)\nline(%z)\n", ptr, heaptag, heap, &size, tag, &line);
+                "address(%p)\nheap(%s,%p)\nsize("size_t_fmt")\nfile(%s)\nline("size_t_fmt")\n", ptr, heaptag, heap, size, tag, line);
             StackTraceToFile(g_file);
             LeaveCriticalSection(&g_access);
         }

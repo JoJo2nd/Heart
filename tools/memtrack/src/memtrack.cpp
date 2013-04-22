@@ -64,9 +64,9 @@ void MemTrackMainFrame::initFrame()
 
     wxMenu* filemenu = new wxMenu();
     filemenu->Append(wxID_OPEN, "&Open");
-    filemenu->Append(wxID_SAVE, "&Save");
-    filemenu->Append(wxID_SAVEAS, "Save &As");
-    filemenu->Append(uiID_IMPORT, "&Import Memory Log");
+//     filemenu->Append(wxID_SAVE, "&Save");
+//     filemenu->Append(wxID_SAVEAS, "Save &As");
+//     filemenu->Append(uiID_IMPORT, "&Import Memory Log");
 
     menubar->Append(filemenu, "&File");
 

@@ -47,6 +47,12 @@ option(BUILD_BUILDER_PROJECT "Build builder lib and stand alone" ON)
 set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR "C:/assimp_sdk_folder/lib" CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR "C:/assimp_sdk_folder/include" CACHE PATH "Directory for assimp includes")
+set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
+
+#Set wxWidgets search path
+set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
+set(wxWidgets_CONFIGURATION CACHE STRING mswdll)
+#set(wxWidgets_CONFIGURATION mswdlld)# for debug
 
 #Common var
 set(EXTERNAL_SRC_ROOT
@@ -75,9 +81,7 @@ else()
 	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${EXTERNAL_SRC_ROOT}/boost/stage/lib")
 endif()
 
-if (BUILD_HEART_TESTBED)
-	project(HEART_TESTBED)
-endif()
+project(HEART)
 
 #project defines
 if (MSVC)
@@ -113,3 +117,5 @@ add_subdirectory("tools/lualibs/filesystem")
 add_subdirectory("tools/lualibs/luasocket")
 add_subdirectory("tools/lualibs/mime")
 add_subdirectory("tools/lualibs/luaxml")
+
+add_subdirectory("tools/memtrack")

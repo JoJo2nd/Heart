@@ -38,7 +38,12 @@ void MemLogMarker::insertMemAlloc(const AllocRecord& allocr)
 
     allocs_.push_back(allocr);
 
-    assert(heapView_.find(allocr) == heapView_.end());
+    if (heapView_.find(allocr) != heapView_.end()){
+        wxString msg;
+        msg.Printf("Warning: allocation 0x%llX has been allocated twice, this suggests that the Free() was done but not tracked\n", allocr.address_);
+        wxMessageDialog mb(NULL, msg);
+        mb.ShowModal();
+    }
     heapView_.insert(allocr);
 }
 
