@@ -50,6 +50,7 @@ ADD_MSVC_PRECOMPILED_HEADER(
 
 source_group(include FILES ${MEMTRACK_HDR_FILES})
 source_group(source  FILES ${MEMTRACK_SRC_FILES})
+source_group(precompiled FILES ${MEMTRACK_PRECOMPILED_SRC_FILES})
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors

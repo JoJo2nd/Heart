@@ -93,7 +93,7 @@ namespace
     static hBool                    g_open   = hFalse;
     static _RTL_CRITICAL_SECTION    g_access;
     static FILE*                    g_file = NULL;
-    static hUint32                  g_symbols[g_maxSymbols];
+    static hUintptr_t               g_symbols[g_maxSymbols];
 }
 
 void FlushSymbolsToLogFile();
@@ -104,9 +104,9 @@ void FlushSymbolsToLogFile();
 
     int SymCmp(const void* a, const void* b)
     {
-        if ( *(hUint32*)a >  *(hUint32*)b ) return 1;
+        if ( *(hUintptr_t*)a >  *(hUintptr_t*)b ) return 1;
         //if ( *(hUint32*)a == *(hUint32*)b ) return 0;
-        if ( *(hUint32*)a <  *(hUint32*)b ) return -1;
+        if ( *(hUintptr_t*)a <  *(hUintptr_t*)b ) return -1;
         return 0;
     }
 
@@ -116,11 +116,11 @@ void FlushSymbolsToLogFile();
 
     static void AddSymbolToLogFile(void* symadd)
     {
-        if (bsearch(&symadd, g_symbols, g_symbolsCount, sizeof(hUint32), SymCmp) != NULL) return;
+        if (bsearch(&symadd, g_symbols, g_symbolsCount, sizeof(hUintptr_t), SymCmp) != NULL) return;
 
-        g_symbols[g_symbolsCount++] = (hUint32)symadd;
+        g_symbols[g_symbolsCount++] = (hUintptr_t)symadd;
 
-        qsort(g_symbols, g_symbolsCount, sizeof(hUint32), SymCmp);
+        qsort(g_symbols, g_symbolsCount, sizeof(hUintptr_t), SymCmp);
 
         if (g_symbolsCount >= g_maxSymbols)
         {
@@ -140,15 +140,16 @@ void FlushSymbolsToLogFile();
         DWORD           dwDisplacement;
         IMAGEHLP_LINE64 line;
 
-        if (!g_symbolsCount) return;
-
-        if (!process)
-        {
+        if (!process) {
             process = GetCurrentProcess();
 
-            SymInitialize( process, NULL, TRUE );
-            SymSetOptions(SYMOPT_LOAD_LINES);
+            if (!SymInitialize( process, NULL, TRUE )) {
+                hcPrintf("SymInitialize Failed: GetLastError()=%u", GetLastError());
+            }
+            SymSetOptions(SYMOPT_LOAD_LINES|SYMOPT_INCLUDE_32BIT_MODULES|SYMOPT_LOAD_ANYTHING);
         }
+
+        if (!g_symbolsCount) return;
 
         symbol               = ( SYMBOL_INFO * )hAlloca(sizeof( SYMBOL_INFO ) + 256 * sizeof( char ));
         symbol->MaxNameLen   = 255;
@@ -159,11 +160,14 @@ void FlushSymbolsToLogFile();
         fprintf(g_file, "!! SYMBOLTABLE\n");
         for (hUint32 i = 0; i < g_symbolsCount; ++i)
         {
-            SymFromAddr(process, (DWORD64)(g_symbols[i]), 0, symbol);
+            DWORD errorcode=0;
+            if (!SymFromAddr(process, (DWORD64)(g_symbols[i]), 0, symbol)) {
+                errorcode=GetLastError();
+            }
             if (SymGetLineFromAddr64(process, (DWORD64)(g_symbols[i]), &dwDisplacement, &line)) {
                 fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], symbol->Name, line.LineNumber);
             } else {
-                fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], "[ERROR: Failed to read symbol address]", 0);
+                fprintf(g_file, "st(%LLX,%s[GetLastError(1)=%u::GetLastError(2)=%u])\n", g_symbols[i], "[ERROR: Failed to read symbol address]", errorcode, GetLastError());
             }
         }
     }

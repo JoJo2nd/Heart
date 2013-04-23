@@ -38,9 +38,14 @@ void MemLogMarker::insertMemAlloc(const AllocRecord& allocr)
 
     allocs_.push_back(allocr);
 
-    if (heapView_.find(allocr) != heapView_.end()){
+    AllocMapType::iterator foundalloc = heapView_.find(allocr);
+    if (foundalloc != heapView_.end()){
         wxString msg;
-        msg.Printf("Warning: allocation 0x%llX has been allocated twice, this suggests that the Free() was done but not tracked\n", allocr.address_);
+        msg.Printf("Warning: allocation 0x%llX has been allocated twice, this suggests that the Free() was done but not tracked\n"
+            "Original allocation was made from %s(%u)\n"
+            "Second allocation was made from %s(%u)\n", 
+            allocr.address_, foundalloc->backtrace_.sourcePath_.c_str(), foundalloc->backtrace_.line_,
+            allocr.backtrace_.sourcePath_.c_str(), allocr.backtrace_.line_);
         wxMessageDialog mb(NULL, msg);
         mb.ShowModal();
     }
