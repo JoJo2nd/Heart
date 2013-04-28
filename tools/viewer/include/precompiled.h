@@ -29,6 +29,11 @@
 #ifndef PRECOMPILED_H__
 #define PRECOMPILED_H__
 
+//include windows first then winundef.h otherwise we get some strange compile errors
+#include <windows.h>
+#include "wx/msw/winundef.h"
+//order of these 1st 3 is important
+
 #include "heart.h"
 
 #ifndef _CRTDBG_MAP_ALLOC
@@ -36,9 +41,6 @@
 #endif
 
 #include "wx/wx.h"
-#ifdef __WXMSW__
-#include "wx/msw/private.h"
-#endif
 #include "wx/app.h"
 #include "wx/cmdline.h"
 #include "wx/busyinfo.h"
@@ -65,6 +67,10 @@
 
 #define boost_foreach    BOOST_FOREACH
 
+extern "C"
+{
+    WXDLLIMPEXP_BASE HINSTANCE wxGetInstance();
+}
 
 #include "viewer_api.h"
 

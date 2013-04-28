@@ -59,6 +59,7 @@ void ModuleSystem::initialiseAndLoadPlugins(
     const std::string& pluginPaths, 
     boost::filesystem::path& databasePath)
 {
+    /*
     std::string str=pluginPaths;
     size_t marker;
     while((marker=str.find_first_of(';')) != std::string::npos) {
@@ -118,6 +119,7 @@ void ModuleSystem::initialiseAndLoadPlugins(
         initData.dataPath=loadedPlugIns_[i].dataPath_.c_str();
         loadedPlugIns_[i].module_->initialise(initData);
     }
+    */
 }
 
 //////////////////////////////////////////////////////////////////////////

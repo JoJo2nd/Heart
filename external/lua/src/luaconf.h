@@ -96,10 +96,10 @@
 		LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua;" ".\\?.lua"
 #ifdef _DEBUG
 #   define LUA_CPATH_DEFAULT \
-        LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll;" ".\\?.dll;" \
-        LUA_CDIR"?_d.dll;" ".\\?_d.dll;" \
-        LUA_CDIR"?\\?.dll;" ".\\?\\?.dll;" \
-        LUA_CDIR"?\\?_d.dll;" ".\\?\\?_d.dll"
+        LUA_CDIR"?_d.dll;" LUA_CDIR"loadall.dll;" ".\\?_d.dll;" \
+        LUA_CDIR"?.dll;" ".\\?.dll;" \
+        LUA_CDIR"?\\?_d.dll;" ".\\?\\?_d.dll;" \
+        LUA_CDIR"?\\?.dll;" ".\\?\\?.dll"
 #else
 #   define LUA_CPATH_DEFAULT \
         LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll;" ".\\?.dll;" \

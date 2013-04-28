@@ -58,6 +58,9 @@ set(wxWidgets_CONFIGURATION CACHE STRING mswdll)
 set(EXTERNAL_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/external"
 )
+set(TOOLS_SRC_ROOT
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools"
+)
 set(HEART_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/heart"
 )
@@ -118,4 +121,6 @@ add_subdirectory("tools/lualibs/luasocket")
 add_subdirectory("tools/lualibs/mime")
 add_subdirectory("tools/lualibs/luaxml")
 
+add_subdirectory("tools/viewer_api")
 add_subdirectory("tools/memtrack")
+add_subdirectory("tools/viewer")

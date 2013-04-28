@@ -56,14 +56,16 @@ void vResource::vImpl::setInputFilePath(const boost::filesystem::path& p)
         absoluteInputPath_ = boost::filesystem::canonical(absoluteInputPath_);//dies when path is not there
     }
     
-    wchar_t outputRelPath[MAX_PATH];
-    PathRelativePathTo(outputRelPath, pkg_->getPackagePath().c_str(), FILE_ATTRIBUTE_DIRECTORY, absoluteInputPath_.c_str(), FILE_ATTRIBUTE_NORMAL);
-    if (wcslen(outputRelPath) == 0) {
-        relativeInputPath_ = absoluteInputPath_;
-    }
-    else {
-        relativeInputPath_ = outputRelPath;
-    }
+//     std::string path1 = pkg_->getPackagePath().generic_string();
+//     std::string path2 = absoluteInputPath_.generic_string();
+//     char outputRelPath[MAX_PATH];
+//     PathRelativePathTo(outputRelPath, path1.c_str(), FILE_ATTRIBUTE_DIRECTORY, path2.c_str(), FILE_ATTRIBUTE_NORMAL);
+//     if (strlen(outputRelPath) == 0) {
+//         relativeInputPath_ = absoluteInputPath_;
+//     }
+//     else {
+//         relativeInputPath_ = outputRelPath;
+//     }
 
     relativeInputPathStr_ = relativeInputPath_.generic_string();
 }

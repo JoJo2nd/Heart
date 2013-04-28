@@ -29,12 +29,13 @@
 #ifndef VIEWER_CONFIG_H__
 #define VIEWER_CONFIG_H__
 
-#ifdef VAPI_COMPILE_DLL
-#   define VAPI_EXPORT __declspec(dllexport)
-#else
-#   define VAPI_EXPORT __declspec(dllimport)
-#endif
+// #ifdef VAPI_COMPILE_DLL
+// #   define VAPI_EXPORT __declspec(dllexport)
+// #else
+// #   define VAPI_EXPORT __declspec(dllimport)
+// #endif
 
+#define VAPI_EXPORT
 #define VAPI_API   __cdecl
 
 #define VAPI_PIMPL(klass) \
@@ -48,7 +49,7 @@
 #ifdef VAPI_COMPILE_DLL
 #   define VAPI_PRIVATE_HEADER()
 #else
-#   define VAPI_PRIVATE_HEADER() char* err_CannotIncludeOutsideOfLibrary[0]
+#   define VAPI_PRIVATE_HEADER() //char* err_CannotIncludeOutsideOfLibrary[0]
 #endif
 
 #endif // VIEWER_CONFIG_H__
