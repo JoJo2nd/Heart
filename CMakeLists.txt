@@ -65,7 +65,7 @@ set(HEART_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/heart"
 )
 if (WIN32)
-	set(PLATFORM_LIBS dbghelp dxguid XInput9_1_0 d3d11 d3dcompiler openAL32)
+	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32)
 	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
 endif()
 

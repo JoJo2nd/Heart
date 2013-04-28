@@ -92,6 +92,7 @@ private:
     RenderTimer             timer_;
     Heart::hHeartEngine*    heart_;
     boost::filesystem::path dataPath_;
+    std::string             pathString_;
     ConnectionVectorType    connnections_;
     SavedPaneInfo           paneSavedLayouts_;
     ModuleSystem            moduleSystem_;

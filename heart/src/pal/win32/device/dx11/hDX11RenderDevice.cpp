@@ -577,6 +577,8 @@ namespace Heart
         }
 #endif
 
+// It seems that resizing in DX11 is broken...?
+#ifdef DO_RESIZE
         if (width_ != sysWindow_->getWindowWidth() || height_ != sysWindow_->getWindowHeight()) {
             if (sysWindow_->getWindowWidth() > 0 && sysWindow_->getWindowHeight() > 0) {
                 width_ =sysWindow_->getWindowWidth();
@@ -590,10 +592,9 @@ namespace Heart
                 refc=renderTargetView_->Release();
                 renderTargetView_=hNullptr;
                 pBackBuffer=hNullptr;
+#   ifdef USE_SWAPCHAIN_RESIZE
                 // Preserve the existing buffer count and format.
                 // Automatically choose the width and height to match the client rect for HWNDs.
-                hcPrintf("before resize");
-                HEART_D3D_OBJECT_REPORT(d3d11Device_);
                 hr = mainSwapChain_->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 hcAssertMsg(SUCCEEDED(hr), "mainSwapChain::ResizeBuffers failed 0x%x", hr);
                 // TODO:Perform error handling here!
@@ -605,56 +606,50 @@ namespace Heart
                 hr = d3d11Device_->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView_);
                 hcAssertMsg(SUCCEEDED(hr), "d3d11Device::CreateRenderTargetView failed 0x%x", hr);
                 HEART_D3D_DEBUG_NAME_OBJECT(renderTargetView_, "back buffer target view");
-
-                hcPrintf("after resize");
-                HEART_D3D_OBJECT_REPORT(d3d11Device_);
-
-//                 if ( depthStencilView_ ) {
-//                     depthStencilView_->Release();
-//                     depthStencilView_=NULL;
-//                 }
-//                 if ( depthStencil_ ) {
-//                     depthStencil_->Release();
-//                     depthStencil_=NULL;
-//                 }
-                // Create depth stencil texture
-//                 D3D11_TEXTURE2D_DESC descDepth;
-//                 ZeroMemory( &descDepth, sizeof(descDepth) );
-//                 descDepth.Width = width_;
-//                 descDepth.Height = height_;
-//                 descDepth.MipLevels = 1;
-//                 descDepth.ArraySize = 1;
-//                 descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-//                 descDepth.SampleDesc.Count = 1;
-//                 descDepth.SampleDesc.Quality = 0;
-//                 descDepth.Usage = D3D11_USAGE_DEFAULT;
-//                 descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-//                 descDepth.CPUAccessFlags = 0;
-//                 descDepth.MiscFlags = 0;
-//                 hr = d3d11Device_->CreateTexture2D(&descDepth, NULL, &depthStencil_);
-//                 hcAssert( SUCCEEDED( hr ) );
-//                 HEART_D3D_DEBUG_NAME_OBJECT(depthStencil_, "depth Stencil");
-// 
-//                 // Create the depth stencil view
-//                 D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
-//                 ZeroMemory( &descDSV, sizeof(descDSV) );
-//                 descDSV.Format = descDepth.Format;
-//                 descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-//                 descDSV.Texture2D.MipSlice = 0;
-//                 hr = d3d11Device_->CreateDepthStencilView(depthStencil_, &descDSV, &depthStencilView_);
-//                 hcAssert( SUCCEEDED( hr ) );
-//                 HEART_D3D_DEBUG_NAME_OBJECT(depthStencilView_, "Depth Stencil View");
-// 
-//                 //update textures
-//                 depthBufferTex_->dx11Texture_=depthStencil_;
-// 
-//                 mainDeviceCtx_->OMSetRenderTargets(1, &renderTargetView_, depthStencilView_);
+#   else
+                BOOL fullscreen;
+                IDXGIOutput* dxgioutput;
+                mainSwapChain_->GetFullscreenState(&fullscreen, &dxgioutput);
+                // Cannot release in fullscreen because it may cause a deadlock
+                mainSwapChain_->SetFullscreenState(FALSE, NULL);
+                mainSwapChain_->Release();
+                mainSwapChain_=hNullptr;
+                //Create a DX11 Swap chain
+                DXGI_SWAP_CHAIN_DESC sd;
+                ZeroMemory( &sd, sizeof(sd) );
+                sd.BufferCount = 2;
+                sd.BufferDesc.Width = width_;
+                sd.BufferDesc.Height = height_;
+                sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+                sd.BufferDesc.RefreshRate.Numerator = 60;
+                sd.BufferDesc.RefreshRate.Denominator = 1;
+                sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+                sd.OutputWindow = sysWindow_->GetSystemHandle()->hWnd_;
+                sd.SampleDesc.Count = 1;
+                sd.SampleDesc.Quality = 0;
+                sd.Windowed = sysWindow_->getOwnWindow() ? !fullscreen : TRUE;
+                sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+                IDXGIFactory1 * factory;
+                hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&factory) );
+                hcAssertMsg(SUCCEEDED(hr), "CreateDXGIFactory1 Failed %u", hr);
+                hr = factory->CreateSwapChain(d3d11Device_, &sd, &mainSwapChain_);
+                hcAssertMsg(SUCCEEDED(hr), "CreateSwapChain Failed %u", hr);
+                // Get buffer and create a render-target-view.
+                hr = mainSwapChain_->GetBuffer(0, __uuidof( ID3D11Texture2D),(void**)&pBackBuffer);
+                hcAssertMsg(SUCCEEDED(hr), "mainSwapChain::GetBuffer failed 0x%x", hr);
+                HEART_D3D_DEBUG_NAME_OBJECT(pBackBuffer, "back buffer");
+                // TODO: Perform error handling here!
+                hr = d3d11Device_->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView_);
+                hcAssertMsg(SUCCEEDED(hr), "d3d11Device::CreateRenderTargetView failed 0x%x", hr);
+                HEART_D3D_DEBUG_NAME_OBJECT(renderTargetView_, "back buffer target view");
+#   endif
 
                 if (resizeCallback_.isValid()) {
                     resizeCallback_(width_, height_);
                 }
             }
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

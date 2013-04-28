@@ -170,8 +170,15 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
         dataPath_ = heartpath.ToStdWstring();
     }
     else {
-        dataPath_ = boost::filesystem::current_path();
+        wxDirDialog dirselector(NULL, "Selete Game Running Directory");
+        if (dirselector.ShowModal() == wxID_OK) {
+            dataPath_ = dirselector.GetPath();
+        } else {
+            dataPath_ = boost::filesystem::current_path();
+        }
     }
+    pathString_ = dataPath_.generic_string();
+    callbacks.overrideFileRoot_ = pathString_.c_str();
     callbacks.consoleCallback_ = &ViewerMainFrame::consoleMsgCallback;
     callbacks.consoleCallbackUser_ = this;
     heart_ = hHeartInitEngine(&callbacks, wxGetInstance(), renderFrame->GetHWND());
