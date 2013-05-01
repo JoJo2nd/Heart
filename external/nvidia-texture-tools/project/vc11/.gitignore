@@ -1,0 +1,14 @@
+/_UpgradeReport_Files/
+/Debug (no cuda).Win32/
+/Debug.Win32/
+/Release (no cuda).Win32/
+/Release.Win32/
+/nvtt.sln.old
+/*.suo
+/*.ncb
+/*/*.suo
+/*/*.ncb
+/Debug (no cuda).x64/
+/Debug.x64/
+/Release (no cuda).x64/
+/Release.x64/
