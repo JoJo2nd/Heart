@@ -21,6 +21,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+// squish
+#include "squish/colourset.h"
+//#include "squish/clusterfit.h"
+#include "squish/fastclusterfit.h"
+#include "squish/weightedclusterfit.h"
+
 #include <nvcore/Memory.h>
 
 #include <nvimage/Image.h>
@@ -34,11 +40,7 @@
 #include "CompressionOptions.h"
 #include "OutputOptions.h"
 
-// squish
-#include "squish/colourset.h"
-//#include "squish/clusterfit.h"
-#include "squish/fastclusterfit.h"
-#include "squish/weightedclusterfit.h"
+
 
 
 // s3_quant
