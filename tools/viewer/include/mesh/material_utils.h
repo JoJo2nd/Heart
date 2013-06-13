@@ -30,7 +30,6 @@
 #ifndef MATERIAL_UTILS_H__
 #define MATERIAL_UTILS_H__
 
-#include "plugin_defines.h"
 #include "heart.h"
 #include "boost/filesystem.hpp"
 #include <vector>

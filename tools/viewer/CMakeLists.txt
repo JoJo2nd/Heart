@@ -54,7 +54,6 @@ set(MESH_SRC_FILES
 	"${VIEWER_SRC_DIR}/include/mesh/mesh_explorer_window.h"
     "${VIEWER_SRC_DIR}/include/mesh/mesh_lod_level.h"
 	"${VIEWER_SRC_DIR}/include/mesh/mesh_module.h"
-	"${VIEWER_SRC_DIR}/include/mesh/plugin_defines.h"
 	"${VIEWER_SRC_DIR}/include/mesh/xml_helpers.h"
 	"${VIEWER_SRC_DIR}/src/mesh/mesh_container.cpp"
 	"${VIEWER_SRC_DIR}/src/mesh/mesh_explorer_window.cpp"
