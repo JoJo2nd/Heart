@@ -33,13 +33,9 @@ set( LUA_FILESYSTEM_HDR_FILES
 set( LUA_FILESYSTEM_SRC_FILES
     "${LUA_FILESYSTEM_SRC_DIR}/src/lua_filesystem.cpp"
 )
-set(LUA_BUIDLER_FILES
-	"${CMAKE_SOURCE_DIR}/tools/lualibs/databuilder/init.lua"
-)
 
 source_group(include FILES ${LUA_FILESYSTEM_HDR_FILES})
 source_group(source  FILES ${LUA_FILESYSTEM_SRC_FILES})
-source_group("lua/databuilder" FILES ${LUA_BUIDLER_FILES})
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
@@ -54,5 +50,4 @@ ADD_CUSTOM_COMMAND(
 	TARGET lua_filesystem
     POST_BUILD
     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" filesystem "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/filesystem"
-	COMMAND ROBOCOPY "${CMAKE_SOURCE_DIR}/tools/lualibs/databuilder" "${CMAKE_SOURCE_DIR}/deploy/builder/databuilder" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
 )
