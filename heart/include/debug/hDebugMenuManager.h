@@ -79,6 +79,7 @@ namespace Heart
 
         static hDebugMenuManager*   instance_;
         hRenderer*                  renderer_;
+        Heart::hRendererCamera      camera_;
         hResourceManager*           resourceManager_;
         hControllerManager*         controllerManager_;
         hMenuMap                    menuMap_;

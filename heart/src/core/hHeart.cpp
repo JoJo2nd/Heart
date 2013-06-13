@@ -111,11 +111,6 @@ namespace Heart
         luaVM_->Initialise();
         entityFactory_->initialise( fileMananger_, resourceMananger_, this );
 
-        //////////////////////////////////////////////////////////////////////////
-        // Console needs resources, call after setup functions ///////////////////
-        //////////////////////////////////////////////////////////////////////////
-        console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
-        debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
         g_ProfilerManager_ = hNEW(GetDebugHeap(), hProfilerManager)();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,9 +138,12 @@ namespace Heart
 
         //////////////////////////////////////////////////////////////////////////
         // Do any post start up init /////////////////////////////////////////////
+        // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
         renderer_->GetMaterialManager()->createDebugMaterials();
         renderer_->initialiseCameras();
+        console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
+        debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
 
         //////////////////////////////////////////////////////////////////////////
         // Load core assets - are none now... ////////////////////////////////////

@@ -63,6 +63,44 @@ namespace Heart
 
         menuMap_.SetHeap(GetDebugHeap());
         menuMap_.SetAutoDelete(hTrue);
+
+        hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
+        hUint32 w = renderer->GetWidth();
+        hUint32 h = renderer->GetHeight();
+        hFloat aspect = (hFloat)w/(hFloat)h;
+        hRenderViewportTargetSetup rtDesc={0};
+        hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+        hRenderTargetView* rtv=NULL;
+        hRenderTargetViewDesc rtvd;
+        hDepthStencilViewDesc dsvd;
+        hZeroMem(&rtvd, sizeof(rtvd));
+        hZeroMem(&dsvd, sizeof(dsvd));
+        rtvd.format_=bb->getTextureFormat();
+        rtvd.resourceType_=bb->getRenderType();
+        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+        rtvd.tex2D_.topMip_=0;
+        rtvd.tex2D_.mipLevels_=~0;
+        renderer->createRenderTargetView(bb, rtvd, &rtv);
+        rtDesc.nTargets_=1;
+        rtDesc.targetTex_=bb;
+        rtDesc.targets_[0]=rtv;
+        rtDesc.depth_=hNullptr;
+
+        hRelativeViewport vp;
+        vp.x= 0.f;
+        vp.y= 0.f;
+        vp.w= 1.f;
+        vp.h= 1.f;
+        Heart::hMatrix vm = Heart::hMatrixFunc::identity();
+        camera_.Initialise(renderer);
+        camera_.bindRenderTargetSetup(rtDesc);
+        camera_.SetFieldOfView(45.f);
+        camera_.SetOrthoParams(0.f, 1.f, 2.f, -1.f, 0.f, 1000.f);
+        camera_.SetViewMatrix(vm);
+        camera_.setViewport(vp);
+        camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+
+        rtv->DecRef();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -71,6 +109,7 @@ namespace Heart
 
     void hDebugMenuManager::Destroy()
     {
+        camera_.releaseRenderTargetSetup();
         menuMap_.Clear(hTrue);
     }
 
@@ -130,39 +169,15 @@ namespace Heart
     {
         HEART_PROFILE_FUNC();
 
-        hConstBlockMapInfo camMap;
-        hViewportShaderConstants* camData;
-        hMatrix view, proj;
+        //hMatrix view, proj;
         hViewport viewport;
         hParameterConstantBlock* camCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("CameraConstants"));
         hParameterConstantBlock* instCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
         hcAssertMsg(camCB, "Couldn't find global constant block \"CameraConstants\"");
         hcAssertMsg(instCB, "Couldn't find global constant block \"InstanceConstants\"");
 
-        rndCtx->Map(camCB, &camMap);
-        camData = (hViewportShaderConstants*)camMap.ptr;
-
-        viewport.x_ = 0;
-        viewport.y_ = 0;
-        viewport.width_ = renderer_->GetWidth();
-        viewport.height_ = renderer_->GetHeight();
-        view = hMatrixFunc::identity();
-        proj = hMatrixFunc::orthoProj((hFloat)renderer_->GetWidth(), (hFloat)renderer_->GetHeight(), 0.f, 100.f);
-
-        camData->projection_ = proj;
-        camData->projectionInverse_ = hMatrixFunc::inverse(proj);
-        camData->view_ = view;
-        camData->viewInverse_ = hMatrixFunc::inverse( view );
-        camData->viewInverseTranspose_ = hMatrixFunc::transpose( camData->viewInverse_ );
-        camData->viewProjection_ = hMatrixFunc::mult(view, proj);
-        camData->viewProjectionInverse_ = hMatrixFunc::inverse(camData->viewProjection_);
-        camData->viewportSize_[0]=(hFloat)renderer_->GetWidth();
-        camData->viewportSize_[1]=(hFloat)renderer_->GetHeight();
-        camData->viewportSize_[2]=(hFloat)renderer_->GetWidth();
-        camData->viewportSize_[3]=(hFloat)renderer_->GetHeight();
-        rndCtx->Unmap(&camMap);
-
-        rndCtx->SetViewport(viewport);
+        camera_.SetOrthoParams((hFloat)renderer_->GetWidth(), (hFloat)renderer_->GetHeight(), 0.f, 100.f);
+        hRenderUtility::setCameraParameters(rndCtx, &camera_);
 
         hDebugRenderParams params;
         params.rtWidth_ = renderer_->GetWidth();
