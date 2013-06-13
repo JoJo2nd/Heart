@@ -28,6 +28,8 @@
 #include "precompiled.h"
 #include "modulesystem.h"
 #include "menuidprovider.h"
+#include "texture/texture_module.h"
+#include "mesh/mesh_module.h"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -55,10 +57,38 @@ void ModuleSystem::initialiseAndLoadPlugins(
     wxAuiManager* auiManager, 
     wxWindow* parentWnd, 
     wxMenuBar* menubar, 
-    vPackageSystem* pkgsys, 
     const std::string& pluginPaths, 
     boost::filesystem::path& databasePath)
 {
+    vModuleInitStruct initData;
+    initData.aui = auiManager;
+    initData.menu = menubar;
+    initData.parent = parentWnd;
+
+    //TODO: improve this!!!! Factory?
+    loadedPlugIns_.resize(2);
+    loadedPlugIns_[0].module_ = new TextureModule();
+    loadedPlugIns_[0].actionStack_=new vActionStack();
+    loadedPlugIns_[0].menuIDProvider_=new MenuIDProvider();
+    boost::filesystem::path datapath=databasePath/"CONFIG"/loadedPlugIns_[0].module_->getModuleName();
+    loadedPlugIns_[0].dataPath_=datapath.generic_string();
+    boost::filesystem::create_directories(datapath);
+    initData.actionStack=loadedPlugIns_[0].actionStack_;
+    initData.menuIDProvider=loadedPlugIns_[0].menuIDProvider_;
+    initData.dataPath=loadedPlugIns_[0].dataPath_.c_str();
+    loadedPlugIns_[0].module_->initialise(initData);
+
+    loadedPlugIns_[1].module_ = new MeshModule();
+    loadedPlugIns_[1].actionStack_=new vActionStack();
+    loadedPlugIns_[1].menuIDProvider_=new MenuIDProvider();
+    datapath=databasePath/"CONFIG"/loadedPlugIns_[1].module_->getModuleName();
+    loadedPlugIns_[1].dataPath_=datapath.generic_string();
+    boost::filesystem::create_directories(datapath);
+    initData.actionStack=loadedPlugIns_[1].actionStack_;
+    initData.menuIDProvider=loadedPlugIns_[1].menuIDProvider_;
+    initData.dataPath=loadedPlugIns_[1].dataPath_.c_str();
+    loadedPlugIns_[1].module_->initialise(initData);
+
     /*
     std::string str=pluginPaths;
     size_t marker;

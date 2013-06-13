@@ -82,6 +82,7 @@ void ConsoleLog::initFrame()
     paneinfo.Name("Console Window");
     paneinfo.Caption("Console Window");
     paneinfo.Float();
+    paneinfo.Hide();
     paneinfo.Floatable(true);
     paneinfo.CloseButton(true);
     paneinfo.CaptionVisible(true);

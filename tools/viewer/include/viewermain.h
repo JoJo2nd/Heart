@@ -73,14 +73,13 @@ private:
     typedef std::map<wxString, wxString> SavedPaneInfo;
 
     static void consoleMsgCallback(const hChar* msg, void*);
+    static void renderCallback(Heart::hHeartEngine* engine);
     void consoleInput(const hChar* msg);
     void initFrame(const wxString& heartpath, const wxString& pluginPaths);
     void dockPaneRegister(wxWindow* pane, const wxString&, const wxAuiPaneInfo&);
 
     //Events
     DECLARE_EVENT_TABLE();
-    void            evtOpen(wxCommandEvent& evt);
-    void            evtSave(wxCommandEvent& evt);
     void            evtShowConsole(wxCommandEvent& evt);
     void            evtOnPaneClose(wxAuiManagerEvent& evt);
     void            evtClose(wxCloseEvent& evt);
@@ -91,12 +90,12 @@ private:
     wxMenuBar*              menuBar_;
     RenderTimer             timer_;
     Heart::hHeartEngine*    heart_;
+    Heart::hRendererCamera  camera_;
     boost::filesystem::path dataPath_;
     std::string             pathString_;
     ConnectionVectorType    connnections_;
     SavedPaneInfo           paneSavedLayouts_;
     ModuleSystem            moduleSystem_;
-    vPackageSystem          packageSystem_;
 };
 
 //////////////////////////////////////////////////////////////////////////

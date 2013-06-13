@@ -30,11 +30,12 @@
 #ifndef MODULESYSTEM_H__
 #define MODULESYSTEM_H__
 
-#include "viewer_api.h" 
 #include "consolelog.h"
 #include <string>
 #include <vector>
+#include <memory>
 
+class vActionStack;
 class MenuIDProvider;
 
 struct ModuleDesc
@@ -53,7 +54,6 @@ public:
         wxAuiManager* auiManager, 
         wxWindow* parentWnd, 
         wxMenuBar* menubar, 
-        vPackageSystem* pkgsys, 
         const std::string& pluginPaths, 
         boost::filesystem::path& databasePath);
     void getModuleList(std::vector< ModuleDesc >* outarray) const;
@@ -63,11 +63,8 @@ public:
 
 private:
 
-    typedef vModuleBase* (VAPI_API *PlugInEntryProc)();
     struct LoadedModuleInfo 
     {
-        HMODULE         loadedLib_;
-        PlugInEntryProc entryProc_;
         vModuleBase*    module_;
         vActionStack*   actionStack_;
         MenuIDProvider* menuIDProvider_;

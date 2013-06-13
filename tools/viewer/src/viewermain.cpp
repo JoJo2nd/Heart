@@ -32,6 +32,8 @@
 
 IMPLEMENT_APP(ViewerApp);
 
+static ViewerMainFrame* g_mainFrame;
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -106,8 +108,6 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 //////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(ViewerMainFrame, wxFrame)
-    EVT_MENU(wxID_OPEN, ViewerMainFrame::evtOpen)
-    EVT_MENU(wxID_SAVE, ViewerMainFrame::evtSave)
     EVT_MENU(cuiID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
     EVT_AUI_PANE_CLOSE(ViewerMainFrame::evtOnPaneClose)
     EVT_CLOSE(ViewerMainFrame::evtClose)
@@ -132,13 +132,12 @@ ViewerMainFrame::~ViewerMainFrame()
 
 void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& pluginPaths)
 {
+    g_mainFrame = this;
     auiManager_ = new wxAuiManager(this, wxAUI_MGR_DEFAULT | wxAUI_MGR_TRANSPARENT_DRAG);
 
     menuBar_ = new wxMenuBar();
 
     wxMenu* filemenu = new wxMenu();
-    filemenu->Append(wxID_OPEN, "&Open");
-    filemenu->Append(wxID_SAVE, "&Save Packages");
     filemenu->AppendSeparator();
     filemenu->Append(cuiID_SHOWCONSOLE, "Show &Console");
 
@@ -181,19 +180,69 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
     callbacks.overrideFileRoot_ = pathString_.c_str();
     callbacks.consoleCallback_ = &ViewerMainFrame::consoleMsgCallback;
     callbacks.consoleCallbackUser_ = this;
+    callbacks.mainRender_ = &ViewerMainFrame::renderCallback;
     heart_ = hHeartInitEngine(&callbacks, wxGetInstance(), renderFrame->GetHWND());
 
-    timer_.start(heart_);
 
-    packageSystem_.initialiseSystem(dataPath_.c_str());
+    Heart::hRenderer* renderer = heart_->GetRenderer();
+    Heart::hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
+    hUint32 w = renderer->GetWidth();
+    hUint32 h = renderer->GetHeight();
+    hFloat aspect = (hFloat)w/(hFloat)h;
+    Heart::hRenderViewportTargetSetup rtDesc={0};
+    Heart::hTexture* bb=matMgr->getGlobalTexture("back_buffer");
+    Heart::hTexture* db=matMgr->getGlobalTexture("depth_buffer");
+    Heart::hTextureFormat dfmt=Heart::TFORMAT_D32F;
+    Heart::hRenderTargetView* rtv=NULL;
+    Heart::hDepthStencilView* dsv=NULL;
+    Heart::hRenderTargetViewDesc rtvd;
+    Heart::hDepthStencilViewDesc dsvd;
+    hZeroMem(&rtvd, sizeof(rtvd));
+    hZeroMem(&dsvd, sizeof(dsvd));
+    rtvd.format_=bb->getTextureFormat();
+    rtvd.resourceType_=bb->getRenderType();
+    //hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    dsvd.format_=dfmt;
+    dsvd.resourceType_=db->getRenderType();
+    //hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    dsvd.tex2D_.topMip_=0;
+    dsvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(bb, rtvd, &rtv);
+    renderer->createDepthStencilView(db, dsvd, &dsv);
+    rtDesc.nTargets_=1;
+    rtDesc.targetTex_=bb;
+    rtDesc.targets_[0]=rtv;
+    rtDesc.depth_=dsv;
+
+    Heart::hRelativeViewport vp;
+    vp.x= 0.f;
+    vp.y= 0.f;
+    vp.w= 1.f;
+    vp.h= 1.f;
+    Heart::hMatrix vm = Heart::hMatrixFunc::identity();;
+    camera_.Initialise(renderer);
+    camera_.bindRenderTargetSetup(rtDesc);
+    camera_.SetFieldOfView(45.f);
+    camera_.SetOrthoParams(-1.f, 1.f, 1.f, -1.f, 0.f, 1000.f);
+    camera_.SetViewMatrix(vm);
+    camera_.setViewport(vp);
+    camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
+
+    // The camera hold refs to this
+    rtv->DecRef();
+    dsv->DecRef();
+
+    timer_.start(heart_);
 
     moduleSystem_.initialiseAndLoadPlugins(
         auiManager_, 
         this, 
         menuBar_, 
-        &packageSystem_, 
         pluginPaths.ToStdString(),
-        boost::filesystem::path(dataPath_.c_str()));
+        boost::filesystem::current_path());
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -202,23 +251,11 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 
 void ViewerMainFrame::evtClose( wxCloseEvent& evt )
 {
+    timer_.Stop();
+    camera_.releaseRenderTargetSetup();
     moduleSystem_.shutdown();
 
     evt.Skip();
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void ViewerMainFrame::evtOpen(wxCommandEvent& evt)
-{
-    wxFileDialog fileopen(this, 
-        "Open MemLog file", "", "",
-        "Text files (*.txt)|*.txt", 
-        wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-
-    if (fileopen.ShowModal() == wxID_CANCEL) return;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -243,6 +280,17 @@ void ViewerMainFrame::consoleMsgCallback(const hChar* msg, void* user)
     // Can't go to control here because this callback happens on any thread
     // so buffer the result
     ((ViewerMainFrame*)user)->timer_.flushConsoleText(msg);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::renderCallback(Heart::hHeartEngine* engine) {
+    Heart::hRendererCamera* camera = &g_mainFrame->camera_;
+    Heart::hRenderUtility::setCameraParameters(engine->GetRenderer()->GetMainSubmissionCtx(), camera);
+    engine->GetRenderer()->GetMainSubmissionCtx()->clearColour(camera->getTargets()[0], Heart::BLACK);
+    engine->GetRenderer()->GetMainSubmissionCtx()->clearDepth(camera->getDepthTarget(), 1.f);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -278,19 +326,6 @@ void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
     auiManager_->Update();
 }
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void ViewerMainFrame::evtSave(wxCommandEvent& evt)
-{
-    wxString msgstr;
-    msgstr.Printf("This will write package information to directory %s.\n Is this ok?", dataPath_.c_str());
-    wxMessageDialog msg(this, msgstr, "Are You Sure?", wxYES_NO);
-    if (msg.ShowModal() == wxID_YES) { 
-        packageSystem_.serialise();
-    }
-}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
