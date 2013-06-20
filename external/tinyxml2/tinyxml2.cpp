@@ -1614,9 +1614,10 @@ XMLError XMLDocument::LoadFile( FILE* fp )
 
     _charBuffer = new char[size+1];
     size_t read = fread( _charBuffer, 1, size, fp );
-    if ( read != size ) {
-        SetError( XML_ERROR_FILE_READ_ERROR, 0, 0 );
-        return _errorID;
+    if ( read < size ) {
+        //SetError( XML_ERROR_FILE_READ_ERROR, 0, 0 );
+        //return _errorID;
+        size = read;
     }
 
     _charBuffer[size] = 0;
