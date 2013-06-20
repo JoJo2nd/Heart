@@ -5,7 +5,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
   IF(MSVC)
     GET_FILENAME_COMPONENT(PrecompiledBasename ${PrecompiledHeader} NAME_WE)
     SET(PrecompiledBinary "${CMAKE_CURRENT_BINARY_DIR}/${PrecompiledBasename}.pch")
-    SET(Sources ${${SourcesVar}})
+    SET(Sources ${SourcesVar})
 
     SET_SOURCE_FILES_PROPERTIES(${PrecompiledSource}
                                 PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledBasename}.h\" /Fp\"${PrecompiledBinary}\""
@@ -17,6 +17,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
     LIST(APPEND ${SourcesVar} ${PrecompiledSource} ${PrecompiledHeader})
   ENDIF(MSVC)
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
+
 MACRO(GET_BASE_FILENAMES destVar sourceVar)
 	set(destVar)
 	foreach(FILEPATH ${sourceVar})
@@ -24,6 +25,21 @@ MACRO(GET_BASE_FILENAMES destVar sourceVar)
 		set(descVar ${destVar} ${FILENAME})
 	endforeach(FILEPATH)
 ENDMACRO(GET_BASE_FILENAMES)
+
+MACRO(SET_USE_PRCOMPILED_HEADER files headername)
+	if(MSVC)
+		foreach( file ${files} )
+				message("${file} COMPILE_FLAGS /Yu${headername}")
+				set_source_files_properties(
+					${file}
+					PROPERTIES
+					COMPILE_FLAGS "/Yu${headername}"
+					)
+		endforeach()
+	endif(MSVC)
+ENDMACRO(SET_USE_PRCOMPILED_HEADER)
+
+#end macros
 
 if( ${CMAKE_SIZEOF_VOID_P} MATCHES 4 )
 	set( BUILD_64_BIT 0 )
@@ -42,12 +58,17 @@ option(USE_XNAMATH "Use old XNA math libraries" OFF)
 option(USE_OLD_DXSDK "Use old DirectX SDK. Will cause issues with Windows 8 SDK" OFF)
 option(BUILD_HEART_TESTBED "Build testbed for heart" OFF)
 option(BUILD_BUILDER_PROJECT "Build builder lib and stand alone" ON)
+option(USE_ASSIMP_DEBUG "Use debug assimp libraries" OFF)
 
 #cache vars
 set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR "C:/assimp_sdk_folder/lib" CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR "C:/assimp_sdk_folder/include" CACHE PATH "Directory for assimp includes")
 set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
+set(nvtt_INCLUDE_DIR "C:/nvtt_sdk_folder/include" CACHE PATH "Directory for nVidia Texture Tools includes")
+set(nvtt_LIB_DIR "C:/nvtt_sdk_folder/project/xxx/lib" CACHE PATH "Directory for nVidia Texture Tools libraries")
+set(nvtt_BIN_DIR "C:/nvtt_sdk_folder/project/xxx/bin" CACHE PATH "Directory for nVidia Texture Tools binaries")
+set(nvtt_DEPENDENT_BIN_DIR "C:/nvtt_sdk_folder/gnumake32/bin" CACHE PATH "Directory for nVidia Texture Tools external binaries")
 
 #Set wxWidgets search path
 set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
@@ -68,6 +89,22 @@ if (WIN32)
 	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32)
 	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
 endif()
+if (USE_ASSIMP_DEBUG)
+	if (BUILD_64_BIT)
+		set(assimp_BUILD_EXT "assimp_debug-dll_x64")
+	else()
+		set(assimp_BUILD_EXT "assimp_debug-dll_win32")
+	endif()
+else()
+	if (BUILD_64_BIT)
+		set(assimp_BUILD_EXT "assimp_release-dll_x64")
+	else()
+		set(assimp_BUILD_EXT "assimp_release-dll_win32")
+	endif()
+endif()
+
+set(assimp_BIN_DIR_FULL "${assimp_BIN_DIR}/${assimp_BUILD_EXT}")
+set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
 #Add boost
 set(Boost_USE_STATIC_LIBS ON)
@@ -121,6 +158,5 @@ add_subdirectory("tools/lualibs/luasocket")
 add_subdirectory("tools/lualibs/mime")
 add_subdirectory("tools/lualibs/luaxml")
 
-add_subdirectory("tools/viewer_api")
 add_subdirectory("tools/memtrack")
 add_subdirectory("tools/viewer")
