@@ -27,7 +27,9 @@
 
 #include "precompiled.h"
 #include "mesh/mesh_container.h"
+#include "tinyxml2.h"
 #include <fstream>
+#include <sstream>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -43,19 +45,6 @@ MeshContainer::MeshContainer() {
 
 MeshContainer::~MeshContainer() {
 
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MeshContainer::setMaterialRemap(const std::vector<std::string>& srcnames, const std::string& destname) {
-    std::map< std::string, std::string >::const_iterator nm=materialRemap_.end();
-    for (size_t i=0,n=srcnames.size(); i<n; ++i) {
-        if (materialRemap_.find(srcnames[i]) != nm) {
-            materialRemap_[srcnames[i]]=destname;
-        }
-    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -113,7 +102,7 @@ void MeshContainer::addMaterialsFromLod(const MeshLodLevel* mesh) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-MeshExportResult MeshContainer::exportToMDF(const std::string& filepath, vPackageSystem* pakSys) const {
+MeshExportResult MeshContainer::exportToMDF(const std::string& filepath) const {
     using namespace rapidxml;
 
     MeshExportResult res={false, ""};
@@ -135,7 +124,7 @@ MeshExportResult MeshContainer::exportToMDF(const std::string& filepath, vPackag
         lodnode->append_attribute(lvlatt);
 
         rootnode->append_node(lodnode);
-        res=lodLevels_[i].exportToMDF(&outputxml, lodnode, pakSys, materialRemap_);
+        res=lodLevels_[i].exportToMDF(&outputxml, lodnode, *this);
         if (!res.exportOK) {
             return res;
         }
@@ -154,4 +143,59 @@ MeshExportResult MeshContainer::exportToMDF(const std::string& filepath, vPackag
     file.close();
 
     return res;
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MeshContainer::importMaterialRemapBindings(const std::string& filepath, bool clearprevmappings) {
+    tinyxml2::XMLDocument xmldocument;
+    FILE* file=fopen(filepath.c_str(), "rt");
+    if (!file) {
+        return;
+    }
+
+    if (clearprevmappings) {
+        materialRemap_.clear();
+    }
+    
+    tinyxml2::XMLError error= xmldocument.LoadFile(file);
+    fclose(file);
+
+    if (error != tinyxml2::XML_SUCCESS) {
+        wxString msg;
+        msg.Printf("Unable to read XML file (errorcode: 0x%08X)", error);
+        wxMessageDialog i(nullptr, msg, "Error");
+    }
+
+    tinyxml2::XMLConstHandle elements=tinyxml2::XMLConstHandle(xmldocument).FirstChildElement("material_bindings").FirstChildElement("binding");
+    for (;elements.ToNode(); elements=elements.NextSiblingElement()) {
+        const char* matname=elements.ToElement()->Attribute("name", "default");
+        const char* resname=elements.ToElement()->Attribute("resource", "CORE.DEFAULT");
+        materialRemap_.insert(std::pair<std::string, std::string>(matname, resname));
+    }
+
+    tinyxml2::XMLConstHandle defaultbind=tinyxml2::XMLConstHandle(xmldocument).FirstChildElement("material_bindings").FirstChildElement("default");
+    if (defaultbind.ToElement()) {
+        const char* resname = defaultbind.ToElement()->Attribute("resource", "CORE.DEFAULT");
+        defaultMaterialResource_ = resname;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+std::string MeshContainer::getMeshInfoString() const {
+    std::stringstream strstream;
+
+    strstream << "============== Mesh Info ==============\n";
+    for (uint i=0, n=lodLevels_.size(); i<n; ++i) {
+        strstream << lodLevels_[i].getMeshInfoString(*this) << "\n";
+    }
+    strstream << "Material remappings (Default: " << defaultMaterialResource_ << ")\n";
+    for (auto i=materialRemap_.begin(), n=materialRemap_.end(); i!=n; ++i) {
+        strstream << "+ Material = " << i->first << " -> Binding = " << i->second << "\n";
+    }
+    return strstream.str();
 }

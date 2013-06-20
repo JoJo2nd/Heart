@@ -78,6 +78,7 @@ private:
     void onSave(wxCommandEvent& evt);
     void onExport(wxCommandEvent& evt);
     void onSourceFileChange(wxFileDirPickerEvent& evt);
+    void onMaterialBindChange(wxFileDirPickerEvent& evt);
     void onLodLevelSelect(wxCommandEvent& evt);
     void onAddLodClick(wxCommandEvent& evt);
     void onYZAxisSwapCheck(wxCommandEvent& evt);
@@ -88,7 +89,7 @@ private:
     wxFilePickerCtrl*                   lodFilePick_;
     wxComboBox*                         lodLevelDropdown_;
     wxButton*                           addLodLevelBtn_;
-    wxListView*                         meshNodeList_;
+    wxTextCtrl*                         meshInfoText_;
     wxCheckBox*                         yzAxisSwapCheck_;
 };
 

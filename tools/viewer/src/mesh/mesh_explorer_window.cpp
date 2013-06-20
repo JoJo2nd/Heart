@@ -96,11 +96,13 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
         this, 
         idProvider->aquireMenuID(MENUID_ADDLODLEVEL), 
         "Add Extra LOD Level");
-    meshNodeList_=new wxListView(
+    meshInfoText_=new wxTextCtrl(
         this,
-        idProvider->aquireMenuID(MENUID_MESHNODELIST));
-    meshNodeList_->InsertColumn(0, "LOD Meshes");
-    meshNodeList_->InsertColumn(0, "All Materials in IMF");
+        idProvider->aquireMenuID(MENUID_MESHINFOTEXT),
+        wxEmptyString,
+        wxDefaultPosition,
+        wxDefaultSize,
+        wxTE_READONLY|wxTE_RICH|wxTE_MULTILINE);
     yzAxisSwapCheck_=new wxCheckBox(
         this, 
         idProvider->aquireMenuID(MENUID_YZAXISSWAP), 
@@ -125,7 +127,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     topSizer->Add(lodPickSizer, 5, wxSTRETCH_NOT);
     topSizer->AddSpacer(5);
     topSizer->Add(new wxStaticText(this, wxID_ANY, "Mesh Nodes"), 1, wxALL|wxSHAPED);
-    topSizer->Add(meshNodeList_, 30, wxALL|wxEXPAND);
+    topSizer->Add(meshInfoText_, 30, wxALL|wxEXPAND);
     topSizer->AddSpacer(5);
     topSizer->Add(matPickSizer, 10, wxSTRETCH_NOT);
 
@@ -135,6 +137,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
     lodLevelDropdown_->Bind(wxEVT_COMMAND_COMBOBOX_SELECTED, &MeshExplorerWindow::onLodLevelSelect, this, idProvider->getMenuID(MENUID_LODLEVELDROPDOWN));
     addLodLevelBtn_->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &MeshExplorerWindow::onAddLodClick, this, idProvider->getMenuID(MENUID_ADDLODLEVEL));
     yzAxisSwapCheck_->Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &MeshExplorerWindow::onYZAxisSwapCheck, this, idProvider->getMenuID(MENUID_YZAXISSWAP));
+    materialBindingPicker_->Bind(wxEVT_COMMAND_FILEPICKER_CHANGED, &MeshExplorerWindow::onMaterialBindChange, this, idProvider->getMenuID(MENUID_MATERIALBINDINGPICKER));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onNew, this, idProvider->getMenuID(MENUID_NEW));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onLoad, this, idProvider->getMenuID(MENUID_LOAD));
     baseMenu->Bind(wxEVT_COMMAND_MENU_SELECTED, &MeshExplorerWindow::onSave, this, idProvider->getMenuID(MENUID_SAVE));
@@ -146,7 +149,7 @@ MeshExplorerWindow::MeshExplorerWindow(wxWindow* parent, vMenuIDProvider* idProv
         lodFilePick_->Enable(false);
         lodLevelDropdown_->Enable(false);
         addLodLevelBtn_->Enable(false);
-        meshNodeList_->Enable(false);
+        meshInfoText_->Enable(false);
         yzAxisSwapCheck_->Enable(false);
     }
 }
@@ -220,7 +223,7 @@ void MeshExplorerWindow::onExport(wxCommandEvent& evt) {
             return;
         }
         wxBusyCursor waitingCursor;
-        MeshExportResult exRes=currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString(), NULL);
+        MeshExportResult exRes=currentMesh_->exportToMDF(saveFileDialog.GetPath().ToStdString());
         if (!exRes.exportOK) {
             wxMessageDialog(this, exRes.errors, "Export Failed?").ShowModal();
         }
@@ -238,7 +241,7 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
         lodFilePick_->Enable(false);
         lodLevelDropdown_->Enable(false);
         addLodLevelBtn_->Enable(false);
-        meshNodeList_->Enable(false);
+        meshInfoText_->Enable(false);
         yzAxisSwapCheck_->Enable(false);
         return;
     }
@@ -249,8 +252,9 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
     lodFilePick_->Enable(true);
     lodLevelDropdown_->Enable(true);
     addLodLevelBtn_->Enable(true);
-    meshNodeList_->Enable(true);
+    meshInfoText_->Enable(true);
     yzAxisSwapCheck_->Enable(true);
+    materialBindingPicker_->Enable(true);
 
     selectionItems.clear();
     for (size_t i=0,n=currentMesh_->getLodCount(); i<n; ++i) {
@@ -274,14 +278,8 @@ void MeshExplorerWindow::refreshView(size_t selectedLod, size_t excludeFlags/* =
         lodFilePick_->SetFileName(filename);
     }
 
-    meshNodeList_->DeleteAllItems();
-    const aiScene* scene=lodLevel->getScene();
-    size_t count=0;
-    if (scene) {
-        for (size_t i=0,n=scene->mNumMeshes; i<n; ++i) {
-            meshNodeList_->InsertItem(0, scene->mMeshes[i]->mName.C_Str());
-        }
-    }
+    meshInfoText_->Clear();
+    meshInfoText_->AppendText(currentMesh_->getMeshInfoString());
 
     yzAxisSwapCheck_->SetValue(lodLevel->getYZAxisSwap());
 }
@@ -296,6 +294,15 @@ void MeshExplorerWindow::onSourceFileChange(wxFileDirPickerEvent& evt) {
 
     wxBusyCursor waitCursor;
     currentMesh_->importMeshIntoLod(getCurrentLodIdx(), evt.GetPath().ToStdString());
+    refreshView(getCurrentLodIdx(), eExcludeLodFilePicker);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MeshExplorerWindow::onMaterialBindChange(wxFileDirPickerEvent& evt) {
+    currentMesh_->importMaterialRemapBindings(evt.GetPath().ToStdString(), true);
     refreshView(getCurrentLodIdx(), eExcludeLodFilePicker);
 }
 

@@ -40,6 +40,8 @@
 #include <string>
 #include <vector>
 
+class MeshContainer;
+
 class MeshLodLevel 
 {
 public:
@@ -53,9 +55,8 @@ public:
     const std::string&          getSceneName() const { return meshSourceFilepath_; }
     void                        setYZAxisSwap(bool v) { yzAxisSwap_=v; }
     bool                        getYZAxisSwap() const { return yzAxisSwap_; }
-    MeshExportResult            exportToMDF(
-        xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, 
-        vPackageSystem* pkgsys, const MaterialRemap& remap) const;
+    MeshExportResult            exportToMDF( xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, const MeshContainer& remap) const;
+    std::string                 getMeshInfoString(const MeshContainer& meshcontainer) const;
 
 private:
     friend class boost::serialization::access;

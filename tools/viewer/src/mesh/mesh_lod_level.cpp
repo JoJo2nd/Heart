@@ -29,6 +29,7 @@
 #include "mesh/mesh_lod_level.h"
 #include "boost/filesystem.hpp"
 #include <sstream>
+#include "mesh/mesh_container.h"
 
 #define MESH_AI_FLAGS (\
     aiProcess_CalcTangentSpace |\
@@ -281,7 +282,7 @@ bool MeshLodLevel::importMeshObject(const std::string& filepath, size_t lodlevel
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, vPackageSystem* pkgsys, const MaterialRemap& remap) const {
+MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>* rootnode, const MeshContainer& container) const {
     using namespace rapidxml;
 
     MeshExportResult ret={true, ""};
@@ -297,10 +298,7 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         fullmatname=tmpbuf;
         fullmatname+="_";
         fullmatname+=matname.C_Str();
-        MaterialRemap::const_iterator matremap=remap.find(fullmatname);
-        MDF_EXPORT_CHECK2(matremap!=remap.end(), "Failed to find remap for material ", matname.C_Str());
-
-        std::string fullassetname=matremap->second;
+        std::string fullassetname=container.getMaterialRemap(fullmatname.c_str());
         std::string pkgname=fullassetname.substr(0, fullassetname.find('.'));
         std::string resname=fullassetname.substr(fullassetname.find('.')+1);
         rapidxml::xml_attribute<>* matnameattr=xmldoc->allocate_attribute("material", xmldoc->allocate_string(fullassetname.c_str()));
@@ -406,5 +404,27 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
     }
 
     return ret;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+std::string MeshLodLevel::getMeshInfoString(const MeshContainer& meshcontainer) const {
+    std::stringstream retstr;
+
+    retstr << "LOD level = " << lodlevel_ << "\nSource = " << meshSourceFilepath_ << "\n";
+    retstr << "+Materials:\n";
+    for (uint i=0, n=matNames_.size(); i<n; ++i) {
+        retstr << "->" << matNames_[i] << " (Bound to: " << meshcontainer.getMaterialRemap(matNames_[i].c_str()) << ")\n";
+    }
+//     retstr << "+Meshes\n";
+//     if (aiScene_) {
+//         for (uint i=0, n=aiScene_->mNumMeshes; i<n; ++i) {
+//             retstr << " +" << aiScene_->mMeshes[i]->mName.C_Str() << "\n";
+//         }
+//     }
+
+    return retstr.str();
 }
 

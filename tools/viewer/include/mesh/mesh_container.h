@@ -45,17 +45,19 @@ public:
     MeshContainer();
     ~MeshContainer();
     const MaterialRemap&    getMaterialRemap() const { return materialRemap_; }
-    void                    setMaterialRemap(const std::vector<std::string>& srcnames, const std::string& destname);
+    const std::string&      getDefaultMaterialRemap() const { return defaultMaterialResource_; }
+    const std::string&      getMaterialRemap(const char* binding) const {
+        auto it = materialRemap_.find(binding);
+        return (it == materialRemap_.end()) ? defaultMaterialResource_ : it->second;
+    }
+    void                    importMaterialRemapBindings(const std::string& filepath, bool clearprevmappings);
     size_t                  getLodCount() const { return lodLevels_.size(); }
     const MeshLodLevel&     getLodLevel(size_t level) const { return lodLevels_[level]; }
     bool                    importMeshIntoLod(size_t lodlvl, const std::string& filepath);
     void                    appendNewLodLevel();
     void                    setYZAxisSwap(size_t lodlvl, bool val);
-    const std::string&      getExportPackageName() const { return outputPackageName_; }
-    void                    setExportPackageName(const char* pkgname) { outputPackageName_=pkgname; }
-    const std::string&      getExportResourceName() const { return outputResName_; }
-    void                    setExportResourceName(const char* resname) { outputResName_=resname; }
-    MeshExportResult        exportToMDF(const std::string& filepath, vPackageSystem* pakSys) const;
+    MeshExportResult        exportToMDF(const std::string& filepath) const;
+    std::string             getMeshInfoString() const;
 
 private:
 
@@ -67,6 +69,7 @@ private:
     template<typename t_archive>
     void save(t_archive& ar, const unsigned int version) const
     {
+        ar&defaultMaterialResource_;
         ar&outputPackageName_;
         ar&outputResName_;
         ar&materialRemap_;
@@ -76,6 +79,9 @@ private:
     void load(t_archive& ar, const unsigned int version)
     {
         switch(version) {
+        case 1: {
+            ar&defaultMaterialResource_;
+        }
         case 0: {
             ar&outputPackageName_;
             ar&outputResName_;
@@ -90,6 +96,9 @@ private:
     std::string                             outputResName_;
     std::map< std::string, std::string >    materialRemap_;
     std::vector< MeshLodLevel >             lodLevels_;
+    std::string                             defaultMaterialResource_;
 };
+
+BOOST_CLASS_VERSION(MeshContainer, 1)
 
 #endif // MESH_CONTAINER_H__
