@@ -31,6 +31,7 @@
 #define COMPLEXMESH1_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class ComplexMesh1 : public IUnitTest
 {
@@ -73,9 +74,7 @@ private:
     Heart::hDrawCall        drawCall_[MAX_DCS];
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // COMPLEXMESH1_H__

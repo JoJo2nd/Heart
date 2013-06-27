@@ -67,6 +67,7 @@ hUint32 ComputeTest::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
+            fpCamera_.setInput(pad);
             engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
             state_ = eLoading;
         }
@@ -171,11 +172,7 @@ void ComputeTest::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    Heart::hMatrix vm = fpCamera_.getViewmatrix();
     hMipDesc resTexInit={
         8192, 8192, NULL, 0
     };
@@ -246,9 +243,6 @@ void ComputeTest::UpdateCamera()
 
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
-
-    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

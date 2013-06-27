@@ -30,9 +30,9 @@
 
 DEFINE_HEART_UNIT_TEST(Sibenik);
 
-#define PACKAGE_NAME ("SIBENIK")
-#define RESOURCE_NAME ("SIBENIK")
-#define ASSET_PATH ("SIBENIK.SIBENIK")
+#define PACKAGE_NAME ("SPONZA")
+#define RESOURCE_NAME ("SPONZA")
+#define ASSET_PATH ("SPONZA.SPONZA")
 
 namespace {
     struct MaterialConstants {
@@ -56,6 +56,7 @@ hUint32 Sibenik::RunUnitTest()
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
             engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
+            fpCamera_.setInput(pad);
             state_ = eLoading;
         }
         break;
@@ -117,7 +118,7 @@ void Sibenik::RenderUnitTest()
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
@@ -181,15 +182,12 @@ void Sibenik::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    fpCamera_.setMoveSpeed(5.f);
+    Heart::hMatrix vm = fpCamera_.getViewmatrix();
 
     camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
-    camera->SetProjectionParams( aspect, 0.1f, 1000.f);
+    camera->SetProjectionParams( aspect, 1.f, 10000.f);
     camera->SetViewMatrix(vm);
     camera->setViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
@@ -239,13 +237,10 @@ void Sibenik::DestroyRenderResources()
 void Sibenik::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
-    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

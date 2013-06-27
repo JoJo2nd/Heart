@@ -48,6 +48,7 @@ hUint32 InstanceRenderTest::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"INSTANCETEST\"");
+            fpCamera_.setInput(pad);
             engine_->GetResourceManager()->mtLoadPackage("INSTANCETEST");
             state_ = eLoading;
         }
@@ -181,11 +182,8 @@ void InstanceRenderTest::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 120.f, -650.f);
-    camDir_ = Heart::hVec3(.022f, -.22f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.9f, .45f);
-
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    fpCamera_.reset(Heart::hVec3(0.f, 1.f, 0.f), Heart::hVec3(.022f, -.22f, 1.f), Heart::hVec3(0.f, 120.f, -650.f));
+    Heart::hMatrix vm = fpCamera_.getViewmatrix();
 
     camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
@@ -245,42 +243,10 @@ void InstanceRenderTest::DestroyRenderResources()
 void InstanceRenderTest::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
-    hFloat delta = hClock::Delta();
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hVec3 camRight = cross(camUp_, camDir_);
-    hVec3 movement, angleXZ, angleYZ;
-    hFloat speed = 5.f, angleSpeed = .314f;
 
-    camRight = normaliseFast(camRight);
-
-    speed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*5.f;
-    speed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*10.f;
-    speed *= delta;
-
-    angleSpeed -= pad->GetAxis(HEART_PAD_LEFT_TRIGGER).anologueVal_*.628f;
-    angleSpeed += pad->GetAxis(HEART_PAD_RIGHT_TRIGGER).anologueVal_*1.256f;
-    angleSpeed *= delta;
-
-    movement =  scale(camRight, pad->GetAxis(HEART_PAD_LEFT_STICKX).anologueVal_*speed);
-    movement += scale(camDir_, pad->GetAxis(HEART_PAD_LEFT_STICKY).anologueVal_*speed);
-
-    movement += (pad->GetButton(HEART_PAD_DPAD_UP).buttonVal_ ? scale(camUp_,speed) : hVec3Func::zeroVector());
-    movement += (pad->GetButton(HEART_PAD_DPAD_DOWN).buttonVal_ ? scale(camUp_,-speed) : hVec3Func::zeroVector());
-
-    angleXZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKX).anologueVal_, camUp_));
-    angleYZ = hMatrixFunc::mult(camDir_, hMatrixFunc::rotate(angleSpeed*pad->GetAxis(HEART_PAD_RIGHT_STICKY).anologueVal_, camRight));
-
-    camPos_ += movement;
-    camDir_ = angleXZ + angleYZ;
-    camUp_  = cross(camDir_, camRight);
-
-    camDir_ = normaliseFast(camDir_);
-    camUp_  = normaliseFast(camUp_);
-
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

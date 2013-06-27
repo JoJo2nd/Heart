@@ -31,6 +31,7 @@
 #define TEXTUREDPLANE_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class TexturedPlane : public IUnitTest
 {
@@ -72,9 +73,7 @@ private:
     Heart::hVertexBuffer*            quadVB_;
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // TEXTUREDPLANE_H__

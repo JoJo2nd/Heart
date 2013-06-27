@@ -47,6 +47,7 @@ hUint32 ComplexMesh2::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
+            fpCamera_.setInput(pad);
             engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
             state_ = eLoading;
         }
@@ -110,7 +111,7 @@ void ComplexMesh2::RenderUnitTest()
         // Should a renderable simply store a draw call?
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
-        hFloat dist=Heart::hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
@@ -174,11 +175,8 @@ void ComplexMesh2::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 0.f, -70.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    fpCamera_.reset(Heart::hVec3(0.f, 1.f, 0.f), Heart::hVec3(0.f, 0.f, 1.f), Heart::hVec3(0.f, 0.f, -70.f));
+    Heart::hMatrix vm = fpCamera_.getViewmatrix();
 
     camera->bindRenderTargetSetup(rtDesc);
     camera->SetFieldOfView(45.f);
@@ -216,13 +214,10 @@ void ComplexMesh2::DestroyRenderResources()
 void ComplexMesh2::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
-    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

@@ -56,6 +56,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     UnitTestCreator TestBedCore::unitTests_[] =
     {
+        REGISTER_UNIT_TEST(Sibenik)
         REGISTER_UNIT_TEST(ModelRenderTest)
         //REGISTER_UNIT_TEST(ComputeBlur)
         REGISTER_UNIT_TEST(TexturedPlane)

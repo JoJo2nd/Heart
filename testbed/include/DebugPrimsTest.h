@@ -31,6 +31,7 @@
 #define DEBUGPRIMSTEST_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class DebugPrimsTest : public IUnitTest
 {
@@ -79,9 +80,7 @@ private:
     Heart::hMatrix                   modelMtx_;
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // DEBUGPRIMSTEST_H__

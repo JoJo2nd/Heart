@@ -31,6 +31,7 @@
 #define INSTANCERENDERTEST_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class InstanceRenderTest : public IUnitTest
 {
@@ -70,9 +71,7 @@ private:
     Heart::hDrawCallContext drawCtx_;
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // INSTANCERENDERTEST_H__

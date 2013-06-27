@@ -31,6 +31,7 @@
 #define COMPUTEBLUR_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class ComputeBlur : public IUnitTest
 {
@@ -81,9 +82,7 @@ private:
     Heart::hParameterConstantBlock* blurParamCB_;
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // ComputeBlur_H__

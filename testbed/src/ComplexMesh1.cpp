@@ -50,6 +50,7 @@ hUint32 ComplexMesh1::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
+            fpCamera_.setInput(pad);
             engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
             state_ = eLoading;
         }
@@ -115,7 +116,7 @@ void ComplexMesh1::RenderUnitTest()
         // Should a renderable simply store a draw call?
         hRenderable* renderable = &lod->renderObjects_[i];
 
-        hFloat dist=hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hFloat dist=hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
         hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         if (!tech) {
             continue;
@@ -149,7 +150,7 @@ void ComplexMesh1::RenderUnitTest()
         // Should a renderable simply store a draw call?
         hRenderable* renderable = &lod->renderObjects_[i];
 
-        hFloat dist=hVec3Func::lengthFast(camPos_-renderable->GetAABB().c_);
+        hFloat dist=hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
         hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
         if (!tech) {
             continue;
@@ -230,10 +231,8 @@ void ComplexMesh1::CreateRenderResources()
     vp.y= 0.f;
     vp.w= 1.f;
     vp.h= 1.f;
-    camPos_ = Heart::hVec3(0.f, 40.f, -60.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+    fpCamera_.reset(Heart::hVec3(0.f, 1.f, 0.f), Heart::hVec3(0.f, 0.f, 1.f), Heart::hVec3(0.f, 40.f, -60.f));
+    Heart::hMatrix vm = fpCamera_.getViewmatrix();
     camera_.Initialise(renderer);
     camera_.bindRenderTargetSetup(rtDesc);
     camera_.SetFieldOfView(45.f);
@@ -285,10 +284,7 @@ void ComplexMesh1::UpdateCamera()
 {
     using namespace Heart;
 
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
-
-    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera_.SetViewMatrix(vm);
-    zPassCamera_.SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera_.SetViewMatrix(fpCamera_.getViewmatrix());
+    zPassCamera_.SetViewMatrix(fpCamera_.getViewmatrix());
 }

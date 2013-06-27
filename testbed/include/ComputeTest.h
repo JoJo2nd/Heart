@@ -31,6 +31,7 @@
 #define COMPUTETEST_H__
 
 #include "UnitTestFactory.h"
+#include "TestUtils.h"
 
 class ComputeTest : public IUnitTest
 {
@@ -74,9 +75,7 @@ private:
     Heart::hShaderResourceView*      resTexSRV_;
 
     //Camera Control
-    Heart::hVec3            camPos_;
-    Heart::hVec3            camDir_;
-    Heart::hVec3            camUp_;
+    SimpleFirstPersonFlyCamera fpCamera_;
 };
 
 #endif // COMPUTETEST_H__

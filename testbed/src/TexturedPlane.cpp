@@ -49,6 +49,7 @@ hUint32 TexturedPlane::RunUnitTest()
     {
     case eBeginLoad:
         {
+            fpCamera_.setInput(pad);
             state_ = eRender;
             timer_ = 0.f;
             CreateRenderResources();
@@ -155,10 +156,6 @@ void TexturedPlane::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    camPos_ = Heart::hVec3(0.f, 1.f, 0.f);
-    camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-    camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
     hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
     Heart::hMatrix vm = Heart::hMatrixFunc::identity();//Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
     hMipDesc resTexInit={
@@ -250,13 +247,10 @@ void TexturedPlane::DestroyRenderResources()
 void TexturedPlane::UpdateCamera()
 {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
-    hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
 
-    updateCameraFirstPerson(hClock::Delta(), *pad, &camUp_, &camDir_, &camPos_);
-    Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
-    camera->SetViewMatrix(vm);
+    fpCamera_.update(hClock::Delta());
+    camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

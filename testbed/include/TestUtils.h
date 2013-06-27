@@ -30,6 +30,48 @@
 #ifndef TESTUTILS_H__
 #define TESTUTILS_H__
 
-void updateCameraFirstPerson(hFloat delta, const Heart::hdGamepad& pad, Heart::hVec3* camUp_, Heart::hVec3* camDir_, Heart::hVec3* camPos_);
+class SimpleFirstPersonFlyCamera
+{
+public:
+    SimpleFirstPersonFlyCamera() 
+        : pad_(hNullptr)
+        , moveSpeed_(0.5f)
+        , turnSpeed_(2.5f)
+        , up_(0.f, 1.f, 0.f)
+        , forward_(0.f, 0.f, 1.f)
+        , look_(0.f, 0.f, 1.f)
+        , position_(0.f, 0.f, 0.f)
+    {
+        viewMatrix_ = Heart::hMatrixFunc::identity();
+    }
+    ~SimpleFirstPersonFlyCamera()
+    {}
+
+    void reset(const Heart::hVec3& up, const Heart::hVec3& forward, const Heart::hVec3& position) {
+        up_=up;
+        forward_=forward;
+        look_=forward;
+        position_=position;
+        viewMatrix_ = Heart::hMatrixFunc::LookAt(position_, position_+look_, up_);
+    }
+    void setMoveSpeed(hFloat speed) { moveSpeed_ = speed; }
+    void setTurnSpeed(hFloat speed) { turnSpeed_ = speed; }
+    void setInput(const Heart::hdGamepad* pad) { pad_ = pad; }
+    void update(hFloat delta);
+    const Heart::hMatrix& getViewmatrix() const { return viewMatrix_; }
+    const Heart::hVec3& getCameraPosition() const { return position_; }
+
+private:
+
+    const Heart::hdGamepad* pad_;
+    hFloat moveSpeed_;
+    hFloat turnSpeed_;
+    Heart::hVec3 up_;
+    Heart::hVec3 forward_;
+    Heart::hVec3 look_;
+    Heart::hVec3 position_;
+    Heart::hMatrix viewMatrix_;
+};
+
 
 #endif // TESTUTILS_H__
