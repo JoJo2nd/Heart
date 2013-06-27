@@ -288,6 +288,8 @@ void TextureManagementWindow::updateControlView(const TextureDBItem& it)
     inputPathPicker_->SetInitialDirectory(it.getInputPath());
     outputPathPicker_->SetPath(it.getOutputPath());
     outputPathPicker_->SetInitialDirectory(it.getOutputPath());
+    packageName_->SetValue(it.getPackageName());
+    resourceName_->SetValue(it.getResourceName());
     formatSelect_->SetStringSelection(s_formatEnumStrs[it.getFormat()]);
     qualitySelect_->SetStringSelection(s_qualityEnumStrs[it.getQuality()]);
     wrapSelect_->SetStringSelection(s_wrapModeEnumStrs[it.getWrapMode()]);

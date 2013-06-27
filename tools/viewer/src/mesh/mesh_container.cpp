@@ -170,15 +170,21 @@ void MeshContainer::importMaterialRemapBindings(const std::string& filepath, boo
 
     tinyxml2::XMLConstHandle elements=tinyxml2::XMLConstHandle(xmldocument).FirstChildElement("material_bindings").FirstChildElement("binding");
     for (;elements.ToNode(); elements=elements.NextSiblingElement()) {
-        const char* matname=elements.ToElement()->Attribute("name", "default");
-        const char* resname=elements.ToElement()->Attribute("resource", "CORE.DEFAULT");
-        materialRemap_.insert(std::pair<std::string, std::string>(matname, resname));
+        const char* matname=elements.ToElement()->Attribute("name");
+        const char* resname=elements.ToElement()->Attribute("resource");
+        if (matname && resname) {
+            materialRemap_.insert(std::pair<std::string, std::string>(matname, resname));
+        }
     }
 
     tinyxml2::XMLConstHandle defaultbind=tinyxml2::XMLConstHandle(xmldocument).FirstChildElement("material_bindings").FirstChildElement("default");
     if (defaultbind.ToElement()) {
-        const char* resname = defaultbind.ToElement()->Attribute("resource", "CORE.DEFAULT");
-        defaultMaterialResource_ = resname;
+        const char* resname = defaultbind.ToElement()->Attribute("resource");
+        if (resname) {
+            defaultMaterialResource_ = resname;
+        } else {
+            defaultMaterialResource_ = "CORE.DEFAULT";
+        }
     }
 }
 

@@ -269,9 +269,7 @@ bool MeshLodLevel::importMeshObject(const std::string& filepath, size_t lodlevel
     for(size_t m=0,nm=aiScene_->mNumMaterials; m<nm; ++m) {
         aiScene_->mMaterials[m]->Get(AI_MATKEY_NAME, aiMatName);
         _itoa(lodlevel, tmpbuf, 10);
-        matName+=tmpbuf;
-        matName+="_";
-        matName+=aiMatName.C_Str();
+        matName=aiMatName.C_Str();
         matNames_.push_back(matName);
         matName.clear();
     }
@@ -295,9 +293,7 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         aiMesh* mesh=aiScene_->mMeshes[i];
         aiScene_->mMaterials[mesh->mMaterialIndex]->Get(AI_MATKEY_NAME, matname);
         _itoa(lodlevel_, tmpbuf, 10);
-        fullmatname=tmpbuf;
-        fullmatname+="_";
-        fullmatname+=matname.C_Str();
+        fullmatname=matname.C_Str();
         std::string fullassetname=container.getMaterialRemap(fullmatname.c_str());
         std::string pkgname=fullassetname.substr(0, fullassetname.find('.'));
         std::string resname=fullassetname.substr(fullassetname.find('.')+1);
