@@ -54,7 +54,7 @@ namespace Heart
     void hRendererCamera::Initialise(hRenderer* renderer)
     {
         renderer_ = renderer;
-        fov = hmPI / 4.0f;//45.0f
+        fov = HEART_PI / 4.0f;//45.0f
         viewMatrix_ = hMatrixFunc::identity();
         isOrtho_ = hFalse;
         viewport_.x = 0.f;

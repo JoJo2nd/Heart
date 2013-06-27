@@ -96,6 +96,7 @@
 #include "render/hDrawCallContext.cpp"
 #include "render/hRenderable.cpp"
 #include "render/hRenderModel.cpp"
+#include "render/hDebugDraw.cpp"
 #include "math/hViewFrustum.cpp"
 
 //////////////////////////////////////////////////////////////////////////

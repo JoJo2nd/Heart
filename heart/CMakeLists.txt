@@ -157,6 +157,7 @@ set(HEART_MATH_FILES
 set(HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/include/render/hCompute.h"
     "${HEART_SOURCE_DIR}/include/render/hDrawCallContext.h"
+	"${HEART_SOURCE_DIR}/include/render/hDebugDraw.h"
     "${HEART_SOURCE_DIR}/include/render/hFont.h"
     "${HEART_SOURCE_DIR}/include/render/hGeometryObject.h"
     "${HEART_SOURCE_DIR}/include/render/hIndexBuffer.h"
@@ -178,6 +179,7 @@ set(HEART_RENDER_FILES
     
     "${HEART_SOURCE_DIR}/src/render/hDebugFontData.cpp"
     "${HEART_SOURCE_DIR}/src/render/hDrawCallContext.cpp"
+	"${HEART_SOURCE_DIR}/src/render/hDebugDraw.cpp"
     "${HEART_SOURCE_DIR}/src/render/hFont.cpp"
     "${HEART_SOURCE_DIR}/src/render/hIndexBuffer.cpp"
     "${HEART_SOURCE_DIR}/src/render/hMaterial.cpp"

@@ -44,7 +44,7 @@ namespace hRenderUtility
     {
         hFloat theta = power;
 
-        return (hFloat)( (1.0 / sqrt( 2 * hmPI * theta ) ) * exp(-(step * step) / (2 * theta * theta)));
+        return (hFloat)( (1.0 / sqrt( 2 * HEART_PI * theta ) ) * exp(-(step * step) / (2 * theta * theta)));
     }
 
     void ComputeBlurWeights( hFloat blurPower, hUint32 samples, hFloat* pOutWeights )
@@ -122,8 +122,8 @@ namespace hRenderUtility
         hFloat* vtx  = verts;
         hUint16* idx = indices;
 
-        hFloat dRingAngle = (hmPI / rings);
-        hFloat dSegAngle = (2 * hmPI / segments);
+        hFloat dRingAngle = (HEART_PI / rings);
+        hFloat dSegAngle = (2 * HEART_PI / segments);
 
         hUint16 idxIdx = 0;
         hUint16 vtxIdx = 0;
@@ -303,7 +303,7 @@ namespace hRenderUtility
         hUint16 vidx = 0;
         void* verts=hAlloca(sizeof(Vertex)*vtxCnt);
         Vertex* vtx = (Vertex*)verts;
-        hFloat dSegAngle = (2 * hmPI / segments);
+        hFloat dSegAngle = (2 * HEART_PI / segments);
 
         hVec3 conetip(0.f, 0.f, 0.f);
         hVec3 conebase(0.f, 0.f, depth);

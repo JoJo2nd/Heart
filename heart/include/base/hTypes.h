@@ -69,7 +69,7 @@ namespace Heart
 #define HEART_ALIGNMENT_END( x )
 
 #if defined (HEART_PLAT_WINDOWS)
-    #define HEART_THREAD_LOCAL  __declspec(thread)
+    #define hThreadLocal  __declspec(thread)
 #else
     #error ("Unknown platform ")
 #endif

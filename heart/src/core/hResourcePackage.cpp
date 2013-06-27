@@ -215,6 +215,7 @@ namespace Heart
                     manager->ltLoadPackage(links_[i]);
                 }
                 packageState_ = State_Load_WaitDeps; 
+                frameWaitBetweenLoads_ = 0;
             } break;
         case State_Load_WaitDeps: {
                 hBool loaded=hTrue;
@@ -284,8 +285,15 @@ namespace Heart
     void hResourcePackage::LoadResourcesState()
     {
         hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
+        //HACK
+        ++frameWaitBetweenLoads_;
+        if ( frameWaitBetweenLoads_ < 3) {
+            return;
+        }
+        //HACK
         if (currentResource_.ToNode())
         {
+            frameWaitBetweenLoads_=0;
             //hIFile* file, const hChar* packagePath, const hChar* resName, const hChar* resourcePath, hUint32 parameterHash
             if (currentResource_.GetAttributeString("name"))
             {

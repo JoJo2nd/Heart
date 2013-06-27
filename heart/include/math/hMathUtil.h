@@ -28,10 +28,15 @@
 #ifndef __HMCOMMON_H__
 #define __HMCOMMON_H__
 
-#define hmPI						(3.14159265358979323846f)// long winded PI
+#define HEART_PI						(3.14159265358979323846f)// long winded PI
+#define HEART_COS35  (0.81915204428899178968448838591684)
+#define HEART_COS45  (0.70710678118654752440084436210485f)
+#define HEART_COS60  (0.5f)
+#define HEART_COS90  (0.0f)
+#define HEART_COS120 (-0.5)
 
-#define hmDegToRad( deg )			( deg * ( hmPI / 180.0f )) 
-#define hmRadToDeg( rad )			( rad * ( 180.0f/ hmPI ))
+#define hDegToRad( deg )			( deg * ( HEART_PI / 180.0f )) 
+#define hRadToDeg( rad )			( rad * ( 180.0f/ HEART_PI ))
 
 template< typename _Ty >
 inline void hmXORSwap( _Ty& x, _Ty& y )
@@ -51,6 +56,18 @@ inline void hmSwap( _Ty& x, _Ty& y )
 
 namespace Heart
 {
+    inline hFloat hCos(hFloat x) {
+        return cosf(x);
+    }
+
+    inline hFloat hSin(hFloat x) {
+        return sinf(x);
+    }
+
+    inline hFloat hTan(hFloat x) {
+        return tanf(x);
+    }
+
 namespace Math
 {
 namespace Util

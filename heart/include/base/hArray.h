@@ -164,6 +164,10 @@ namespace Heart
             }
         }
 
+        void reserveGrow(hUint32 size) {
+            Reserve(size_+size);
+        }
+
         void Resize( hUint32 size )
         {
             if ( size > size_ )

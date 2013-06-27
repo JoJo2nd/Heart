@@ -76,6 +76,8 @@ public:
     {
     }
 
+    const hTexture* getTarget() const { return refTex_; }
+
 private:
     friend class hRenderer;
     hPRIVATE_DESTRUCTOR();

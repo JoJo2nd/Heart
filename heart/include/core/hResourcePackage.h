@@ -142,6 +142,9 @@ namespace Heart
         PkgLinkArray                links_;
         hXMLGetter                  currentResource_;
         ResourceMap                 resourceMap_;
+
+        //HACK
+        hUint                       frameWaitBetweenLoads_;
     };
 
 }
