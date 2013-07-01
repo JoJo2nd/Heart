@@ -114,7 +114,7 @@ void InstanceRenderTest::RenderUnitTest()
 
         drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, 0/*layer*/, hFalse, 10.f, renderable->GetMaterialKey(), 0);
 
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
             drawCall_.blendState_ = passptr->GetBlendState();

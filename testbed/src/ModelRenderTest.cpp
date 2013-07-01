@@ -113,7 +113,7 @@ void ModelRenderTest::RenderUnitTest()
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
         hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);

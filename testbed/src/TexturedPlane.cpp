@@ -102,7 +102,7 @@ void TexturedPlane::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = Heart::hMatrixFunc::identity();
     ctx->Unmap(&mapinfo);
 
-    Heart::hMaterialTechnique* tech=materialInstance_->GetTechniqueByMask(techinfo->mask_);
+    Heart::hMaterialTechnique* tech=materialInstance_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);

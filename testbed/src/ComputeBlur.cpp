@@ -130,7 +130,7 @@ void ComputeBlur::RenderUnitTest()
     Heart::hRenderUtility::setCameraParameters(ctx, &blurCamera_);
     ctx->clearDepth(camera_.getDepthTarget(), 1.f);
 
-    Heart::hMaterialTechnique* tech=materialInstance_->GetTechniqueByMask(techinfo->mask_);
+    Heart::hMaterialTechnique* tech=materialInstance_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -158,7 +158,7 @@ void ComputeBlur::RenderUnitTest()
         allow the target to be read by the compute shaders
     */
     Heart::hRenderUtility::setCameraParameters(ctx, &camera_);
-    tech=blurToScreen_->GetTechniqueByMask(techinfo->mask_);
+    tech=blurToScreen_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);

@@ -117,7 +117,7 @@ void ComplexMesh1::RenderUnitTest()
         hRenderable* renderable = &lod->renderObjects_[i];
 
         hFloat dist=hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
-        hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
         if (!tech) {
             continue;
         }
@@ -151,7 +151,7 @@ void ComplexMesh1::RenderUnitTest()
         hRenderable* renderable = &lod->renderObjects_[i];
 
         hFloat dist=hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
-        hMaterialTechnique* tech = renderable->GetMaterial()->GetTechniqueByMask(techinfo->mask_);
+        hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
         if (!tech) {
             continue;
         }

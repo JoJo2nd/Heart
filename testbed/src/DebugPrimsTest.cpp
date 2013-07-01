@@ -86,7 +86,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    Heart::hMaterialTechnique* tech = wireConeMat_->GetTechniqueByMask(techinfo->mask_);
+    Heart::hMaterialTechnique* tech = wireConeMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -98,7 +98,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = wirePlaneMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = wirePlaneMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -110,7 +110,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = wireSphereMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = wireSphereMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -122,7 +122,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = wireCubeMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = wireCubeMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -134,7 +134,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = viewLitConeMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = viewLitConeMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -146,7 +146,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = viewLitSphereMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = viewLitSphereMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
@@ -158,7 +158,7 @@ void DebugPrimsTest::RenderUnitTest()
     *(Heart::hMatrix*)mapinfo.ptr = model;
     ctx->Unmap(&mapinfo);
 
-    tech = viewLitCubeMat_->GetTechniqueByMask(techinfo->mask_);
+    tech = viewLitCubeMat_->getGroup(0)->getTechniqueByMask(techinfo->mask_);
     for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
         Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
         ctx->SetMaterialPass(passptr);
