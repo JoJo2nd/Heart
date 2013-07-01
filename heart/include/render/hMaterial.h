@@ -123,10 +123,13 @@ namespace Heart
     public:
 
         hUint32             getMaterialKey() const;
-        hUint32             GetTechniqueCount() const { return techniques_.GetSize(); }
-        hMaterialTechnique* GetTechnique( hUint32 idx ) { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
-        hMaterialTechnique* GetTechniqueByName( const hChar* name );
-        hMaterialTechnique* GetTechniqueByMask( hUint32 mask );
+//         hUint32             GetTechniqueCount() const;// { return techniques_.GetSize(); }
+//         hMaterialTechnique* GetTechnique( hUint32 idx );// { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
+//         hMaterialTechnique* GetTechniqueByName( const hChar* name );
+//         hMaterialTechnique* GetTechniqueByMask( hUint32 mask );
+        hUint getGroupCount() const { return groups_.GetSize(); }
+        hMaterialGroup* getGroup(hUint idx) { return &groups_[idx]; }
+        hMaterialGroup* getGroupByName(const hChar* name);
         /* Bind interface - return false if not set on any programs */
         hBool bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* view);
@@ -142,6 +145,7 @@ namespace Heart
         friend class hMaterial;
         hPRIVATE_DESTRUCTOR();
 
+        typedef hVector< hMaterialGroup >     GroupArrayType;
         typedef hVector< hMaterialTechnique > TechniqueArrayType;
         typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
         typedef hVector< hBoundResource > BoundResourceArrayType;
@@ -151,7 +155,6 @@ namespace Heart
             : memHeap_(heap)
             , material_(parent)
             , manager_(NULL)
-            , techniques_(heap)
             , constBlocks_(heap)
             , boundResources_(heap)
             , boundSamplers_(heap)
@@ -164,7 +167,7 @@ namespace Heart
         hMemoryHeapBase*            memHeap_;
         hMaterial*                  material_;
         hRenderMaterialManager*     manager_;
-        TechniqueArrayType          techniques_;
+        GroupArrayType              groups_;
         BoundConstBlockArrayType    constBlocks_;
         BoundResourceArrayType      boundResources_;
         BoundSamplerArrayType       boundSamplers_;
@@ -178,14 +181,12 @@ namespace Heart
         hMaterial(hMemoryHeapBase* heap, hRenderer* renderer);
         ~hMaterial();
 
-        hUint32                 GetTechniqueCount() const { hcAssert(activeTechniques_); return activeTechniques_->GetSize(); }
-        hMaterialTechnique*     GetTechnique( hUint32 idx ) { hcAssert(activeTechniques_ && activeTechniques_->GetSize() ); return &(*activeTechniques_)[idx]; }
-        hMaterialTechnique*     GetTechniqueByName( const hChar* name );
-        hMaterialTechnique*     GetTechniqueByMask( hUint32 mask );
         hRenderMaterialManager* GetManager() const { return manager_; }
         void                    SetManager(hRenderMaterialManager* val) { manager_ = val; }
         hMaterialGroup*         AddGroup(const hChar* name);
-        void                    SetActiveGroup(const hChar* name);
+        hUint32                 getGroupCount() const { return groups_.GetSize(); }
+        hMaterialGroup*         getGroup(hUint idx) { return &groups_[idx]; }
+        hMaterialGroup*         getGroupByName(const hChar* name);
         hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    AddSamplerParameter(const hSamplerParameter& samp);
@@ -228,7 +229,6 @@ namespace Heart
         hRenderer*                          renderer_;
         hRenderMaterialManager*             manager_;
         GroupArrayType                      groups_;
-        TechniqueArrayType*                 activeTechniques_;
 
         hUint                               defaultDataSize_;
         hUint8*                             defaultData_;

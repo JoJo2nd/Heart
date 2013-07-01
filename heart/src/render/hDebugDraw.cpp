@@ -119,6 +119,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hDebugDrawRenderer::initialiseResources(hRenderer* renderer) {
+        hInputLayoutDesc vbdesc[] = {
+            {eIS_POSITION, 0, eIF_FLOAT4, 0, 0},
+        };
+        hRenderMaterialManager* matmgr=renderer->GetMaterialManager();
+        debugMat_=matmgr->getWireframeDebug()->createMaterialInstance(0);
+        renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, vbdesc, (hUint)hArraySize(vbdesc), RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &linesBuffer_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hDebugDrawRenderer::debugRenderSetup(hRenderTargetView* colour, hDepthStencilView* depth) {
 
     }
@@ -131,16 +144,35 @@ namespace Heart
         if (!colourView_ || !depthView_ || !resourcesCreated_) {
             return;
         }
+//         struct DebugDrawCall {
+//             
+//         } debugcalls[eDebugSet_Max];
         hMutexAutoScope mutscope(&critSection_);
+        hVertexBufferMapInfo vbmap;
         hUint colourW = colourView_->getTarget()->getWidth();
         hUint colourH = colourView_->getTarget()->getHeight();
         hViewport vp(0, 0, colourW, colourH);
         hScissorRect scissor={0, 0, colourW, colourH};
 
+        ctx->Map(linesBuffer_, &vbmap);
+        hVec3* mapptr=(hVec3*)vbmap.ptr_;
+        hVec3* mapend=mapptr+(s_maxDebugPrims);
+        for (hUint dps=0,ndps=eDebugSet_Max; dps<ndps && mapptr<mapend; ++dps) {
+            const hVector< hDebugLine >& lines = debugPrims_[dps].lines_;
+            for (hUint i=0,n=s_maxDebugPrims; i<n && mapptr<mapend; ++i) {
+                *mapptr = lines[i].p1;
+                ++mapptr;
+                *mapptr = lines[i].p2;
+                ++mapptr;
+            }
+        }
+        //ctx->Unmap();
+
         ctx->setTargets(1, &colourView_, depthView_);
         ctx->SetViewport(vp);
         ctx->SetScissorRect(scissor);
         //ctx->
+        //ctx->SetInputStreams()
     }
 
     //////////////////////////////////////////////////////////////////////////

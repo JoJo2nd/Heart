@@ -44,6 +44,10 @@ namespace Heart
     {
         memset( dest, 0, size );
     }
+
+    hFORCEINLINE void hMemMove(void* dest, const void* src, hSizeT size) {
+        memmove(dest, src, size);
+    }
 }
 
 #endif // HMEMORYUTIL_H__

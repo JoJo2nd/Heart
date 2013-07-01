@@ -144,4 +144,30 @@ namespace Heart
         passes_.Reserve(count);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialTechnique* hMaterialGroup::getTechniqueByName(const hChar* name) {
+        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
+            if (hStrICmp(name, techniques_[i].GetName()) == 0) {
+                return &techniques_[i];
+            }
+        }
+        return hNullptr;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialTechnique* hMaterialGroup::getTechniqueByMask(hUint32 mask) {
+        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
+            if (techniques_[i].GetMask()==mask) {
+                return &techniques_[i];
+            }
+        }
+        return hNullptr;
+    }
+
 }

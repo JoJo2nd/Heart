@@ -165,6 +165,96 @@ namespace Heart
         hUint32     size;
     };
 
+    enum hRenderCmdOpCode 
+    {
+        eRenderCmd_Jump,
+        eRenderCmd_Return,
+        eRenderCmd_Draw,
+        eRenderCmd_DrawIndex,
+        eRenderCmd_DrawInstanced,
+        eRenderCmd_DrawInstancedIndex,
+
+        eRenderCmd_DeviceCmds, //NoOp - any enum higher is processed by the device level
+
+        eRenderCmd_SetRenderStates,
+        eRenderCmd_SetVertexShader,
+        eRenderCmd_SetPixelShader,
+        eRenderCmd_SetGeometeryShader,
+        eRenderCmd_SetHullShader,
+        eRenderCmd_SetDomainShader,
+        eRenderCmd_SetComputeShader,
+        eRenderCmd_SetVertexInputs,
+        eRenderCmd_SetPixelInputs,
+        eRenderCmd_SetGeometryInputs,
+        eRenderCmd_SetHullInputs,
+        eRenderCmd_SetDomainInputs,
+        eRenderCmd_SetComputeInputs,
+        eRenderCmd_SetInputStreams,
+
+        eRenderCmd_End
+    };
+
+#define HEART_RENDER_CMD_APPEND (hErrorCode)
+
+    struct HEART_DLLEXPORT hRCmd 
+    {
+        hRCmd(hRenderCmdOpCode oc, hSizeT size) 
+            : opCode_(oc), size_((hByte)size) {}
+        hRenderCmdOpCode    opCode_;
+        hByte               size_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdJump : public hRCmd
+    {
+        hRCmdJump(hRCmd* cmd) 
+            : hRCmd(eRenderCmd_Jump, sizeof(hRCmdJump))
+            , cmd_(cmd) {}
+        hRCmd* cmd_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdReturn : public hRCmd
+    {
+        hRCmdReturn() : hRCmd(eRenderCmd_Return, sizeof(hRCmdReturn)) {}
+    };
+
+    struct HEART_DLLEXPORT hRCmdDraw : public hRCmd
+    {
+        hRCmdDraw(hUint nPrims, hUint startvtx) 
+            : hRCmd(eRenderCmd_Draw, sizeof(hRCmdDraw))
+            , nPrimatives_(nPrims), startVertex_(startvtx) {}
+        hUint nPrimatives_;
+        hUint startVertex_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdDrawIndex : public hRCmd
+    {
+        hRCmdDrawIndex(hUint nPrims, hUint startvtx) 
+            : hRCmd(eRenderCmd_DrawIndex, sizeof(hRCmdDrawIndex))
+            , nPrimatives_(nPrims), startVertex_(startvtx) {}
+        hUint nPrimatives_;
+        hUint startVertex_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdDrawInstanced : public hRCmd
+    {
+        hRCmdDrawInstanced(hUint nPrims, hUint startvtx, hUint count) 
+            : hRCmd(eRenderCmd_DrawInstanced, sizeof(hRCmdDrawInstanced))
+            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount(count) {}
+        hUint nPrimatives_;
+        hUint startVertex_;
+        hUint instanceCount;
+    };
+
+    struct HEART_DLLEXPORT hRCmdInstancedIndex : public hRCmd
+    {
+        hRCmdInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
+            : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdInstancedIndex))
+            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount(count) {}
+        hUint nPrimatives_;
+        hUint startVertex_;
+        hUint instanceCount;
+    };
+
     enum hShaderType
     {
         ShaderType_VERTEXPROG,
@@ -446,11 +536,11 @@ namespace Heart
 
     struct hInputLayoutDesc
     {
-        hInputSemantic  semantic_;              
-        hByte           semIndex_;              
-        hInputFormat    typeFormat_;            
-        hUint32         inputStream_;           
-        hUint16         instanceDataRepeat_;    
+        hInputSemantic  semantic_;
+        hByte           semIndex_;
+        hInputFormat    typeFormat_;
+        hUint32         inputStream_;
+        hUint16         instanceDataRepeat_;
     };
 
     enum ResourceFlags

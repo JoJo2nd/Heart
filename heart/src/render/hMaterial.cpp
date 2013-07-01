@@ -78,7 +78,6 @@ namespace Heart
 
     hMaterial::hMaterial(hMemoryHeapBase* heap, hRenderer* renderer) : memHeap_(heap)
         , renderer_(renderer)
-        , activeTechniques_(NULL)
         , manager_(renderer->GetMaterialManager())
         , groups_(heap) 
     {
@@ -100,40 +99,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hMaterialTechnique* hMaterial::GetTechniqueByName( const hChar* name )
-    {
-        for ( hUint32 i = 0; i < activeTechniques_->GetSize(); ++i )
-        {
-            if ( hStrCmp( (*activeTechniques_)[i].GetName(), name ) == 0 )
-            {
-                return &(*activeTechniques_)[i];
-            }
-        }
-
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hMaterialTechnique* hMaterial::GetTechniqueByMask( hUint32 mask )
-    {
-        for ( hUint32 i = 0; i < activeTechniques_->GetSize(); ++i )
-        {
-            if ( (*activeTechniques_)[i].GetMask() == mask )
-            {
-                return &(*activeTechniques_)[i];
-            }
-        }
-
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     hMaterialGroup* hMaterial::AddGroup( const hChar* name )
     {
         hMaterialGroup newGroup;
@@ -146,28 +111,22 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::SetActiveGroup( const hChar* name )
+    void hMaterial::AddSamplerParameter(const hSamplerParameter& samp)
     {
-        hUint32 groups = groups_.GetSize();
-        for ( hUint32 i = 0; i < groups; ++i)
-        {
-            if (hStrICmp(name, groups_[i].name_) == 0)
-            {
-                activeTechniques_ = &groups_[i].techniques_;
-                return;
-            }
-        }
-
-        hcAssertFailMsg("Couldn't find group %s", name);
+        defaultSamplers_.PushBack(samp);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::AddSamplerParameter(const hSamplerParameter& samp)
-    {
-        defaultSamplers_.PushBack(samp);
+    hMaterialGroup* hMaterial::getGroupByName(const hChar* name) {
+        for (hUint i=0,n=groups_.GetSize(); i<n; ++i) {
+            if (hStrICmp(name, groups_[i].name_)==0) {
+                return &groups_[i];
+            }
+        }
+        return NULL;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -228,12 +187,13 @@ namespace Heart
 
     hBool hMaterial::bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb)
     {
-        hcAssert(activeTechniques_);
         hBool succ = true;
-        for (hUint32 tech = 0, nTech = activeTechniques_->GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = (*activeTechniques_)[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                hMaterialTechniquePass* pass = (*activeTechniques_)[tech].GetPass(passIdx);
-                succ &= pass->setConstantBuffer(id, cb);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech=0, nTech=groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
+                    succ &= pass->setConstantBuffer(id, cb);
+                }
             }
         }
 
@@ -286,7 +246,7 @@ namespace Heart
     {
         hBool dontcreatecb=(hMatInst_DontInstanceConstantBuffers&flags) == hMatInst_DontInstanceConstantBuffers;;
         hMaterialInstance* matInst = hNEW(memHeap_, hMaterialInstance) (memHeap_, this);
-        matInst->techniques_=*activeTechniques_;
+        matInst->groups_ = groups_;
 
         for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
             for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
@@ -346,10 +306,12 @@ namespace Heart
     {
 #pragma message ("TODO- Fix hMaterial::destroyMaterialInstance to release references to input to streams")
         hcAssert(matInst);
-        for (hUint32 tech = 0; tech < matInst->techniques_.GetSize(); ++tech) {
-            for (hUint32 pass = 0; pass < matInst->techniques_[tech].passes_.GetSize(); ++pass) {
-                hMaterialTechniquePass* passptr = &matInst->techniques_[tech].passes_[pass];
-                passptr->unbind();
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* passptr = groups_[group].getTech(tech)->GetPass(passIdx);
+                    passptr->unbind();
+                }
             }
         }
 
@@ -647,10 +609,12 @@ namespace Heart
         hcAssert(id);
         hcAssert(cb);
         hBool succ = hFalse;
-        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ |= pass->setConstantBuffer(id, cb);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].getTech(tech)->GetPass(passIdx);
+                    succ |= pass->setConstantBuffer(id, cb);
+                }
             }
         }
 
@@ -687,10 +651,12 @@ namespace Heart
     hBool hMaterialInstance::bindSampler(hShaderParameterID id, hSamplerState* samplerState)
     {
         hBool succ = hFalse;
-        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ |= pass->setSamplerInput(id, samplerState);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].getTech(tech)->GetPass(passIdx);
+                    succ |= pass->setSamplerInput(id, samplerState);
+                }
             }
         }
 
@@ -725,10 +691,12 @@ namespace Heart
 
     hBool hMaterialInstance::bindResource(hShaderParameterID id, hShaderResourceView* view) {
         hBool succ = hFalse;
-        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                hMaterialTechniquePass* pass = techniques_[tech].GetPass(passIdx);
-                succ |= pass->setResourceView(id, view);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].getTech(tech)->GetPass(passIdx);
+                    succ |= pass->setResourceView(id, view);
+                }
             }
         }
 
@@ -765,9 +733,12 @@ namespace Heart
     hBool hMaterialInstance::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt) {
 #pragma message ("TODO- Fix hMaterialInstance::bindInputStreams to take a reference to streams")
         hBool succ = true;
-        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                techniques_[tech].GetPass(passIdx)->bindInputStreams(type, idx, vtxs, streamCnt);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].getTech(tech)->GetPass(passIdx);
+                    pass->bindInputStreams(type, idx, vtxs, streamCnt);
+                }
             }
         }
         return succ;
@@ -780,9 +751,12 @@ namespace Heart
     hBool hMaterialInstance::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
 #pragma message ("TODO- Fix hMaterialInstance::bindVertexStream to take a reference to streams")
         hBool succ = true;
-        for (hUint32 tech = 0, nTech = techniques_.GetSize(); tech < nTech; ++tech) {
-            for (hUint32 passIdx = 0, nPasses = techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
-                techniques_[tech].GetPass(passIdx)->bindInputStream(inputSlot, vtxBuf);
+        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
+            for (hUint32 tech = 0, nTech = groups_[group].getTechCount(); tech < nTech; ++tech) {
+                for (hUint32 passIdx = 0, nPasses = groups_[group].getTech(tech)->GetPassCount(); passIdx < nPasses; ++passIdx) {
+                    hMaterialTechniquePass* pass = groups_[group].getTech(tech)->GetPass(passIdx);
+                    pass->bindInputStream(inputSlot, vtxBuf);
+                }
             }
         }
         return succ;
@@ -807,40 +781,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hMaterialTechnique* hMaterialInstance::GetTechniqueByName( const hChar* name )
-    {
-        for ( hUint32 i = 0; i < techniques_.GetSize(); ++i )
-        {
-            if ( hStrCmp( techniques_[i].GetName(), name ) == 0 )
-            {
-                return &techniques_[i];
-            }
-        }
-
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hMaterialTechnique* hMaterialInstance::GetTechniqueByMask( hUint32 mask )
-    {
-        for ( hUint32 i = 0; i < techniques_.GetSize(); ++i )
-        {
-            if ( techniques_[i].GetMask() == mask )
-            {
-                return &techniques_[i];
-            }
-        }
-
-        return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hMaterialInstance::destroyMaterialInstance(hMaterialInstance* inst)
     {
         if (!inst) return;
@@ -854,6 +794,19 @@ namespace Heart
 
     hUint32 hMaterialInstance::getMaterialKey() const {
         return material_->GetMatKey();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialGroup* hMaterialInstance::getGroupByName(const hChar* name) {
+        for (hUint i=0,n=groups_.GetSize(); i<n; ++i) {
+            if (hStrICmp(name, groups_[i].name_)==0) {
+                return &groups_[i];
+            }
+        }
+        return hNullptr;
     }
 
 }//Heart

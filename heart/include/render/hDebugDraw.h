@@ -80,7 +80,8 @@ namespace Heart
         hDebugDrawRenderer();
         ~hDebugDrawRenderer();
 
-        void initialiseResources();
+        void initialiseResources(hRenderer* renderer);
+        void destroyResources();
         void debugRenderSetup(hRenderTargetView* colour, hDepthStencilView* depth);
         void render(hRenderSubmissionCtx* ctx);
         void append(hDebugDraw* debugdraw);
@@ -88,10 +89,13 @@ namespace Heart
         static hDebugDrawRenderer* it();
     private:
 
+        static const hUint s_maxDebugPrims = 10000;
+
         hMutex              critSection_;
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];
+        hMaterialInstance*  debugMat_;
         hVertexBuffer*      linesBuffer_;
         hMaterialInstance*  lineMaterial_;
         hBool               resourcesCreated_;

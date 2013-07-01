@@ -73,6 +73,7 @@ namespace Heart
         friend class hdDX11RenderSubmissionCtx;
         friend class hdDX11ComputeInputObject;
         friend class hdDX11RenderInputObject;
+        friend class hdDX11RenderCommandGenerator;
 
         hdDX11RenderDevice*     device_;
         hShaderType             type_;

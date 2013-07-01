@@ -184,7 +184,8 @@ namespace Heart
                 inst->world_ = hMatrixFunc::translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
                 ctx->Unmap(&map);
 
-                hMaterialTechnique* tech = backdropMat_->GetTechniqueByMask(debugTechMask_);
+                hMaterialGroup* group = backdropMat_->getGroup(0);
+                hMaterialTechnique* tech = group->getTechniqueByMask(debugTechMask_);
                 if (!tech) return;
                 for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
                     hMaterialTechniquePass* passptr = tech->GetPass(pass);
@@ -207,7 +208,8 @@ namespace Heart
                 /*
                 * INput text string
                 */
-                tech = inputMat_->GetTechniqueByMask(debugTechMask_);
+                hMaterialGroup* matGroup=inputMat_->getGroup(0);
+                tech = matGroup->getTechniqueByMask(debugTechMask_);
                 if (!tech) return;
 
                 ctx->Map(fontCB_, &map);
@@ -253,7 +255,8 @@ namespace Heart
                 /*
                 * Log text string
                 */
-                tech = logMat_->GetTechniqueByMask(debugTechMask_);
+                hMaterialGroup* loggroup = logMat_->getGroup(0);
+                tech = loggroup->getTechniqueByMask(debugTechMask_);
                 if (!tech) return;
 
                 {
@@ -268,7 +271,7 @@ namespace Heart
                     ctx->Unmap(&vbmap);
                 }
 
-                tech = logMat_->GetTechniqueByMask(debugTechMask_);
+                tech = loggroup->getTechniqueByMask(debugTechMask_);
                 if (!tech) return;
 
 

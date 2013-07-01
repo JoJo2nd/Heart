@@ -77,6 +77,7 @@ namespace Heart
 
     typedef hdDX11RenderDevice           hdRenderDevice;
     typedef hdDX11RenderSubmissionCtx    hdRenderSubmissionCtx;
+    typedef hdDX11RenderCommandGenerator hdRenderCommandGenerator;
     typedef hdDX11RenderInputObject      hdRenderInputObject;
     typedef hdDX11RenderStreamsObject    hdRenderStreamsObject;
     typedef hdDX11VertexLayout           hdInputLayout;

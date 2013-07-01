@@ -32,6 +32,140 @@ namespace Heart
 {
     hFUNCTOR_TYPEDEF(void(*)(hUint width, hUint height), hDeviceResizeCallback);
 
+    struct HEART_DLLEXPORT hRCmdSetStates : public hRCmd 
+    {
+        hRCmdSetStates(ID3D11BlendState* bs, ID3D11RasterizerState* rs, ID3D11DepthStencilState* dss, hUint32 stencilRef) 
+            : hRCmd(eRenderCmd_SetRenderStates, sizeof(hRCmdSetStates))
+            , blendState_(bs), rasterState_(rs), depthState_(dss), stencilRef_(stencilRef) {}
+        ID3D11BlendState*           blendState_;
+        ID3D11RasterizerState*      rasterState_;
+        ID3D11DepthStencilState*    depthState_;
+        hUint32                     stencilRef_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetVertexShader : public hRCmd
+    {
+        hRCmdSetVertexShader(ID3D11VertexShader* shader)
+            : hRCmd(eRenderCmd_SetVertexShader, sizeof(hRCmdSetVertexShader)), shader_(shader) {}
+        ID3D11VertexShader* shader_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetPixelShader : public hRCmd
+    {
+        hRCmdSetPixelShader(ID3D11PixelShader* shader)
+            : hRCmd(eRenderCmd_SetPixelShader, sizeof(hRCmdSetPixelShader)), shader_(shader) {}
+        ID3D11PixelShader* shader_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetGeometryShader : public hRCmd
+    {
+        hRCmdSetGeometryShader(ID3D11GeometryShader* shader)
+            : hRCmd(eRenderCmd_SetGeometeryShader, sizeof(hRCmdSetGeometryShader)), shader_(shader) {}
+        ID3D11GeometryShader* shader_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetHullShader : public hRCmd
+    {
+        hRCmdSetHullShader(ID3D11HullShader* shader)
+            : hRCmd(eRenderCmd_SetHullShader, sizeof(hRCmdSetHullShader)), shader_(shader) {}
+        ID3D11HullShader* shader_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetDomainShader : public hRCmd
+    {
+        hRCmdSetDomainShader(ID3D11DomainShader* shader)
+            : hRCmd(eRenderCmd_SetDomainShader, sizeof(hRCmdSetDomainShader)), shader_(shader) {}
+        ID3D11DomainShader* shader_;
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetInputsBase : public hRCmd
+    {
+        hRCmdSetInputsBase(hRenderCmdOpCode oc, hUint rescount, hUint samcount, hUint bufcount)
+            : hRCmd(oc, sizeof(hRCmdSetInputsBase))
+            , resourceViewCount_(rescount), samplerCount_(samcount), bufferCount_(bufcount) {}
+        hUint resourceViewCount_;
+        hUint samplerCount_;
+        hUint bufferCount_;
+        // Followed by an array of the following
+        //ID3D11ShaderResourceView* resourceViews_[resourceViewCount_];
+        //ID3D11SamplerState*       samplerState_[samplerCount_];
+        //ID3D11Buffer*             programInputs_[bufferCount_];
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetVertexInputs     : public hRCmdSetInputsBase
+    {
+        hRCmdSetVertexInputs(hUint rescount, hUint samcount, hUint bufcount) 
+            : hRCmdSetInputsBase(eRenderCmd_SetVertexInputs, rescount, samcount, bufcount) {}
+    };
+    struct HEART_DLLEXPORT hRCmdSetPixelInputs      : public hRCmdSetInputsBase
+    {
+        hRCmdSetPixelInputs(hUint rescount, hUint samcount, hUint bufcount) 
+            : hRCmdSetInputsBase(eRenderCmd_SetPixelInputs, rescount, samcount, bufcount) {}
+    };
+    struct HEART_DLLEXPORT hRCmdSetGeometryInputs   : public hRCmdSetInputsBase
+    {
+        hRCmdSetGeometryInputs(hUint rescount, hUint samcount, hUint bufcount) 
+            : hRCmdSetInputsBase(eRenderCmd_SetGeometryInputs, rescount, samcount, bufcount) {}
+    };
+    struct HEART_DLLEXPORT hRCmdSetHullInputs       : public hRCmdSetInputsBase
+    {
+        hRCmdSetHullInputs(hUint rescount, hUint samcount, hUint bufcount) 
+            : hRCmdSetInputsBase(eRenderCmd_SetHullInputs, rescount, samcount, bufcount) {}
+    };
+    struct HEART_DLLEXPORT hRCmdSetDomainInputs     : public hRCmdSetInputsBase
+    {
+        hRCmdSetDomainInputs(hUint rescount, hUint samcount, hUint bufcount) 
+            : hRCmdSetInputsBase(eRenderCmd_SetDomainInputs, rescount, samcount, bufcount) {}
+    };
+
+    struct HEART_DLLEXPORT hRCmdSetInputStreams : public hRCmd
+    {
+        hRCmdSetInputStreams(D3D11_PRIMITIVE_TOPOLOGY top, DXGI_FORMAT format, ID3D11InputLayout* lo, hUint16 fstream, hUint16 estream, ID3D11Buffer* index)
+            : hRCmd(eRenderCmd_SetInputStreams, sizeof(hRCmdSetInputStreams))
+            , topology_(top), indexFormat_(format), layout_(lo), firstStream_(fstream), lastStream_(estream), index_(index) {}
+        D3D11_PRIMITIVE_TOPOLOGY topology_;
+        DXGI_FORMAT         indexFormat_;
+        ID3D11InputLayout*  layout_;
+        hUint16             firstStream_;
+        hUint16             lastStream_;
+        ID3D11Buffer*       index_;
+        // Followed by an array of 
+        //ID3D11Buffer*       streams[lastStream-firstStream];
+    };
+
+    class HEART_DLLEXPORT hdDX11RenderCommandGenerator
+    {
+    public:
+        hdDX11RenderCommandGenerator() {}
+        ~hdDX11RenderCommandGenerator() {}
+
+    protected:
+
+        hUint setRenderStates(hdDX11BlendState* bs, hdDX11RasterizerState* rs, hdDX11DepthStencilState* dss);
+        hUint setShader(hdDX11ShaderProgram* shader);
+        hUint setVertexInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11ParameterConstantBlock** cb, hUint ncb);
+        hUint setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11ParameterConstantBlock** cb, hUint ncb);
+        hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11ParameterConstantBlock** cb, hUint ncb);
+        hUint setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11ParameterConstantBlock** cb, hUint ncb);
+        hUint setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11ParameterConstantBlock** cb, hUint ncb);
+        hUint setStreamInputs(PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format,
+            hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount);
+        
+        virtual hRCmd* getCmdBufferStart() = 0;
+        virtual hUint  appendCmd(const hRCmd* cmd) = 0;
+        virtual void   reset() = 0;
+    };
+
     struct HEART_DLLEXPORT hRenderDeviceSetup
     {
         hTempRenderMemAlloc     alloc_;

@@ -486,7 +486,7 @@ namespace hRenderUtility
         pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosOnly));
         pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhite));
         tech->AppendPass(pass);
-        ddrawmat->SetActiveGroup("low_detail");
+        
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
 
         return ddrawmat;
@@ -616,7 +616,7 @@ namespace hRenderUtility
         pass.SetVertexShader(rndr->getDebugShader(eDebugVertexPosNormal));
         pass.SetFragmentShader(rndr->getDebugShader(eDebugPixelWhiteViewLit));
         tech->AppendPass(pass);
-        ddrawmat->SetActiveGroup("low_detail");
+        
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
         return ddrawmat;
     }
@@ -680,7 +680,7 @@ namespace hRenderUtility
         rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eConsoleVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eConsolePixel));
-        ddrawmat->SetActiveGroup("low_detail");
+        
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
 
         return ddrawmat;
@@ -754,8 +754,8 @@ namespace hRenderUtility
         sampDesc.maxAnisotropy_ = 16;
         sampDesc.borderColour_  = WHITE;
         sampDesc.minLOD_        = -FLT_MAX;
-        sampDesc.maxLOD_        = FLT_MAX;  
-        ddrawmat->SetActiveGroup("low_detail");
+        sampDesc.maxLOD_        = FLT_MAX;
+        
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), ss);
@@ -834,7 +834,7 @@ namespace hRenderUtility
 
         pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
-        ddrawmat->SetActiveGroup("low_detail");
+        
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);

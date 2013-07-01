@@ -66,6 +66,39 @@ namespace Heart
 
     typedef void (*hCustomRenderCallback)(hRenderer*, void*);
 
+    class HEART_DLLEXPORT hRenderCommands
+    {
+    public:
+        hRenderCommands()
+            : cmdSize_(0)
+            , allocatedSize_(0)
+            , cmds_(hNullptr)
+        {
+
+        }
+        ~hRenderCommands()
+        {
+            hFreeSafe(cmds_);
+        }
+
+        hRCmd*  getFirst() { return cmds_; }
+
+    private:
+
+        hRenderCommands(const hRenderCommands& rhs);
+        hRenderCommands& operator = (const hRenderCommands& rhs);
+
+        friend class hRenderCommandGenerator;
+
+        void    insertCommand(hUint where, const hRCmd* command, hBool overwrite);
+        void    reserveSpace(hUint size);
+
+        hUint  cmdSize_;
+        hUint  allocatedSize_;
+        hRCmd* cmds_;
+        hVector<hdInputLayout> boundInputLayouts;
+    };
+
     struct HEART_DLLEXPORT hDrawCall
     {
         hUint64                 sortKey_;                                   //8b        -> 8b
@@ -84,7 +117,54 @@ namespace Heart
                 hCustomRenderCallback   customCall_;
                 void*                   userPtr_;
             };
+            struct {
+                hRenderCommands* rCmds_;
+            };
         };
+    };
+
+    class HEART_DLLEXPORT hRenderCommandGenerator : public hdRenderCommandGenerator
+    {
+    public:
+        hRenderCommandGenerator();
+        hRenderCommandGenerator(hRenderCommands* rcmds);
+
+        void             setRenderCommands(hRenderCommands* rcmds) { renderCommands_ = rcmds; }
+        hRenderCommands* getRenderCommands() { return renderCommands_; }
+        hUint resetCommands();
+        hUint setJump(hRCmd* cmd);
+        hUint setReturn();
+        hUint setDraw(hUint nPrimatives, hUint startVertex);
+        hUint setDrawIndex(hUint nPrimatives, hUint startVertex);
+        hUint setDrawInstance(hUint nPrimatives, hUint startVertex, hUint instancecount);
+        hUint setDrawInstanceIndex(hUint nPrimatives, hUint startVertex, hUint instancecount);
+        hUint setRenderStates(hBlendState* bs, hRasterizerState* rs, hDepthStencilState* dss);
+        hUint setShader(hShaderProgram* shader);
+        hUint setVertexInputs(hSamplerState* samplers, hUint nsamplers,
+            hShaderResourceView* srv, hUint nsrv,
+            hParameterConstantBlock* cb, hUint ncb);
+        hUint setPixelInputs(hSamplerState* samplers, hUint nsamplers,
+            hShaderResourceView* srv, hUint nsrv,
+            hParameterConstantBlock* cb, hUint ncb);
+        hUint setGeometryInputs(hdDX11SamplerState* samplers, hUint nsamplers,
+            hShaderResourceView* srv, hUint nsrv,
+            hParameterConstantBlock* cb, hUint ncb);
+        hUint setHullInputs(hdDX11SamplerState* samplers, hUint nsamplers,
+            hShaderResourceView* srv, hUint nsrv,
+            hParameterConstantBlock* cb, hUint ncb);
+        hUint setDomainInputs(hdDX11SamplerState* samplers, hUint nsamplers,
+            hShaderResourceView* srv, hUint nsrv,
+            hParameterConstantBlock* cb, hUint ncb);
+        hUint setStreamInputs(PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
+            hShaderProgram* vertexprog, hVertexBuffer* vtx, hUint firstStream, hUint streamCount);
+
+    private:
+
+        virtual hRCmd* getCmdBufferStart();
+        virtual hUint  appendCmd(const hRCmd* cmd);
+        virtual void   reset();
+
+        hRenderCommands*    renderCommands_;
     };
 
     class HEART_DLLEXPORT hRenderer : public hdRenderDevice

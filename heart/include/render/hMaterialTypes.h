@@ -203,6 +203,12 @@ namespace Heart
             return *this;
         }
 
+        const hChar* getName() const { return name_.GetBuffer(); }
+        hUint getTechCount() const { return techniques_.GetSize(); }
+        hMaterialTechnique* getTech(hUint idx) { return &techniques_[idx]; }
+        hMaterialTechnique* getTechniqueByName(const hChar* name);
+        hMaterialTechnique* getTechniqueByMask(hUint32 mask);
+    
         hArray< hChar, MAX_NAME_LEN >   name_;
         TechniqueArrayType              techniques_;
     };
