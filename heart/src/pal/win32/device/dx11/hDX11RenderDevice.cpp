@@ -1968,13 +1968,13 @@ namespace Heart
         hPLACEMENT_NEW(cmd) hRCmdSetVertexInputs(nsrv, nsamplers, ncb);
         cmd->size_=cmdsize;
         for (hUint i=0, n=nsrv; i<n; ++i) {
-            cmdsrv[i]=srv[i]->srv_;
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
         }
         for (hUint i=0, n=nsamplers; i<n; ++i) {
-            cmdsamp[i]=samplers[i]->stateObj_;
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i]->constBuffer_;
+            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -1993,13 +1993,13 @@ namespace Heart
         hPLACEMENT_NEW(cmd) hRCmdSetPixelInputs(nsrv, nsamplers, ncb);
         cmd->size_=cmdsize;
         for (hUint i=0, n=nsrv; i<n; ++i) {
-            cmdsrv[i]=srv[i]->srv_;
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
         }
         for (hUint i=0, n=nsamplers; i<n; ++i) {
-            cmdsamp[i]=samplers[i]->stateObj_;
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i]->constBuffer_;
+            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -2018,13 +2018,13 @@ namespace Heart
         hPLACEMENT_NEW(cmd) hRCmdSetGeometryInputs(nsrv, nsamplers, ncb);
         cmd->size_=cmdsize;
         for (hUint i=0, n=nsrv; i<n; ++i) {
-            cmdsrv[i]=srv[i]->srv_;
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
         }
         for (hUint i=0, n=nsamplers; i<n; ++i) {
-            cmdsamp[i]=samplers[i]->stateObj_;
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i]->constBuffer_;
+            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -2043,13 +2043,13 @@ namespace Heart
         hPLACEMENT_NEW(cmd) hRCmdSetHullInputs(nsrv, nsamplers, ncb);
         cmd->size_=cmdsize;
         for (hUint i=0, n=nsrv; i<n; ++i) {
-            cmdsrv[i]=srv[i]->srv_;
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
         }
         for (hUint i=0, n=nsamplers; i<n; ++i) {
-            cmdsamp[i]=samplers[i]->stateObj_;
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i]->constBuffer_;
+            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -2068,13 +2068,13 @@ namespace Heart
         hPLACEMENT_NEW(cmd) hRCmdSetDomainInputs(nsrv, nsamplers, ncb);
         cmd->size_=cmdsize;
         for (hUint i=0, n=nsrv; i<n; ++i) {
-            cmdsrv[i]=srv[i]->srv_;
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
         }
         for (hUint i=0, n=nsamplers; i<n; ++i) {
-            cmdsamp[i]=samplers[i]->stateObj_;
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i]->constBuffer_;
+            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -2098,6 +2098,69 @@ namespace Heart
             cmdib[i]=vtx[i]->buffer_;
         }
         return appendCmd(cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11RenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11ParameterConstantBlock* cb) {
+        hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
+        hcAssert(reg < inputcmd->bufferCount_);
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);
+        cmdpcb[reg]=cb ? cb->constBuffer_ : hNullptr;
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11RenderCommandGenerator::updateShaderInputSampler(hRCmd* cmd, hUint reg, hdDX11SamplerState* ss) {
+        hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
+        hcAssert(reg < inputcmd->bufferCount_);
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);
+        cmdsamp[reg]=ss ? ss->stateObj_ : hNullptr;
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11RenderCommandGenerator::updateShaderInputView(hRCmd* cmd, hUint reg, hdDX11ShaderResourceView* srv) {
+        hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
+        hcAssert(reg < inputcmd->bufferCount_);
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);
+        cmdsrv[reg]=srv ? srv->srv_ : hNullptr;
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11RenderCommandGenerator::updateStreamInputs(hRCmd* origcmd, PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format, hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount) {
+        hUint cmdsize=sizeof(ID3D11Buffer*)*streamCount;
+        cmdsize+=sizeof(hRCmdSetInputStreams);
+        D3D11_PRIMITIVE_TOPOLOGY top;
+        if ( primType == PRIMITIVETYPE_LINELIST ) top = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+        else if ( primType == PRIMITIVETYPE_TRILIST) top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        else if ( primType == PRIMITIVETYPE_TRISTRIP) top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        hRCmdSetInputStreams* cmd=(hRCmdSetInputStreams*)hAlloca(cmdsize);
+        ID3D11Buffer** cmdib=(ID3D11Buffer**)(cmd+1);
+        hPLACEMENT_NEW(cmd) hRCmdSetInputStreams(top, format == hIndexBufferType_Index16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, layout, firstStream, firstStream+streamCount, index->buffer_);
+        cmd->size_=cmdsize;
+        for (hUint i=0, n=streamCount; i<n; ++i) {
+            cmdib[i]=vtx[i]->buffer_;
+        }
+        return overwriteCmd(origcmd, cmd);
     }
 
 }

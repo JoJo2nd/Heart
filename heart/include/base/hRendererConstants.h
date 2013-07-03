@@ -167,6 +167,7 @@ namespace Heart
 
     enum hRenderCmdOpCode 
     {
+        eRenderCmd_NOOP,
         eRenderCmd_Jump,
         eRenderCmd_Return,
         eRenderCmd_Draw,
@@ -183,12 +184,14 @@ namespace Heart
         eRenderCmd_SetHullShader,
         eRenderCmd_SetDomainShader,
         eRenderCmd_SetComputeShader,
+
         eRenderCmd_SetVertexInputs,
         eRenderCmd_SetPixelInputs,
         eRenderCmd_SetGeometryInputs,
         eRenderCmd_SetHullInputs,
         eRenderCmd_SetDomainInputs,
         eRenderCmd_SetComputeInputs,
+
         eRenderCmd_SetInputStreams,
 
         eRenderCmd_End
@@ -215,6 +218,11 @@ namespace Heart
     struct HEART_DLLEXPORT hRCmdReturn : public hRCmd
     {
         hRCmdReturn() : hRCmd(eRenderCmd_Return, sizeof(hRCmdReturn)) {}
+    };
+
+    struct HEART_DLLEXPORT hRCmdNOOP : public hRCmd
+    {
+        hRCmdNOOP() : hRCmd(eRenderCmd_NOOP, sizeof(hRCmdNOOP)) {}
     };
 
     struct HEART_DLLEXPORT hRCmdDraw : public hRCmd
@@ -245,14 +253,51 @@ namespace Heart
         hUint instanceCount;
     };
 
-    struct HEART_DLLEXPORT hRCmdInstancedIndex : public hRCmd
+    struct HEART_DLLEXPORT hRCmdDrawInstancedIndex : public hRCmd
     {
-        hRCmdInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
-            : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdInstancedIndex))
+        hRCmdDrawInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
+            : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdDrawInstancedIndex))
             , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount(count) {}
         hUint nPrimatives_;
         hUint startVertex_;
         hUint instanceCount;
+    };
+
+    class HEART_DLLEXPORT hRenderCommands
+    {
+    public:
+        hRenderCommands()
+            : cmdSize_(0)
+            , allocatedSize_(0)
+            , cmds_(hNullptr)
+        {
+
+        }
+        ~hRenderCommands()
+        {
+            hFreeSafe(cmds_);
+        }
+
+        hRCmd*  getFirst() { return cmds_; }
+        hRCmd*  getEnd() { return cmds_+cmdSize_; }
+        hRCmd*  getCommandAtOffset(hUint offset) { 
+            hcAssert(offset < cmdSize_);
+            return (hRCmd*)((hByte*)cmds_+offset);
+        }
+
+    private:
+
+        hRenderCommands(const hRenderCommands& rhs);
+        hRenderCommands& operator = (const hRenderCommands& rhs);
+
+        friend class hRenderCommandGenerator;
+
+        void    insertCommand(hUint where, const hRCmd* command, hBool overwrite);
+        void    reserveSpace(hUint size);
+
+        hUint  cmdSize_;
+        hUint  allocatedSize_;
+        hRCmd* cmds_;
     };
 
     enum hShaderType

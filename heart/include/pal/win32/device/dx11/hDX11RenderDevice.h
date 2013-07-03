@@ -160,9 +160,15 @@ namespace Heart
             hdDX11ParameterConstantBlock** cb, hUint ncb);
         hUint setStreamInputs(PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format,
             hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount);
+        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11ParameterConstantBlock* cb);
+        hUint updateShaderInputSampler(hRCmd* cmd, hUint reg, hdDX11SamplerState* ss);
+        hUint updateShaderInputView(hRCmd* cmd, hUint reg, hdDX11ShaderResourceView* srv);
+        hUint updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format,
+            hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount);
         
         virtual hRCmd* getCmdBufferStart() = 0;
         virtual hUint  appendCmd(const hRCmd* cmd) = 0;
+        virtual hUint  overwriteCmd(const hRCmd* oldcmd, const hRCmd* newcmd) = 0;
         virtual void   reset() = 0;
     };
 

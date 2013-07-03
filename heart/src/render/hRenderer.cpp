@@ -1355,12 +1355,15 @@ namespace Heart
         hUint remainingBytes=cmdSize_-where;
         if (overwrite) {
             hcAssert(cmd->opCode_ < eRenderCmd_End);
-            hUint oldcmdsize=cmd->size_;
+            hByte oldcmdsize=cmd->size_;
             if (oldcmdsize < command->size_) {
                 hMemMove(((hByte*)cmd+command->size_), nextcmd, remainingBytes);
             }
             hMemSet(cmd, 0xAC, cmd->size_);
             hMemCpy(cmd, command, command->size_);
+            if (oldcmdsize > command->size_) {
+                cmd->size_=oldcmdsize;
+            }
         } else {
             hMemMove(nextcmd, cmd, remainingBytes);
             hMemCpy(cmd, command, command->size_);
@@ -1410,6 +1413,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint hRenderCommandGenerator::overwriteCmd(const hRCmd* oldcmd, const hRCmd* newcmd) {
+        hcAssert(renderCommands_);
+        hUint sizediff=oldcmd->size_ < newcmd->size_ ? newcmd->size_-oldcmd->size_ : 0;
+        hUint cmdstart=(hUint)((ptrdiff_t)renderCommands_->cmdSize_-(ptrdiff_t)oldcmd);
+        renderCommands_->insertCommand(cmdstart, newcmd, true);
+        return sizediff;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hRenderCommandGenerator::reset() {
         hcAssert(renderCommands_);
         renderCommands_->cmdSize_=0;
@@ -1449,6 +1464,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint hRenderCommandGenerator::setNoOp() {
+        hcAssert(renderCommands_);
+        hRCmdNOOP cmd;
+        return appendCmd(&cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hUint hRenderCommandGenerator::setDraw(hUint nPrimatives, hUint startVertex) {
         hcAssert(renderCommands_);
         hRCmdDraw cmd(nPrimatives, startVertex);
@@ -1463,6 +1488,202 @@ namespace Heart
         hcAssert(renderCommands_);
         hRCmdDrawIndex cmd(nPrimatives, startVertex);
         return appendCmd(&cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setDrawInstance(hUint nPrimatives, hUint startVertex, hUint instancecount) {
+        hcAssert(renderCommands_);
+        hRCmdDrawInstanced cmd(nPrimatives, startVertex, instancecount);
+        return appendCmd(&cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setDrawInstanceIndex(hUint nPrimatives, hUint startVertex, hUint instancecount) {
+        hcAssert(renderCommands_);
+        hRCmdDrawInstancedIndex cmd(nPrimatives, startVertex, instancecount);
+        return appendCmd(&cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setRenderStates(hBlendState* bs, hRasterizerState* rs, hDepthStencilState* dss) {
+        hcAssert(renderCommands_);
+        return hdRenderCommandGenerator::setRenderStates(bs, rs, dss);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setShader(hShaderProgram* shader) {
+        hcAssert(renderCommands_);
+        return hdRenderCommandGenerator::setShader(shader);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setVertexInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::setVertexInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setPixelInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::setPixelInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::setGeometryInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::setHullInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::setDomainInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::setStreamInputs(PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format, hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount) {
+        hcAssert(renderCommands_);
+        hdVtxBuffer** dvtx=(hdVtxBuffer**)hAlloca(sizeof(hdVtxBuffer*)*streamCount);
+        for (hUint i=0, n=streamCount; i<n; ++i) {
+            dvtx[i]=vtx[i];
+        }
+        return hdRenderCommandGenerator::setStreamInputs(primType, index, format, vertexlayout, dvtx, firstStream, streamCount);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hParameterConstantBlock* cb) {
+        hcAssert(cmd >= renderCommands_->cmds_ && (hByte*)cmd < (hByte*)renderCommands_->cmds_+renderCommands_->cmdSize_);
+        hdRenderCommandGenerator::updateShaderInputBuffer(cmd, reg, cb);
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::updateShaderInputSampler(hRCmd* cmd, hUint reg, hSamplerState* ss) {
+        hcAssert(cmd >= renderCommands_->cmds_ && (hByte*)cmd < (hByte*)renderCommands_->cmds_+renderCommands_->cmdSize_);
+        hdRenderCommandGenerator::updateShaderInputSampler(cmd, reg, ss);
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::updateShaderInputView(hRCmd* cmd, hUint reg, hShaderResourceView* srv) {
+        hcAssert(cmd >= renderCommands_->cmds_ && (hByte*)cmd < (hByte*)renderCommands_->cmds_+renderCommands_->cmdSize_);
+        hdRenderCommandGenerator::updateShaderInputView(cmd, reg, srv);
+        return 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format, hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount) {
+        hcAssert(cmd >= renderCommands_->cmds_ && (hByte*)cmd < (hByte*)renderCommands_->cmds_+renderCommands_->cmdSize_);
+        hdVtxBuffer** dvtx=(hdVtxBuffer**)hAlloca(sizeof(hdVtxBuffer*)*streamCount);
+        for (hUint i=0, n=streamCount; i<n; ++i) {
+            dvtx[i]=vtx[i];
+        }
+        return hdRenderCommandGenerator::updateStreamInputs(cmd, primType, index, format, vertexlayout, dvtx, firstStream, streamCount);
     }
 
 }

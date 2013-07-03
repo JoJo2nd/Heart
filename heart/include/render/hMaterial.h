@@ -123,10 +123,6 @@ namespace Heart
     public:
 
         hUint32             getMaterialKey() const;
-//         hUint32             GetTechniqueCount() const;// { return techniques_.GetSize(); }
-//         hMaterialTechnique* GetTechnique( hUint32 idx );// { hcAssert( techniques_.GetSize() ); return &techniques_[idx]; }
-//         hMaterialTechnique* GetTechniqueByName( const hChar* name );
-//         hMaterialTechnique* GetTechniqueByMask( hUint32 mask );
         hUint getGroupCount() const { return groups_.GetSize(); }
         hMaterialGroup* getGroup(hUint idx) { return &groups_[idx]; }
         hMaterialGroup* getGroupByName(const hChar* name);
@@ -140,6 +136,14 @@ namespace Heart
         hParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
         static void destroyMaterialInstance(hMaterialInstance* inst);
 
+        // v2 interface
+        hBool bindConstanstBufferV2(hShaderParameterID id, hParameterConstantBlock* cb);
+        hBool bindResourceV2(hShaderParameterID id, hShaderResourceView* view);
+        hBool bindSamplerV2(hShaderParameterID id, hSamplerState* samplerState);
+        hBool bindInputStreamsV2(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
+        hRCmd* getRenderCommandsBegin(hUint group, hUint tech, hUint pass);
+        hRCmd* getRenderCommandsEnd(hUint group, hUint tech, hUint pass);
+        
     private:
 
         friend class hMaterial;
@@ -150,6 +154,7 @@ namespace Heart
         typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
         typedef hVector< hBoundResource > BoundResourceArrayType;
         typedef hVector< hBoundSampler > BoundSamplerArrayType;
+        typedef hVector< hdInputLayout* > InputLayoutsArrayType;
 
         hMaterialInstance(hMemoryHeapBase* heap, hMaterial* parent)
             : memHeap_(heap)
@@ -164,14 +169,29 @@ namespace Heart
         ~hMaterialInstance()
         {}
 
+        //version 2
+        void   updateRenderCommandOffsets(hUint diff);
+        hdInputLayout* buildInputLayout(hVertexBuffer** vtx, hUint streamCount, hShaderProgram* prog);
+
+        //shared
         hMemoryHeapBase*            memHeap_;
         hMaterial*                  material_;
         hRenderMaterialManager*     manager_;
+        //version 1
         GroupArrayType              groups_;
         BoundConstBlockArrayType    constBlocks_;
         BoundResourceArrayType      boundResources_;
         BoundSamplerArrayType       boundSamplers_;
         hUint32                     flags_;
+
+        //version 2
+        hRenderCommands             renderCmds_;
+        hUint                       selectorCount_;
+        hUint*                      selectorIDs_;
+        hUint*                      group_; // pointer within selectorIDs array
+        hUint*                      tech_;  // pointer within selectorIDs array
+        hUint*                      pass_;  // pointer within selectorIDs array
+        InputLayoutsArrayType       inputLayouts_;
     };
 
     class HEART_DLLEXPORT hMaterial : public hResourceClassBase

@@ -66,39 +66,6 @@ namespace Heart
 
     typedef void (*hCustomRenderCallback)(hRenderer*, void*);
 
-    class HEART_DLLEXPORT hRenderCommands
-    {
-    public:
-        hRenderCommands()
-            : cmdSize_(0)
-            , allocatedSize_(0)
-            , cmds_(hNullptr)
-        {
-
-        }
-        ~hRenderCommands()
-        {
-            hFreeSafe(cmds_);
-        }
-
-        hRCmd*  getFirst() { return cmds_; }
-
-    private:
-
-        hRenderCommands(const hRenderCommands& rhs);
-        hRenderCommands& operator = (const hRenderCommands& rhs);
-
-        friend class hRenderCommandGenerator;
-
-        void    insertCommand(hUint where, const hRCmd* command, hBool overwrite);
-        void    reserveSpace(hUint size);
-
-        hUint  cmdSize_;
-        hUint  allocatedSize_;
-        hRCmd* cmds_;
-        hVector<hdInputLayout> boundInputLayouts;
-    };
-
     struct HEART_DLLEXPORT hDrawCall
     {
         hUint64                 sortKey_;                                   //8b        -> 8b
@@ -118,7 +85,7 @@ namespace Heart
                 void*                   userPtr_;
             };
             struct {
-                hRenderCommands* rCmds_;
+                hRCmd* rCmds_;
             };
         };
     };
@@ -134,34 +101,41 @@ namespace Heart
         hUint resetCommands();
         hUint setJump(hRCmd* cmd);
         hUint setReturn();
+        hUint setNoOp();
         hUint setDraw(hUint nPrimatives, hUint startVertex);
         hUint setDrawIndex(hUint nPrimatives, hUint startVertex);
         hUint setDrawInstance(hUint nPrimatives, hUint startVertex, hUint instancecount);
         hUint setDrawInstanceIndex(hUint nPrimatives, hUint startVertex, hUint instancecount);
         hUint setRenderStates(hBlendState* bs, hRasterizerState* rs, hDepthStencilState* dss);
         hUint setShader(hShaderProgram* shader);
-        hUint setVertexInputs(hSamplerState* samplers, hUint nsamplers,
-            hShaderResourceView* srv, hUint nsrv,
-            hParameterConstantBlock* cb, hUint ncb);
-        hUint setPixelInputs(hSamplerState* samplers, hUint nsamplers,
-            hShaderResourceView* srv, hUint nsrv,
-            hParameterConstantBlock* cb, hUint ncb);
-        hUint setGeometryInputs(hdDX11SamplerState* samplers, hUint nsamplers,
-            hShaderResourceView* srv, hUint nsrv,
-            hParameterConstantBlock* cb, hUint ncb);
-        hUint setHullInputs(hdDX11SamplerState* samplers, hUint nsamplers,
-            hShaderResourceView* srv, hUint nsrv,
-            hParameterConstantBlock* cb, hUint ncb);
-        hUint setDomainInputs(hdDX11SamplerState* samplers, hUint nsamplers,
-            hShaderResourceView* srv, hUint nsrv,
-            hParameterConstantBlock* cb, hUint ncb);
+        hUint setVertexInputs(hSamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hParameterConstantBlock** cb, hUint ncb);
+        hUint setPixelInputs(hSamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hParameterConstantBlock** cb, hUint ncb);
+        hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hParameterConstantBlock** cb, hUint ncb);
+        hUint setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hParameterConstantBlock** cb, hUint ncb);
+        hUint setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hParameterConstantBlock** cb, hUint ncb);
         hUint setStreamInputs(PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
-            hShaderProgram* vertexprog, hVertexBuffer* vtx, hUint firstStream, hUint streamCount);
+            hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount);
+        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hParameterConstantBlock* cb);
+        hUint updateShaderInputSampler(hRCmd* cmd, hUint reg, hSamplerState* ss);
+        hUint updateShaderInputView(hRCmd* cmd, hUint reg, hShaderResourceView* srv);
+        hUint updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
+            hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount);
 
     private:
 
         virtual hRCmd* getCmdBufferStart();
         virtual hUint  appendCmd(const hRCmd* cmd);
+        virtual hUint  overwriteCmd(const hRCmd* oldcmd, const hRCmd* newcmd);
         virtual void   reset();
 
         hRenderCommands*    renderCommands_;

@@ -808,5 +808,193 @@ namespace Heart
         }
         return hNullptr;
     }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterialInstance::bindConstanstBufferV2(hShaderParameterID id, hParameterConstantBlock* cb) {
+        hBool succ=false;
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        hUint groups=material_->getGroupCount();
+        for (hUint group=0; group<groups; ++group) {
+            hUint techs=material_->getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=material_->getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    hMaterialTechniquePass* passptr=material_->getGroup(group)->getTech(tech)->GetPass(pass);
+                    hRCmd* i=getRenderCommandsBegin(group, tech, pass);
+                    hRCmd* n=getRenderCommandsEnd(group, tech, pass);
+                    for (; i<n; i+=i->size_) {
+                        if (i->opCode_>=eRenderCmd_SetVertexInputs && i->opCode_<=eRenderCmd_SetDomainInputs) {
+                            hUint reg=passptr->GetProgram(i->opCode_-eRenderCmd_SetVertexInputs)->GetInputRegister(id);
+                            if (reg!=hErrorCode) {
+                                //update constant block pointer 
+                                succ = true;
+                                rcGen.updateShaderInputBuffer(i, reg, cb);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return succ;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterialInstance::bindResourceV2(hShaderParameterID id, hShaderResourceView* view) {
+        hBool succ=false;
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        hUint groups=material_->getGroupCount();
+        for (hUint group=0; group<groups; ++group) {
+            hUint techs=material_->getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=material_->getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    hMaterialTechniquePass* passptr=material_->getGroup(group)->getTech(tech)->GetPass(pass);
+                    hRCmd* i=getRenderCommandsBegin(group, tech, pass);
+                    hRCmd* n=getRenderCommandsEnd(group, tech, pass);
+                    for (; i<n; i+=i->size_) {
+                        if (i->opCode_>=eRenderCmd_SetVertexInputs && i->opCode_<=eRenderCmd_SetDomainInputs) {
+                            hUint reg=passptr->GetProgram(i->opCode_-eRenderCmd_SetVertexInputs)->GetInputRegister(id);
+                            if (reg!=hErrorCode) {
+                                //update constant block pointer 
+                                succ = true;
+                                rcGen.updateShaderInputView(i, reg, view);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return succ;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterialInstance::bindSamplerV2(hShaderParameterID id, hSamplerState* samplerState) {
+        hBool succ=false;
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        hUint groups=material_->getGroupCount();
+        for (hUint group=0; group<groups; ++group) {
+            hUint techs=material_->getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=material_->getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    hMaterialTechniquePass* passptr=material_->getGroup(group)->getTech(tech)->GetPass(pass);
+                    hRCmd* i=getRenderCommandsBegin(group, tech, pass);
+                    hRCmd* n=getRenderCommandsEnd(group, tech, pass);
+                    for (; i<n; i+=i->size_) {
+                        if (i->opCode_>=eRenderCmd_SetVertexInputs && i->opCode_<=eRenderCmd_SetDomainInputs) {
+                            hUint reg=passptr->GetProgram(i->opCode_-eRenderCmd_SetVertexInputs)->GetInputRegister(id);
+                            if (reg!=hErrorCode) {
+                                //update constant block pointer 
+                                succ = true;
+                                rcGen.updateShaderInputSampler(i, reg, samplerState);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return succ;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterialInstance::bindInputStreamsV2(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt) {
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        hUint inputlayoutidx=0;
+        hUint groups=material_->getGroupCount();
+        for (hUint group=0; group<groups; ++group) {
+            hUint techs=material_->getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=material_->getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    hMaterialTechniquePass* passptr=material_->getGroup(group)->getTech(tech)->GetPass(pass);
+                    hRCmd* i=getRenderCommandsBegin(group, tech, pass);
+                    hRCmd* n=getRenderCommandsEnd(group, tech, pass);
+                    for (; i<n; i+=i->size_) {
+                        if (i->opCode_==eRenderCmd_SetInputStreams) {
+                            if (inputLayouts_.GetSize()<inputlayoutidx) {
+                                inputLayouts_.PushBack(buildInputLayout(vtxs, streamCnt, passptr->GetVertexShader()));
+                            } else {
+                                if (inputLayouts_[inputlayoutidx]) {
+                                    inputLayouts_[inputlayoutidx]->Release();
+                                }
+                                inputLayouts_[inputlayoutidx]=buildInputLayout(vtxs, streamCnt, passptr->GetVertexShader());
+                            }
+                            rcGen.updateStreamInputs(i, type, idx, idx->getIndexBufferType(), inputLayouts_[inputlayoutidx], vtxs, 0, streamCnt);
+                            ++inputlayoutidx;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hRCmd* hMaterialInstance::getRenderCommandsBegin(hUint group, hUint tech, hUint pass) {
+        hcAssert(material_);
+        return renderCmds_.getCommandAtOffset(pass_[tech_[group_[group]]+pass]);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hRCmd* hMaterialInstance::getRenderCommandsEnd(hUint group, hUint tech, hUint pass) {
+        hUint idx=(tech_[group_[group]]+pass+1);
+        return idx < selectorCount_ ? renderCmds_.getCommandAtOffset(selectorIDs_[idx]) : renderCmds_.getEnd();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterialInstance::updateRenderCommandOffsets(hUint diff) {
+        hUint groups=material_->getGroupCount();
+        for (hUint group=0; group<groups; ++group) {
+            hUint techs=material_->getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=material_->getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    pass_[tech_[group_[group]]+pass] += diff;
+                }
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdInputLayout* hMaterialInstance::buildInputLayout(hVertexBuffer** vtx, hUint streamCount, hShaderProgram* prog) {
+        hInputLayoutDesc* desc=NULL, *dptr=NULL;
+        hUint descn=0;
+        for(hUint i=0; i<HEART_MAX_INPUT_STREAMS; ++i) {
+            if (vtx[i]) {
+                descn+=vtx[i]->streamDescCount_;
+            }
+        }
+        desc=(hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*descn);
+        dptr=desc;
+        for(hUint i=0; i<HEART_MAX_INPUT_STREAMS; ++i) {
+            if (vtx[i]) {
+                dptr->inputStream_=i;
+                hMemCpy(dptr, vtx[i]->streamLayoutDesc_, sizeof(hInputLayoutDesc)*vtx[i]->streamDescCount_);
+                dptr+=vtx[i]->streamDescCount_;
+            }
+        }
+
+        return prog->createVertexLayout(desc, descn);
+    }
 
 }//Heart
