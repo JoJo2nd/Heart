@@ -48,7 +48,7 @@ namespace Heart
             , backdropPlane_(NULL)
             , backdropMat_(NULL)
             , consoleFont_(NULL)
-            , logMat_(NULL)
+            , textMat_(NULL)
             , windowOffset_(1.f)
         {
 
@@ -81,6 +81,10 @@ namespace Heart
                 { .5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
             };
 
+            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
+            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
+            consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
+            hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
             hSamplerStateDesc ssdesc;
             ssdesc.filter_        = SSV_LINEAR;
             ssdesc.addressU_      = SSV_CLAMP;
@@ -92,16 +96,6 @@ namespace Heart
             ssdesc.minLOD_        = -FLT_MAX;
             ssdesc.maxLOD_        = FLT_MAX;  
             fontSamplerState_=renderer->createSamplerState(ssdesc);
-
-            renderer->createVertexBuffer(consolePlane, 6, layout, (hUint32)hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
-            hMaterial* backdropMat = matManager->getConsoleMat();
-            backdropMat_ = backdropMat->createMaterialInstance(0);
-            backdropMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &backdropPlane_, 1);
-
-            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
-            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
-            consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
-            hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
             hShaderResourceViewDesc srvd;
             hZeroMem(&srvd, sizeof(srvd));
             srvd.format_=consoleTex_->getTextureFormat();
@@ -109,21 +103,70 @@ namespace Heart
             srvd.tex2D_.topMip_=0;
             srvd.tex2D_.mipLevels_=~0;
             renderer->createShaderResourceView(consoleTex_, srvd, &consoleTexSRV_);
-            hMaterial* fontMat=matManager->getDebugFontMat();
-            hShaderParameterID fontsamplerid=hCRC32::StringCRC("fontSampler");
-            logMat_ = fontMat->createMaterialInstance(0);
-            logMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &logBuffer_, 1);
-            logMat_->bindResource(fontsamplerid, consoleTexSRV_);
-            logMat_->bindSampler(fontsamplerid, fontSamplerState_);
-            inputMat_=fontMat->createMaterialInstance(hMatInst_DontInstanceConstantBuffers);
-            inputMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, NULL, &textBuffer_, 1);
-            inputMat_->bindResource(fontsamplerid, consoleTexSRV_);
-            inputMat_->bindSampler(fontsamplerid, fontSamplerState_);
-
-            fontCB_ = logMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
-            inputMat_->bindConstanstBuffer(hCRC32::StringCRC("FontParams"), fontCB_);
 
             debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
+            hRenderCommandGenerator rcGen;
+
+            rcGen.setRenderCommands(&drawCommands_[0]);
+            rcGen.resetCommands();
+
+            renderer->createVertexBuffer(consolePlane, 6, layout, (hUint32)hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
+            hMaterial* backdropMat = matManager->getConsoleMat();
+            backdropMat_ = backdropMat->createMaterialInstance(0);
+            hMaterialGroup* group=backdropMat->getGroup(0);
+            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
+                if (group->getTech(t)->GetMask()==debugTechMask_) {
+                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
+                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
+                        inputLayouts_.PushBack(inlayout);
+                        rcGen.setJump(backdropMat_->getRenderCommandsBegin(0, t, p));
+                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &backdropPlane_, 0, 1);
+                        rcGen.setDraw(2, 0);
+                    }
+                }
+            }
+
+            rcGen.setReturn();
+
+            hMaterial* fontMat=matManager->getDebugFontMat();
+            hShaderParameterID fontsamplerid=hCRC32::StringCRC("fontSampler");
+            textMat_ = fontMat->createMaterialInstance(0);
+            textMat_->bindResource(fontsamplerid, consoleTexSRV_);
+            textMat_->bindSampler(fontsamplerid, fontSamplerState_);
+
+            rcGen.setRenderCommands(&drawCommands_[1]);
+            rcGen.resetCommands();
+
+            group=textMat_->getGroup(0);
+            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
+                if (group->getTech(t)->GetMask()==debugTechMask_) {
+                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
+                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
+                        inputLayouts_.PushBack(inlayout);
+                        rcGen.setJump(textMat_->getRenderCommandsBegin(0, t, p));
+                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &textBuffer_, 0, 1);
+                    }
+                }
+            }
+            rcGen.setReturn();
+
+            rcGen.setRenderCommands(&drawCommands_[2]);
+            rcGen.resetCommands();
+
+            group=textMat_->getGroup(0);
+            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
+                if (group->getTech(t)->GetMask()==debugTechMask_) {
+                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
+                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
+                        inputLayouts_.PushBack(inlayout);
+                        rcGen.setJump(textMat_->getRenderCommandsBegin(0, t, p));
+                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &logBuffer_, 0, 1);
+                    }
+                }
+            }
+            rcGen.setReturn();
+
+             fontCB_ = textMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
         }
         void destroyRenderResources(hRenderer* renderer)
         {
@@ -131,14 +174,18 @@ namespace Heart
             consoleTex_=NULL;
             hDELETE_SAFE(GetGlobalHeap(), consoleFont_);
             hMaterialInstance::destroyMaterialInstance(backdropMat_);
-            hMaterialInstance::destroyMaterialInstance(logMat_);
-            hMaterialInstance::destroyMaterialInstance(inputMat_);
+            hMaterialInstance::destroyMaterialInstance(textMat_);
             fontSamplerState_->DecRef();
             fontSamplerState_=NULL;
             backdropMat_ = NULL;
-            logMat_ = NULL;
+            textMat_ = NULL;
             consoleTexSRV_->DecRef();
             consoleTexSRV_=NULL;
+
+            for (hUint i=0,n=inputLayouts_.GetSize(); i<n; ++i) {
+                inputLayouts_[i]->Release();
+            }
+            inputLayouts_.Clear();
 
             backdropPlane_->DecRef();
             backdropPlane_ = NULL;
@@ -147,7 +194,7 @@ namespace Heart
             logBuffer_->DecRef();
             logBuffer_ = NULL;
             consoleFont_ = NULL;
-            logMat_ = NULL;
+            textMat_ = NULL;
             debugTechMask_ = 0;
             renderer = NULL;
         }
@@ -184,14 +231,7 @@ namespace Heart
                 inst->world_ = hMatrixFunc::translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
                 ctx->Unmap(&map);
 
-                hMaterialGroup* group = backdropMat_->getGroup(0);
-                hMaterialTechnique* tech = group->getTechniqueByMask(debugTechMask_);
-                if (!tech) return;
-                for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetMaterialPass(passptr);
-                    ctx->DrawPrimitive(2, 0);
-                }
+                ctx->runRenderCommands(drawCommands_[0].getFirst());
 
                 {
                     ctx->Map(textBuffer_, &vbmap);
@@ -208,10 +248,6 @@ namespace Heart
                 /*
                 * INput text string
                 */
-                hMaterialGroup* matGroup=inputMat_->getGroup(0);
-                tech = matGroup->getTechniqueByMask(debugTechMask_);
-                if (!tech) return;
-
                 ctx->Map(fontCB_, &map);
                 fontParams = (hFloat*)map.ptr;
                 //colour
@@ -225,12 +261,8 @@ namespace Heart
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);
-
-                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
-                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetMaterialPass(passptr);
-                    ctx->DrawPrimitive(prims, 0);
-                }
+                ctx->runRenderCommands(drawCommands_[1].getFirst());
+                ctx->DrawPrimitive(prims, 0);
 
                 ctx->Map(fontCB_, &map);
                 fontParams = (hFloat*)map.ptr;
@@ -245,20 +277,12 @@ namespace Heart
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);
-
-                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
-                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetMaterialPass(passptr);
-                    ctx->DrawPrimitive(prims, 0);
-                }
+                //ctx->runRenderCommands(drawCommands_[1].getFirst());
+                ctx->DrawPrimitive(prims, 0);
 
                 /*
                 * Log text string
-                */
-                hMaterialGroup* loggroup = logMat_->getGroup(0);
-                tech = loggroup->getTechniqueByMask(debugTechMask_);
-                if (!tech) return;
-
+                */ 
                 {
                     ctx->Map(logBuffer_, &vbmap);
                     formatter.setOutputBuffer(vbmap.ptr_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6*sizeof(hFontVex));
@@ -271,10 +295,6 @@ namespace Heart
                     ctx->Unmap(&vbmap);
                 }
 
-                tech = loggroup->getTechniqueByMask(debugTechMask_);
-                if (!tech) return;
-
-
                 ctx->Map(fontCB_, &map);
                 fontParams = (hFloat*)map.ptr;
                 //colour
@@ -288,12 +308,8 @@ namespace Heart
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);
-
-                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
-                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetMaterialPass(passptr);
-                    ctx->DrawPrimitive(prims, 0);
-                }
+                ctx->runRenderCommands(drawCommands_[2].getFirst());
+                ctx->DrawPrimitive(prims, 0);
 
                 ctx->Map(fontCB_, &map);
                 fontParams = (hFloat*)map.ptr;
@@ -308,12 +324,8 @@ namespace Heart
                 fontParams[6]=0.f;
                 fontParams[7]=0.f;
                 ctx->Unmap(&map);
-
-                for (hUint32 pass = 0, passcount = tech->GetPassCount() && prims; pass < passcount; ++pass ) {
-                    hMaterialTechniquePass* passptr = tech->GetPass(pass);
-                    ctx->SetMaterialPass(passptr);
-                    ctx->DrawPrimitive(prims, 0);
-                }
+                //ctx->runRenderCommands(drawCommands_[1].getFirst());
+                ctx->DrawPrimitive(prims, 0);
             }
         }
         void EndFrameUpdate() {}
@@ -332,14 +344,16 @@ namespace Heart
         hVertexBuffer*           logBuffer_;
         hVertexBuffer*           backdropPlane_;
         hMaterialInstance*       backdropMat_;
+        hMaterialInstance*       textMat_;
         hFont*                   consoleFont_;
         hTexture*                consoleTex_;
         hShaderResourceView*     consoleTexSRV_;
         hSamplerState*           fontSamplerState_;
         hParameterConstantBlock* fontCB_;
-        hMaterialInstance*       logMat_;
-        hMaterialInstance*       inputMat_;
         hFloat                   windowOffset_;
+
+        hRenderCommands         drawCommands_[3];
+        hVector<hdInputLayout*> inputLayouts_;
 
         hSystemConsole* console_;
         hUint32         logSize_;

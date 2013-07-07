@@ -81,18 +81,21 @@ namespace Heart
 
         hRenderSubmissionCtx()
             : renderer_(NULL)
-            , viewportConstants_(NULL)
         {}
         ~hRenderSubmissionCtx();
 
         void    Initialise( hRenderer* renderer );
 
-        hdRenderCommandBuffer SaveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
-        void                  RunCommandBuffer(hdRenderCommandBuffer cmdBuf);
-        
+        hdRenderCommandBuffer saveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
+        void    runCommandBuffer(hdRenderCommandBuffer cmdBuf);
+        void    runRenderCommands(hRCmd* cmds);
         void    setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth);
-        void    SetInputStreams(const hdRenderStreamsObject* streams) { impl_.SetInputStreams(streams); }
-        void    SetRenderInputObject(const hdRenderInputObject* rnInput) { impl_.SetRenderInputObject(rnInput); }
+        void    SetInputStreams(const hdRenderStreamsObject* streams) {
+            impl_.SetInputStreams(streams);
+        }
+        void    SetRenderInputObject(const hdRenderInputObject* rnInput) {
+            impl_.SetRenderInputObject(rnInput);
+        }
         void    setComputeInput(const hComputeObject* cInput) { 
             hcAssert(cInput);
             impl_.setComputeInput(&cInput->inputs_); 
@@ -100,9 +103,15 @@ namespace Heart
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    SetMaterialPass(hMaterialTechniquePass* pass);
-        void    SetRenderStateBlock(hdBlendState* st) { impl_.SetRenderStateBlock( st ); }
-        void    SetRenderStateBlock(hdDepthStencilState* st) { impl_.SetRenderStateBlock( st ); }
-        void    SetRenderStateBlock(hdRasterizerState* st) { impl_.SetRenderStateBlock( st ); }
+        void    setRenderStateBlock(hdBlendState* st) {
+            impl_.setRenderStateBlock( st );
+        }
+        void    setRenderStateBlock(hdDepthStencilState* st) {
+            impl_.setRenderStateBlock( st );
+        }
+        void    setRenderStateBlock(hdRasterizerState* st) {
+            impl_.setRenderStateBlock( st );
+        }
         void    clearColour(hRenderTargetView* view, const hColour& colour);
         void    clearDepth(hDepthStencilView* view, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex);
@@ -123,13 +132,6 @@ namespace Heart
         friend class hRenderer; 
            
         hRenderer*                      renderer_;
-        hUint32                         techniqueMask_;
-        hMaterialInstance*              currentMaterial_;
-        hMaterialTechnique*             currentTechnique_;
-        const hViewportShaderConstants* viewportConstants_;
-        hParameterConstantBlock*       viewportConstantsBlock_;
-        hInstanceConstants*             instanceConstants_;
-        hParameterConstantBlock*       instanceConstantsBlock_; 
         hdRenderSubmissionCtx           impl_;
     };
 

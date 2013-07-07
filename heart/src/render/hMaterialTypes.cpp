@@ -55,7 +55,25 @@ namespace Heart
 
     hBool hMaterialTechniquePass::setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer)
     {
-        return renderInput_.bindConstantBuffer(paramID, buffer);
+        hBool succ=false;
+        for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
+            if (programs_[i]) {
+                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+                if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                    continue;
+                }
+                succ=true;
+                if (idx+1>inputResources_[i].buffers_.GetSize()) {
+                    hUint oldsize=inputResources_[i].buffers_.GetSize();
+                    inputResources_[i].buffers_.Resize(idx+1);
+                    for (hUint b=oldsize; b<idx+1; ++b) {
+                        inputResources_[i].buffers_[b]=hNullptr;
+                    }
+                }
+                inputResources_[i].buffers_[idx]=buffer;
+            }
+        }
+        return succ || renderInput_.bindConstantBuffer(paramID, buffer);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -64,6 +82,24 @@ namespace Heart
 
     hBool hMaterialTechniquePass::setSamplerInput(hShaderParameterID paramID, hSamplerState* srv)
     {
+        hBool succ=false;
+        for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
+            if (programs_[i]) {
+                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+                if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                    continue;
+                }
+                succ=true;
+                if (idx+1>inputResources_[i].samplerStates_.GetSize()) {
+                    hUint oldsize=inputResources_[i].samplerStates_.GetSize();
+                    inputResources_[i].samplerStates_.Resize(idx+1);
+                    for (hUint b=oldsize; b<idx+1; ++b) {
+                        inputResources_[i].samplerStates_[b]=hNullptr;
+                    }
+                }
+                inputResources_[i].samplerStates_[idx]=srv;
+            }
+        }
         return renderInput_.bindSamplerInput(paramID, srv);
     }
 
@@ -73,6 +109,24 @@ namespace Heart
 
     hBool hMaterialTechniquePass::setResourceView(hShaderParameterID paramID, hShaderResourceView* view)
     {
+        hBool succ=false;
+        for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
+            if (programs_[i]) {
+                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+                if (idx > HEART_MAX_RESOURCE_INPUTS) {
+                    continue;
+                }
+                succ=true;
+                if (idx+1>inputResources_[i].srView_.GetSize()) {
+                    hUint oldsize=inputResources_[i].srView_.GetSize();
+                    inputResources_[i].srView_.Resize(idx+1);
+                    for (hUint b=oldsize; b<idx+1; ++b) {
+                        inputResources_[i].srView_[b]=hNullptr;
+                    }
+                }
+                inputResources_[i].srView_[idx]=view;
+            }
+        }
         return renderInput_.bindResourceView(paramID, view);
     }
 
@@ -168,6 +222,19 @@ namespace Heart
             }
         }
         return hNullptr;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hMaterialGroup::getTechniqueIndexByMask(hUint32 mask) {
+        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
+            if (techniques_[i].GetMask()==mask) {
+                return i;
+            }
+        }
+        return hErrorCode;
     }
 
 }

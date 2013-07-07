@@ -97,7 +97,7 @@ namespace Heart
             if (!boundProgs_[p]) continue;
             idx = boundProgs_[p]->GetInputRegister(paramID);
             if (idx >= HEART_MAX_RESOURCE_INPUTS) continue;
-            inputData_[p].samplerState_[idx] = ss->stateObj_;
+            inputData_[p].samplerState_[idx] = ss ? ss->stateObj_ : hNullptr;
             inputData_[p].samplerCount_ = hMax(idx+1, inputData_[p].samplerCount_);
             succ = true;
         }
@@ -292,7 +292,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11BlendState* st )
+    void hdDX11RenderSubmissionCtx::setRenderStateBlock( hdDX11BlendState* st )
     {
         hFloat factors[4] = { 1.f, 1.f, 1.f, 1.f };
         device_->OMSetBlendState( st->stateObj_, factors, ~0U );
@@ -302,7 +302,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11DepthStencilState* st )
+    void hdDX11RenderSubmissionCtx::setRenderStateBlock( hdDX11DepthStencilState* st )
     {
         device_->OMSetDepthStencilState( st->stateObj_, st->stencilRef_ );
     }
@@ -311,7 +311,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::SetRenderStateBlock( hdDX11RasterizerState* st )
+    void hdDX11RenderSubmissionCtx::setRenderStateBlock( hdDX11RasterizerState* st )
     {
         device_->RSSetState( st->stateObj_ );
     }
@@ -391,6 +391,24 @@ namespace Heart
             verts = nPrimatives + 2; break;
         }
         device_->Draw( verts, start );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::DrawPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex) {
+        hUint32 verts;
+        switch ( primType_ )
+        {
+        case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
+            verts = nPrimatives / 2; break;
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
+            verts = nPrimatives * 3; break;
+        case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
+            verts = nPrimatives + 2; break;
+        }
+        device_->DrawInstanced(verts, instanceCount, startVertex, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -593,6 +611,145 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::clearDepth(hdDX11DepthStencilView* view, hFloat z) {
         hcAssert(view);
         device_->ClearDepthStencilView(view->dsv_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setVertexShader(hRCmdSetVertexShader* prog) {
+        device_->VSSetShader(prog->shader_, hNullptr, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setPixelShader(hRCmdSetPixelShader* prog) {
+        device_->PSSetShader(prog->shader_, hNullptr, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setGeometryShader(hRCmdSetGeometryShader* prog) {
+        device_->GSSetShader(prog->shader_, hNullptr, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setHullShader(hRCmdSetHullShader* prog) {
+        device_->HSSetShader(prog->shader_, hNullptr, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setDomainShader(hRCmdSetDomainShader* prog) {
+        device_->DSSetShader(prog->shader_, hNullptr, 0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setVertexInputs(hRCmdSetVertexInputs* cmd) {
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
+        device_->VSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        device_->VSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        device_->VSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setPixelInputs(hRCmdSetPixelInputs* cmd) {
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
+        device_->PSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        device_->PSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        device_->PSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setGeometryInputs(hRCmdSetGeometryInputs* cmd) {
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
+        device_->GSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        device_->GSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        device_->GSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setHullInputs(hRCmdSetHullInputs* cmd) {
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
+        device_->HSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        device_->HSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        device_->HSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setDomainInputs(hRCmdSetDomainInputs* cmd) {
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
+        device_->DSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        device_->DSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        device_->DSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setRenderStates(hRCmdSetStates* cmd) {
+        hFloat factors[4] = { 1.f, 1.f, 1.f, 1.f };
+        device_->OMSetBlendState( cmd->blendState_, factors, ~0U );
+        device_->OMSetDepthStencilState( cmd->depthState_, cmd->stencilRef_ );
+        device_->RSSetState( cmd->rasterState_ );
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::setInputStreams(hRCmdSetInputStreams* cmd) {
+        hUint streamcount=cmd->lastStream_-cmd->firstStream_;
+        ID3D11Buffer** vbs=(ID3D11Buffer**)(cmd+1);
+        UINT* strides=(UINT*)(vbs+streamcount);
+        UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
+        if (primType_ != cmd->topology_) {
+            device_->IASetPrimitiveTopology(cmd->topology_);
+        }
+        device_->IASetInputLayout(cmd->layout_);
+        device_->IASetIndexBuffer(cmd->index_, cmd->indexFormat_, 0);
+        device_->IASetVertexBuffers(
+            cmd->firstStream_,
+            streamcount,
+            vbs,
+            strides,
+            offsets);
+        primType_ = cmd->topology_;
     }
 
     //////////////////////////////////////////////////////////////////////////

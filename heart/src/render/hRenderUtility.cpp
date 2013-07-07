@@ -911,24 +911,24 @@ namespace hRenderUtility
         {
             const hDrawCall* dcall = &dcs[dc];
             // For masks check hBuildRenderSortKey()
-            hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
-            hUint32 nPass = (dcall->sortKey_&0xF);
-            hUint32 matKey = (dcall->sortKey_&0x3FFFFF); // stored in lower 28 bits
-
-            hBool newMaterial = matKey != lastMatKey;
-            lastMatKey = matKey;
-            //if (newMaterial){ //TODO flush correctly
-            ctx->SetRenderStateBlock(dcall->blendState_);
-            ctx->SetRenderStateBlock(dcall->depthState_);
-            ctx->SetRenderStateBlock(dcall->rasterState_);
-
-            ctx->SetRenderInputObject(dcall->progInput_);
-            ctx->SetInputStreams(&dcall->streams_);
-            if (dcall->instanceCount_) {
-                ctx->DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
-            }else{
-                ctx->DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
-            }
+//             hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
+//             hUint32 nPass = (dcall->sortKey_&0xF);
+//             hUint32 matKey = (dcall->sortKey_&0x3FFFFF); // stored in lower 28 bits
+// 
+//             hBool newMaterial = matKey != lastMatKey;
+//             lastMatKey = matKey;
+//             //if (newMaterial){ //TODO flush correctly
+//             ctx->setRenderStateBlock(dcall->blendState_);
+//             ctx->setRenderStateBlock(dcall->depthState_);
+//             ctx->setRenderStateBlock(dcall->rasterState_);
+// 
+//             ctx->SetRenderInputObject(dcall->progInput_);
+//             ctx->SetInputStreams(&dcall->streams_);
+//             if (dcall->instanceCount_) {
+//                 ctx->DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
+//             }else{
+//                 ctx->DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
+//             }
         }
     }
 

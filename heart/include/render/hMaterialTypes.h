@@ -84,6 +84,14 @@ namespace Heart
         hBool   setSamplerInput(hShaderParameterID paramID, hSamplerState* srv);
         hBool   setResourceView(hShaderParameterID paramID, hShaderResourceView* view);
         hBool   setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer);
+
+        hUint   getConstantBufferCount(hShaderType progtype) const { return inputResources_[progtype].buffers_.GetSize();}
+        hUint   getSamplerCount(hShaderType progtype) const { return inputResources_[progtype].samplerStates_.GetSize();}
+        hUint   getShaderResourceViewCount(hShaderType progtype) const { return inputResources_[progtype].srView_.GetSize();}
+        hParameterConstantBlock** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.GetBuffer(); }
+        hSamplerState**           getSamplers(hShaderType progtype) { return inputResources_[progtype].samplerStates_.GetBuffer(); }
+        hShaderResourceView**     getShaderResourceViews(hShaderType progtype) { return inputResources_[progtype].srView_.GetBuffer(); }
+
         hBool   bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt);
         hBool   bindInputStream(hUint slot, hVertexBuffer* vtx);
         void    unbind();
@@ -95,7 +103,7 @@ namespace Heart
         friend class hRenderer;
         friend class hMaterial;
 
-        static const hUint32 s_maxPrograms = 5;
+        static const hUint32 s_maxPrograms = ShaderType_MAX;
 
         /*
          * Following should be in an array
@@ -117,6 +125,12 @@ namespace Heart
             hResourceID vertexProgramID_;
             hResourceID fragmentProgramID_;
         };
+        struct 
+        {
+            hVector< hShaderResourceView* >     srView_;
+            hVector< hSamplerState* >           samplerStates_;
+            hVector< hParameterConstantBlock* > buffers_;
+        } inputResources_[s_maxPrograms];
 
         /*
          * Previous should be in an array
@@ -208,6 +222,7 @@ namespace Heart
         hMaterialTechnique* getTech(hUint idx) { return &techniques_[idx]; }
         hMaterialTechnique* getTechniqueByName(const hChar* name);
         hMaterialTechnique* getTechniqueByMask(hUint32 mask);
+        hUint getTechniqueIndexByMask(hUint32 mask);
     
         hArray< hChar, MAX_NAME_LEN >   name_;
         TechniqueArrayType              techniques_;

@@ -30,6 +30,19 @@
 
 namespace Heart
 {
+    struct hRCmdSetStates;
+    struct hRCmdSetVertexShader;
+    struct hRCmdSetPixelShader;
+    struct hRCmdSetGeometryShader;
+    struct hRCmdSetHullShader;
+    struct hRCmdSetDomainShader;
+    struct hRCmdSetVertexInputs;
+    struct hRCmdSetPixelInputs;
+    struct hRCmdSetGeometryInputs;
+    struct hRCmdSetHullInputs;
+    struct hRCmdSetDomainInputs;
+    struct hRCmdSetInputStreams;
+
     typedef D3D11_MAPPED_SUBRESOURCE hdDX11MappedResourceData;
     typedef ID3D11CommandList* hdDX11CommandBuffer;
 
@@ -175,9 +188,23 @@ namespace Heart
 
         void    SetInputStreams(const hdDX11RenderStreamsObject* streams);
         void    SetRenderInputObject(const hdDX11RenderInputObject* inputobj);
-        void    SetRenderStateBlock(hdDX11BlendState* st);
-        void    SetRenderStateBlock(hdDX11DepthStencilState* st);
-        void    SetRenderStateBlock(hdDX11RasterizerState* st);
+        void    setRenderStateBlock(hdDX11BlendState* st);
+        void    setRenderStateBlock(hdDX11DepthStencilState* st);
+        void    setRenderStateBlock(hdDX11RasterizerState* st);
+        void    setRenderStates(hRCmdSetStates* cmd);
+        void    setVertexShader(hRCmdSetVertexShader* prog);
+        void    setVertexInputs(hRCmdSetVertexInputs* cmd);
+        void    setPixelShader(hRCmdSetPixelShader* prog);
+        void    setPixelInputs(hRCmdSetPixelInputs* cmd);
+        void    setGeometryShader(hRCmdSetGeometryShader* prog);
+        void    setGeometryInputs(hRCmdSetGeometryInputs* cmd);
+        void    setHullShader(hRCmdSetHullShader* prog);
+        void    setHullInputs(hRCmdSetHullInputs* cmd);
+        void    setDomainShader(hRCmdSetDomainShader* prog);
+        void    setDomainInputs(hRCmdSetDomainInputs* cmd);
+        void    setInputStreams(hRCmdSetInputStreams* cmd);
+        //void    setComputeShader(hRCmdSetComputeShader* prog);
+        //void    setComputeInputs(hRCmdSetC)
         void    setComputeInput(const hdDX11ComputeInputObject* ci);
         void    setTargets(hUint32 idx, hdDX11RenderTargetView** target, hdDX11DepthStencilView* depth);
         void    SetViewport(const hViewport& viewport);
@@ -185,6 +212,7 @@ namespace Heart
         void    clearColour(hdDX11RenderTargetView* view, const hColour& colour);
         void    clearDepth(hdDX11DepthStencilView* view, hFloat z);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
+        void    DrawPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrims, hUint startVtx);
         void    dispatch(hUint x, hUint y, hUint z);

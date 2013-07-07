@@ -1054,7 +1054,7 @@ namespace Heart
         hUint32 stride;
         hUint32 inputLayoutId;
         hUint32 elementCount = BuildVertexFormatArray(inputdesc, desccount, &stride, &inputLayoutId, elements);
-
+#pragma message ("TODO: Hash map this call (hash of input streams and vertex prog input), will probably a good chunk of memory")
         hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout );
         hcAssert( SUCCEEDED( hr ) );
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout);
@@ -1076,7 +1076,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11VertexBuffer* vtxBuf)
+    void hdDX11RenderDevice::createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11VertexBuffer* vtxBuf)
     {
         HRESULT hr;
         D3D11_BUFFER_DESC bufdesc;
@@ -1097,8 +1097,9 @@ namespace Heart
         hcAssert( SUCCEEDED( hr ) );
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", vtxBuf->buffer_);
 
-        vtxBuf->flags_ = flags;
-        vtxBuf->dataSize_ = sizeInBytes;
+        vtxBuf->flags_=flags;
+        vtxBuf->stride_=stride;
+        vtxBuf->dataSize_=sizeInBytes;
         hMemCpy(vtxBuf->streamLayoutDesc_, desc, sizeof(hInputLayoutDesc)*desccount);
         vtxBuf->streamDescCount_=desccount;
     }
@@ -2085,17 +2086,20 @@ namespace Heart
 
     hUint hdDX11RenderCommandGenerator::setStreamInputs(PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format, hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount) {
         hUint cmdsize=sizeof(ID3D11Buffer*)*streamCount;
+        cmdsize+=sizeof(hUint)*streamCount;
         cmdsize+=sizeof(hRCmdSetInputStreams);
         D3D11_PRIMITIVE_TOPOLOGY top;
         if ( primType == PRIMITIVETYPE_LINELIST ) top = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
         else if ( primType == PRIMITIVETYPE_TRILIST) top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         else if ( primType == PRIMITIVETYPE_TRISTRIP) top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
         hRCmdSetInputStreams* cmd=(hRCmdSetInputStreams*)hAlloca(cmdsize);
-        ID3D11Buffer** cmdib=(ID3D11Buffer**)(cmd+1);
-        hPLACEMENT_NEW(cmd) hRCmdSetInputStreams(top, format == hIndexBufferType_Index16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, layout, firstStream, firstStream+streamCount, index->buffer_);
+        ID3D11Buffer** cmdvb=(ID3D11Buffer**)(cmd+1);
+        hUint* cmdstrides=(hUint*)(&cmdvb[streamCount]);
+        hPLACEMENT_NEW(cmd) hRCmdSetInputStreams(top, format == hIndexBufferType_Index16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, layout, firstStream, firstStream+streamCount, index ? index->buffer_ : hNullptr);
         cmd->size_=cmdsize;
         for (hUint i=0, n=streamCount; i<n; ++i) {
-            cmdib[i]=vtx[i]->buffer_;
+            cmdvb[i]=vtx[i]->buffer_;
+            cmdstrides[i]=vtx[i]->stride_;
         }
         return appendCmd(cmd);
     }
@@ -2120,7 +2124,7 @@ namespace Heart
 
     hUint hdDX11RenderCommandGenerator::updateShaderInputSampler(hRCmd* cmd, hUint reg, hdDX11SamplerState* ss) {
         hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
-        hcAssert(reg < inputcmd->bufferCount_);
+        hcAssert(reg < inputcmd->samplerCount_);
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);
@@ -2134,7 +2138,7 @@ namespace Heart
 
     hUint hdDX11RenderCommandGenerator::updateShaderInputView(hRCmd* cmd, hUint reg, hdDX11ShaderResourceView* srv) {
         hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
-        hcAssert(reg < inputcmd->bufferCount_);
+        hcAssert(reg < inputcmd->resourceViewCount_);
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);

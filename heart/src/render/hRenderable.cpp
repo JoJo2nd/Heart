@@ -40,4 +40,55 @@ void hRenderable::SetMaterial(hMaterialInstance* material)
     materialKey_ = matInstance_->getMaterialKey();
 }
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
+    hcAssert(matInstance_);
+    hUint layoutdesccount=0;
+    hInputLayoutDesc* layoutdesc=hNullptr;
+
+    for (hUint i=0, n=vertexBuffer_.GetSize(); i<n; ++i) {
+        if (vertexBuffer_[i]) {
+            layoutdesccount+=vertexBuffer_[i]->getDescCount();
+        }
+    }
+    layoutdesc=(hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*layoutdesccount);
+    layoutdesccount=0;
+    for (hUint i=0, n=vertexBuffer_.GetSize(); i<n; ++i) {
+        if (vertexBuffer_[i]) {
+            hMemCpy(layoutdesc+layoutdesccount, vertexBuffer_[i]->getLayoutDesc(), vertexBuffer_[i]->getDescCount()*sizeof(hInputLayoutDesc));
+            layoutdesccount+=vertexBuffer_[i]->getDescCount();
+        }
+    }
+
+    cmdLookUp_.init(matInstance_->getParentMaterial());
+    for(hUint g=0, ng=matInstance_->getGroupCount(); g<ng; ++g) {
+        hMaterialGroup* group=matInstance_->getGroup(g);
+        for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
+            hMaterialTechnique* tech=group->getTech(t);
+            for (hUint p=0, np=tech->GetPassCount(); p<np; ++p) {
+                hMaterialTechniquePass* pass=tech->GetPass(p);
+                hdInputLayout* inputlayout=pass->GetVertexShader()->createVertexLayout(layoutdesc, layoutdesccount);
+                inputLayouts_.PushBack(inputlayout);
+                cmdLookUp_.setCommand(g, t, p, rcGen->getRenderCommandsSize());
+                rcGen->setJump(matInstance_->getRenderCommandsBegin(g, t, p));
+                rcGen->setStreamInputs(primType_, 
+                    indexBuffer_, 
+                    indexBuffer_ ? indexBuffer_->getIndexBufferType() : hIndexBufferType_Index16, 
+                    inputlayout, 
+                    vertexBuffer_.GetBuffer(), 
+                    0, vertexBuffer_.GetSize());
+                if (indexBuffer_) {
+                    rcGen->setDrawIndex(primCount_, 0);
+                } else {
+                    rcGen->setDraw(primCount_, 0);
+                }
+                rcGen->setReturn();
+            }
+        }
+    }
+}
+
 }

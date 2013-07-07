@@ -47,18 +47,17 @@ namespace Heart
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
-            hZeroMem(vertexBuffer_, sizeof(vertexBuffer_));
         }
         virtual ~hRenderable() 
         {
         }
 
-        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const {
-            hcAssert(stream < HEART_MAX_INPUT_STREAMS); 
-            return vertexBuffer_[stream]; 
-        }
+        hUint                                   getVertexBufferCount() const { vertexBuffer_.GetSize(); }
+        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { return vertexBuffer_[stream]; }
         void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) {
-            hcAssert(stream < HEART_MAX_INPUT_STREAMS);
+            if (vertexBuffer_.GetSize() <= stream) {
+                vertexBuffer_.Resize(stream+1);
+            }
             vertexBuffer_[stream]=vtx;
         }
         hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
@@ -81,25 +80,30 @@ namespace Heart
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-        void                                    bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuff)  {
-            matInstance_->bindVertexStream(inputSlot, vtxBuff);
-        }
+//         void                                    bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuff)  {
+//             matInstance_->bindVertexStream(inputSlot, vtxBuff);
+//         }
         void                                    bind() { 
-            matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_, HEART_MAX_INPUT_STREAMS); 
+            matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_.GetBuffer(), vertexBuffer_.GetSize()); 
+        }
+        void initialiseRenderCommands(hRenderCommandGenerator* rcGen);
+        hUint getRenderCommandOffset(hUint g, hUint t, hUint p) const {
+            return cmdLookUp_.getCommand(g, t, p);
         }
     
     private:
 
-        hResourceID             materialID_;
-        hUint32                 materialKey_;
-        hUint                   primCount_;
-        hUint                   startVertex_;
-        hMaterialInstance*      matInstance_;
-        hAABB                   aabb_;
-        PrimitiveType           primType_;
-        hIndexBuffer*           indexBuffer_;
-        hVertexBuffer*          vertexBuffer_[HEART_MAX_INPUT_STREAMS];
-        hdRenderStreamsObject   vertexStreams_;
+        hResourceID              materialID_;
+        hUint32                  materialKey_;
+        hUint                    primCount_;
+        hUint                    startVertex_;
+        hMaterialInstance*       matInstance_;
+        hAABB                    aabb_;
+        PrimitiveType            primType_;
+        hIndexBuffer*            indexBuffer_;
+        hVector<hVertexBuffer*>  vertexBuffer_;
+        hMaterialCmdLookUpHelper cmdLookUp_;
+        hVector<hdInputLayout*>  inputLayouts_;
     };
 }
 

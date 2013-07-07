@@ -218,7 +218,7 @@ namespace Heart
         void                 destroyShaderDevice(hMemoryHeapBase* heap, hdDX11ShaderProgram* shaderProg);
         hdDX11Texture*  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
         void            destroyTextureDevice( hdDX11Texture* texture );
-        void            createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
+        void            createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
         void            destroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
         void            createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
         void            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);

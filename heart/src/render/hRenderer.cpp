@@ -344,7 +344,7 @@ namespace Heart
             hFUNCTOR_BINDMEMBER(hVertexBuffer::hZeroProc, hRenderer, destroyVertexBuffer, this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
-        ParentClass::createVertexBufferDevice(desc, desccount, nElements*pdata->stride_, initData, flags, pdata);
+        ParentClass::createVertexBufferDevice(desc, desccount, pdata->stride_, nElements*pdata->stride_, initData, flags, pdata);
         *outVB = pdata;
     }
 
@@ -503,9 +503,8 @@ namespace Heart
         hUint32 tmask = ~0U;
         hUint32 dcs = drawCallBlockIdx_.value_;
 
-        for (hUint32 dc = 0; dc < dcs; ++dc)
-        {
-            hDrawCall* dcall = &drawCallBlocks_[dc];
+        for (hUint32 dc = 0; dc < dcs; ++dc) {
+            hDrawCall* dcall=&drawCallBlocks_[dc];
             // For masks check hBuildRenderSortKey()
             hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
             hUint32 nPass = (dcall->sortKey_&0xF);
@@ -516,21 +515,22 @@ namespace Heart
                 tmask = beginCameraRender(&mainSubmissionCtx_, nCam);
                 camera = nCam;
             }
-
-            hBool newMaterial = matKey != lastMatKey;
-            lastMatKey = matKey;
-            //if (newMaterial){ //TODO flush correctly
-            mainSubmissionCtx_.SetRenderStateBlock(dcall->blendState_);
-            mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
-            mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
-
-            mainSubmissionCtx_.SetRenderInputObject(dcall->progInput_);
-            mainSubmissionCtx_.SetInputStreams(&dcall->streams_);
-            if (dcall->instanceCount_) {
-                mainSubmissionCtx_.DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
-            }else{
-                mainSubmissionCtx_.DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
-            }
+            mainSubmissionCtx_.runRenderCommands(dcall->rCmds_);
+// 
+//             hBool newMaterial = matKey != lastMatKey;
+//             lastMatKey = matKey;
+//             //if (newMaterial){ //TODO flush correctly
+//             mainSubmissionCtx_.SetRenderStateBlock(dcall->blendState_);
+//             mainSubmissionCtx_.SetRenderStateBlock(dcall->depthState_);
+//             mainSubmissionCtx_.SetRenderStateBlock(dcall->rasterState_);
+// 
+//             mainSubmissionCtx_.SetRenderInputObject(dcall->progInput_);
+//             mainSubmissionCtx_.SetInputStreams(&dcall->streams_);
+//             if (dcall->instanceCount_) {
+//                 mainSubmissionCtx_.DrawIndexedPrimitiveInstanced(dcall->instanceCount_, dcall->drawPrimCount_, 0);
+//             }else{
+//                 mainSubmissionCtx_.DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
+//             }
         }
     }
 
@@ -1290,6 +1290,8 @@ namespace Heart
                 }
             }
         }
+
+        rmodel->initialiseRenderCommands();
         return hTrue;
     }
 
@@ -1336,8 +1338,8 @@ namespace Heart
 
     void hRenderCommands::reserveSpace(hUint size) {
         if (allocatedSize_ < size) {
-            hRealloc(cmds_, size);
-            allocatedSize_=size;
+            cmds_=(hRCmd*)hRealloc(cmds_, hAlign(size, 1024));
+            allocatedSize_=hAlign(size, 1024);
         }
     }
 
@@ -1348,7 +1350,7 @@ namespace Heart
     void hRenderCommands::insertCommand(hUint where, const hRCmd* command, hBool overwrite) {
         hcAssert(command);
         if (where+command->size_ >= cmdSize_) {
-            reserveSpace(cmdSize_ + hMax(allocatedSize_, 1024));
+            reserveSpace(cmdSize_+command->size_);
         }
         hRCmd* cmd=(hRCmd*)((hByte*)cmds_+where);
         hRCmd* nextcmd=(hRCmd*)((hByte*)cmds_+where+cmd->size_);
@@ -1358,6 +1360,7 @@ namespace Heart
             hByte oldcmdsize=cmd->size_;
             if (oldcmdsize < command->size_) {
                 hMemMove(((hByte*)cmd+command->size_), nextcmd, remainingBytes);
+                cmdSize_+=command->size_-oldcmdsize;
             }
             hMemSet(cmd, 0xAC, cmd->size_);
             hMemCpy(cmd, command, command->size_);
@@ -1365,8 +1368,11 @@ namespace Heart
                 cmd->size_=oldcmdsize;
             }
         } else {
-            hMemMove(nextcmd, cmd, remainingBytes);
+            if (remainingBytes > 0) {
+                hMemMove(nextcmd, cmd, remainingBytes);
+            }
             hMemCpy(cmd, command, command->size_);
+            cmdSize_+=command->size_;
         }
     }
 
@@ -1428,7 +1434,9 @@ namespace Heart
     void hRenderCommandGenerator::reset() {
         hcAssert(renderCommands_);
         renderCommands_->cmdSize_=0;
+#ifdef HEART_DEBUG
         hMemSet(renderCommands_->cmds_, 0xDC, renderCommands_->allocatedSize_);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

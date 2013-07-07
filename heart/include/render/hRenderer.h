@@ -70,7 +70,7 @@ namespace Heart
     {
         hUint64                 sortKey_;                                   //8b        -> 8b
         union {
-            struct {
+            /*struct {
                 // Pointers for the following three might not be the best solution
                 hUint                   instanceCount_;
                 hUint32                 drawPrimCount_;
@@ -79,7 +79,7 @@ namespace Heart
                 hdDepthStencilState*    depthState_;
                 hdRenderInputObject*    progInput_;
                 hdRenderStreamsObject   streams_;
-            };
+            };*/
             struct {
                 hCustomRenderCallback   customCall_;
                 void*                   userPtr_;
@@ -98,6 +98,7 @@ namespace Heart
 
         void             setRenderCommands(hRenderCommands* rcmds) { renderCommands_ = rcmds; }
         hRenderCommands* getRenderCommands() { return renderCommands_; }
+        hUint            getRenderCommandsSize() const { return renderCommands_->cmdSize_; }
         hUint resetCommands();
         hUint setJump(hRCmd* cmd);
         hUint setReturn();

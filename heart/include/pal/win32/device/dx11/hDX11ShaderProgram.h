@@ -64,6 +64,8 @@ namespace Heart
         hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param) const;
         hUint32                         GetInputRegister(const hChar* name) const;
         hUint32                         GetInputRegister(hShaderParameterID id) const;
+        hUint                           getInputCount() const;
+        void                            getInput(hUint idx, hShaderInput* inputdesc) const;
         hdDX11VertexLayout*             createVertexLayout(hInputLayoutDesc* desc, hUint n) const;
         void                            destroyVertexLayout(hdDX11VertexLayout* vtxlayout) const;
 

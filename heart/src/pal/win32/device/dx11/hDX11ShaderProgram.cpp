@@ -214,4 +214,45 @@ namespace Heart
         device_->DestroyVertexLayout(vtxlayout);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11ShaderProgram::getInputCount() const {
+        D3D11_SHADER_DESC shaderdesc;
+        shaderInfo_->GetDesc(&shaderdesc);
+        return shaderdesc.BoundResources;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11ShaderProgram::getInput(hUint idx, hShaderInput* inputdesc) const {
+        D3D11_SHADER_INPUT_BIND_DESC bindInfo;
+        shaderInfo_->GetResourceBindingDesc(idx, &bindInfo);
+
+        hStrCopy(inputdesc->name_, inputdesc->name_.GetMaxSize(), bindInfo.Name);
+        inputdesc->bindPoint_=bindInfo.BindPoint;
+        inputdesc->arraySize_=bindInfo.BindCount;
+        switch(bindInfo.Type) {
+        case D3D_SIT_CBUFFER                        :
+            inputdesc->type_=eShaderInputType_Buffer; break;
+        case D3D_SIT_SAMPLER                        :
+            inputdesc->type_=eShaderInputType_Sampler; break;
+        case D3D_SIT_TBUFFER                        :
+        case D3D_SIT_TEXTURE                        :
+            inputdesc->type_=eShaderInputType_Resource; break;
+        case D3D_SIT_UAV_RWTYPED                    :
+        case D3D_SIT_STRUCTURED                     :
+        case D3D_SIT_UAV_RWSTRUCTURED               :
+        case D3D_SIT_BYTEADDRESS                    :
+        case D3D_SIT_UAV_RWBYTEADDRESS              :
+        case D3D_SIT_UAV_APPEND_STRUCTURED          :
+        case D3D_SIT_UAV_CONSUME_STRUCTURED         :
+        case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER  :
+            inputdesc->type_=eShaderInputType_UAV; break;
+        }
+    }
+
 }

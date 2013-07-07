@@ -42,6 +42,7 @@ namespace Heart
 
         ID3D11Buffer*       buffer_;
         hUint32             flags_;
+        hUint               stride_;
         hUint32             dataSize_;
         hUint               streamDescCount_;
         hInputLayoutDesc    streamLayoutDesc_[HEART_MAX_INPUT_STREAMS];

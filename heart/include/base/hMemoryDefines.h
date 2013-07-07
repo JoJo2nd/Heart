@@ -145,8 +145,8 @@ namespace Heart
     #define hDELETE(heap, ptr)                  Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
     #define hDELETE_ALIGNED(heap, ptr)          Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr)
     #define hDELETE_ARRAY(heap, ptr)            Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr))
-    #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = NULL
-    #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = NULL
+    #define hDELETE_SAFE(heap, ptr)             Heart::hDestroyObjects(ptr,1); hHeapFree(heap,ptr); ptr = hNullptr
+    #define hDELETE_ARRAY_SAFE(heap, ptr)       Heart::hDestroyObjects(ptr,Heart::hCalcArrayAllocCount(ptr)); hHeapFree(heap,Heart::hCalcArrayAllocCorrectPointer(ptr)); ptr = hNullptr
 #if 0 // may want to enable these later to check only heaps are being used
     inline void* operator new ( size_t size )
     {
@@ -190,8 +190,8 @@ namespace Heart
     #define hDELETE(heap, ptr)                  delete ptr
     #define hDELETE_ALIGNED(heap, ptr)          hFree(ptr)
     #define hDELETE_ARRAY(heap, ptr)            delete[] ptr
-    #define hDELETE_SAFE(heap, ptr)             delete ptr; ptr = NULL
-    #define hDELETE_ARRAY_SAFE(heap, ptr)       delete[] ptr; ptr = NULL
+    #define hDELETE_SAFE(heap, ptr)             delete ptr; ptr = hNullptr
+    #define hDELETE_ARRAY_SAFE(heap, ptr)       delete[] ptr; ptr = hNullptr
 /*
     inline void* operator new ( size_t size )
     {

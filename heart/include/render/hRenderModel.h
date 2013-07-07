@@ -46,8 +46,8 @@ namespace Heart
         hRenderModel() {}
         ~hRenderModel() {}
     
-        hGeomLODLevel*  GetLODLevel( hFloat dist )
-        {
+        void            initialiseRenderCommands();
+        hGeomLODLevel*  GetLODLevel( hFloat dist ) {
             for (hUint32 i = 0; i < levelCount_; ++i)
                 if (dist < lodLevels_[i].minRange_) return &lodLevels_[i];
             return NULL;
@@ -57,12 +57,16 @@ namespace Heart
         void            SetLODCount(hUint32 val) { levelCount_ = val; }
         hGeomLODLevel*  GetLOD(hUint32 idx) { hcAssert(idx < levelCount_); return &lodLevels_[idx]; }
         hBool           bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
+        hRCmd*          getRenderCommands(hUint offset) {
+            return renderCommands_.getCommandAtOffset(offset);
+        }
 
     private:
 
         hUint32                                     levelCount_;
         hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
         hAABB                                       totalBounds_;
+        hRenderCommands                             renderCommands_;
     };
 
 }

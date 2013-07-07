@@ -157,6 +157,31 @@ namespace Heart
         hUint32                             cBufferBindPoint_;
     };
 
+    enum hShaderInputType {
+        eShaderInputType_Buffer,
+        eShaderInputType_Resource,
+        eShaderInputType_Sampler,
+        eShaderInputType_UAV,
+
+        eShaderInputType_Invalid
+    };
+
+    struct hShaderInput
+    {
+        hShaderInput() 
+            : type_(eShaderInputType_Invalid)
+            , bindPoint_(0)
+            , arraySize_(0)
+        {
+            hZeroMem(name_,sizeof(name_));
+        }
+
+        hArray< hChar, 32 > name_; 
+        hShaderInputType    type_;
+        hUint               bindPoint_;
+        hUint               arraySize_;
+    };
+
     struct hMipDesc
     {
         hUint32     width;
@@ -247,20 +272,20 @@ namespace Heart
     {
         hRCmdDrawInstanced(hUint nPrims, hUint startvtx, hUint count) 
             : hRCmd(eRenderCmd_DrawInstanced, sizeof(hRCmdDrawInstanced))
-            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount(count) {}
+            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount_(count) {}
         hUint nPrimatives_;
         hUint startVertex_;
-        hUint instanceCount;
+        hUint instanceCount_;
     };
 
     struct HEART_DLLEXPORT hRCmdDrawInstancedIndex : public hRCmd
     {
         hRCmdDrawInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
             : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdDrawInstancedIndex))
-            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount(count) {}
+            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount_(count) {}
         hUint nPrimatives_;
         hUint startVertex_;
-        hUint instanceCount;
+        hUint instanceCount_;
     };
 
     class HEART_DLLEXPORT hRenderCommands
@@ -279,7 +304,7 @@ namespace Heart
         }
 
         hRCmd*  getFirst() { return cmds_; }
-        hRCmd*  getEnd() { return cmds_+cmdSize_; }
+        hRCmd*  getEnd() { return (hRCmd*)((hByte*)cmds_+cmdSize_); }
         hRCmd*  getCommandAtOffset(hUint offset) { 
             hcAssert(offset < cmdSize_);
             return (hRCmd*)((hByte*)cmds_+offset);
