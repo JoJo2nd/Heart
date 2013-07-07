@@ -117,14 +117,14 @@ void InstanceRenderTest::RenderUnitTest()
         Heart::hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=INSTANCE_COUNT;
-            drawCtx_.SubmitDrawCall(drawCall_);
+//             drawCall_.blendState_ = passptr->GetBlendState();
+//             drawCall_.depthState_ = passptr->GetDepthStencilState();
+//             drawCall_.rasterState_ = passptr->GetRasterizerState();
+//             drawCall_.progInput_ = passptr->GetRenderInputObject();
+//             drawCall_.streams_=*passptr->getRenderStreamsObject();
+//             drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
+//             drawCall_.instanceCount_=INSTANCE_COUNT;
+//             drawCtx_.SubmitDrawCall(drawCall_);
         }
     }
     drawCtx_.End();

@@ -111,7 +111,7 @@ void Sibenik::RenderUnitTest()
     Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
     hUint32 lodobjects = lod->renderObjects_.GetSize();
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
-
+    Heart::hDrawCall drawcall;
     drawCtx_.Begin(renderer);
 
     for (hUint32 i = 0; i < lodobjects; ++i) {
@@ -119,18 +119,17 @@ void Sibenik::RenderUnitTest()
         Heart::hRenderable* renderable = &lod->renderObjects_[i];
 
         hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
-        Heart::hMaterialTechnique* tech = renderable->GetMaterial()->getGroup(0)->getTechniqueByMask(techinfo->mask_);
-        for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-            drawCall_.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            Heart::hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_.blendState_ = passptr->GetBlendState();
-            drawCall_.depthState_ = passptr->GetDepthStencilState();
-            drawCall_.rasterState_ = passptr->GetRasterizerState();
-            drawCall_.progInput_ = passptr->GetRenderInputObject();
-            drawCall_.streams_=*passptr->getRenderStreamsObject();
-            drawCall_.drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_.instanceCount_=0;
-            drawCtx_.SubmitDrawCall(drawCall_);
+        Heart::hMaterialGroup* group = renderable->GetMaterial()->getGroup(0);
+        for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
+            Heart::hMaterialTechnique* tech=group->getTech(t);
+            if (tech->GetMask()!=techinfo->mask_) {
+                continue;
+            }
+            for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+                drawcall.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
+                drawcall.rCmds_ = renderModel_->getRenderCommands(renderable->getRenderCommandOffset(0, t, pass));
+                drawCtx_.SubmitDrawCall(drawcall);
+            }
         }
     }
     drawCtx_.End();

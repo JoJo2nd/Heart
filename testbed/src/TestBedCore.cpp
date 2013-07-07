@@ -57,7 +57,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     UnitTestCreator TestBedCore::unitTests_[] =
     {
         REGISTER_UNIT_TEST(Sibenik)
-        REGISTER_UNIT_TEST(ModelRenderTest)
+        /*REGISTER_UNIT_TEST(ModelRenderTest)
         //REGISTER_UNIT_TEST(ComputeBlur)
         REGISTER_UNIT_TEST(TexturedPlane)
         REGISTER_UNIT_TEST(LoadTextureTest)
@@ -72,7 +72,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         REGISTER_UNIT_TEST(ComplexMesh2)
         REGISTER_UNIT_TEST(DebugPrimsTest)
         REGISTER_UNIT_TEST(Sibenik)
-        REGISTER_UNIT_TEST(ComputeTest)
+        REGISTER_UNIT_TEST(ComputeTest)*/
     };
 
     void consoleStateEvent(hFloat secs) 

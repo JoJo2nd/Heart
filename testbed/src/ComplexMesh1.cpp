@@ -123,19 +123,19 @@ void ComplexMesh1::RenderUnitTest()
         }
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             drawCall_[nDrawCalls_].sortKey_ = hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
-            drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
-            drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
-            drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
-            drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
-            drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_[nDrawCalls_].instanceCount_=0;
-            ++nDrawCalls_;
-            hcAssert(nDrawCalls_ < MAX_DCS);
-            if (nDrawCalls_ >= MAX_DCS) {
-                break;
-            }
+//             hMaterialTechniquePass* passptr = tech->GetPass(pass);
+//             drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
+//             drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
+//             drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
+//             drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
+//             drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
+//             drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
+//             drawCall_[nDrawCalls_].instanceCount_=0;
+//             ++nDrawCalls_;
+//             hcAssert(nDrawCalls_ < MAX_DCS);
+//             if (nDrawCalls_ >= MAX_DCS) {
+//                 break;
+//             }
         }
     }
 
@@ -157,19 +157,19 @@ void ComplexMesh1::RenderUnitTest()
         }
         for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
             drawCall_[nDrawCalls_].sortKey_ = hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-            hMaterialTechniquePass* passptr = tech->GetPass(pass);
-            drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
-            drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
-            drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
-            drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
-            drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
-            drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
-            drawCall_[nDrawCalls_].instanceCount_=0;
-            ++nDrawCalls_;
-            hcAssert(nDrawCalls_ < MAX_DCS);
-            if (nDrawCalls_ >= MAX_DCS) {
-                break;
-            }
+//             hMaterialTechniquePass* passptr = tech->GetPass(pass);
+//             drawCall_[nDrawCalls_].blendState_ = passptr->GetBlendState();
+//             drawCall_[nDrawCalls_].depthState_ = passptr->GetDepthStencilState();
+//             drawCall_[nDrawCalls_].rasterState_ = passptr->GetRasterizerState();
+//             drawCall_[nDrawCalls_].progInput_ = passptr->GetRenderInputObject();
+//             drawCall_[nDrawCalls_].streams_=*passptr->getRenderStreamsObject();
+//             drawCall_[nDrawCalls_].drawPrimCount_ = renderable->GetPrimativeCount();
+//             drawCall_[nDrawCalls_].instanceCount_=0;
+//             ++nDrawCalls_;
+//             hcAssert(nDrawCalls_ < MAX_DCS);
+//             if (nDrawCalls_ >= MAX_DCS) {
+//                 break;
+//             }
         }
     }
     

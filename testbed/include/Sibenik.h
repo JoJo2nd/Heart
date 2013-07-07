@@ -65,7 +65,6 @@ private:
     State                   state_;
     hFloat                  timer_;
     Heart::hRenderModel*    renderModel_;
-    Heart::hDrawCall        drawCall_;
     Heart::hDrawCallContext drawCtx_;
 
     //Camera Control

@@ -236,12 +236,12 @@ void DebugPrimsTest::CreateRenderResources()
     viewLitSphereMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
     viewLitConeMat_=matMgr->getDebugViewLit()->createMaterialInstance(0);
      
-    wireCubeMat_->bindVertexStream(0, cubeVB_);
-    viewLitCubeMat_->bindVertexStream(0, cubeVB_);
+    wireCubeMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, hNullptr, &cubeVB_, 1);
+    viewLitCubeMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, hNullptr, &cubeVB_, 1);
     wireSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
     viewLitSphereMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, sphereIB_, &sphereVB_, 1);
-    wireConeMat_->bindVertexStream(0, coneVB_);
-    viewLitConeMat_->bindVertexStream(0, coneVB_);
+    wireConeMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, hNullptr, &coneVB_, 1);
+    viewLitConeMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, hNullptr, &coneVB_, 1);;
     wirePlaneMat_->bindInputStreams(PRIMITIVETYPE_TRILIST, planeIB_, &planeVB_, 1);
 
     viewportCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("ViewportConstants"));
