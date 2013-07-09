@@ -52,7 +52,7 @@ namespace Heart
         {
         }
 
-        hUint                                   getVertexBufferCount() const { vertexBuffer_.GetSize(); }
+        hUint                                   getVertexBufferCount() const { return vertexBuffer_.GetSize(); }
         hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { return vertexBuffer_[stream]; }
         void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) {
             if (vertexBuffer_.GetSize() <= stream) {

@@ -31,7 +31,8 @@ local destRootDir_=""
 local logfile=nil
 local logerr=nil
 
-logfile, logerr=io.open(strfmt("build_log_%s.txt",os.date("%Y-%m-%d_%H-%M")), "w")
+logfile = io.open(strfmt("build_log_%s.txt",os.date("%Y-%m-%d")), "w")
+logerr = io.open("errors.txt", "w")
 
 local function addBuilder(boptions) 
     if (type(boptions.typename) ~= "string") then
@@ -192,6 +193,13 @@ local function buildResources(matchopts, scriptpath)
         logfile:write("\n")
         oldprint(...)
     end 
+    G.errorprint = function (...) 
+        for i, v in ipairs{...} do
+            logerr:write(G.tostring(v))
+        end
+        logerr:write("\n")
+        G.print(...)
+    end 
     G.splitresourceid = function (x)
         local dpkg, dres = string.match(drespath, "(%u+)%.(%u+)")
         return dpkg, dres
@@ -235,6 +243,7 @@ local function buildResources(matchopts, scriptpath)
     local packagestouched={}
     local buildcoroutines={}
     local i=0
+    G.errorprint("Error Log: Build Start... ")
 
 	for k, v in pairs(resourcestobuild) do
         local co = coroutine.create( function ()
@@ -274,7 +283,8 @@ local function buildResources(matchopts, scriptpath)
                 worktodo=true
                 local stat = coroutine.status(co)
                 if stat == "suspended" then
-                    coroutine.resume(co)
+                    local resumeok, er = coroutine.resume(co)
+                    if not resoumeok and er ~= nil then G.errorprint("(>^o^)> BUILD ERROR <(^o^<) ",er) end
                 elseif stat == "dead" then
                     buildcoroutines[k] = nil
                 end
@@ -314,10 +324,12 @@ local function buildResources(matchopts, scriptpath)
         pkgxmlroot:save(packdir)
     end
 
+    G.errorprint("Error Log: Build finished")
     G.print("Build finished")
     G.print=oldprint
     G.buildpathresolve=nil
     logfile:flush()
+    logerr:flush()
 end
 
 _ENV=G

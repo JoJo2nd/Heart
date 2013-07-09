@@ -209,7 +209,7 @@ int SB_API shaderCompiler(lua_State* L) {
     if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
         luaL_error(L, "defines unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
     }
-    if (!lua_isnil(L, -1)) {
+    if (lua_istable(L, -1)) {
         hasdefines=hTrue;
     }
     const hChar* progTypeMacros[] = {
@@ -230,8 +230,14 @@ int SB_API shaderCompiler(lua_State* L) {
     };
 
     D3D_SHADER_MACRO* fullmacros=hNullptr;
+    definecount=0;
     if (hasdefines) {
-        definecount=(hUint)lua_rawlen(L, -1);
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            ++definecount;
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+        }
     }
     fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
     if (hasdefines) {
@@ -412,7 +418,7 @@ int SB_API shaderPreprocess(lua_State* L) {
     if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
         luaL_error(L, "DEFINES unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
     }
-    if (!lua_isnil(L, -1)) {
+    if (lua_istable(L, -1)) {
         hasdefines=hTrue;
     }
     const hChar* progTypeMacros[] = {
@@ -433,8 +439,14 @@ int SB_API shaderPreprocess(lua_State* L) {
     };
 
     D3D_SHADER_MACRO* fullmacros=hNullptr;
+    definecount=0;
     if (hasdefines) {
-        definecount=(hUint)lua_rawlen(L, -1);
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            ++definecount;
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+        }
     }
     fullmacros=(D3D_SHADER_MACRO*)hAlloca(sizeof(D3D_SHADER_MACRO)*(definecount+1+hStaticArraySize(defaultmacros)));
     if (hasdefines) {
@@ -453,7 +465,6 @@ int SB_API shaderPreprocess(lua_State* L) {
             lua_pop(L, 1);
             ++i;
         }
-        lua_pop(L, 1);// pop the final key
     }
     memcpy(fullmacros+definecount, defaultmacros, sizeof(defaultmacros));
     lua_pop(L, 1);

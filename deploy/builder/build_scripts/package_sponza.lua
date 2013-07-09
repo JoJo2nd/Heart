@@ -2,7 +2,7 @@ local infiles=nil
 local depfiles=nil
 local progparams=nil
 local materialpath=nil
-
+local packagename="SPONZA"
 --
 --
 --
@@ -37,7 +37,7 @@ materials = {
 }
 for k, mat in pairs(materials) do 
     databuilder.addresource{
-        package="SPONZA",
+        package=packagename,
         resname=mat.res.."_M",
         restype="mat_fx",
         inputfiles={mat.path},
@@ -47,6 +47,26 @@ end
 --
 --
 --
+shaders={
+    {path="src://shaders/gbuffer.c", res="GBUFFER_VS", params={entry="vertexMain", profile="vs_5_0"}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_PS", params={entry="pixelMain", profile="ps_5_0"}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_VS", params={entry="vertexMain", profile="vs_5_0", defines={NO_NORMAL_MAP="1"}}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_PS", params={entry="pixelMain", profile="ps_5_0", defines={NO_NORMAL_MAP="1"}}},
+}
+for k, gpu in pairs(shaders) do 
+    databuilder.addresource{
+        package=packagename,
+        resname=gpu.res,
+        restype="gpu_prog",
+        inputfiles={gpu.path},
+        depfiles=gpuprog.preprocess(gpu.path, gpu.params),
+        parameters=gpu.params
+    }
+end
+--
+--
+--
+
 -- textures = {
     -- CHECKER = {input="src://textures/convert/default.dds", sRGB=true}
 -- }

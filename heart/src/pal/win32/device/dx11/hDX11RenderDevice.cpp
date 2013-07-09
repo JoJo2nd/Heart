@@ -922,53 +922,6 @@ namespace Heart
         hr = d3d11Device_->CreateTexture2D( &desc, dataptr, &texture->dx11Texture_ );
         hcAssert( SUCCEEDED( hr ) );
         hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->dx11Texture_);
-#if 0
-        if ( flags & RESOURCEFLAG_RENDERTARGET )
-        {
-            hr = d3d11Device_->CreateRenderTargetView( texture->dx11Texture_, NULL, &texture->renderTargetView_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->renderTargetView_);
-        }
-
-        if ( flags & RESOURCEFLAG_DEPTHTARGET )
-        {
-            D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
-            ZeroMemory( &descDSV, sizeof(descDSV) );
-            if ( format == TFORMAT_D24S8F )
-                descDSV.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-            else if ( format == TFORMAT_D32F )
-                descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-            else
-                hcAssertFailMsg( "Invalid Depth format" );
-            descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-            descDSV.Texture2D.MipSlice = 0;
-            hr = d3d11Device_->CreateDepthStencilView( texture->dx11Texture_, &descDSV, &texture->depthStencilView_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->depthStencilView_);
-
-            D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-            hZeroMem( &srvDesc, sizeof(srvDesc) );
-            srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-            if ( format == TFORMAT_D24S8F )
-                srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-            else if ( format == TFORMAT_D32F )
-                srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-            else
-                hcAssertFailMsg( "Invalid Depth format" );
-            srvDesc.Texture2D.MipLevels = 1;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-
-            hr = d3d11Device_->CreateShaderResourceView( texture->dx11Texture_, &srvDesc, &texture->shaderResourceView_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->shaderResourceView_);
-        }
-        else
-        {
-            hr = d3d11Device_->CreateShaderResourceView( texture->dx11Texture_, NULL, &texture->shaderResourceView_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", texture->shaderResourceView_);
-        }
-#endif
 
         return texture;
     }
@@ -984,23 +937,6 @@ namespace Heart
             texture->dx11Texture_->Release();
             texture->dx11Texture_ = NULL;
         }
-#if 0
-        if (texture->depthStencilView_) {
-            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->depthStencilView_);
-            texture->depthStencilView_->Release();
-            texture->depthStencilView_ = NULL;
-        }
-        if (texture->shaderResourceView_) {
-            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->shaderResourceView_);
-            texture->shaderResourceView_->Release();
-            texture->shaderResourceView_ = NULL;
-        }
-        if (texture->renderTargetView_) {
-            hTRACK_CUSTOM_ADDRESS_FREE("DirectX", texture->renderTargetView_);
-            texture->renderTargetView_->Release();
-            texture->renderTargetView_ = NULL;
-        }
-#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

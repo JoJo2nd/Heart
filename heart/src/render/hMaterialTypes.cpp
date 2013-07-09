@@ -73,7 +73,7 @@ namespace Heart
                 inputResources_[i].buffers_[idx]=buffer;
             }
         }
-        return succ || renderInput_.bindConstantBuffer(paramID, buffer);
+        return succ;// || renderInput_.bindConstantBuffer(paramID, buffer);
     }
 
     //////////////////////////////////////////////////////////////////////////

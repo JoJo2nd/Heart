@@ -1318,7 +1318,7 @@ namespace Heart
         for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
             hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
             for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-                for (hUint32 s = 0, sc=HEART_MAX_INPUT_STREAMS; s < sc; ++s) {
+                for (hUint32 s = 0, sc=lod->renderObjects_[rIdx].getVertexBufferCount(); s < sc; ++s) {
                     hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
                     if (vb) {
                         vb->DecRef();

@@ -80,6 +80,7 @@ namespace Heart
         , renderer_(renderer)
         , manager_(renderer->GetMaterialManager())
         , groups_(heap) 
+        , defaultData_(hNullptr)
     {
 
     }
@@ -531,16 +532,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::addDefaultParameterValue(const hChar* paramName, void* data, hUint size) {
-        hcAssert(paramName && data && size > 0);
-        hDefaultParameterValue defVal={0};
-        hStrCopy(defVal.parameterName, hMAX_PARAMETER_NAME_LEN, paramName);
-        defVal.dataOffset=defaultDataSize_;
-        defVal.dataSize=size;
-        defVal.parameterNameHash=hCRC32::StringCRC(defVal.parameterName);
-        defaultDataSize_+=size;
-        defaultData_=(hUint8*)hHeapRealloc(memHeap_, defaultData_, defaultDataSize_);
-        hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, size);
-        defaultValues_.PushBack(defVal);
+//         hcAssert(paramName && data && size > 0);
+//         hDefaultParameterValue defVal={0};
+//         hStrCopy(defVal.parameterName, hMAX_PARAMETER_NAME_LEN, paramName);
+//         defVal.dataOffset=defaultDataSize_;
+//         defVal.dataSize=size;
+//         defVal.parameterNameHash=hCRC32::StringCRC(defVal.parameterName);
+//         defaultDataSize_+=size;
+//         defaultData_=(hUint8*)hHeapRealloc(memHeap_, defaultData_, defaultDataSize_);
+//         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, size);
+//         defaultValues_.PushBack(defVal);
     }
 
     //////////////////////////////////////////////////////////////////////////
