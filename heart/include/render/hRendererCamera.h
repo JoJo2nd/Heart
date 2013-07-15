@@ -96,7 +96,7 @@ namespace Heart
         hRelativeViewport           viewport_;
         hRenderer*                  renderer_;
         hRenderViewportTargetSetup  setup_;
-        hParameterConstantBlock*   cameraConstBlock_;
+        hRenderBuffer*   cameraConstBlock_;
         hViewportShaderConstants    viewportConstants_;
     };
     

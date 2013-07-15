@@ -186,7 +186,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb)
+    hBool hMaterial::bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb)
     {
         hBool succ = true;
         for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
@@ -228,7 +228,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hParameterConstantBlock* hMaterial::GetParameterConstBlock( hShaderParameterID cbid )
+    hRenderBuffer* hMaterial::GetParameterConstBlock( hShaderParameterID cbid )
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             if (constBlocks_[i].paramid == cbid) {
@@ -259,8 +259,8 @@ namespace Heart
                             hConstantBlockDesc desc;
                             prog->GetConstantBlockDesc(cb, &desc);
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
-                            hParameterConstantBlock* globalCB = manager_->GetGlobalConstantBlockByAlias(desc.name_);
-                            hParameterConstantBlock* tmp=NULL;
+                            hRenderBuffer* globalCB = manager_->GetGlobalConstantBlockByAlias(desc.name_);
+                            hRenderBuffer* tmp=NULL;
                             hBool alreadyAdded = hFalse;
                             if (!globalCB) {
                                 for (hUint mcb=0, mcbc=matInst->constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
@@ -271,7 +271,7 @@ namespace Heart
                                 if (!alreadyAdded && !dontcreatecb) {
                                     void* initdata=hAlloca(desc.size_);
                                     initConstBlockBufferData(prog, desc, initdata, desc.size_);
-                                    renderer_->createConstantBlock(desc.size_, &initdata, &tmp);
+                                    renderer_->createBuffer(desc.size_, &initdata, eResourceFlag_ConstantBuffer, 0, &tmp);
                                     globalCB=tmp;
                                 }
                             }
@@ -407,8 +407,8 @@ namespace Heart
                             }
 #endif // HEART_DEBUG
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
-                            hParameterConstantBlock* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
-                            hParameterConstantBlock* tmp=NULL;
+                            hRenderBuffer* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
+                            hRenderBuffer* tmp=NULL;
                             hBool alreadyAdded = hFalse;
                             if (!globalCB) {
                                 for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
@@ -417,7 +417,7 @@ namespace Heart
                                     }
                                 }
                                 if (!alreadyAdded) {
-                                    renderer_->createConstantBlock(desc.size_, NULL, &tmp);
+                                    renderer_->createBuffer(desc.size_, NULL, eResourceFlag_ConstantBuffer, 0, &tmp);
                                     globalCB = tmp;
                                 }
                             }
@@ -791,7 +791,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hParameterConstantBlock* hMaterialInstance::GetParameterConstBlock(hShaderParameterID cbid)
+    hRenderBuffer* hMaterialInstance::GetParameterConstBlock(hShaderParameterID cbid)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             if (constBlocks_[i].paramid == cbid) {
@@ -848,7 +848,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialInstance::bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb) {
+    hBool hMaterialInstance::bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb) {
         hBool succ=false;
         hRenderCommandGenerator rcGen(&renderCmds_);
         hUint groups=material_->getGroupCount();

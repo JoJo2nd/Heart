@@ -67,9 +67,9 @@ namespace Heart
         hMatrix world_;
     };
 
-    struct hConstBlockMapInfo
+    struct hRenderBufferMapInfo
     {
-        hParameterConstantBlock* cb;
+        hRenderBuffer* cb;
         void* ptr;
     };
 
@@ -124,8 +124,8 @@ namespace Heart
         void    Unmap(hVertexBufferMapInfo* outInfo);
         void    Map(hTexture* ib, hUint32 level, hTextureMapInfo* outInfo);
         void    Unmap(hTextureMapInfo* outInfo);
-        void    Map(hParameterConstantBlock* cb, hConstBlockMapInfo* outInfo);
-        void    Unmap(hConstBlockMapInfo* info);
+        void    Map(hRenderBuffer* cb, hRenderBufferMapInfo* outInfo);
+        void    Unmap(hRenderBufferMapInfo* info);
 
     private:
 

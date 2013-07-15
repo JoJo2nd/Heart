@@ -145,22 +145,22 @@ namespace Heart
         hUint setShader(hdDX11ShaderProgram* shader);
         hUint setVertexInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
-            hdDX11ParameterConstantBlock** cb, hUint ncb);
+            hdDX11Buffer** cb, hUint ncb);
         hUint setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
-            hdDX11ParameterConstantBlock** cb, hUint ncb);
+            hdDX11Buffer** cb, hUint ncb);
         hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
-            hdDX11ParameterConstantBlock** cb, hUint ncb);
+            hdDX11Buffer** cb, hUint ncb);
         hUint setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
-            hdDX11ParameterConstantBlock** cb, hUint ncb);
+            hdDX11Buffer** cb, hUint ncb);
         hUint setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
-            hdDX11ParameterConstantBlock** cb, hUint ncb);
+            hdDX11Buffer** cb, hUint ncb);
         hUint setStreamInputs(PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format,
             hdDX11VertexLayout* layout, hdDX11VertexBuffer** vtx, hUint firstStream, hUint streamCount);
-        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11ParameterConstantBlock* cb);
+        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11Buffer* cb);
         hUint updateShaderInputSampler(hRCmd* cmd, hUint reg, hdDX11SamplerState* ss);
         hUint updateShaderInputView(hRCmd* cmd, hUint reg, hdDX11ShaderResourceView* srv);
         hUint updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hdDX11IndexBuffer* index, hIndexBufferType format,
@@ -223,7 +223,7 @@ namespace Heart
         void            createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
         void            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);
         void            createShaderResourseViewDevice(hdDX11Texture* texture, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
-        void            createShaderResourseViewDevice(hdDX11ParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
+        void            createShaderResourseViewDevice(hdDX11Buffer* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
         void            destroyShaderResourceViewDevice(hdDX11ShaderResourceView* srv);
         void            createRenderTargetViewDevice(hdDX11Texture* texture, const hRenderTargetViewDesc& desc, hdDX11RenderTargetView* outrtv);
         void            destroyRenderTargetViewDevice(hdDX11RenderTargetView* outrtv);
@@ -237,8 +237,8 @@ namespace Heart
         void            destroyDepthStencilStateDevice(hdDX11DepthStencilState* state);
         void            createSamplerStateDevice(const hSamplerStateDesc& desc, hdDX11SamplerState* out);
         void            destroySamplerStateDevice(hdDX11SamplerState* state);
-        void            createConstantBlockDevice(hUint size, void* initdata, hdDX11ParameterConstantBlock* block);
-        void            destroyConstantBlockDevice(hdDX11ParameterConstantBlock* constBlock);
+        void            createBufferDevice(hUint size, void* initdata, hUint flags, hUint stride, hdDX11Buffer* block);
+        void            destroyConstantBlockDevice(hdDX11Buffer* constBlock);
 
     private:
 

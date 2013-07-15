@@ -204,12 +204,12 @@ namespace Heart
             windowOffset_ = hMax(windowOffset_, .5f);
             windowOffset_ = hMin(windowOffset_, 1.f);
         }
-        void Render(hRenderSubmissionCtx* ctx, hParameterConstantBlock* instanceCB, const hDebugRenderParams& params) 
+        void Render(hRenderSubmissionCtx* ctx, hRenderBuffer* instanceCB, const hDebugRenderParams& params) 
         {
             hFixedPoolStackMemoryHeap stackHeap(32*1024, hAlloca(32*1024));
             hFloat intprt = 0.f;
             hInstanceConstants* inst;
-            hConstBlockMapInfo map;
+            hRenderBufferMapInfo map;
             hVertexBufferMapInfo vbmap;
             hFloat fontScale = hSystemConsole::getFontSize();
             hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
@@ -349,7 +349,7 @@ namespace Heart
         hTexture*                consoleTex_;
         hShaderResourceView*     consoleTexSRV_;
         hSamplerState*           fontSamplerState_;
-        hParameterConstantBlock* fontCB_;
+        hRenderBuffer* fontCB_;
         hFloat                   windowOffset_;
 
         hRenderCommands         drawCommands_[3];

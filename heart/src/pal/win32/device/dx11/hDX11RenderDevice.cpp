@@ -29,7 +29,7 @@
 
 namespace Heart
 {
-#if defined (HEART_DEBUG)
+#if 0// defined (HEART_DEBUG)
 #   define HEART_D3D_OBJECT_REPORT(device) {\
         ID3D11Debug* debuglayer;\
         device->QueryInterface(__uuidof(ID3D11Debug), (void**)&debuglayer);\
@@ -482,34 +482,62 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     DXGI_FORMAT hdDX11RenderDevice::toDXGIFormat(hTextureFormat format, hBool* compressed) {
-        DXGI_FORMAT fmt = DXGI_FORMAT_UNKNOWN;
+        DXGI_FORMAT fmt = DXGI_FORMAT_FORCE_UINT;
         hBool compressedFormat=hFalse;
         switch ( format )
         {
-        case TFORMAT_ARGB8:          fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_ARGB8_sRGB:     fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case TFORMAT_ARGB8_TYPELESS: fmt = DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
-        case TFORMAT_XRGB8:          fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case TFORMAT_XRGB8_sRGB:     fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case TFORMAT_R16F:           fmt = DXGI_FORMAT_R16_FLOAT; break;
-        case TFORMAT_GR16F:          fmt = DXGI_FORMAT_R16G16_FLOAT; break;
-        case TFORMAT_ABGR16F:        fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-        case TFORMAT_R32F:           fmt = DXGI_FORMAT_R32_FLOAT; break;
-        case TFORMAT_R32_TYPELESS:   fmt = DXGI_FORMAT_R32_TYPELESS; break;
-        case TFORMAT_R32UINT:        fmt = DXGI_FORMAT_R32_UINT; break;
-        case TFORMAT_D32F:           fmt = DXGI_FORMAT_D32_FLOAT; break;
-        case TFORMAT_D24S8F:         fmt = DXGI_FORMAT_D24_UNORM_S8_UINT; break;
-        case TFORMAT_L8:             fmt = DXGI_FORMAT_A8_UNORM; break;
-        case TFORMAT_DXT5:           fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT3:           fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
-        case TFORMAT_DXT1:           fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
-        case TFORMAT_DXT5_sRGB:      fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
-        case TFORMAT_DXT3_sRGB:      fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
-        case TFORMAT_DXT1_sRGB:      fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
+        case eTextureFormat_Unknown: fmt = DXGI_FORMAT_UNKNOWN; break;
+        case eTextureFormat_RGBA32_typeless: fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; break;
+        case eTextureFormat_RGBA32_float: fmt = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+        case eTextureFormat_RGBA32_uint: fmt = DXGI_FORMAT_R32G32B32A32_UINT; break;
+        case eTextureFormat_RGBA32_sint: fmt = DXGI_FORMAT_R32G32B32A32_SINT; break;
+        case eTextureFormat_RGB32_typeless: fmt = DXGI_FORMAT_R32G32B32_TYPELESS; break;
+        case eTextureFormat_RGB32_float: fmt = DXGI_FORMAT_R32G32B32_FLOAT; break;
+        case eTextureFormat_RGB32_uint: fmt = DXGI_FORMAT_R32G32B32_UINT; break;
+        case eTextureFormat_RGB32_sint: fmt = DXGI_FORMAT_R32G32B32_SINT; break;
+        case eTextureFormat_RGBA16_typeless: fmt = DXGI_FORMAT_R16G16B16A16_TYPELESS; break;
+        case eTextureFormat_RGBA16_float: fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+        case eTextureFormat_RGBA16_unorm: fmt = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+        case eTextureFormat_RGBA16_uint: fmt = DXGI_FORMAT_R16G16B16A16_UINT; break;
+        case eTextureFormat_RGBA16_snorm: fmt = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+        case eTextureFormat_RGBA16_sint: fmt = DXGI_FORMAT_R16G16B16A16_SINT; break;
+        case eTextureFormat_RG32_typeless: fmt = DXGI_FORMAT_R32G32_TYPELESS; break;
+        case eTextureFormat_RG32_float: fmt = DXGI_FORMAT_R32G32_FLOAT; break;
+        case eTextureFormat_RG32_uint: fmt = DXGI_FORMAT_R32G32_UINT; break;
+        case eTextureFormat_RG32_sint: fmt = DXGI_FORMAT_R32G32_SINT; break;
+        case eTextureFormat_RG16_typeless: fmt = DXGI_FORMAT_R16G16_TYPELESS; break;
+        case eTextureFormat_RG16_float: fmt = DXGI_FORMAT_R16G16_FLOAT; break;
+        case eTextureFormat_RG16_uint: fmt = DXGI_FORMAT_R16G16_UINT; break;
+        case eTextureFormat_RG16_sint: fmt = DXGI_FORMAT_R16G16_SINT; break;
+        case eTextureFormat_R32_typeless: fmt = DXGI_FORMAT_R32_TYPELESS; break;
+        case eTextureFormat_R32_float: fmt = DXGI_FORMAT_R32_FLOAT; break;
+        case eTextureFormat_R32_uint: fmt = DXGI_FORMAT_R32_UINT; break;
+        case eTextureFormat_R32_sint: fmt = DXGI_FORMAT_R32_SINT; break;
+        case eTextureFormat_R16_typeless: fmt = DXGI_FORMAT_R16_TYPELESS; break;
+        case eTextureFormat_R16_float: fmt = DXGI_FORMAT_R16_FLOAT; break;
+        case eTextureFormat_R16_uint: fmt = DXGI_FORMAT_R16_UINT; break;
+        case eTextureFormat_R16_sint: fmt = DXGI_FORMAT_R16_SINT; break;
+        case eTextureFormat_RGB10A2_typeless: fmt = DXGI_FORMAT_R10G10B10A2_TYPELESS; break;
+        case eTextureFormat_RGB10A2_unorm: fmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+        case eTextureFormat_RGB10A2_uint: fmt = DXGI_FORMAT_R10G10B10A2_UINT; break;
+        case eTextureFormat_RGBA8_unorm: fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case eTextureFormat_RGBA8_typeless: fmt = DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
+        case eTextureFormat_D32_float: fmt = DXGI_FORMAT_D32_FLOAT; break;
+        case eTextureFormat_D24S8_float: fmt = DXGI_FORMAT_D24_UNORM_S8_UINT; break;
+        case eTextureFormat_R8_unorm: fmt = DXGI_FORMAT_A8_UNORM; break;
+
+        case eTextureFormat_RGBA8_sRGB_unorm:   fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case eTextureFormat_BC3_unorm:          fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
+        case eTextureFormat_BC2_unorm:          fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
+        case eTextureFormat_BC1_unorm:          fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
+        case eTextureFormat_BC3_sRGB_unorm:     fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
+        case eTextureFormat_BC2_sRGB_unorm:     fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
+        case eTextureFormat_BC1_sRGB_unorm:     fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
         }
         if(compressed) {
             *compressed=compressedFormat;
         }
+        hcAssert(fmt!=DXGI_FORMAT_FORCE_UINT);
         return fmt;
     }
 
@@ -1548,20 +1576,26 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::createConstantBlockDevice(hUint size, void* initdata, hdParameterConstantBlock* block) {
-        hcAssert(block && size >= 16 && size%16 == 0);
+    void hdDX11RenderDevice::createBufferDevice(hUint size, void* initdata, hUint flags, hUint stride, hdRenderBuffer* block) {
+        hcAssert(block);
         HRESULT hr;
         D3D11_BUFFER_DESC desc={0};
         D3D11_SUBRESOURCE_DATA resdata={0};
         D3D11_SUBRESOURCE_DATA* subresdata=initdata ? &resdata : NULL;
         //hZeroMem( &desc, sizeof(desc) );
         resdata.pSysMem=initdata;
-        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        desc.BindFlags = 0;
+        desc.BindFlags |= flags & eResourceFlag_ConstantBuffer ? D3D11_BIND_CONSTANT_BUFFER : 0;
+        desc.BindFlags |= flags & eResourceFlag_ShaderResource ? D3D11_BIND_SHADER_RESOURCE : 0;
+        desc.BindFlags |= flags & eResourceFlag_StreamOut ? D3D11_BIND_STREAM_OUTPUT : 0;
         desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.ByteWidth = size;
+        desc.ByteWidth = hMax(size, 16);
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        hr = d3d11Device_->CreateBuffer( &desc, subresdata, &block->constBuffer_ );
-        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", block->constBuffer_);
+        desc.MiscFlags = 0;
+        desc.MiscFlags |= flags & eResourceFlag_StructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
+        desc.StructureByteStride=stride;
+        hr = d3d11Device_->CreateBuffer( &desc, subresdata, &block->buffer_ );
+        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", block->buffer_);
         hcAssert( SUCCEEDED( hr ) );
         block->size_ = size;
     }
@@ -1570,11 +1604,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::destroyConstantBlockDevice(hdDX11ParameterConstantBlock* constBlock)
+    void hdDX11RenderDevice::destroyConstantBlockDevice(hdDX11Buffer* constBlock)
     {
-        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", constBlock->constBuffer_);
-        constBlock->constBuffer_->Release();
-        constBlock->constBuffer_ = NULL;
+        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", constBlock->buffer_);
+        constBlock->buffer_->Release();
+        constBlock->buffer_ = NULL;
         constBlock->size_ = 0;
     }
 
@@ -1636,8 +1670,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::createShaderResourseViewDevice(hdDX11ParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv) {
-        createShaderResourseViewDevice(cb->constBuffer_, desc, outsrv);
+    void hdDX11RenderDevice::createShaderResourseViewDevice(hdDX11Buffer* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv) {
+        createShaderResourseViewDevice(cb->buffer_, desc, outsrv);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1895,7 +1929,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setVertexInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11ParameterConstantBlock** cb, hUint ncb) {
+    hUint hdDX11RenderCommandGenerator::setVertexInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetVertexInputs);
         hRCmdSetVertexInputs* cmd=(hRCmdSetVertexInputs*)hAlloca(cmdsize);
@@ -1911,7 +1945,7 @@ namespace Heart
             cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -1920,7 +1954,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11ParameterConstantBlock** cb, hUint ncb) {
+    hUint hdDX11RenderCommandGenerator::setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetPixelInputs);
         hRCmdSetPixelInputs* cmd=(hRCmdSetPixelInputs*)hAlloca(cmdsize);
@@ -1936,7 +1970,7 @@ namespace Heart
             cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -1945,7 +1979,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11ParameterConstantBlock** cb, hUint ncb) {
+    hUint hdDX11RenderCommandGenerator::setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetGeometryInputs);
         hRCmdSetGeometryInputs* cmd=(hRCmdSetGeometryInputs*)hAlloca(cmdsize);
@@ -1961,7 +1995,7 @@ namespace Heart
             cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -1970,7 +2004,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11ParameterConstantBlock** cb, hUint ncb) {
+    hUint hdDX11RenderCommandGenerator::setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetHullInputs);
         hRCmdSetHullInputs* cmd=(hRCmdSetHullInputs*)hAlloca(cmdsize);
@@ -1986,7 +2020,7 @@ namespace Heart
             cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -1995,7 +2029,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11ParameterConstantBlock** cb, hUint ncb) {
+    hUint hdDX11RenderCommandGenerator::setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetDomainInputs);
         hRCmdSetDomainInputs* cmd=(hRCmdSetDomainInputs*)hAlloca(cmdsize);
@@ -2011,7 +2045,7 @@ namespace Heart
             cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
         }
         for (hUint i=0, n=ncb; i<n; ++i) {
-            cmdpcb[i]=cb[i] ? cb[i]->constBuffer_ : hNullptr;
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
     }
@@ -2044,13 +2078,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11ParameterConstantBlock* cb) {
+    hUint hdDX11RenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hdDX11Buffer* cb) {
         hRCmdSetInputsBase* inputcmd=static_cast<hRCmdSetInputsBase*>(cmd);
         hcAssert(reg < inputcmd->bufferCount_);
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(inputcmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+inputcmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+inputcmd->samplerCount_);
-        cmdpcb[reg]=cb ? cb->constBuffer_ : hNullptr;
+        cmdpcb[reg]=cb ? cb->buffer_ : hNullptr;
         return 0;
     }
 

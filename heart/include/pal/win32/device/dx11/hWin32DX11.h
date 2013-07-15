@@ -85,7 +85,7 @@ namespace Heart
     typedef hdDX11IndexBuffer            hdIndexBuffer;
     typedef hdDX11Texture                hdTexture;
     typedef hdDX11ShaderProgram          hdShaderProgram;
-    typedef hdDX11ParameterConstantBlock hdParameterConstantBlock;
+    typedef hdDX11Buffer                 hdRenderBuffer;
     typedef hdDX11BlendState             hdBlendState;
     typedef hdDX11RasterizerState        hdRasterizerState;
     typedef hdDX11DepthStencilState      hdDepthStencilState;

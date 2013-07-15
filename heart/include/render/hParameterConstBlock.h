@@ -33,12 +33,12 @@
 namespace Heart
 {
 
-class HEART_DLLEXPORT hParameterConstantBlock : public hIReferenceCounted,
-    public hdParameterConstantBlock
+class HEART_DLLEXPORT hRenderBuffer : public hIReferenceCounted,
+    public hdRenderBuffer
 {
 public:
-    hFUNCTOR_TYPEDEF(void(*)(hParameterConstantBlock*), hZeroRefProc);
-    hParameterConstantBlock(hZeroRefProc zeroproc)
+    hFUNCTOR_TYPEDEF(void(*)(hRenderBuffer*), hZeroRefProc);
+    hRenderBuffer(hZeroRefProc zeroproc)
         : zeroProc_(zeroproc)
     {
     }

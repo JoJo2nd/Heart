@@ -91,7 +91,7 @@ namespace Heart
         viewportConstants_.viewportSize_[2]=0.f;
         viewportConstants_.viewportSize_[3]=0.f;
 
-        hConstBlockMapInfo map;
+        hRenderBufferMapInfo map;
         ctx->Map(cameraConstBlock_, &map);
         hMemCpy(map.ptr, &viewportConstants_, sizeof(viewportConstants_));
         ctx->Unmap(&map);

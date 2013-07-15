@@ -196,7 +196,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11VertexLayout* hdDX11ShaderProgram::createVertexLayout(hInputLayoutDesc* desc, hUint n) const {
+    hdDX11VertexLayout* hdDX11ShaderProgram::createVertexLayout(const hInputLayoutDesc* desc, hUint n) const {
         D3D11_SHADER_DESC shaderdesc;
         shaderInfo_->GetDesc(&shaderdesc);
         if (n < shaderdesc.InputParameters) {
@@ -242,11 +242,11 @@ namespace Heart
             inputdesc->type_=eShaderInputType_Sampler; break;
         case D3D_SIT_TBUFFER                        :
         case D3D_SIT_TEXTURE                        :
+        case D3D_SIT_STRUCTURED                     :
+        case D3D_SIT_BYTEADDRESS                    :
             inputdesc->type_=eShaderInputType_Resource; break;
         case D3D_SIT_UAV_RWTYPED                    :
-        case D3D_SIT_STRUCTURED                     :
         case D3D_SIT_UAV_RWSTRUCTURED               :
-        case D3D_SIT_BYTEADDRESS                    :
         case D3D_SIT_UAV_RWBYTEADDRESS              :
         case D3D_SIT_UAV_APPEND_STRUCTURED          :
         case D3D_SIT_UAV_CONSUME_STRUCTURED         :

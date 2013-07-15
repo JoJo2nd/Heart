@@ -47,47 +47,21 @@ namespace Heart
         hRenderFrameStats passes_[ MAX_PASSES ];
     };
 
-    struct HEART_DLLEXPORT hRenderResourceUpdateCmd
-    {
-        enum hMapType
-        {
-            eMapTypeVtxBuffer,
-            eMapTypeIdxBuffer,
-        };
-        union
-        {
-            hVertexBuffer*  vb_;
-            hIndexBuffer*   ib_;
-        };
-        void*   data_;
-        hUint32 size_;
-        hUint16 flags_;
-    };
-
-    typedef void (*hCustomRenderCallback)(hRenderer*, void*);
+    hFUNCTOR_TYPEDEF(void (*)(hRenderer*, hRenderSubmissionCtx*), hCustomRenderCallback);
 
     struct HEART_DLLEXPORT hDrawCall
     {
-        hUint64                 sortKey_;                                   //8b        -> 8b
+        hDrawCall() : customCallFlag_(false) {}
+        hUint64                 sortKey_;//8b        -> 8b
         union {
-            /*struct {
-                // Pointers for the following three might not be the best solution
-                hUint                   instanceCount_;
-                hUint32                 drawPrimCount_;
-                hdBlendState*           blendState_;
-                hdRasterizerState*      rasterState_;
-                hdDepthStencilState*    depthState_;
-                hdRenderInputObject*    progInput_;
-                hdRenderStreamsObject   streams_;
-            };*/
             struct {
                 hCustomRenderCallback   customCall_;
-                void*                   userPtr_;
             };
             struct {
                 hRCmd* rCmds_;
             };
         };
+        hBool                   customCallFlag_;
     };
 
     class HEART_DLLEXPORT hRenderCommandGenerator : public hdRenderCommandGenerator
@@ -111,22 +85,22 @@ namespace Heart
         hUint setShader(hShaderProgram* shader);
         hUint setVertexInputs(hSamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
-            hParameterConstantBlock** cb, hUint ncb);
+            hRenderBuffer** cb, hUint ncb);
         hUint setPixelInputs(hSamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
-            hParameterConstantBlock** cb, hUint ncb);
+            hRenderBuffer** cb, hUint ncb);
         hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
-            hParameterConstantBlock** cb, hUint ncb);
+            hRenderBuffer** cb, hUint ncb);
         hUint setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
-            hParameterConstantBlock** cb, hUint ncb);
+            hRenderBuffer** cb, hUint ncb);
         hUint setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
-            hParameterConstantBlock** cb, hUint ncb);
+            hRenderBuffer** cb, hUint ncb);
         hUint setStreamInputs(PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
             hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount);
-        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hParameterConstantBlock* cb);
+        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hRenderBuffer* cb);
         hUint updateShaderInputSampler(hRCmd* cmd, hUint reg, hSamplerState* ss);
         hUint updateShaderInputView(hRCmd* cmd, hUint reg, hShaderResourceView* srv);
         hUint updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
@@ -184,14 +158,14 @@ namespace Heart
         void  createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
         void  createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
         void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-        void  createShaderResourceView(hParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+        void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
         void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
         void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
         hBlendState*        createBlendState( const hBlendStateDesc& desc );
         hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
         hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
         hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
-        void  createConstantBlock(hUint size, void* data, hParameterConstantBlock** outcb);
+        void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
     private:  
         void  destroyShader(hShaderProgram* prog);
         void  destroyTexture(hTexture* pOut);
@@ -204,7 +178,7 @@ namespace Heart
         void  destoryRasterizerState( hRasterizerState* state );
         void  destroyDepthStencilState( hDepthStencilState* state );
         void  destroySamplerState( hSamplerState* state );
-        void  destroyConstantBlock(hParameterConstantBlock* block);
+        void  destroyConstantBlock(hRenderBuffer* block);
     public:
         void  SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
         void* allocTempRenderMemory( hUint32 size );
@@ -293,7 +267,6 @@ namespace Heart
         hAtomicInt                                              drawCallBlockIdx_;
         hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
         hAtomicInt                                              drawResourceUpdateCalls_;
-        hArray< hRenderResourceUpdateCmd, s_resoruceUpdateLimit >     drawResourceUpdates_;
 
         hUint32										            FPS_;
         hUint32													currentRenderStatFrame_;
@@ -303,6 +276,84 @@ namespace Heart
         static void*											pRenderThreadID_;
     };
 
+    class hLightingManager
+    {
+    public:
+
+        struct hRenderTargetInfo
+        {
+            hShaderProgram* vertexLightShader_;
+            hShaderProgram* pixelLightShader_;
+            hTexture*       albedo_;
+            hTexture*       normal_;
+            hTexture*       spec_;
+            hTexture*       depth_;
+            hUint           viewCameraIndex_;
+        };
+
+        hLightingManager()
+            : inputLayout_(hNullptr)
+            , inputLightData_(hNullptr)
+            , directionLightData_(hNullptr)
+            , screenQuadIB_(hNullptr)
+            , screenQuadVB_(hNullptr)
+            , blendState_(hNullptr)
+            , rasterState_(hNullptr)
+            , depthStencilState_(hNullptr)
+            , samplerState_(hNullptr)
+            , samplerBindPoint_(0)
+        {
+            
+        }
+        ~hLightingManager()
+        {
+            destroy();
+        }
+
+        void initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo);
+        void destroy();
+        void addDirectionalLight(const hVec3& direction, const hColour& colour);
+
+        void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
+
+    private:
+
+        struct hInputLightData
+        {
+            hMatrix viewMatrix_;
+            hMatrix inverseViewMtx_;
+            hMatrix projectionMtx_;
+            hMatrix inverseProjectMtx_;
+            hVec4   eyePos_;
+            hUint   directionalLightCount_;
+        };
+
+        struct hDirectionalLight
+        {
+            hVec3   direction_;
+            hColour colour_;
+        };
+
+        static const hUint s_maxDirectionalLights = 15;
+
+        hRenderTargetInfo                                   targetInfo_;
+        hdInputLayout*                                      inputLayout_;
+        hRenderBuffer*                                      inputLightData_;
+        hRenderBuffer*                                      directionLightData_;
+        hIndexBuffer*                                       screenQuadIB_;
+        hVertexBuffer*                                      screenQuadVB_;
+        hBlendState*                                        blendState_;
+        hRasterizerState*                                   rasterState_;
+        hDepthStencilState*                                 depthStencilState_;
+        hSamplerState*                                      samplerState_;
+        hUint                                               samplerBindPoint_;
+        hVector<hShaderResourceView*>                       srv_;
+        hVector<hRenderBuffer*>                             buffers_;
+        hRenderCommands                                     renderCmds_;
+
+        hInputLightData                                     lightInfo_;
+        hArray<hDirectionalLight, s_maxDirectionalLights>   directionalLights_;
+    };
 }
 
 #endif // hrRenderer_h__

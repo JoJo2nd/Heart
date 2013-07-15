@@ -47,7 +47,7 @@ namespace Heart
         void SetVisible(hBool visible) { visible_ = visible; }
         hBool GetVisible() const { return visible_; }
         virtual void PreRenderUpdate() = 0;
-        virtual void Render(hRenderSubmissionCtx* ctx, hParameterConstantBlock* instanceCB, const hDebugRenderParams& params) = 0;
+        virtual void Render(hRenderSubmissionCtx* ctx, hRenderBuffer* instanceCB, const hDebugRenderParams& params) = 0;
         virtual void EndFrameUpdate() = 0;
 
     private:

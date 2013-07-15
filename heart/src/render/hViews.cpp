@@ -60,7 +60,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hShaderResourceView::bindConstBlock(hParameterConstantBlock* cb) {
+    void hShaderResourceView::bindConstBlock(hRenderBuffer* cb) {
         if (cb) {
             cb->AddRef();
         }

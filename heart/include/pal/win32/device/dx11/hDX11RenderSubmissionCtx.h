@@ -63,7 +63,7 @@ namespace Heart
         hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
         hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
         hBool   bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view);
-        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
+        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11Buffer* buffer);
 
         enum hdDX11ShaderProgTypes
         {
@@ -115,7 +115,7 @@ namespace Heart
         hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
         hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
         hBool   bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view);
-        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer);
+        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11Buffer* buffer);
         hBool   bindUAV(hShaderParameterID paramID, hdDX11ComputeUAV* uav);
     private:
         friend class hdDX11RenderSubmissionCtx;
@@ -222,8 +222,8 @@ namespace Heart
         void    Unmap(hdDX11IndexBuffer* ib, void* ptr);
         void    Map(hdDX11VertexBuffer* vb, hdDX11MappedResourceData* data);
         void    Unmap(hdDX11VertexBuffer* vb, void* ptr);
-        void    Map(hdDX11ParameterConstantBlock* vb, hdDX11MappedResourceData* data);
-        void    Unmap(hdDX11ParameterConstantBlock* vb, void* ptr);
+        void    Map(hdDX11Buffer* vb, hdDX11MappedResourceData* data);
+        void    Unmap(hdDX11Buffer* vb, void* ptr);
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };

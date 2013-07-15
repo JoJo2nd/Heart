@@ -83,12 +83,12 @@ namespace Heart
         hBool   bindShaderProgram(hdShaderProgram* prog);
         hBool   setSamplerInput(hShaderParameterID paramID, hSamplerState* srv);
         hBool   setResourceView(hShaderParameterID paramID, hShaderResourceView* view);
-        hBool   setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer);
+        hBool   setConstantBuffer(hShaderParameterID paramID, hRenderBuffer* buffer);
 
         hUint   getConstantBufferCount(hShaderType progtype) const { return inputResources_[progtype].buffers_.GetSize();}
         hUint   getSamplerCount(hShaderType progtype) const { return inputResources_[progtype].samplerStates_.GetSize();}
         hUint   getShaderResourceViewCount(hShaderType progtype) const { return inputResources_[progtype].srView_.GetSize();}
-        hParameterConstantBlock** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.GetBuffer(); }
+        hRenderBuffer** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.GetBuffer(); }
         hSamplerState**           getSamplers(hShaderType progtype) { return inputResources_[progtype].samplerStates_.GetBuffer(); }
         hShaderResourceView**     getShaderResourceViews(hShaderType progtype) { return inputResources_[progtype].srView_.GetBuffer(); }
 
@@ -129,7 +129,7 @@ namespace Heart
         {
             hVector< hShaderResourceView* >     srView_;
             hVector< hSamplerState* >           samplerStates_;
-            hVector< hParameterConstantBlock* > buffers_;
+            hVector< hRenderBuffer* > buffers_;
         } inputResources_[s_maxPrograms];
 
         /*

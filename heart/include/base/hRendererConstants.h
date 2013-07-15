@@ -379,31 +379,65 @@ namespace Heart
 
     enum hTextureFormat
     {
-        TFORMAT_ARGB8,
-        TFORMAT_XRGB8,
-        TFORMAT_ARGB8_TYPELESS,
-        TFORMAT_R16F,
-        TFORMAT_GR16F,
-        TFORMAT_ABGR16F,
-        TFORMAT_R32F,
-        TFORMAT_R32_TYPELESS,
-        TFORMAT_R32UINT,
-        TFORMAT_D32F,
-        TFORMAT_D24S8F,
-        TFORMAT_L8,
-        TFORMAT_DXT5,
-        TFORMAT_DXT3,
-        TFORMAT_DXT1,
+        eTextureFormat_Unknown,
 
-        TFORMAT_GAMMA_sRGB      = 0x80000000,
-        TFORMAT_ARGB8_sRGB      = TFORMAT_ARGB8     | TFORMAT_GAMMA_sRGB,
-        TFORMAT_XRGB8_sRGB      = TFORMAT_XRGB8     | TFORMAT_GAMMA_sRGB,
-        TFORMAT_ABGR16F_sRGB    = TFORMAT_ABGR16F   | TFORMAT_GAMMA_sRGB,
-        TFORMAT_DXT5_sRGB       = TFORMAT_DXT5      | TFORMAT_GAMMA_sRGB,
-        TFORMAT_DXT3_sRGB       = TFORMAT_DXT3      | TFORMAT_GAMMA_sRGB,
-        TFORMAT_DXT1_sRGB       = TFORMAT_DXT1      | TFORMAT_GAMMA_sRGB,
+        eTextureFormat_RGBA32_typeless,
+        eTextureFormat_RGBA32_float,
+        eTextureFormat_RGBA32_uint,
+        eTextureFormat_RGBA32_sint,
 
-        TFORMAT_FORCE_DWORD = ~0U
+        eTextureFormat_RGB32_typeless,  // DXGI_FORMAT_R32G32B32_TYPELESS          = 5,
+        eTextureFormat_RGB32_float,     // DXGI_FORMAT_R32G32B32_FLOAT             = 6,
+        eTextureFormat_RGB32_uint,      // DXGI_FORMAT_R32G32B32_UINT              = 7,
+        eTextureFormat_RGB32_sint,      // DXGI_FORMAT_R32G32B32_SINT              = 8,
+        
+        eTextureFormat_RGBA16_typeless, // DXGI_FORMAT_R16G16B16A16_TYPELESS       = 9,
+        eTextureFormat_RGBA16_float,    // DXGI_FORMAT_R16G16B16A16_FLOAT          = 10,
+        eTextureFormat_RGBA16_unorm,    // DXGI_FORMAT_R16G16B16A16_UNORM          = 11,
+        eTextureFormat_RGBA16_uint,     // DXGI_FORMAT_R16G16B16A16_UINT           = 12,
+        eTextureFormat_RGBA16_snorm,    // DXGI_FORMAT_R16G16B16A16_SNORM          = 13,
+        eTextureFormat_RGBA16_sint,     // DXGI_FORMAT_R16G16B16A16_SINT           = 14,
+        
+        eTextureFormat_RG32_typeless,    // DXGI_FORMAT_R32G32_TYPELESS             = 15,
+        eTextureFormat_RG32_float,      // DXGI_FORMAT_R32G32_FLOAT                = 16,
+        eTextureFormat_RG32_uint,       // DXGI_FORMAT_R32G32_UINT                 = 17,
+        eTextureFormat_RG32_sint,       // DXGI_FORMAT_R32G32_SINT                 = 18,
+        
+        eTextureFormat_RG16_typeless,    // DXGI_FORMAT_R16G16_TYPELESS             = 15,
+        eTextureFormat_RG16_float,      // DXGI_FORMAT_R16G16_FLOAT                = 16,
+        eTextureFormat_RG16_uint,       // DXGI_FORMAT_R16G16_UINT                 = 17,
+        eTextureFormat_RG16_sint,       // DXGI_FORMAT_R16G16_SINT                 = 18,
+
+        eTextureFormat_R32_typeless,    //
+        eTextureFormat_R32_float,      //
+        eTextureFormat_R32_uint,       //
+        eTextureFormat_R32_sint,       //
+
+        eTextureFormat_R16_typeless,    //
+        eTextureFormat_R16_float,      //
+        eTextureFormat_R16_uint,       //
+        eTextureFormat_R16_sint,       //
+
+        eTextureFormat_RGB10A2_typeless,    // DXGI_FORMAT_R10G10B10A2_TYPELESS        = 23,
+        eTextureFormat_RGB10A2_unorm,       // DXGI_FORMAT_R10G10B10A2_UNORM           = 24,
+        eTextureFormat_RGB10A2_uint,        // DXGI_FORMAT_R10G10B10A2_UINT            = 25,
+
+        eTextureFormat_RGBA8_unorm,
+        eTextureFormat_RGBA8_typeless,
+        eTextureFormat_D32_float,
+        eTextureFormat_D24S8_float,
+        eTextureFormat_R8_unorm,
+        eTextureFormat_BC3_unorm, //DXT5
+        eTextureFormat_BC2_unorm, //DXT3
+        eTextureFormat_BC1_unorm, //DXT1
+
+        eTextureFormat_sRGB_mask      = 0x80000000,
+        eTextureFormat_RGBA8_sRGB_unorm     = eTextureFormat_RGBA8_unorm    | eTextureFormat_sRGB_mask,
+        eTextureFormat_BC3_sRGB_unorm       = eTextureFormat_BC3_unorm      | eTextureFormat_sRGB_mask,
+        eTextureFormat_BC2_sRGB_unorm       = eTextureFormat_BC2_unorm      | eTextureFormat_sRGB_mask,
+        eTextureFormat_BC1_sRGB_unorm       = eTextureFormat_BC1_unorm      | eTextureFormat_sRGB_mask,
+
+        eTextureFormat_ForceUintMax = ~0U
     };
 
     enum RENDER_STATE
@@ -620,7 +654,11 @@ namespace Heart
         RESOURCEFLAG_DEPTHTARGET     = 1 << 3,
         RESOURCEFLAG_KEEPCPUDATA     = 1 << 4,
         RESOURCEFLAG_DONTOWNCPUDATA  = 1 << 5,
-        RESOURCEFLAG_UNORDEREDACCESS = 1 << 6
+        RESOURCEFLAG_UNORDEREDACCESS = 1 << 6,
+        eResourceFlag_ConstantBuffer = 1 << 7,
+        eResourceFlag_ShaderResource = 1 << 8,
+        eResourceFlag_StreamOut      = 1 << 9,
+        eResourceFlag_StructuredBuffer = 1 << 10,
     };
 
     enum PrimitiveType

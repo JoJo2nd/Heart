@@ -866,7 +866,7 @@ namespace hRenderUtility
         hMipDesc mipsdesc[] = {
             {(hUint32)low_res_fnt_width, (hUint32)low_res_fnt_height, (hByte*)low_res_fnt_data, (hUint)low_res_fnt_data_len},
         };
-        rndr->createTexture(1, mipsdesc, TFORMAT_L8, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
+        rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
 
         return outfont;
     }

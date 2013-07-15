@@ -53,7 +53,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterialTechniquePass::setConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer)
+    hBool hMaterialTechniquePass::setConstantBuffer(hShaderParameterID paramID, hRenderBuffer* buffer)
     {
         hBool succ=false;
         for (hUint i=0, n=s_maxPrograms; i<n; ++i) {

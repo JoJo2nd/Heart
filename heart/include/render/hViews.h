@@ -33,7 +33,7 @@ namespace Heart
 {
 
 class hTexture;
-class hParameterConstantBlock;
+class hRenderBuffer;
 
 class HEART_DLLEXPORT hShaderResourceView : public hIReferenceCounted,
                                             public hdShaderResourceView
@@ -54,14 +54,14 @@ private:
     HEART_PRIVATE_COPY(hShaderResourceView);
 
     void bindTexture(hTexture* tex);
-    void bindConstBlock(hParameterConstantBlock* cb);
+    void bindConstBlock(hRenderBuffer* cb);
     virtual void OnZeroRef();
 
     hZeroRefProc        zeroRefProc_;
     hRenderResourceType refType_;
     union {
         hTexture*                   refTex_;
-        hParameterConstantBlock*    refCB_;
+        hRenderBuffer*    refCB_;
     };
 };
 

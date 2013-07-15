@@ -66,7 +66,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11RenderInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer)
+    hBool hdDX11RenderInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11Buffer* buffer)
     {
         hcAssert(paramID != 0);
         hcAssert(buffer);
@@ -77,7 +77,7 @@ namespace Heart
             if (!boundProgs_[p]) continue;
             cbidx = boundProgs_[p]->GetConstantBlockRegister(paramID);
             if (cbidx >= HEART_MAX_CONSTANT_BLOCKS) continue;
-            inputData_[p].programInputs_[cbidx] = buffer->constBuffer_;
+            inputData_[p].programInputs_[cbidx] = buffer->buffer_;
             succ = true;
         }
 
@@ -537,10 +537,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::Map(hdDX11ParameterConstantBlock* cb, hdDX11MappedResourceData* data)
+    void hdDX11RenderSubmissionCtx::Map(hdDX11Buffer* cb, hdDX11MappedResourceData* data)
     {
         HRESULT hr;
-        hr = device_->Map(cb->constBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, data);
+        hr = device_->Map(cb->buffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, data);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -590,9 +590,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderSubmissionCtx::Unmap(hdDX11ParameterConstantBlock* cb, void* ptr)
+    void hdDX11RenderSubmissionCtx::Unmap(hdDX11Buffer* cb, void* ptr)
     {
-        device_->Unmap(cb->constBuffer_, 0);
+        device_->Unmap(cb->buffer_, 0);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -805,13 +805,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdDX11ComputeInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11ParameterConstantBlock* buffer) {
+    hBool hdDX11ComputeInputObject::bindConstantBuffer(hShaderParameterID paramID, hdDX11Buffer* buffer) {
         if (computeShader_) {
             hUint32 idx = boundComputeProg_->GetInputRegister(paramID);
             if (idx > HEART_MAX_RESOURCE_INPUTS) {
                 return hFalse;
             }
-            programInputs_[idx] = buffer->constBuffer_;
+            programInputs_[idx] = buffer->buffer_;
             constCount_ = (hUint16)hMax(idx+1, constCount_);
             return hTrue;
         }

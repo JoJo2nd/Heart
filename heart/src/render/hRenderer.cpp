@@ -442,7 +442,9 @@ namespace Heart
             for (hUint t=0, n=camera->getTargetCount(); t<n; ++t) {
                 ctx->clearColour(camera->getTargets()[t], BLACK);
             }
-            ctx->clearDepth(camera->getDepthTarget(), 1.f);
+            if (camera->getDepthTarget()) {
+                ctx->clearDepth(camera->getDepthTarget(), 1.f);
+            }
         }
 
         return retTechMask;
@@ -515,7 +517,11 @@ namespace Heart
                 tmask = beginCameraRender(&mainSubmissionCtx_, nCam);
                 camera = nCam;
             }
-            mainSubmissionCtx_.runRenderCommands(dcall->rCmds_);
+            if (dcall->customCallFlag_) {
+                dcall->customCall_(this, &mainSubmissionCtx_);
+            } else {
+                mainSubmissionCtx_.runRenderCommands(dcall->rCmds_);
+            }
 // 
 //             hBool newMaterial = matKey != lastMatKey;
 //             lastMatKey = matKey;
@@ -559,7 +565,7 @@ namespace Heart
         hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
         rtvd.tex2D_.topMip_=0;
         rtvd.tex2D_.mipLevels_=~0;
-        dsvd.format_=TFORMAT_D32F;//db->getTextureFormat();
+        dsvd.format_=eTextureFormat_D32_float;//db->getTextureFormat();
         dsvd.resourceType_=db->getRenderType();
         hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
         dsvd.tex2D_.topMip_=0;
@@ -693,7 +699,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createShaderResourceView(hParameterConstantBlock* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+    void hRenderer::createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
         (*outsrv) = hNEW(GetGlobalHeap(), hShaderResourceView)(
             hFUNCTOR_BINDMEMBER(hShaderResourceView::hZeroRefProc, hRenderer, destroyShaderResourceView, this));
         ParentClass::createShaderResourseViewDevice(cb, desc, *outsrv);
@@ -901,17 +907,17 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createConstantBlock(hUint size, void* data, hParameterConstantBlock** outcb) {
-        (*outcb) = hNEW(GetGlobalHeap(), hParameterConstantBlock)(
-            hFUNCTOR_BINDMEMBER(hParameterConstantBlock::hZeroRefProc, hRenderer, destroyConstantBlock, this));
-        ParentClass::createConstantBlockDevice(size, data, *outcb);
+    void hRenderer::createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb) {
+        (*outcb) = hNEW(GetGlobalHeap(), hRenderBuffer)(
+            hFUNCTOR_BINDMEMBER(hRenderBuffer::hZeroRefProc, hRenderer, destroyConstantBlock, this));
+        ParentClass::createBufferDevice(size, data, flags, stride, *outcb);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyConstantBlock(hParameterConstantBlock* block) {
+    void hRenderer::destroyConstantBlock(hRenderBuffer* block) {
         ParentClass::destroyConstantBlockDevice(block);
         hDELETE(GetGlobalHeap(), block);
     }
@@ -1540,11 +1546,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setVertexInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+    hUint hRenderCommandGenerator::setVertexInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
         hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
-        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
         for (hUint i=0, n=nsamplers; i<n; ++i) {
             dsamplers[i]=samplers[i];
         }
@@ -1561,11 +1567,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setPixelInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+    hUint hRenderCommandGenerator::setPixelInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
         hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
-        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
         for (hUint i=0, n=nsamplers; i<n; ++i) {
             dsamplers[i]=samplers[i];
         }
@@ -1581,11 +1587,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+    hUint hRenderCommandGenerator::setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
         hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
-        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
         for (hUint i=0, n=nsamplers; i<n; ++i) {
             dsamplers[i]=samplers[i];
         }
@@ -1601,11 +1607,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+    hUint hRenderCommandGenerator::setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
         hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
-        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
         for (hUint i=0, n=nsamplers; i<n; ++i) {
             dsamplers[i]=samplers[i];
         }
@@ -1622,11 +1628,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hParameterConstantBlock** cb, hUint ncb) {
+    hUint hRenderCommandGenerator::setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
         hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
-        hdParameterConstantBlock** dcb  =(hdParameterConstantBlock**)hAlloca(sizeof(hdParameterConstantBlock*)*ncb);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
         for (hUint i=0, n=nsamplers; i<n; ++i) {
             dsamplers[i]=samplers[i];
         }
@@ -1655,7 +1661,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hParameterConstantBlock* cb) {
+    hUint hRenderCommandGenerator::updateShaderInputBuffer(hRCmd* cmd, hUint reg, hRenderBuffer* cb) {
         hcAssert(cmd >= renderCommands_->cmds_ && (hByte*)cmd < (hByte*)renderCommands_->cmds_+renderCommands_->cmdSize_);
         hdRenderCommandGenerator::updateShaderInputBuffer(cmd, reg, cb);
         return 0;
@@ -1692,6 +1698,243 @@ namespace Heart
             dvtx[i]=vtx[i];
         }
         return hdRenderCommandGenerator::updateStreamInputs(cmd, primType, index, format, vertexlayout, dvtx, firstStream, streamCount);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo) {
+        destroy();
+
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        targetInfo_=*rndrinfo;
+        lightInfo_.directionalLightCount_=0;
+        renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
+        renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
+        hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, GetGlobalHeap(), &screenQuadIB_, &screenQuadVB_);
+        hBlendStateDesc blendstatedesc;
+        hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
+        blendstatedesc.blendEnable_           = RSV_DISABLE;
+        blendstatedesc.srcBlend_              = RSV_BLEND_OP_ONE;
+        blendstatedesc.destBlend_             = RSV_BLEND_OP_ZERO;
+        blendstatedesc.blendOp_               = RSV_BLEND_FUNC_ADD;
+        blendstatedesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
+        blendstatedesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
+        blendstatedesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
+        blendstatedesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
+        blendState_=renderer->createBlendState(blendstatedesc);
+        hRasterizerStateDesc rasterstatedesc;
+        hZeroMem(&rasterstatedesc, sizeof(rasterstatedesc));
+        rasterstatedesc.fillMode_              = RSV_FILL_MODE_SOLID;
+        rasterstatedesc.cullMode_              = RSV_CULL_MODE_NONE;
+        rasterstatedesc.frontCounterClockwise_ = RSV_DISABLE;
+        rasterstatedesc.depthBias_             = 0;
+        rasterstatedesc.depthBiasClamp_        = 0.f;
+        rasterstatedesc.slopeScaledDepthBias_  = 0.f;
+        rasterstatedesc.depthClipEnable_       = RSV_ENABLE;
+        rasterstatedesc.scissorEnable_         = RSV_DISABLE;
+        rasterState_=renderer->createRasterizerState(rasterstatedesc);
+        hDepthStencilStateDesc depthstatedesc;
+        hZeroMem(&depthstatedesc, sizeof(depthstatedesc));
+        depthstatedesc.depthEnable_        = RSV_DISABLE;
+        depthstatedesc.depthWriteMask_     = RSV_DISABLE;
+        depthstatedesc.depthFunc_          = RSV_Z_CMP_LESS;
+        depthstatedesc.stencilEnable_      = RSV_DISABLE;
+        depthstatedesc.stencilReadMask_    = ~0U;
+        depthstatedesc.stencilWriteMask_   = ~0U;
+        depthstatedesc.stencilFailOp_      = RSV_SO_KEEP;
+        depthstatedesc.stencilDepthFailOp_ = RSV_SO_KEEP;
+        depthstatedesc.stencilPassOp_      = RSV_SO_KEEP;
+        depthstatedesc.stencilFunc_        = RSV_SF_CMP_ALWAYS;
+        depthstatedesc.stencilRef_         = 0;  
+        depthStencilState_=renderer->createDepthStencilState(depthstatedesc);
+        hSamplerStateDesc samplerstatedesc;
+        samplerstatedesc.filter_        = SSV_POINT;
+        samplerstatedesc.addressU_      = SSV_CLAMP;
+        samplerstatedesc.addressV_      = SSV_CLAMP;
+        samplerstatedesc.addressW_      = SSV_CLAMP;
+        samplerstatedesc.mipLODBias_    = 0;
+        samplerstatedesc.maxAnisotropy_ = 16;
+        samplerstatedesc.borderColour_  = WHITE;
+        samplerstatedesc.minLOD_        = -FLT_MAX;
+        samplerstatedesc.maxLOD_        = FLT_MAX;
+        samplerState_=renderer->createSamplerState(samplerstatedesc);
+        inputLayout_=targetInfo_.vertexLightShader_->createVertexLayout(screenQuadVB_->getLayoutDesc(), screenQuadVB_->getDescCount());
+
+        
+        for (hUint i=0, n=targetInfo_.pixelLightShader_->getInputCount(); i<n; ++i) {
+            hShaderInput shaderInput;
+            targetInfo_.pixelLightShader_->getInput(i, &shaderInput);
+            if (hStrCmp(shaderInput.name_, "gbuffer_albedo")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=targetInfo_.albedo_->getTextureFormat();
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.albedo_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_normal")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=targetInfo_.normal_->getTextureFormat();
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.normal_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_spec")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                    hShaderResourceViewDesc srvdesc;
+                    hShaderResourceView* srv;
+                    hZeroMem(&srvdesc, sizeof(srvdesc));
+                    srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                    srvdesc.format_=targetInfo_.spec_->getTextureFormat();
+                    srvdesc.tex2D_.mipLevels_=~0;
+                    srvdesc.tex2D_.topMip_=0;
+                    renderer->createShaderResourceView(targetInfo_.spec_, srvdesc, &srv);
+                    if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                        srv_.Resize(shaderInput.bindPoint_+1);
+                    }
+                    srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_depth")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=eTextureFormat_R32_float;
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.depth_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "tex_sampler")==0 && shaderInput.type_==eShaderInputType_Sampler) {
+                samplerBindPoint_=shaderInput.bindPoint_;
+            } else if (hStrCmp(shaderInput.name_, "lighting_setup")==0 && shaderInput.type_==eShaderInputType_Buffer) {
+                if (buffers_.GetSize() < shaderInput.bindPoint_+1) {
+                    buffers_.Resize(shaderInput.bindPoint_+1);
+                }
+                buffers_[shaderInput.bindPoint_]=inputLightData_;
+            } else if (hStrCmp(shaderInput.name_, "direction_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hDirectionalLight);
+                srvdesc.buffer_.numElements_=s_maxDirectionalLights;
+                renderer->createShaderResourceView(directionLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            }
+        }
+        rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
+        rcGen.setShader(targetInfo_.vertexLightShader_);
+        rcGen.setShader(targetInfo_.pixelLightShader_);
+        rcGen.setPixelInputs(&samplerState_, 1, srv_.GetBuffer(), srv_.GetSize(), buffers_.GetBuffer(), buffers_.GetSize());
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
+        rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
+        rcGen.setReturn();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::destroy() {
+        for (hUint i=0, n=srv_.GetSize(); i<n; ++i) {
+            if (srv_[i]) {
+                srv_[i]->DecRef();
+                srv_[i]=hNullptr;
+            }
+        }
+        srv_.Resize(0);
+        buffers_.Resize(0);
+        if (blendState_) {
+            blendState_->DecRef();
+            blendState_=hNullptr;
+        }
+        if (rasterState_) {
+            rasterState_->DecRef();
+            rasterState_=hNullptr;
+        }
+        if (depthStencilState_) {
+            depthStencilState_->DecRef();
+            depthStencilState_=hNullptr;
+        }
+        if (samplerState_) {
+            samplerState_->DecRef();
+            samplerState_=hNullptr;
+        }
+        if (inputLayout_) {
+            targetInfo_.vertexLightShader_->destroyVertexLayout(inputLayout_);
+            inputLayout_=hNullptr;
+        }
+        if (inputLightData_) {
+            inputLightData_->DecRef();
+            inputLightData_=hNullptr;
+        }
+        if (directionLightData_) {
+            directionLightData_->DecRef();
+            directionLightData_=hNullptr;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::addDirectionalLight(const hVec3& direction, const hColour& colour) {
+        directionalLights_[lightInfo_.directionalLightCount_].direction_=direction;
+        directionalLights_[lightInfo_.directionalLightCount_].colour_=colour;
+        ++lightInfo_.directionalLightCount_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx) {
+        (void)renderer;
+        hRenderBufferMapInfo mapinfo;
+        hRendererCamera* viewcam=renderer->GetRenderCamera(targetInfo_.viewCameraIndex_);
+        hMatrix view=viewcam->GetViewMatrix();
+        hMatrix invView=hMatrixFunc::inverse(view);
+        hMatrix project=viewcam->GetProjectionMatrix();
+        hMatrix invProject=hMatrixFunc::inverse(project);
+
+        ctx->Map(inputLightData_, &mapinfo); {
+            hInputLightData* mapptr=(hInputLightData*)mapinfo.ptr;
+            mapptr->viewMatrix_=view;
+            mapptr->inverseViewMtx_=invView;
+            mapptr->projectionMtx_=project;
+            mapptr->inverseProjectMtx_=invProject;
+            mapptr->eyePos_=hMatrixFunc::getRow(invView, 3);
+            mapptr->directionalLightCount_ = lightInfo_.directionalLightCount_;
+            ctx->Unmap(&mapinfo);
+        }
+        ctx->Map(directionLightData_, &mapinfo); {
+            hDirectionalLight* mapptr=(hDirectionalLight*)mapinfo.ptr;
+            for (hUint i=0; i<lightInfo_.directionalLightCount_; ++i) {
+                mapptr[i]=directionalLights_[i];
+            }
+            ctx->Unmap(&mapinfo);
+        }
+        ctx->runRenderCommands(renderCmds_.getFirst());
     }
 
 }

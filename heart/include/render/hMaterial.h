@@ -139,7 +139,7 @@ namespace Heart
     struct hBoundConstBlock
     {
         hShaderParameterID paramid;
-        hParameterConstantBlock* constBlock;
+        hRenderBuffer* constBlock;
     };
 
     struct hDefaultParameterValue
@@ -160,11 +160,11 @@ namespace Heart
         hMaterialGroup* getGroup(hUint idx);
         hMaterialGroup* getGroupByName(const hChar* name);
         /* Allow access to parameter blocks and updating of parameters */
-        hParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+        hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
         static void destroyMaterialInstance(hMaterialInstance* inst);
 
         // v2 interface
-        hBool bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb);
+        hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* view);
         hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
         hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
@@ -244,14 +244,14 @@ namespace Heart
         void                destroyMaterialInstance(hMaterialInstance*);
 
         /* Bind interface - return false if not set on any programs */
-        hBool bindConstanstBuffer(hShaderParameterID id, hParameterConstantBlock* cb);
+        hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
         hBool bindMaterial(hRenderMaterialManager* matManager);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);
         hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
         void  unbind();
 
         /* Allow access to parameter blocks and updating of parameters */
-        hParameterConstantBlock* GetParameterConstBlock(hShaderParameterID cbid);
+        hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
 
     private:
 

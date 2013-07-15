@@ -46,7 +46,7 @@ namespace Heart
         hBool   bindResourceView(hShaderParameterID paramID, hShaderResourceView* view) {
             return inputs_.bindResourceView(paramID, view);
         }
-        hBool   bindConstantBuffer(hShaderParameterID paramID, hParameterConstantBlock* buffer) {
+        hBool   bindConstantBuffer(hShaderParameterID paramID, hRenderBuffer* buffer) {
             return inputs_.bindConstantBuffer(paramID, buffer);
         }
         hBool   bindUAV(hShaderParameterID paramID, hComputeUAV* computeUAV) {

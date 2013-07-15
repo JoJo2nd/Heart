@@ -138,7 +138,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Map(hParameterConstantBlock* cb, hConstBlockMapInfo* outInfo)
+    void hRenderSubmissionCtx::Map(hRenderBuffer* cb, hRenderBufferMapInfo* outInfo)
     {
         hdMappedData md;
         impl_.Map(cb, &md);
@@ -177,7 +177,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Unmap(hConstBlockMapInfo* info)
+    void hRenderSubmissionCtx::Unmap(hRenderBufferMapInfo* info)
     {
         impl_.Unmap(info->cb, info->ptr);
         info->ptr = NULL;

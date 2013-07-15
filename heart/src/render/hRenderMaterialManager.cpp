@@ -106,7 +106,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlock(hUint32 id)
+    hRenderBuffer* hRenderMaterialManager::GetGlobalConstantBlock(hUint32 id)
     {
         hGlobalConstantBlock* gcb = constBlockLookUp_.Find(id);
         return gcb ? gcb->constBlock_ : NULL;
@@ -269,7 +269,7 @@ namespace Heart
         block.data_ = hHeapMalloc(GetGlobalHeap(), block.dataSize_);
 
         //create the const block
-        m->renderer_->createConstantBlock(block.dataSize_, NULL, &block.constBlock_);
+        m->renderer_->createBuffer(block.dataSize_, NULL, eResourceFlag_ConstantBuffer, 0, &block.constBlock_);
 
         //Copy data across to str pool
         hChar* strPtr = block.strPool_;
@@ -315,7 +315,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockByAlias(const hChar* name)
+    hRenderBuffer* hRenderMaterialManager::GetGlobalConstantBlockByAlias(const hChar* name)
     {
         return GetGlobalConstantBlockParameterID(hCRC32::StringCRC(name));
     }
@@ -324,7 +324,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hParameterConstantBlock* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
+    hRenderBuffer* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             for (hUint32 a = 0, ac = constBlocks_[i].aliasCount_; a < ac; ++a) {
@@ -479,49 +479,99 @@ namespace Heart
         hTexture* texture;
 
         static const hChar* formatnames[] = {
-            "rgba8"         ,// TFORMAT_ARGB8,
-            "rgb8"          ,// TFORMAT_XRGB8,
-            "rgba8_typeless",// TFORMAT_ARGB8_TYPELESS,
-            "r16_float"     ,// TFORMAT_R16F,
-            "rg16_float"    ,// TFORMAT_GR16F,
-            "rgba16_float"  ,// TFORMAT_ABGR16F,
-            "r32_float"     ,// TFORMAT_R32F,
-            "r32_typeless"  ,// TFORMAT_R32_TYPELESS,
-            "r32_uint"      ,// TFORMAT_R32UINT,
-            "d32"           ,// TFORMAT_D32F,
-            "d28s8"         ,// TFORMAT_D24S8F,
-            "l8"            ,// TFORMAT_L8,
-            "dxt5"          ,// TFORMAT_DXT5,
-            "dxt3"          ,// TFORMAT_DXT3,
-            "dxt1"          ,// TFORMAT_DXT1,
-            "rgba8_srgb"    ,// TFORMAT_ARGB8_sRGB    
-            "rgb8_srgb"     ,// TFORMAT_XRGB8_sRGB    
-            "dxt5_srgb"     ,// TFORMAT_DXT5_sRGB     
-            "dxt3_srgb"     ,// TFORMAT_DXT3_sRGB     
-            "dxt1_srgb"     ,// TFORMAT_DXT1_sRGB     
+            "rgba32_typeless",
+            "rgba32_float",
+            "rgba32_uint",
+            "rgba32_sint",
+            "rgb32_typeless", 
+            "rgb32_float",    
+            "rgb32_uint",     
+            "rgb32_sint",     
+            "rgba16_typeless",
+            "rgba16_float",   
+            "rgba16_unorm",   
+            "rgba16_uint",    
+            "rgba16_snorm",   
+            "rgba16_sint",    
+            "rg32_typeless",  
+            "rg32_float",     
+            "rg32_uint",      
+            "rg32_sint",      
+            "rg16_typeless",  
+            "rg16_float",     
+            "rg16_uint",      
+            "rg16_sint",      
+            "r32_typeless",  
+            "r32_float",     
+            "r32_uint",      
+            "r32_sint",      
+            "r16_typeless",  
+            "r16_float",     
+            "r16_uint",      
+            "r16_sint",      
+            "rgb10a2_typeless", 
+            "rgb10a2_unorm",    
+            "rgb10a2_uint",     
+            "rgba8_unorm",
+            "rgba8_typeless",
+            "d32_float",
+            "d24S8_float",
+            "r8_unorm",
+            "bc3_unorm", //dXT5
+            "bc2_unorm", //dXT3
+            "bc1_unorm", //dXT1
+            "rgba8_srgb_unorm",
+            "bc3_srgb_unorm",
+            "bc2_srgb_unorm",
+            "bc1_srgb_unorm",
             NULL
         };
         static const hTextureFormat formats[] = {
-            TFORMAT_ARGB8,
-            TFORMAT_XRGB8,
-            TFORMAT_ARGB8_TYPELESS,
-            TFORMAT_R16F,
-            TFORMAT_GR16F,
-            TFORMAT_ABGR16F,
-            TFORMAT_R32F,
-            TFORMAT_R32_TYPELESS,
-            TFORMAT_R32UINT,
-            TFORMAT_D32F,
-            TFORMAT_D24S8F,
-            TFORMAT_L8,
-            TFORMAT_DXT5,
-            TFORMAT_DXT3,
-            TFORMAT_DXT1,
-            TFORMAT_ARGB8_sRGB,
-            TFORMAT_XRGB8_sRGB,
-            TFORMAT_DXT5_sRGB,
-            TFORMAT_DXT3_sRGB,
-            TFORMAT_DXT1_sRGB,
+            eTextureFormat_RGBA32_typeless,
+            eTextureFormat_RGBA32_float,
+            eTextureFormat_RGBA32_uint,
+            eTextureFormat_RGBA32_sint,
+            eTextureFormat_RGB32_typeless, 
+            eTextureFormat_RGB32_float,    
+            eTextureFormat_RGB32_uint,     
+            eTextureFormat_RGB32_sint,     
+            eTextureFormat_RGBA16_typeless,
+            eTextureFormat_RGBA16_float,   
+            eTextureFormat_RGBA16_unorm,   
+            eTextureFormat_RGBA16_uint,    
+            eTextureFormat_RGBA16_snorm,   
+            eTextureFormat_RGBA16_sint,    
+            eTextureFormat_RG32_typeless,  
+            eTextureFormat_RG32_float,     
+            eTextureFormat_RG32_uint,      
+            eTextureFormat_RG32_sint,      
+            eTextureFormat_RG16_typeless,  
+            eTextureFormat_RG16_float,     
+            eTextureFormat_RG16_uint,      
+            eTextureFormat_RG16_sint,      
+            eTextureFormat_R32_typeless,  
+            eTextureFormat_R32_float,     
+            eTextureFormat_R32_uint,      
+            eTextureFormat_R32_sint,      
+            eTextureFormat_R16_typeless,  
+            eTextureFormat_R16_float,     
+            eTextureFormat_R16_uint,      
+            eTextureFormat_R16_sint,      
+            eTextureFormat_RGB10A2_typeless, 
+            eTextureFormat_RGB10A2_unorm,    
+            eTextureFormat_RGB10A2_uint,     
+            eTextureFormat_RGBA8_unorm,
+            eTextureFormat_RGBA8_typeless,
+            eTextureFormat_D32_float,
+            eTextureFormat_D24S8_float,
+            eTextureFormat_R8_unorm,
+            eTextureFormat_BC3_unorm, //DXT5
+            eTextureFormat_BC2_unorm, //DXT3
+            eTextureFormat_BC1_unorm, //DXT1
+            eTextureFormat_RGBA8_sRGB_unorm,
+            eTextureFormat_BC3_sRGB_unorm  ,
+            eTextureFormat_BC2_sRGB_unorm  ,
+            eTextureFormat_BC1_sRGB_unorm  ,
         };
 
         luaL_checktype(L, -1, LUA_TTABLE);

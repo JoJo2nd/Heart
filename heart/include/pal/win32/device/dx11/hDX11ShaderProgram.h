@@ -34,9 +34,9 @@ namespace Heart
     struct hShaderParameter;
     class hdDX11RenderDevice;
 
-    struct HEART_DLLEXPORT hdDX11ParameterConstantBlock
+    struct HEART_DLLEXPORT hdDX11Buffer
     {
-        ID3D11Buffer*    constBuffer_;
+        ID3D11Buffer*    buffer_;
         hUint32          size_;
     };
 
@@ -66,7 +66,7 @@ namespace Heart
         hUint32                         GetInputRegister(hShaderParameterID id) const;
         hUint                           getInputCount() const;
         void                            getInput(hUint idx, hShaderInput* inputdesc) const;
-        hdDX11VertexLayout*             createVertexLayout(hInputLayoutDesc* desc, hUint n) const;
+        hdDX11VertexLayout*             createVertexLayout(const hInputLayoutDesc* desc, hUint n) const;
         void                            destroyVertexLayout(hdDX11VertexLayout* vtxlayout) const;
 
     private:
