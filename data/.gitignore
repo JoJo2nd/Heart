@@ -1,3 +1,6 @@
-/*/
+/fonts/*
+/mesh/*
+/fonts/*
+/textures/*
 /debug_font_data.c
 /texture_data_store.xml
