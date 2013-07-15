@@ -88,7 +88,7 @@ void TexturedPlane::RenderUnitTest()
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
-    Heart::hConstBlockMapInfo mapinfo;
+    Heart::hRenderBufferMapInfo mapinfo;
 
     camera_.UpdateParameters(ctx);
     ctx->setTargets(camera_.getTargetCount(), camera_.getTargets(), camera_.getDepthTarget());
@@ -138,7 +138,7 @@ void TexturedPlane::CreateRenderResources()
     hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=TFORMAT_D32F;
+    dsvd.format_=eTextureFormat_D32_float;
     dsvd.resourceType_=db->getRenderType();
     hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;
@@ -192,7 +192,7 @@ void TexturedPlane::CreateRenderResources()
     camera->setViewport(vp);
     camera->SetTechniquePass(matMgr->GetRenderTechniqueInfo("main"));
 
-    renderer->createTexture(1, &resTexInit, TFORMAT_XRGB8, 0, GetGlobalHeap(), &resTex_);
+    renderer->createTexture(1, &resTexInit, eTextureFormat_RGBA8_sRGB_unorm, 0, GetGlobalHeap(), &resTex_);
     hRenderUtility::buildTessellatedQuadMesh(2.f, 2.f, 20, 20, renderer, GetGlobalHeap(), &quadIB_, &quadVB_);
     materialInstance_=matMgr->getDebugTexMaterial()->createMaterialInstance(0);
     hShaderResourceViewDesc srvd;

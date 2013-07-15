@@ -132,6 +132,13 @@ void Sibenik::RenderUnitTest()
             }
         }
     }
+
+    //submit the lighting pass
+    drawcall.customCallFlag_=true;
+    drawcall.sortKey_=Heart::hBuildRenderSortKey(1/*cam*/, 1, 0, 0.f, 0, 0);
+    drawcall.customCall_=hFUNCTOR_BINDMEMBER(Heart::hCustomRenderCallback, Heart::hLightingManager, doDeferredLightPass, &deferredLightManager_);
+    drawCtx_.SubmitDrawCall(drawcall);
+
     drawCtx_.End();
 }
 
@@ -150,29 +157,53 @@ void Sibenik::CreateRenderResources()
     hUint32 h = renderer->GetHeight();
     hFloat aspect = (hFloat)w/(hFloat)h;
     hRenderViewportTargetSetup rtDesc={0};
-    hTexture* bb=matMgr->getGlobalTexture("back_buffer");
-    hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-    hRenderTargetView* rtv=NULL;
+    hTexture* backbuffer=matMgr->getGlobalTexture("back_buffer");
+    hTexture* albedo=matMgr->getGlobalTexture("gbuffer_albedo");
+    hTexture* normal=matMgr->getGlobalTexture("gbuffer_normal");
+    hTexture* spec=matMgr->getGlobalTexture("gbuffer_spec");
+    hTexture* depth=matMgr->getGlobalTexture("depth_buffer");
+    hRenderTargetView* rtv[3]={hNullptr, hNullptr, hNullptr};
     hDepthStencilView* dsv=NULL;
     hRenderTargetViewDesc rtvd;
     hDepthStencilViewDesc dsvd;
+
     hZeroMem(&rtvd, sizeof(rtvd));
-    hZeroMem(&dsvd, sizeof(dsvd));
-    rtvd.format_=bb->getTextureFormat();
-    rtvd.resourceType_=bb->getRenderType();
-    hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.format_=albedo->getTextureFormat();
+    rtvd.resourceType_=albedo->getRenderType();
+    hcAssert(albedo->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=TFORMAT_D32F;
-    dsvd.resourceType_=db->getRenderType();
-    hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
+    renderer->createRenderTargetView(albedo, rtvd, &rtv[0]);
+
+    hZeroMem(&rtvd, sizeof(rtvd));
+    rtvd.format_=normal->getTextureFormat();
+    rtvd.resourceType_=normal->getRenderType();
+    hcAssert(normal->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(normal, rtvd, &rtv[1]);
+
+    hZeroMem(&rtvd, sizeof(rtvd));
+    rtvd.format_=spec->getTextureFormat();
+    rtvd.resourceType_=spec->getRenderType();
+    hcAssert(spec->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(spec, rtvd, &rtv[2]);
+
+    hZeroMem(&dsvd, sizeof(dsvd));
+    dsvd.format_=eTextureFormat_D32_float;
+    dsvd.resourceType_=depth->getRenderType();
+    hcAssert(depth->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;
     dsvd.tex2D_.mipLevels_=~0;
-    renderer->createRenderTargetView(bb, rtvd, &rtv);
-    renderer->createDepthStencilView(db, dsvd, &dsv);
-    rtDesc.nTargets_=1;
-    rtDesc.targetTex_=bb;
-    rtDesc.targets_[0]=rtv;
+    renderer->createDepthStencilView(depth, dsvd, &dsv);
+
+    rtDesc.nTargets_=3;
+    rtDesc.targetTex_=albedo;
+    rtDesc.targets_[0]=rtv[0];
+    rtDesc.targets_[1]=rtv[1];
+    rtDesc.targets_[2]=rtv[2];
     rtDesc.depth_=dsv;
 
     hRelativeViewport vp;
@@ -193,13 +224,13 @@ void Sibenik::CreateRenderResources()
 
     renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
     hcAssert(renderModel_);
-    Heart::hParameterConstantBlock* constblock_;
+    Heart::hRenderBuffer* constblock_;
     MaterialConstants initdata = {
         Heart::hVec4(1.f, 1.f, 1.f, 1.f),
         Heart::hVec4(1.f, 1.f, 1.f, 1.f),
         64.f
     };
-    renderer->createConstantBlock(sizeof(MaterialConstants), &initdata, &constblock_);
+    renderer->createBuffer(sizeof(MaterialConstants), &initdata, eResourceFlag_ConstantBuffer, 0, &constblock_);
 
     for (hUint i=0, n=renderModel_->GetLODCount(); i<n; ++i) {
         hGeomLODLevel* lod=renderModel_->GetLOD(i);
@@ -212,8 +243,54 @@ void Sibenik::CreateRenderResources()
     constblock_->DecRef();
 
     // The camera hold refs to this
-    rtv->DecRef();
+    for (hUint i=0; i<hStaticArraySize(rtv); ++i)
+    {
+        rtv[i]->DecRef();
+    }
     dsv->DecRef();
+
+    // setup the deferred camera
+    camera = renderer->GetRenderCamera(1);
+    hZeroMem(&rtvd, sizeof(rtvd));
+    rtvd.format_=backbuffer->getTextureFormat();
+    rtvd.resourceType_=backbuffer->getRenderType();
+    hcAssert(backbuffer->getRenderType()==eRenderResourceType_Tex2D);
+    rtvd.tex2D_.topMip_=0;
+    rtvd.tex2D_.mipLevels_=~0;
+    renderer->createRenderTargetView(backbuffer, rtvd, &rtv[0]);
+
+    rtDesc.nTargets_=1;
+    rtDesc.targetTex_=backbuffer;
+    rtDesc.targets_[0]=rtv[0];
+    rtDesc.depth_=hNullptr;
+
+    vp.x=0.f;
+    vp.y=0.f;
+    vp.w=1.f;
+    vp.h=1.f;
+
+    vm = fpCamera_.getViewmatrix();
+    camera->bindRenderTargetSetup(rtDesc);
+    camera->SetFieldOfView(45.f);
+    camera->SetOrthoParams(0.f, 0.f, 1.f, 1.f, 0.f, 1000.f);
+    camera->SetViewMatrix(vm);
+    camera->setViewport(vp);
+    camera->setClearScreenFlag(true);
+    camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("lighting"));
+    
+    rtv[0]->DecRef();
+
+    hLightingManager::hRenderTargetInfo lightInput;
+    lightInput.albedo_=albedo;
+    lightInput.normal_=normal;
+    lightInput.spec_=spec;
+    lightInput.depth_=depth;
+    lightInput.vertexLightShader_=static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource("MATERIALS.DEFERRED_VS"));
+    lightInput.pixelLightShader_=static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource("MATERIALS.DEFERRED_PS"));
+    lightInput.viewCameraIndex_=0;
+    deferredLightManager_.initialise(renderer, &lightInput);
+    deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
+    //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(1.f, 0.f, 0.f)), Heart::WHITE);
 }
 
 //////////////////////////////////////////////////////////////////////////

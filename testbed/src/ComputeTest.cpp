@@ -154,7 +154,7 @@ void ComputeTest::CreateRenderResources()
     hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=TFORMAT_D32F;
+    dsvd.format_=eTextureFormat_D32_float;
     dsvd.resourceType_=db->getRenderType();
     hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;
@@ -186,8 +186,8 @@ void ComputeTest::CreateRenderResources()
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
     computeProg_ = static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
-    renderer->createTexture(1, &resTexInit, TFORMAT_R32F, RESOURCEFLAG_UNORDEREDACCESS, GetGlobalHeap(), &resTex_);
-    renderer->createConstantBlock(cbSizes, NULL, &noiseParams_);
+    renderer->createTexture(1, &resTexInit, eTextureFormat_R32_float, RESOURCEFLAG_UNORDEREDACCESS, GetGlobalHeap(), &resTex_);
+    renderer->createBuffer(cbSizes, NULL, eResourceFlag_ConstantBuffer, 0, &noiseParams_);
     hShaderResourceViewDesc srvd;
     hZeroMem(&srvd, sizeof(srvd));
     srvd.format_=resTex_->getTextureFormat();
@@ -201,7 +201,7 @@ void ComputeTest::CreateRenderResources()
     computeParams_.bindConstantBuffer(hCRC32::StringCRC("cbNoise"), noiseParams_);
 
     hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
-    hConstBlockMapInfo mapinfo;
+    hRenderBufferMapInfo mapinfo;
     ctx->Map(noiseParams_, &mapinfo);
     cbNoise* ncb=(cbNoise*)mapinfo.ptr;
     ncb->persistence = NOISE_PER;

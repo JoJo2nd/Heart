@@ -109,7 +109,7 @@ void ComputeBlur::RenderUnitTest()
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
-    Heart::hConstBlockMapInfo mapinfo;
+    Heart::hRenderBufferMapInfo mapinfo;
     ComputeBlurData::cbParams* cbblur=NULL;
 
     ctx->Map(modelMtxCB_, &mapinfo);
@@ -313,13 +313,13 @@ void ComputeBlur::CreateRenderResources()
     mockSceneSRV->DecRef();
 
     modelMtxCB_=matMgr->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
-    renderer->createConstantBlock(sizeof(ComputeBlurData::cbParams), NULL, &blurParamCB_);
+    renderer->createBuffer(sizeof(ComputeBlurData::cbParams), NULL, eResourceFlag_ConstantBuffer, 0, &blurParamCB_);
 
     blurHCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_ROW));
     blurVCS_=static_cast<hShaderProgram*>(resMgr->mtGetResource(ASSET_PATH_COL));
     hcAssert(blurHCS_ && blurVCS_);
 
-    renderer->createComputeUAV(rwtex, TFORMAT_R32UINT, 0, &blurUAV_);
+    renderer->createComputeUAV(rwtex, eTextureFormat_R32_uint, 0, &blurUAV_);
     blurHozCObj_.bindShaderProgram(blurHCS_);
     blurHozCObj_.bindResourceView(hCRC32::StringCRC("g_texInput"), blurTexSRV_);
     blurHozCObj_.bindUAV(hCRC32::StringCRC("g_rwtOutput"), &blurUAV_);

@@ -105,7 +105,7 @@ void LoadTextureTest::RenderUnitTest()
     Heart::hRenderer* renderer = engine_->GetRenderer();
     Heart::hRenderSubmissionCtx* ctx=renderer->GetMainSubmissionCtx();
     const Heart::hRenderTechniqueInfo* techinfo = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main");
-    Heart::hConstBlockMapInfo mapinfo;
+    Heart::hRenderBufferMapInfo mapinfo;
 
     camera_.UpdateParameters(ctx);
     ctx->setTargets(camera_.getTargetCount(), camera_.getTargets(), camera_.getDepthTarget());
@@ -143,7 +143,7 @@ void LoadTextureTest::CreateRenderResources()
     hRenderViewportTargetSetup rtDesc={0};
     hTexture* bb=matMgr->getGlobalTexture("back_buffer");
     hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-    hTextureFormat dfmt=TFORMAT_D32F;
+    hTextureFormat dfmt=eTextureFormat_D32_float;
     hRenderTargetView* rtv=NULL;
     hDepthStencilView* dsv=NULL;
     hRenderTargetViewDesc rtvd;

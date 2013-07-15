@@ -71,7 +71,7 @@ private:
     Heart::hComputeObject            computeParams_;
     Heart::hShaderProgram*           computeProg_;
     Heart::hTexture*                 resTex_;
-    Heart::hParameterConstantBlock* noiseParams_;
+    Heart::hRenderBuffer* noiseParams_;
     Heart::hShaderResourceView*      resTexSRV_;
 
     //Camera Control

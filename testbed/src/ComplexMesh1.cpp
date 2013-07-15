@@ -198,10 +198,10 @@ void ComplexMesh1::CreateRenderResources()
     hTexture* bb=matMgr->getGlobalTexture("back_buffer");
 #ifdef DO_Z_PRE_PASS
     hTexture* db=matMgr->getGlobalTexture("z_pre_pass");
-    hTextureFormat dfmt=TFORMAT_D32F;
+    hTextureFormat dfmt=eTextureFormat_D32_float;
 #else
     hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-    hTextureFormat dfmt=TFORMAT_D24S8F;
+    hTextureFormat dfmt=eTextureFormat_D24S8_float;
 #endif
     hRenderTargetView* rtv=NULL;
     hDepthStencilView* dsv=NULL;

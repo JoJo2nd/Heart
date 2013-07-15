@@ -159,7 +159,7 @@ void ModelRenderTest::CreateRenderResources()
     hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
     rtvd.tex2D_.topMip_=0;
     rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=TFORMAT_D32F;//db->getTextureFormat();
+    dsvd.format_=eTextureFormat_D32_float;//db->getTextureFormat();
     dsvd.resourceType_=db->getRenderType();
     hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
     dsvd.tex2D_.topMip_=0;

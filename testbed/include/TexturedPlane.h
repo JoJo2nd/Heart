@@ -67,7 +67,7 @@ private:
     Heart::hRendererCamera           camera_;
     Heart::hTexture*                 resTex_;
     Heart::hShaderResourceView*      resTesSRV_;
-    Heart::hParameterConstantBlock* modelMtxCB_;
+    Heart::hRenderBuffer* modelMtxCB_;
     Heart::hMaterialInstance*        materialInstance_;
     Heart::hIndexBuffer*             quadIB_;
     Heart::hVertexBuffer*            quadVB_;

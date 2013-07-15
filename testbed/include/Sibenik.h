@@ -66,6 +66,7 @@ private:
     hFloat                  timer_;
     Heart::hRenderModel*    renderModel_;
     Heart::hDrawCallContext drawCtx_;
+    Heart::hLightingManager deferredLightManager_;
 
     //Camera Control
     SimpleFirstPersonFlyCamera fpCamera_;
