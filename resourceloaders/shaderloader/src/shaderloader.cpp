@@ -194,7 +194,7 @@ int SB_API shaderCompiler(lua_State* L) {
     HRESULT hr;
     ID3DBlob* errors;
     ID3DBlob* result;
-    hUint32 compileFlags = 0;
+    hUint32 compileFlags = 0;//D3DCOMPILE_WARNINGS_ARE_ERRORS;
     lua_getfield(L, 3, "debug");
     if (lua_toboolean(L, -1)) {
         compileFlags |= D3DCOMPILE_DEBUG;

@@ -197,7 +197,7 @@ int TB_API textureCompile(lua_State* L) {
         hUint32 bitsPerPixel = textureData.bytesPerPixel_*8;
         hUint32 w = textureData.width_;
         hUint32 h = textureData.height_;
-        hUint32 size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
+        hUint32 size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::eTextureFormat_BC1_unorm, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
         hByte* ptr = (hByte*)textureData.data_.get();
 
         mips = (Heart::hMipDesc*)hAlloca(sizeof(Heart::hMipDesc)*textureData.mips_);
@@ -225,13 +225,13 @@ int TB_API textureCompile(lua_State* L) {
             ptr += mips[i].size;
             w = hMax(w >> 1, 1);
             h = hMax(h >> 1, 1);
-            size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::TFORMAT_DXT1, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
+            size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::eTextureFormat_BC1_unorm, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
         }
     }
 
     if (gammaCorrect)
     {
-        textureData.format_ = (Heart::hTextureFormat)(textureData.format_ | Heart::TFORMAT_GAMMA_sRGB);
+        textureData.format_ = (Heart::hTextureFormat)(textureData.format_ | Heart::eTextureFormat_sRGB_mask);
     }
 
     lua_getglobal(L, "buildpathresolve");
@@ -311,9 +311,9 @@ hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData) {
     if ((header.ddspf.dwFlags & DDPF_FOURCC) == 0) {
         outData->bytesPerPixel_ = header.ddspf.dwRGBBitCount / 8;
         if (outData->bytesPerPixel_ == 1) {
-            outData->format_        = Heart::TFORMAT_L8;
+            outData->format_        = Heart::eTextureFormat_R8_unorm;
         } else if (outData->bytesPerPixel_ = 4) {
-            outData->format_ = (header.ddspf.dwFlags & DDPF_ALPHA) ? Heart::TFORMAT_ARGB8 : Heart::TFORMAT_XRGB8;
+            outData->format_ = Heart::eTextureFormat_RGBA8_unorm;
         } else {
             return hFalse;
         }
@@ -322,12 +322,12 @@ hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData) {
         outData->compressed_    = hTrue;
         if ((MAKEFOURCC('D','X','T','1') == header.ddspf.dwFourCC) ||
             (MAKEFOURCC('D','X','T','2') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::TFORMAT_DXT1;
+            outData->format_ = Heart::eTextureFormat_BC1_unorm;
         } else if ((MAKEFOURCC('D','X','T','3') == header.ddspf.dwFourCC) ||
                  (MAKEFOURCC('D','X','T','4') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::TFORMAT_DXT3;
+            outData->format_ = Heart::eTextureFormat_BC2_unorm;
         } else if ((MAKEFOURCC('D','X','T','5') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::TFORMAT_DXT5;
+            outData->format_ = Heart::eTextureFormat_BC3_unorm;
         } else {
             return hFalse;
         }
