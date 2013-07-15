@@ -1,0 +1,5 @@
+<material inherit="sponza_basic_trans.mfx">
+    <sampler name="diffuseSampler">
+        <texture>SPONZA.CHAIN_TEXTURE</texture>
+    </sampler>
+</material>

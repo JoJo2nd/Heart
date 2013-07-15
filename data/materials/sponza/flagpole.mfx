@@ -1,0 +1,8 @@
+<material inherit="sponza_no_normalmap.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.SPONZA_FLAGPOLE_DIFF</texture>
+    </sampler>
+    <sampler name="specSampler">
+        <texture>SPONZA.SPONZA_FLAGPOLE_SPEC</texture>
+    </sampler>
+</material>

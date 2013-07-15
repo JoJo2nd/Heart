@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<material>
+    <group name="lowdetail">
+        <technique name="main">
+            <sort>false</sort>
+            <layer>1</layer>
+            <pass>
+                <depthtest>TRUE</depthtest>
+                <depthwrite>TRUE</depthwrite>
+                <blendenable>FALSE</blendenable>
+                <cullmode>ccw</cullmode>
+                <vertex>UNITTEST.BOCO_VP</vertex>
+                <fragment>UNITTEST.BOCO_FP</fragment>
+            </pass>
+        </technique>
+    </group>
+</material>

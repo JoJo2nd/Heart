@@ -1,0 +1,5 @@
+<material inherit="sponza_no_normalmap.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.SPONZA_DETAILS_DIFF</texture>
+    </sampler>
+</material>

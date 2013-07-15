@@ -1,0 +1,8 @@
+<material inherit="sponza_basic.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.LOIN</texture>
+    </sampler>
+    <sampler name="normalSampler">
+        <texture>SPONZA.LION_BUMP_NRM</texture>
+    </sampler>
+</material>

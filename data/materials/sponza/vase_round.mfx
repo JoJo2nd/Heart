@@ -1,0 +1,11 @@
+<material inherit="sponza_basic.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.VASE_ROUND</texture>
+    </sampler>
+    <sampler name="normalSampler">
+        <texture>SPONZA.VASE_ROUND_BUMP_NRM</texture>
+    </sampler>
+    <sampler name="specSampler">
+        <texture>SPONZA.VASE_ROUND_SPEC</texture>
+    </sampler>
+</material>

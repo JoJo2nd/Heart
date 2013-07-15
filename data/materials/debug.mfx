@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<material>
+    <sampler name="diffuse">
+        <addressu>WRAP</addressu>
+        <addressv>WRAP</addressv>
+        <bordercolour>1,1,1,1</bordercolour>
+    </sampler>
+    <parameter name="emissiveScale" dest="x">1.0</parameter>
+    <group name="lowdetail">
+        <technique name="main">
+            <sort>true</sort>
+            <layer>1</layer>
+            <pass>
+                <depthtest>FALSE</depthtest>
+                <depthwrite>FALSE</depthwrite>
+                <blendenable>TRUE</blendenable>
+                <srcblend>srcalpha</srcblend>
+                <destblend>invsrcalpha</destblend>
+                <cullmode>none</cullmode>
+                <vertex>CORE.SIMPLE_COLOUR_VP</vertex>
+                <fragment>CORE.SIMPLE_COLOUR_FP</fragment>
+            </pass>
+        </technique>
+    </group>
+</material>

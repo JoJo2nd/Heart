@@ -1,0 +1,5 @@
+<material inherit="fabric_a.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.SPONZA_CURTAIN_GREEN_DIFF</texture>
+    </sampler>
+</material>

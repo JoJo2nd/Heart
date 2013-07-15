@@ -1,0 +1,11 @@
+<material inherit="sponza_basic.mfx">
+    <sampler name="albedoSampler">
+        <texture>SPONZA.SPONZA_COLUMN_B_DIFF</texture>
+    </sampler>
+    <sampler name="normalSampler">
+        <texture>SPONZA.COLUMN_B_BUMP_NRM</texture>
+    </sampler>
+    <sampler name="specSampler">
+        <texture>SPONZA.SPONZA_COLUMN_B_SPEC</texture>
+    </sampler>
+</material>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<material>
+    <sampler name="diffuseSampler">
+        <addressu>WRAP</addressu>
+        <addressv>WRAP</addressv>
+        <filter>linear</filter>
+    </sampler>
+    <parameter name="matColour" type="colour">1,1,1,1</parameter>
+    <parameter name="matSpecColour" type="colour">1,1,1,1</parameter>
+    <parameter name="matSpecPower" type="float">64</parameter>
+    <group name="lowdetail">
+        <technique name="never"><!--name="main"> was main, disabled to turn of transparent objects-->
+            <sort>true</sort>
+            <layer>1</layer>
+            <pass>
+                <depthtest>true</depthtest>
+                <depthwrite>false</depthwrite>
+                <blendenable>true</blendenable>
+                <blendop>add</blendop>
+                <srcblend>srcalpha</srcblend>
+                <destblend>invsrcalpha</destblend>
+                <cullmode>ccw</cullmode>
+                <vertex>MATERIALS.BLINNPHONG_VP</vertex>
+                <fragment>MATERIALS.BLINNPHONG_FP</fragment>
+            </pass>
+        </technique>
+    </group>
+</material>

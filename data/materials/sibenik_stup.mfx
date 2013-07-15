@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<material inherit="blinn_phong_diffuse.mfx">
+    <sampler name="diffuseSampler">
+        <texture>SIBENIK.KAMEN-STUP</texture>
+    </sampler>
+</material>

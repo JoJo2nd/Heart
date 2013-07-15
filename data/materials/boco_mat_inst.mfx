@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<material inherit="boco_mat.mfx">
+    <group name="lowdetail">
+        <technique name="main">
+            <pass>
+                <vertex>INSTANCETEST.BOCO_VP</vertex>
+                <fragment>INSTANCETEST.BOCO_FP</fragment>
+            </pass>
+        </technique>
+    </group>
+</material>
