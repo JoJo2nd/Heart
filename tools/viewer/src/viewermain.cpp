@@ -192,7 +192,7 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
     Heart::hRenderViewportTargetSetup rtDesc={0};
     Heart::hTexture* bb=matMgr->getGlobalTexture("back_buffer");
     Heart::hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-    Heart::hTextureFormat dfmt=Heart::TFORMAT_D32F;
+    Heart::hTextureFormat dfmt=Heart::eTextureFormat_D32_float;
     Heart::hRenderTargetView* rtv=NULL;
     Heart::hDepthStencilView* dsv=NULL;
     Heart::hRenderTargetViewDesc rtvd;
