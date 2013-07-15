@@ -274,7 +274,7 @@ local function buildResources(matchopts, scriptpath)
         buildcoroutines[i]=co
         i = i+1
 	end
-    
+    local therewaserror=false
     local worktodo=true
     while worktodo do
         worktodo=false
@@ -284,7 +284,10 @@ local function buildResources(matchopts, scriptpath)
                 local stat = coroutine.status(co)
                 if stat == "suspended" then
                     local resumeok, er = coroutine.resume(co)
-                    if not resoumeok and er ~= nil then G.errorprint("(>^o^)> BUILD ERROR <(^o^<) ",er) end
+                    if not resoumeok and er ~= nil then 
+                        therewaserror=true
+                        G.errorprint("(>^o^)> BUILD ERROR <(^o^<) ",er)
+                    end
                 elseif stat == "dead" then
                     buildcoroutines[k] = nil
                 end
@@ -330,6 +333,11 @@ local function buildResources(matchopts, scriptpath)
     G.buildpathresolve=nil
     logfile:flush()
     logerr:flush()
+    
+    if therewaserror then
+        G.errorprint("Build completed with Errors!")
+        os.execute("notepad errors.txt")
+    end
 end
 
 _ENV=G

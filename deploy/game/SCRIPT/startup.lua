@@ -5,6 +5,9 @@ function rendererResize(width, height)
     heart.resizeGlobalTexture("back_buffer", width, height);
     heart.resizeGlobalTexture("depth_buffer", width, height);
     heart.resizeGlobalTexture("z_pre_pass", width, height);
+    heart.resizeGlobalTexture("gbuffer_albedo", width, height);
+    heart.resizeGlobalTexture("gbuffer_normal", width, height);
+    heart.resizeGlobalTexture("gbuffer_spec", width, height);
     heart.resizeGlobalTexture("blur_target", width, height);
     heart.resizeGlobalTexture("blur_rw_texture", width, height);
 end
@@ -20,7 +23,40 @@ function registerGlobalTextures()
         },
         width=rndrWidth,
         height=rndrHeight,
-        format="rgba8_srgb",
+        format="rgba8_srgb_unorm",
+        rendertarget=true,
+    }
+    heart.registerGlobalTexture {
+        name="gbuffer_albedo",
+        aliases={
+            "gbuffer_albedo",
+            "galbedo"
+        },
+        width=rndrWidth,
+        height=rndrHeight,
+        format="rgba16_float",
+        rendertarget=true,
+    }
+    heart.registerGlobalTexture {
+        name="gbuffer_normal",
+        aliases={
+            "gbuffer_normal",
+            "gnormal"
+        },
+        width=rndrWidth,
+        height=rndrHeight,
+        format="rgba16_float",
+        rendertarget=true,
+    }
+    heart.registerGlobalTexture {
+        name="gbuffer_spec",
+        aliases={
+            "gbuffer_spec",
+            "gspec"
+        },
+        width=rndrWidth,
+        height=rndrHeight,
+        format="rgba16_float",
         rendertarget=true,
     }
     heart.registerGlobalTexture {
@@ -86,6 +122,7 @@ registerGlobalTextures()
 heart.registerRenderTechnique("zprepass")
 heart.registerRenderTechnique("postzmain")
 heart.registerRenderTechnique("main")
+heart.registerRenderTechnique("lighting")
 
 -- heart.registerParameterBlock {
     -- name="FrameConstants",

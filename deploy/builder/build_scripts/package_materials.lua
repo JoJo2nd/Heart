@@ -185,6 +185,34 @@ databuilder.addresource{
     parameters=progparams
 }
 --
+infiles={"src://shaders/deferred_light.c"}
+progparams.entry="vertexMain"
+progparams.profile="vs_5_0"
+defines={}
+depfiles = gpuprog.preprocess("src://shaders/deferred_light.c", progparams)
+databuilder.addresource{
+    package="MATERIALS",
+    resname="DEFERRED_VS",
+    restype="gpu_prog",
+    inputfiles=infiles,
+    depfiles=depfiles,
+    parameters=progparams
+}
+--
+infiles={"src://shaders/deferred_light.c"}
+progparams.entry="pixelMain"
+progparams.profile="ps_5_0"
+defines={}
+depfiles = gpuprog.preprocess("src://shaders/deferred_light.c", progparams)
+databuilder.addresource{
+    package="MATERIALS",
+    resname="DEFERRED_PS",
+    restype="gpu_prog",
+    inputfiles=infiles,
+    depfiles=depfiles,
+    parameters=progparams
+}
+--
 --
 --
 materialpath="src://materials/minemat.mfx"
