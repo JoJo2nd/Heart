@@ -35,6 +35,7 @@ namespace Heart
         ePTFloat,
         ePTInt,
         ePTColour,
+        ePTTexture,
 
         ePTNone = ~0U
     };

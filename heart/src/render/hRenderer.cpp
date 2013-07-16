@@ -1093,7 +1093,6 @@ namespace Heart
             hSamplerParameter sampler;
             file->Read(&samplerDef, sizeof(samplerDef));
 
-            sampler.defaultTextureID_ = samplerDef.defaultTextureID;
             hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), samplerDef.samplerName);
             sampler.samplerState_ = createSamplerState(samplerDef.samplerState);
 
@@ -1103,14 +1102,8 @@ namespace Heart
         for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
         {
             ParameterDefinition paramDef;
-            //hMaterialParameterID id;
             file->Read(&paramDef, sizeof(paramDef));
-            void* dataptr=paramDef.floatData;
-            hUint dataelesize=0;
-            if (paramDef.type==ePTFloat || paramDef.type==ePTInt || paramDef.type==ePTColour) {
-                dataelesize=4;
-            }
-            material->addDefaultParameterValue(paramDef.parameterName, dataptr, paramDef.count*dataelesize);
+            material->addDefaultParameterValue(paramDef);
         }
         //Add Groups, Techniques & Passes
         for (hUint32 groupidx = 0, groupCount = header.groupCount; groupidx < groupCount; ++groupidx)

@@ -166,6 +166,7 @@ extern "C"
 #include "render/hRenderShaderProgram.h"
 #include "render/hCompute.h"
 #include "render/hMaterialTypes.h"
+#include "resourcedata/hMaterialResourceData.h"
 #include "render/hMaterial.h"
 #include "render/hRenderSubmissionContext.h"
 #include "render/hRenderMaterialManager.h"
@@ -238,7 +239,6 @@ extern "C"
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #include "resourcedata/hTextureResourceData.h"
 #include "resourcedata/hShaderResourceData.h"
-#include "resourcedata/hMaterialResourceData.h"
 #include "resourcedata/hMeshResourceData.h"
 
 //////////////////////////////////////////////////////////////////////////

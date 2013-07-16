@@ -27,70 +27,6 @@
 
 namespace Heart
 {
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint32 hdDX11ShaderProgram::GetShaderParameterCount() const
-    {
-        hUint32 params = 0;
-        D3D11_SHADER_DESC desc;
-        shaderInfo_->GetDesc( &desc );
-        //CONSTANT BUFFERS
-        for ( hUint32 buffer = 0; buffer < desc.ConstantBuffers; ++buffer )
-        {
-            ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
-            D3D11_SHADER_BUFFER_DESC bufInfo;
-            constInfo->GetDesc( &bufInfo );
-
-            params += bufInfo.Variables;
-        }
-
-        return params;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hdDX11ShaderProgram::GetShaderParameter( hUint32 i, hShaderParameter* param ) const
-    {
-        hcAssert( param );
-        HRESULT hr;
-        D3D11_SHADER_DESC desc;
-        shaderInfo_->GetDesc( &desc );
-        //CONSTANT BUFFERS
-        for ( hUint32 buffer = 0; buffer < desc.ConstantBuffers; ++buffer )
-        {
-            ID3D11ShaderReflectionConstantBuffer* constInfo = shaderInfo_->GetConstantBufferByIndex( buffer );
-            D3D11_SHADER_BUFFER_DESC bufInfo;
-            constInfo->GetDesc( &bufInfo );
-            hUint32 cBufferCRC = hCRC32::StringCRC( bufInfo.Name );
-
-            if ( i < bufInfo.Variables )
-            {
-                ID3D11ShaderReflectionVariable* var = constInfo->GetVariableByIndex( i );
-                D3D11_SHADER_VARIABLE_DESC varDesc;
-                var->GetDesc( &varDesc );
-                D3D11_SHADER_INPUT_BIND_DESC bindInfo;
-                hr = shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
-                hcAssert(SUCCEEDED(hr));
-
-                hStrCopy(param->name_.GetBuffer(), param->name_.GetMaxSize(), varDesc.Name);
-                param->size_    = varDesc.Size;
-                param->cBufferBindPoint_ = bindInfo.BindPoint;
-                param->cReg_    = varDesc.StartOffset;
-
-                return hTrue;
-            }
-            else
-            {
-                i -= bufInfo.Variables;
-            }
-        }
-
-        return hFalse;
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -142,8 +78,10 @@ namespace Heart
         constInfo->GetDesc( &bufInfo );
         shaderInfo_->GetResourceBindingDescByName( bufInfo.Name, &bindInfo );
 
-        ret->bindPoint_ = bindInfo.BindPoint;
-        ret->size_ = bufInfo.Size;
+        ret->bindPoint_=bindInfo.BindPoint;
+        ret->size_=bufInfo.Size;
+        ret->parameterCount_=bufInfo.Variables;
+        ret->index_=idx;
         hStrCopy(ret->name_, ret->name_.GetMaxSize(), bufInfo.Name);
 
         //build a hash of all the parameters in the constant buffer
@@ -159,6 +97,21 @@ namespace Heart
             hCRC32::ContinueCRC32(&ret->hash_, (hChar*)&varDesc.Size, sizeof(varDesc.Size));
         }
         hCRC32::FinishCRC32(&ret->hash_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11ShaderProgram::getConstantBlockParameter(const hConstantBlockDesc& desc, hUint paramIndex, hShaderParameter* outparam) const {
+        ID3D11ShaderReflectionConstantBuffer* constinfo=shaderInfo_->GetConstantBufferByIndex(desc.index_);
+        ID3D11ShaderReflectionVariable* var=constinfo->GetVariableByIndex(paramIndex);
+        D3D11_SHADER_VARIABLE_DESC vardesc;
+        var->GetDesc(&vardesc);
+        outparam->cBufferBindPoint_=desc.bindPoint_;
+        outparam->cReg_=vardesc.StartOffset;
+        outparam->size_=vardesc.Size;
+        hStrCopy(outparam->name_, outparam->name_.GetMaxSize(), vardesc.Name);
     }
 
     //////////////////////////////////////////////////////////////////////////

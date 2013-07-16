@@ -73,6 +73,9 @@ namespace Heart
         hTextureFormat          getTextureFormat() const { return format_; }
         hUint32                 getFlags() const { return flags_; }
         hRenderResourceType     getRenderType() const { return type_; }
+        hUint                   getMipCount() const { return nLevels_; }
+#pragma message ("TODO: fix array size on textures")
+        hUint                   getArraySize() const { return 1; }
 
         static hUint32          GetDXTTextureSize( hBool dxt1, hUint32 width, hUint32 height );
 

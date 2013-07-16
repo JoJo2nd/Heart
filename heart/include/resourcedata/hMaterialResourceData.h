@@ -68,9 +68,8 @@ struct MaterialHeader
 struct SamplerDefinition
 {
     hChar                       samplerName[MATERIAL_STRING_MAX_LEN];
-    Heart::hResourceID          defaultTextureID;
     Heart::hSamplerStateDesc    samplerState;
-    hUint8                      remapParamCount;
+    //hUint8                      remapParamCount;
 };
 
 struct ParameterDefinition
@@ -78,6 +77,7 @@ struct ParameterDefinition
     hChar                       parameterName[MATERIAL_PARAM_STRING_MAX_LEN];
     hUint                       count;
     Heart::hParameterType       type;
+    Heart::hResourceID          resourceID;
     union {
         hFloat                  floatData[MATERIAL_DATA_MAX_SIZE];
         hInt                    intData[MATERIAL_DATA_MAX_SIZE];

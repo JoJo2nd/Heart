@@ -134,8 +134,10 @@ namespace Heart
     struct hConstantBlockDesc
     {
         hArray< hChar, 32 >     name_;
-        hUint32                 size_;
-        hUint32                 bindPoint_;
+        hUint                   size_;
+        hUint                   parameterCount_;
+        hUint                   bindPoint_;
+        hUint                   index_;
         hUint32                 hash_;
     };
 

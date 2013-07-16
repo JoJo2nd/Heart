@@ -60,8 +60,7 @@ namespace Heart
         hUint32                         GetConstantBlockCount() const;
         void                            GetConstantBlockDesc(hUint32 idx, hConstantBlockDesc* desc);
         hUint32                         GetConstantBlockRegister(hShaderParameterID id) const;
-        hUint32                         GetShaderParameterCount() const;
-        hBool                           GetShaderParameter(hUint32 i, hShaderParameter* param) const;
+        void                            getConstantBlockParameter(const hConstantBlockDesc& desc, hUint paramIndex, hShaderParameter* outparam) const;
         hUint32                         GetInputRegister(const hChar* name) const;
         hUint32                         GetInputRegister(hShaderParameterID id) const;
         hUint                           getInputCount() const;

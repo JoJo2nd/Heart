@@ -65,10 +65,7 @@ namespace Heart
     struct HEART_DLLEXPORT hSamplerParameter
     {
         hSamplerParameter()
-            : boundTexture_(NULL)
-            , samplerState_(NULL)
-            , resView_(NULL)
-            , defaultTextureID_(0)
+            : samplerState_(NULL)
         {
             hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
         }
@@ -76,11 +73,9 @@ namespace Heart
         {
         }
 
-        hArray<hChar, hMAX_PARAMETER_NAME_LEN> name_;
-        hResourceID                         defaultTextureID_;
-        hTexture*                           boundTexture_;
-        hSamplerState*                      samplerState_;
-        hShaderResourceView*                resView_;
+        hArray<hChar, hMAX_PARAMETER_NAME_LEN>  name_;
+        hShaderParameterID                      paramID_;
+        hSamplerState*                          samplerState_;
     };
 
     typedef hVector< hSamplerParameter >  hSamplerArrayType;
@@ -117,13 +112,6 @@ namespace Heart
         hUint* pass_; 
     };
 
-    struct hBoundTexture
-    {
-        hShaderParameterID paramid;
-        hTexture* texture;
-        hSamplerState* state;
-    };
-
     struct hBoundSampler 
     {
         hShaderParameterID paramid;
@@ -144,10 +132,13 @@ namespace Heart
 
     struct hDefaultParameterValue
     {
-        hUint16         dataOffset;
-        hUint16         dataSize;
-        hUint32         parameterNameHash;
-        hChar           parameterName[hMAX_PARAMETER_NAME_LEN];
+        hDefaultParameterValue() : resourcePtr(hNullptr) {}
+        hParameterType      type;
+        hUint               count;
+        hShaderParameterID  paramid;
+        hResourceID         resourceID;
+        hResourceClassBase* resourcePtr;
+        hUint16             dataOffset;
     };
 
     class HEART_DLLEXPORT hMaterialInstance
@@ -237,7 +228,7 @@ namespace Heart
         hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    AddSamplerParameter(const hSamplerParameter& samp);
-        void                    addDefaultParameterValue(const hChar* paramName, void* data, hUint size);
+        void                    addDefaultParameterValue(const ParameterDefinition& paramdef);
         
         /* Create Create/DestroyMaterialOverrides()*/
         hMaterialInstance*  createMaterialInstance(hUint32 flags);
@@ -245,9 +236,9 @@ namespace Heart
 
         /* Bind interface - return false if not set on any programs */
         hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
-        hBool bindMaterial(hRenderMaterialManager* matManager);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);
         hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
+        hBool bindMaterial(hRenderMaterialManager* matManager);
         void  unbind();
 
         /* Allow access to parameter blocks and updating of parameters */
@@ -266,8 +257,7 @@ namespace Heart
         typedef hVector< hBoundResource >           BoundResourceArrayType;
         typedef hVector< hBoundSampler >            BoundSamplerArrayType;
 
-        void initConstBlockBufferData(
-            const hShaderProgram* prog, const hConstantBlockDesc& desc, void* outinitdata, hUint totaloutsize) const;
+        void initConstBlockBufferData(const hConstantBlockDesc& desc, const hShaderProgram* prog, void* outdata);
 
         hAtomicInt                          instanceCount_;
         hSamplerArrayType                   defaultSamplers_;

@@ -127,6 +127,7 @@ Heart::hXMLEnumReamp g_parameterTypes[] =
     {"float",   Heart::ePTFloat },
     {"int",     Heart::ePTInt   },
     {"colour",  Heart::ePTColour},
+    {"texture", Heart::ePTTexture},
     {"none",    Heart::ePTNone  },
 };
 
@@ -480,9 +481,9 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
         if (xSampler.GetAttribute("name") || !orgSampDef) {
             strcpy_s(sampDef->samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
         }
-        if (xSampler.FirstChild("texture").ToNode() || !orgSampDef) {
-            sampDef->defaultTextureID = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
-        }
+        //if (xSampler.FirstChild("texture").ToNode() || !orgSampDef) {
+        //    sampDef->defaultTextureID = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
+        //}
         if (xSampler.FirstChild("addressu").ToNode() || !orgSampDef) {
             sampDef->samplerState.addressU_ = xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP);
         }
@@ -543,7 +544,11 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
                 hFloat* fd=paramDef->colourData;
                 paramDef->count=sscanf_s(valstr, " %f , %f , %f , %f ",
                     fd, fd+1, fd+2, fd+3);
+            } else if (paramDef->type == ePTTexture) {
+                paramDef->count=1;
+                paramDef->resourceID=hResourceManager::BuildResourceID(valstr);
             }
+            paramDef->count*=4;
         }
 
         if (!orgParamDef) {
