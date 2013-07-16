@@ -6,25 +6,16 @@
         </sampler>
         
     </material> -->
-    <sampler name="albedoSampler">
-        <texture>SPONZA.CHECKER</texture>
+    <sampler name="textureSampler">
         <addressu>WRAP</addressu>
         <addressv>WRAP</addressv>
         <filter>linear</filter>
     </sampler>
-    <sampler name="normalSampler">
-        <texture>SPONZA.CHECKER_NRM</texture>
-        <addressu>WRAP</addressu>
-        <addressv>WRAP</addressv>
-        <filter>linear</filter>
-    </sampler>
-    <sampler name="specSampler">
-        <texture>SPONZA.CHECKER_SPEC</texture>
-        <addressu>WRAP</addressu>
-        <addressv>WRAP</addressv>
-        <filter>linear</filter>
-    </sampler>
-    <!-- This cause error if they don't exist in shader <parameter name="matColour" type="colour">1,1,1,1</parameter>
+    <parameter name="albedoTexture" type="texture">SPONZA.CHECKER</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.CHECKER_NRM</parameter>
+    <parameter name="specTexture" type="texture">SPONZA.CHECKER_SPEC</parameter>
+    <!-- This cause errors if they don't exist in shader 
+    <parameter name="matColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecPower" type="float">64</parameter> -->
     <!-- <group name="debug">

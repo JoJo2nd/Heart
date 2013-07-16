@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <material>
-    <sampler name="albedoSampler">
-        <texture>SPONZA.CHECKER</texture>
+    <sampler name="textureSampler">
         <addressu>WRAP</addressu>
         <addressv>WRAP</addressv>
         <filter>linear</filter>
     </sampler>
-    <sampler name="specSampler">
-        <texture>SPONZA.CHECKER_SPEC</texture>
-        <addressu>WRAP</addressu>
-        <addressv>WRAP</addressv>
-        <filter>linear</filter>
-    </sampler>
+    <parameter name="albedoTexture" type="texture">SPONZA.CHECKER</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.CHECKER_NRM</parameter>
     <!-- This cause error if they don't exist in shader <parameter name="matColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecPower" type="float">64</parameter> -->

@@ -1,8 +1,4 @@
 <material inherit="sponza_basic.mfx">
-    <sampler name="albedoSampler">
-        <texture>SPONZA.BACKGROUND</texture>
-    </sampler>
-    <sampler name="normalSampler">
-        <texture>SPONZA.BACKGROUND_BUMP_NRM</texture>
-    </sampler>
+    <parameter name="albedoTexture" type="texture">SPONZA.BACKGROUND</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.BACKGROUND_BUMP_NRM</parameter>
 </material>

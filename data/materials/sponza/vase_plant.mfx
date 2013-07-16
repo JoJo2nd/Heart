@@ -1,8 +1,4 @@
 <material inherit="sponza_basic_trans.mfx">
-    <sampler name="diffuseSampler">
-        <texture>SPONZA.VASE_PLANT</texture>
-    </sampler>
-    <sampler name="specSampler">
-        <texture>SPONZA.VASE_PLANT_SPEC</texture>
-    </sampler>
+    <parameter name="albedoTexture" type="texture">SPONZA.VASE_PLANT</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.VASE_PLANT_SPEC</parameter>
 </material>

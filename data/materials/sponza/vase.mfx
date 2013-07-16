@@ -1,8 +1,4 @@
 <material inherit="sponza_basic.mfx">
-    <sampler name="albedoSampler">
-        <texture>SPONZA.VASE_DIF</texture>
-    </sampler>
-    <sampler name="normalSampler">
-        <texture>SPONZA.VASE_BUMP_NRM</texture>
-    </sampler>
+    <parameter name="albedoTexture" type="texture">SPONZA.VASE_DIF</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.VASE_BUMP_NRM</parameter>
 </material>

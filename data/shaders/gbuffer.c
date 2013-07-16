@@ -1,11 +1,9 @@
 #include "hGlobalConstants.h"
 
 Texture2D albedoTexture;
-SamplerState albedoSampler;
 Texture2D normalTexture;
-SamplerState normalSampler;
 Texture2D specTexture;
-SamplerState specSampler;
+SamplerState textureSampler;
 
 #define WORLD_SPACE_NORMALS
 //#ifndef NO_NORMAL_MAP
@@ -68,7 +66,7 @@ void pixelMain(in VSOutput input,
     //float4 viewnormal;
     //float4 spec;
     
-    albedo = albedoTexture.Sample(albedoSampler, input.tex0);
+    albedo = albedoTexture.Sample(textureSampler, input.tex0);
     /*
         In the normal map DXT compression from the nvtt the colour is encoded
         like so...R=1, G=Y, B=0, A=X, 
@@ -79,7 +77,7 @@ void pixelMain(in VSOutput input,
         Z=sqrt(1 - X^2 - Y^2)
     */
 #ifndef NO_NORMAL_MAP
-    float4 normal = 2*normalTexture.Sample(normalSampler, input.tex0)-1;
+    float4 normal = 2*normalTexture.Sample(textureSampler, input.tex0)-1;
     normal.x = normal.r*normal.a;
     normal.y = normal.g;
     normal.z = sqrt(1-normal.x*normal.x-normal.y*normal.y);
@@ -93,7 +91,7 @@ void pixelMain(in VSOutput input,
 #endif
     viewnormal.a=0; 
     
-    spec = specTexture.Sample(specSampler, input.tex0);
+    spec = specTexture.Sample(textureSampler, input.tex0);
     spec.a=length(spec)*2+0.1;
     spec.rgb=float3(0.04, 0.04, 0.04);
 }

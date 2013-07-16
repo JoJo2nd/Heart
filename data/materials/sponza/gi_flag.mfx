@@ -1,5 +1,3 @@
 <material inherit="../blinn_phong_diffuse.mfx">
-    <sampler name="diffuseSampler">
-        <texture>SPONZA.GI_FLAG</texture>
-    </sampler>
+    <parameter name="diffuseTexture" type="texture">SPONZA.GI_FLAG</parameter>
 </material>

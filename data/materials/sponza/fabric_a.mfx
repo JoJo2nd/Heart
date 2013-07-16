@@ -1,8 +1,4 @@
 <material inherit="sponza_no_normalmap.mfx">
-    <sampler name="albedoSampler">
-        <texture>SPONZA.SPONZA_FABRIC_DIFF</texture>
-    </sampler>
-    <sampler name="specSampler">
-        <texture>SPONZA.SPONZA_FABRIC_SPEC</texture>
-    </sampler>
+    <parameter name="albedoTexture" type="texture">SPONZA.SPONZA_FABRIC_DIFF</parameter>
+    <parameter name="normalTexture" type="texture">SPONZA.SPONZA_FABRIC_SPEC</parameter>
 </material>

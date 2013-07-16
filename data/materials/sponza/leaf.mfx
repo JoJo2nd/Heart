@@ -1,5 +1,3 @@
 <material inherit="sponza_basic_trans.mfx">
-    <sampler name="diffuseSampler">
-        <texture>SPONZA.SPONZA_THORN_DIFF</texture>
-    </sampler>
+    <parameter name="diffuseTexture" type="texture">SPONZA.SPONZA_THORN_DIFF</parameter>
 </material>
