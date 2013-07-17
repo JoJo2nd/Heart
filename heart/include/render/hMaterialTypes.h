@@ -65,8 +65,6 @@ namespace Heart
         hBlendState*            GetBlendState() { return blendState_; }
         hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
         hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
-        hdRenderInputObject*    GetRenderInputObject() { return &renderInput_; }
-        hdRenderStreamsObject*  getRenderStreamsObject() { return &boundStreams_; }
         void                    bindBlendState(hBlendState* state) { 
             state->AddRef();
             blendState_ = state; 
@@ -81,7 +79,6 @@ namespace Heart
         }
         void                    ReleaseResources(hRenderer* renderer);
 
-        hBool   bindShaderProgram(hdShaderProgram* prog);
         hBool   setSamplerInput(hShaderParameterID paramID, hSamplerState* srv);
         hBool   setResourceView(hShaderParameterID paramID, hShaderResourceView* view);
         hBool   setConstantBuffer(hShaderParameterID paramID, hRenderBuffer* buffer);
@@ -92,10 +89,6 @@ namespace Heart
         hRenderBuffer** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.GetBuffer(); }
         hSamplerState**           getSamplers(hShaderType progtype) { return inputResources_[progtype].samplerStates_.GetBuffer(); }
         hShaderResourceView**     getShaderResourceViews(hShaderType progtype) { return inputResources_[progtype].srView_.GetBuffer(); }
-
-        hBool   bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt);
-        hBool   bindInputStream(hUint slot, hVertexBuffer* vtx);
-        void    unbind();
 
     private:
 
@@ -130,7 +123,7 @@ namespace Heart
         {
             hVector< hShaderResourceView* >     srView_;
             hVector< hSamplerState* >           samplerStates_;
-            hVector< hRenderBuffer* > buffers_;
+            hVector< hRenderBuffer* >           buffers_;
         } inputResources_[s_maxPrograms];
 
         /*
@@ -139,8 +132,6 @@ namespace Heart
         hBlendState*                        blendState_;
         hDepthStencilState*                 depthStencilState_;
         hRasterizerState*                   rasterizerState_;
-        hdRenderInputObject                 renderInput_;
-        hdRenderStreamsObject               boundStreams_;
     };
 
     class HEART_DLLEXPORT hMaterialTechnique

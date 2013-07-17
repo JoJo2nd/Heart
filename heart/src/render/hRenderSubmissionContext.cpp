@@ -32,19 +32,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::SetMaterialPass(hMaterialTechniquePass* pass)
-    {
-        impl_.setRenderStateBlock(pass->GetDepthStencilState());
-        impl_.setRenderStateBlock(pass->GetBlendState());
-        impl_.setRenderStateBlock(pass->GetRasterizerState());
-        impl_.SetRenderInputObject(pass->GetRenderInputObject());
-        impl_.SetInputStreams(pass->getRenderStreamsObject());
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     void hRenderSubmissionCtx::SetViewport( const hViewport& viewport )
     {
         impl_.SetViewport( viewport );

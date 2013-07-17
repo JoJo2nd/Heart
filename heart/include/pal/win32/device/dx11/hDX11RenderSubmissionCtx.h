@@ -46,56 +46,7 @@ namespace Heart
     typedef D3D11_MAPPED_SUBRESOURCE hdDX11MappedResourceData;
     typedef ID3D11CommandList* hdDX11CommandBuffer;
 
-    class HEART_DLLEXPORT hdDX11RenderInputObject
-    {
-    public:
-        hdDX11RenderInputObject()
-            : vertexShader_(NULL)
-            , pixelShader_(NULL)
-            , geometryShader_(NULL)
-            , hullShader_(NULL)
-            , domainShader_(NULL)
-        {
-            hZeroMem(boundProgs_, sizeof(boundProgs_));
-            hZeroMem(inputData_, sizeof(inputData_));
-        }
-
-        hBool   bindShaderProgram(hdDX11ShaderProgram* prog);
-        hBool   bindSamplerInput(hShaderParameterID paramID, hdDX11SamplerState* srv);
-        hBool   bindResourceView(hShaderParameterID paramID, hdDX11ShaderResourceView* view);
-        hBool   bindConstantBuffer(hShaderParameterID paramID, hdDX11Buffer* buffer);
-
-        enum hdDX11ShaderProgTypes
-        {
-            hdDX11VertexProg,
-            hdDX11PixelProg,
-            hdDX11GemoProg,
-            hdDX11HullProg,
-            hdDX11DomainProg,
-
-            hdDX11ProgMax
-        };
-
-    private:
-        friend class hdDX11RenderSubmissionCtx;
-
-        hdDX11ShaderProgram*            boundProgs_[hdDX11ProgMax];
-        ID3D11VertexShader*             vertexShader_;
-        ID3D11PixelShader*              pixelShader_;
-        ID3D11GeometryShader*           geometryShader_;
-        ID3D11HullShader*               hullShader_;
-        ID3D11DomainShader*             domainShader_;
-        //More shaders to come...
-        struct RendererInputs
-        {
-            hUint32                         resourceViewCount_;
-            hUint32                         samplerCount_;
-            ID3D11ShaderResourceView*       resourceViews_[HEART_MAX_RESOURCE_INPUTS];
-            ID3D11SamplerState*             samplerState_[HEART_MAX_RESOURCE_INPUTS];
-            ID3D11Buffer*                   programInputs_[HEART_MAX_CONSTANT_BLOCKS];
-        } inputData_[hdDX11ProgMax]; //for inputData_[vertexShader] & inputData_[pixelShader]
-    };
-
+#pragma message ("TODO: Is hdComputeInputObject still needed or would hRenderCommands replace it?")
     class HEART_DLLEXPORT hdDX11ComputeInputObject 
     {
     public:
@@ -132,43 +83,6 @@ namespace Heart
         ID3D11UnorderedAccessView* unorderdAccessView_[HEART_MAX_UAV_INPUTS];
     };
 
-    class HEART_DLLEXPORT hdDX11RenderStreamsObject
-    {
-    public:
-        hdDX11RenderStreamsObject()
-            : indexFormat_(DXGI_FORMAT_R16_UINT)
-            , index_(NULL)
-            , layout_(NULL)
-            , streamLower_(HEART_MAX_INPUT_STREAMS)
-            , streamUpper_(0)
-            , topology_(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
-        {
-            hZeroMem(streams_, sizeof(streams_));
-            hZeroMem(strides_, sizeof(strides_));
-            hZeroMem(boundStreams_, sizeof(boundStreams_));
-        }
-
-        hBool getHasIndexStream() const { return index_ != NULL; }
-        void setPrimType(PrimitiveType primType);
-        void bindIndexVertex(hdDX11IndexBuffer* index, hIndexBufferType format);
-        void bindVertexStream(hUint16 stream, hdDX11VertexBuffer* vertexbuffer, hUint stride);
-        void bindVertexFetch(hdDX11ShaderProgram* prog);
-        void unbind(hdDX11ShaderProgram* prog);
-
-    private:
-        friend class hdDX11RenderSubmissionCtx;
-
-        D3D11_PRIMITIVE_TOPOLOGY topology_;
-        DXGI_FORMAT         indexFormat_;
-        ID3D11InputLayout*  layout_;
-        hUint16             streamLower_;
-        hUint16             streamUpper_;
-        hdDX11VertexBuffer* boundStreams_[HEART_MAX_INPUT_STREAMS];
-        ID3D11Buffer*       index_;
-        ID3D11Buffer*       streams_[HEART_MAX_INPUT_STREAMS];
-        UINT                strides_[HEART_MAX_INPUT_STREAMS];
-    };
-
     class HEART_DLLEXPORT hdDX11RenderSubmissionCtx
     {
     public:
@@ -186,8 +100,6 @@ namespace Heart
         hdDX11CommandBuffer     SaveToCommandBuffer();
         void                    RunSubmissionBuffer(hdDX11CommandBuffer cmdBuf);
 
-        void    SetInputStreams(const hdDX11RenderStreamsObject* streams);
-        void    SetRenderInputObject(const hdDX11RenderInputObject* inputobj);
         void    setRenderStateBlock(hdDX11BlendState* st);
         void    setRenderStateBlock(hdDX11DepthStencilState* st);
         void    setRenderStateBlock(hdDX11RasterizerState* st);

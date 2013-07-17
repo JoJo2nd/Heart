@@ -90,19 +90,12 @@ namespace Heart
         void    runCommandBuffer(hdRenderCommandBuffer cmdBuf);
         void    runRenderCommands(hRCmd* cmds);
         void    setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth);
-        void    SetInputStreams(const hdRenderStreamsObject* streams) {
-            impl_.SetInputStreams(streams);
-        }
-        void    SetRenderInputObject(const hdRenderInputObject* rnInput) {
-            impl_.SetRenderInputObject(rnInput);
-        }
         void    setComputeInput(const hComputeObject* cInput) { 
             hcAssert(cInput);
             impl_.setComputeInput(&cInput->inputs_); 
         }
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
-        void    SetMaterialPass(hMaterialTechniquePass* pass);
         void    setRenderStateBlock(hdBlendState* st) {
             impl_.setRenderStateBlock( st );
         }

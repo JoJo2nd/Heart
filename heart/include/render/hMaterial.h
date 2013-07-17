@@ -140,76 +140,7 @@ namespace Heart
         hResourceClassBase* resourcePtr;
         hUint16             dataOffset;
     };
-#if 0
-    class HEART_DLLEXPORT hMaterialInstance
-    {
-    public:
 
-        hMaterial* getParentMaterial() const { return material_; }
-        hUint32 getMaterialKey() const;
-        hUint getGroupCount() const;
-        hMaterialGroup* getGroup(hUint idx);
-        hMaterialGroup* getGroupByName(const hChar* name);
-        /* Allow access to parameter blocks and updating of parameters */
-        hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
-        static void destroyMaterialInstance(hMaterialInstance* inst);
-
-        // v2 interface
-        hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
-        hBool bindResource(hShaderParameterID id, hShaderResourceView* view);
-        hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
-        hBool bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtxs, hUint streamCnt);
-        hRCmd* getRenderCommandsBegin(hUint group, hUint tech, hUint pass);
-        hRCmd* getRenderCommandsEnd(hUint group, hUint tech, hUint pass);
-        
-    private:
-
-        friend class hMaterial;
-        hPRIVATE_DESTRUCTOR();
-
-        typedef hVector< hMaterialGroup >     GroupArrayType;
-        typedef hVector< hMaterialTechnique > TechniqueArrayType;
-        typedef hVector< hBoundConstBlock > BoundConstBlockArrayType;
-        typedef hVector< hBoundResource > BoundResourceArrayType;
-        typedef hVector< hBoundSampler > BoundSamplerArrayType;
-
-        hMaterialInstance(hMemoryHeapBase* heap, hMaterial* parent)
-            : memHeap_(heap)
-            , material_(parent)
-            , manager_(NULL)
-            , constBlocks_(heap)
-            , boundResources_(heap)
-            , boundSamplers_(heap)
-        {
-        }
-        HEART_PRIVATE_COPY(hMaterialInstance);
-        ~hMaterialInstance()
-        {}
-
-        //version 2
-        void   generateRenderCommands();
-        void   updateRenderCommandOffsets(hUint diff);
-        hdInputLayout* buildInputLayout(hVertexBuffer** vtx, hUint streamCount, hShaderProgram* prog);
-
-        //shared
-        hMemoryHeapBase*            memHeap_;
-        hMaterial*                  material_;
-        hRenderMaterialManager*     manager_;
-        //version 1
-        BoundConstBlockArrayType    constBlocks_;
-        BoundResourceArrayType      boundResources_;
-        BoundSamplerArrayType       boundSamplers_;
-        hUint32                     flags_;
-
-        //version 2
-        hRenderCommands             renderCmds_;
-        hUint                       selectorCount_;
-
-        hUint*                      group_; // pointer within selectorIDs array
-        hUint*                      tech_;  // pointer within selectorIDs array
-        hUint*                      pass_;  // pointer within selectorIDs array
-    };
-#endif
     class HEART_DLLEXPORT hMaterial : public hResourceClassBase
     {
     public:
@@ -229,11 +160,7 @@ namespace Heart
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    AddSamplerParameter(const hSamplerParameter& samp);
         void                    addDefaultParameterValue(const ParameterDefinition& paramdef);
-#if 0
-        /* Create Create/DestroyMaterialOverrides()*/
-        hMaterialInstance*  createMaterialInstance(hUint32 flags);
-        void                destroyMaterialInstance(hMaterialInstance*);
-#else
+
         hRCmd* getRenderCommandsBegin(hUint group, hUint tech, hUint pass) {
             return renderCmds_.getCommandAtOffset(passCmds_[techCmds_[groupCmds_[group]]+pass]);
         }
@@ -241,7 +168,7 @@ namespace Heart
             hUint* idx=&passCmds_[techCmds_[groupCmds_[group]]+pass+1];
             return idx < groupCmds_+selectorCount_ ? renderCmds_.getCommandAtOffset(*idx) : renderCmds_.getEnd();
         }
-#endif
+
         /* Bind interface - return false if not set on any programs */
         hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);

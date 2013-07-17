@@ -73,7 +73,7 @@ namespace Heart
                 inputResources_[i].buffers_[idx]=buffer;
             }
         }
-        return succ;// || renderInput_.bindConstantBuffer(paramID, buffer);
+        return succ;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ namespace Heart
                 inputResources_[i].samplerStates_[idx]=srv;
             }
         }
-        return renderInput_.bindSamplerInput(paramID, srv);
+        return succ;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -127,57 +127,7 @@ namespace Heart
                 inputResources_[i].srView_[idx]=view;
             }
         }
-        return renderInput_.bindResourceView(paramID, view);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechniquePass::bindShaderProgram(hdShaderProgram* prog)
-    {
-        return renderInput_.bindShaderProgram(prog);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechniquePass::bindInputStreams(PrimitiveType type, hIndexBuffer* idx, hVertexBuffer** vtx, hUint streamcnt) {
-        boundStreams_.setPrimType(type);
-        boundStreams_.bindIndexVertex(idx, idx ? idx->getIndexBufferType() : hIndexBufferType_Index16);
-        for(hUint i=0; i<streamcnt; ++i) {
-            if (vtx[i]) {
-                boundStreams_.bindVertexStream(i, vtx[i], vtx[i]->getStride());
-            }
-        }
-        boundStreams_.bindVertexFetch(vertexProgram_);
-        return true;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterialTechniquePass::bindInputStream(hUint slot, hVertexBuffer* vtx) {
-        hcAssert(slot < HEART_MAX_INPUT_STREAMS);
-        if (vtx) {
-            boundStreams_.bindVertexStream(slot, vtx, vtx->getStride());
-        } else {
-            boundStreams_.bindVertexStream(slot, NULL, 0);
-        }
-        boundStreams_.bindVertexFetch(vertexProgram_);
-        return true;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterialTechniquePass::unbind() {
-        if (vertexProgram_) {
-            boundStreams_.unbind(vertexProgram_);
-        }
+        return succ;
     }
 
     //////////////////////////////////////////////////////////////////////////
