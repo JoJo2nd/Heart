@@ -32,12 +32,13 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hRenderable::SetMaterial(hMaterialInstance* material)
+void hRenderable::SetMaterial(hMaterial* material)
 {
-    hcAssertMsg(material, "Material cannot be NULL");
-
-    matInstance_ = material;
-    materialKey_ = matInstance_->getMaterialKey();
+    materialKey_=0;
+    material_ = material;
+    if (material_) {
+        materialKey_ = material_->GetMatKey();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -45,7 +46,7 @@ void hRenderable::SetMaterial(hMaterialInstance* material)
 //////////////////////////////////////////////////////////////////////////
 
 void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
-    hcAssert(matInstance_);
+    hcAssert(material_);
     hUint layoutdesccount=0;
     hInputLayoutDesc* layoutdesc=hNullptr;
 
@@ -63,9 +64,9 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
         }
     }
 
-    cmdLookUp_.init(matInstance_->getParentMaterial());
-    for(hUint g=0, ng=matInstance_->getGroupCount(); g<ng; ++g) {
-        hMaterialGroup* group=matInstance_->getGroup(g);
+    cmdLookUp_.init(material_);
+    for(hUint g=0, ng=material_->getGroupCount(); g<ng; ++g) {
+        hMaterialGroup* group=material_->getGroup(g);
         for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
             hMaterialTechnique* tech=group->getTech(t);
             for (hUint p=0, np=tech->GetPassCount(); p<np; ++p) {
@@ -73,7 +74,7 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
                 hdInputLayout* inputlayout=pass->GetVertexShader()->createVertexLayout(layoutdesc, layoutdesccount);
                 inputLayouts_.PushBack(inputlayout);
                 cmdLookUp_.setCommand(g, t, p, rcGen->getRenderCommandsSize());
-                rcGen->setJump(matInstance_->getRenderCommandsBegin(g, t, p));
+                rcGen->setJump(material_->getRenderCommandsBegin(g, t, p));
                 rcGen->setStreamInputs(primType_, 
                     indexBuffer_, 
                     indexBuffer_ ? indexBuffer_->getIndexBufferType() : hIndexBufferType_Index16, 

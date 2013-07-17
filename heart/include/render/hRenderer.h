@@ -82,11 +82,17 @@ namespace Heart
         hUint setDrawInstance(hUint nPrimatives, hUint startVertex, hUint instancecount);
         hUint setDrawInstanceIndex(hUint nPrimatives, hUint startVertex, hUint instancecount);
         hUint setRenderStates(hBlendState* bs, hRasterizerState* rs, hDepthStencilState* dss);
-        hUint setShader(hShaderProgram* shader);
+        hUint setShader(hShaderProgram* shader, hShaderType type);
         hUint setVertexInputs(hSamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
             hRenderBuffer** cb, hUint ncb);
+        hUint updateVertexInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hRenderBuffer** cb, hUint ncb);
         hUint setPixelInputs(hSamplerState** samplers, hUint nsamplers,
+            hShaderResourceView** srv, hUint nsrv,
+            hRenderBuffer** cb, hUint ncb);
+        hUint updatePixelInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers,
             hShaderResourceView** srv, hUint nsrv,
             hRenderBuffer** cb, hUint ncb);
         hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,

@@ -694,7 +694,6 @@ namespace hRenderUtility
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
         hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
-
         group->techniques_.Resize(1);
         hMaterialTechnique* tech=&group->techniques_[0];
         tech->SetName("main");
@@ -756,9 +755,10 @@ namespace hRenderUtility
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;
         
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), ss);
+
+        ddrawmat->bindMaterial(rndr->GetMaterialManager());
         ss->DecRef();
 
         return ddrawmat;

@@ -26,28 +26,28 @@
 *********************************************************************/
 
 #include "testbed_precompiled.h"
-#include "TestBedCore.h"
-#include <time.h>
-#include "CreateTextureTest.h"
-#include "MapTest.h"
-#include "ListTest.h"
-#include "ResourceLoadTest.h"
-#include "JobManagerTest.h"
-#include "ModelRenderTest.h"
-#include "EventTest.h"
-#include "Base64Test.h"
-#include "InstanceRenderTest.h"
-#include "ComplexMesh1.h"
-#include "ComplexMesh2.h"
-#include "DebugPrimsTest.h"
-#include "Sibenik.h"
-#include "ComputeTest.h"
-#include "TexturedPlane.h"
-#include "LoadTextureTest.h"
-#include "ComputeBlur.h"
+ #include "TestBedCore.h"
+ #include <time.h>
+// #include "CreateTextureTest.h"
+// #include "MapTest.h"
+// #include "ListTest.h"
+// #include "ResourceLoadTest.h"
+// #include "JobManagerTest.h"
+// #include "ModelRenderTest.h"
+// #include "EventTest.h"
+ #include "Base64Test.h"
+// #include "InstanceRenderTest.h"
+// #include "ComplexMesh1.h"
+// #include "ComplexMesh2.h"
+// #include "DebugPrimsTest.h"
+ #include "Sibenik.h"
+// #include "ComputeTest.h"
+// #include "TexturedPlane.h"
+// #include "LoadTextureTest.h"
+// #include "ComputeBlur.h"
 
-DEFINE_HEART_UNIT_TEST(ListTest);
-DEFINE_HEART_UNIT_TEST(MapTest);
+//DEFINE_HEART_UNIT_TEST(ListTest);
+//DEFINE_HEART_UNIT_TEST(MapTest);
 DEFINE_HEART_UNIT_TEST(Base64);
 
 #define LUA_GET_TESTBED(L) \

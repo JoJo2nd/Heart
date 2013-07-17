@@ -43,7 +43,7 @@ namespace Heart
         hRenderable() 
             : materialID_(0)
             , materialKey_(0)
-            , matInstance_(NULL)
+            , material_(NULL)
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
@@ -75,16 +75,13 @@ namespace Heart
         void                                    SetPrimativeCount(hUint primCount) { primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
-        void                                    SetMaterial(hMaterialInstance* material);
-        hMaterialInstance*                      GetMaterial() const { return matInstance_; }
+        void                                    SetMaterial(hMaterial* material);
+        hMaterial*                              GetMaterial() const { return material_; }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
         void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-//         void                                    bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuff)  {
-//             matInstance_->bindVertexStream(inputSlot, vtxBuff);
-//         }
         void                                    bind() { 
-            matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_.GetBuffer(), vertexBuffer_.GetSize()); 
+            //matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_.GetBuffer(), vertexBuffer_.GetSize()); 
         }
         void initialiseRenderCommands(hRenderCommandGenerator* rcGen);
         hUint getRenderCommandOffset(hUint g, hUint t, hUint p) const {
@@ -97,7 +94,7 @@ namespace Heart
         hUint32                  materialKey_;
         hUint                    primCount_;
         hUint                    startVertex_;
-        hMaterialInstance*       matInstance_;
+        hMaterial*               material_;
         hAABB                    aabb_;
         PrimitiveType            primType_;
         hIndexBuffer*            indexBuffer_;

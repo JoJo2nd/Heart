@@ -95,7 +95,6 @@ namespace Heart
             ssdesc.borderColour_  = WHITE;
             ssdesc.minLOD_        = -FLT_MAX;
             ssdesc.maxLOD_        = FLT_MAX;  
-            fontSamplerState_=renderer->createSamplerState(ssdesc);
             hShaderResourceViewDesc srvd;
             hZeroMem(&srvd, sizeof(srvd));
             srvd.format_=consoleTex_->getTextureFormat();
@@ -111,9 +110,8 @@ namespace Heart
             rcGen.resetCommands();
 
             renderer->createVertexBuffer(consolePlane, 6, layout, (hUint32)hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
-            hMaterial* backdropMat = matManager->getConsoleMat();
-            backdropMat_ = backdropMat->createMaterialInstance(0);
-            hMaterialGroup* group=backdropMat->getGroup(0);
+            backdropMat_ = matManager->getConsoleMat();
+            hMaterialGroup* group=backdropMat_->getGroup(0);
             for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
                 if (group->getTech(t)->GetMask()==debugTechMask_) {
                     for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
@@ -128,11 +126,9 @@ namespace Heart
 
             rcGen.setReturn();
 
-            hMaterial* fontMat=matManager->getDebugFontMat();
             hShaderParameterID fontsamplerid=hCRC32::StringCRC("fontSampler");
-            textMat_ = fontMat->createMaterialInstance(0);
+            textMat_ = matManager->getDebugFontMat();
             textMat_->bindResource(fontsamplerid, consoleTexSRV_);
-            textMat_->bindSampler(fontsamplerid, fontSamplerState_);
 
             rcGen.setRenderCommands(&drawCommands_[1]);
             rcGen.resetCommands();
@@ -166,17 +162,13 @@ namespace Heart
             }
             rcGen.setReturn();
 
-             fontCB_ = textMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
+            fontCB_ = textMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
         }
         void destroyRenderResources(hRenderer* renderer)
         {
             hRenderUtility::destroyDebugFont(renderer, consoleFont_, consoleTex_);
             consoleTex_=NULL;
             hDELETE_SAFE(GetGlobalHeap(), consoleFont_);
-            hMaterialInstance::destroyMaterialInstance(backdropMat_);
-            hMaterialInstance::destroyMaterialInstance(textMat_);
-            fontSamplerState_->DecRef();
-            fontSamplerState_=NULL;
             backdropMat_ = NULL;
             textMat_ = NULL;
             consoleTexSRV_->DecRef();
@@ -339,18 +331,17 @@ namespace Heart
 
         static const hUint32 INPUT_BUFFER_LEN = hSystemConsole::INPUT_BUFFER_LEN;
 
-        hUint32                  debugTechMask_;
-        hVertexBuffer*           textBuffer_;
-        hVertexBuffer*           logBuffer_;
-        hVertexBuffer*           backdropPlane_;
-        hMaterialInstance*       backdropMat_;
-        hMaterialInstance*       textMat_;
-        hFont*                   consoleFont_;
-        hTexture*                consoleTex_;
-        hShaderResourceView*     consoleTexSRV_;
-        hSamplerState*           fontSamplerState_;
-        hRenderBuffer* fontCB_;
-        hFloat                   windowOffset_;
+        hUint32              debugTechMask_;
+        hVertexBuffer*       textBuffer_;
+        hVertexBuffer*       logBuffer_;
+        hVertexBuffer*       backdropPlane_;
+        hMaterial*           backdropMat_;
+        hMaterial*           textMat_;
+        hFont*               consoleFont_;
+        hTexture*            consoleTex_;
+        hShaderResourceView* consoleTexSRV_;
+        hRenderBuffer*       fontCB_;
+        hFloat               windowOffset_;
 
         hRenderCommands         drawCommands_[3];
         hVector<hdInputLayout*> inputLayouts_;

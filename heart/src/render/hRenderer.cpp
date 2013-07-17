@@ -1283,8 +1283,10 @@ namespace Heart
                 if (lod->renderObjects_[j].GetMaterial() == 0) {
                     hMaterial* mat = static_cast<hMaterial*>(resourceManager_->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
                     // Possible the material won't have loaded just yet...
-                    if (!mat) return hFalse; 
-                    lod->renderObjects_[j].SetMaterial(mat->createMaterialInstance(0));
+                    if (!mat) {
+                        return hFalse;
+                    }
+                    lod->renderObjects_[j].SetMaterial(mat);
                     lod->renderObjects_[j].bind();
                 }
             }
@@ -1303,7 +1305,7 @@ namespace Heart
         for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
             hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
             for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-                hMaterialInstance::destroyMaterialInstance(lod->renderObjects_[rIdx].GetMaterial());
+                lod->renderObjects_[rIdx].SetMaterial(hNullptr);
             }
         }
     }
@@ -1348,6 +1350,7 @@ namespace Heart
 
     void hRenderCommands::insertCommand(hUint where, const hRCmd* command, hBool overwrite) {
         hcAssert(command);
+        hcAssert(where <= cmdSize_);
         if (where+command->size_ >= cmdSize_) {
             reserveSpace(cmdSize_+command->size_);
         }
@@ -1421,7 +1424,7 @@ namespace Heart
     hUint hRenderCommandGenerator::overwriteCmd(const hRCmd* oldcmd, const hRCmd* newcmd) {
         hcAssert(renderCommands_);
         hUint sizediff=oldcmd->size_ < newcmd->size_ ? newcmd->size_-oldcmd->size_ : 0;
-        hUint cmdstart=(hUint)((ptrdiff_t)renderCommands_->cmdSize_-(ptrdiff_t)oldcmd);
+        hUint cmdstart=(hUint)((ptrdiff_t)oldcmd-(ptrdiff_t)renderCommands_->cmds_);
         renderCommands_->insertCommand(cmdstart, newcmd, true);
         return sizediff;
     }
@@ -1530,9 +1533,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hRenderCommandGenerator::setShader(hShaderProgram* shader) {
+    hUint hRenderCommandGenerator::setShader(hShaderProgram* shader, hShaderType type) {
         hcAssert(renderCommands_);
-        return hdRenderCommandGenerator::setShader(shader);
+        return hdRenderCommandGenerator::setShader(shader, type);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1560,6 +1563,26 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint hRenderCommandGenerator::updateVertexInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::updateVertexInputs(cmd, dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hUint hRenderCommandGenerator::setPixelInputs(hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
         hcAssert(renderCommands_);
         hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
@@ -1576,6 +1599,28 @@ namespace Heart
         }
         return hdRenderCommandGenerator::setPixelInputs(dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hRenderCommandGenerator::updatePixelInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers, hShaderResourceView** srv, hUint nsrv, hRenderBuffer** cb, hUint ncb) {
+        hcAssert(renderCommands_);
+        hdSamplerState** dsamplers      =(hdSamplerState**)hAlloca(sizeof(hdSamplerState*)*nsamplers);
+        hdShaderResourceView** dsrv     =(hdShaderResourceView**)hAlloca(sizeof(hdShaderResourceView*)*nsrv);
+        hdRenderBuffer** dcb  =(hdRenderBuffer**)hAlloca(sizeof(hdRenderBuffer*)*ncb);
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            dsamplers[i]=samplers[i];
+        }
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            dsrv[i]=srv[i];
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            dcb[i]=cb[i];
+        }
+        return hdRenderCommandGenerator::updatePixelInputs(cmd, dsamplers, nsamplers, dsrv, nsrv, dcb, ncb);
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -1836,8 +1881,8 @@ namespace Heart
             }
         }
         rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
-        rcGen.setShader(targetInfo_.vertexLightShader_);
-        rcGen.setShader(targetInfo_.pixelLightShader_);
+        rcGen.setShader(targetInfo_.vertexLightShader_, ShaderType_VERTEXPROG);
+        rcGen.setShader(targetInfo_.pixelLightShader_, ShaderType_FRAGMENTPROG);
         rcGen.setPixelInputs(&samplerState_, 1, srv_.GetBuffer(), srv_.GetSize(), buffers_.GetBuffer(), buffers_.GetSize());
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
         rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);

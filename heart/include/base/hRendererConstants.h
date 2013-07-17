@@ -305,6 +305,7 @@ namespace Heart
             hFreeSafe(cmds_);
         }
 
+        hBool   isEmpty() const { return cmdSize_ == 0; }
         hRCmd*  getFirst() { return cmds_; }
         hRCmd*  getEnd() { return (hRCmd*)((hByte*)cmds_+cmdSize_); }
         hRCmd*  getCommandAtOffset(hUint offset) { 

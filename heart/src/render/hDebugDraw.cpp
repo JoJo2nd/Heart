@@ -124,7 +124,7 @@ namespace Heart
             {eIS_POSITION, 0, eIF_FLOAT4, 0, 0},
         };
         hRenderMaterialManager* matmgr=renderer->GetMaterialManager();
-        debugMat_=matmgr->getWireframeDebug()->createMaterialInstance(0);
+        debugMat_=matmgr->getWireframeDebug();
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, vbdesc, (hUint)hArraySize(vbdesc), RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &linesBuffer_);
     }
 

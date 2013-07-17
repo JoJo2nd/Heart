@@ -1896,27 +1896,26 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint hdDX11RenderCommandGenerator::setShader(hdDX11ShaderProgram* shader) {
-        hcAssert(shader);
-        switch(shader->type_) {
+    hUint hdDX11RenderCommandGenerator::setShader(hdDX11ShaderProgram* shader, hShaderType type) {
+        switch(type) {
             case ShaderType_VERTEXPROG: {
-                hRCmdSetVertexShader cmd(shader->vertexShader_);
+                hRCmdSetVertexShader cmd(!shader ? hNullptr : shader->vertexShader_);
                 return appendCmd(&cmd);
             } break;
             case ShaderType_FRAGMENTPROG: {
-                hRCmdSetPixelShader cmd(shader->pixelShader_);
+                hRCmdSetPixelShader cmd(!shader ? hNullptr : shader->pixelShader_);
                 return appendCmd(&cmd);
             } break;
             case ShaderType_GEOMETRYPROG: {
-                hRCmdSetGeometryShader cmd(shader->geomShader_);
+                hRCmdSetGeometryShader cmd(!shader ? hNullptr : shader->geomShader_);
                 return appendCmd(&cmd);
             } break;
             case ShaderType_HULLPROG: {
-                hRCmdSetHullShader cmd(shader->hullShader_);
+                hRCmdSetHullShader cmd(!shader ? hNullptr : shader->hullShader_);
                 return appendCmd(&cmd);
             } break;
             case ShaderType_DOMAINPROG: {
-                hRCmdSetDomainShader cmd(shader->domainShader_);
+                hRCmdSetDomainShader cmd(!shader ? hNullptr : shader->domainShader_);
                 return appendCmd(&cmd);
             } break;
             default:
@@ -1954,6 +1953,32 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hUint hdDX11RenderCommandGenerator::updateVertexInputs(hRCmd* oldcmd, hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
+        hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
+        cmdsize+=sizeof(hRCmdSetVertexInputs);
+        hRCmdSetVertexInputs* cmd=(hRCmdSetVertexInputs*)hAlloca(cmdsize);
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+nsrv);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+nsamplers);
+        hPLACEMENT_NEW(cmd) hRCmdSetVertexInputs(nsrv, nsamplers, ncb);
+        cmd->size_=cmdsize;
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
+        }
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
+        }
+        hcAssert(cmd->size_ == oldcmd->size_);
+        return overwriteCmd(oldcmd, cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     hUint hdDX11RenderCommandGenerator::setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
         hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
         cmdsize+=sizeof(hRCmdSetPixelInputs);
@@ -1973,6 +1998,32 @@ namespace Heart
             cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
         }
         return appendCmd(cmd);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdDX11RenderCommandGenerator::updatePixelInputs(hRCmd* oldcmd, hdDX11SamplerState** samplers, hUint nsamplers, hdDX11ShaderResourceView** srv, hUint nsrv, hdDX11Buffer** cb, hUint ncb) {
+        hUint cmdsize=sizeof(ID3D11ShaderResourceView*)*nsrv+sizeof(ID3D11SamplerState*)*nsamplers+sizeof(ID3D11Buffer*)*ncb;
+        cmdsize+=sizeof(hRCmdSetPixelInputs);
+        hRCmdSetPixelInputs* cmd=(hRCmdSetPixelInputs*)hAlloca(cmdsize);
+        ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
+        ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+nsrv);
+        ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+nsamplers);
+        hPLACEMENT_NEW(cmd) hRCmdSetPixelInputs(nsrv, nsamplers, ncb);
+        cmd->size_=cmdsize;
+        for (hUint i=0, n=nsrv; i<n; ++i) {
+            cmdsrv[i]=srv[i] ? srv[i]->srv_ : hNullptr;
+        }
+        for (hUint i=0, n=nsamplers; i<n; ++i) {
+            cmdsamp[i]=samplers[i] ? samplers[i]->stateObj_ : hNullptr;
+        }
+        for (hUint i=0, n=ncb; i<n; ++i) {
+            cmdpcb[i]=cb[i] ? cb[i]->buffer_ : hNullptr;
+        }
+        hcAssert(cmd->size_ == oldcmd->size_);
+        return overwriteCmd(oldcmd, cmd);
     }
 
     //////////////////////////////////////////////////////////////////////////

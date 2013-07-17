@@ -95,9 +95,9 @@ namespace Heart
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];
-        hMaterialInstance*  debugMat_;
+        hMaterial*          debugMat_;
         hVertexBuffer*      linesBuffer_;
-        hMaterialInstance*  lineMaterial_;
+        hMaterial*          lineMaterial_;
         hBool               resourcesCreated_;
     };
 }

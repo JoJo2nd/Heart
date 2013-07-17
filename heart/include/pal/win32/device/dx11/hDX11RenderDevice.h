@@ -142,11 +142,17 @@ namespace Heart
     protected:
 
         hUint setRenderStates(hdDX11BlendState* bs, hdDX11RasterizerState* rs, hdDX11DepthStencilState* dss);
-        hUint setShader(hdDX11ShaderProgram* shader);
+        hUint setShader(hdDX11ShaderProgram* shader, hShaderType type);
         hUint setVertexInputs(hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
             hdDX11Buffer** cb, hUint ncb);
+        hUint updateVertexInputs(hRCmd* oldcmd, hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11Buffer** cb, hUint ncb);
         hUint setPixelInputs(hdDX11SamplerState** samplers, hUint nsamplers,
+            hdDX11ShaderResourceView** srv, hUint nsrv,
+            hdDX11Buffer** cb, hUint ncb);
+        hUint updatePixelInputs(hRCmd* oldcmd, hdDX11SamplerState** samplers, hUint nsamplers,
             hdDX11ShaderResourceView** srv, hUint nsrv,
             hdDX11Buffer** cb, hUint ncb);
         hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,

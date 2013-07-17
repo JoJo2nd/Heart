@@ -140,7 +140,7 @@ namespace Heart
         hResourceClassBase* resourcePtr;
         hUint16             dataOffset;
     };
-
+#if 0
     class HEART_DLLEXPORT hMaterialInstance
     {
     public:
@@ -209,7 +209,7 @@ namespace Heart
         hUint*                      tech_;  // pointer within selectorIDs array
         hUint*                      pass_;  // pointer within selectorIDs array
     };
-
+#endif
     class HEART_DLLEXPORT hMaterial : public hResourceClassBase
     {
     public:
@@ -229,11 +229,19 @@ namespace Heart
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    AddSamplerParameter(const hSamplerParameter& samp);
         void                    addDefaultParameterValue(const ParameterDefinition& paramdef);
-        
+#if 0
         /* Create Create/DestroyMaterialOverrides()*/
         hMaterialInstance*  createMaterialInstance(hUint32 flags);
         void                destroyMaterialInstance(hMaterialInstance*);
-
+#else
+        hRCmd* getRenderCommandsBegin(hUint group, hUint tech, hUint pass) {
+            return renderCmds_.getCommandAtOffset(passCmds_[techCmds_[groupCmds_[group]]+pass]);
+        }
+        hRCmd* getRenderCommandsEnd(hUint group, hUint tech, hUint pass) {
+            hUint* idx=&passCmds_[techCmds_[groupCmds_[group]]+pass+1];
+            return idx < groupCmds_+selectorCount_ ? renderCmds_.getCommandAtOffset(*idx) : renderCmds_.getEnd();
+        }
+#endif
         /* Bind interface - return false if not set on any programs */
         hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);
@@ -258,6 +266,8 @@ namespace Heart
         typedef hVector< hBoundSampler >            BoundSamplerArrayType;
 
         void initConstBlockBufferData(const hConstantBlockDesc& desc, const hShaderProgram* prog, void* outdata);
+        void generateRenderCommands();
+        void updateRenderCommands();
 
         hAtomicInt                          instanceCount_;
         hSamplerArrayType                   defaultSamplers_;
@@ -275,6 +285,12 @@ namespace Heart
         BoundConstBlockArrayType            constBlocks_;
         BoundResourceArrayType              boundResources_;
         BoundSamplerArrayType               boundSamplers_;
+
+        hRenderCommands             renderCmds_;
+        hUint                       selectorCount_;
+        hUint*                      groupCmds_; // pointer within selectorIDs array
+        hUint*                      techCmds_;  // pointer within selectorIDs array
+        hUint*                      passCmds_;  // pointer within selectorIDs array
     };
 }
 

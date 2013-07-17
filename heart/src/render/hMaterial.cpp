@@ -82,6 +82,10 @@ namespace Heart
         , groups_(heap) 
         , defaultDataSize_(0)
         , defaultData_(hNullptr)
+        , selectorCount_(0)
+        , groupCmds_(hNullptr)
+        , techCmds_(hNullptr)
+        , passCmds_(hNullptr)
     {
 
     }
@@ -211,6 +215,8 @@ namespace Heart
                 cb->AddRef();
                 constBlocks_.PushBack(bcb);
             }
+
+            updateRenderCommands();
         }
 
         return succ;
@@ -234,7 +240,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-
+#if 0
     hMaterialInstance* hMaterial::createMaterialInstance(hUint32 flags)
     {
         hBool dontcreatecb=(hMatInst_DontInstanceConstantBuffers&flags) == hMatInst_DontInstanceConstantBuffers;;
@@ -323,7 +329,7 @@ namespace Heart
         hDELETE_SAFE(memHeap_, matInst);
         hAtomic::Decrement(instanceCount_);
     }
-
+#endif
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -404,7 +410,7 @@ namespace Heart
                             hBool alreadyAdded = hFalse;
                             if (!globalCB) {
                                 for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
-                                    if (constBlocks_[mcb].paramid == cbID) {
+                                    if (constBlocks_[mcb].paramid == cbID && constBlocks_[mcb].constBlock != hNullptr) {
                                         alreadyAdded = hTrue;
                                     }
                                 }
@@ -464,6 +470,8 @@ namespace Heart
             bindSampler(paramid, defaultSamplers_[si].samplerState_);
         }
 
+        generateRenderCommands();
+
         return hTrue;
     }
 
@@ -504,6 +512,8 @@ namespace Heart
                 srv->AddRef();
                 boundResources_.PushBack(bt);
             }
+
+            updateRenderCommands();
         }
 
         return succ;
@@ -546,6 +556,8 @@ namespace Heart
                 samplerState->AddRef();
                 boundSamplers_.PushBack(bt);
             }
+
+            updateRenderCommands();
         }
 
         return succ;
@@ -640,6 +652,96 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hMaterial::generateRenderCommands() {
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        selectorCount_=getGroupCount()+getTotalTechniqueCount()+getTotalPassCount();
+        groupCmds_=hNEW_ARRAY(memHeap_, hUint, selectorCount_);
+        techCmds_=groupCmds_+getGroupCount();
+        passCmds_=techCmds_+getTotalTechniqueCount();
+        hUint groups=getGroupCount();
+        hUint groupsWritten=0;
+        hUint techsWritten=0;
+        hUint passesWritten=0;
+        for (hUint group=0; group<groups; ++group) {
+            groupCmds_[groupsWritten++]=techsWritten;
+            hUint techs=getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                techCmds_[techsWritten++]=passesWritten;
+                hUint passes=getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    passCmds_[passesWritten++]=rcGen.getRenderCommandsSize();
+                    hMaterialTechniquePass* passptr=getGroup(group)->getTech(tech)->GetPass(pass);
+                    rcGen.setRenderStates(passptr->GetBlendState(), passptr->GetRasterizerState(), passptr->GetDepthStencilState());
+                    rcGen.setShader(passptr->GetVertexShader(), ShaderType_VERTEXPROG);
+                    if (passptr->GetVertexShader()) {
+                        rcGen.setVertexInputs(
+                            passptr->getSamplers(ShaderType_VERTEXPROG),
+                            passptr->getSamplerCount(ShaderType_VERTEXPROG),
+                            passptr->getShaderResourceViews(ShaderType_VERTEXPROG),
+                            passptr->getShaderResourceViewCount(ShaderType_VERTEXPROG),
+                            passptr->getConstantBuffers(ShaderType_VERTEXPROG),
+                            passptr->getConstantBufferCount(ShaderType_VERTEXPROG));
+                    }
+                    rcGen.setShader(passptr->GetFragmentShader(), ShaderType_FRAGMENTPROG);
+                    if (passptr->GetFragmentShader()) {
+                        rcGen.setPixelInputs(
+                            passptr->getSamplers(ShaderType_FRAGMENTPROG),
+                            passptr->getSamplerCount(ShaderType_FRAGMENTPROG),
+                            passptr->getShaderResourceViews(ShaderType_FRAGMENTPROG),
+                            passptr->getShaderResourceViewCount(ShaderType_FRAGMENTPROG),
+                            passptr->getConstantBuffers(ShaderType_FRAGMENTPROG),
+                            passptr->getConstantBufferCount(ShaderType_FRAGMENTPROG));
+                    }
+                    rcGen.setReturn();
+                }
+            }
+        }
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::updateRenderCommands() {
+        if (renderCmds_.isEmpty()) {
+            return;
+        }
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        for (hUint group=0, groups=getGroupCount(); group<groups; ++group) {
+            hUint techs=getGroup(group)->getTechCount();
+            for (hUint tech=0; tech<techs; ++tech) {
+                hUint passes=getGroup(group)->getTech(tech)->GetPassCount();
+                for (hUint pass=0; pass<passes; ++pass) {
+                    hMaterialTechniquePass* passptr=getGroup(group)->getTech(tech)->GetPass(pass);
+                    hRCmd* rc=getRenderCommandsBegin(group, tech, pass);
+                    hRCmd* rcend=getRenderCommandsEnd(group, tech, pass);
+                    for (; rc<rcend; rc=(hRCmd*)(((hByte*)rc)+rc->size_)) {
+                        if (rc->opCode_==eRenderCmd_SetVertexInputs) {
+                            rcGen.updateVertexInputs(rc,
+                                passptr->getSamplers(ShaderType_VERTEXPROG),
+                                passptr->getSamplerCount(ShaderType_VERTEXPROG),
+                                passptr->getShaderResourceViews(ShaderType_VERTEXPROG),
+                                passptr->getShaderResourceViewCount(ShaderType_VERTEXPROG),
+                                passptr->getConstantBuffers(ShaderType_VERTEXPROG),
+                                passptr->getConstantBufferCount(ShaderType_VERTEXPROG));
+                        } else if (rc->opCode_==eRenderCmd_SetPixelInputs) {
+                            rcGen.updatePixelInputs(rc,
+                                passptr->getSamplers(ShaderType_FRAGMENTPROG),
+                                passptr->getSamplerCount(ShaderType_FRAGMENTPROG),
+                                passptr->getShaderResourceViews(ShaderType_FRAGMENTPROG),
+                                passptr->getShaderResourceViewCount(ShaderType_FRAGMENTPROG),
+                                passptr->getConstantBuffers(ShaderType_FRAGMENTPROG),
+                                passptr->getConstantBufferCount(ShaderType_FRAGMENTPROG));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+#if 0
     hRenderBuffer* hMaterialInstance::GetParameterConstBlock(hShaderParameterID cbid)
     {
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
@@ -1003,7 +1105,7 @@ namespace Heart
             }
         }
     }
-
+#endif
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
