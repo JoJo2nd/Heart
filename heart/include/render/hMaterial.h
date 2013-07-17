@@ -196,8 +196,6 @@ namespace Heart
         void generateRenderCommands();
         void updateRenderCommands();
 
-        hAtomicInt                          instanceCount_;
-        hSamplerArrayType                   defaultSamplers_;
         hMemoryHeapBase*                    memHeap_;
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;
@@ -209,6 +207,7 @@ namespace Heart
         hUint                               defaultDataSize_;
         hUint8*                             defaultData_;
         DefaultValueArrayType               defaultValues_;
+        hSamplerArrayType                   defaultSamplers_;
         BoundConstBlockArrayType            constBlocks_;
         BoundResourceArrayType              boundResources_;
         BoundSamplerArrayType               boundSamplers_;

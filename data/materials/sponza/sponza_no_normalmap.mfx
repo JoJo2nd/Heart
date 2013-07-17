@@ -6,7 +6,7 @@
         <filter>linear</filter>
     </sampler>
     <parameter name="albedoTexture" type="texture">SPONZA.CHECKER</parameter>
-    <parameter name="normalTexture" type="texture">SPONZA.CHECKER_NRM</parameter>
+    <parameter name="specTexture" type="texture">SPONZA.CHECKER_SPEC</parameter>
     <!-- This cause error if they don't exist in shader <parameter name="matColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecColour" type="colour">1,1,1,1</parameter>
     <parameter name="matSpecPower" type="float">64</parameter> -->

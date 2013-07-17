@@ -96,8 +96,6 @@ namespace Heart
 
     hMaterial::~hMaterial()
     {
-        hcAssertMsg(instanceCount_.value_ == 0, 
-            "Not all material instances created from this material were released");
         unbind();
     }
 

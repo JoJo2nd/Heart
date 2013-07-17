@@ -754,11 +754,10 @@ namespace hRenderUtility
         sampDesc.borderColour_  = WHITE;
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;
-        
-        hSamplerState* ss=rndr->createSamplerState(sampDesc);
-        ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), ss);
 
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        hSamplerState* ss=rndr->createSamplerState(sampDesc);
+        ddrawmat->bindSampler(hCRC32::StringCRC("fontSampler"), ss);
         ss->DecRef();
 
         return ddrawmat;

@@ -402,9 +402,15 @@ namespace Heart
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
-        device_->VSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
-        device_->VSSetSamplers(0, cmd->samplerCount_, cmdsamp);
-        device_->VSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        if (cmd->resourceViewCount_) {
+            device_->VSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        }
+        if (cmd->samplerCount_) {
+            device_->VSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        }
+        if (cmd->bufferCount_) {
+            device_->VSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -415,9 +421,15 @@ namespace Heart
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
-        device_->PSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
-        device_->PSSetSamplers(0, cmd->samplerCount_, cmdsamp);
-        device_->PSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        if (cmd->resourceViewCount_) {
+            device_->PSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        }
+        if (cmd->samplerCount_) {
+            device_->PSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        }
+        if (cmd->bufferCount_) {
+            device_->PSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -428,9 +440,15 @@ namespace Heart
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
-        device_->GSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
-        device_->GSSetSamplers(0, cmd->samplerCount_, cmdsamp);
-        device_->GSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        if (cmd->resourceViewCount_) {
+            device_->GSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        }
+        if (cmd->samplerCount_) {
+            device_->GSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        }
+        if (cmd->bufferCount_) {
+            device_->GSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -441,9 +459,15 @@ namespace Heart
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
-        device_->HSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
-        device_->HSSetSamplers(0, cmd->samplerCount_, cmdsamp);
-        device_->HSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        if (cmd->resourceViewCount_) {
+            device_->HSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        }
+        if (cmd->samplerCount_) {
+            device_->HSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        }
+        if (cmd->bufferCount_) {
+            device_->HSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -454,9 +478,15 @@ namespace Heart
         ID3D11ShaderResourceView** cmdsrv=(ID3D11ShaderResourceView**)(cmd+1);
         ID3D11SamplerState** cmdsamp=(ID3D11SamplerState**)(cmdsrv+cmd->resourceViewCount_);
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
-        device_->DSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
-        device_->DSSetSamplers(0, cmd->samplerCount_, cmdsamp);
-        device_->DSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        if (cmd->resourceViewCount_) {
+            device_->DSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+        }
+        if (cmd->samplerCount_) {
+            device_->DSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+        }
+        if (cmd->bufferCount_) {
+            device_->DSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
