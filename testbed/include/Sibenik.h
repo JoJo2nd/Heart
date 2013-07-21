@@ -67,6 +67,10 @@ private:
     Heart::hRenderModel*    renderModel_;
     Heart::hDrawCallContext drawCtx_;
     Heart::hLightingManager deferredLightManager_;
+    Heart::hShaderResourceView* albedoSRV_;
+    Heart::hShaderResourceView* normalSRV_;
+    Heart::hShaderResourceView* specSRV_;
+    Heart::hShaderResourceView* depthSRV_;
 
     //Camera Control
     SimpleFirstPersonFlyCamera fpCamera_;

@@ -150,12 +150,18 @@ void Sibenik::RenderUnitTest()
         {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, -100.f, 0.f), Heart::hColour(1.f,0.f,1.f,1.f)},
         {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -100.f), Heart::hColour(1.f,1.f,0.f,1.f)},
     };
+    Heart::hVec3 tri[] = {
+        Heart::hVec3(-100.f, -50.f, 0.f), Heart::hVec3(0.f, 50.f, 0.f), Heart::hVec3(100.f, -50.f, 0.f),
+    };
     Heart::hDebugDraw* dd=Heart::hDebugDraw::it();
     dd->begin();
     dd->drawLines(orig, 6, Heart::eDebugSet_3DDepth);
-    //dd->drawLines(orig, 6, Heart::eDebugSet_2DNoDepth);
-    dd->drawText(Heart::hVec3(11.f,  9.f, 0.f), "Hello World from debug text", Heart::hColour(0.f,0.f,0.f,1.f), Heart::eDebugSet_2DNoDepth);
-    dd->drawText(Heart::hVec3(10.f, 10.f, 0.f), "Hello World from debug text", Heart::hColour(1.f,1.f,1.f,1.f), Heart::eDebugSet_2DNoDepth);
+//     dd->drawTexturedQuad(Heart::hVec3(-200.f, -200.f, 0.f), 400.f, 400.f, specSRV_);
+//     dd->drawLines(orig, 6, Heart::eDebugSet_2DNoDepth);
+//     dd->drawTris(tri, 3, Heart::hColour(1.f,0.f,0.f,0.5f), Heart::eDebugSet_3DDepth);
+//     dd->drawTris(tri, 3, Heart::hColour(0.f,0.f,1.f,0.5f), Heart::eDebugSet_2DNoDepth);
+//     dd->drawText(Heart::hVec3(11.f,  9.f, 0.f), "Hello World from debug text", Heart::hColour(0.f,0.f,0.f,1.f));
+//     dd->drawText(Heart::hVec3(10.f, 10.f, 0.f), "Hello World from debug text", Heart::hColour(1.f,1.f,1.f,1.f));
     dd->end();
 }
 
@@ -296,6 +302,32 @@ void Sibenik::CreateRenderResources()
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("lighting"));
     
     rtv[0]->DecRef();
+
+    hShaderResourceViewDesc srvdesc;
+    hZeroMem(&srvdesc, sizeof(srvdesc));
+    srvdesc.format_=albedo->getTextureFormat();
+    srvdesc.resourceType_=albedo->getRenderType();
+    srvdesc.tex2D_.topMip_=0;
+    srvdesc.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(albedo, srvdesc, &albedoSRV_);
+    hZeroMem(&srvdesc, sizeof(srvdesc));
+    srvdesc.format_=normal->getTextureFormat();
+    srvdesc.resourceType_=normal->getRenderType();
+    srvdesc.tex2D_.topMip_=0;
+    srvdesc.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(normal, srvdesc, &normalSRV_);
+    hZeroMem(&srvdesc, sizeof(srvdesc));
+    srvdesc.format_=spec->getTextureFormat();
+    srvdesc.resourceType_=spec->getRenderType();
+    srvdesc.tex2D_.topMip_=0;
+    srvdesc.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(spec, srvdesc, &specSRV_);
+    hZeroMem(&srvdesc, sizeof(srvdesc));
+    srvdesc.format_=eTextureFormat_R32_float;
+    srvdesc.resourceType_=depth->getRenderType();
+    srvdesc.tex2D_.topMip_=0;
+    srvdesc.tex2D_.mipLevels_=~0;
+    renderer->createShaderResourceView(depth, srvdesc, &depthSRV_);
 
     hLightingManager::hRenderTargetInfo lightInput;
     lightInput.albedo_=albedo;
