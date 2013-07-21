@@ -140,6 +140,23 @@ void Sibenik::RenderUnitTest()
     drawCtx_.SubmitDrawCall(drawcall);
 
     drawCtx_.End();
+
+    Heart::hDebugLine orig[] = {
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(100.f, 0.f, 0.f), Heart::hColour(1.f,0.f,0.f,1.f)},
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, 100.f, 0.f), Heart::hColour(0.f,1.f,0.f,1.f)},
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, 100.f), Heart::hColour(0.f,0.f,1.f,1.f)},
+
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(-100.f, 0.f, 0.f), Heart::hColour(0.f,1.f,1.f,1.f)},
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, -100.f, 0.f), Heart::hColour(1.f,0.f,1.f,1.f)},
+        {Heart::hVec3(0.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -100.f), Heart::hColour(1.f,1.f,0.f,1.f)},
+    };
+    Heart::hDebugDraw* dd=Heart::hDebugDraw::it();
+    dd->begin();
+    dd->drawLines(orig, 6, Heart::eDebugSet_3DDepth);
+    //dd->drawLines(orig, 6, Heart::eDebugSet_2DNoDepth);
+    dd->drawText(Heart::hVec3(11.f,  9.f, 0.f), "Hello World from debug text", Heart::hColour(0.f,0.f,0.f,1.f), Heart::eDebugSet_2DNoDepth);
+    dd->drawText(Heart::hVec3(10.f, 10.f, 0.f), "Hello World from debug text", Heart::hColour(1.f,1.f,1.f,1.f), Heart::eDebugSet_2DNoDepth);
+    dd->end();
 }
 
 
@@ -289,7 +306,11 @@ void Sibenik::CreateRenderResources()
     lightInput.pixelLightShader_=static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource("MATERIALS.DEFERRED_PS"));
     lightInput.viewCameraIndex_=0;
     deferredLightManager_.initialise(renderer, &lightInput);
-    deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
+    //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
+    deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -25.f), Heart::hVec3(0.f, 425.f, 0.f), Heart::WHITE);
+    //deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -75.f), Heart::hVec3(0.f, 25.f, 0.f), Heart::WHITE);
+    //deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -250.f), Heart::hVec3(0.f, 925.f, 0.f), Heart::WHITE);
+    //deferredLightManager_.addQuadLight(Heart::hVec3Func::normalise(Heart::hVec3(120.f, 0.f, 100.f))*20.f, Heart::hVec3Func::normalise(Heart::hVec3(0.f, 50.f, 200.f))*50.f, Heart::hVec3(175.f, 250.f, 0.f), Heart::WHITE);
     //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(1.f, 0.f, 0.f)), Heart::WHITE);
 }
 
