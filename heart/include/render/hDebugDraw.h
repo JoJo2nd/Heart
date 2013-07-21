@@ -39,6 +39,12 @@ namespace Heart
         hColour colour;
     };
 
+    struct hDebugTriPosCol
+    {
+        hVec3   pos;
+        hColour colour;
+    };
+
     struct hDebugTextString
     {
         hColour colour;
@@ -46,12 +52,23 @@ namespace Heart
         hUint   txtBufOffset;
     };
 
+    struct hDebugTexQuad
+    {
+        hShaderResourceView* srv;
+        hVec3 position;
+        hVec3 width;
+        hVec3 height;
+        hUint startvtx;
+    };
+
     struct hDebugPrimsSet
     {
         void reset();
 
         hVector< hDebugLine >       lines_;
+        hVector< hDebugTriPosCol >  tris_;
         hVector< hDebugTextString > strings_;
+        hVector< hDebugTexQuad >    texQuads_;
         hVector< hChar >            txtBuffer_;
     };
 
@@ -71,7 +88,9 @@ namespace Heart
 
         void begin();
         void drawLines(hDebugLine* points, hUint32 linecount, hDebugSet set);
-        void drawText(const hVec3& screenpos, const hChar* buffer, const hColour& colour, hDebugSet set);
+        void drawTris(const hVec3* tris, hUint tricount, const hColour& colour, hDebugSet set);
+        void drawText(const hVec3& screenpos, const hChar* buffer, const hColour& colour, hUint textLimit=0);
+        void drawTexturedQuad(const hVec3& screenpos, hFloat width, hFloat height, hShaderResourceView* texturesrv);
         void end();
 
         static hDebugDraw* it();
@@ -101,26 +120,38 @@ namespace Heart
         static hDebugDrawRenderer* it();
     private:
 
-        static const hUint s_maxDebugPrims = 10000;
+        static const hUint s_maxDebugPrims = 20000;
 
         hMutex              critSection_;
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];
+
         hMaterial*          debugPosColMat_;
         hMaterial*          debugPosColUVMat_;
+        hMaterial*          debugFontMat_;
+        hMaterial*          debugPosColAlphaMat_;
+        hMaterial*          debugPosColUVAlphaMat_;
+
         hVertexBuffer*      posColBuffer_;
         hVertexBuffer*      posColUVBuffer_;
-        hMaterial*          lineMaterial_;
+
         hFont*              debugFont_;
         hTexture*           debugFontTex_;
         hShaderResourceView* debugFontSRV_;
-        hdInputLayout*      inputlayout_;
+
+        hVector<hdInputLayout*> inputlayout_;
         hRenderBuffer*      viewParameters_;
         hRenderBuffer*      perDrawParameters_;
+
+        hRenderCommands     posColRdrLineCmds_;
         hRenderCommands     posColRdrCmds_;
         hRenderCommands     posColUVRdrCmds_;
-        hRenderCommands     tmpRdrCmds_;
+        hRenderCommands     textRdrCmds_;
+        hRenderCommands     posColAlphaRdrCmds_;
+        hRenderCommands     posColAlphaRdrLineCmds_;
+        hRenderCommands     posColUVAlphaRdrCmds_;
+
         hBool               resourcesCreated_;
     };
 }

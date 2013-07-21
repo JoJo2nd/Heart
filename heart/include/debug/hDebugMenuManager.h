@@ -39,7 +39,7 @@ namespace Heart
     {
     public:
         hDebugMenuBase() 
-            : visible_(hTrue)
+            : visible_(hFalse)
         {
         }
         ~hDebugMenuBase() {}

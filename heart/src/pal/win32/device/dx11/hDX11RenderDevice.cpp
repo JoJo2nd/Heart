@@ -125,7 +125,7 @@ namespace Heart
         \n\
         float4 mainFP(PSInput input) : SV_Target0                                          \n\
         {                                                                     \n\
-        return float4(input.colour.rgb,1);                                           \n\
+        return input.colour;                                           \n\
         }                                                                     \n\
         "
     };
@@ -228,15 +228,9 @@ namespace Heart
     const hChar s_debugFont[] = {
         COMMON_CONST_BLOCK()
         "                                                              \n\
-        cbuffer FontParams                                             \n\
-        {                                                              \n\
-            float4 fontColour;                                         \n\
-            float4 dropOffset;                                         \n\
-        }                                                              \n\
                                                                        \n\
-        Texture2D   SignedDistanceField;                               \n\
-                                                                       \n\
-        SamplerState fontSampler= sampler_state{};                     \n\
+        Texture2D   g_texture;                               \n\
+        SamplerState g_sampler= sampler_state{};                     \n\
                                                                        \n\
         struct VSInput                                                 \n\
         {                                                              \n\
@@ -256,7 +250,6 @@ namespace Heart
         {                                                              \n\
             PSInput output;                                            \n\
             float4 pos = float4(input.position.xyz,1);                 \n\
-            pos.xyz += dropOffset.xyz;                                 \n\
             output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
             output.colour = input.colour;	                           \n\
             output.uv = input.uv;                                      \n\
@@ -265,9 +258,9 @@ namespace Heart
                                                                               \n\
         float4 mainFP( PSInput input ) : SV_TARGET0                           \n\
         {                                                                     \n\
-            float a   = SignedDistanceField.Sample(fontSampler, input.uv).a;  \n\
-            return float4(fontColour.rgb,a);                                  \n\
-        }                                                                     \n\
+            float a   = g_texture.Sample(g_sampler, input.uv).a; \n\
+            return float4(input.colour.rgb,a); \n\
+        } \n\
         "
     };
 
@@ -304,7 +297,7 @@ namespace Heart
         float4 mainFP( PSInput input ) : SV_TARGET0                    \n\
         {                                                              \n\
             float4 c = g_texture.Sample(g_sampler, input.uv).rgba;     \n\
-            return float4(/*c.rgb*/input.colour.rgb,c.a);                 \n\
+            return c.rgba*input.colour.rgba;                 \n\
         }                                                              \n\
         "
     };

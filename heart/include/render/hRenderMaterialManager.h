@@ -73,12 +73,11 @@ namespace Heart
         void                        SetRenderer(hRenderer* renderer) { renderer_ = renderer; }
         void                        createDebugMaterials();
         void                        destroyRenderResources();
-        hMaterial*                  getWireframeDebug() const { return wireframeMat_; }
-        hMaterial*                  getDebugViewLit() const { return viewLitMat_; }
-        hMaterial*                  getConsoleMat() const { return consoleMat_; }
         hMaterial*                  getDebugFontMat() const { return debugFontMat_; }
         hMaterial*                  getDebugPosColMat() const { return debugPosColMat_; }
         hMaterial*                  getDebugPosColUVMat() const { return debugPosColUVMat_; }
+        hMaterial*                  getDebugPosColAlphaMat() const { return debugPosColAlphaMat_; }
+        hMaterial*                  getDebugPosColUVAlphaMat() const { return debugPosColUVAlphaMat_; }
         void                        GetUniqueKey(hMaterial* mat);
         void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
@@ -150,13 +149,11 @@ namespace Heart
         ConstBlockArrayType     constBlocks_;
         ConstBlockMapType       constBlockLookUp_;
         GloblaTextureMapType    globalTextures_;
-        hMaterial*              wireframeMat_;
-        hMaterial*              viewLitMat_;
-        hMaterial*              consoleMat_;
         hMaterial*              debugFontMat_;
-        hMaterial*              debugMat_;
         hMaterial*              debugPosColUVMat_;
         hMaterial*              debugPosColMat_;
+        hMaterial*              debugPosColAlphaMat_;
+        hMaterial*              debugPosColUVAlphaMat_;
     };
 }
 

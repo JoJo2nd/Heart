@@ -42,13 +42,6 @@ namespace Heart
         //GWEN_CONTROL_CONSTRUCTOR(hConsoleUI)
         hConsoleUI(hSystemConsole* systemConsole) 
             : console_(systemConsole)
-            , debugTechMask_(0)
-            , textBuffer_(NULL)
-            , logBuffer_(NULL)
-            , backdropPlane_(NULL)
-            , backdropMat_(NULL)
-            , consoleFont_(NULL)
-            , textMat_(NULL)
             , windowOffset_(1.f)
         {
 
@@ -59,265 +52,60 @@ namespace Heart
 
         }
 
-        void InitRenderResources(hRenderer* renderer)
+        void InitRenderResources(hRenderer* /*renderer*/)
         {
-            hRenderMaterialManager* matManager=renderer->GetMaterialManager();
-            hInputLayoutDesc layout[] = {
-                {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
-                {eIS_COLOUR,   0, eIF_FLOAT4, 0, 0},
-                {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
-            };
-            struct Vertex {
-                hFloat x,y,z;
-                hFloat r,g,b,a;
-            };
-            Vertex consolePlane[] = {
-                { .5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                {-.5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                {-.5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-
-                {-.5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                { .5f, .5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-                { .5f,-.5f, 0.f, 0.f, 0.75f, 0.f, 0.2f }, 
-            };
-
-            renderer->createVertexBuffer(textBuffer_, INPUT_BUFFER_LEN*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &textBuffer_);
-            renderer->createVertexBuffer(logBuffer_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6, layout, (hUint32)hStaticArraySize(layout), RESOURCEFLAG_DYNAMIC, GetDebugHeap(), &logBuffer_);
-            consoleFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
-            hRenderUtility::createDebugFont(renderer, consoleFont_, &consoleTex_, GetGlobalHeap());
-            hSamplerStateDesc ssdesc;
-            ssdesc.filter_        = SSV_LINEAR;
-            ssdesc.addressU_      = SSV_CLAMP;
-            ssdesc.addressV_      = SSV_CLAMP;
-            ssdesc.addressW_      = SSV_CLAMP;
-            ssdesc.mipLODBias_    = 0;
-            ssdesc.maxAnisotropy_ = 16;
-            ssdesc.borderColour_  = WHITE;
-            ssdesc.minLOD_        = -FLT_MAX;
-            ssdesc.maxLOD_        = FLT_MAX;  
-            hShaderResourceViewDesc srvd;
-            hZeroMem(&srvd, sizeof(srvd));
-            srvd.format_=consoleTex_->getTextureFormat();
-            srvd.resourceType_=eRenderResourceType_Tex2D;
-            srvd.tex2D_.topMip_=0;
-            srvd.tex2D_.mipLevels_=~0;
-            renderer->createShaderResourceView(consoleTex_, srvd, &consoleTexSRV_);
-
-            debugTechMask_ = renderer->GetMaterialManager()->GetRenderTechniqueInfo("main")->mask_;
-            hRenderCommandGenerator rcGen;
-
-            rcGen.setRenderCommands(&drawCommands_[0]);
-            rcGen.resetCommands();
-
-            renderer->createVertexBuffer(consolePlane, 6, layout, (hUint32)hStaticArraySize(layout)-1, 0, GetDebugHeap(), &backdropPlane_);
-            backdropMat_ = matManager->getConsoleMat();
-            hMaterialGroup* group=backdropMat_->getGroup(0);
-            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
-                if (group->getTech(t)->GetMask()==debugTechMask_) {
-                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
-                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
-                        inputLayouts_.PushBack(inlayout);
-                        rcGen.setJump(backdropMat_->getRenderCommandsBegin(0, t, p));
-                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &backdropPlane_, 0, 1);
-                        rcGen.setDraw(2, 0);
-                    }
-                }
-            }
-
-            rcGen.setReturn();
-
-            hShaderParameterID fontsamplerid=hCRC32::StringCRC("fontSampler");
-            textMat_ = matManager->getDebugFontMat();
-            textMat_->bindResource(fontsamplerid, consoleTexSRV_);
-
-            rcGen.setRenderCommands(&drawCommands_[1]);
-            rcGen.resetCommands();
-
-            group=textMat_->getGroup(0);
-            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
-                if (group->getTech(t)->GetMask()==debugTechMask_) {
-                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
-                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
-                        inputLayouts_.PushBack(inlayout);
-                        rcGen.setJump(textMat_->getRenderCommandsBegin(0, t, p));
-                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &textBuffer_, 0, 1);
-                    }
-                }
-            }
-            rcGen.setReturn();
-
-            rcGen.setRenderCommands(&drawCommands_[2]);
-            rcGen.resetCommands();
-
-            group=textMat_->getGroup(0);
-            for (hUint t=0,nt=group->getTechCount(); t<nt; ++t) {
-                if (group->getTech(t)->GetMask()==debugTechMask_) {
-                    for (hUint p=0, np=group->getTech(t)->GetPassCount(); p<np; ++p) {
-                        hdInputLayout* inlayout=group->getTech(t)->GetPass(p)->GetVertexShader()->createVertexLayout(layout, (hUint)hStaticArraySize(layout));
-                        inputLayouts_.PushBack(inlayout);
-                        rcGen.setJump(textMat_->getRenderCommandsBegin(0, t, p));
-                        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, hNullptr, hIndexBufferType_Index16, inlayout, &logBuffer_, 0, 1);
-                    }
-                }
-            }
-            rcGen.setReturn();
-
-            fontCB_ = textMat_->GetParameterConstBlock(hCRC32::StringCRC("FontParams"));
         }
-        void destroyRenderResources(hRenderer* renderer)
+        void destroyRenderResources(hRenderer* /*renderer*/)
         {
-            hRenderUtility::destroyDebugFont(renderer, consoleFont_, consoleTex_);
-            consoleTex_=NULL;
-            hDELETE_SAFE(GetGlobalHeap(), consoleFont_);
-            backdropMat_ = NULL;
-            textMat_ = NULL;
-            consoleTexSRV_->DecRef();
-            consoleTexSRV_=NULL;
-
-            for (hUint i=0,n=inputLayouts_.GetSize(); i<n; ++i) {
-                inputLayouts_[i]->Release();
-            }
-            inputLayouts_.Clear();
-
-            backdropPlane_->DecRef();
-            backdropPlane_ = NULL;
-            textBuffer_->DecRef();
-            textBuffer_ = NULL;
-            logBuffer_->DecRef();
-            logBuffer_ = NULL;
-            consoleFont_ = NULL;
-            textMat_ = NULL;
-            debugTechMask_ = 0;
-            renderer = NULL;
+            //renderer = NULL;
         }
         void PreRenderUpdate() 
         {
-            windowOffset_ += GetVisible() ? -hClock::Delta() : hClock::Delta();
-            windowOffset_ = hMax(windowOffset_, .5f);
+            windowOffset_ += GetVisible() ? hClock::Delta()*4.f : -hClock::Delta()*4.f;
+            windowOffset_ = hMax(windowOffset_, 0.f);
             windowOffset_ = hMin(windowOffset_, 1.f);
         }
         void Render(hRenderSubmissionCtx* ctx, hRenderBuffer* instanceCB, const hDebugRenderParams& params) 
         {
-            hFixedPoolStackMemoryHeap stackHeap(32*1024, hAlloca(32*1024));
-            hFloat intprt = 0.f;
-            hInstanceConstants* inst;
-            hRenderBufferMapInfo map;
-            hVertexBufferMapInfo vbmap;
-            hFloat fontScale = hSystemConsole::getFontSize();
-            hCPUVec2 bottomleft(-(params.rtWidth_/2.f), -(params.rtHeight_/2.f));
-            hCPUVec2 bottomright((params.rtWidth_/2.f), -(params.rtHeight_/2.f));
-            hCPUVec2 topleft(-(params.rtWidth_/2.f), 1000.f);
-            hUint32 prims = 0;
-            hFloat* fontParams;
-            hFontFormatting formatter(&stackHeap);
-            formatter.setScale(fontScale);
-            formatter.setFont(consoleFont_);
-            formatter.setColour(WHITE);
-            formatter.setReserve(256);
+            static hFloat s_debugFontSize=12;
+            hFloat width=(hFloat)params.rtWidth_;
+            hFloat height=(hFloat)params.rtHeight_;
 
-            if (windowOffset_ < 1.f) {
-
-                ctx->Map(instanceCB, &map);
-                inst = (hInstanceConstants*)map.ptr;
-                inst->world_ = hMatrixFunc::identity();
-                inst->world_ = hMatrixFunc::translation(hVec3(0.f, (params.rtHeight_*windowOffset_), 0.f));
-                ctx->Unmap(&map);
-
-                ctx->runRenderCommands(drawCommands_[0].getFirst());
-
+            if (windowOffset_ > 0.f) {
+                hFloat ytop = height/2.f;
+                hFloat ybtm=floorf(height/2.f-height/4.f*windowOffset_);
+                hFloat logy=ybtm;
+                hVec3 backquad[] = {
+                    hVec3(-width/2.f, ytop, 0.f), hVec3(width/2.f, ytop, 0.f), hVec3(-width/2.f, ybtm, 0.f),
+                    hVec3(-width/2.f, ybtm, 0.f), hVec3(width/2.f, ytop, 0.f), hVec3(width/2.f, ybtm, 0.f),
+                };
+                hDebugDraw* dd=hDebugDraw::it();
+                dd->begin();
+                dd->drawTris(backquad, 6, hColour(0.f, 0.5f, 0.f, 0.3f), eDebugSet_2DNoDepth);
+                dd->drawText(hVec3(-width/2.f+1, logy-1, 0.f), inputBuffer_, hColour(0.f, 0.f, 0.f, 1.f));
+                dd->drawText(hVec3(-width/2.f, logy, 0.f), inputBuffer_, hColour(1.f, 1.f, 1.f, 1.f));
+                logy+=s_debugFontSize;
+                if (logSize_ > 0)
                 {
-                    ctx->Map(textBuffer_, &vbmap);
-                    formatter.setOutputBuffer(vbmap.ptr_, INPUT_BUFFER_LEN*6*sizeof(hFontVex));
-                    formatter.setInputStringBuffer(inputBuffer_, hStrLen(inputBuffer_));
-                    formatter.setFormatExtents(FLT_MAX, 0);
-                    formatter.setAlignment(hFONT_ALIGN_LEFT|hFONT_ALIGN_TOP);
-                    formatter.formatText();
-                    formatter.writeTextToBuffer(bottomleft);
-                    prims = formatter.getPrimitiveCount();
-                    ctx->Unmap(&vbmap);
+                    hChar* logend=log_+logSize_-1;
+                    hUint len=0;
+                    hFloat logtop=height/2.f;
+                    while(logy < logtop && logend > log_) {
+                        if (*logend == '\n') {
+                            if (len>1) {
+                                dd->drawText(hVec3(-width/2.f+1, logy-1, 0.f), logend+1, hColour(0.f, 0.f, 0.f, 1.f), len);
+                                dd->drawText(hVec3(-width/2.f, logy, 0.f), logend+1, hColour(1.f, 1.f, 1.f, 1.f), len);
+                                logy+=s_debugFontSize;
+                            }
+                            len=0;
+                        }
+                        else {
+                            ++len;
+                        }
+                        --logend;
+                    }
                 }
-
-                /*
-                * INput text string
-                */
-                ctx->Map(fontCB_, &map);
-                fontParams = (hFloat*)map.ptr;
-                //colour
-                fontParams[0]=.0f;
-                fontParams[1]=.0f;
-                fontParams[2]=.0f;
-                fontParams[3]=1.f;
-                //offset
-                fontParams[4]=1.f;
-                fontParams[5]=-1.f;
-                fontParams[6]=0.f;
-                fontParams[7]=0.f;
-                ctx->Unmap(&map);
-                ctx->runRenderCommands(drawCommands_[1].getFirst());
-                ctx->DrawPrimitive(prims, 0);
-
-                ctx->Map(fontCB_, &map);
-                fontParams = (hFloat*)map.ptr;
-                //colour
-                fontParams[0]=1.f;
-                fontParams[1]=1.f;
-                fontParams[2]=1.f;
-                fontParams[3]=1.f;
-                //offset
-                fontParams[4]=0.f;
-                fontParams[5]=0.f;
-                fontParams[6]=0.f;
-                fontParams[7]=0.f;
-                ctx->Unmap(&map);
-                //ctx->runRenderCommands(drawCommands_[1].getFirst());
-                ctx->DrawPrimitive(prims, 0);
-
-                /*
-                * Log text string
-                */ 
-                {
-                    ctx->Map(logBuffer_, &vbmap);
-                    formatter.setOutputBuffer(vbmap.ptr_, hSystemConsole::MAX_CONSOLE_LOG_SIZE*6*sizeof(hFontVex));
-                    formatter.setInputStringBuffer(log_, logSize_);
-                    formatter.setFormatExtents(FLT_MAX, FLT_MAX);
-                    formatter.setAlignment(hFONT_ALIGN_LEFT|hFONT_ALIGN_BOTTOM);
-                    formatter.formatText();
-                    formatter.writeTextToBuffer(bottomleft);
-                    prims = formatter.getPrimitiveCount();
-                    ctx->Unmap(&vbmap);
-                }
-
-                ctx->Map(fontCB_, &map);
-                fontParams = (hFloat*)map.ptr;
-                //colour
-                fontParams[0]=.0f;
-                fontParams[1]=.0f;
-                fontParams[2]=.0f;
-                fontParams[3]=1.f;
-                //offset
-                fontParams[4]=1.f;
-                fontParams[5]=-1.f;
-                fontParams[6]=0.f;
-                fontParams[7]=0.f;
-                ctx->Unmap(&map);
-                ctx->runRenderCommands(drawCommands_[2].getFirst());
-                ctx->DrawPrimitive(prims, 0);
-
-                ctx->Map(fontCB_, &map);
-                fontParams = (hFloat*)map.ptr;
-                //colour
-                fontParams[0]=1.f;
-                fontParams[1]=1.f;
-                fontParams[2]=1.f;
-                fontParams[3]=1.f;
-                //offset
-                fontParams[4]=0.f;
-                fontParams[5]=0.f;
-                fontParams[6]=0.f;
-                fontParams[7]=0.f;
-                ctx->Unmap(&map);
-                //ctx->runRenderCommands(drawCommands_[1].getFirst());
-                ctx->DrawPrimitive(prims, 0);
+                dd->end();
             }
         }
         void EndFrameUpdate() {}
@@ -331,20 +119,7 @@ namespace Heart
 
         static const hUint32 INPUT_BUFFER_LEN = hSystemConsole::INPUT_BUFFER_LEN;
 
-        hUint32              debugTechMask_;
-        hVertexBuffer*       textBuffer_;
-        hVertexBuffer*       logBuffer_;
-        hVertexBuffer*       backdropPlane_;
-        hMaterial*           backdropMat_;
-        hMaterial*           textMat_;
-        hFont*               consoleFont_;
-        hTexture*            consoleTex_;
-        hShaderResourceView* consoleTexSRV_;
-        hRenderBuffer*       fontCB_;
         hFloat               windowOffset_;
-
-        hRenderCommands         drawCommands_[3];
-        hVector<hdInputLayout*> inputLayouts_;
 
         hSystemConsole* console_;
         hUint32         logSize_;

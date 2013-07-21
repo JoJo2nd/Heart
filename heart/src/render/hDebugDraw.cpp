@@ -72,18 +72,48 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugDraw::drawText(const hVec3& screenpos, const hChar* buffer, const hColour& colour, hDebugSet set) {
+    void hDebugDraw::drawTris(const hVec3* tris, hUint tricount, const hColour& colour, hDebugSet set) {
         hDebugPrimsSet* prims=debugPrims_+set;
+        prims->tris_.reserveGrow(tricount);
+        for (hUint32 i=0, n=tricount; i<n; ++i) {
+            hDebugTriPosCol t={tris[i], colour};
+            prims->tris_.PushBack(t);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugDraw::drawText(const hVec3& screenpos, const hChar* buffer, const hColour& colour, hUint textLimit/*=0*/) {
+        hDebugPrimsSet* prims=debugPrims_+eDebugSet_2DNoDepth;
         hDebugTextString txt;
+        hUint c=0;
         txt.colour=colour;
         txt.position=screenpos;
         txt.txtBufOffset=prims->txtBuffer_.GetSize();
-        while(*buffer) {
-            prims->txtBuffer_.PushBack(*buffer);
-            ++buffer;
+        while(buffer[c] && (c < textLimit || textLimit==0)) {
+            prims->txtBuffer_.PushBack(buffer[c]);
+            ++c;
         }
         prims->txtBuffer_.PushBack(0);
         prims->strings_.PushBack(txt);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugDraw::drawTexturedQuad(const hVec3& screenpos, hFloat width, hFloat height, hShaderResourceView* texturesrv) {
+        hcAssert(texturesrv);
+        hDebugPrimsSet* prims=debugPrims_+eDebugSet_2DNoDepth;
+        hDebugTexQuad quad;
+        quad.position=screenpos;
+        quad.width=hVec3(width, 0.f, 0.f);
+        quad.height=hVec3(0.f, height, 0.f);
+        quad.srv=texturesrv;
+        quad.startvtx=0;
+        prims->texQuads_.PushBack(quad);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -112,7 +142,9 @@ namespace Heart
 
     void hDebugPrimsSet::reset() {
         lines_.Resize(0);
+        tris_.Resize(0);
         strings_.Resize(0);
+        texQuads_.Resize(0);
         txtBuffer_.Resize(0);
     }
 
@@ -147,8 +179,11 @@ namespace Heart
             {eIS_TEXCOORD, 0, eIF_FLOAT4, 0, 0},
         };
         hRenderMaterialManager* matmgr=renderer->GetMaterialManager();
+        debugFontMat_=matmgr->getDebugFontMat();
         debugPosColMat_=matmgr->getDebugPosColMat();
         debugPosColUVMat_=matmgr->getDebugPosColUVMat();
+        debugPosColAlphaMat_=matmgr->getDebugPosColAlphaMat();
+        debugPosColUVAlphaMat_=matmgr->getDebugPosColUVAlphaMat();
         debugFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
         hRenderUtility::createDebugFont(renderer, debugFont_, &debugFontTex_, GetGlobalHeap());
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoldesc, (hUint)hArraySize(poscoldesc), RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &posColBuffer_);
@@ -161,20 +196,60 @@ namespace Heart
         srvdesc.tex2D_.topMip_=0;
         renderer->createShaderResourceView(debugFontTex_, srvdesc, &debugFontSRV_);
 
-        hRenderCommandGenerator rcGen(&posColRdrCmds_);
+        hdInputLayout* inputlayout;
+        hRenderCommandGenerator rcGen(&posColRdrLineCmds_);
 
-        inputlayout_=debugPosColMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
+        inputlayout=debugPosColMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
+        inputlayout_.PushBack(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColMat_->getRenderCommandsBegin(0, 0, 0));
-        rcGen.setStreamInputs(PRIMITIVETYPE_LINELIST, NULL, hIndexBufferType_Index16, inputlayout_, &posColBuffer_, 0, 1);
+        rcGen.setStreamInputs(PRIMITIVETYPE_LINELIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
+        rcGen.setReturn();
+        
+        rcGen.setRenderCommands(&posColRdrCmds_);
+        rcGen.resetCommands();
+        rcGen.setJump(debugPosColMat_->getRenderCommandsBegin(0, 0, 0));
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
         rcGen.setReturn();
 
         rcGen.setRenderCommands(&posColUVRdrCmds_);
-
-        inputlayout_=debugPosColUVMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
+        inputlayout=debugPosColUVMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
+        inputlayout_.PushBack(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColUVMat_->getRenderCommandsBegin(0, 0, 0));
-        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout_, &posColUVBuffer_, 0, 1);
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);
+        rcGen.setReturn();
+
+        rcGen.setRenderCommands(&posColAlphaRdrCmds_);
+        inputlayout=debugPosColAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
+        inputlayout_.PushBack(inputlayout);
+        rcGen.resetCommands();
+        rcGen.setJump(debugPosColAlphaMat_->getRenderCommandsBegin(0, 0, 0));
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
+        rcGen.setReturn();
+
+        rcGen.setRenderCommands(&posColAlphaRdrLineCmds_);
+        inputlayout=debugPosColAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
+        inputlayout_.PushBack(inputlayout);
+        rcGen.resetCommands();
+        rcGen.setJump(debugPosColAlphaMat_->getRenderCommandsBegin(0, 0, 0));
+        rcGen.setStreamInputs(PRIMITIVETYPE_LINELIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
+        rcGen.setReturn();
+
+        rcGen.setRenderCommands(&posColUVAlphaRdrCmds_);
+        inputlayout=debugPosColUVAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
+        inputlayout_.PushBack(inputlayout);
+        rcGen.resetCommands();
+        rcGen.setJump(debugPosColUVAlphaMat_->getRenderCommandsBegin(0, 0, 0));
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);
+        rcGen.setReturn();
+
+        rcGen.setRenderCommands(&textRdrCmds_);
+        inputlayout=debugFontMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
+        inputlayout_.PushBack(inputlayout);
+        rcGen.resetCommands();
+        rcGen.setJump(debugFontMat_->getRenderCommandsBegin(0, 0, 0));
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);
         rcGen.setReturn();
 
         hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
@@ -221,6 +296,10 @@ namespace Heart
                 hUint prims;
                 hUint start;
             } text;
+            struct {
+                hUint prims;
+                hUint start;
+            } tris;
         } debugcalls[eDebugSet_Max];
         struct PosColVtx {
             hVec3 vtx;
@@ -245,11 +324,11 @@ namespace Heart
         ctx->Map(posColBuffer_, &vbmap); {
             PosColVtx* mapptr=(PosColVtx*)vbmap.ptr_;
             PosColVtx* mapend=mapptr+(s_maxDebugPrims);
-            hUint linescount=0;
+            hUint vtxcount=0;
             for (hUint dps=0,ndps=eDebugSet_Max; dps<ndps && mapptr<mapend; ++dps) {
                 const hVector< hDebugLine >& lines = debugPrims_[dps].lines_;
                 debugcalls[dps].lines.prims=0;
-                debugcalls[dps].lines.start=linescount;
+                debugcalls[dps].lines.start=vtxcount;
                 for (hUint i=0,n=lines.GetSize(); i<n && mapptr<mapend; ++i) {
                     mapptr->vtx=lines[i].p1;
                     mapptr->colour=lines[i].colour;
@@ -259,7 +338,20 @@ namespace Heart
                     ++mapptr;
 
                     ++debugcalls[dps].lines.prims;
-                    ++linescount;
+                    vtxcount+=2;
+                }
+            }
+            for (hUint dps=0,ndps=eDebugSet_Max; dps<ndps && mapptr<mapend; ++dps) {
+                const hVector< hDebugTriPosCol >& tris = debugPrims_[dps].tris_;
+                debugcalls[dps].tris.prims=0;
+                debugcalls[dps].tris.start=vtxcount;
+                for (hUint i=0,n=tris.GetSize(); i<n && mapptr<mapend; ++i) {
+                    mapptr->vtx=tris[i].pos;
+                    mapptr->colour=tris[i].colour;
+                    ++mapptr;
+
+                    debugcalls[dps].tris.prims += ((i+1)%3)==0 ? 1 : 0;
+                    ++vtxcount;
                 }
             }
             ctx->Unmap(&vbmap);
@@ -329,6 +421,44 @@ namespace Heart
                         vtxcount+=6;
                     }
                 }
+                hVector< hDebugTexQuad >& quads = debugPrims_[dps].texQuads_;
+                hColour constwhite=hColour(1.f, 1.f, 1.f, 1.f);
+                for (hUint i=0,n=quads.GetSize(); i<n && mapptr<mapend; ++i) {
+                    mapptr->vtx=quads[i].position;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=0.f;
+                    mapptr->uv[1]=1.f;
+                    ++mapptr;
+                    mapptr->vtx=quads[i].position+quads[i].height;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=0.f;
+                    mapptr->uv[1]=0.f;
+                    ++mapptr;
+                    mapptr->vtx=quads[i].position+quads[i].width;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=1.f;
+                    mapptr->uv[1]=1.f;
+                    ++mapptr;
+                    //
+                    mapptr->vtx=quads[i].position+quads[i].width;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=1.f;
+                    mapptr->uv[1]=1.f;
+                    ++mapptr;
+                    mapptr->vtx=quads[i].position+quads[i].height;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=0.f;
+                    mapptr->uv[1]=0.f;
+                    ++mapptr;
+                    mapptr->vtx=quads[i].position+quads[i].width+quads[i].height;
+                    mapptr->colour=constwhite;
+                    mapptr->uv[0]=1.f;
+                    mapptr->uv[1]=0.f;
+                    ++mapptr;
+
+                    quads[i].startvtx=vtxcount;
+                    vtxcount+=6;
+                }
             }
             ctx->Unmap(&vbmap);
         }
@@ -347,8 +477,12 @@ namespace Heart
         *viewconst=*camera->GetViewportConstants();
         ctx->Unmap(&map);
         //lines
-        if (debugcalls[eDebugSet_3DDepth].lines.prims) {
+        if (debugcalls[eDebugSet_3DDepth].tris.prims) {
             ctx->runRenderCommands(posColRdrCmds_.getFirst());
+            ctx->DrawPrimitive(debugcalls[eDebugSet_3DDepth].tris.prims, debugcalls[eDebugSet_3DDepth].tris.start);
+        }
+        if (debugcalls[eDebugSet_3DDepth].lines.prims) {
+            ctx->runRenderCommands(posColRdrLineCmds_.getFirst());
             ctx->DrawPrimitive(debugcalls[eDebugSet_3DDepth].lines.prims, debugcalls[eDebugSet_3DDepth].lines.start);
         }
 
@@ -371,12 +505,24 @@ namespace Heart
             ctx->Unmap(&map);
         }
         //
+        if (debugcalls[eDebugSet_2DNoDepth].tris.prims) {
+            ctx->runRenderCommands(posColAlphaRdrCmds_.getFirst());
+            ctx->DrawPrimitive(debugcalls[eDebugSet_2DNoDepth].tris.prims, debugcalls[eDebugSet_2DNoDepth].tris.start);
+        }
         if (debugcalls[eDebugSet_2DNoDepth].lines.prims) {
-            ctx->runRenderCommands(posColRdrCmds_.getFirst());
+            ctx->runRenderCommands(posColAlphaRdrLineCmds_.getFirst());
             ctx->DrawPrimitive(debugcalls[eDebugSet_2DNoDepth].lines.prims, debugcalls[eDebugSet_2DNoDepth].lines.start);
         }
+        const hVector< hDebugTexQuad >& quads = debugPrims_[eDebugSet_2DNoDepth].texQuads_;
+        if (quads.GetSize() > 0) {
+            ctx->runRenderCommands(posColUVAlphaRdrCmds_.getFirst());
+            for (hUint i=0, n=quads.GetSize(); i<n; ++i) {
+                ctx->setViewPixel(0, quads[i].srv);
+                ctx->DrawPrimitive(2, quads[i].startvtx);
+            }
+        }
         if (debugcalls[eDebugSet_2DNoDepth].text.prims) {
-            ctx->runRenderCommands(posColUVRdrCmds_.getFirst());
+            ctx->runRenderCommands(textRdrCmds_.getFirst());
             ctx->setViewPixel(0, debugFontSRV_);
             ctx->DrawPrimitive(debugcalls[eDebugSet_2DNoDepth].text.prims, debugcalls[eDebugSet_2DNoDepth].text.start);
         }
@@ -399,6 +545,13 @@ namespace Heart
             debugPrims_[i].lines_.reserveGrow(ddprims[i].lines_.GetSize());
             for (hUint32 p=0, n=ddprims[i].lines_.GetSize(); p<n; ++p) {
                 debugPrims_[i].lines_.PushBack(ddprims[i].lines_[p]);
+            }
+            debugPrims_[i].tris_.reserveGrow(ddprims[i].tris_.GetSize());
+            for (hUint32 p=0, n=ddprims[i].tris_.GetSize(); p<n; ++p) {
+                debugPrims_[i].tris_.PushBack(ddprims[i].tris_[p]);
+            }
+            for (hUint q=0, n=ddprims[i].texQuads_.GetSize(); q<n; ++q) {
+                debugPrims_[i].texQuads_.PushBack(ddprims[i].texQuads_[q]);
             }
             hUint newtxtstart=debugPrims_[i].txtBuffer_.GetSize();
             hUint stringcount=debugPrims_[i].strings_.GetSize();
