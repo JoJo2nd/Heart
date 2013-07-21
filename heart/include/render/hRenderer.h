@@ -262,7 +262,7 @@ namespace Heart
         hResourceManager*       resourceManager_;
         hRenderMaterialManager  materialManager_;
         hRenderSubmissionCtx    mainSubmissionCtx_;
-        //hTexture*               depthBuffer_;
+
         hShaderProgram*         debugShaders_[eDebugShaderMax];
 
         hTexture*               backBuffer_;
@@ -319,6 +319,7 @@ namespace Heart
         void initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo);
         void destroy();
         void addDirectionalLight(const hVec3& direction, const hColour& colour);
+        void addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
 
@@ -332,6 +333,7 @@ namespace Heart
             hMatrix inverseProjectMtx_;
             hVec4   eyePos_;
             hUint   directionalLightCount_;
+            hUint   quadLightCount_;
         };
 
         struct hDirectionalLight
@@ -340,12 +342,24 @@ namespace Heart
             hColour colour_;
         };
 
+        struct hQuadLight 
+        {
+            hVec3   points_[4];
+            hVec3   centre_;
+            hVec3   halfv_[2];
+            hColour colour_;
+        };
+
         static const hUint s_maxDirectionalLights = 15;
+        static const hUint s_maxQuadLights = 100;
+
+        void drawDebugLightInfo();
 
         hRenderTargetInfo                                   targetInfo_;
         hdInputLayout*                                      inputLayout_;
         hRenderBuffer*                                      inputLightData_;
         hRenderBuffer*                                      directionLightData_;
+        hRenderBuffer*                                      quadLightData_;
         hIndexBuffer*                                       screenQuadIB_;
         hVertexBuffer*                                      screenQuadVB_;
         hBlendState*                                        blendState_;
@@ -359,6 +373,7 @@ namespace Heart
 
         hInputLightData                                     lightInfo_;
         hArray<hDirectionalLight, s_maxDirectionalLights>   directionalLights_;
+        hArray<hQuadLight, s_maxDirectionalLights>          quadLights_;
     };
 }
 

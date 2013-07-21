@@ -102,6 +102,34 @@ namespace Heart
     "
     };
 
+    static const hChar s_debugWSVertexCol[] ={
+        COMMON_CONST_BLOCK()
+        "                                                                     \n\
+        struct VSInput                                                        \n\
+        {                                                                     \n\
+            float4 position : POSITION;                                       \n\
+            float4 colour : COLOR0;                                           \n\
+        };                                                                    \n\
+        struct PSInput { \n\
+            float4 colour : TEXCOORD0; \n\
+        }; \n\
+        \n\
+        PSInput mainVP( VSInput input, out float4 position : SV_POSITION )       \n\
+        {\n\
+        PSInput output=(PSInput)0;\n\
+        position = float4(input.position.xyz,1);                              \n\
+        position = mul(mul(g_ViewProjection,  g_World), position);            \n\
+        output.colour = input.colour;                                                \n\
+        return output; \n\
+        }                                                                     \n\
+        \n\
+        float4 mainFP(PSInput input) : SV_Target0                                          \n\
+        {                                                                     \n\
+        return float4(input.colour.rgb,1);                                           \n\
+        }                                                                     \n\
+        "
+    };
+
     static const hChar s_debugVertexLit[] ={
     COMMON_CONST_BLOCK()
     "                                                                     \n\
@@ -252,6 +280,7 @@ namespace Heart
         struct VSInput                                                 \n\
         {                                                              \n\
             float3 position : POSITION;                                \n\
+            float4 colour   : COLOR0; \n\
             float2 uv 		: TEXCOORD0;                               \n\
         };                                                             \n\
                                                                        \n\
@@ -259,6 +288,7 @@ namespace Heart
         {                                                              \n\
             float4 position : SV_POSITION;                             \n\
             float2 uv 		: TEXCOORD0;                               \n\
+            float4 colour   : TEXCOORD1; \n\
         };                                                             \n\
                                                                        \n\
         PSInput mainVP( VSInput input )                                \n\
@@ -267,13 +297,14 @@ namespace Heart
             float4 pos = float4(input.position.xyz,1);                 \n\
             output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
             output.uv = input.uv;                                      \n\
+            output.colour = input.colour; \n\
             return output;                                             \n\
         }                                                              \n\
                                                                        \n\
         float4 mainFP( PSInput input ) : SV_TARGET0                    \n\
         {                                                              \n\
             float4 c = g_texture.Sample(g_sampler, input.uv).rgba;     \n\
-            return float4(c.rgb,c.a);                                  \n\
+            return float4(/*c.rgb*/input.colour.rgb,c.a);                 \n\
         }                                                              \n\
         "
     };
@@ -288,6 +319,10 @@ namespace Heart
         s_debugVertexLit,
         s_debugVertexLit,
         s_debugTexture, 
+        s_debugTexture,
+        s_debugWSVertexCol,
+        s_debugWSVertexCol,
+        s_debugTexture,
         s_debugTexture,
     };
 

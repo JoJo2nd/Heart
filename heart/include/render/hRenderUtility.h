@@ -77,7 +77,9 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugTexMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    HEART_DLLEXPORT
+    hMaterial* HEART_API buildDebugDrawMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT
     hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex, hMemoryHeapBase* heap);
     HEART_DLLEXPORT

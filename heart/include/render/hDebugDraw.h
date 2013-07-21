@@ -31,24 +31,34 @@
 
 namespace Heart
 {
+    class hFont;
+
     struct hDebugLine
     {
         hVec3 p1, p2;
+        hColour colour;
+    };
+
+    struct hDebugTextString
+    {
+        hColour colour;
+        hVec3   position;
+        hUint   txtBufOffset;
     };
 
     struct hDebugPrimsSet
     {
         void reset();
 
-        hVector< hDebugLine > lines_;
+        hVector< hDebugLine >       lines_;
+        hVector< hDebugTextString > strings_;
+        hVector< hChar >            txtBuffer_;
     };
 
     enum hDebugSet
     {
-        eDebugSet_2DDepth,
         eDebugSet_2DNoDepth,
         eDebugSet_3DDepth,
-        eDebugSet_3DNoDepth,
 
         eDebugSet_Max,
     };
@@ -60,7 +70,8 @@ namespace Heart
         ~hDebugDraw();
 
         void begin();
-        void drawLines(hVec3* points, hUint32 linecount, hDebugSet set);
+        void drawLines(hDebugLine* points, hUint32 linecount, hDebugSet set);
+        void drawText(const hVec3& screenpos, const hChar* buffer, const hColour& colour, hDebugSet set);
         void end();
 
         static hDebugDraw* it();
@@ -81,9 +92,10 @@ namespace Heart
         ~hDebugDrawRenderer();
 
         void initialiseResources(hRenderer* renderer);
+        void setMainViewCameraIndex(hUint camIndex);
+
         void destroyResources();
-        void debugRenderSetup(hRenderTargetView* colour, hDepthStencilView* depth);
-        void render(hRenderSubmissionCtx* ctx);
+        void render(hRenderer* renderer, hRenderSubmissionCtx* ctx);
         void append(hDebugDraw* debugdraw);
 
         static hDebugDrawRenderer* it();
@@ -95,9 +107,20 @@ namespace Heart
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];
-        hMaterial*          debugMat_;
-        hVertexBuffer*      linesBuffer_;
+        hMaterial*          debugPosColMat_;
+        hMaterial*          debugPosColUVMat_;
+        hVertexBuffer*      posColBuffer_;
+        hVertexBuffer*      posColUVBuffer_;
         hMaterial*          lineMaterial_;
+        hFont*              debugFont_;
+        hTexture*           debugFontTex_;
+        hShaderResourceView* debugFontSRV_;
+        hdInputLayout*      inputlayout_;
+        hRenderBuffer*      viewParameters_;
+        hRenderBuffer*      perDrawParameters_;
+        hRenderCommands     posColRdrCmds_;
+        hRenderCommands     posColUVRdrCmds_;
+        hRenderCommands     tmpRdrCmds_;
         hBool               resourcesCreated_;
     };
 }

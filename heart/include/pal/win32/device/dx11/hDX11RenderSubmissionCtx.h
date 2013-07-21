@@ -123,6 +123,7 @@ namespace Heart
         void    SetScissorRect(const hScissorRect& scissor);
         void    clearColour(hdDX11RenderTargetView* view, const hColour& colour);
         void    clearDepth(hdDX11DepthStencilView* view, hFloat z);
+        void    setViewPixel(hUint slot, hdDX11ShaderResourceView* buffer);
         void    DrawPrimitive(hUint32 nPrimatives, hUint32 startVertex );
         void    DrawPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex );
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);

@@ -350,8 +350,10 @@ namespace Heart
         hRenderUtility::buildDebugConsoleMaterial(renderer_, consoleMat_);
         debugFontMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
         hRenderUtility::buildDebugFontMaterial(renderer_, debugFontMat_);
-        debugTexMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
-        hRenderUtility::buildDebugTexMaterial(renderer_, debugTexMat_);
+        debugPosColUVMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugPosColUVMaterial(renderer_, debugPosColUVMat_);
+        debugPosColMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        hRenderUtility::buildDebugDrawMaterial(renderer_, debugPosColMat_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -364,7 +366,8 @@ namespace Heart
         hDELETE_SAFE(GetGlobalHeap(), viewLitMat_);
         hDELETE_SAFE(GetGlobalHeap(), consoleMat_);
         hDELETE_SAFE(GetGlobalHeap(), debugFontMat_);
-        hDELETE_SAFE(GetGlobalHeap(), debugTexMat_);
+        hDELETE_SAFE(GetGlobalHeap(), debugPosColUVMat_);
+        hDELETE_SAFE(GetGlobalHeap(), debugPosColMat_);
 
         for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             constBlocks_[i].constBlock_->DecRef();

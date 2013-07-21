@@ -111,6 +111,11 @@ namespace Heart
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
         void    dispatch(hUint x, hUint y, hUint z) { impl_.dispatch(x, y, z); }
+        // single state setters, add as needed - useful for one off special cases like debug
+        void    setViewPixel(hUint slot, hShaderResourceView* buffers) {
+            impl_.setViewPixel(slot, buffers);
+        }
+        // mapping
         void    Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo);
         void    Unmap(hIndexBufferMapInfo* outInfo);
         void    Map(hVertexBuffer* ib, hVertexBufferMapInfo* outInfo);

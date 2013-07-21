@@ -119,13 +119,22 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    void hdDX11RenderSubmissionCtx::setViewPixel(hUint slot, hdDX11ShaderResourceView* buffer) {
+        ID3D11ShaderResourceView* srv=buffer ? buffer->srv_ : hNullptr;
+        device_->PSSetShaderResources(0, 1, &srv);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hdDX11RenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 start )
     {
         hUint32 verts;
         switch ( primType_ )
         {
         case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
-            verts = nPrimatives / 2; break;
+            verts = nPrimatives*2; break;
         case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
             verts = nPrimatives * 3; break;
         case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:

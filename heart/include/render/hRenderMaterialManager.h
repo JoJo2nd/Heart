@@ -77,8 +77,8 @@ namespace Heart
         hMaterial*                  getDebugViewLit() const { return viewLitMat_; }
         hMaterial*                  getConsoleMat() const { return consoleMat_; }
         hMaterial*                  getDebugFontMat() const { return debugFontMat_; }
-        hMaterial*                  getDebugMaterial();
-        hMaterial*                  getDebugTexMaterial() const { return debugTexMat_; }
+        hMaterial*                  getDebugPosColMat() const { return debugPosColMat_; }
+        hMaterial*                  getDebugPosColUVMat() const { return debugPosColUVMat_; }
         void                        GetUniqueKey(hMaterial* mat);
         void                        RemoveKey(hMaterial* mat);
         const hRenderTechniqueInfo* AddRenderTechnique( const hChar* name );
@@ -155,7 +155,8 @@ namespace Heart
         hMaterial*              consoleMat_;
         hMaterial*              debugFontMat_;
         hMaterial*              debugMat_;
-        hMaterial*              debugTexMat_;
+        hMaterial*              debugPosColUVMat_;
+        hMaterial*              debugPosColMat_;
     };
 }
 

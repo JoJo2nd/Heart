@@ -212,6 +212,7 @@ namespace Heart
         }
 
         ParentClass::EndRender();
+        hDebugDrawRenderer::it()->render(this, &mainSubmissionCtx_);
         ParentClass::SwapBuffers(backBuffer_);
     }
 
@@ -581,6 +582,8 @@ namespace Heart
 
         rtv->DecRef();
         dsv->DecRef();
+
+        hDebugDrawRenderer::it()->initialiseResources(this);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -658,6 +661,19 @@ namespace Heart
             GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugTexPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexPixel)),
             "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugTexPixel]);
+        debugShaders_[eDebugVertexPosCol]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugVertexPosCol),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosCol)),
+            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosCol]);
+        debugShaders_[eDebugPixelPosCol]=hNEW(GetGlobalHeap(), hShaderProgram)(this, GetGlobalHeap(),
+            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        ParentClass::compileShaderFromSourceDevice(
+            GetGlobalHeap(), ParentClass::getDebugShaderSource(eDebugPixelPosCol),
+            hStrLen(ParentClass::getDebugShaderSource(eDebugPixelPosCol)),
+            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelPosCol]);
+
     }
 
     void hRenderer::rendererFrameSubmit()
@@ -1733,8 +1749,10 @@ namespace Heart
         hRenderCommandGenerator rcGen(&renderCmds_);
         targetInfo_=*rndrinfo;
         lightInfo_.directionalLightCount_=0;
+        lightInfo_.quadLightCount_=0;
         renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
         renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
+        renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
         hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, GetGlobalHeap(), &screenQuadIB_, &screenQuadVB_);
         hBlendStateDesc blendstatedesc;
         hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
@@ -1863,6 +1881,21 @@ namespace Heart
                     srv_.Resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "quad_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hQuadLight);
+                srvdesc.buffer_.numElements_=s_maxQuadLights;
+                renderer->createShaderResourceView(quadLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
             }
         }
         rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
@@ -1915,6 +1948,10 @@ namespace Heart
             directionLightData_->DecRef();
             directionLightData_=hNullptr;
         }
+        if (quadLightData_) {
+            quadLightData_->DecRef();
+            quadLightData_=hNullptr;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1925,6 +1962,24 @@ namespace Heart
         directionalLights_[lightInfo_.directionalLightCount_].direction_=direction;
         directionalLights_[lightInfo_.directionalLightCount_].colour_=colour;
         ++lightInfo_.directionalLightCount_;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour) {
+        hQuadLight quad;
+        quadLights_[lightInfo_.quadLightCount_].points_[0] = centre-halfwidth-halfheight;
+        quadLights_[lightInfo_.quadLightCount_].points_[1] = centre+halfwidth-halfheight;
+        quadLights_[lightInfo_.quadLightCount_].points_[2] = centre+halfwidth+halfheight;
+        quadLights_[lightInfo_.quadLightCount_].points_[3] = centre-halfwidth+halfheight;
+        quadLights_[lightInfo_.quadLightCount_].colour_ = colour;
+        quadLights_[lightInfo_.quadLightCount_].centre_=centre;
+        quadLights_[lightInfo_.quadLightCount_].halfv_[0]=halfwidth;
+        quadLights_[lightInfo_.quadLightCount_].halfv_[1]=halfheight;
+        ++lightInfo_.quadLightCount_;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1940,6 +1995,8 @@ namespace Heart
         hMatrix project=viewcam->GetProjectionMatrix();
         hMatrix invProject=hMatrixFunc::inverse(project);
 
+        drawDebugLightInfo();
+
         ctx->Map(inputLightData_, &mapinfo); {
             hInputLightData* mapptr=(hInputLightData*)mapinfo.ptr;
             mapptr->viewMatrix_=view;
@@ -1948,6 +2005,7 @@ namespace Heart
             mapptr->inverseProjectMtx_=invProject;
             mapptr->eyePos_=hMatrixFunc::getRow(invView, 3);
             mapptr->directionalLightCount_ = lightInfo_.directionalLightCount_;
+            mapptr->quadLightCount_ = lightInfo_.quadLightCount_;
             ctx->Unmap(&mapinfo);
         }
         ctx->Map(directionLightData_, &mapinfo); {
@@ -1957,7 +2015,41 @@ namespace Heart
             }
             ctx->Unmap(&mapinfo);
         }
+        ctx->Map(quadLightData_, &mapinfo); {
+            hQuadLight* mapptr=(hQuadLight*)mapinfo.ptr;
+            for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
+                mapptr[i]=quadLights_[i];
+            }
+            ctx->Unmap(&mapinfo);
+        }
         ctx->runRenderCommands(renderCmds_.getFirst());
+    }
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::drawDebugLightInfo() {
+        hDebugDraw* dd=hDebugDraw::it();
+        dd->begin();
+
+        for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
+            hVec3 forward=hVec3Func::cross(quadLights_[i].halfv_[1], quadLights_[i].halfv_[0]);
+            forward=hVec3Func::normaliseFast(forward)*hVec3Func::lengthFast(quadLights_[i].halfv_[0]);
+            Heart::hDebugLine quadlight[] = {
+                //quad
+                {quadLights_[i].points_[0], quadLights_[i].points_[1], hColour(1.f, 0.f, 1.f, 1.f)},
+                {quadLights_[i].points_[1], quadLights_[i].points_[2], hColour(1.f, 0.f, 1.f, 1.f)},
+                {quadLights_[i].points_[2], quadLights_[i].points_[3], hColour(1.f, 0.f, 1.f, 1.f)},
+                {quadLights_[i].points_[3], quadLights_[i].points_[0], hColour(1.f, 0.f, 1.f, 1.f)},
+                //half widths
+                {quadLights_[i].centre_, quadLights_[i].centre_+quadLights_[i].halfv_[0], hColour(1.f, 0.f, 0.f, 1.f)},
+                {quadLights_[i].centre_, quadLights_[i].centre_+quadLights_[i].halfv_[1], hColour(0.f, 1.f, 0.f, 1.f)},
+                {quadLights_[i].centre_, quadLights_[i].centre_+forward, hColour(0.f, 0.f, 1.f, 1.f)},
+            };
+            dd->drawLines(quadlight, (hUint)hArraySize(quadlight), eDebugSet_3DDepth);
+        }
+
+        dd->end();
     }
 
 }
