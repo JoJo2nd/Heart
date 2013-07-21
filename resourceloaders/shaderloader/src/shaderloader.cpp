@@ -285,6 +285,7 @@ int SB_API shaderCompiler(lua_State* L) {
         return 0;
     }
     fread(sourcedata.get(), 1, sourcedatalen, f);
+    fclose(f);
     sourcedata[sourcedatalen] = 0;
     hr = D3DCompile( 
         sourcedata.get(), 
