@@ -194,12 +194,20 @@ int SB_API shaderCompiler(lua_State* L) {
     HRESULT hr;
     ID3DBlob* errors;
     ID3DBlob* result;
-    hUint32 compileFlags = 0;//D3DCOMPILE_WARNINGS_ARE_ERRORS;
+    hUint32 compileFlags = 0;
     lua_getfield(L, 3, "debug");
     if (lua_toboolean(L, -1)) {
         compileFlags |= D3DCOMPILE_DEBUG;
-        compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL0;
+    }
+    lua_pop(L, 1);
+    lua_getfield(L, 3, "skipoptimization");
+    if (lua_toboolean(L, -1)) {
         compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+    }
+    lua_pop(L, 1);
+    lua_getfield(L, 3, "warningsaserrors");
+    if (lua_toboolean(L, -1)) {
+        compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
     }
     lua_pop(L, 1);
 
@@ -493,6 +501,7 @@ int SB_API shaderPreprocess(lua_State* L) {
         return 0;
     }
     fread(sourcedata.get(), 1, sourcedatalen, f);
+    fclose(f);
     sourcedata[sourcedatalen] = 0;
     hr = D3DPreprocess( 
         sourcedata.get(), 
