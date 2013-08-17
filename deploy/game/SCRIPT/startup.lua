@@ -45,7 +45,7 @@ function registerGlobalTextures()
         },
         width=rndrWidth,
         height=rndrHeight,
-        format="rgba16_float",
+        format="rg16_float",
         rendertarget=true,
     }
     heart.registerGlobalTexture {

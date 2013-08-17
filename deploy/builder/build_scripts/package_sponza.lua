@@ -48,10 +48,10 @@ end
 --
 --
 shaders={
-    {path="src://shaders/gbuffer.c", res="GBUFFER_VS", params={entry="vertexMain", profile="vs_5_0"}},
-    {path="src://shaders/gbuffer.c", res="GBUFFER_PS", params={entry="pixelMain", profile="ps_5_0"}},
-    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_VS", params={entry="vertexMain", profile="vs_5_0", defines={NO_NORMAL_MAP="1"}}},
-    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_PS", params={entry="pixelMain", profile="ps_5_0", defines={NO_NORMAL_MAP="1"}}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_VS", params={entry="vertexMain", profile="vs_5_0", warningsaserrors=true}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_PS", params={entry="pixelMain", profile="ps_5_0", warningsaserrors=true}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_VS", params={entry="vertexMain", profile="vs_5_0", defines={NO_NORMAL_MAP="1"}, warningsaserrors=true}},
+    {path="src://shaders/gbuffer.c", res="GBUFFER_NO_NRM_PS", params={entry="pixelMain", profile="ps_5_0", defines={NO_NORMAL_MAP="1"}, warningsaserrors=true}},
 }
 for k, gpu in pairs(shaders) do 
     databuilder.addresource{
