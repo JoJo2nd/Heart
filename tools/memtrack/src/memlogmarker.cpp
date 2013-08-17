@@ -83,10 +83,19 @@ void MemLogMarker::addChild(MemLogMarker* child)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void MemLogMarker::getAliveAllocs(AllocVectorType* aliveOut)
-{
-    for (AllocMapType::iterator i = heapView_.begin(), iend = heapView_.end();
-        i != iend; ++i)
+void MemLogMarker::getAliveAllocsInclusive(AllocVectorType* aliveOut) const {
+    getAliveAllocsExclusive(aliveOut);
+    for (auto i=children_.begin(), n=children_.end(); i!=n; ++i) {
+        (*i)->getAliveAllocsInclusive(aliveOut);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MemLogMarker::getAliveAllocsExclusive(AllocVectorType* aliveOut) const {
+    for (auto i = heapView_.begin(), iend = heapView_.end(); i != iend; ++i)
     {
         aliveOut->push_back(*i);
     }

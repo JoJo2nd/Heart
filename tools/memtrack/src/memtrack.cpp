@@ -75,8 +75,10 @@ void MemTrackMainFrame::initFrame()
     wxNotebook* notebook = new wxNotebook(this, wxID_ANY);
 
     leakListPage_ = new MemLeakPage(notebook, wxID_ANY);
+    makerTreePage_= new MemMarkerPage(notebook, wxID_ANY);
+
     notebook->InsertPage(0, leakListPage_, "Leaks");
-    notebook->InsertPage(1, new wxNotebookPage(notebook, wxID_ANY), "Markers");
+    notebook->InsertPage(1, makerTreePage_, "Markers");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -109,4 +111,5 @@ void MemTrackMainFrame::evtOpen(wxCommandEvent& evt)
     parseMemLog(fileopen.GetPath().c_str(), &memLog_, &parserFileAccess_);
 
     leakListPage_->updateMemLeaks(&memLog_);
+    makerTreePage_->updateMarkerTree(&memLog_);
 }

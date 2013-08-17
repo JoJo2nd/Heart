@@ -49,9 +49,10 @@ void MemLog::pushMemoryMarker(const char* name)
 
     newmarker.setName(name);
     markerList_.push_back(newmarker);
-    if (markerStack_.size() > 0)
-    {
+    if (markerStack_.size() > 0) {
         (*markerStack_.rbegin())->addChild(&(*markerList_.rbegin()));
+    } else {
+        rootList_.push_back(&(*markerList_.rbegin()));
     }
     markerStack_.push_back(&(*markerList_.rbegin()));
 }
@@ -114,6 +115,6 @@ void MemLog::getAllMemoryLeaks(AllocVectorType* leaksArray)
     for (MarkerListType::reverse_iterator i = markerList_.rbegin(), iend = markerList_.rend();
         i != iend; ++i)
     {
-        i->getAliveAllocs(leaksArray);
+        i->getAliveAllocsInclusive(leaksArray);
     }
 }

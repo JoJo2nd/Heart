@@ -57,7 +57,8 @@ public:
     void            clearChildren() { children_.clear(); }
     uint            getChildCount() { return children_.size(); }
     MemLogMarker*   getChild(uint idx) const { return children_[idx]; }
-    void            getAliveAllocs(AllocVectorType* aliveOut);
+    void            getAliveAllocsInclusive(AllocVectorType* aliveOut) const;
+    void            getAliveAllocsExclusive(AllocVectorType* aliveOut) const;
 
 private:
 

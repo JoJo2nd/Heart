@@ -57,6 +57,7 @@ private:
     MemLog          memLog_;
     IODevice        parserFileAccess_;
     MemLeakPage*    leakListPage_;
+    MemMarkerPage*  makerTreePage_;
 };
 
 //////////////////////////////////////////////////////////////////////////

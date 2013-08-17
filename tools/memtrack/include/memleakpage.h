@@ -32,6 +32,7 @@
 #include "records.h"
 
 class MemLog;
+class MemLogMarker;
 
 class MemLeakPage : public wxNotebookPage
 {
@@ -52,6 +53,30 @@ private:
     wxListCtrl*      list_;
     wxStaticText*    callstackText_;
     AllocVectorType  leaksVector_;
+};
+
+class MemMarkerPage : public wxNotebookPage
+{
+public:
+    MemMarkerPage(wxWindow* parent, wxWindowID id);
+
+    void updateMarkerTree(MemLog*);
+
+private:
+
+    class MarkerTreeAllocRecord : public wxTreeItemData
+    {
+    public:
+        AllocRecord record;
+    };
+
+    DECLARE_EVENT_TABLE();
+
+    void updateMarkerTree(wxTreeItemId, MemLogMarker*);
+    void onMarkerTreeItemSelect(wxTreeEvent& evt);
+
+    wxTreeCtrl*      markerTree_;
+    wxStaticText*    callstackText_;
 };
 
 #endif // MEMLEAKPAGE_H__

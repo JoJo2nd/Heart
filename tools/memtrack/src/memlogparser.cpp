@@ -61,6 +61,7 @@ bool tokenize(InputStream* fis, char* outtoken, uint maxlen, uint* written)
 
     } while (*written < maxlen);
 
+    outtoken[*written]='\0';
     return true;
 }
 

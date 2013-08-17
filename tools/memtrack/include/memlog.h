@@ -40,6 +40,7 @@ class MemLog
 public:
 
     typedef std::vector<AllocRecord>    AllocVectorType;
+    typedef std::vector<MemLogMarker*>   MarkerStackType;
 
     MemLog() {}
     ~MemLog() {}
@@ -50,12 +51,14 @@ public:
     void logMemoryAlloc(uint64 address, uint64 size, const char* heap, const Callstack& backtrace);
     void logMemoryFree(uint64 address, const char* heap, const Callstack& backtrace);
     void getAllMemoryLeaks(AllocVectorType* leaksArray);
+    MarkerStackType::const_iterator getFirstMarker() const { return rootList_.begin(); }
+    MarkerStackType::const_iterator getLastMarker() const { return rootList_.end(); }
 
 private:
 
-    typedef std::vector<MemLogMarker*>   MarkerStackType;
     typedef std::list<MemLogMarker>     MarkerListType;
 
+    MarkerStackType rootList_;
     MarkerListType  markerList_;
     MarkerStackType markerStack_;
     uint64          nextID_;
