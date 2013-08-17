@@ -1,11 +1,12 @@
 #include "hGlobalConstants.h"
+#include "shader_utils.h"
 
 Texture2D albedoTexture;
 Texture2D normalTexture;
 Texture2D specTexture;
 SamplerState textureSampler;
 
-#define WORLD_SPACE_NORMALS
+//#define WORLD_SPACE_NORMALS
 //#ifndef NO_NORMAL_MAP
 //#   define NO_NORMAL_MAP
 //#endif
@@ -43,10 +44,10 @@ void vertexMain(in VSInput input, out VSOutput output) {
     output.tangent = input.tangent;
 #   endif
 #else
-    output.normal = mul(worldView, input.normal);
+    output.normal = mul((float3x3)worldView, input.normal);
 #   ifndef NO_NORMAL_MAP    
-    output.bitangent = mul(worldView, input.bitangent);
-    output.tangent = mul(worldView, input.tangent);
+    output.bitangent = mul((float3x3)worldView, input.bitangent);
+    output.tangent = mul((float3x3)worldView, input.tangent);
 #   endif
 #endif
     output.tex0 = input.tex0;
@@ -85,13 +86,13 @@ void pixelMain(in VSOutput input,
         do inverse! (i.e. swap matrix mul order) because normal is in tangent space
         tangentMtx vectors are in view space ??
     */
-    viewnormal.rgb=normalize(mul(normal, tangentMtx));
+    viewnormal.rg=laeq_NormalEncode(mul(normal.xyz, (float3x3)tangentMtx));
 #else
-    viewnormal.rgb=normalize(input.normal.xyz);
+    viewnormal.rg=laeq_NormalEncode(input.normal.xyz);
 #endif
-    viewnormal.a=0; 
+    viewnormal.ba=0; 
     
     spec = specTexture.Sample(textureSampler, input.tex0);
-    spec.a=length(spec)*2+0.1;
+    spec.a=1-saturate(spec.r);
     spec.rgb=float3(0.04, 0.04, 0.04);
 }

@@ -1,3 +1,4 @@
 <material inherit="sponza_no_normalmap.mfx">
     <parameter name="albedoTexture" type="texture">SPONZA.SPONZA_DETAILS_DIFF</parameter>
+    <parameter name="specTexture" type="texture">SPONZA.SPONZA_DETAILS_SPEC</parameter>
 </material>
