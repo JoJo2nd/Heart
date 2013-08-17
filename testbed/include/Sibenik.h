@@ -41,8 +41,12 @@ public:
         , state_(eBeginLoad)
         , renderModel_(NULL)
     {
+        Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
     }
-    ~Sibenik() {}
+    ~Sibenik() 
+    {
+        Heart::hMemTracking::TrackPopMarker();
+    }
 
     hUint32				RunUnitTest();
     void                RenderUnitTest();

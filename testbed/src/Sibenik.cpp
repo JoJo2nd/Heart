@@ -76,6 +76,8 @@ hUint32 Sibenik::RunUnitTest()
         {
             timer_ += Heart::hClock::Delta();
             UpdateCamera();
+            deferredLightManager_.setSphereLight(0, Heart::hVec3(Heart::hCos(timer_*0.5f)*0.f, 250.f, 0.f), 100.f+Heart::hSin(timer_*0.5f)*99.f);
+            deferredLightManager_.setSphereLight(1, Heart::hVec3(Heart::hCos(timer_*0.5f)*1000.f, 600.f, 0.f), 100.f);
             if (getForceExitFlag()) {
                 state_ = eBeginUnload;
             }
@@ -156,7 +158,7 @@ void Sibenik::RenderUnitTest()
     Heart::hDebugDraw* dd=Heart::hDebugDraw::it();
     dd->begin();
     dd->drawLines(orig, 6, Heart::eDebugSet_3DDepth);
-//     dd->drawTexturedQuad(Heart::hVec3(-200.f, -200.f, 0.f), 400.f, 400.f, specSRV_);
+    dd->drawTexturedQuad(Heart::hVec3(-640, 160.f, 0.f), 355.f, 200.f, normalSRV_);
 //     dd->drawLines(orig, 6, Heart::eDebugSet_2DNoDepth);
 //     dd->drawTris(tri, 3, Heart::hColour(1.f,0.f,0.f,0.5f), Heart::eDebugSet_3DDepth);
 //     dd->drawTris(tri, 3, Heart::hColour(0.f,0.f,1.f,0.5f), Heart::eDebugSet_2DNoDepth);
@@ -339,11 +341,18 @@ void Sibenik::CreateRenderResources()
     lightInput.viewCameraIndex_=0;
     deferredLightManager_.initialise(renderer, &lightInput);
     //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
-    deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -25.f), Heart::hVec3(0.f, 425.f, 0.f), Heart::WHITE);
-    //deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -75.f), Heart::hVec3(0.f, 25.f, 0.f), Heart::WHITE);
-    //deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -250.f), Heart::hVec3(0.f, 925.f, 0.f), Heart::WHITE);
-    //deferredLightManager_.addQuadLight(Heart::hVec3Func::normalise(Heart::hVec3(120.f, 0.f, 100.f))*20.f, Heart::hVec3Func::normalise(Heart::hVec3(0.f, 50.f, 200.f))*50.f, Heart::hVec3(175.f, 250.f, 0.f), Heart::WHITE);
+//     deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, 125.f), Heart::hVec3(0.f, 425.f, 0.f), Heart::WHITE);
+//     deferredLightManager_.addQuadLight(Heart::hVec3(0.f, 25.f, 0.f), Heart::hVec3(25.f, 0.f, 0.f), Heart::hVec3(0.f, 15.f, 0.f), Heart::WHITE);
+//     deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -75.f), Heart::hVec3(0.f, 25.f, 0.f), Heart::WHITE);
+//     deferredLightManager_.addQuadLight(Heart::hVec3(1200.f, 0.f, 0.f), Heart::hVec3(0.f, 0.f, -250.f), Heart::hVec3(0.f, 925.f, 0.f), Heart::WHITE);
+//     deferredLightManager_.addQuadLight(Heart::hVec3Func::normalise(Heart::hVec3(120.f, 0.f, 100.f))*20.f, Heart::hVec3Func::normalise(Heart::hVec3(0.f, 50.f, 200.f))*50.f, Heart::hVec3(175.f, 250.f, 0.f), Heart::WHITE);
+    //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(0.f, -1.f, 0.f)), Heart::WHITE);
     //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(1.f, 0.f, 0.f)), Heart::WHITE);
+    //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(0.f, 0.f, 0.f)), Heart::WHITE);
+    deferredLightManager_.enableSphereLight(0, hTrue);
+    deferredLightManager_.setSphereLight(0, hVec3(0.f, 100.f, 0.f), 50.f);
+    deferredLightManager_.enableSphereLight(1, hTrue);
+    deferredLightManager_.setSphereLight(1, hVec3(0.f, 600.f, 0.f), 110.f);
 }
 
 //////////////////////////////////////////////////////////////////////////
