@@ -293,6 +293,7 @@ void FlushSymbolsToLogFile();
         if (g_open)
         {
             EnterCriticalSection(&g_access);
+            hcAssertMsg(hStrChr(heaptag, ' ') == 0, "Heap tags cannot contain spaces");
             fprintf(g_file, "!! MARKERPUSH %s\n", heaptag);
             LeaveCriticalSection(&g_access);
         }

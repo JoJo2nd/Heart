@@ -88,6 +88,7 @@
 #include "math/hVec2.h"
 #include "math/hVec3.h"
 #include "math/hVec4.h"
+#include "math/hVectorOps.h"
 #include "math/hQuaternion.h"
 #include "math/hMatrix.h"
 

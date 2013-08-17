@@ -33,19 +33,7 @@ namespace Heart
 
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
-    
-    struct HEART_DLLEXPORT hRenderFrameStats
-    {
-        hUint32			nTriangels_;
-        hUint32			nRenderCmds_;
-        hUint32			nDrawCalls_;
-    };
 
-    struct HEART_DLLEXPORT hRenderFrameStatsCollection
-    {
-        static const hUint32 MAX_PASSES = 8;
-        hRenderFrameStats passes_[ MAX_PASSES ];
-    };
 
     hFUNCTOR_TYPEDEF(void (*)(hRenderer*, hRenderSubmissionCtx*), hCustomRenderCallback);
 
@@ -146,7 +134,7 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-        hRenderFrameStatsCollection*							LastRenderFrameStats() { return rendererStats_ + (currentRenderStatFrame_ % 2); }
+        const hRenderFrameStats*                                getRenderStats() const { return &stats_; }
         hRenderMaterialManager*                                 GetMaterialManager() { return &materialManager_; }
 
         //////////////////////////////////////////////////////////////////////////
@@ -196,7 +184,6 @@ namespace Heart
         void                                                    EndRenderFrame();
         void                                                    rendererFrameSubmit();
 
-        hUint32													CurrentFPS() { return FPS_; }
         hFloat                                                  GetLastGPUTime() { return gpuTime_; }
         hShaderProgram*                                         getDebugShader(hDebugShaderID shaderID);
 
@@ -274,10 +261,8 @@ namespace Heart
         hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
         hAtomicInt                                              drawResourceUpdateCalls_;
 
-        hUint32										            FPS_;
-        hUint32													currentRenderStatFrame_;
-        hRenderFrameStatsCollection								rendererStats_[2];
-        hUint32													statPass_;
+        hTimer              frameTimer_;
+        hRenderFrameStats   stats_;
         
         static void*											pRenderThreadID_;
     };
@@ -320,6 +305,8 @@ namespace Heart
         void destroy();
         void addDirectionalLight(const hVec3& direction, const hColour& colour);
         void addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour);
+        void enableSphereLight(hUint light, hBool enable);
+        void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
 
@@ -334,6 +321,7 @@ namespace Heart
             hVec4   eyePos_;
             hUint   directionalLightCount_;
             hUint   quadLightCount_;
+            hUint   sphereLightCount_;
         };
 
         struct hDirectionalLight
@@ -350,8 +338,21 @@ namespace Heart
             hColour colour_;
         };
 
+        struct hSphereLight
+        {
+            hVec4   centreRadius_;
+            hColour colour_;
+        };
+
+        struct hSphereLightContainer : public hLinkedListElement<hSphereLightContainer>
+        {
+            hSphereLight    light_;
+            hBool           enabled_;
+        };
+
         static const hUint s_maxDirectionalLights = 15;
-        static const hUint s_maxQuadLights = 100;
+        static const hUint s_maxQuadLights = 32;
+        static const hUint s_maxSphereLights = 64;
 
         void drawDebugLightInfo();
 
@@ -360,6 +361,7 @@ namespace Heart
         hRenderBuffer*                                      inputLightData_;
         hRenderBuffer*                                      directionLightData_;
         hRenderBuffer*                                      quadLightData_;
+        hRenderBuffer*                                      sphereLightData_;
         hIndexBuffer*                                       screenQuadIB_;
         hVertexBuffer*                                      screenQuadVB_;
         hBlendState*                                        blendState_;
@@ -374,6 +376,8 @@ namespace Heart
         hInputLightData                                     lightInfo_;
         hArray<hDirectionalLight, s_maxDirectionalLights>   directionalLights_;
         hArray<hQuadLight, s_maxDirectionalLights>          quadLights_;
+        hArray<hSphereLightContainer, s_maxSphereLights>    sphereLights_;
+        hLinkedList<hSphereLightContainer>                  activeSphereLights_;
     };
 }
 

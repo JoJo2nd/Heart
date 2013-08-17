@@ -137,6 +137,9 @@ namespace Heart
         void    Unmap(hdDX11VertexBuffer* vb, void* ptr);
         void    Map(hdDX11Buffer* vb, hdDX11MappedResourceData* data);
         void    Unmap(hdDX11Buffer* vb, void* ptr);
+        void    appendRenderStats(hRenderFrameStats* outstats);
+        void    resetStats();
+        const hRenderFrameStats* getRenderStats() const { return &stats_; }
 
         void                    SetDeviceCtx( ID3D11DeviceContext* device, hTempRenderMemAlloc alloc, hTempRenderMemFree free ) { device_ = device; alloc_ = alloc; free_ = free; }
         ID3D11DeviceContext*    GetDeviceCtx() const { return device_; };
@@ -151,6 +154,8 @@ namespace Heart
         ID3D11RenderTargetView*  renderTargetViews_[MAX_RENDERTARGE_VIEWS];
         ID3D11DepthStencilView*  depthStencilView_;
         ID3D11DeviceContext*     device_;
+
+        hRenderFrameStats        stats_;
     };
 }
 

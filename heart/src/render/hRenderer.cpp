@@ -59,8 +59,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hRenderer::hRenderer()
-        : currentRenderStatFrame_( 0 )
-        , statPass_( 0 )
     {
         //SetImpl( hNEW(GetGlobalHeap(), hdRenderDevice) );
     }
@@ -79,7 +77,7 @@ namespace Heart
         hBool vsync,
         hResourceManager* pResourceManager	)
     {
-
+        hClock::BeginTimer(frameTimer_);
         materialManager_.SetRenderer(this);
 
         width_			= width;
@@ -189,9 +187,6 @@ namespace Heart
         //ReleasePendingRenderResources();
         //Start new frame
 
-        // clear the render buffer
-        ++currentRenderStatFrame_;
-
         //Free last frame draw calls and temporary memory
         hAtomic::AtomicSet(scratchPtrOffset_, 0);
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
@@ -214,6 +209,14 @@ namespace Heart
         ParentClass::EndRender();
         hDebugDrawRenderer::it()->render(this, &mainSubmissionCtx_);
         ParentClass::SwapBuffers(backBuffer_);
+
+        hClock::EndTimer(frameTimer_);
+        hZeroMem(&stats_, sizeof(stats_));
+        stats_.gpuTime_=0.f;
+        stats_.frametime_=(hFloat)frameTimer_.ElapsedmS()/1000.f;
+        hClock::BeginTimer(frameTimer_);
+        mainSubmissionCtx_.appendRenderStats(&stats_);
+        mainSubmissionCtx_.resetStats();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1753,6 +1756,7 @@ namespace Heart
         renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
         renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
         renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
+        renderer->createBuffer(sizeof(hSphereLight)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLight), &sphereLightData_);
         hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, GetGlobalHeap(), &screenQuadIB_, &screenQuadVB_);
         hBlendStateDesc blendstatedesc;
         hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
@@ -1896,6 +1900,21 @@ namespace Heart
                     srv_.Resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "sphere_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hSphereLight);
+                srvdesc.buffer_.numElements_=s_maxSphereLights;
+                renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
             }
         }
         rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
@@ -1952,6 +1971,10 @@ namespace Heart
             quadLightData_->DecRef();
             quadLightData_=hNullptr;
         }
+        if (sphereLightData_) {
+            sphereLightData_->DecRef();
+            sphereLightData_=hNullptr;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -2006,6 +2029,7 @@ namespace Heart
             mapptr->eyePos_=hMatrixFunc::getRow(invView, 3);
             mapptr->directionalLightCount_ = lightInfo_.directionalLightCount_;
             mapptr->quadLightCount_ = lightInfo_.quadLightCount_;
+            mapptr->sphereLightCount_=lightInfo_.sphereLightCount_;
             ctx->Unmap(&mapinfo);
         }
         ctx->Map(directionLightData_, &mapinfo); {
@@ -2022,6 +2046,19 @@ namespace Heart
             }
             ctx->Unmap(&mapinfo);
         }
+        ctx->Map(sphereLightData_, &mapinfo); {
+            hSphereLight* mapptr=(hSphereLight*)mapinfo.ptr;
+            for (hSphereLightContainer* i=activeSphereLights_.GetHead(); i; i=i->GetNext()) {
+                mapptr->centreRadius_=i->light_.centreRadius_;
+                mapptr->colour_=i->light_.colour_;
+                mapptr->colour_.r_=12.57f*10.f;//light power
+                mapptr->colour_.g_=12.57f*10.f;//light power
+                mapptr->colour_.b_=12.57f*10.f;//light power
+                mapptr->colour_.a_=12.57f*10.f;//light power
+                ++mapptr;
+            }
+            ctx->Unmap(&mapinfo);
+        }
         ctx->runRenderCommands(renderCmds_.getFirst());
     }
     //////////////////////////////////////////////////////////////////////////
@@ -2033,7 +2070,7 @@ namespace Heart
         dd->begin();
 
         for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
-            hVec3 forward=hVec3Func::cross(quadLights_[i].halfv_[1], quadLights_[i].halfv_[0]);
+            hVec3 forward=hVec3Func::cross(quadLights_[i].halfv_[0], quadLights_[i].halfv_[1]);
             forward=hVec3Func::normaliseFast(forward)*hVec3Func::lengthFast(quadLights_[i].halfv_[0]);
             Heart::hDebugLine quadlight[] = {
                 //quad
@@ -2049,7 +2086,59 @@ namespace Heart
             dd->drawLines(quadlight, (hUint)hArraySize(quadlight), eDebugSet_3DDepth);
         }
 
+        for (hSphereLightContainer* i=activeSphereLights_.GetHead(); i; i=i->GetNext()) {
+            const hSphereLight& l=i->light_;
+            Heart::hDebugLine spherelines[] = {
+                { l.centreRadius_+hVec3(l.centreRadius_.getW(), 0.f, 0.f), l.centreRadius_-hVec3(l.centreRadius_.getW(), 0.f, 0.f), hColour(1.f, 0.f, 0.f, 1.f) },
+                { l.centreRadius_+hVec3(0.f, l.centreRadius_.getW(), 0.f), l.centreRadius_-hVec3(0.f, l.centreRadius_.getW(), 0.f), hColour(0.f, 1.f, 0.f, 1.f) },
+                { l.centreRadius_+hVec3(0.f, 0.f, l.centreRadius_.getW()), l.centreRadius_-hVec3(0.f, 0.f, l.centreRadius_.getW()), hColour(0.f, 0.f, 1.f, 1.f) },
+                // rings
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  0.f, l.centreRadius_.getW()*hSin(0.f)   ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f), 0.f, l.centreRadius_.getW()*hSin(0.785f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  0.f, l.centreRadius_.getW()*hSin(0.785f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) , 0.f, l.centreRadius_.getW()*hSin(1.57f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  0.f, l.centreRadius_.getW()*hSin(1.57f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f), 0.f, l.centreRadius_.getW()*hSin(2.355f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  0.f, l.centreRadius_.getW()*hSin(2.355f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) , 0.f, l.centreRadius_.getW()*hSin(3.14f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  0.f, l.centreRadius_.getW()*hSin(3.14f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f), 0.f, l.centreRadius_.getW()*hSin(3.925f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  0.f, l.centreRadius_.getW()*hSin(3.925f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) , 0.f, l.centreRadius_.getW()*hSin(4.71f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  0.f, l.centreRadius_.getW()*hSin(4.71f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f), 0.f, l.centreRadius_.getW()*hSin(5.495f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  0.f, l.centreRadius_.getW()*hSin(5.495f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   , 0.f, l.centreRadius_.getW()*hSin(0.f)   ), hColour(1.f, 0.f, 1.f, 1.f) },
+            };
+
+            dd->drawLines(spherelines, (hUint)hArraySize(spherelines), eDebugSet_3DDepth);
+        }
+
         dd->end();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::enableSphereLight(hUint light, hBool enable) {
+        if (enable && !sphereLights_[light].enabled_) {
+            activeSphereLights_.PushBack(&sphereLights_[light]);
+        } else if (!enable && sphereLights_[light].enabled_) {
+            activeSphereLights_.Remove(&sphereLights_[light]);
+        }
+        sphereLights_[light].enabled_=enable;
+        lightInfo_.sphereLightCount_=activeSphereLights_.GetSize();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::setSphereLight(hUint light, const hVec3& centre, hFloat radius) {
+        sphereLights_[light].light_.centreRadius_=hVec4(centre, radius);
+        sphereLights_[light].light_.colour_=WHITE;
     }
 
 }

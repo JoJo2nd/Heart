@@ -79,6 +79,15 @@ namespace Heart
         }
     };
 
+    struct hRenderFrameStats
+    {
+        hFloat          frametime_;
+        hFloat          gpuTime_;
+        hUint32			nPrims_;
+        hUint32			nDeviceCalls_;
+        hUint32			nDrawCalls_;
+    };
+
     struct hColour
     {
         hColour() {}

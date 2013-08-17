@@ -176,6 +176,7 @@ namespace Heart
 
         //Debug 
         hDebugMenuManager*              debugMenuManager_;
+        hDebugInfo*                     debugInfo_;
 
         //app functions
     public:

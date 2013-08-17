@@ -28,6 +28,8 @@
 
 namespace Heart
 {
+#define HEART_RSTAT_DEVICE_CALL() ++stats_.nDeviceCalls_
+#define HEART_RSTAT_DRAW_CALL(prims) stats_.nPrims_+=prims; ++stats_.nDrawCalls_
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -37,6 +39,7 @@ namespace Heart
     {
         hFloat factors[4] = { 1.f, 1.f, 1.f, 1.f };
         device_->OMSetBlendState( st->stateObj_, factors, ~0U );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -46,6 +49,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::setRenderStateBlock( hdDX11DepthStencilState* st )
     {
         device_->OMSetDepthStencilState( st->stateObj_, st->stencilRef_ );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -55,6 +59,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::setRenderStateBlock( hdDX11RasterizerState* st )
     {
         device_->RSSetState( st->stateObj_ );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -64,11 +69,16 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::setComputeInput(const hdDX11ComputeInputObject* ci) {
         hcAssert(ci);
         device_->CSSetShader(ci->computeShader_, NULL, 0);
+        HEART_RSTAT_DEVICE_CALL();
         if (ci->computeShader_) {
             device_->CSSetConstantBuffers(0, ci->constCount_, ci->programInputs_);
+            HEART_RSTAT_DEVICE_CALL();
             device_->CSSetSamplers(0, ci->samplerCount_, ci->samplerState_);
+            HEART_RSTAT_DEVICE_CALL();
             device_->CSSetShaderResources(0, ci->resourceViewCount_, ci->resourceViews_);
+            HEART_RSTAT_DEVICE_CALL();
             device_->CSSetUnorderedAccessViews(0, ci->uavCount_, ci->unorderdAccessView_, NULL);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -83,6 +93,7 @@ namespace Heart
         }
         hdDX11RenderDevice::clearDeviceInputs(device_);
         device_->OMSetRenderTargets(n, rtviews, depth ? depth->dsv_ : NULL);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -99,6 +110,7 @@ namespace Heart
         vp.MinDepth = 0.f;
         vp.MaxDepth = 1.f;
         device_->RSSetViewports( 1, &vp );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -113,6 +125,7 @@ namespace Heart
         s.top = scissor.top_;
         s.bottom = scissor.bottom_;
         device_->RSSetScissorRects( 1, &s );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -122,6 +135,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::setViewPixel(hUint slot, hdDX11ShaderResourceView* buffer) {
         ID3D11ShaderResourceView* srv=buffer ? buffer->srv_ : hNullptr;
         device_->PSSetShaderResources(0, 1, &srv);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -141,6 +155,7 @@ namespace Heart
             verts = nPrimatives + 2; break;
         }
         device_->Draw( verts, start );
+        HEART_RSTAT_DRAW_CALL(nPrimatives);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -159,6 +174,7 @@ namespace Heart
             verts = nPrimatives + 2; break;
         }
         device_->DrawInstanced(verts, instanceCount, startVertex, 0);
+        HEART_RSTAT_DRAW_CALL(nPrimatives*instanceCount);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -178,6 +194,7 @@ namespace Heart
             verts = nPrimatives + 2; break;
         }
         device_->DrawIndexed( verts, start, 0 );
+        HEART_RSTAT_DRAW_CALL(nPrimatives);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -195,6 +212,7 @@ namespace Heart
             verts = nPrims + 2; break;
         }
         device_->DrawIndexedInstanced(verts, instanceCount, startVtx, 0, 0);
+        HEART_RSTAT_DRAW_CALL(nPrims*instanceCount);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -352,6 +370,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::clearColour(hdDX11RenderTargetView* target, const hColour& colour) {
         hcAssert(target);
         device_->ClearRenderTargetView(target->rtv_,  (FLOAT*)&colour);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -361,6 +380,7 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::clearDepth(hdDX11DepthStencilView* view, hFloat z) {
         hcAssert(view);
         device_->ClearDepthStencilView(view->dsv_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, z, 0);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -369,6 +389,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::setVertexShader(hRCmdSetVertexShader* prog) {
         device_->VSSetShader(prog->shader_, hNullptr, 0);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -385,6 +406,7 @@ namespace Heart
 
     void hdDX11RenderSubmissionCtx::setGeometryShader(hRCmdSetGeometryShader* prog) {
         device_->GSSetShader(prog->shader_, hNullptr, 0);
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -413,12 +435,15 @@ namespace Heart
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
         if (cmd->resourceViewCount_) {
             device_->VSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->samplerCount_) {
             device_->VSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->bufferCount_) {
             device_->VSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -432,12 +457,15 @@ namespace Heart
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
         if (cmd->resourceViewCount_) {
             device_->PSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->samplerCount_) {
             device_->PSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->bufferCount_) {
             device_->PSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -451,12 +479,15 @@ namespace Heart
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
         if (cmd->resourceViewCount_) {
             device_->GSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->samplerCount_) {
             device_->GSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->bufferCount_) {
             device_->GSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -470,12 +501,15 @@ namespace Heart
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
         if (cmd->resourceViewCount_) {
             device_->HSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->samplerCount_) {
             device_->HSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->bufferCount_) {
             device_->HSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -489,12 +523,15 @@ namespace Heart
         ID3D11Buffer** cmdpcb=(ID3D11Buffer**)(cmdsamp+cmd->samplerCount_);
         if (cmd->resourceViewCount_) {
             device_->DSSetShaderResources(0, cmd->resourceViewCount_, cmdsrv);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->samplerCount_) {
             device_->DSSetSamplers(0, cmd->samplerCount_, cmdsamp);
+            HEART_RSTAT_DEVICE_CALL();
         }
         if (cmd->bufferCount_) {
             device_->DSSetConstantBuffers(0, cmd->bufferCount_, cmdpcb);
+            HEART_RSTAT_DEVICE_CALL();
         }
     }
 
@@ -505,8 +542,11 @@ namespace Heart
     void hdDX11RenderSubmissionCtx::setRenderStates(hRCmdSetStates* cmd) {
         hFloat factors[4] = { 1.f, 1.f, 1.f, 1.f };
         device_->OMSetBlendState( cmd->blendState_, factors, ~0U );
+        HEART_RSTAT_DEVICE_CALL();
         device_->OMSetDepthStencilState( cmd->depthState_, cmd->stencilRef_ );
+        HEART_RSTAT_DEVICE_CALL();
         device_->RSSetState( cmd->rasterState_ );
+        HEART_RSTAT_DEVICE_CALL();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -520,16 +560,38 @@ namespace Heart
         UINT offsets[HEART_MAX_INPUT_STREAMS] = {0};
         if (primType_ != cmd->topology_) {
             device_->IASetPrimitiveTopology(cmd->topology_);
+            HEART_RSTAT_DEVICE_CALL();
         }
         device_->IASetInputLayout(cmd->layout_);
+        HEART_RSTAT_DEVICE_CALL();
         device_->IASetIndexBuffer(cmd->index_, cmd->indexFormat_, 0);
+        HEART_RSTAT_DEVICE_CALL();
         device_->IASetVertexBuffers(
             cmd->firstStream_,
             streamcount,
             vbs,
             strides,
             offsets);
+        HEART_RSTAT_DEVICE_CALL();
         primType_ = cmd->topology_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::appendRenderStats(hRenderFrameStats* outstats) {
+        outstats->nDeviceCalls_ += stats_.nDeviceCalls_;
+        outstats->nDrawCalls_ += stats_.nDrawCalls_;
+        outstats->nPrims_ += stats_.nPrims_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdDX11RenderSubmissionCtx::resetStats() {
+        hZeroMem(&stats_, sizeof(stats_));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -615,5 +677,8 @@ namespace Heart
         }
         return hFalse;
     }
+
+#undef HEART_RSTAT_DEVICE_CALL
+#undef HEART_RSTAT_DRAW_CALL
 
 }

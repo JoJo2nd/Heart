@@ -145,10 +145,16 @@ namespace Heart
         console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
         debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
 
+        debugInfo_ = hNEW(GetDebugHeap(), hDebugInfo)(this);
+        debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
+        debugMenuManager_->SetMenuVisiablity("dbinfo", true);
+
         //////////////////////////////////////////////////////////////////////////
         // Load core assets - are none now... ////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         engineState_ = hHeartState_LoadingCore;
+
+        hMemTracking::TrackPushMarker("After_Engine_Init");
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -282,6 +288,8 @@ namespace Heart
 
     hHeartEngine::~hHeartEngine()
     {
+        hMemTracking::TrackPopMarker();
+
         jobManager_->Destory();
         debugMenuManager_->Destroy();
         console_->Destroy();
@@ -290,6 +298,7 @@ namespace Heart
         luaVM_->Destroy();
         renderer_->Destroy();
 
+        hDELETE_SAFE(GetDebugHeap(), debugInfo_);
         hDELETE_SAFE(GetDebugHeap(), g_ProfilerManager_);
         hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
         hDELETE_SAFE(GetGlobalHeap(), entityFactory_);

@@ -140,6 +140,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include "debug/hDebugMenuManager.cpp"
+#include "debug/hDebugInfo.cpp"
 #include "utils/hRealTimeProfilerMenu.cpp"
 #include "utils/hMemoryViewMenu.cpp"
 

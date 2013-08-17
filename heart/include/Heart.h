@@ -212,6 +212,7 @@ extern "C"
 //////////////////////////////////////////////////////////////////////////
 
 #include "debug/hDebugMenuManager.h"
+#include "debug/hDebugInfo.h"
 #include "utils/hRealTimeProfilerMenu.h"
 #include "utils/hMemoryViewMenu.h"
 #include "utils/hTextFormatting.h"

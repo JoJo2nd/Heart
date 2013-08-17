@@ -122,8 +122,9 @@ set(HEART_CORE_FILES
 )
 set(HEART_DEBUG_FILES
     "${HEART_SOURCE_DIR}/include/debug/hDebugMenuManager.h"
-    
+    "${HEART_SOURCE_DIR}/include/debug/hDebugInfo.h"
     "${HEART_SOURCE_DIR}/src/debug/hDebugMenuManager.cpp"
+	"${HEART_SOURCE_DIR}/src/debug/hDebugInfo.cpp"
 )
 set(HEART_EVENTS_FILES
     "${HEART_SOURCE_DIR}/include/events/hEventManager.h"
@@ -252,6 +253,7 @@ if (WIN32)
         "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVec3.h"
         "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVec4.h"
         "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVector.h"
+		"${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVectorOps.h"
 	)
     set( HEART_SRC_FILES 
         ${HEART_SRC_FILES}

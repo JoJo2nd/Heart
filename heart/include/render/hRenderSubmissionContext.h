@@ -125,6 +125,10 @@ namespace Heart
         void    Map(hRenderBuffer* cb, hRenderBufferMapInfo* outInfo);
         void    Unmap(hRenderBufferMapInfo* info);
 
+        void    appendRenderStats(hRenderFrameStats* outstats) { impl_.appendRenderStats(outstats); }
+        void    resetStats() { impl_.resetStats(); }
+        const hRenderFrameStats* getRenderStats() const { return impl_.getRenderStats(); }
+
     private:
 
         friend class hRenderer; 
