@@ -34,6 +34,7 @@
 
 void MemLog::clear()
 {
+    rootList_.clear();
     markerList_.clear();
     markerStack_.clear();
     nextID_ = 1;

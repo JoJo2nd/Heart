@@ -46,6 +46,7 @@ public:
 
     MemLogMarker() 
         : firstAllocID_(~0)
+        , parent_(nullptr)
     {}
     ~MemLogMarker() {}
 
@@ -54,15 +55,21 @@ public:
     void            insertMemAlloc(const AllocRecord& allocr);
     bool            insertMemFree(const FreeRecord& freer);
     void            addChild(MemLogMarker* child);
+    void            setParent(MemLogMarker* parent) { parent_=parent; }
+    MemLogMarker*   getParent() const;
     void            clearChildren() { children_.clear(); }
     uint            getChildCount() { return children_.size(); }
     MemLogMarker*   getChild(uint idx) const { return children_[idx]; }
     void            getAliveAllocsInclusive(AllocVectorType* aliveOut) const;
     void            getAliveAllocsExclusive(AllocVectorType* aliveOut) const;
+    bool            ownAllocOrParentsDo(const FreeRecord& freer);
 
 private:
 
+    void            eraseAllocInclusive(const AllocRecord& allocr);
+
     char                markerName[MemLogMarker_MAXNAMELEN];
+    MemLogMarker*       parent_;
     AllocVectorType     allocs_;
     FreeVectorType      frees_;
     AllocMapType        heapView_;

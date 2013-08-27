@@ -62,10 +62,10 @@ bool MemLogMarker::insertMemFree(const FreeRecord& freer)
 
     allr.address_ = freer.address_;
    
-    if (heapView_.find(allr) == heapView_.end()) return false;
+    eraseAllocInclusive(allr);
 
     frees_.push_back(freer);
-    heapView_.erase(allr);
+    //heapView_.erase(allr);
     
     return true;
 }
@@ -74,8 +74,26 @@ bool MemLogMarker::insertMemFree(const FreeRecord& freer)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+bool MemLogMarker::ownAllocOrParentsDo(const FreeRecord& freer) {
+    AllocRecord allr;
+    allr.address_ = freer.address_;
+    if (heapView_.find(allr) == heapView_.end()) {
+        if (parent_) {
+            return parent_->ownAllocOrParentsDo(freer);
+        }
+        return false;
+    }
+    return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
 void MemLogMarker::addChild(MemLogMarker* child)
 {
+    child->setParent(this);
     children_.push_back(child);
 }
 
@@ -98,5 +116,17 @@ void MemLogMarker::getAliveAllocsExclusive(AllocVectorType* aliveOut) const {
     for (auto i = heapView_.begin(), iend = heapView_.end(); i != iend; ++i)
     {
         aliveOut->push_back(*i);
+    }
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void MemLogMarker::eraseAllocInclusive(const AllocRecord& allocr) {
+    if (heapView_.find(allocr) != heapView_.end()) {
+        heapView_.erase(allocr);
+    }
+    for (auto i=children_.begin(), n=children_.end(); i!=n; ++i) {
+        (*i)->eraseAllocInclusive(allocr);
     }
 }

@@ -1,0 +1,28 @@
+package Heart.proto;
+
+option optimize_for = LITE_RUNTIME;
+
+enum ResourceType {
+	eResourceType_None = 0;
+	eResourceType_GPUProgram = 1;
+	eResourceType_Texture = 2;
+}
+
+enum ResourceSectionType {
+	eResourceSection_Temp = 0;
+	eResourceSection_Persistent = 1;
+	eResourceSection_VRAM = 2;
+}
+
+message ResourceSection {
+	optional ResourceSectionType type = 1;
+	optional uint64 size = 2;
+}
+
+message ResourceHeader {
+	required ResourceType type = 1 [default = eResourceType_None];
+	optional string sourceFile = 2;
+	optional string author = 3;
+	repeated ResourceSection sections = 4;
+}
+
