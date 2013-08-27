@@ -252,10 +252,11 @@ int MB_API materialCompile(lua_State* L) {
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+    std::vector<std::string> openedfiles;
     MaterialHeader matHeader = {0};
     MaterialData matData;
     boost::system::error_code ec;
-    const hChar* filepath=hNullptr;
+    std::string filepath;
     rapidxml::xml_document<> xmldoc;
     hUint filesize=0;
     StrVectorType depresnames;
@@ -271,9 +272,9 @@ int MB_API materialCompile(lua_State* L) {
     filepath=lua_tostring(L, -1);
     lua_pop(L, 1);
 
-    filesize=(hUint)boost::filesystem::file_size(filepath, ec);
+    filesize=(hUint)boost::filesystem::file_size(filepath.c_str(), ec);
     if (ec) {
-        luaL_error(L, "Unable to get file size for file %s", filepath);
+        luaL_error(L, "Unable to get file size for file %s", filepath.c_str());
         return 0;
     }
 
@@ -281,13 +282,13 @@ int MB_API materialCompile(lua_State* L) {
     std::ifstream infile;
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_error(L, "Unable to open file %s", filepath);
+        luaL_error(L, "Unable to open file %s", filepath.c_str());
         return 0;
     }
     memset(xmlmem.get(), 0, filesize+1);
     infile.read(xmlmem.get(), filesize);
     infile.close();
-
+    openedfiles.push_back(filepath);
     try {
         xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
     } catch (...) {
@@ -295,7 +296,11 @@ int MB_API materialCompile(lua_State* L) {
         return 0;
     }
 
-    readMaterialXMLToMaterialData(xmldoc, filepath, &matData, &includes, &depresnames);
+    readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &matData, &includes, &depresnames);
+
+    for (auto i=includes.begin(),n=includes.end(); i!=n; ++i) {
+        openedfiles.push_back(*i);
+    }
 
     matData.header_.samplerCount=(hByte)matData.samplers_.size();
     matData.header_.samplerOffset=0;
@@ -356,14 +361,20 @@ int MB_API materialCompile(lua_State* L) {
     //Return a list of resources this material is dependent on
     lua_newtable(L);
     hUint idx=1;
-    for (StrVectorType::iterator i=depresnames.begin(),n=depresnames.end(); i!=n; ++i) {
+    for (auto i=depresnames.begin(),n=depresnames.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
 
-    // return 1 list
-    return 1;
+    lua_newtable(L); // push table of input files we depend on (absolute paths)
+    idx=1;
+    for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 2;
 }
 
 int MB_API materialScanIncludes(lua_State* L) {

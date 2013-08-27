@@ -29,6 +29,8 @@
 #include "cryptoBase64.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/filesystem.hpp>
+#include <string>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -111,6 +113,8 @@ int MB_API meshCompile(lua_State* L)
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+    std::vector<std::string> openedfiles;
+
     lua_rawgeti(L, 1, 1);
     if (!lua_isstring(L, -1)) {
         luaL_error(L, "input file is not a string");
@@ -119,7 +123,8 @@ int MB_API meshCompile(lua_State* L)
     lua_getglobal(L, "buildpathresolve");
     lua_pushvalue(L, -2);
     lua_call(L, 1, 1);
-    const hChar* filepath=lua_tostring(L, -1);
+
+    std::string filepath=lua_tostring(L, -1);
     hUint filesize;
     MeshHeader header = {0};
     system::error_code ec;
@@ -128,16 +133,16 @@ int MB_API meshCompile(lua_State* L)
     shared_array<LODInfo> lodInfo;
     hUint32 lodIdx;
     std::list< std::string > dependentres;
-    hChar* pathroot = (hChar*)hAlloca(strlen(filepath));
+    hChar* pathroot = (hChar*)hAlloca(strlen(filepath.c_str()));
 
     hChar* end = strrchr(pathroot, '/');
     if (end == NULL) 
         pathroot[0] = 0;
     else 
         end = NULL;
-    filesize=(hUint)filesystem::file_size(filepath, ec);
+    filesize=(hUint)filesystem::file_size(filepath.c_str(), ec);
     if (ec) {
-        luaL_error(L, "Failed to read % file size", filepath);
+        luaL_error(L, "Failed to read % file size", filepath.c_str());
         return 0;
     }
     std::ifstream infile;
@@ -147,6 +152,8 @@ int MB_API meshCompile(lua_State* L)
         luaL_error(L, "Couldn't open file %s", filepath);
         return 0;
     }
+
+    openedfiles.push_back(filepath);
 
     xmlmem = shared_array<hChar>(new hChar[filesize+1]);
     infile.read(xmlmem.get(), filesize);
@@ -218,12 +225,19 @@ int MB_API meshCompile(lua_State* L)
     dependentres.unique();
     lua_newtable(L);
     hUint idx=1;
-    for (std::list< std::string >::iterator i=dependentres.begin(),n=dependentres.end(); i!=n; ++i) {
+    for (auto i=dependentres.begin(),n=dependentres.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-    return 1;
+    lua_newtable(L); // push table of input files we depend on (absolute paths)
+    idx=1;
+    for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 2;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -30,6 +30,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/smart_ptr.hpp>
 #include <fstream>
+#include <string>
 
 using namespace Heart;
 
@@ -154,8 +155,9 @@ int TB_API textureCompile(lua_State* L) {
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+    std::vector<std::string> openedfiles;
     RawTextureData textureData;
-    const hChar* filepath=hNullptr;
+    std::string filepath;
     hBool gammaCorrect = hFalse;
     hBool buildMips = hFalse;
     hBool keepcpu = hFalse;
@@ -171,11 +173,12 @@ int TB_API textureCompile(lua_State* L) {
     filepath=lua_tostring(L, -1);
     lua_pop(L, 1);
 
-    if (!ReadDDSFileData(filepath, &textureData)) {
+    if (!ReadDDSFileData(filepath.c_str(), &textureData)) {
         luaL_error(L, "Unable to read DDS file");
         return 0;
     }
     ddsInput = hTrue;
+    openedfiles.push_back(filepath);
 
     lua_getfield(L, 3, "sRGB");
     if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
@@ -240,7 +243,7 @@ int TB_API textureCompile(lua_State* L) {
     const hChar* outputpath=lua_tostring(L, -1);
     std::ofstream output;
     output.open(outputpath, std::ios_base::out|std::ios_base::binary);
-
+    lua_pop(L, 1);//pop the return of the stack
     if (!output.is_open()) {
         luaL_error(L, "Unable to open output file %s for writing", outputpath);
         return 0;
@@ -277,7 +280,14 @@ int TB_API textureCompile(lua_State* L) {
     }
     output.close();
     lua_newtable(L); // push empty table, this resource won't have any dependencies
-    return 1;
+    lua_newtable(L); // push table of input files we depend on (absolute paths)
+    hUint idx=1;
+    for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
+        lua_pushstring(L, i->c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 2;
 }
 
 //////////////////////////////////////////////////////////////////////////

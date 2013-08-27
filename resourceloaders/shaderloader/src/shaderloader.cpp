@@ -373,7 +373,15 @@ int SB_API shaderCompiler(lua_State* L) {
     lua_pop(L, 1);
 
     lua_newtable(L); // push empty table of resources this is dependent on (which is always none)
-    return 1;
+
+    lua_newtable(L); // push table of files files that where included by 
+    hUint idx=1;
+    for (FXIncludeHandler::IncludeMap::iterator i=includeHandler.includedFiles_.begin(), n=includeHandler.includedFiles_.end(); i!=n; ++i) {
+        lua_pushstring(L, i->second.fullpath_.generic_string().c_str());
+        lua_rawseti(L, -2, idx);
+        ++idx;
+    }
+    return 2;
 }
 
 //////////////////////////////////////////////////////////////////////////
