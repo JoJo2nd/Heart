@@ -12,13 +12,13 @@ databuilder.addresource{
     restype="mesh",
     inputfiles={"src://mesh/boco.mdf"},
 }
-infiles={"src://shaders/boco_inst.c"}
+infiles={"src://shaders/boco_inst.hlsl"}
 progparams={
     entry="mainFP",
     profile="ps_4_0",
     defines={},
 }
-depfiles = gpuprog.preprocess("src://shaders/boco_inst.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/boco_inst.hlsl", progparams)
 databuilder.addresource{
     package="UNITTEST",
     resname="BOCO_FP",
@@ -27,13 +27,13 @@ databuilder.addresource{
     depfiles=depfiles,
     parameters=progparams
 }
-infiles={"src://shaders/boco_inst.c"}
+infiles={"src://shaders/boco_inst.hlsl"}
 progparams={
     entry="mainVP",
     profile="vs_4_0",
     defines={},
 }
-depfiles = gpuprog.preprocess("src://shaders/boco_inst.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/boco_inst.hlsl", progparams)
 databuilder.addresource{
     package="UNITTEST",
     resname="BOCO_VP",
@@ -56,7 +56,7 @@ databuilder.addresource{
 --    restype="font",
 --    inputfiles={"src://fonts/debug/debug.fnt"},
 --    parameters={
---        headeroutput="src://debug_font_data.c"
+--        headeroutput="src://debug_font_data.hlsl"
 --    },
 --}
 databuilder.addresource{

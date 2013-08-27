@@ -20,13 +20,13 @@ databuilder.addresource{
     inputfiles={materialpath,},
     depfiles=material.scanincludes(materialpath),
 }
-infiles={"src://shaders/boco_inst.c"}
+infiles={"src://shaders/boco_inst.hlsl"}
 progparams={
     entry="mainFP",
     profile="ps_4_0",
     defines={},
 }
-depfiles = gpuprog.preprocess("src://shaders/boco_inst.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/boco_inst.hlsl", progparams)
 databuilder.addresource{
     package="INSTANCETEST",
     resname="BOCO_FP",
@@ -35,13 +35,13 @@ databuilder.addresource{
     depfiles=depfiles,
     parameters=progparams
 }
-infiles={"src://shaders/boco_inst.c"}
+infiles={"src://shaders/boco_inst.hlsl"}
 progparams={
     entry="mainInstVP",
     profile="vs_4_0",
     defines={},
 }
-depfiles = gpuprog.preprocess("src://shaders/boco_inst.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/boco_inst.hlsl", progparams)
 databuilder.addresource{
     package="INSTANCETEST",
     resname="BOCO_VP",

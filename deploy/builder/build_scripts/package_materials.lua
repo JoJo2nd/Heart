@@ -41,7 +41,7 @@ databuilder.addresource{
 }
 
 -- Common Materials & Shaders
-infiles={"src://shaders/sibenik.c"}
+infiles={"src://shaders/sibenik.hlsl"}
 progparams={
     entry="mainColFP",
     profile="ps_4_0",
@@ -49,7 +49,7 @@ progparams={
         TESTDEFINE="1",
     },
 }
-depfiles = gpuprog.preprocess("src://shaders/sibenik.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/sibenik.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLINNPHONGCOL_FP",
@@ -59,11 +59,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/sibenik.c"}
+infiles={"src://shaders/sibenik.hlsl"}
 progparams.entry="mainColVP"
 progparams.profile="vs_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/sibenik.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/sibenik.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLINNPHONGCOL_VP",
@@ -73,11 +73,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/sibenik.c"}
+infiles={"src://shaders/sibenik.hlsl"}
 progparams.entry="mainFP"
 progparams.profile="ps_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/sibenik.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/sibenik.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLINNPHONG_FP",
@@ -87,11 +87,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/sibenik.c"}
+infiles={"src://shaders/sibenik.hlsl"}
 progparams.entry="mainVP"
 progparams.profile="vs_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/sibenik.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/sibenik.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLINNPHONG_VP",
@@ -101,11 +101,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/minecraft_style.c"}
+infiles={"src://shaders/minecraft_style.hlsl"}
 progparams.entry="mainAlphaCutoutFP"
 progparams.profile="ps_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/minecraft_style.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/minecraft_style.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="MINEALPHATESTFP",
@@ -115,11 +115,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/minecraft_style.c"}
+infiles={"src://shaders/minecraft_style.hlsl"}
 progparams.entry="mainFP"
 progparams.profile="ps_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/minecraft_style.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/minecraft_style.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="MINEFP",
@@ -129,11 +129,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/minecraft_style.c"}
+infiles={"src://shaders/minecraft_style.hlsl"}
 progparams.entry="mainVP"
 progparams.profile="vs_4_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/minecraft_style.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/minecraft_style.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="MINEVP",
@@ -143,11 +143,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/perlin.c"}
+infiles={"src://shaders/perlin.hlsl"}
 progparams.entry="csPerlinNoise"
 progparams.profile="cs_5_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/perlin.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/perlin.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="PERLIN_CS",
@@ -157,11 +157,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/blur_blit.c"}
+infiles={"src://shaders/blur_blit.hlsl"}
 progparams.entry="mainVP"
 progparams.profile="vs_5_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/blur_blit.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/blur_blit.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLUR_BLIT_VP",
@@ -171,11 +171,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/blur_blit.c"}
+infiles={"src://shaders/blur_blit.hlsl"}
 progparams.entry="BlitColor_PS"
 progparams.profile="ps_5_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/blur_blit.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/blur_blit.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="BLUR_BLIT_FP",
@@ -185,11 +185,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/deferred_light.c"}
+infiles={"src://shaders/deferred_light.hlsl"}
 progparams.entry="vertexMain"
 progparams.profile="vs_5_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/deferred_light.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/deferred_light.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="DEFERRED_VS",
@@ -199,11 +199,11 @@ databuilder.addresource{
     parameters=progparams
 }
 --
-infiles={"src://shaders/deferred_light.c"}
+infiles={"src://shaders/deferred_light.hlsl"}
 progparams.entry="pixelMain"
 progparams.profile="ps_5_0"
 defines={}
-depfiles = gpuprog.preprocess("src://shaders/deferred_light.c", progparams)
+depfiles = gpuprog.preprocess("src://shaders/deferred_light.hlsl", progparams)
 databuilder.addresource{
     package="MATERIALS",
     resname="DEFERRED_PS",
