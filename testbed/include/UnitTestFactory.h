@@ -76,7 +76,7 @@
     IUnitTest* klass::FactoryCreator(Heart::hHeartEngine* engine)\
     {\
         hcPrintf("Starting Test %s", s_className_);\
-        return hNEW(Heart::GetGlobalHeap(), klass)(engine);\
+        return hNEW(klass)(engine);\
     }\
 
 #define REGISTER_UNIT_TEST(klass)\

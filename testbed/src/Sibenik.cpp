@@ -366,6 +366,23 @@ void Sibenik::DestroyRenderResources()
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->releaseRenderTargetSetup();
+
+    if (albedoSRV_) {
+        albedoSRV_->DecRef();
+        albedoSRV_=hNullptr;
+    }
+    if (normalSRV_) {
+        normalSRV_->DecRef();
+        normalSRV_=hNullptr;
+    }
+    if (specSRV_) {
+        specSRV_->DecRef();
+        specSRV_=hNullptr;
+    }
+    if (depthSRV_) {
+        depthSRV_->DecRef();
+        depthSRV_=hNullptr;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -72,9 +72,31 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.onShutdown_ = HeartAppOnShutdown;
 
     while (strstr(lpCmdLine, "-debug")) {}
+// 
+//     char* leak = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     char* dontleak1 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     char* dontleak2 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+// 
+//     Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
+// 
+//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak1);
+//     char* dontleak3 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     char* leak2 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     char* dontleak4 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak4);
+// 
+//     Heart::hMemTracking::TrackPopMarker();
+// 
+//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak2);
+//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak3);
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
     
+    Heart::proto::ResourceHeader resheader;
+    resheader.set_type(Heart::proto::eResourceType_GPUProgram);
+    resheader.set_author("james.moran");
+    resheader.set_sourcefile("~/shaders/ashader.hlsl");
+
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
     hHeartShutdownEngine(engine);
