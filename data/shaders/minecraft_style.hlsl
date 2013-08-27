@@ -9,7 +9,7 @@ date: YYMMDD
 
 */
 
-#include "hGlobalConstants.h"
+#include "hGlobalConstants.hlsl"
 
 #define SUN_DIR (normalize(float3(0.1, -.9, -0.1)))
 

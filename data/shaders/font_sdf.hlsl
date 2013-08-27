@@ -9,7 +9,7 @@ date: YYMMDD
 
 */
 
-#include "hGlobalConstants.h"
+#include "hGlobalConstants.hlsl"
 
 cbuffer FontParams
 {

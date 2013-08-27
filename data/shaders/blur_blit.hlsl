@@ -1,5 +1,5 @@
 
-#include "hGlobalConstants.h"
+#include "hGlobalConstants.hlsl"
 
 // R11G11B10 texture containing the filtered image
 Texture2D<uint>		texColorInput;

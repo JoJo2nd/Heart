@@ -1,5 +1,5 @@
-#include "hGlobalConstants.h"
-#include "shader_utils.h"
+#include "hGlobalConstants.hlsl"
+#include "shader_utils.hlsl"
 
 SamplerState tex_sampler;
 Texture2D gbuffer_albedo;

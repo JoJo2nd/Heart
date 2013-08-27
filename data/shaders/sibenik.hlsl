@@ -1,4 +1,4 @@
-#include "hGlobalConstants.h"
+#include "hGlobalConstants.hlsl"
 
 #define SUN_DIR (normalize(float3(0.4, -.6, -0.1)))
 
