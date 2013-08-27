@@ -85,6 +85,11 @@ set(TOOLS_SRC_ROOT
 set(HEART_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/heart"
 )
+set(GENERATED_PROTO_INC_DIRS
+    "${CMAKE_BINARY_DIR}/tools/proto"
+    #add more as needed
+)
+
 if (WIN32)
 	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32)
 	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
@@ -120,6 +125,20 @@ else()
 	set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${EXTERNAL_SRC_ROOT}/boost")
 	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${EXTERNAL_SRC_ROOT}/boost/stage/lib")
 endif()
+
+# Add proto buffers
+set(PROTOBUF_INCLUDE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/include"
+)
+set(PROTOBUF_LIBRARY
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf-lite.lib"
+)
+set(PROTOBUF_LIBRARY_DEBUG
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf-lite.lib"
+)
+set(PROTOBUF_PROTOC_EXECUTABLE
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/bin/protoc.exe"
+)
 
 project(HEART)
 
@@ -158,5 +177,8 @@ add_subdirectory("tools/lualibs/luasocket")
 add_subdirectory("tools/lualibs/mime")
 add_subdirectory("tools/lualibs/luaxml")
 
+add_subdirectory("tools/proto")
 add_subdirectory("tools/memtrack")
 add_subdirectory("tools/viewer")
+
+message(${CMAKE_BINARY_DIR})
