@@ -88,13 +88,16 @@ namespace Heart
                 read_ = ring_+((hUint32)rhs.read_-(hUint32)rhs.ring_);
                 newLines_ = rhs.newLines_;
             }
-            hStringRingBuffer& operator = (const hStringRingBuffer& rhs)
+            hStringRingBuffer& operator = (const hStringRingBuffer rhs)
             {
-                hMemCpy(ring_,rhs.ring_,t_size);
-                write_ = ring_+((hUint32)rhs.write_-(hUint32)rhs.ring_);
-                read_ = ring_+((hUint32)rhs.read_-(hUint32)rhs.ring_);
-                newLines_ = rhs.newLines_;
+                swap(*this, rhs);
                 return *this;
+            }
+            void swap(hStringRingBuffer& lhs, hStringRingBuffer& rhs) {
+                std::swap(lhs.write_, rhs.write_);
+                std::swap(lhs.read_, rhs.read_);
+                std::swap(lhs.newLines_, rhs.newLines_);
+                std::swap(lhs.ring_, rhs.ring_);
             }
             void   pushChar(const hChar& x)
             {

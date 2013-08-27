@@ -2372,7 +2372,7 @@ static void internal_malloc_stats(mstate m, size_t* peak, size_t* curr, size_t* 
 #else /* ONLY_MSPACES */
 #if MSPACES
 #define internal_malloc(m, b)\
-   (m == gm)? dlmalloc(b) : mspace_malloc(m, b)
+   ((m == gm)? dlmalloc(b) : mspace_malloc(m, b))
 #define internal_free(m, mem)\
    if (m == gm) dlfree(mem); else mspace_free(m,mem);
 #else /* MSPACES */
@@ -3353,7 +3353,7 @@ void* dlmalloc(size_t bytes) {
       bindex_t idx;
       binmap_t smallbits;
       nb = (bytes < MIN_REQUEST)? MIN_CHUNK_SIZE : pad_request(bytes);
-      idx = small_index(nb);
+      idx = (bindex_t)small_index(nb);
       smallbits = gm->smallmap >> idx;
 
       if ((smallbits & 0x3U) != 0) { /* Remainderless fit to a smallbin. */
@@ -3655,7 +3655,8 @@ struct mallinfo dlmallinfo(void) {
 #endif /* NO_MALLINFO */
 
 void dlmalloc_stats() {
-  internal_malloc_stats(gm);
+  size_t peak,curr,allocd;
+  internal_malloc_stats(gm, &peak, &curr, &allocd);
 }
 
 int dlmallopt(int param_number, int value) {
@@ -4136,18 +4137,19 @@ HEART_DLLEXPORT size_t HEART_API mspace_usable_size(void* mem) {
 
 HEART_DLLEXPORT size_t HEART_API mspace_allocate_size( void* mem )
 {
-// 	if (mem != 0) 
-// 	{
-// 		mchunkptr p = mem2chunk(mem);
-// 		if (is_inuse(p))
-// 			return chunksize(p);
-// 	}
-// 	return 0;
 	return mspace_usable_size(mem);
 }
 
 HEART_DLLEXPORT int HEART_API mspace_valid_pointer(mspace msp,void* mem)
 {
+#if defined (FOOTERS)
+    mchunkptr p  = mem2chunk(mem);
+    mstate fm = get_mstate_for(p);
+    if (!ok_magic(fm)) {
+        return 0;
+    }
+    return fm==(mstate)msp;
+#else
 	mstate ms = (mstate)msp;
 	char* c = (char*)mem;
 	if (mem != 0)
@@ -4163,6 +4165,7 @@ HEART_DLLEXPORT int HEART_API mspace_valid_pointer(mspace msp,void* mem)
 	}
 
 	return 0;
+#endif
 }
 
 HEART_DLLEXPORT int HEART_API mspace_mallopt(int param_number, int value) {

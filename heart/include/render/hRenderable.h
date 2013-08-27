@@ -50,6 +50,12 @@ namespace Heart
         }
         virtual ~hRenderable() 
         {
+            for (hUint i=0, n=inputLayouts_.GetSize(); i<n; ++i) {
+                if (inputLayouts_[i]) {
+                    inputLayouts_[i]->Release();
+                    inputLayouts_[i]=NULL;
+                }
+            }
         }
 
         hUint                                   getVertexBufferCount() const { return vertexBuffer_.GetSize(); }

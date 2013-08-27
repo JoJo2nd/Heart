@@ -34,10 +34,10 @@ namespace Heart
 
     hResourceClassBase* hSoundResource::OnSoundLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
-        hSoundResource* sound = hNEW(GetGlobalHeap()/*!heap*/, hSoundResource);
+        hSoundResource* sound = hNEW(hSoundResource);
         if ( !sound->DecodeVorbisHeader( dataStream ) )
         {
-            hDELETE(GetGlobalHeap()/*!heap*/, sound);
+            hDELETE(sound);
             sound = NULL;
         }
         return sound;
@@ -51,7 +51,7 @@ namespace Heart
     {
         hSoundResource* sound = static_cast<hSoundResource*>(resource);
 
-        hDELETE(GetGlobalHeap()/*!heap*/, sound);
+        hDELETE(sound);
         return 0;
     }
 

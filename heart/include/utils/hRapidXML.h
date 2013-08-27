@@ -50,35 +50,23 @@ namespace Heart
     public:
         hXMLDocument()
             : data_(NULL)
-            , heap_(NULL)
         {
             set_allocator( hXML_alloc_func, hXML_free_func );
         }
 
         ~hXMLDocument()
         {
-            if (heap_)
-            {
-                hHeapFreeSafe(heap_, data_);
-            }
+            hFreeSafe(data_);
         }
 
         template< hUint32 flags >
-        hBool ParseSafe( hChar* data, hMemoryHeapBase* heap )
+        hBool ParseSafe(hChar* data)
         {
-            if (heap_)
-            {
-                hHeapFreeSafe(heap_, data_);
-            }
-
+            hFreeSafe(data_);
             data_ = data;
-            heap_ = heap;
-            try
-            {
+            try {
                 parse< flags >( data );
-            }
-            catch( ... )
-            {
+            } catch( ... ) {
                 return hFalse;
             }
             return hTrue;
@@ -90,7 +78,6 @@ namespace Heart
         hXMLDocument& operator = ( const hXMLDocument& rhs );
 
         hChar*           data_;
-        hMemoryHeapBase* heap_;
     };
 
     struct hXMLEnumReamp

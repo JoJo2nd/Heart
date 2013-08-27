@@ -46,6 +46,8 @@ namespace Heart
 
     hHeartEngine::hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig)
     {
+        GOOGLE_PROTOBUF_VERIFY_VERSION;
+
         if (rootdir) hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), rootdir);
         else hSysCall::GetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
 
@@ -57,18 +59,18 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        mainPublisherCtx_ = hNEW(GetGlobalHeap(), hPublisherContext);
-        jobManager_ = hNEW_ALIGN(GetGlobalHeap(), 32, hJobManager);
-        controllerManager_ = hNEW(GetGlobalHeap() , hControllerManager);
-        system_ = hNEW(GetGlobalHeap(), hSystem);
-        fileMananger_ = hNEW(GetGlobalHeap(), hDriveFileSystem)(workingDir_);
-        resourceMananger_ = hNEW(GetGlobalHeap(), hResourceManager);
-        renderer_ = hNEW(GetGlobalHeap(), hRenderer);
-        soundManager_ = hNEW(GetGlobalHeap(), hSoundManager);
-        console_ = hNEW(GetGlobalHeap(), hSystemConsole)(consoleCb, consoleUser);
-        luaVM_ = hNEW(GetGlobalHeap(), hLuaStateManager);
-        entityFactory_ = hNEW(GetGlobalHeap(), hEntityFactory);
-        debugMenuManager_ = hNEW(GetDebugHeap(), hDebugMenuManager);
+        mainPublisherCtx_ = hNEW(hPublisherContext);
+        jobManager_ = hNEW(hJobManager);
+        controllerManager_ = hNEW(hControllerManager);
+        system_ = hNEW(hSystem);
+        fileMananger_ = hNEW(hDriveFileSystem)(workingDir_);
+        resourceMananger_ = hNEW(hResourceManager);
+        renderer_ = hNEW(hRenderer);
+        soundManager_ = hNEW(hSoundManager);
+        console_ = hNEW(hSystemConsole)(consoleCb, consoleUser);
+        luaVM_ = hNEW(hLuaStateManager);
+        entityFactory_ = hNEW(hEntityFactory);
+        debugMenuManager_ = hNEW(hDebugMenuManager);
 
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
@@ -89,7 +91,7 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         
         hcSetOutputStringCallback(hSystemConsole::PrintConsoleMessage);
-        mainPublisherCtx_->initialise(GetGlobalHeap(), 1024*1024);
+        mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
         jobManager_->Initialise();
         controllerManager_->Initialise(system_);
@@ -111,7 +113,7 @@ namespace Heart
         luaVM_->Initialise();
         entityFactory_->initialise( fileMananger_, resourceMananger_, this );
 
-        g_ProfilerManager_ = hNEW(GetDebugHeap(), hProfilerManager)();
+        g_ProfilerManager_ = hNEW(hProfilerManager)();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
@@ -145,7 +147,7 @@ namespace Heart
         console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
         debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
 
-        debugInfo_ = hNEW(GetDebugHeap(), hDebugInfo)(this);
+        debugInfo_ = hNEW(hDebugInfo)(this);
         debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
         debugMenuManager_->SetMenuVisiablity("dbinfo", true);
 
@@ -298,21 +300,25 @@ namespace Heart
         luaVM_->Destroy();
         renderer_->Destroy();
 
-        hDELETE_SAFE(GetDebugHeap(), debugInfo_);
-        hDELETE_SAFE(GetDebugHeap(), g_ProfilerManager_);
-        hDELETE_SAFE(GetDebugHeap(), debugMenuManager_);
-        hDELETE_SAFE(GetGlobalHeap(), entityFactory_);
-        hDELETE_SAFE(GetGlobalHeap(), luaVM_);
-        hDELETE_SAFE(GetGlobalHeap(), console_);
-        hDELETE_SAFE(GetGlobalHeap(), resourceMananger_);
-        hDELETE_SAFE(GetGlobalHeap(), soundManager_);
-        hDELETE_SAFE(GetGlobalHeap(), renderer_);
-        hDELETE_SAFE(GetGlobalHeap(), controllerManager_);
-        hDELETE_SAFE(GetGlobalHeap(), fileMananger_);
-        hDELETE_ALIGNED(GetGlobalHeap(), jobManager_);
-        hDELETE_SAFE(GetGlobalHeap(), mainPublisherCtx_);
-        hDELETE_SAFE(GetGlobalHeap(), system_);
+        //hDELETE_SAFE(GetGlobalHeap(), debugInfo_);
+        hDELETE_SAFE(g_ProfilerManager_);
+        hDELETE_SAFE(debugMenuManager_);
+        hDELETE_SAFE(entityFactory_);
+        hDELETE_SAFE(luaVM_);
+        hDELETE_SAFE(console_);
+        hDELETE_SAFE(resourceMananger_);
+        hDELETE_SAFE(soundManager_);
+        hDELETE_SAFE(renderer_);
+        hDELETE_SAFE(controllerManager_);
+        hDELETE_SAFE(fileMananger_);
+        hDELETE_SAFE(jobManager_);
+        hDELETE_SAFE(mainPublisherCtx_);
+        hDELETE_SAFE(system_);
 
+        hDebugDraw::release();
+
+        // Delete all global objects allocated by libprotobuf.
+        google::protobuf::ShutdownProtobufLibrary();
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -406,7 +412,7 @@ namespace Heart
     deviceConfig.instance_ = hInstance;
     deviceConfig.hWnd_ = hWnd;
 
-    Heart::hHeartEngine* engine = hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (NULL, NULL, NULL, &deviceConfig);
+    Heart::hHeartEngine* engine = hNEW(Heart::hHeartEngine) (NULL, NULL, NULL, &deviceConfig);
 
     engine->sharedLib_ = Heart::hd_OpenSharedLib(appLib);
 
@@ -451,7 +457,7 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCall
     deviceConfig.hWnd_ = hWnd;
 
     Heart::hHeartEngine* engine = 
-        hNEW(Heart::GetGlobalHeap(), Heart::hHeartEngine) (callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
+        hNEW(Heart::hHeartEngine) (callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
 
     engine->firstLoaded_        = callbacks->firstLoaded_;
     engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;
@@ -476,30 +482,6 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCall
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void initialiseBaseMemoryHeaps()
-{
-    static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
-    static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
-    static hByte g_luaMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
-
-#ifdef HEART_TRACK_MEMORY_ALLOCS
-    Heart::hMemTracking::InitMemTracking();
-#endif
-
-    Heart::SetGlobalHeap(hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap"));
-    Heart::SetDebugHeap(hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap"));
-    Heart::SetLuaHeap(hPLACEMENT_NEW(g_luaMemoryPoolSpace) Heart::hMemoryHeap("LuaHeap"));
-
-    // It important that the debug heap is created first
-    Heart::GetDebugHeap()->create(1024*1024,hFalse);
-    Heart::GetGlobalHeap()->create(1024*1024,hFalse);
-    Heart::GetLuaHeap()->create(1024*1024,hTrue);
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 HEART_DLLEXPORT 
 hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* engine )
 {
@@ -519,5 +501,5 @@ void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* engine )
 {
     Heart::hd_CloseSharedLib(engine->sharedLib_);
 
-    hDELETE(Heart::GetGlobalHeap(), engine);
+    hDELETE(engine);
 }

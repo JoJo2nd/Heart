@@ -145,12 +145,12 @@ namespace Heart
         /*
             pimpl methods
         */
-        void  compileShaderFromSource(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram** out);
-        void  createShader(hMemoryHeapBase* heap, const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out);
-        void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hMemoryHeapBase* heap, hTexture** outTex);
+        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram** out);
+        void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out);
+        void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
         void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
         void  createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
-        void  createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hMemoryHeapBase* heap, hVertexBuffer** outVB);
+        void  createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
         void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
         void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
         void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
@@ -294,7 +294,7 @@ namespace Heart
             , samplerState_(hNullptr)
             , samplerBindPoint_(0)
         {
-            
+            activeSphereLights_.SetAutoDelete(false);
         }
         ~hLightingManager()
         {

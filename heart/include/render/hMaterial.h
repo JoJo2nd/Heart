@@ -145,7 +145,7 @@ namespace Heart
     {
     public:
 
-        hMaterial(hMemoryHeapBase* heap, hRenderer* renderer);
+        hMaterial(hRenderer* renderer);
         ~hMaterial();
 
         hRenderMaterialManager* GetManager() const { return manager_; }
@@ -194,9 +194,9 @@ namespace Heart
 
         void initConstBlockBufferData(const hConstantBlockDesc& desc, const hShaderProgram* prog, void* outdata);
         void generateRenderCommands();
+        void releaseRenderCommands();
         void updateRenderCommands();
 
-        hMemoryHeapBase*                    memHeap_;
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;
         hRenderMaterialManager*             manager_;

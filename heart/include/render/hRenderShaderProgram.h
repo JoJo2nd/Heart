@@ -36,9 +36,8 @@ namespace Heart
     {
     public:
         hFUNCTOR_TYPEDEF(void(*)(hShaderProgram*), hZeroProc);
-        hShaderProgram(hdRenderDevice* device, hMemoryHeapBase* heap, hZeroProc zeroproc) 
+        hShaderProgram(hdRenderDevice* device, hZeroProc zeroproc) 
             : hdShaderProgram(device)
-            , heap_(heap)
             , shaderType_(ShaderType_MAX)
             , zeroProc_(zeroproc)
         {
@@ -56,7 +55,7 @@ namespace Heart
             zeroProc_(this);
         }
         friend class hRenderer;
-        hMemoryHeapBase*    heap_;
+
         hZeroProc           zeroProc_;
         hShaderType         shaderType_;
     };

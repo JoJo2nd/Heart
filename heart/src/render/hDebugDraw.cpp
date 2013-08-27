@@ -127,13 +127,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
+    hThreadLocal static hDebugDraw* g_debugDraw = hNullptr;
 
     hDebugDraw* hDebugDraw::it() {
-        hThreadLocal static hDebugDraw* debugDraw = hNullptr;
-        if (!debugDraw) {
-            debugDraw=hNEW(GetGlobalHeap(), hDebugDraw)();
+        if (!g_debugDraw) {
+            g_debugDraw=hNEW(hDebugDraw)();
         }
-        return debugDraw;
+        return g_debugDraw;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugDraw::release() {
+        hDELETE_SAFE(g_debugDraw);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -146,6 +154,18 @@ namespace Heart
         strings_.Resize(0);
         texQuads_.Resize(0);
         txtBuffer_.Resize(0);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugPrimsSet::clear() {
+        lines_.Clear();
+        tris_.Clear();
+        strings_.Clear();
+        texQuads_.Clear();
+        txtBuffer_.Clear();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -184,10 +204,10 @@ namespace Heart
         debugPosColUVMat_=matmgr->getDebugPosColUVMat();
         debugPosColAlphaMat_=matmgr->getDebugPosColAlphaMat();
         debugPosColUVAlphaMat_=matmgr->getDebugPosColUVAlphaMat();
-        debugFont_=hNEW(GetGlobalHeap(), hFont)(GetGlobalHeap());
-        hRenderUtility::createDebugFont(renderer, debugFont_, &debugFontTex_, GetGlobalHeap());
-        renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoldesc, (hUint)hArraySize(poscoldesc), RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &posColBuffer_);
-        renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoluvdesc, (hUint)hArraySize(poscoluvdesc), RESOURCEFLAG_DYNAMIC, GetGlobalHeap(), &posColUVBuffer_);
+        debugFont_=hNEW(hFont)();
+        hRenderUtility::createDebugFont(renderer, debugFont_, &debugFontTex_);
+        renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoldesc, (hUint)hArraySize(poscoldesc), RESOURCEFLAG_DYNAMIC, &posColBuffer_);
+        renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoluvdesc, (hUint)hArraySize(poscoluvdesc), RESOURCEFLAG_DYNAMIC, &posColUVBuffer_);
         hShaderResourceViewDesc srvdesc;
         hZeroMem(&srvdesc, sizeof(srvdesc));
         srvdesc.format_=debugFontTex_->getTextureFormat();
@@ -278,6 +298,56 @@ namespace Heart
 
         resourcesCreated_=true;
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hDebugDrawRenderer::destroyResources() {
+        if (resourcesCreated_) {
+            if (debugFontTex_) {
+                debugFontTex_->DecRef();
+                debugFontTex_=hNullptr;
+            }
+            hDELETE_SAFE(debugFont_);
+
+            if (posColBuffer_) {
+                posColBuffer_->DecRef();
+                posColBuffer_=hNullptr;
+            }
+            if (posColUVBuffer_) {
+                posColUVBuffer_->DecRef();
+                posColBuffer_=hNullptr;
+            }
+            if (colourView_) {
+                colourView_->DecRef();
+                colourView_=hNullptr;
+            }
+            if (depthView_) {
+                depthView_->DecRef();
+                depthView_=hNullptr;
+            }
+            if (debugFontSRV_) {
+                debugFontSRV_->DecRef();
+                debugFontSRV_=hNullptr;
+            }
+            posColRdrLineCmds_.release();
+            posColRdrCmds_.release();
+            posColUVRdrCmds_.release();
+            textRdrCmds_.release();
+            posColAlphaRdrCmds_.release();
+            posColAlphaRdrLineCmds_.release();
+            posColUVAlphaRdrCmds_.release();
+
+            //Reset everything
+            for (hUint32 i=0; i<eDebugSet_Max; ++i) {
+                debugPrims_[i].clear();
+            }
+
+            resourcesCreated_ = false;
+        }
+    }
+
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

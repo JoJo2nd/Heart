@@ -41,9 +41,8 @@ namespace Heart
     {
     public:
         hFUNCTOR_TYPEDEF(void(*)(hTexture*), hZeroRefProc);
-        hTexture(hZeroRefProc zeroproc, hRenderResourceType type, hMemoryHeapBase* heap) 
-            : heap_(heap)
-            , zeroProc_(zeroproc)
+        hTexture(hZeroRefProc zeroproc, hRenderResourceType type) 
+            : zeroProc_(zeroproc)
             , keepcpu_(hFalse)
             , singleAlloc_(hTrue)
             , levelDescs_(NULL)
@@ -53,7 +52,7 @@ namespace Heart
         {
             ReleaseCPUTextureData();
 
-            hDELETE_ARRAY_SAFE(heap_, levelDescs_);
+            hDELETE_ARRAY_SAFE(levelDescs_);
         }
 
         struct LevelDesc
@@ -88,7 +87,6 @@ namespace Heart
         hTexture( const hTexture& c );
         hTexture& operator = ( const hTexture& rhs );
 
-        hMemoryHeapBase*        heap_;
         hZeroRefProc            zeroProc_;
         hRenderResourceType     type_;
         hTextureFormat          format_;

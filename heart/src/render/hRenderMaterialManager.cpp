@@ -41,7 +41,7 @@ namespace Heart
     {
         maxKeys_ = 64;
         nMatKeys_ = 0;
-        matKeys_ = (hMaterialKeyContainer*)hHeapRealloc(GetGlobalHeap(), matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
+        matKeys_ = (hMaterialKeyContainer*)hHeapRealloc("general", matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
         constBlockLookUp_.SetAutoDelete(false);
     }
 
@@ -51,7 +51,7 @@ namespace Heart
 
     hRenderMaterialManager::~hRenderMaterialManager()
     {
-        hHeapFreeSafe(GetGlobalHeap(), matKeys_);
+        hFreeSafe(matKeys_);
         nMatKeys_ = maxKeys_ = 0;
     }
 
@@ -123,7 +123,7 @@ namespace Heart
         if (nMatKeys_+1 >= maxKeys_)
         {
             maxKeys_ *= 2;
-            matKeys_ = (hMaterialKeyContainer*)hHeapRealloc(GetGlobalHeap(), matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
+            matKeys_ = (hMaterialKeyContainer*)hHeapRealloc("general", matKeys_, sizeof(hMaterialKeyContainer)*maxKeys_);
         }
 
         //Walk the keys looking for a gap inbetween keys
@@ -222,8 +222,8 @@ namespace Heart
         if (lua_type(L, -1) != LUA_TTABLE) luaL_error(L, "block.aliases must be a table type");
         // create space for alias names, we get the pointers to these and copy them later
         block.aliasCount_ = (hUint)lua_rawlen(L,-1);
-        block.aliases_ = (const hChar**)hHeapMalloc(GetGlobalHeap(), sizeof(hChar*)*block.aliasCount_);
-        block.aliasHashes_ = (hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*block.aliasCount_);
+        block.aliases_ = (const hChar**)hHeapMalloc("general", sizeof(hChar*)*block.aliasCount_);
+        block.aliasHashes_ = (hUint32*)hHeapMalloc("general", sizeof(hUint32)*block.aliasCount_);
         for (hUint32 i = 0; i < block.aliasCount_; ++i)
         {
             lua_rawgeti(L, -1, (i+1));// push table entry onto stack (entries start at 1)
@@ -238,7 +238,7 @@ namespace Heart
         lua_getfield(L, -1, "parameters");// get parameters table
         if (lua_type(L, -1) != LUA_TTABLE) luaL_error(L, "expected parameter table");
         block.paramCount_ = (hUint)lua_rawlen(L, -1);// get parameter count
-        block.params_ = (hConstBlockParam*)hHeapMalloc(GetGlobalHeap(), sizeof(hConstBlockParam)*block.paramCount_);
+        block.params_ = (hConstBlockParam*)hHeapMalloc("general", sizeof(hConstBlockParam)*block.paramCount_);
         
         block.dataSize_ = 0;
         lua_pushnil(L);  // first key for enumeration
@@ -265,8 +265,8 @@ namespace Heart
         }
         
         //build the string pools
-        block.strPool_ = (hChar*)hHeapMalloc(GetGlobalHeap(), block.strPoolSize_);
-        block.data_ = hHeapMalloc(GetGlobalHeap(), block.dataSize_);
+        block.strPool_ = (hChar*)hHeapMalloc("general", block.strPoolSize_);
+        block.data_ = hHeapMalloc("general", block.dataSize_);
 
         //create the const block
         m->renderer_->createBuffer(block.dataSize_, NULL, eResourceFlag_ConstantBuffer, 0, &block.constBlock_);
@@ -342,15 +342,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderMaterialManager::createDebugMaterials() {
-        debugFontMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        debugFontMat_=hNEW(hMaterial)(renderer_);
         hRenderUtility::buildDebugFontMaterial(renderer_, debugFontMat_);
-        debugPosColUVMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        debugPosColUVMat_=hNEW(hMaterial)(renderer_);
         hRenderUtility::buildDebugPosColUVMaterial(renderer_, debugPosColUVMat_);
-        debugPosColMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        debugPosColMat_=hNEW(hMaterial)(renderer_);
         hRenderUtility::buildDebugPosColMaterial(renderer_, debugPosColMat_);
-        debugPosColUVAlphaMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        debugPosColUVAlphaMat_=hNEW(hMaterial)(renderer_);
         hRenderUtility::buildDebugPosColUVAlphaMaterial(renderer_, debugPosColUVAlphaMat_);
-        debugPosColAlphaMat_=hNEW(GetGlobalHeap(), hMaterial)(GetGlobalHeap(), renderer_);
+        debugPosColAlphaMat_=hNEW(hMaterial)(renderer_);
         hRenderUtility::buildDebugPosColAlphaMaterial(renderer_, debugPosColAlphaMat_);
     }
 
@@ -361,24 +361,26 @@ namespace Heart
     void hRenderMaterialManager::destroyRenderResources()
     {
 
-        hDELETE_SAFE(GetGlobalHeap(), debugFontMat_);
-        hDELETE_SAFE(GetGlobalHeap(), debugPosColUVMat_);
-        hDELETE_SAFE(GetGlobalHeap(), debugPosColMat_);
+        hDELETE_SAFE(debugFontMat_);
+        hDELETE_SAFE(debugPosColUVMat_);
+        hDELETE_SAFE(debugPosColMat_);
+        hDELETE_SAFE(debugPosColUVAlphaMat_);
+        hDELETE_SAFE(debugPosColAlphaMat_);
 
         for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             constBlocks_[i].constBlock_->DecRef();
-            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliasHashes_);
-            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].aliases_);
-            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].strPool_);
-            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].data_);
-            hHeapFreeSafe(GetGlobalHeap(), constBlocks_[i].params_);
+            hFreeSafe(constBlocks_[i].aliasHashes_);
+            hFreeSafe(constBlocks_[i].aliases_);
+            hFreeSafe(constBlocks_[i].strPool_);
+            hFreeSafe(constBlocks_[i].data_);
+            hFreeSafe(constBlocks_[i].params_);
         }
         constBlockLookUp_.Clear(hFalse);
         constBlocks_.Clear();
 
         for (hGlobalTexture* i=globalTextures_.GetHead(); i; i=i->GetNext()) {
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->strPool_);
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), i->aliasHashes_);
+            hDELETE_ARRAY_SAFE(i->strPool_);
+            hDELETE_ARRAY_SAFE(i->aliasHashes_);
             i->texture_->DecRef();
         }
         globalTextures_.Clear(hTrue);
@@ -390,7 +392,7 @@ namespace Heart
 
     void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSizeT aliasCount, hBool takeTexture/*=hFalse*/) {
         hcAssert(name && tex && aliases && aliasCount > 0);
-        hGlobalTexture* gtex=hNEW(GetGlobalHeap(), hGlobalTexture);
+        hGlobalTexture* gtex=hNEW(hGlobalTexture);
         hUint strsize;
         hUint len;
         hChar* strptr;
@@ -399,10 +401,10 @@ namespace Heart
         for (hUint i=0; i<aliasCount; ++i) {
             strsize += hStrLen(aliases[i])+1;
         }
-        strptr=hNEW_ARRAY(GetGlobalHeap(), hChar, strsize);
+        strptr=hNEW_ARRAY(hChar, strsize);
         gtex->strPoolSize_=strsize;
         gtex->strPool_=(hChar*)strptr;
-        gtex->aliasHashes_=hNEW_ARRAY(GetGlobalHeap(), hUint32, aliasCount);
+        gtex->aliasHashes_=hNEW_ARRAY(hUint32, aliasCount);
         gtex->nameHash_=hCRC32::StringCRC(name);
         gtex->texture_=tex;
         gtex->texture_->AddRef();
@@ -630,7 +632,7 @@ namespace Heart
             }
         }
         lua_pop(L, 1);
-        m->renderer_->createTexture(1, &texdesc, tformat, flags, GetGlobalHeap(), &texture);
+        m->renderer_->createTexture(1, &texdesc, tformat, flags, &texture);
         lua_pop(L, 1);
         m->registerGlobalTexture(name, texture, aliases, aliascount, hTrue);
         //reg global texture takes a ref so dicard our references

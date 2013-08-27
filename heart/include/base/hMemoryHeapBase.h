@@ -142,12 +142,12 @@ protected:
     hSizeT				debugAlloc_;
 };
 
-HEART_DLLEXPORT void               HEART_API SetGlobalHeap(hMemoryHeapBase*);
-HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetGlobalHeap();
-HEART_DLLEXPORT void               HEART_API SetDebugHeap(hMemoryHeapBase*);
-HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetDebugHeap();
-HEART_DLLEXPORT void               HEART_API SetLuaHeap(hMemoryHeapBase*);
-HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetLuaHeap();
+// HEART_DLLEXPORT void               HEART_API SetGlobalHeap(hMemoryHeapBase*);
+// HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetGlobalHeap();
+// HEART_DLLEXPORT void               HEART_API SetDebugHeap(hMemoryHeapBase*);
+// HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetDebugHeap();
+// HEART_DLLEXPORT void               HEART_API SetLuaHeap(hMemoryHeapBase*);
+// HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetLuaHeap();
 
 }
 

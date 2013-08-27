@@ -60,6 +60,16 @@ namespace Heart
         hTime   lastAccessTime_;
     };
 
+    class hdFileHandle
+    {
+    public:
+
+        HANDLE				fileHandle_;
+        OVERLAPPED			operation_;
+        hUint64				filePos_;
+        hUint32				opPending_;
+    };
+
     hFUNCTOR_TYPEDEF(hBool(*)(const hdFileHandleInfo*), hdEnumerateFilesCallback);
 
 	/**
@@ -71,7 +81,7 @@ namespace Heart
 	* @return   hBool
 	*/
     HEART_DLLEXPORT
-	hBool		HEART_API hdFopen( const hChar* filename, const hChar* mode, hdFileHandle** pOut );
+	hBool		HEART_API hdFopen(const hChar* filename, const hChar* mode, hdFileHandle* pOut);
 	/**
 	* Fclose 
 	*
@@ -79,7 +89,7 @@ namespace Heart
 	* @return   hBool
 	*/
     HEART_DLLEXPORT
-	hBool		HEART_API hdFclose( hdFileHandle* pHandle );
+	hBool		HEART_API hdFclose(hdFileHandle* pHandle);
 	/**
 	* Fread 
 	*
@@ -89,7 +99,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEART_DLLEXPORT
-	hdFileError	HEART_API hdFread( hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read );
+	hdFileError	HEART_API hdFread(hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read);
 	/**
 	* Fseek 
 	*
@@ -99,7 +109,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEART_DLLEXPORT
-	hdFileError	HEART_API hdFseek( hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from );
+	hdFileError	HEART_API hdFseek(hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from);
 	/**
 	* Ftell 
 	*
@@ -107,7 +117,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEART_DLLEXPORT
-	hUint64		HEART_API hdFtell( hdFileHandle* pHandle );
+	hUint64		HEART_API hdFtell(hdFileHandle* pHandle);
 	/**
 	* Fsize 
 	*
@@ -115,7 +125,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEART_DLLEXPORT
-	hUint64		HEART_API hdFsize( hdFileHandle* pHandle );
+	hUint64		HEART_API hdFsize(hdFileHandle* pHandle);
 	/**
 	* Fwrite 
 	*
@@ -125,7 +135,7 @@ namespace Heart
 	* @return   hUint32
 	*/
     HEART_DLLEXPORT
-	hdFileError	HEART_API hdFwrite( hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written );
+	hdFileError	HEART_API hdFwrite(hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written);
 
 	/**
 	* EnumerateFiles 
@@ -135,7 +145,7 @@ namespace Heart
 	* @return   void
 	*/
     HEART_DLLEXPORT
-	void		HEART_API hdEnumerateFiles( const hChar* path, hdEnumerateFilesCallback fn );
+	void		HEART_API hdEnumerateFiles(const hChar* path, hdEnumerateFilesCallback fn);
 
     HEART_DLLEXPORT
     hdFileStat   HEART_API hdFstat(hdFileHandle* handle);

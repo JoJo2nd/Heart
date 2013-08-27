@@ -124,9 +124,16 @@ HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg,
 #   endif // HEART_DEBUG
     if (!ignore) {
      ret = MessageBox(NULL, buffer, "ASSERT FAILED!", MB_ABORTRETRYIGNORE);
-     if (ret == IDABORT) ret = 0; // abort
-     else if (ret == IDRETRY) ret = 1; // break to debugger
-     else ret = 2; // ignore
+     if (ret == IDABORT) {
+         ret = 1; // break to debugger
+         //ret = 0; // abort
+     }
+     else if (ret == IDRETRY) {
+         ret = 1; // break to debugger
+     }
+     else {
+         ret = 2; // ignore
+     }
     }
     else {
         ret = 2; // ignore

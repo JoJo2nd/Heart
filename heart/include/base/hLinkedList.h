@@ -79,22 +79,12 @@ namespace Heart
 			, head_( NULL )
 			, tail_( NULL )
 			, autoDelete_( hTrue )
-            , heap_(GetGlobalHeap())
 		{
 		}
-        hLinkedList(hMemoryHeapBase* heap) 
-            : size_( 0 )
-            , head_( NULL )
-            , tail_( NULL )
-            , autoDelete_( hTrue )
-            , heap_(heap)
-        {
-        }
 		~hLinkedList()
 		{
 			Clear( autoDelete_ );
 		}
-        void                    SetHeap(hMemoryHeapBase* heap ) { heap_ = heap }
 		void					PushBack( ElementTypePtr add )
 		{
 			if ( !head_ )
@@ -199,8 +189,9 @@ namespace Heart
 			{ 
 				ElementTypePtr p = head_; 
 				Remove( head_ ); 
-				if ( deleteAll )
-					hDELETE(heap_, p);
+				if ( deleteAll ) {
+					hDELETE(p);
+                }
 			}
 		}
 		hUint32					GetSize() const { return size_; }
@@ -228,7 +219,6 @@ namespace Heart
 		ElementTypePtr			tail_;
 		hUint32					size_;
 		hBool					autoDelete_;
-        hMemoryHeapBase*        heap_;
 	};
 }
 

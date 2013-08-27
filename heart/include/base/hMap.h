@@ -134,25 +134,15 @@ namespace Heart
 
 		hMap() 
 			: size_(0)
-			, rbTreeRoot_(NULL)
+			, rbTreeRoot_(hNullptr)
 			, deleteOnDestroy_(hTrue)
-            , heap_(GetGlobalHeap())
 		{
 		}
-        hMap(hMemoryHeap* heap)
-            : size_(0)
-            , rbTreeRoot_(NULL)
-            , deleteOnDestroy_(hTrue)
-            , heap_(heap)
-        {
-            
-        }
 		~hMap() 
 		{
-			Clear( deleteOnDestroy_ );
+			Clear(deleteOnDestroy_);
 		}
 
-        void            SetHeap(hMemoryHeapBase* heap) { heap_ = heap; }
 		void			Insert( KeyType key, MapElementPtr val )
 		{
 			hcAssertMsg( !val->leftRight_[0] && !val->leftRight_[1] && !val->parent_, "Node belongs to another Map" );
@@ -273,7 +263,7 @@ namespace Heart
 		void			Clear( hBool deleteAll )
 		{
 			TreeClear(rbTreeRoot_, deleteAll);
-			rbTreeRoot_ = NULL;
+			rbTreeRoot_ = hNullptr;
 			size_ = 0; 
 		}
 		hUint32			GetSize() const { return size_; }
@@ -338,7 +328,7 @@ namespace Heart
 
             if (deleteAll)
             {
-                hDELETE(heap_, root);
+                hDELETE(root);
             }
 		}
 
@@ -674,7 +664,6 @@ namespace Heart
 		hUint32			    size_;
 		MapElementPtr	    rbTreeRoot_;
 		hBool			    deleteOnDestroy_;
-        hMemoryHeapBase*    heap_;
 	};
 
 }

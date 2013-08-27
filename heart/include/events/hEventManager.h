@@ -41,7 +41,6 @@ namespace Heart
 
         hPublisherContext() 
             : threadID_(NULL)
-            , memHeap_(NULL)
             , activeBuffer_(0)
             , sbPos_(NULL)
             , signalBufferSize_(0)
@@ -50,14 +49,12 @@ namespace Heart
         }
         ~hPublisherContext()
         {
-            if (memHeap_) {
-                hHeapFreeSafe(memHeap_, signalBuffer_[0]);
-                signalBuffer_[1] = NULL;
-                sbPos_ = NULL;
-                signalBufferSize_ = 0;
-            }
+            hFreeSafe(signalBuffer_[0]);
+            signalBuffer_[1] = NULL;
+            sbPos_ = NULL;
+            signalBufferSize_ = 0;
         }
-        void  initialise(hMemoryHeapBase* memHeap, hUint bufferSize);
+        void  initialise(hUint bufferSize);
         void* pushSignal(hUint sizeneeded, hDispatchDelegate proc);
         void  updateDispatch(hUint maxIterations = 2);
 
@@ -71,12 +68,11 @@ namespace Heart
 
         void  dispatch();
 
-        void*               threadID_; // Heart::Device::GetCurrentThreadID()
-        hMemoryHeapBase*    memHeap_;
-        hUint               activeBuffer_;
-        hUint8*             signalBuffer_[2];
-        hUint8*             sbPos_;
-        hUint               signalBufferSize_;
+        void*   threadID_; // Heart::Device::GetCurrentThreadID()
+        hUint   activeBuffer_;
+        hUint8* signalBuffer_[2];
+        hUint8* sbPos_;
+        hUint   signalBufferSize_;
     };
 
 #include "generated/hPuslisher_gen.h"

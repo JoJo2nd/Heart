@@ -34,6 +34,11 @@ namespace Heart
 	{
 	public:
 
+        hDriveFile()
+        {}
+        ~hDriveFile()
+        {}
+
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
         hUint32     		Seek( hUint64 offset, hdSeekOffset from );
@@ -42,16 +47,10 @@ namespace Heart
         hTime               GetTimestamp();
 
 	private:
-        hPRIVATE_DESTRUCTOR();
 
 		friend class		hDriveFileSystem;
 
-		hDriveFile()
-		{}
-		~hDriveFile()
-		{}
-
-		hdFileHandle*	fileHandle_;
+		hdFileHandle    fileHandle_;
 	};
 }
 

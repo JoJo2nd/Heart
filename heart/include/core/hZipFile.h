@@ -33,6 +33,8 @@ namespace Heart
 	class hZipFile : public hIFile
 	{
 	public:
+        hZipFile(unzFile zip, unz_file_info64 info, unz64_file_pos pos);
+        ~hZipFile();
 
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
@@ -42,12 +44,8 @@ namespace Heart
         hTime               GetTimestamp();
 
 	private:
-        hPRIVATE_DESTRUCTOR();
 
 		friend class				hZipFileSystem;
-
-		hZipFile(unzFile zip, unz_file_info64 info, unz64_file_pos pos);
-		~hZipFile();
 
 		unzFile                     zipPak_;
         unz_file_info64             zipFileInfo_;

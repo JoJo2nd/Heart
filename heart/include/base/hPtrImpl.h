@@ -34,19 +34,17 @@ namespace Heart
     {
     public:
 
-        hPtrImpl() : pImpl_(NULL), heap_(NULL) {}
+        hPtrImpl() : pImpl_(NULL) {}
         explicit hPtrImpl( _Ty* pImpl ) : pImpl_( pImpl ) {}
-        virtual ~hPtrImpl() { hDELETE_SAFE(heap_, pImpl_); }
+        virtual ~hPtrImpl() { hDELETE_SAFE(pImpl_); }
 
-        hFORCEINLINE void SetImpl(_Ty* pImpl) { pImpl_ = pImpl; heap_ = GetGlobalHeap(); }
-        hFORCEINLINE void SetImpl(_Ty* pImpl, hMemoryHeapBase* heap) { pImpl_ = pImpl; heap_ = heap; }
+        hFORCEINLINE void SetImpl(_Ty* pImpl) { pImpl_ = pImpl; }
         hFORCEINLINE _Ty* pImpl() { return pImpl_; }
         hFORCEINLINE const _Ty* pImpl() const { return pImpl_; }
 
     private:
 
         _Ty* pImpl_;
-        hMemoryHeapBase* heap_;
     };
 }
 

@@ -118,7 +118,7 @@ namespace Heart
                         hUint32 key = hCRC32::StringCRC(loadmsg.path_);
                         hResourcePackage* toload = ltLoadedPackages_.Find(key);
                         if (toload == NULL) {
-                            toload = hNEW(GetGlobalHeap(), hResourcePackage)(engine_, filesystem_, &resourceHandlers_);
+                            toload = hNEW(hResourcePackage)(engine_, filesystem_, &resourceHandlers_);
 
                             toload->LoadPackageDescription(loadmsg.path_);
 
@@ -172,7 +172,7 @@ namespace Heart
                         hMutexAutoScope autoLock(&ltAccessMutex_);
                         if (ltPackageLoadCompleteQueue_.isEmpty() || exitSignal_.TryWait()) {
                             ltLoadedPackages_.Remove(pack);
-                            hDELETE(GetGlobalHeap(), pack);
+                            hDELETE(pack);
                         }
                     }
 
@@ -225,7 +225,7 @@ namespace Heart
                 }
 
                 ltLoadedPackages_.Remove(packToUnload);
-                hDELETE(GetGlobalHeap(), packToUnload);
+                hDELETE(packToUnload);
             }
         }
 
@@ -254,7 +254,7 @@ namespace Heart
             ResourcePackageQueueMsg loadedPak = ltPackageLoadCompleteQueue_.pop();
             hLoadedResourcePackages* pak = mtLoadedPackages_.Find(loadedPak.packageCRC_);
             if (!pak) {
-                pak = hNEW(GetGlobalHeap(), hLoadedResourcePackages);
+                pak = hNEW(hLoadedResourcePackages);
                 mtLoadedPackages_.Insert(loadedPak.packageCRC_, pak);
             }
             pak->package_ = loadedPak.package_;
@@ -429,7 +429,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hResourceManager::registerResourceHandler(hResourceType restype, hResourceHandler handler) {
-        hResourceHandler* newhandler=hNEW(GetGlobalHeap(), hResourceHandler)();
+        hResourceHandler* newhandler=hNEW(hResourceHandler)();
         *newhandler=handler;
         resourceHandlers_.Insert(restype, newhandler);
     }

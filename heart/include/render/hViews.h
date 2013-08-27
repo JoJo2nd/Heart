@@ -50,7 +50,7 @@ public:
 
 private:
     friend class hRenderer;
-    hPRIVATE_DESTRUCTOR();
+
     HEART_PRIVATE_COPY(hShaderResourceView);
 
     void bindTexture(hTexture* tex);
@@ -80,7 +80,7 @@ public:
 
 private:
     friend class hRenderer;
-    hPRIVATE_DESTRUCTOR();
+
     HEART_PRIVATE_COPY(hRenderTargetView);
 
     void bindTexture(hTexture* tex);
@@ -103,7 +103,7 @@ public:
 
 private:
     friend class hRenderer;
-    hPRIVATE_DESTRUCTOR();
+
     HEART_PRIVATE_COPY(hDepthStencilView);
 
     void bindTexture(hTexture* tex);

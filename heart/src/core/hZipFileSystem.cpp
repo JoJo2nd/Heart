@@ -32,14 +32,16 @@ namespace Heart
 	{
 		(void)opaque;
 		(void)mode;
-		hdFileHandle* fh;
+		hdFileHandle* fh=new hdFileHandle();
         static hChar rootDir[] = "GAMEDATA/";
         hUint32 maxlen = sizeof(rootDir)+hStrLen((const hChar*)filename)+1;
         hChar* fullpath = (hChar*)hAlloca(maxlen);
         hStrCopy(fullpath, maxlen, rootDir);
         hStrCat(fullpath, maxlen, (const hChar*)filename);
-		if ( !hdFopen( (const hChar*)fullpath, "r", &fh ) )
+		if ( !hdFopen( (const hChar*)fullpath, "r", fh ) ) {
+            delete fh;
 			return NULL;
+        }
 
 		return fh;
 	}
@@ -50,6 +52,8 @@ namespace Heart
 		hdFileHandle* fh = (hdFileHandle*)stream;
 
 		hdFclose( fh );
+        delete fh;
+        fh=hNullptr;
 
 		return 0;
 	}
@@ -184,7 +188,7 @@ namespace Heart
 
         ++openHandles_;
 
-		return hNEW(GetGlobalHeap(), hZipFile)(zipFileHandle_,file_info, file_pos);
+		return hNEW(hZipFile)(zipFileHandle_,file_info, file_pos);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -198,7 +202,7 @@ namespace Heart
 
         --openHandles_;
 
-		hDELETE(GetGlobalHeap(), pFile);
+		hDELETE(pFile);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

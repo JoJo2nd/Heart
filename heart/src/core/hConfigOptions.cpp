@@ -37,11 +37,11 @@ namespace Heart
         hIFile* file = filesystem->OpenFileRoot( filename, FILEMODE_READ );
         if ( file ) {
             hUint32 read;
-            char* data = (hChar*)hHeapMalloc(GetGlobalHeap(), (hUint32)file->Length());
+            char* data = (hChar*)hHeapMalloc("general", (hUint32)file->Length());
             read = file->Read(data, (hUint32)file->Length());
             if ( read == file->Length() ) {
                 
-                if ( doc_.ParseSafe< rapidxml::parse_default >(data, GetGlobalHeap()) ) {
+                if ( doc_.ParseSafe< rapidxml::parse_default >(data) ) {
                     hXMLGetter getter(&doc_);
                     readDocToMap(doc_);
                 }
@@ -80,7 +80,7 @@ namespace Heart
                 crc=hCRC32::StringCRC(namebuf);
                 hOption* op=config_.Find(crc); 
                 if (!op) {
-                    op=hNEW(GetGlobalHeap(), hOption);
+                    op=hNEW(hOption);
                     config_.Insert(crc, op);
                 }
                 op->op=node;

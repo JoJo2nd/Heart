@@ -51,6 +51,21 @@ namespace Heart
         hViewport( hUint32 x,hUint32 y,hUint32 w,hUint32 h )
             : x_(x), y_(y), width_(w), height_(h)
         {}
+        hViewport(hViewport&& rhs)
+        {
+            hPLACEMENT_NEW(this) hViewport();
+            swap(*this, rhs);
+        }
+        hViewport operator = (hViewport rhs) {
+            swap(*this, rhs);
+            return *this;
+        }
+        void swap(hViewport& lhs, hViewport& rhs) {
+            std::swap(lhs.x_, rhs.x_);
+            std::swap(lhs.y_, rhs.y_);
+            std::swap(lhs.width_, rhs.width_);
+            std::swap(lhs.height_, rhs.height_);
+        }
         hUint32 x_,y_,width_,height_;
     };
     struct hRelativeViewport 
@@ -311,7 +326,7 @@ namespace Heart
         }
         ~hRenderCommands()
         {
-            hFreeSafe(cmds_);
+            release();
         }
 
         hBool   isEmpty() const { return cmdSize_ == 0; }
@@ -320,6 +335,9 @@ namespace Heart
         hRCmd*  getCommandAtOffset(hUint offset) { 
             hcAssert(offset < cmdSize_);
             return (hRCmd*)((hByte*)cmds_+offset);
+        }
+        void    release() {
+            hFreeSafe(cmds_);
         }
 
     private:

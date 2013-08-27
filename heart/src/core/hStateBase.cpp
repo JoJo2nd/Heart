@@ -56,7 +56,7 @@ namespace Heart
 				ret = child_->Process();
 				if ( ret == FINISHED )
 				{
-					delete ( GetGlobalHeap(), child_ );
+					delete child_;
 					child_ = NULL;
 				}
 			}
@@ -76,7 +76,7 @@ namespace Heart
 						ret = subStates_[ i ]->Process();
 						if ( ret == FINISHED )
 						{
-							delete ( GetGlobalHeap(), subStates_[ i ] );
+							delete subStates_[ i ];
 							subStates_[ i ] = NULL;
 						}
 					}
@@ -95,7 +95,7 @@ namespace Heart
 					}
 					else if ( child_->internalState_ == IS_CLEANUP )
 					{
-						delete ( GetGlobalHeap(), child_ );
+						delete child_;
 						child_ = pendingChild_;
 						child_->parent_ = this;
 						pendingChild_ = NULL;
@@ -121,7 +121,7 @@ namespace Heart
 						}
 						else if ( subStates_[ i ]->internalState_ == IS_CLEANUP )
 						{
-							delete ( GetGlobalHeap(), subStates_[ i ] );
+							delete subStates_[ i ];
 							subStates_[ i ] = pendingChild_;
 							subStates_[ i ]->parent_ = this;
 							pendingChild_ = NULL;
@@ -187,7 +187,7 @@ namespace Heart
 		if ( pendingChild_ )
 		{
 			hcPrintf( "Child State %s was deleted before it could be processed\n", pendingChild_->Name() );
-			delete ( GetGlobalHeap(), pendingChild_ );
+			delete pendingChild_;
 		}
 		pendingChild_ = pState;
 	}
@@ -201,7 +201,7 @@ namespace Heart
 		if ( pendingSubStates_[ Id ] )
 		{
 			hcPrintf( "Sub State %s was deleted before it could be processed\n", pendingSubStates_[ Id ]->Name() );
-			delete ( GetGlobalHeap(), pendingSubStates_[ Id ] );
+			delete pendingSubStates_[ Id ];
 		}
 		pendingSubStates_[ Id ] = pState;
 	}
@@ -254,7 +254,7 @@ namespace Heart
 					}
 					else if ( child_->internalState_ == IS_CLEANUP )
 					{
-						delete ( GetGlobalHeap(), child_ );
+						delete child_;
 						child_ = NULL;
 					}
 				}
@@ -269,7 +269,7 @@ namespace Heart
 						}
 						else if ( subStates_[ i ]->internalState_ == IS_CLEANUP )
 						{
-							delete ( GetGlobalHeap(), subStates_[ i ] );
+							delete subStates_[ i ];
 							subStates_[ i ] = NULL;
 						}
 					}

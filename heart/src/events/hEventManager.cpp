@@ -33,16 +33,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hPublisherContext::initialise(hMemoryHeapBase* memHeap, hUint bufferSize)
+    void hPublisherContext::initialise(hUint bufferSize)
     {
-        hcAssert(memHeap);
         hcAssert(bufferSize > 0);
 
-        memHeap_ = memHeap;
         signalBufferSize_ = bufferSize;
         activeBuffer_ = 0;
         threadID_ = Heart::Device::GetCurrentThreadID();
-        sbPos_ = signalBuffer_[0] = (hUint8*)hHeapMalloc(memHeap_, signalBufferSize_*2);
+        sbPos_ = signalBuffer_[0] = (hUint8*)hHeapMalloc("general", signalBufferSize_*2);
         signalBuffer_[1] = signalBuffer_[0]+signalBufferSize_;
     }
 

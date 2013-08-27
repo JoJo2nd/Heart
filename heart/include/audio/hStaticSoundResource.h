@@ -93,9 +93,9 @@ namespace Heart
         }
         ~hSoundBankResource()
         {
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), sources_);
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), sourcesData_);
-            hDELETE_ARRAY_SAFE(GetGlobalHeap(), namePool_);
+            hDELETE_ARRAY_SAFE(sources_);
+            hDELETE_ARRAY_SAFE(sourcesData_);
+            hDELETE_ARRAY_SAFE(namePool_);
         }
 
         hUint32                      GetSourceCount() { return sourceCount_; }
@@ -109,8 +109,6 @@ namespace Heart
 
         friend class ::OGGSoundBankBuilder;
 
-        HEART_ALLOW_SERIALISE_FRIEND();
-
         hUint32              sourceCount_;
         hStaticSoundSource*  sources_;
         hUint32              sourceDataSize_;
@@ -119,57 +117,6 @@ namespace Heart
         hChar*               namePool_;
     };
 
-    template<>
-    inline void SerialiseMethod< hStaticSoundSource >( hSerialiser* ser, const hStaticSoundSource& data )
-    {
-        SERIALISE_ELEMENT( data.nameLen_ );
-        SERIALISE_ELEMENT_PTR_AS_INT( data.name_ );
-        SERIALISE_ELEMENT( data.oggDataSize_ );
-        SERIALISE_ELEMENT_PTR_AS_INT( data.oggData_ );
-        SERIALISE_ELEMENT_ENUM_AS_INT( data.format_ );
-        SERIALISE_ELEMENT( data.channels_ );
-        SERIALISE_ELEMENT( data.pitch_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hStaticSoundSource >( hSerialiser* ser, hStaticSoundSource& data )
-    {
-        DESERIALISE_ELEMENT( data.nameLen_ );
-        DESERIALISE_ELEMENT_INT_AS_PTR( data.name_ );
-        DESERIALISE_ELEMENT( data.oggDataSize_ );
-        DESERIALISE_ELEMENT_INT_AS_PTR( data.oggData_ );
-        DESERIALISE_ELEMENT_INT_AS_ENUM( data.format_ );
-        DESERIALISE_ELEMENT( data.channels_ );
-        DESERIALISE_ELEMENT( data.pitch_ );
-    }
-
-    template<>
-    inline void SerialiseMethod< hSoundBankResource >( hSerialiser* ser, const hSoundBankResource& data )
-    {
-        SERIALISE_ELEMENT( data.sourceCount_ );
-        SERIALISE_ELEMENT_COUNT( data.sources_, data.sourceCount_ );
-        SERIALISE_ELEMENT( data.sourceDataSize_ );
-        SERIALISE_ELEMENT_COUNT( data.sourcesData_, data.sourceDataSize_ );
-        SERIALISE_ELEMENT( data.namePoolSize_ );
-        SERIALISE_ELEMENT_COUNT( data.namePool_, data.namePoolSize_ );
-    }
-
-    template<>
-    inline void DeserialiseMethod< hSoundBankResource >( hSerialiser* ser, hSoundBankResource& data )
-    {
-        DESERIALISE_ELEMENT( data.sourceCount_ );
-        DESERIALISE_ELEMENT( data.sources_ );
-        DESERIALISE_ELEMENT( data.sourceDataSize_ );
-        DESERIALISE_ELEMENT( data.sourcesData_ );
-        DESERIALISE_ELEMENT( data.namePoolSize_ );
-        DESERIALISE_ELEMENT( data.namePool_ );
-
-        for ( hUint32 i = 0; i < data.sourceCount_; ++i )
-        {
-            HEART_RESOURCE_DATA_FIXUP( hChar, data.namePool_, data.sources_[i].name_ );
-            HEART_RESOURCE_DATA_FIXUP( hByte, data.sourcesData_, data.sources_[i].oggData_ );
-        }
-    }
 }
 
 #endif // HSTATICSOUNDRESOURCE_H__

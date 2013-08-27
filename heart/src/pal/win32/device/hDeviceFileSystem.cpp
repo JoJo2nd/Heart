@@ -37,22 +37,12 @@ namespace Heart
         FILEOP_MAX
     };
 
-    class hdFileHandle
-    {
-    public:
-
-        HANDLE				fileHandle_;
-        OVERLAPPED			operation_;
-        hUint64				filePos_;
-        hUint32				opPending_;
-    };
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hBool HEART_API hdFopen( const hChar* filename, const hChar* mode, hdFileHandle** pOut )
+    hBool HEART_API hdFopen(const hChar* filename, const hChar* mode, hdFileHandle* pOut)
     {
         DWORD access = 0;
         DWORD share = 0;// < always ZERO, dont let things happen to file in use!
@@ -61,7 +51,7 @@ namespace Heart
         DWORD flags = FILE_ATTRIBUTE_NORMAL;
         HANDLE fhandle;
 
-        hcAssert( pOut != NULL );
+        hcAssert( pOut != hNullptr );
 
         if ( mode[ 0 ] == 'r' || mode[ 0 ] == 'R' )
         {
@@ -75,17 +65,16 @@ namespace Heart
         }
 
         
-        fhandle = CreateFile( filename, access, share, secatt, creation, flags, NULL );
+        fhandle = CreateFile( filename, access, share, secatt, creation, flags, hNullptr );
 
         if ( fhandle == INVALID_HANDLE_VALUE )
         {
             return hFalse;
         }
 
-        (*pOut) = hNEW( GetGlobalHeap(), hdFileHandle );
-        (*pOut)->fileHandle_ = fhandle;
-        (*pOut)->filePos_	= 0;
-        (*pOut)->opPending_ = FILEOP_NONE;
+        pOut->fileHandle_ = fhandle;
+        pOut->filePos_	= 0;
+        pOut->opPending_ = FILEOP_NONE;
 
         return hTrue;
     }
@@ -95,11 +84,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hBool HEART_API hdFclose( hdFileHandle* pHandle )
+    hBool HEART_API hdFclose(hdFileHandle* pHandle)
     {
         CloseHandle( pHandle->fileHandle_ );
 
-        hDELETE(GetGlobalHeap(), pHandle);
         return hTrue;
     }
 
@@ -108,7 +96,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hdFileError HEART_API hdFread( hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read )
+    hdFileError HEART_API hdFread(hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read)
     {
         pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
         pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
@@ -133,7 +121,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hdFileError HEART_API hdFseek( hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from )
+    hdFileError HEART_API hdFseek(hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from)
     {
         hUint64 size = hdFsize( pHandle );
         switch ( from )
@@ -173,7 +161,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hUint64 HEART_API hdFtell( hdFileHandle* pHandle )
+    hUint64 HEART_API hdFtell(hdFileHandle* pHandle)
     {
         return pHandle->filePos_;
     }
@@ -183,7 +171,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hUint64 HEART_API hdFsize( hdFileHandle* pHandle )
+    hUint64 HEART_API hdFsize(hdFileHandle* pHandle)
     {
         return GetFileSize( pHandle->fileHandle_, NULL );
     }
@@ -193,7 +181,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hdFileError HEART_API hdFwrite( hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written )
+    hdFileError HEART_API hdFwrite(hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written)
     {
         pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
         pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
@@ -218,7 +206,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API hdEnumerateFiles( const hChar* path, hdEnumerateFilesCallback fn )
+    void HEART_API hdEnumerateFiles(const hChar* path, hdEnumerateFilesCallback fn)
     {
         WIN32_FIND_DATA found;
         hUint32 searchPathLen = hStrLen(path) + 3;
@@ -255,7 +243,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hdFileStat HEART_API hdFstat( hdFileHandle* handle )
+    hdFileStat HEART_API hdFstat(hdFileHandle* handle)
     {
         hdFileStat stat;
         BY_HANDLE_FILE_INFORMATION fileInfo;
@@ -274,7 +262,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void        HEART_API hdCreateDirectory( const hChar* path )
+    void        HEART_API hdCreateDirectory(const hChar* path)
     {
         CreateDirectory(path, NULL);
     }

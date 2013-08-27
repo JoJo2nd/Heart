@@ -759,7 +759,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(hMemoryHeapBase* heap, 
+    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(
     const hChar* shaderProg, hSizeT len, const hChar* entry, 
     hShaderProfile profile, hdDX11ShaderProgram* out) {
         HRESULT hr;
@@ -796,7 +796,7 @@ namespace Heart
         if (FAILED(hr)) {
             return NULL;
         }
-        out=compileShaderDevice(heap, (hChar*)codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), type, out);
+        out=compileShaderDevice((hChar*)codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), type, out);
         codeBlob->Release();
         return out;
     }
@@ -805,15 +805,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderDevice(
-        hMemoryHeapBase* heap, const hChar* shaderProg, 
-        hSizeT len, hShaderType type, hdDX11ShaderProgram* out)
-    {
+    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderDevice(const hChar* shaderProg, 
+    hSizeT len, hShaderType type, hdDX11ShaderProgram* out) {
         HRESULT hr;
         hdDX11ShaderProgram* shader = out;
         shader->type_ = type;
         shader->blobLen_= 0;
-        shader->shaderBlob_= NULL;
+        shader->shaderBlob_= hNullptr;
 
         if ( type == ShaderType_FRAGMENTPROG ) {
             hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
@@ -835,7 +833,7 @@ namespace Heart
             hcAssert(SUCCEEDED(hr));
             shader->blobLen_= (hUint)inputBlob->GetBufferSize();
             hcAssert(shader->blobLen_ == inputBlob->GetBufferSize());
-            shader->shaderBlob_= hNEW_ARRAY(heap, hUint8, shader->blobLen_);
+            shader->shaderBlob_= hNEW_ARRAY(hUint8, shader->blobLen_);
             hMemCpy(shader->shaderBlob_, inputBlob->GetBufferPointer(), shader->blobLen_);
             inputBlob->Release();
         } else if (type==ShaderType_GEOMETRYPROG) {
@@ -875,7 +873,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::destroyShaderDevice(hMemoryHeapBase* heap, hdDX11ShaderProgram* prog)
+    void hdDX11RenderDevice::destroyShaderDevice(hdDX11ShaderProgram* prog)
     {
         if (!prog) return;
         if (prog->shaderInfo_) {
@@ -913,7 +911,7 @@ namespace Heart
             prog->computeShader_->Release();
             prog->computeShader_ = NULL;
         }
-        hDELETE_ARRAY_SAFE(heap, prog->shaderBlob_);
+        hDELETE_ARRAY_SAFE(prog->shaderBlob_);
         prog->blobLen_=0;
     }
 
@@ -1049,7 +1047,7 @@ namespace Heart
 #pragma message ("TODO: Hash map this call (hash of input streams and vertex prog input), will probably a good chunk of memory")
         hr = d3d11Device_->CreateInputLayout( elements, elementCount, shaderProg, progLen, &layout );
         hcAssert( SUCCEEDED( hr ) );
-        hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout);
+        //hTRACK_CUSTOM_ADDRESS_ALLOC("DirectX", layout);
 
         return layout;
     }
@@ -1060,7 +1058,7 @@ namespace Heart
 
     void hdDX11RenderDevice::DestroyVertexLayout( hdDX11VertexLayout* layout )
     {
-        hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout);
+        //hTRACK_CUSTOM_ADDRESS_FREE("DirectX", layout);
         layout->Release();
     }
 

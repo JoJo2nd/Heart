@@ -50,9 +50,8 @@ namespace Heart
 
     hResourceClassBase* hSoundBankResource::OnSoundBankLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
     {
-        hSoundBankResource* resource = hNEW(GetGlobalHeap()/*!heap*/, hSoundBankResource);
+        hSoundBankResource* resource = hNEW(hSoundBankResource);
         hSerialiser ser;
-        ser.Deserialise( dataStream, *resource );
 
         return resource;
     }
@@ -63,7 +62,7 @@ namespace Heart
 
     hUint32 hSoundBankResource::OnSoundBankUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
-        hDELETE(GetGlobalHeap()/*!heap*/, resource);
+        hDELETE(resource);
 
         return 0;
     }

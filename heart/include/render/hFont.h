@@ -106,9 +106,8 @@ namespace Private
     {
     public:
 
-        hFont(hMemoryHeapBase* heap) 
-            : heap_(heap)
-            , nTexturePages_(0)
+        hFont() 
+            : nTexturePages_(0)
             , texturePageResID_(0)
             , texturePages_(0)
             , fontMaterial_(NULL)
@@ -123,22 +122,21 @@ namespace Private
         {}
         virtual	~hFont();
 
-        void                SetFontHeight(hUint32 val) { fontHeight_ = val; }
-        hUint32				GetFontHeight() const { return fontHeight_; }
-        void                SetFontWidth(hUint32 val) { fontWidth_ = val; }
-        hUint32				GetFontWidth() const { return fontWidth_; }
-        void                SetPageCount(hUint32 val) { nTexturePages_ = val; }
-        void                SetPageResourceID(hResourceID val) { texturePageResID_ = val; }
-        void                SetMaterialResourceID(hResourceID val) { fontMaterialID_ = val; }
-        void                SetFontCharacterLimit(hUint32 nChars);
-        void                AddFontCharacter(const hFontCharacter* fchar);
-        void                SortCharacters();
-        hBool               Link(hResourceManager* resManager);
-        const hFontCharacter*       GetFontCharacter( hUint32 charcode ) const;
+        void                    SetFontHeight(hUint32 val) { fontHeight_ = val; }
+        hUint32				    GetFontHeight() const { return fontHeight_; }
+        void                    SetFontWidth(hUint32 val) { fontWidth_ = val; }
+        hUint32				    GetFontWidth() const { return fontWidth_; }
+        void                    SetPageCount(hUint32 val) { nTexturePages_ = val; }
+        void                    SetPageResourceID(hResourceID val) { texturePageResID_ = val; }
+        void                    SetMaterialResourceID(hResourceID val) { fontMaterialID_ = val; }
+        void                    SetFontCharacterLimit(hUint32 nChars);
+        void                    AddFontCharacter(const hFontCharacter* fchar);
+        void                    SortCharacters();
+        hBool                   Link(hResourceManager* resManager);
+        const hFontCharacter*   GetFontCharacter( hUint32 charcode ) const;
 
     private:
 
-        hMemoryHeapBase*            heap_;
         hUint32						nTexturePages_;
         hResourceID                 texturePageResID_;
         hTexture*				    texturePages_;

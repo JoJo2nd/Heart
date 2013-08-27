@@ -543,22 +543,19 @@ improvement at the expense of carrying around more memory.
 
 #ifndef ONLY_MSPACES
 #define ONLY_MSPACES 0     /* define to a value */
-#else
-#undef ONLY_MSPACES
-#define ONLY_MSPACES 1
 #endif  /* ONLY_MSPACES */
 #ifndef MSPACES
 #if ONLY_MSPACES
 #define MSPACES 1
 #else   /* ONLY_MSPACES */
-#define MSPACES 0
+#define MSPACES 1
 #endif  /* ONLY_MSPACES */
 #endif  /* MSPACES */
 #ifndef MALLOC_ALIGNMENT
 #define MALLOC_ALIGNMENT ((size_t)8U)
 #endif  /* MALLOC_ALIGNMENT */
 #ifndef FOOTERS
-#define FOOTERS 0
+#define FOOTERS 1
 #endif  /* FOOTERS */
 #ifndef ABORT
 #define ABORT  __debugbreak()
@@ -770,7 +767,6 @@ extern "C" {
 #define dlindependent_calloc   independent_calloc
 #define dlindependent_comalloc independent_comalloc
 #endif /* USE_DL_PREFIX */
-
 
 	/*
 	malloc(size_t n)

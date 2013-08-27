@@ -48,7 +48,9 @@ namespace Heart
         }
         ~hEntityFactory()
         {
-
+            factoryMap_.Clear(hTrue);
+            objectTemplates_.Clear(hTrue);
+            entityLookUp_.Clear(hTrue);
         }
 
         void                    initialise(hIFileSystem* fileSystem, hResourceManager* resourceManager, hHeartEngine* engine);

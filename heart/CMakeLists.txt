@@ -4,6 +4,8 @@ project(HEART)
 
 #TODO: execute_process -> to build files? 
 
+find_package(Protobuf REQUIRED)
+
 # set project directories
 set(heart_BINARY_DIR "${HEART_SOURCE_DIR}/../bin/heart")
 
@@ -19,8 +21,10 @@ set( HEART_INCLUDE_DIRS
     "${EXTERNAL_SRC_ROOT}/minizip/include"
     "${EXTERNAL_SRC_ROOT}/libogg/include"
     "${EXTERNAL_SRC_ROOT}/libvorbis/include"
+    "${PROTOBUF_INCLUDE_DIR}"
+    "${GENERATED_PROTO_INC_DIRS}"
 
-	"${PROJECT_SOURCE_DIR}/resourceloaders/textureloader/include"
+    "${PROJECT_SOURCE_DIR}/resourceloaders/textureloader/include"
 )
 set(HEART_LIB_DIRS)
 if (WIN32)
@@ -51,36 +55,17 @@ set( HEART_SRC_FILES
     "${HEART_SOURCE_DIR}/src/heartBaseUnity.cpp"
     "${HEART_SOURCE_DIR}/src/heartCoreUnity.cpp"
 )
-set(HEART_BASE_FILES
-    "${HEART_SOURCE_DIR}/include/base/hAtomic.h"
-    "${HEART_SOURCE_DIR}/include/base/hClock.h"    
-    "${HEART_SOURCE_DIR}/include/base/hDebugMacros.h"    
-    "${HEART_SOURCE_DIR}/include/base/hProfiler.h"
-    "${HEART_SOURCE_DIR}/include/base/hSysCalls.h"
-    "${HEART_SOURCE_DIR}/include/base/hUTF8.h"
-	"${HEART_SOURCE_DIR}/src/base/hAtomic.cpp"
-	"${HEART_SOURCE_DIR}/src/base/hClock.cpp"
-	"${HEART_SOURCE_DIR}/src/base/hDebugMacros.cpp"
-	"${HEART_SOURCE_DIR}/src/base/hProfiler.cpp"
-	"${HEART_SOURCE_DIR}/src/base/hSysCalls.cpp"
-    "${HEART_SOURCE_DIR}/src/base/hUTF8.cpp"
-    "${HEART_SOURCE_DIR}/src/base/hWildcard.cpp"
+
+file(GLOB HEART_BASE_FILES 
+    "${HEART_SOURCE_DIR}/include/base/*.h"
+    "${HEART_SOURCE_DIR}/src/base/*.cpp"
 )
-set(HEART_COMPONENTS_FILES
-    "${HEART_SOURCE_DIR}/include/components/hComponent.h"
-    "${HEART_SOURCE_DIR}/include/components/hEntity.h"
-    "${HEART_SOURCE_DIR}/include/components/hEntityDataDefinition.h"
-    "${HEART_SOURCE_DIR}/include/components/hEntityFactory.h"
-    "${HEART_SOURCE_DIR}/include/components/hLuaScriptComponent.h"
-    "${HEART_SOURCE_DIR}/include/components/hSceneNodeComponent.h"
-    "${HEART_SOURCE_DIR}/include/components/hWorldObjectScript.h"
-    "${HEART_SOURCE_DIR}/src/components/hComponent.cpp"
-    "${HEART_SOURCE_DIR}/src/components/hEntity.cpp"
-    "${HEART_SOURCE_DIR}/src/components/hEntityFactory.cpp"
-    "${HEART_SOURCE_DIR}/src/components/hLuaScriptComponent.cpp"
-    "${HEART_SOURCE_DIR}/src/components/hSceneNodeComponent.cpp"
-    "${HEART_SOURCE_DIR}/src/components/hWorldObjectScript.cpp"
+
+file(GLOB HEART_COMPONENTS_FILES 
+    "${HEART_SOURCE_DIR}/include/components/*.h"
+    "${HEART_SOURCE_DIR}/src/components/*.cpp"
 )
+
 set(HEART_COMPUTE_FILES 
     "${HEART_SOURCE_DIR}/include/compute/hComputeUAV.h"
 )
@@ -358,4 +343,4 @@ set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPusli
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib crypto lua minizip libogg libvorbis ${PLATFORM_LIBS})
+target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto ${PLATFORM_LIBS})

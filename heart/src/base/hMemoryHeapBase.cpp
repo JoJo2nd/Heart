@@ -25,73 +25,148 @@
 
 *********************************************************************/
 
-// Not the cleanest way to do this but it works
-extern void initialiseBaseMemoryHeaps();
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+static hByte g_globalMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+static hByte g_debugMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+static hByte g_luaMemoryPoolSpace[sizeof(Heart::hMemoryHeap)];
+
+void initialiseBaseMemoryHeaps()
+{
+#ifdef HEART_TRACK_MEMORY_ALLOCS
+    Heart::hMemTracking::InitMemTracking();
+#endif
+
+    Heart::hMemoryHeapBase* global=hPLACEMENT_NEW(g_globalMemoryPoolSpace) Heart::hMemoryHeap("GlobalHeap");
+    Heart::hMemoryHeapBase* debug=hPLACEMENT_NEW(g_debugMemoryPoolSpace) Heart::hMemoryHeap("DebugHeap");
+    Heart::hMemoryHeapBase* lua=hPLACEMENT_NEW(g_luaMemoryPoolSpace) Heart::hMemoryHeap("LuaHeap");
+
+    // It important that the debug heap is created first
+    global->create(1024*1024,hFalse);
+    debug->create(1024*1024,hFalse);
+    lua->create(1024*1024,hTrue);
+}
 
 namespace Heart
 {
-    static hMemoryHeapBase* g_globalHeap = NULL;
-    static hMemoryHeapBase* g_debugHeap = NULL;
-    static hMemoryHeapBase* g_luaHeap=NULL;
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    HEART_DLLEXPORT void               HEART_API SetGlobalHeap( hMemoryHeapBase* heap )
+namespace HeapPrivate 
+{
+    struct HeapLookup
     {
-        hcAssert(g_debugHeap == NULL);
-        g_globalHeap = heap;
+        hUint32             stringHash_;
+        hMemoryHeapBase*    heapPtr_;
+
+        bool operator < (const HeapLookup& rhs) {
+            return stringHash_ < rhs.stringHash_;
+        }
+        bool operator < (const hUint32& rhs) {
+            return stringHash_ < rhs;
+        }
+    };
+
+    static hMutex g_initMutex;
+    static hBool g_heapInit = false;
+    static HeapLookup g_heapArray[128];
+    static hUint g_heapCount = 0;
+
+    static hUint readMemoryMap() {
+        hMutexAutoScope mas(&g_initMutex);
+        if (g_heapInit) {
+            return g_heapCount;
+        }
+
+        initialiseBaseMemoryHeaps();
+
+        g_heapArray[g_heapCount].stringHash_=hCRC32::StringCRC("general");
+        g_heapArray[g_heapCount++].heapPtr_=(hMemoryHeapBase*)g_globalMemoryPoolSpace;
+        g_heapArray[g_heapCount].stringHash_=hCRC32::StringCRC("lua");
+        g_heapArray[g_heapCount++].heapPtr_=(hMemoryHeapBase*)g_luaMemoryPoolSpace;
+        g_heapArray[g_heapCount].stringHash_=hCRC32::StringCRC("debug");
+        g_heapArray[g_heapCount++].heapPtr_=(hMemoryHeapBase*)g_debugMemoryPoolSpace;
+
+        std::sort(g_heapArray, g_heapArray+3);
+
+        g_heapInit=true;
+
+        return g_heapCount;
+    }
+
+    static hMemoryHeapBase* findHeapByName(const hChar* name) {
+        static hThreadLocal hBool doneinit=false;
+        static hThreadLocal HeapLookup heapArray_[128];
+        static hThreadLocal hUint heapCount=0;
+        if (!doneinit) {
+            heapCount=readMemoryMap();
+            hMemCpy(heapArray_, g_heapArray, sizeof(g_heapArray));
+            doneinit=true;
+        }
+
+        hUint32 hash=hCRC32::StringCRC(name);
+        HeapLookup* found=std::lower_bound(heapArray_, heapArray_+heapCount, hash);
+        hcAssert(found->stringHash_==hash);
+
+        return found->heapPtr_;
+    }
+
+    static hMemoryHeapBase* findHeapByPtr(void* ptr) {
+        for (hUint i=0; g_heapArray[i].heapPtr_; ++i) {
+            if (g_heapArray[i].heapPtr_->pointerBelongsToMe(ptr)) {
+                return g_heapArray[i].heapPtr_;
+            }
+        }
+        // This might be ok for alloc only heaps? Null ptrs follow this path
+        return hNullptr;
+    }
+}
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMemoryHeapBase* hFindMemoryHeapByName(const hChar* heapName) {
+        return HeapPrivate::findHeapByName(heapName);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetGlobalHeap()
-    {
-        if(g_globalHeap == NULL) initialiseBaseMemoryHeaps();
-        return g_globalHeap;
+    hMemoryHeapBase* hFindMemoryHeapByPtr(void* ptr) {
+        return HeapPrivate::findHeapByPtr(ptr);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetDebugHeap()
-    {
-        if(g_debugHeap == NULL) initialiseBaseMemoryHeaps();
-        return g_debugHeap;
+    void hGlobalMemoryFree(void* ptr) {
+        hMemoryHeapBase* h=hFindMemoryHeapByPtr(ptr);
+        if (h) {
+            h->release(ptr);
+        }
     }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+void* operator new (size_t size)
+{
+    Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
+    return heap->alloc(size, 16);
+}
 
-    HEART_DLLEXPORT void               HEART_API SetDebugHeap( hMemoryHeapBase* heap )
-    {
-        hcAssert(g_debugHeap == NULL);
-        g_debugHeap = heap;
-    }
+void* operator new[] (size_t size)
+{
+    Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
+    return heap->alloc(size, 16);
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+void operator delete (void* mem)
+{
+    Heart::hGlobalMemoryFree(mem);
+}
 
-    HEART_DLLEXPORT void               HEART_API SetLuaHeap(hMemoryHeapBase* heap)
-    {
-        hcAssert(g_luaHeap==NULL);
-        g_luaHeap=heap;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    HEART_DLLEXPORT hMemoryHeapBase*   HEART_API GetLuaHeap()
-    {
-        if(g_luaHeap == NULL) initialiseBaseMemoryHeaps();
-        return g_luaHeap;
-    }
-
+void operator delete[] (void* mem)
+{
+    Heart::hGlobalMemoryFree(mem);
 }

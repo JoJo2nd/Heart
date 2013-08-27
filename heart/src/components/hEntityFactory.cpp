@@ -50,7 +50,7 @@ namespace Heart
         ComponentCreateCallback createFunc, 
         ComponentDestroyCallback destroyFunc )
     {
-        hComponentFactory* fact = hNEW(GetGlobalHeap(), hComponentFactory);
+        hComponentFactory* fact = hNEW(hComponentFactory);
         hUint i=0;
 
         for (; props[i].name_!=NULL; ++i) {}
@@ -92,7 +92,7 @@ namespace Heart
         for (hUint i=0; entityLookUp_.Find(entryHash); ++i, hStrPrintf(objectName, nameLen, "%s%d", wantedObjectName, i), entryHash=hCRC32::StringCRC(objectName)) {}
 
         //TODO: Allocate from a pool?
-        entry = hNEW(GetGlobalHeap(), hEntity)();
+        entry = hNEW(hEntity)();
         entry->SetName(objectName);
         entityLookUp_.Insert(entryHash, entry);
 
@@ -132,7 +132,7 @@ namespace Heart
                     else if (prop->flags_&eComponentTypeFlag_Ptr) {
                         // alloc & copy
                         hChar** strptr=(hChar**)((hUint8*)comp+prop->offset_);
-                        *strptr=hNEW_ARRAY(GetGlobalHeap(), hChar, size);
+                        *strptr=hNEW_ARRAY(hChar, size);
                         hMemCpy(*strptr, data, size);
                     }
                 }
@@ -157,7 +157,7 @@ namespace Heart
         for (hUint i=0; entityLookUp_.Find(entryHash); ++i, hStrPrintf(objectName, nameLen, "%s%d", wantedObjectName, i), entryHash=hCRC32::StringCRC(objectName)) {}
 
         //TODO: Allocate from a pool?
-        entry = hNEW(GetGlobalHeap(), hEntity)();
+        entry = hNEW(hEntity)();
         entry->SetName(objectName);
         entityLookUp_.Insert(entryHash, entry);
 
@@ -183,7 +183,7 @@ namespace Heart
 
     void hEntityFactory::registerObjectTemplate(const hWorldObjectTemplate& wot)
     {
-        hWorldObjectTemplate* newwot=hNEW(GetGlobalHeap(), hWorldObjectTemplate)();
+        hWorldObjectTemplate* newwot=hNEW(hWorldObjectTemplate)();
         *newwot=wot;
         objectTemplates_.Insert(hCRC32::StringCRC(newwot->getName()), newwot);
     }

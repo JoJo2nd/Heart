@@ -40,7 +40,7 @@ namespace Heart
         }
         virtual ~hIReferenceCounted() 
         {
-            hcWarningHigh(reference_.value_ != 0, "Object instance deleted before all references were released (address=0x%p ref=%u)", this, reference_.value_);
+            hcAssertMsg(reference_.value_ == 0, "Object instance deleted before all references were released (address=0x%p ref=%u)", this, reference_.value_);
         }
         void			AddRef()
         {

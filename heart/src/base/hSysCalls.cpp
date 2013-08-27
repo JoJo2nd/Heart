@@ -180,7 +180,6 @@ void FlushSymbolsToLogFile();
     {
         EnterCriticalSection(&g_access);
         FlushSymbolsToLogFile();
-        //TrackPopMarker(/*ROOT*/);
         LeaveCriticalSection(&g_access);
     }
 

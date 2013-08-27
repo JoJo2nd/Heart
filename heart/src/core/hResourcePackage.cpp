@@ -62,9 +62,9 @@ namespace Heart
 
     hResourcePackage::~hResourcePackage()
     {
-        hDELETE_SAFE(GetGlobalHeap(), zipPackage_);
+        hDELETE_SAFE(zipPackage_);
         resourceMap_.Clear(hTrue);
-        hDELETE_SAFE(GetGlobalHeap(), packageHeap_);
+        //hDELETE_SAFE(packageHeap_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ namespace Heart
 
         packageCRC_ = hCRC32::StringCRC(packname);
 
-        zipPackage_ = hNEW(GetGlobalHeap(), hZipFileSystem)(zipname);
+        zipPackage_ = hNEW(hZipFileSystem)(zipname);
 
         if (zipPackage_->IsOpen())
         {
@@ -89,7 +89,7 @@ namespace Heart
         }
         else
         {
-            hDELETE_SAFE(GetGlobalHeap(), zipPackage_);
+            hDELETE_SAFE(zipPackage_);
         }
 
         hcAssert(fileSystem_);
@@ -107,12 +107,12 @@ namespace Heart
 
         tempHeap_.create(0, hTrue);
 
-        hChar* xmldata = (hChar*)hHeapMalloc(GetGlobalHeap(), (hUint32)(pakDesc->Length()+1));
+        hChar* xmldata = (hChar*)hHeapMalloc("general", (hUint32)(pakDesc->Length()+1));
 
         pakDesc->Read(xmldata, (hUint32)pakDesc->Length());
         xmldata[pakDesc->Length()] = 0;
 
-        if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata, GetGlobalHeap()))
+        if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata))
         {
             return -1;
         }
@@ -141,21 +141,21 @@ namespace Heart
         }
 
         if (!packageHeap_) {
-            if (sizeBytes == 0)
-            {
-                // Create base/normal allocator, useful for debug
-                packageHeap_ = hNEW(GetGlobalHeap(), hMemoryHeap)(packageName_);
-                packageHeap_->create(0, hTrue);
-            }
-            else
-            {
-                packageHeap_ = hNEW(GetGlobalHeap(), hStackMemoryHeap)(GetGlobalHeap());
-                packageHeap_->create(sizeBytes, hTrue);
-            }
+            packageHeap_=Heart::hFindMemoryHeapByName("general");// maybe resources?
+//             if (sizeBytes == 0)
+//             {
+//                 // Create base/normal allocator, useful for debug
+//                 packageHeap_ = hNEW(hMemoryHeap)(packageName_);
+//                 packageHeap_->create(0, hTrue);
+//             }
+//             else
+//             {
+//                 packageHeap_ = hNEW(hStackMemoryHeap)();
+//                 packageHeap_->create(sizeBytes, hTrue);
+//             }
         }
 
-        resourceMap_.SetHeap(packageHeap_);
-
+        links_.Resize(0);
         links_.Reserve(16);
         for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling())
         {

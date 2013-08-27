@@ -61,7 +61,6 @@ namespace Heart
         resourceManager_ = resManager;
         controllerManager_ = controllerManager;
 
-        menuMap_.SetHeap(GetDebugHeap());
         menuMap_.SetAutoDelete(hTrue);
 
         hRenderMaterialManager* matMgr=renderer->GetMaterialManager();

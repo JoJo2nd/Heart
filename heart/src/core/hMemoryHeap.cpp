@@ -175,11 +175,12 @@ void hMemoryHeap::release( void* ptr )
     if ( ptr != NULL )
     {	
         hMH_PRE_ACTION();
-        hcAssert( pointerBelongsToMe(ptr) );
+        //hcAssert( pointerBelongsToMe(ptr) );
         size_t s = mspace_allocate_size(ptr);
         --alloced_;
         hMH_RELEASE_TRACK_INFO( ptr, s );
-        mspace_free( localMspace_, ptr );
+        //mspace_free( localMspace_, ptr );
+        dlfree( ptr );
         hMH_POST_ACTION();
     }
 }
@@ -218,6 +219,7 @@ hMemoryHeapBase::HeapInfo hMemoryHeap::usage()
 
 hBool hMemoryHeap::pointerBelongsToMe( void* ptr )
 {
+    if (!ptr) return hFalse;
     hMH_PRE_ACTION();
     hBool r = mspace_valid_pointer( localMspace_, ptr ) == 1 ? hTrue : hFalse;
     hMH_POST_ACTION();

@@ -83,7 +83,7 @@ namespace Heart
             if ( RunLuaThread( i ) )
             {
                 hLuaThreadState* removed = luaThreads_.Remove( i );
-                hDELETE(GetGlobalHeap()/*!heap*/, removed);
+                hDELETE(removed);
             }
 
             i = next;
@@ -140,12 +140,12 @@ namespace Heart
         (void)osize;
         if (nsize == 0) 
         {
-            hHeapFree(GetLuaHeap(), ptr );
+            hFree(ptr);
             return NULL;
         }
         else
         {
-            return hHeapRealloc(GetLuaHeap(), ptr, nsize);
+            return hHeapRealloc("lua", ptr, nsize);
         }
     }
 
@@ -313,12 +313,12 @@ namespace Heart
 
     hComponent* hLuaStateManager::LuaScriptComponentCreate( hEntity* owner )
     {
-        hLuaThreadState* newthread = hNEW(GetGlobalHeap()/*!heap*/, hLuaThreadState);
+        hLuaThreadState* newthread = hNEW(hLuaThreadState);
         newthread->lua_ = NewLuaState( mainLuaState_ );
         newthread->status_ = HLUA_NEWTHREAD;
         newthread->yieldRet_ = 0;
 
-        return hNEW(GetGlobalHeap()/*!heap*/, hLuaScriptComponent)(owner, newthread);
+        return hNEW(hLuaScriptComponent)(owner, newthread);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -327,7 +327,7 @@ namespace Heart
 
     void hLuaStateManager::LuaScriptComponentDestroy( hComponent* luaComp )
     {
-        hDELETE(GetGlobalHeap()/*!heap*/, luaComp);
+        hDELETE(luaComp);
     }
 
 }

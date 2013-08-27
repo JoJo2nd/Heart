@@ -291,10 +291,10 @@ namespace Heart
                 data = NULL;
                 return;
             case 1:
-                data = hNEW(GetGlobalHeap(), _Ty);//need placement_new( malloc_func() )
+                data = hNEW(_Ty);//need placement_new( malloc_func() )
                 break;
             default:
-                data = hNEW_ARRAY(GetGlobalHeap(), _Ty, header.count_);//need placement_new( malloc_func() )
+                data = hNEW_ARRAY(_Ty, header.count_);//need placement_new( malloc_func() )
                 break;
             }
 

@@ -108,7 +108,7 @@ namespace hRenderUtility
 
     HEART_DLLEXPORT
     void HEART_API buildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
-    hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
+    hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
@@ -171,7 +171,7 @@ namespace hRenderUtility
         }
 
         rndr->createIndexBuffer(indices, idxCnt, 0, outIdxBuf);
-        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -230,9 +230,9 @@ namespace hRenderUtility
 
     HEART_DLLEXPORT 
     void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint wdivs, hUint hdivs, 
-    hRenderer* rndr, hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
+    hRenderer* rndr, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
         hcAssert(width > 0.f && height > 0.f && wdivs >= 1 && hdivs >= 1);
-        hcAssert(outVtxBuf && heap && rndr);
+        hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
             {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
@@ -275,7 +275,7 @@ namespace hRenderUtility
         }
 
         rndr->createIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
-        rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,10 +283,9 @@ namespace hRenderUtility
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT 
-    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hRenderer* rndr,
-    hMemoryHeapBase* heap, hVertexBuffer** outVtxBuf)
+    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hRenderer* rndr, hVertexBuffer** outVtxBuf)
     {
-        hcAssert(outVtxBuf && heap && rndr);
+        hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
             {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
@@ -352,7 +351,7 @@ namespace hRenderUtility
             vtx+=3;
         }
 
-        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, heap, outVtxBuf);
+        rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
     }
 
 
@@ -361,7 +360,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
 #define PRIM_COUNT (36)
-    hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB) {
+    hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hVertexBuffer** retVB) {
         hInputLayoutDesc desc[] = {
             {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
             {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
@@ -422,7 +421,7 @@ namespace hRenderUtility
              .5f,  .5f,  .5f,   0.f, 0.f, 1.f,
              .5f, -.5f,  .5f,   0.f, 0.f, 1.f,
         };
-        rndr->createVertexBuffer(verts, PRIM_COUNT, desc, (hUint32)hStaticArraySize(desc), 0, heap, retVB);
+        rndr->createVertexBuffer(verts, PRIM_COUNT, desc, (hUint32)hStaticArraySize(desc), 0, retVB);
         return *retVB;
     }
 #undef PRIM_COUNT
@@ -797,7 +796,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex, hMemoryHeapBase* heap) {
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex) {
         hcAssert(rndr && outfont && outtex);
 
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
@@ -815,7 +814,7 @@ namespace hRenderUtility
         hMipDesc mipsdesc[] = {
             {(hUint32)low_res_fnt_width, (hUint32)low_res_fnt_height, (hByte*)low_res_fnt_data, (hUint)low_res_fnt_data_len},
         };
-        rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, heap, outtex);
+        rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, outtex);
 
         return outfont;
     }

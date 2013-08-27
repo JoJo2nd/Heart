@@ -71,7 +71,7 @@ namespace
         hChar* fullFilename = (hChar*)hAlloca(len);
         hStrCopy(fullFilename, len, workingDir_.GetBuffer());
         hStrCat(fullFilename, len, filename);
-        hdFileHandle* fh;
+        hdFileHandle fh;
         const hChar* devMode;
 
         if ( mode == FILEMODE_WRITE )
@@ -92,7 +92,7 @@ namespace
             return NULL;
         }
 
-        hDriveFile* pFile = hNEW(GetGlobalHeap(), hDriveFile);
+        hDriveFile* pFile = hNEW(hDriveFile);
         pFile->fileHandle_ = fh;
 
         return pFile;
@@ -109,9 +109,9 @@ namespace
 			return;
 		}
 
-		hdFclose( ((hDriveFile*)pFile)->fileHandle_ );
+		hdFclose(&((hDriveFile*)pFile)->fileHandle_);
 
-		hDELETE(GetGlobalHeap(), pFile);
+		hDELETE(pFile);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

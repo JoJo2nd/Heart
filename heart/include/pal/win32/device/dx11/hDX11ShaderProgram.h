@@ -46,10 +46,10 @@ namespace Heart
         hdDX11ShaderProgram(hdDX11RenderDevice* device) 
             : device_(device)
             , type_(ShaderType_MAX)
-            , pixelShader_(NULL)
-            , shaderInfo_(NULL)
+            , pixelShader_(hNullptr)
+            , shaderInfo_(hNullptr)
             , blobLen_(0)
-            , shaderBlob_(NULL)
+            , shaderBlob_(hNullptr)
         {
 
         }

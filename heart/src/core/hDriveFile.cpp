@@ -34,7 +34,7 @@ namespace Heart
 
 	hUint64 hDriveFile::Tell()
 	{
-		return hdFtell( fileHandle_ );
+		return hdFtell(&fileHandle_);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ namespace Heart
 
 	hUint64 hDriveFile::Length()
 	{
-		return hdFsize( fileHandle_ );
+		return hdFsize(&fileHandle_);
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ namespace Heart
     hUint32 hDriveFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( hdFread( fileHandle_, pBuffer, size, &ret ) != FILEERROR_NONE )
+        if ( hdFread(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
             return 0;
         return ret;
     }
@@ -65,7 +65,7 @@ namespace Heart
     hUint32 hDriveFile::Write( const void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( hdFwrite( fileHandle_, pBuffer, size, &ret ) != FILEERROR_NONE )
+        if ( hdFwrite(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
             return 0;
         return ret;
     }
@@ -77,7 +77,7 @@ namespace Heart
     hUint32 hDriveFile::Seek( hUint64 offset, hdSeekOffset from )
     {
         hdSeekOffset devFrom = (hdSeekOffset)from;
-        hdFseek( fileHandle_, offset, devFrom );
+        hdFseek(&fileHandle_, offset, devFrom);
         return 0;
     }
 
@@ -87,7 +87,7 @@ namespace Heart
 
     hTime hDriveFile::GetTimestamp()
     {
-        return hdFstat(fileHandle_).lastModTime_;
+        return hdFstat(&fileHandle_).lastModTime_;
     }
 
 }

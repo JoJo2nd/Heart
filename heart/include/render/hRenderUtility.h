@@ -52,17 +52,16 @@ namespace hRenderUtility
 		hUint16 rings, 
 		hFloat radius,
 		hRenderer* rndr, 
-        hMemoryHeapBase* heap,
 		hIndexBuffer** outIdxBuf,
 		hVertexBuffer** outVtxBuf );
 	HEART_DLLEXPORT 
     void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth,
-    hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** outVtxBuf);
+    hRenderer* rndr, hVertexBuffer** outVtxBuf);
 	HEART_DLLEXPORT 
     void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint hdivs, hUint vdivs, 
-    hRenderer* rndr, hMemoryHeapBase* heap, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf);
+    hRenderer* rndr, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf);
     HEART_DLLEXPORT
-    hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hMemoryHeapBase* heap, hVertexBuffer** retVB);
+    hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hVertexBuffer** retVB);
     //////////////////////////////////////////////////////////////////////////
     // Materials /////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -77,7 +76,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex, hMemoryHeapBase* heap);
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex);
     HEART_DLLEXPORT
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex);
     //////////////////////////////////////////////////////////////////////////

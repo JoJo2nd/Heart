@@ -41,9 +41,8 @@ namespace Cmd
     {
     public:
         hFUNCTOR_TYPEDEF(void(*)(hVertexBuffer*), hZeroProc);
-        hVertexBuffer( hMemoryHeapBase* heap, hZeroProc zeroproc)
-            : heap_(heap)
-            , zeroProc_(zeroproc)
+        hVertexBuffer(hZeroProc zeroproc)
+            : zeroProc_(zeroproc)
         {}
         ~hVertexBuffer() 
         {
@@ -59,7 +58,6 @@ namespace Cmd
             zeroProc_(this);
         }
 
-        hMemoryHeapBase*        heap_;
         hZeroProc               zeroProc_;
         hUint32                 stride_;
         hUint32					vtxCount_;

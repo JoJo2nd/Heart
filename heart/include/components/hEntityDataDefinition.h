@@ -72,13 +72,10 @@ namespace Heart
     {
     public:
         hComponentDataDefinition()
-            : heap_(GetGlobalHeap())
         {
         }
-        hComponentDataDefinition(hMemoryHeapBase* heap, hComponentFactory* base)
-            : heap_(heap)
-            , properties_(heap)
-            , baseFactory_(base)
+        hComponentDataDefinition(hComponentFactory* base)
+            : baseFactory_(base)
         {
         }
         hComponentDataDefinition(const hComponentDataDefinition& rhs)
@@ -87,7 +84,7 @@ namespace Heart
             dataSize_=rhs.dataSize_;
             baseFactory_=rhs.baseFactory_;
             rhs.properties_.CopyTo(&properties_);
-            overrideData_=(hUint8*)hHeapMalloc(heap_, dataSize_);
+            overrideData_=(hUint8*)hHeapMalloc("general", dataSize_);
             hMemCpy(overrideData_, rhs.overrideData_, dataSize_);
         }
         hComponentDataDefinition& operator = (const hComponentDataDefinition& rhs)
@@ -96,13 +93,13 @@ namespace Heart
             dataSize_=rhs.dataSize_;
             baseFactory_=rhs.baseFactory_;
             rhs.properties_.CopyTo(&properties_);
-            overrideData_=(hUint8*)hHeapMalloc(heap_, dataSize_);
+            overrideData_=(hUint8*)hHeapMalloc("general", dataSize_);
             hMemCpy(overrideData_, rhs.overrideData_, dataSize_);
             return *this;
         }
         ~hComponentDataDefinition()
         {
-            hHeapFreeSafe(heap_, overrideData_);
+            hFreeSafe(overrideData_);
         }
 
         hComponentFactory* GetComponentFactory() const { return baseFactory_; }
@@ -116,7 +113,7 @@ namespace Heart
             hcAssertMsg(baseFactory_->GetProperty(propHash), "Couldn't find property hash 0x%08x", propHash);
             hUint oldsize=dataSize_;
             dataSize_+=size;
-            overrideData_=(hUint8*)hHeapRealloc(heap_, overrideData_, dataSize_);
+            overrideData_=(hUint8*)hHeapRealloc("general", overrideData_, dataSize_);
             hMemCpy(overrideData_+oldsize, data, size);
             hComponentPropertyDefault cpd;
             cpd.overrideHash_=propHash;

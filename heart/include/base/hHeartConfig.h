@@ -57,7 +57,7 @@
 #endif
 
 #ifndef ONLY_MSPACES
-#   define ONLY_MSPACES 1
+#   define ONLY_MSPACES 0
 #endif
 
 //#define HEART_ALLOW_NEW

@@ -168,7 +168,7 @@ namespace Heart
                 poolblock=&poolBlocks_[poolBlocks_.GetSize()-1];
             }
 
-            hUint8* ptr=hNEW_ARRAY(baseHeap_, hUint8, s_poolBlockSize);
+            hUint8* ptr=hNEW_ARRAY(hUint8, s_poolBlockSize);
             poolblock->mem_=(void*)ptr;
             poolblock->alloced_=0;
             for (hUint ele=0; ele<t_blockSize; ++ele) {
@@ -190,10 +190,9 @@ namespace Heart
             }
 
             block->alloced_=0;
-            hHeapFreeSafe(baseHeap_, block->mem_);
+            hFreeSafe(block->mem_);
         }
 
-        hMemoryHeapBase*    baseHeap_;
         hUint32				alloced_;
         PoolBlockVectorType poolBlocks_;
         FreeListType        freeList_;

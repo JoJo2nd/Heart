@@ -76,10 +76,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hMaterial::hMaterial(hMemoryHeapBase* heap, hRenderer* renderer) : memHeap_(heap)
-        , renderer_(renderer)
+    hMaterial::hMaterial(hRenderer* renderer) 
+        : renderer_(renderer)
         , manager_(renderer->GetMaterialManager())
-        , groups_(heap) 
         , defaultDataSize_(0)
         , defaultData_(hNullptr)
         , selectorCount_(0)
@@ -470,7 +469,7 @@ namespace Heart
         defVal.count=paramdef.count;
         if (defVal.type==ePTFloat || defVal.type==ePTInt || defVal.type==ePTColour) {
             defVal.dataOffset=defaultDataSize_;
-            defaultData_=(hUint8*)hHeapRealloc(memHeap_, defaultData_, defaultDataSize_);
+            defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_);
             hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, paramdef.floatData, paramdef.count);
         }
         defaultValues_.PushBack(defVal);
@@ -500,6 +499,8 @@ namespace Heart
 
     void hMaterial::unbind() {
         hcAssert(renderer_ && manager_);
+
+        releaseRenderCommands();
 
         for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
             for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
@@ -539,7 +540,7 @@ namespace Heart
         defaultSamplers_.Resize(0);
 
         defaultDataSize_=0;
-        hHeapFreeSafe(memHeap_, defaultData_);
+        hFreeSafe(defaultData_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -547,9 +548,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::generateRenderCommands() {
+        releaseRenderCommands();
         hRenderCommandGenerator rcGen(&renderCmds_);
         selectorCount_=getGroupCount()+getTotalTechniqueCount()+getTotalPassCount();
-        groupCmds_=hNEW_ARRAY(memHeap_, hUint, selectorCount_);
+        groupCmds_=hNEW_ARRAY(hUint, selectorCount_);
         techCmds_=groupCmds_+getGroupCount();
         passCmds_=techCmds_+getTotalTechniqueCount();
         hUint groups=getGroupCount();
@@ -591,6 +593,18 @@ namespace Heart
             }
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::releaseRenderCommands() {
+        selectorCount_=0;
+        hDELETE_ARRAY_SAFE(groupCmds_);
+        techCmds_=hNullptr;
+        passCmds_=hNullptr;
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -638,7 +652,7 @@ namespace Heart
 
     void hMaterialCmdLookUpHelper::init(hMaterial* material) {
         count_=material->getGroupCount()+material->getTotalTechniqueCount()+material->getTotalPassCount();
-        group_=hNEW_ARRAY(GetGlobalHeap(), hUint, count_);
+        group_=hNEW_ARRAY(hUint, count_);
         tech_=group_+material->getGroupCount();
         pass_=tech_+material->getTotalTechniqueCount();
         hUint groupsWritten=0;
@@ -663,7 +677,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterialCmdLookUpHelper::destroy() {
-        hDELETE_ARRAY_SAFE(GetGlobalHeap(), group_);
+        hDELETE_ARRAY_SAFE(group_);
         tech_=hNullptr;
         pass_=hNullptr;
     }

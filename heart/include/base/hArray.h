@@ -102,8 +102,7 @@ namespace Heart
         typedef _Ty* TypePtr;
 
         hVector()
-            : heap_(GetGlobalHeap())
-            , values_( NULL )
+            : values_( NULL )
             , size_( 0 )
             , reserve_( 0 )
         {}
@@ -117,12 +116,6 @@ namespace Heart
 
             return *this;
         }
-        hVector(hMemoryHeapBase* heap)
-            : heap_(heap)
-            , values_( NULL )
-            , size_( 0 )
-            , reserve_( 0 )
-        {}
         ~hVector()
         {
             Clear();
@@ -132,10 +125,7 @@ namespace Heart
         void CopyTo( hVector< _Uy, _OtherGranularity >* rhs ) const
         {
             rhs->Shrink(0);
-            if (rhs->heap_!=heap_) {
-                rhs->Clear();
-            }
-            rhs->heap_=heap_;
+            rhs->Clear();
             rhs->Reserve( size_ );
             for ( hUint32 i = 0; i < size_; ++i )
             {
@@ -160,7 +150,7 @@ namespace Heart
             if ( size > reserve_ )
             {
                 reserve_ = size;
-                values_ = (_Ty*)hHeapAlignRealloc(heap_, values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hAlignRealloc(values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
             }
         }
 
@@ -182,13 +172,9 @@ namespace Heart
             values_[size_-1] = val;
         }
 
-        void Clear() 
-        {
-            if (heap_) {
-                Shrink( 0 );
-                hHeapFree(heap_, values_);
-            }
-            values_ = NULL;
+        void Clear() {
+            Shrink( 0 );
+            hFreeSafe(values_);
             reserve_ = 0;
         }
 
@@ -212,11 +198,10 @@ namespace Heart
         
         void ReserveGran( hUint32 size )
         {
-            if ( size > reserve_ )
-            {
+            if ( size > reserve_ ) {
                 reserve_ = hAlign( size, _Granularity );
                 hcAssert( reserve_ >= size );
-                values_ = (_Ty*)hHeapAlignRealloc(heap_, values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hAlignRealloc(values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
             }
         }
 
@@ -237,7 +222,6 @@ namespace Heart
             size_ = size;
         }
 
-        hMemoryHeapBase*    heap_;
         TypePtr	            values_;
         hUint32             size_;
         hUint32             reserve_;

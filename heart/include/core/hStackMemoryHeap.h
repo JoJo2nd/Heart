@@ -130,7 +130,7 @@ namespace Heart
             return info; 
         }
         hSizeT                     totalAllocationCount() const { return alloced_; }
-        hBool                      pointerBelongsToMe( void* ptr ) { return hFalse; }
+        hBool                      pointerBelongsToMe(void* ptr) { return (uintptr_t)ptr >= (uintptr_t)basePtr_ && (uintptr_t)ptr < (uintptr_t)basePtr_+sizeBytes_; }
 
     private:
 

@@ -48,14 +48,12 @@ enum hFontStyling
 class hFontFormatting
 {
 public:
-    hFontFormatting(hMemoryHeapBase* heap = GetGlobalHeap())
-        : inputUTF8Str_(heap)
-        , flags_(0)
+    hFontFormatting()
+        : flags_(0)
         , font_(0)
         , scale_(1.f)
         , outputPtr_(NULL)
         , outputSize_(0)
-        , formattedLines_(heap)
         , primCount_(0)
     {
     }
@@ -164,7 +162,8 @@ private:
             strBufIdx_ = rhs.strBufIdx_;
             strOs_ = rhs.strOs_;
             value_ = rhs.value_;
-            return *this; }
+            return *this;
+        }
         hTextIterator& operator ++ () { 
             next();
             return *this;

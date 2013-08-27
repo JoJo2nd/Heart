@@ -64,6 +64,7 @@ namespace Heart
     struct hDebugPrimsSet
     {
         void reset();
+        void clear();
 
         hVector< hDebugLine >       lines_;
         hVector< hDebugTriPosCol >  tris_;
@@ -94,10 +95,13 @@ namespace Heart
         void end();
 
         static hDebugDraw* it();
+        static void        release();
 
     private:
         
         friend class hDebugDrawRenderer;
+
+
 
         hDebugDrawRenderer* renderer_;
         hDebugPrimsSet debugPrims_[eDebugSet_Max];
@@ -111,9 +115,9 @@ namespace Heart
         ~hDebugDrawRenderer();
 
         void initialiseResources(hRenderer* renderer);
+        void destroyResources();
         void setMainViewCameraIndex(hUint camIndex);
 
-        void destroyResources();
         void render(hRenderer* renderer, hRenderSubmissionCtx* ctx);
         void append(hDebugDraw* debugdraw);
 

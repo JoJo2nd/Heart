@@ -40,7 +40,7 @@ namespace Heart
 
     hComponent* hLuaScriptComponent::hLuaComponentCreate( hEntity* owner )
     {
-        return hNEW(GetGlobalHeap(),hLuaScriptComponent)(owner, NULL);
+        return hNEW(hLuaScriptComponent)(owner, NULL);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ namespace Heart
 
     void hLuaScriptComponent::hLuaComponentDestroy( hComponent* comp )
     {
-        hDELETE_SAFE(GetGlobalHeap(), comp);
+        hDELETE_SAFE(comp);
     }
 
 }

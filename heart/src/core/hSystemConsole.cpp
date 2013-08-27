@@ -183,7 +183,7 @@ namespace Heart
                 //////////////////////////////////////////////////////////////////////////
                 loaded_ = hTrue;
 
-                consoleWindow_ = hNEW(GetDebugHeap(), hConsoleUI)(this);
+                consoleWindow_ = hNEW(hConsoleUI)(this);
                 consoleWindow_->InitRenderResources(renderer_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
             }
