@@ -1,2 +1,0 @@
-Release|Win32
-Debug|Win32
