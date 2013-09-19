@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
+find_package(Protobuf REQUIRED)
 
 if (MSVC)
     #add_definitions(/wd"4244")
@@ -13,13 +14,11 @@ set(MESH_BUILDER_SRC_DIR
 )
 set( MESH_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
-    "${MESH_BUILDER_SRC_DIR}/include"
+    "${MESH_BUILDER_SRC_DIR}/src"
 )
-set( MESH_BUILDER_HDR_FILES 
-    "${MESH_BUILDER_SRC_DIR}/include/meshloader.h"
-)
-set( MESH_BUILDER_SRC_FILES
-    "${MESH_BUILDER_SRC_DIR}/src/meshloader.cpp"
+file(GLOB MESH_BUILDER_SRC_FILES 
+    "${MESH_BUILDER_SRC_DIR}/src/*.h"
+    "${MESH_BUILDER_SRC_DIR}/src/*.cpp"
 )
 set(MESH_BUILDER_LIB_DIRS
 	"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
@@ -44,13 +43,12 @@ if (WIN32)
     endif()
 endif()
 
-source_group(include FILES ${MESH_BUILDER_HDR_FILES})
 source_group(source  FILES ${MESH_BUILDER_SRC_FILES})
 
 include_directories(${MESH_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${MESH_BUILDER_LIB_DIRS})
-add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES} ${MESH_BUILDER_HDR_FILES})
-target_link_libraries(mesh_builder lua crypto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES})
+target_link_libraries(mesh_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
 

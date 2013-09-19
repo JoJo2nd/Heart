@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
+find_package(Protobuf REQUIRED)
 
 if (MSVC)
     #add_definitions(/wd"4244")
@@ -13,25 +14,23 @@ set(SHADER_BUILDER_SRC_DIR
 )
 set( SHADER_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
-    "${SHADER_BUILDER_SRC_DIR}/include"
+    "${GENERATED_PROTO_INC_DIRS}"
+    "${SHADER_BUILDER_SRC_DIR}/src"
 )
-set( SHADER_BUILDER_HDR_FILES 
-    "${SHADER_BUILDER_SRC_DIR}/include/shaderloader.h"
-)
-set( SHADER_BUILDER_SRC_FILES
-    "${SHADER_BUILDER_SRC_DIR}/src/shaderloader.cpp"
+file(GLOB SHADER_BUILDER_FILES 
+    "${SHADER_BUILDER_SRC_DIR}/src/*.h"
+    "${SHADER_BUILDER_SRC_DIR}/src/*.cpp"
 )
 set(SHADER_BUILDER_LIB_DIRS
 	"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
 )
 
-source_group(include FILES ${SHADER_BUILDER_HDR_FILES})
-source_group(source  FILES ${SHADER_BUILDER_SRC_FILES})
+source_group(source  FILES ${SHADER_BUILDER_FILES})
 
 include_directories(${SHADER_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
-add_library(shader_builder SHARED ${SHADER_BUILDER_SRC_FILES} ${SHADER_BUILDER_HDR_FILES})
-target_link_libraries(shader_builder lua crypto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
+target_link_libraries(shader_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
 

@@ -237,7 +237,58 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, MaterialData* mat, StrVectorType* includes, StrVectorType* deps);
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps);
+
+Heart::proto::MaterialSampler* findOrAddMaterialSampler(Heart::proto::MaterialResource* mat, const hChar* name) {
+    for (hUint i=0, n=mat->samplers_size(); i<n; ++i) {
+        if (Heart::hStrCmp(mat->samplers(i).samplername().c_str(), name) == 0) {
+            return mat->mutable_samplers()->Mutable(i);
+        }
+    }
+    auto r=mat->add_samplers();
+    r->set_samplername(name);
+    return r;
+}
+
+Heart::proto::MaterialParameter* findOrAddMaterialParameter(Heart::proto::MaterialResource* mat, const hChar* name) {
+    for (hUint i=0, n=mat->parameters_size(); i<n; ++i) {
+        if (Heart::hStrCmp(mat->parameters(i).paramname().c_str(), name) == 0) {
+            return mat->mutable_parameters()->Mutable(i);
+        }
+    }
+    auto r = mat->add_parameters();
+    r->set_paramname(name);
+    return r;
+}
+
+Heart::proto::MaterialGroup* findOrAddMaterialGroup(Heart::proto::MaterialResource* mat, const hChar* name) {
+    for (hUint i=0, n=mat->groups_size(); i<n; ++i) {
+        if (Heart::hStrCmp(mat->groups(i).groupname().c_str(), name) == 0) {
+            return mat->mutable_groups()->Mutable(i);
+        }
+    }
+    auto r = mat->add_groups();
+    r->set_groupname(name);
+    return r;
+}
+
+Heart::proto::MaterialTechnique* findOrAddMaterialTechnique(Heart::proto::MaterialGroup* group, const hChar* name) {
+    for (hUint i=0, n=group->technique_size(); i<n; ++i) {
+        if (Heart::hStrCmp(group->technique(i).techniquename().c_str(), name) == 0) {
+            return group->mutable_technique()->Mutable(i);
+        }
+    }
+    auto r = group->add_technique();
+    r->set_techniquename(name);
+    return r;
+}
+
+Heart::proto::MaterialPass* findOrAddMaterialPass(Heart::proto::MaterialTechnique* tech, hUint passidx) {
+    if (tech->passes_size() > (hInt)passidx) {
+        return tech->mutable_passes(passidx);
+    }
+    return tech->add_passes();
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -252,9 +303,9 @@ int MB_API materialCompile(lua_State* L) {
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+    Heart::proto::MaterialResource materialresource;
     std::vector<std::string> openedfiles;
     MaterialHeader matHeader = {0};
-    MaterialData matData;
     boost::system::error_code ec;
     std::string filepath;
     rapidxml::xml_document<> xmldoc;
@@ -296,30 +347,10 @@ int MB_API materialCompile(lua_State* L) {
         return 0;
     }
 
-    readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &matData, &includes, &depresnames);
+    readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
 
     for (auto i=includes.begin(),n=includes.end(); i!=n; ++i) {
         openedfiles.push_back(*i);
-    }
-
-    matData.header_.samplerCount=(hByte)matData.samplers_.size();
-    matData.header_.samplerOffset=0;
-    matData.header_.parameterCount=(hUint16)matData.parameters_.size();
-    matData.header_.parameterOffset=0;
-    matData.header_.groupCount=(hByte)matData.groups_.size();
-    matData.header_.groupOffset=0;
-
-    if (matData.header_.samplerCount != matData.samplers_.size()) {
-        luaL_error(L, "sampler count is too large (greater than 255)");
-        return 0;
-    }
-    if (matData.header_.groupCount != matData.groups_.size()) {
-        luaL_error(L, "sampler count is too large (greater than 255)");
-        return 0;
-    }
-    if (matData.header_.parameterCount != matData.parameters_.size()) {
-        luaL_error(L, "parameter count is too large (greater than 65535)");
-        return 0;
     }
 
     lua_getglobal(L, "buildpathresolve");
@@ -334,28 +365,23 @@ int MB_API materialCompile(lua_State* L) {
         return 0;
     }
 
-    output.write((char*)&matData.header_, sizeof(matData.header_));
+    std::string streambuffer;
+    google::protobuf::io::StringOutputStream filestream(&streambuffer);
+    google::protobuf::io::CodedOutputStream outputstream(&filestream);
 
-    for (hUint samp=0,sampn=matData.header_.samplerCount; samp<sampn; ++samp) {
-        output.write((char*)&matData.samplers_[samp], sizeof(SamplerDefinition));
-    }
+    //write the resource header
+    Heart::proto::ResourceHeader resHeader;
+    resHeader.set_type("mfx");
+    resHeader.set_sourcefile(lua_tostring(L, 4));
+    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
+    blobsection->set_type(Heart::proto::eResourceSection_Temp);
+    blobsection->set_sectionname("material");
+    blobsection->set_size(materialresource.ByteSize());
 
-    for (hUint param=0, paramn=matData.header_.parameterCount; param<paramn; ++param) {
-        output.write((char*)&matData.parameters_[param], sizeof(ParameterDefinition));
-    }
+    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
+    materialresource.SerializeToCodedStream(&outputstream);
 
-    for (hUint grp=0, grpn=(hUint)matData.groups_.size(); grp<grpn; ++grp) {
-        matData.groups_[grp].groupDef_.techniques=(hUint16)matData.groups_[grp].techniques_.size();
-        output.write((char*)&matData.groups_[grp].groupDef_, sizeof(matData.groups_[grp].groupDef_));
-        for (hUint tech=0, techn=(hUint)matData.groups_[grp].techniques_.size(); tech<techn; ++tech) {
-            matData.groups_[grp].techniques_[tech].techDef_.passes=(hUint16)matData.groups_[grp].techniques_[tech].passes_.size();
-            output.write((char*)&matData.groups_[grp].techniques_[tech].techDef_, sizeof(matData.groups_[grp].techniques_[tech].techDef_));
-            for (hUint passidx=0,passidxn=(hUint)matData.groups_[grp].techniques_[tech].passes_.size(); passidx<passidxn; ++passidx) {
-                output.write((char*)&matData.groups_[grp].techniques_[tech].passes_[passidx], sizeof(PassDefintion));
-            }
-        }
-    }
-
+    output << streambuffer;
     output.close();
 
     //Return a list of resources this material is dependent on
@@ -382,7 +408,7 @@ int MB_API materialScanIncludes(lua_State* L) {
     luaL_checktype(L, 1, LUA_TSTRING);
 
     MaterialHeader matHeader = {0};
-    MaterialData matData;
+    Heart::proto::MaterialResource materialresource;
     boost::system::error_code ec;
     const hChar* filepath=hNullptr;
     rapidxml::xml_document<> xmldoc;
@@ -420,7 +446,7 @@ int MB_API materialScanIncludes(lua_State* L) {
         return 0;
     }
 
-    readMaterialXMLToMaterialData(xmldoc, filepath, &matData, &includes, &depresnames);
+    readMaterialXMLToMaterialData(xmldoc, filepath, &materialresource, &includes, &depresnames);
 
     //Return a list of resources this material is dependent on
     lua_newtable(L);
@@ -439,13 +465,8 @@ int MB_API materialScanIncludes(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, MaterialData* mat, StrVectorType* includes, StrVectorType* deps) {
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
     using namespace Heart;
-
-    mat->header_.resHeader.resourceType = hMAKE_FOURCC('X','X','X','X');//Write a invalid four cc, we'll write a correct one later
-    mat->header_.version = MATERIAL_VERSION;
-    mat->header_.resHeader.resourceType = MATERIAL_MAGIC_NUM;
-    strcpy_s(mat->header_.defaultGroupName, MATERIAL_STRING_MAX_LEN, hXMLGetter(&xmldoc).FirstChild("material").FirstChild("defaultgroup").GetValueString("lowdetail"));
 
     if (hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit")) {
         //Load the base first
@@ -485,236 +506,229 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
     hXMLGetter xSampler = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("sampler");
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
-        SamplerDefinition newSampDef = {0};
-        SamplerDefinition* orgSampDef=mat->getSamplerByName(xSampler.GetAttributeString("name","none"));
-        SamplerDefinition* sampDef= orgSampDef ? orgSampDef : &newSampDef;
-
-        if (xSampler.GetAttribute("name") || !orgSampDef) {
-            strcpy_s(sampDef->samplerName, MATERIAL_STRING_MAX_LEN, xSampler.GetAttributeString("name","none"));
-        }
-        //if (xSampler.FirstChild("texture").ToNode() || !orgSampDef) {
-        //    sampDef->defaultTextureID = hResourceManager::BuildResourceID(xSampler.FirstChild("texture").GetValueString());
-        //}
-        if (xSampler.FirstChild("addressu").ToNode() || !orgSampDef) {
-            sampDef->samplerState.addressU_ = xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        }
-        if (xSampler.FirstChild("addressv").ToNode() || !orgSampDef) {
-            sampDef->samplerState.addressV_ = xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        }
-        if (xSampler.FirstChild("addressw").ToNode() || !orgSampDef) {
-            sampDef->samplerState.addressW_ = xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, SSV_CLAMP);
-        }
-        if (xSampler.FirstChild("bordercolour").ToNode() || !orgSampDef) {
-            sampDef->samplerState.borderColour_ = xSampler.FirstChild("bordercolour").GetValueColour(hColour(0.f, 0.f, 0.f, 1.f));
-        }
-        if (xSampler.FirstChild("filter").ToNode() || !orgSampDef) {
-            sampDef->samplerState.filter_   = xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, SSV_POINT);
-        }
-        if (xSampler.FirstChild("maxanisotropy").ToNode() || !orgSampDef) {
-            sampDef->samplerState.maxAnisotropy_ = xSampler.FirstChild("maxanisotropy").GetValueInt(1);
-        }
-        if (xSampler.FirstChild("minlod").ToNode() || !orgSampDef) {
-            sampDef->samplerState.minLOD_ = xSampler.FirstChild("minlod").GetValueFloat();
-        }
-        if (xSampler.FirstChild("maxlod").ToNode() || !orgSampDef) {
-            sampDef->samplerState.maxLOD_ = xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX);
-        }
-        if (xSampler.FirstChild("miplodbias").ToNode() || !orgSampDef) {
-            sampDef->samplerState.mipLODBias_ = xSampler.FirstChild("miplodbias").GetValueFloat();
+        Heart::proto::MaterialSampler* sampler=hNullptr;
+        if (xSampler.GetAttribute("name")) {
+            sampler = findOrAddMaterialSampler(mat, xSampler.GetAttribute("name")->value());
+        } else { // Error? can't process this!
+            continue;
         }
 
-        if (!orgSampDef) {
-            mat->samplers_.push_back(*sampDef);
+        if (xSampler.FirstChild("addressu").ToNode()) {
+            sampler->mutable_samplerstate()->set_addressu((hUint)xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP));
+        }
+        if (xSampler.FirstChild("addressv").ToNode()) {
+            sampler->mutable_samplerstate()->set_addressv((hUint)xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, SSV_CLAMP));
+        }
+        if (xSampler.FirstChild("addressw").ToNode()) {
+            sampler->mutable_samplerstate()->set_addressw((hUint)xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, SSV_CLAMP));
+        }
+        if (xSampler.FirstChild("bordercolour").ToNode()) {
+            auto colour=xSampler.FirstChild("bordercolour").GetValueColour(hColour(0.f, 0.f, 0.f, 1.f));
+            sampler->mutable_samplerstate()->mutable_bordercolour()->set_red((hUint)(colour.r_*255.f+.5f));
+            sampler->mutable_samplerstate()->mutable_bordercolour()->set_green((hUint)(colour.g_*255.f+.5f));
+            sampler->mutable_samplerstate()->mutable_bordercolour()->set_blue((hUint)(colour.b_*255.f+.5f));
+            sampler->mutable_samplerstate()->mutable_bordercolour()->set_alpha((hUint)(colour.a_*255.f+.5f));
+        }
+        if (xSampler.FirstChild("filter").ToNode()) {
+            sampler->mutable_samplerstate()->set_filter((hUint)xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, SSV_POINT));
+        }
+        if (xSampler.FirstChild("maxanisotropy").ToNode()) {
+            sampler->mutable_samplerstate()->set_maxanisotropy((hUint)xSampler.FirstChild("maxanisotropy").GetValueInt(1));
+        }
+        if (xSampler.FirstChild("minlod").ToNode()) {
+            sampler->mutable_samplerstate()->set_minlod((hFloat)xSampler.FirstChild("minlod").GetValueFloat());
+        }
+        if (xSampler.FirstChild("maxlod").ToNode()) {
+            sampler->mutable_samplerstate()->set_maxlod((hFloat)xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX));
+        }
+        if (xSampler.FirstChild("miplodbias").ToNode()) {
+            sampler->mutable_samplerstate()->set_miplodbias((hFloat)xSampler.FirstChild("miplodbias").GetValueFloat());
         }
     }
 
     hXMLGetter xParameter = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("parameter");
     for (; xParameter.ToNode(); xParameter = xParameter.NextSibling())
     {
-        ParameterDefinition newParamDef = {0};
-        ParameterDefinition* orgParamDef=mat->getParameterByName(xParameter.GetAttributeString("name","none"));
-        ParameterDefinition* paramDef=orgParamDef ? orgParamDef : &newParamDef;
-
-        if (xParameter.GetAttribute("name") || !orgParamDef) {
-            strcpy_s(paramDef->parameterName, MATERIAL_PARAM_STRING_MAX_LEN, xParameter.GetAttributeString("name","none"));
+        hParameterType ptype=ePTNone;
+        proto::MaterialParameter* param=hNullptr;
+        if (xParameter.GetAttribute("name")) {
+            param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
+        } else {
+            continue;// ERROR?
         }
-        if (xParameter.GetAttribute("type") || !orgParamDef) {
-            paramDef->type = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
+        if (xParameter.GetAttribute("type")) {
+            ptype = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
         }
-        if (xParameter.GetValueString() || !orgParamDef) {
+        if (xParameter.GetValueString()) {
             const hChar* valstr=xParameter.GetValueString();
-            if (paramDef->type == ePTFloat) {
-                hFloat* fd=paramDef->floatData;
-                paramDef->count=sscanf_s(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
+            if (ptype == ePTFloat) {
+                hFloat fd[16];
+                hUint count=sscanf_s(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
                     fd, fd+1, fd+2, fd+3, fd+4, fd+5, fd+6, fd+7, fd+8, fd+9, fd+10, fd+11, fd+12, fd+13, fd+14, fd+15);
-            } else if (paramDef->type == ePTInt) {
-                hInt* id=paramDef->intData;
-                paramDef->count=sscanf_s(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
+                for (hUint i=0; i<count; ++i) {
+                    param->add_floatvalues(fd[i]);
+                }
+            } else if (ptype == ePTInt) {
+                hInt id[16];
+                hUint count=sscanf_s(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
                     id, id+1, id+2, id+3, id+4, id+5, id+6, id+7, id+8, id+9, id+10, id+11, id+12, id+13, id+14, id+15);
-            } else if (paramDef->type == ePTColour) {
-                hFloat* fd=paramDef->colourData;
-                paramDef->count=sscanf_s(valstr, " %f , %f , %f , %f ",
-                    fd, fd+1, fd+2, fd+3);
-            } else if (paramDef->type == ePTTexture) {
-                paramDef->count=1;
-                paramDef->resourceID=hResourceManager::BuildResourceID(valstr);
+                for (hUint i=0; i<count; ++i) {
+                    param->add_intvalues(id[i]);
+                }
+            } else if (ptype == ePTColour) {
+                hFloat fd[4] = {1.f, 1.f, 1.f, 1.f};
+                hUint count=sscanf_s(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
+                auto colour=param->add_colourvalues();
+                colour->set_red((hUint)(fd[0]*255.f+.5f));
+                colour->set_green((hUint)(fd[1]*255.f+.5f));
+                colour->set_blue((hUint)(fd[2]*255.f+.5f));
+                colour->set_alpha((hUint)(fd[3]*255.f+.5f));
+            } else if (ptype == ePTTexture) {
+                param->set_resourceid((hUint64)hResourceManager::BuildResourceID(valstr));
             }
-            paramDef->count*=4;
-        }
-
-        if (!orgParamDef) {
-            mat->parameters_.push_back(newParamDef);
         }
     }
 
     hXMLGetter xGroup = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("group");
     for (; xGroup.ToNode(); xGroup = xGroup.NextSibling())
     {
-        GroupData* orgGroupDef=mat->getGroup(xGroup.GetAttributeString("name","none"));
-        GroupData* destGroup=orgGroupDef ? orgGroupDef : mat->addGroup();
-        GroupDefinition* groupDef=&destGroup->groupDef_;
-
-        if (xGroup.GetAttribute("name") || !orgGroupDef) {
-            strcpy_s(groupDef->groupName, MATERIAL_STRING_MAX_LEN, xGroup.GetAttributeString("name","none"));
+        Heart::proto::MaterialGroup* group=hNullptr;
+        if (xGroup.GetAttribute("name")) {
+            group=findOrAddMaterialGroup(mat, xGroup.GetAttributeString("name","none"));
+        } else {
+            continue;//ERROR?
         }
 
         hXMLGetter xTech = xGroup.FirstChild("technique");
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
-            TechniqueData* orgTechDef=destGroup->getTechnique(xTech.GetAttributeString("name","none"));
-            TechniqueData* destTech=orgGroupDef ? orgTechDef : destGroup->addTechnique();
-            TechniqueDefinition* techDef=&destTech->techDef_;
-
-            if (xTech.GetAttribute("name") || !orgTechDef) {
-                strcpy_s(techDef->technqiueName, MATERIAL_STRING_MAX_LEN, xTech.GetAttributeString("name","none"));
+            Heart::proto::MaterialTechnique* tech=hNullptr;
+            if (xTech.GetAttribute("name")) {
+                tech=findOrAddMaterialTechnique(group, xTech.GetAttributeString("name","none"));
+            } else {
+                continue;// Error?
             }
-            if (xTech.FirstChild("sort").ToNode() || !orgTechDef) {
-                techDef->transparent = hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0;
+            if (xTech.FirstChild("sort").ToNode()) {
+                tech->set_transparent(hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0);
             }
-            if (xTech.FirstChild("layer").ToNode() || !orgTechDef) {
-                techDef->layer = (hByte)(xTech.FirstChild("layer").GetValueInt()&0xFF);
+            if (xTech.FirstChild("layer").ToNode()) {
+                tech->set_layer(xTech.FirstChild("layer").GetValueInt()&0xFF);
             }
 
             hXMLGetter xPass = xTech.FirstChild("pass");
             for (hUint passIdx=0; xPass.ToNode(); xPass = xPass.NextSibling(), ++passIdx)
             {
-                hBool newpass=passIdx >= destTech->passes_.size();
-                PassDefintion newPassDef = {0};
-                PassDefintion& passDef= newpass ? newPassDef : destTech->passes_[passIdx];
+                Heart::proto::MaterialPass* pass=findOrAddMaterialPass(tech, passIdx);
 
-                if (xPass.FirstChild("blendenable").ToNode() || newpass) {
-                    passDef.blendState.blendEnable_ = xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                if (xPass.FirstChild("blendenable").ToNode()) {
+                    pass->mutable_blend()->set_blendenable(xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                if (xPass.FirstChild("blendop").ToNode() || newpass) {
-                    passDef.blendState.blendOp_ = xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
+                if (xPass.FirstChild("blendop").ToNode()) {
+                    pass->mutable_blend()->set_blendop(xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD));
                 }
-                if (xPass.FirstChild("blendopalpha").ToNode() || newpass) {
-                    passDef.blendState.blendOpAlpha_ = xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD);
+                if (xPass.FirstChild("blendopalpha").ToNode()) {
+                    pass->mutable_blend()->set_blendopalpha(xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD));
                 }
-                if (xPass.FirstChild("destblend").ToNode() || newpass) {
-                    passDef.blendState.destBlend_ = xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                if (xPass.FirstChild("destblend").ToNode()) {
+                    pass->mutable_blend()->set_destblend(xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
                 }
-                if (xPass.FirstChild("destblendalpha").ToNode() || newpass) {
-                    passDef.blendState.destBlendAlpha_ = xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                if (xPass.FirstChild("destblendalpha").ToNode()) {
+                    pass->mutable_blend()->set_destblendalpha(xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
                 }
-                if (xPass.FirstChild("srcblend").ToNode() || newpass) {
-                    passDef.blendState.srcBlend_= xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                if (xPass.FirstChild("srcblend").ToNode()) {
+                    pass->mutable_blend()->set_srcblend(xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
                 }
-                if (xPass.FirstChild("srcblendalpha").ToNode() || newpass) {
-                    passDef.blendState.srcBlendAlpha_= xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE);
+                if (xPass.FirstChild("srcblendalpha").ToNode()) {
+                    pass->mutable_blend()->set_srcblendalpha(xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
                 }
-                if (xPass.FirstChild("rendertargetwritemask").ToNode() || newpass) {
-                    passDef.blendState.renderTargetWriteMask_ = xPass.FirstChild("rendertargetwritemask").GetValueHex(0xFF);
+                if (xPass.FirstChild("rendertargetwritemask").ToNode()) {
+                    pass->mutable_blend()->set_rendertargetwritemask(xPass.FirstChild("rendertargetwritemask").GetValueHex(0xFF));
                 }
-
-                if (xPass.FirstChild("depthtest").ToNode() || newpass) {
-                    passDef.depthState.depthEnable_ = xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                
+                if (xPass.FirstChild("depthtest").ToNode()) {
+                    pass->mutable_depthstencil()->set_depthenable(xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                if (xPass.FirstChild("depthfunc").ToNode() || newpass) {
-                    passDef.depthState.depthFunc_ = xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, RSV_Z_CMP_LESS);
+                if (xPass.FirstChild("depthfunc").ToNode()) {
+                    pass->mutable_depthstencil()->set_depthfunc(xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, RSV_Z_CMP_LESS));
                 }
-                if (xPass.FirstChild("depthwrite").ToNode() || newpass) {
-                    passDef.depthState.depthWriteMask_ = xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                if (xPass.FirstChild("depthwrite").ToNode()) {
+                    pass->mutable_depthstencil()->set_depthwritemask(xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                if (xPass.FirstChild("stencilenable").ToNode() || newpass) {
-                    passDef.depthState.stencilEnable_ = xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                if (xPass.FirstChild("stencilenable").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilenable(xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                if (xPass.FirstChild("stencilfunc").ToNode() || newpass) {
-                    passDef.depthState.stencilFunc_ = xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, RSV_SF_CMP_NEVER);
+                if (xPass.FirstChild("stencilfunc").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilfunc(xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, RSV_SF_CMP_NEVER));
                 }
-                if (xPass.FirstChild("stencildepthfailop").ToNode() || newpass) {
-                    passDef.depthState.stencilDepthFailOp_ = xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                if (xPass.FirstChild("stencildepthfailop").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencildepthfailop(xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
                 }
-                if (xPass.FirstChild("stencilfail").ToNode() || newpass) {
-                    passDef.depthState.stencilFailOp_ = xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                if (xPass.FirstChild("stencilfail").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilfailop(xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
                 }
-                if (xPass.FirstChild("stencilpass").ToNode() || newpass) {
-                    passDef.depthState.stencilPassOp_ = xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP);
+                if (xPass.FirstChild("stencilpass").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilpassop(xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
                 }
-                if (xPass.FirstChild("stencilreadmask").ToNode() || newpass) {
-                    passDef.depthState.stencilReadMask_ = xPass.FirstChild("stencilreadmask").GetValueHex(0xFFFFFFFF);
+                if (xPass.FirstChild("stencilreadmask").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilreadmask(xPass.FirstChild("stencilreadmask").GetValueHex(0xFFFFFFFF));
                 }
-                if (xPass.FirstChild("stencilwritemask").ToNode() || newpass) {
-                    passDef.depthState.stencilWriteMask_ = xPass.FirstChild("stencilwritemask").GetValueHex(0xFFFFFFFF);
+                if (xPass.FirstChild("stencilwritemask").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilwritemask(xPass.FirstChild("stencilwritemask").GetValueHex(0xFFFFFFFF));
                 }
-                if (xPass.FirstChild("stencilref").ToNode() || newpass) {
-                    passDef.depthState.stencilRef_ = xPass.FirstChild("stencilref").GetValueHex(0x00000000);
+                if (xPass.FirstChild("stencilref").ToNode()) {
+                    pass->mutable_depthstencil()->set_stencilref(xPass.FirstChild("stencilref").GetValueHex(0x00000000));
                 }
-
-                if (xPass.FirstChild("cullmode").ToNode() || newpass) {
-                    passDef.rasterizerState.cullMode_ = xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW);
+                
+                if (xPass.FirstChild("cullmode").ToNode()) {
+                    pass->mutable_rasterizer()->set_cullmode(xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW));
                 }
-                passDef.rasterizerState.depthBias_ = 0;//xPass.FirstChild("depthbias").GetValueFloat();
-                if (xPass.FirstChild("depthbiasclamp").ToNode() || newpass) {
-                    passDef.rasterizerState.depthBiasClamp_ = xPass.FirstChild("depthbiasclamp").GetValueFloat();
+                //passDef.rasterizerState.depthBias_ = 0;//xPass.FirstChild("depthbias").GetValueFloat();
+                if (xPass.FirstChild("depthbiasclamp").ToNode()) {
+                    pass->mutable_rasterizer()->set_depthbiasclamp(xPass.FirstChild("depthbiasclamp").GetValueFloat());
                 }
-                if (xPass.FirstChild("depthclipenable").ToNode() || newpass) {
-                    passDef.rasterizerState.depthClipEnable_ = xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                if (xPass.FirstChild("depthclipenable").ToNode()) {
+                    pass->mutable_rasterizer()->set_depthclipenable(xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                if (xPass.FirstChild("fillmode").ToNode() || newpass) {
-                    passDef.rasterizerState.fillMode_ = xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID);
+                if (xPass.FirstChild("fillmode").ToNode()) {
+                    pass->mutable_rasterizer()->set_fillmode(xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID));
                 }
-                if (xPass.FirstChild("slopescaleddepthbias").ToNode() || newpass) {
-                    passDef.rasterizerState.slopeScaledDepthBias_ = xPass.FirstChild("slopescaleddepthbias").GetValueFloat();
+                if (xPass.FirstChild("slopescaleddepthbias").ToNode()) {
+                    pass->mutable_rasterizer()->set_slopescaleddepthbias(xPass.FirstChild("slopescaleddepthbias").GetValueFloat());
                 }
-                if (xPass.FirstChild("scissortest").ToNode() || newpass) {
-                    passDef.rasterizerState.scissorEnable_ = xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE);
+                if (xPass.FirstChild("scissortest").ToNode()) {
+                    pass->mutable_rasterizer()->set_scissorenable(xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
                 }
-                passDef.rasterizerState.frontCounterClockwise_ = RSV_ENABLE;
-
-                if (xPass.FirstChild("vertex").ToNode() || newpass) {
-                    passDef.vertexProgramID   = hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString());
-                    if (passDef.vertexProgramID) {
+                //passDef.rasterizerState.frontCounterClockwise_ = RSV_ENABLE;
+                
+                if (xPass.FirstChild("vertex").ToNode()) {
+                    pass->set_vertex(hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString()));
+                    if (pass->vertex()) {
                         deps->push_back(xPass.FirstChild("vertex").GetValueString());
                     }
                 }
-                if (xPass.FirstChild("fragment").ToNode() || newpass) {
-                    passDef.fragmentProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString());
-                    if (passDef.fragmentProgramID) {
+                if (xPass.FirstChild("fragment").ToNode()) {
+                    pass->set_pixel(hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString()));
+                    if (pass->pixel()) {
                         deps->push_back(xPass.FirstChild("fragment").GetValueString());
                     }
                 }
-                if (xPass.FirstChild("geometry").ToNode() || newpass) {
-                    passDef.geometryProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString());
-                    if (passDef.geometryProgramID) {
+                if (xPass.FirstChild("geometry").ToNode()) {
+                    pass->set_geometry(hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString()));
+                    if (pass->geometry()) {
                         deps->push_back(xPass.FirstChild("geometry").GetValueString());
                     }
                 }
-                if (xPass.FirstChild("hull").ToNode() || newpass) {
-                    passDef.hullProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("hull").GetValueString());
-                    if (passDef.hullProgramID) {
+                if (xPass.FirstChild("hull").ToNode()) {
+                    pass->set_hull(hResourceManager::BuildResourceID(xPass.FirstChild("hull").GetValueString()));
+                    if (pass->hull()) {
                         deps->push_back(xPass.FirstChild("hull").GetValueString());
                     }
                 }
-                if (xPass.FirstChild("domain").ToNode() || newpass) {
-                    passDef.domainProgramID = hResourceManager::BuildResourceID(xPass.FirstChild("domain").GetValueString());
-                    if (passDef.domainProgramID) {
+                if (xPass.FirstChild("domain").ToNode()) {
+                    pass->set_domain(hResourceManager::BuildResourceID(xPass.FirstChild("domain").GetValueString()));
+                    if (pass->domain()) {
                         deps->push_back(xPass.FirstChild("domain").GetValueString());
                     }
-                }
-
-                if (newpass)  {
-                    destTech->passes_.push_back(passDef);
                 }
             }
         }

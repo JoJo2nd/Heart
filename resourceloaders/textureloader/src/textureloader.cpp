@@ -155,6 +155,7 @@ int TB_API textureCompile(lua_State* L) {
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+    Heart::proto::TextureResource textureresource;
     std::vector<std::string> openedfiles;
     RawTextureData textureData;
     std::string filepath;
@@ -249,36 +250,39 @@ int TB_API textureCompile(lua_State* L) {
         return 0;
     }
 
-    //Write Header
-    TextureHeader header = {0};
-    header.resHeader.resourceType = TEXTURE_MAGIC_NUM;
-    header.version = TEXTURE_VERSION;
-    header.width = textureData.width_;
-    header.height = textureData.height_;
-    header.depth = 0;
-    header.mipCount = textureData.mips_;
-    header.format = textureData.format_;
-    header.flags = keepcpu ? Heart::RESOURCEFLAG_KEEPCPUDATA : (Heart::ResourceFlags)0;
+    std::string streambuffer;
+    google::protobuf::io::StringOutputStream filestream(&streambuffer);
+    google::protobuf::io::CodedOutputStream outputstream(&filestream);
 
-    output.write((hChar*)&header, sizeof(header));
-
-    //Write mip info
-    for (hUint32 i = 0; i < header.mipCount; ++i)
-    {
-        Heart::hMipDesc mdesc;
-        mdesc = mips[i];
-        mdesc.data = 0;
-        output.write((hChar*)&mdesc, sizeof(mdesc));
+    textureresource.set_width(textureData.width_);
+    textureresource.set_height(textureData.height_);
+    textureresource.set_format(textureData.format_);
+    for (hUint32 i = 0; i < textureData.mips_; ++i) {
+        proto::TextureMip* mip=textureresource.add_mips();
+        mip->set_width(mips[i].width);
+        mip->set_height(mips[i].height);
+        mip->set_data(mips[i].data, mips[i].size);
+        delete [] mips[i].data;
+        mips[i].data=hNullptr;
+        mips[i].size=0;
     }
 
-    //Write Texture data
-    for (hUint32 i = 0; i < header.mipCount; ++i)
-    {
-        output.write((hChar*)mips[i].data, mips[i].size);
-        //Release Data
-        delete[] mips[i].data;
-    }
+    //write the resource header
+    Heart::proto::ResourceHeader resHeader;
+    resHeader.set_type("texture");
+    resHeader.set_sourcefile(lua_tostring(L, 4));
+    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
+    blobsection->set_type(Heart::proto::eResourceSection_Temp);
+    blobsection->set_sectionname("texture");
+    blobsection->set_size(textureresource.ByteSize());
+
+    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
+    textureresource.SerializeToCodedStream(&outputstream);
+
+    output.write(streambuffer.c_str(), streambuffer.length());
+
     output.close();
+
     lua_newtable(L); // push empty table, this resource won't have any dependencies
     lua_newtable(L); // push table of input files we depend on (absolute paths)
     hUint idx=1;

@@ -31,6 +31,7 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -86,18 +87,8 @@ Heart::hXMLEnumReamp g_semanticTypes[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, std::ofstream* binoutput, std::list< std::string >* depres);
+void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* mesh, std::list< std::string >* depres);
 void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFloat* max);
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-int inputDescQsortCompar(const void* a, const void* b) {
-    StreamInfo* lhs=(StreamInfo*)a;
-    StreamInfo* rhs=(StreamInfo*)b;
-    return ((0xFF-(lhs->desc.inputStream_-rhs->desc.inputStream_)) << 16) | (0xFF-(lhs->desc.semantic_-rhs->desc.semantic_));
-}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -131,7 +122,6 @@ int MB_API meshCompile(lua_State* L)
     rapidxml::xml_document<> xmldoc;
     shared_array<hChar> xmlmem;
     shared_array<LODInfo> lodInfo;
-    hUint32 lodIdx;
     std::list< std::string > dependentres;
     hChar* pathroot = (hChar*)hAlloca(strlen(filepath.c_str()));
 
@@ -178,6 +168,47 @@ int MB_API meshCompile(lua_State* L)
         return 0;
     }
 
+    Heart::proto::Mesh meshresource;
+
+    hXMLGetter xLODData = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
+    // only parse the first model
+    if (xLODData.ToNode()) {
+        WriteLODRenderables(xLODData, &meshresource, &dependentres);
+    } else {
+        luaL_error(L, "Mesh description is missing any mesh data");
+    }
+
+    std::string streambuffer;
+    google::protobuf::io::StringOutputStream filestream(&streambuffer);
+    google::protobuf::io::CodedOutputStream outputstream(&filestream);
+
+    Heart::proto::ResourceHeader resHeader;
+    resHeader.set_type("mesh");
+    resHeader.set_sourcefile(lua_tostring(L, 4));
+    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
+    blobsection->set_type(Heart::proto::eResourceSection_Temp);
+    blobsection->set_sectionname("mesh");
+    blobsection->set_size(meshresource.ByteSize());
+
+    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
+    meshresource.SerializeToCodedStream(&outputstream);
+    outfile.write(streambuffer.c_str(), streambuffer.length());
+
+#if 0
+    //write the resource header
+    hUint totalmeshsize=0;
+    totalmeshsize+=sizeof(header);
+    Heart::proto::ResourceHeader resHeader;
+    resHeader.set_type("mesh");
+    resHeader.set_sourcefile(lua_tostring(L, 4));
+    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
+    blobsection->set_type(Heart::proto::eResourceSection_Temp);
+    blobsection->set_sectionname("mesh_blob");
+    blobsection->set_size(totalmeshsize);
+
+    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
+    outfile.write(streambuffer.c_str(), streambuffer.length());
+
     header.resHeader.resourceType = MESH_MAGIC_NUM;
     header.version = MESH_VERSION;
     header.lodCount=0;
@@ -221,6 +252,14 @@ int MB_API meshCompile(lua_State* L)
         outfile.seekp(0, std::ios_base::end);
     }
 
+    //re write the header
+    auto writtensize=outfile.tellp();
+    totalmeshsize=(hUint)((size_t)writtensize-(size_t)resHeader.ByteSize());
+    blobsection->set_size(totalmeshsize);
+    outfile.seekp(0, std::ios_base::beg);
+    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
+#endif
+
     //Return a list of resources this material is dependent on
     dependentres.unique();
     lua_newtable(L);
@@ -244,114 +283,61 @@ int MB_API meshCompile(lua_State* L)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void WriteLODRenderables(const Heart::hXMLGetter& xLODData, LODHeader* header, std::ofstream* binoutput, std::list< std::string >* depres) {
+void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* mesh, std::list< std::string >* depres) {
     using namespace boost;
 
     Heart::hXMLGetter renderablenode = xLODData.FirstChild("renderable");
-    header->renderableCount = 0;
-    header->renderableOffset = binoutput->tellp();
-
     for (; renderablenode.ToNode(); renderablenode=renderablenode.NextSibling()) {
-        RenderableHeader renderableHeader = {0};
-        hUint64 writeOffset = binoutput->tellp();
+        Heart::proto::Renderable* renderablebuf=mesh->add_renderables();
         Heart::hXMLGetter indexnode=renderablenode.FirstChild("index");
-        hUint streamcount=0;
-        for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling()) ++streamcount;
-        StreamInfo posStream;
-        scoped_array<Heart::hXMLGetter> streamnodes(new Heart::hXMLGetter[streamcount]);
-        scoped_array<StreamInfo> streaminfos(new StreamInfo[streamcount]);
-        hUint streamidx=0;
-        for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling(), ++streamidx) {
-            streamnodes[streamidx]=s;
-            streaminfos[streamidx].encodedData=s.GetValueString();
-            streaminfos[streamidx].encodedDataSize=s.GetValueStringLen();
-            streaminfos[streamidx].decodedDataSize=cyBase64DecodeCalcRequiredSize(streaminfos[streamidx].encodedData, streaminfos[streamidx].encodedDataSize);
-            streaminfos[streamidx].decodedData= shared_array<char>(new char[streaminfos[streamidx].decodedDataSize]);
-            streaminfos[streamidx].count=s.GetAttributeInt("count", 0);
-            streaminfos[streamidx].desc.inputStream_=s.GetAttributeInt("sindex", 0);
-            streaminfos[streamidx].desc.semIndex_=(hByte)s.GetAttributeInt("index", 0);
-            streaminfos[streamidx].desc.semantic_=s.GetAttributeEnum("semantic", g_semanticTypes, Heart::eIS_POSITION);
-            streaminfos[streamidx].desc.typeFormat_=s.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT1);
-            streaminfos[streamidx].desc.instanceDataRepeat_=0;
-            cyBase64Decode(streaminfos[streamidx].encodedData, streaminfos[streamidx].encodedDataSize, 
-                streaminfos[streamidx].decodedData.get(), streaminfos[streamidx].decodedDataSize);
-            if (streaminfos[streamidx].desc.semantic_==Heart::eIS_POSITION) {
-                posStream=streaminfos[streamidx];
+        hUint vtxcount=0;
+        hFloat boundsMin[3];
+        hFloat boundsMax[3];
+        for (Heart::hXMLGetter s=renderablenode.FirstChild("stream"); s.ToNode(); s=s.NextSibling()) {
+            Heart::proto::VertexStream* streambuf=renderablebuf->add_vertexstreams();
+            hUint format = s.GetAttributeEnum("type", g_formatTypes, Heart::eIF_FLOAT1);
+            hUint streamcount=(hUint32)s.GetAttributeInt("count", 0);
+            vtxcount=hMax(streamcount, vtxcount);
+            streambuf->set_format(format);
+            streambuf->set_semantic(s.GetAttributeString("semantic"));
+            streambuf->set_semanticindex(s.GetAttributeInt("index", 0));
+            
+            const hChar* encodeddata=s.GetValueString();
+            hUint encodeddatasize=s.GetValueStringLen();
+            hUint decodeddatasize=cyBase64DecodeCalcRequiredSize(encodeddata, encodeddatasize);
+            auto decodeddata=shared_array<char>(new char[decodeddatasize]);
+            cyBase64Decode(encodeddata, encodeddatasize, decodeddata.get(), decodeddatasize);
+
+            if (Heart::hStrICmp(s.GetAttributeString("semantic"), "POSITION") == 0) {
+                GetMeshBounds((hFloat*)decodeddata.get(), format, streamcount, boundsMin, boundsMax);
             }
-        }
-        ++header->renderableCount;
 
-        renderableHeader.flags=0;
-        renderableHeader.primType = Heart::PRIMITIVETYPE_TRILIST;
-        renderableHeader.startIndex = 0;
-        renderableHeader.materialID = Heart::hResourceManager::BuildResourceID(renderablenode.GetAttributeString("material"));
+            streambuf->set_streamdata(decodeddata.get(), decodeddatasize);
+        }
+
         depres->push_back(renderablenode.GetAttributeString("material"));
+        renderablebuf->set_vertexcount(vtxcount);
+        renderablebuf->set_primtype(Heart::PRIMITIVETYPE_TRILIST);
+        renderablebuf->set_materialresource(Heart::hResourceManager::BuildResourceID(renderablenode.GetAttributeString("material")));
         if (indexnode.ToNode()) {
-            renderableHeader.nPrimatives = indexnode.GetAttributeInt("count",0);
-            renderableHeader.nPrimatives /= 3;
-            renderableHeader.flags|=indexnode.GetAttributeInt("count",0) > 0xFFFF ? MESH_DATA_FLAG_32BIT_INDEX : 0;
-        } else {
-            renderableHeader.nPrimatives = posStream.count/3;
-        }
-
-        // Update bounds
-        GetMeshBounds((hFloat*)posStream.decodedData.get(), (posStream.desc.typeFormat_-Heart::eIF_FLOAT1)+1, 
-            posStream.count, renderableHeader.boundsMin, renderableHeader.boundsMax);
-        for (hUint32 i = 0; i < 3; ++i)
-        {
-            header->boundsMin[i] = hMin(header->boundsMin[i], renderableHeader.boundsMin[i]);
-            header->boundsMax[i] = hMax(header->boundsMax[i], renderableHeader.boundsMax[i]);
-        }
-
-        hUint vertexStreamCount=0;
-        scoped_array<StreamInfo> inputDesc(new StreamInfo[streamcount]);
-        Heart::hMemCpy(inputDesc.get(), streaminfos.get(), sizeof(StreamInfo)*streamcount);
-        qsort(inputDesc.get(), streamcount, sizeof(StreamInfo), inputDescQsortCompar); //Sort by vertex stream index
-        vertexStreamCount=inputDesc[streamcount-1].desc.inputStream_+1;
-        binoutput->write((char*)&renderableHeader, sizeof(renderableHeader));
-        for (hUint i=0; i<streamcount; ++i) {
-            binoutput->write((char*)&inputDesc[i].desc, sizeof(Heart::hInputLayoutDesc));
-        }
-        renderableHeader.ibOffset = binoutput->tellp();
-        if (indexnode.ToNode()) {
+            hUint indexcount=indexnode.GetAttributeInt("count",0);
             hUint ibsize=cyBase64DecodeCalcRequiredSize(indexnode.GetValueString(), indexnode.GetValueStringLen());
             scoped_ptr<char> indexData(new char[ibsize]);
             cyBase64Decode(indexnode.GetValueString(), indexnode.GetValueStringLen(), indexData.get(), ibsize);
-            binoutput->write(indexData.get(), ibsize);
-            renderableHeader.ibSize=ibsize;
-            //hcAssert(renderableHeader.nPrimatives*3*sizeof(hUint32) == ibsize || renderableHeader.nPrimatives*3*sizeof(hUint16) == ibsize);
+            
+            renderablebuf->set_indexcount(indexcount);
+            renderablebuf->set_indexbuffer(indexData.get(), ibsize);
+            renderablebuf->set_primcount(indexcount/3);
         } else {
-            renderableHeader.ibSize=0;
+            renderablebuf->set_primcount(vtxcount/3);
         }
 
-        renderableHeader.verts = posStream.count;
-        renderableHeader.inputElements = streamcount;
-        renderableHeader.streams = vertexStreamCount;
-
-        for (hUint streamIdx = 0; streamIdx < vertexStreamCount; ++streamIdx) {
-            hUint64 streamOffset = binoutput->tellp();
-            StreamHeader streamHeader = {streamIdx, 0};
-            binoutput->write((char*)&streamHeader, sizeof(streamHeader));
-            for (hUint vtxIdx = 0; vtxIdx < posStream.count; ++vtxIdx) {
-                for (hUint32 inElem = 0; inElem < streamcount; ++inElem) {
-                    if (inputDesc[inElem].desc.inputStream_ != streamIdx) {
-                        continue;
-                    }
-                    hUint eleSize=inputDesc[inElem].decodedDataSize/inputDesc[inElem].count;
-                    hUint offset=eleSize*vtxIdx;
-                    binoutput->write(((char*)inputDesc[inElem].decodedData.get())+offset, eleSize);
-                    streamHeader.size+=eleSize;
-                }
-            }
-
-            binoutput->seekp(streamOffset);
-            binoutput->write((char*)&streamHeader, sizeof(streamHeader));
-            binoutput->seekp(0, std::ios_base::end);
-        }
-
-        binoutput->seekp(writeOffset);
-        binoutput->write((char*)&renderableHeader, sizeof(renderableHeader));
-        binoutput->seekp(0, std::ios_base::end);
+        renderablebuf->mutable_aabb()->set_minx(boundsMin[0]);
+        renderablebuf->mutable_aabb()->set_miny(boundsMin[1]);
+        renderablebuf->mutable_aabb()->set_minz(boundsMin[2]);
+        renderablebuf->mutable_aabb()->set_maxx(boundsMax[0]);
+        renderablebuf->mutable_aabb()->set_maxy(boundsMax[1]);
+        renderablebuf->mutable_aabb()->set_maxz(boundsMax[2]);
     }
 }
 

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
+find_package(Protobuf REQUIRED)
 
 if (MSVC)
     #add_definitions(/wd"4244")
@@ -13,19 +14,16 @@ set(TEXTURE_BUILDER_SRC_DIR
 )
 set( TEXTURE_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
-    "${TEXTURE_BUILDER_SRC_DIR}/include"
+    "${TEXTURE_BUILDER_SRC_DIR}/src"
 )
-set( TEXTURE_BUILDER_HDR_FILES 
-    "${TEXTURE_BUILDER_SRC_DIR}/include/textureloader.h"
-)
-set( TEXTURE_BUILDER_SRC_FILES
-    "${TEXTURE_BUILDER_SRC_DIR}/src/textureloader.cpp"
+file(GLOB TEXTURE_BUILDER_SRC_FILES 
+    "${TEXTURE_BUILDER_SRC_DIR}/src/*.h"
+    "${TEXTURE_BUILDER_SRC_DIR}/src/*.cpp"
 )
 set(TEXTURE_BUILDER_LIB_DIRS
 	"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
 )
 
-source_group(include FILES ${TEXTURE_BUILDER_HDR_FILES})
 source_group(source  FILES ${TEXTURE_BUILDER_SRC_FILES})
 
 if (MSVC)
@@ -34,8 +32,8 @@ endif()
 
 include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${TEXTURE_BUILDER_LIB_DIRS})
-add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES} ${TEXTURE_BUILDER_HDR_FILES})
-target_link_libraries(texture_builder lua crypto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
+target_link_libraries(texture_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)
 
