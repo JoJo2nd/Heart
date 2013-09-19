@@ -110,17 +110,15 @@ hUint32 Sibenik::RunUnitTest()
 void Sibenik::RenderUnitTest()
 {
     Heart::hRenderer* renderer = engine_->GetRenderer();
-    Heart::hGeomLODLevel* lod = renderModel_->GetLOD(0);
-    hUint32 lodobjects = lod->renderObjects_.GetSize();
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
     Heart::hDrawCall drawcall;
     drawCtx_.Begin(renderer);
 
-    for (hUint32 i = 0; i < lodobjects; ++i) {
+    for (hUint32 i=0, n=renderModel_->getRenderableCount(); i<n; ++i) {
         // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable = &lod->renderObjects_[i];
+        Heart::hRenderable* renderable=renderModel_->getRenderable(i);
 
-        hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderable->GetAABB().c_);
+        hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderModel_->getBounds().c_);
         Heart::hMaterialGroup* group = renderable->GetMaterial()->getGroup(0);
         for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
             Heart::hMaterialTechnique* tech=group->getTech(t);
@@ -256,14 +254,14 @@ void Sibenik::CreateRenderResources()
         64.f
     };
     renderer->createBuffer(sizeof(MaterialConstants), &initdata, eResourceFlag_ConstantBuffer, 0, &constblock_);
-
+/*
     for (hUint i=0, n=renderModel_->GetLODCount(); i<n; ++i) {
         hGeomLODLevel* lod=renderModel_->GetLOD(i);
         for(hUint ri=0, rn=lod->renderObjects_.GetSize(); ri<rn; ++ri) {
             lod->renderObjects_[ri].GetMaterial()->bindConstanstBuffer(Heart::hCRC32::StringCRC("MaterialConstants"), constblock_);
         }
     }
-
+*/
     //material hold this so let go
     constblock_->DecRef();
 

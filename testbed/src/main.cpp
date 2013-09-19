@@ -91,11 +91,6 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak3);
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
-    
-    Heart::proto::ResourceHeader resheader;
-    resheader.set_type(Heart::proto::eResourceType_GPUProgram);
-    resheader.set_author("james.moran");
-    resheader.set_sourcefile("~/shaders/ashader.hlsl");
 
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
