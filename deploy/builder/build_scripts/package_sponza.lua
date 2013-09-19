@@ -41,7 +41,7 @@ for k, mat in pairs(materials) do
         resname=mat.res.."_M",
         restype="mat_fx",
         inputfiles={mat.path},
-        depfiles=material.scanincludes(mat.path)
+        --depfiles=material.scanincludes(mat.path)
     }
 end
 --
@@ -59,7 +59,7 @@ for k, gpu in pairs(shaders) do
         resname=gpu.res,
         restype="gpu_prog",
         inputfiles={gpu.path},
-        depfiles=gpuprog.preprocess(gpu.path, gpu.params),
+        --depfiles=gpuprog.preprocess(gpu.path, gpu.params),
         parameters=gpu.params
     }
 end
