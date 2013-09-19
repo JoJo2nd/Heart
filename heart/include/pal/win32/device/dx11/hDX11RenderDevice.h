@@ -219,14 +219,14 @@ namespace Heart
     protected:
 
         const hChar*    getDebugShaderSource(hDebugShaderID shaderid);
-        hdDX11ShaderProgram* compileShaderFromSourceDevice(const hChar* shaderProg, hSizeT len, const hChar* entry, hShaderProfile profile, hdDX11ShaderProgram* out);
+        hdDX11ShaderProgram* compileShaderFromSourceDevice(const hChar* shaderProg, hSizeT len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hdDX11ShaderProgram* out);
         hdDX11ShaderProgram* compileShaderDevice(const hChar* shaderProg, hSizeT len, hShaderType type, hdDX11ShaderProgram* out);
         void                 destroyShaderDevice(hdDX11ShaderProgram* shaderProg);
         hdDX11Texture*  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
         void            destroyTextureDevice( hdDX11Texture* texture );
-        void            createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
+        void            createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, const void* initialData, hUint32 flags, hdDX11VertexBuffer* vtxBuf);
         void            destroyVertexBufferDevice(hdDX11VertexBuffer* indexBuffer);
-        void            createIndexBufferDevice(hUint32 sizeInBytes, void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
+        void            createIndexBufferDevice(hUint32 sizeInBytes, const void* initialData, hUint32 flags, hdDX11IndexBuffer* idxBuf);
         void            destroyIndexBufferDevice(hdDX11IndexBuffer* indexBuffer);
         void            createShaderResourseViewDevice(hdDX11Texture* texture, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);
         void            createShaderResourseViewDevice(hdDX11Buffer* cb, const hShaderResourceViewDesc& desc, hdDX11ShaderResourceView* outsrv);

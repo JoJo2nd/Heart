@@ -66,11 +66,11 @@ namespace Heart
         void reset();
         void clear();
 
-        hVector< hDebugLine >       lines_;
-        hVector< hDebugTriPosCol >  tris_;
-        hVector< hDebugTextString > strings_;
-        hVector< hDebugTexQuad >    texQuads_;
-        hVector< hChar >            txtBuffer_;
+        std::vector< hDebugLine >       lines_;
+        std::vector< hDebugTriPosCol >  tris_;
+        std::vector< hDebugTextString > strings_;
+        std::vector< hDebugTexQuad >    texQuads_;
+        std::vector< hChar >            txtBuffer_;
     };
 
     enum hDebugSet
@@ -95,7 +95,6 @@ namespace Heart
         void end();
 
         static hDebugDraw* it();
-        static void        release();
 
     private:
         

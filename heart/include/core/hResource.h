@@ -34,22 +34,24 @@ namespace Heart
     struct hResourceType
     {
         hResourceType() {}
+        explicit hResourceType(const hChar* name) 
+            : typeCRC(hCRC32::StringCRC(name))
+        {}
         explicit hResourceType(hUint32 cc)
-            : fourCC(cc)
+            : typeCRC(cc)
         {}
         union{
-            hChar   ext[4];
-            hUint32 fourCC;
+            hUint32 typeCRC;
         };
 
         hBool operator == ( const hResourceType& b ) const {
-            return fourCC == b.fourCC;
+            return typeCRC == b.typeCRC;
         }
         hBool operator != ( const hResourceType& b ) const {
-            return fourCC != b.fourCC;
+            return typeCRC != b.typeCRC;
         }
         hBool operator < ( const hResourceType& b ) const {
-            return fourCC < b.fourCC;
+            return typeCRC < b.typeCRC;
         }
     };
 

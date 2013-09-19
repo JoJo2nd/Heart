@@ -111,8 +111,8 @@ namespace hRenderUtility
     hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
         hInputLayoutDesc desc[] = {
-            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
-            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
+            hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
+            hInputLayoutDesc("NORMAL", 0, eIF_FLOAT3, 0, 0),
         };
         hUint16 vtxCnt = GetSphereMeshVertexCount( segments, rings );
         hUint16 idxCnt = GetSphereMeshIndexCount( segments, rings );
@@ -234,8 +234,8 @@ namespace hRenderUtility
         hcAssert(width > 0.f && height > 0.f && wdivs >= 1 && hdivs >= 1);
         hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
-            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
-            {eIS_TEXCOORD, 0, eIF_FLOAT2, 0, 0},
+            hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
+            hInputLayoutDesc("TEXCOORD", 0, eIF_FLOAT2, 0, 0),
         };
         hFloat uvxstep=1.f/wdivs;
         hFloat uvystep=-1.f/hdivs;
@@ -287,8 +287,8 @@ namespace hRenderUtility
     {
         hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
-            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
-            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
+            hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
+            hInputLayoutDesc("NORMAL", 0, eIF_FLOAT3, 0, 0),
         };
         struct Vertex
         {
@@ -362,8 +362,8 @@ namespace hRenderUtility
 #define PRIM_COUNT (36)
     hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hVertexBuffer** retVB) {
         hInputLayoutDesc desc[] = {
-            {eIS_POSITION, 0, eIF_FLOAT3, 0, 0},
-            {eIS_NORMAL, 0, eIF_FLOAT3, 0, 0},
+            hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
+            hInputLayoutDesc("NORMAL", 0, eIF_FLOAT3, 0, 0),
         };
         hFloat verts[PRIM_COUNT*(3+3)] = {
             // Positions        Normals
@@ -433,16 +433,8 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
-        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
-        group->techniques_.Resize(1);
-        hMaterialTechnique* tech=&group->techniques_[0];
-        tech->SetName("main");
-        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
-        tech->SetSort(hFalse);
-        tech->SetLayer(0);
-        tech->SetPasses(1);
-        tech->AppendPass(hMaterialTechniquePass());
-        hMaterialTechniquePass* pass=tech->GetPass(0);
+
+        
         hBlendStateDesc blendDesc;
         blendDesc.blendEnable_           = RSV_ENABLE;
         blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
@@ -453,8 +445,6 @@ namespace hRenderUtility
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
         hBlendState* bs=rndr->createBlendState(blendDesc);
-        pass->bindBlendState(bs);
-        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -468,8 +458,6 @@ namespace hRenderUtility
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
         hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
-        pass->bindDepthStencilState(ds);
-        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -480,10 +468,25 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+
+        hMaterialGroup* group = ddrawmat->addGroup("debug");
+        hMaterialTechnique* tech = group->addTechnique("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass* pass=tech->appendPass();
+        pass->bindBlendState(bs);
+        bs->DecRef();
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
+
+        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_POINT;
         sampDesc.addressU_      = SSV_CLAMP;
@@ -494,8 +497,6 @@ namespace hRenderUtility
         sampDesc.borderColour_  = WHITE;
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;
-
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         ss->DecRef();
@@ -510,17 +511,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
-        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
 
-        group->techniques_.Resize(1);
-        hMaterialTechnique* tech=&group->techniques_[0];
-        tech->SetName("main");
-        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
-        tech->SetSort(hFalse);
-        tech->SetLayer(0);
-        tech->SetPasses(1);
-        tech->AppendPass(hMaterialTechniquePass());
-        hMaterialTechniquePass* pass=tech->GetPass(0);
         hBlendStateDesc blendDesc;
         blendDesc.blendEnable_           = RSV_DISABLE;
         blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
@@ -531,8 +522,6 @@ namespace hRenderUtility
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
         hBlendState* bs=rndr->createBlendState(blendDesc);
-        pass->bindBlendState(bs);
-        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -546,8 +535,6 @@ namespace hRenderUtility
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
         hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
-        pass->bindDepthStencilState(ds);
-        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -558,8 +545,6 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
-        pass->bindRasterizerState(rs);
-        rs->DecRef();
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_LINEAR;
         sampDesc.addressU_      = SSV_CLAMP;
@@ -571,9 +556,22 @@ namespace hRenderUtility
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;  
 
+        hMaterialGroup* group = ddrawmat->addGroup("debug");
+        hMaterialTechnique* tech = group->addTechnique("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass* pass=tech->appendPass();
+        pass->bindBlendState(bs);
+        bs->DecRef();
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
-        
+
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
@@ -589,17 +587,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
-        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
 
-        group->techniques_.Resize(1);
-        hMaterialTechnique* tech=&group->techniques_[0];
-        tech->SetName("main");
-        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
-        tech->SetSort(hFalse);
-        tech->SetLayer(0);
-        tech->SetPasses(1);
-        tech->AppendPass(hMaterialTechniquePass());
-        hMaterialTechniquePass* pass=tech->GetPass(0);
         hBlendStateDesc blendDesc;
         blendDesc.blendEnable_           = RSV_DISABLE;
         blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
@@ -610,8 +598,6 @@ namespace hRenderUtility
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
         hBlendState* bs=rndr->createBlendState(blendDesc);
-        pass->bindBlendState(bs);
-        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_ENABLE;       //
@@ -625,8 +611,6 @@ namespace hRenderUtility
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
         hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
-        pass->bindDepthStencilState(ds);
-        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -637,6 +621,18 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+
+        hMaterialGroup* group = ddrawmat->addGroup("debug");
+        hMaterialTechnique* tech = group->addTechnique("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass* pass=tech->appendPass();
+        pass->bindBlendState(bs);
+        bs->DecRef();
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosCol));
@@ -654,17 +650,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
-        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
 
-        group->techniques_.Resize(1);
-        hMaterialTechnique* tech=&group->techniques_[0];
-        tech->SetName("main");
-        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
-        tech->SetSort(hFalse);
-        tech->SetLayer(0);
-        tech->SetPasses(1);
-        tech->AppendPass(hMaterialTechniquePass());
-        hMaterialTechniquePass* pass=tech->GetPass(0);
         hBlendStateDesc blendDesc;
         blendDesc.blendEnable_           = RSV_DISABLE;
         blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
@@ -675,8 +661,6 @@ namespace hRenderUtility
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
         hBlendState* bs=rndr->createBlendState(blendDesc);
-        pass->bindBlendState(bs);
-        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -690,8 +674,6 @@ namespace hRenderUtility
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
         hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
-        pass->bindDepthStencilState(ds);
-        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -702,8 +684,6 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
-        pass->bindRasterizerState(rs);
-        rs->DecRef();
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_LINEAR;
         sampDesc.addressU_      = SSV_CLAMP;
@@ -715,6 +695,19 @@ namespace hRenderUtility
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;  
 
+        hMaterialGroup* group = ddrawmat->addGroup("debug");
+        hMaterialTechnique* tech = group->addTechnique("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass* pass=tech->appendPass();
+        pass->bindBlendState(bs);
+        bs->DecRef();
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
+        pass->bindRasterizerState(rs);
+        rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
 
@@ -733,17 +726,7 @@ namespace hRenderUtility
     HEART_DLLEXPORT
     hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
-        hMaterialGroup* group=ddrawmat->AddGroup("low_detail");
 
-        group->techniques_.Resize(1);
-        hMaterialTechnique* tech=&group->techniques_[0];
-        tech->SetName("main");
-        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
-        tech->SetSort(hFalse);
-        tech->SetLayer(0);
-        tech->SetPasses(1);
-        tech->AppendPass(hMaterialTechniquePass());
-        hMaterialTechniquePass* pass=tech->GetPass(0);
         hBlendStateDesc blendDesc;
         blendDesc.blendEnable_           = RSV_ENABLE;
         blendDesc.srcBlend_              = RSV_BLEND_OP_SRC_ALPHA;
@@ -754,8 +737,6 @@ namespace hRenderUtility
         blendDesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
         blendDesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
         hBlendState* bs=rndr->createBlendState(blendDesc);
-        pass->bindBlendState(bs);
-        bs->DecRef();
         hDepthStencilStateDesc depthDesc;
         depthDesc.depthEnable_         = RSV_ENABLE;       //
         depthDesc.depthWriteMask_      = RSV_DISABLE;       //
@@ -769,8 +750,6 @@ namespace hRenderUtility
         depthDesc.stencilFunc_         = RSV_SF_CMP_ALWAYS;//
         depthDesc.stencilRef_          = 0;                //
         hDepthStencilState* ds=rndr->createDepthStencilState(depthDesc);
-        pass->bindDepthStencilState(ds);
-        ds->DecRef();
         hRasterizerStateDesc rastDesc;
         rastDesc.fillMode_              = RSV_FILL_MODE_SOLID;        //
         rastDesc.cullMode_              = RSV_CULL_MODE_NONE;         //
@@ -781,11 +760,22 @@ namespace hRenderUtility
         rastDesc.depthClipEnable_       = RSV_ENABLE;                 //
         rastDesc.scissorEnable_         = RSV_DISABLE;                //
         hRasterizerState* rs=rndr->createRasterizerState(rastDesc);
+
+        hMaterialGroup* group = ddrawmat->addGroup("debug");
+        hMaterialTechnique* tech = group->addTechnique("main");
+        tech->SetMask(rndr->GetMaterialManager()->AddRenderTechnique("main")->mask_);
+        tech->SetSort(hFalse);
+        tech->SetLayer(0);
+        tech->SetPasses(1);
+        hMaterialTechniquePass* pass=tech->appendPass();
+        pass->bindBlendState(bs);
+        bs->DecRef();
+        pass->bindDepthStencilState(ds);
+        ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
         pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosCol));
         pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelPosCol));
-
         ddrawmat->bindMaterial(rndr->GetMaterialManager());
 
         return ddrawmat;

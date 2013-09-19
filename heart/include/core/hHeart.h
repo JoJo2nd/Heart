@@ -84,6 +84,27 @@ namespace Heart
     class hEntityFactory;
     class hHeartEngine;
 
+    template < typename _ty >
+    class hGlobalFinaliser
+    {
+    public:
+        ~hGlobalFinaliser() {
+            for (auto i=objectList_.begin(), n=objectList_.end(); i!=n; ++i) {
+                hDELETE_SAFE(*i);
+            }
+        }
+
+        void addObject(_ty* object) {
+            hMutexAutoScope mas(&lock_);
+            objectList_.push_back(object);
+        }
+
+    private:
+
+        hMutex            lock_;
+        std::vector<_ty*> objectList_;
+    };
+
     class HEART_DLLEXPORT HeartConfig
     {
     public:
@@ -150,6 +171,7 @@ namespace Heart
         static const hUint32 HEART_VERSION_MINOR = 4;
         static hdThreadEvent exitSignal_;
 
+        static void                     ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message);
 
         void                            RegisterDefaultComponents();
         void                            PostCoreResourceLoad();

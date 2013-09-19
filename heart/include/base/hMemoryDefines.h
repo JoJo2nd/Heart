@@ -56,29 +56,22 @@ namespace Heart
 #      define hHeapRealloc( h, p, s ) Heart::hFindMemoryHeapByName(h)->realloc( p, 16, s, __FILE__, __LINE__ )
 #      define hHeapAlignRealloc( h, p, a, s ) Heart::hFindMemoryHeapByName(h)->realloc( p, a, s, __FILE__, __LINE__ )
 #   else
-#       define hAlignMalloc( s, a ) Heart::GetGlobalHeap()->alloc( s, a )
+#       define hAlignMalloc( s, a ) Heart::hFindMemoryHeapByName("general")->alloc( s, a )
 #       define hMalloc( s ) hAlignMalloc( s, 16 )
-#       define hRealloc( p, s ) Heart::GetGlobalHeap()->realloc( p, 16, s )
-#       define hAlignRealloc( p, a, s ) Heart::GetGlobalHeap()->realloc( p, a, s )
-#       define hFree( p ) Heart::GetGlobalHeap()->release( p )
-#       define hFreeSafe( p ) Heart::GetGlobalHeap()->release( p ); p = NULL
-#       define hHeapAlignMalloc( h, s, a )  (h)->alloc( s, a )
-#       define hHeapMalloc( h, s ) (h)->alloc( s, 16 )
-#       define hHeapRealloc( h, p, s ) (h)->realloc( p, 16, s )
-#       define hHeapAlignRealloc( h, p, a, s ) (h)->realloc( p, a, s )
-#       define hHeapFree( h, p ) (h)->release( p )
-#       define hHeapFreeSafe( h, p ) (h)->release( p ); p = NULL
+#       define hRealloc( p, s ) Heart::hFindMemoryHeapByName("general")->realloc( p, 16, s )
+#       define hAlignRealloc( p, a, s ) Heart::hFindMemoryHeapByName("general")->realloc( p, a, s )
+#       define hFree( p ) Heart::hGlobalMemoryFree( p )
+#       define hFreeSafe( p ) Heart::hGlobalMemoryFree( p ); p = NULL
+#       define hHeapAlignMalloc( h, s, a )  Heart::hFindMemoryHeapByName(h)->alloc( s, a )
+#       define hHeapMalloc( h, s ) Heart::hFindMemoryHeapByName(h)->alloc( s, 16 )
+#       define hHeapRealloc( h, p, s ) Heart::hFindMemoryHeapByName(h)->realloc( p, 16, s )
+#       define hHeapAlignRealloc( h, p, a, s ) Heart::hFindMemoryHeapByName(h)->realloc( p, a, s )
+#       define hHeapFree( h, p ) Heart::hGlobalMemoryFree( p )
+#       define hHeapFreeSafe( h, p ) Heart::hGlobalMemoryFree( p ); p = NULL
 #   endif
-
-    /*
-        worth noting that placement new (with vs2008, may be different on other compilers) 
-        stores the array size in the first 4 bytes of allocation. So delete array will
-        grab that header
-    */
 
     #define hNEW(type)                    hPLACEMENT_NEW(hAlignMalloc(sizeof(type),hAlignOf(type))) type
     #define hNEW_ALIGN(align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
-//hPLACEMENT_NEW(hAlignMalloc(sizeof(type),hAlignOf(type))) type [ele]
     #define hNEW_ARRAY(type, ele)         new type [ele]
     #define hDELETE(ptr)                  delete ptr
     #define hDELETE_ALIGNED(ptr)          delete ptr
@@ -87,33 +80,34 @@ namespace Heart
     #define hDELETE_ARRAY_SAFE(ptr)       delete [] ptr; ptr = hNullptr
 
     // These are defined in hMemoryHeapBase.cpp
-    void* operator new (size_t size);
-    void* operator new[] (size_t size);
-    void operator delete (void* mem);
-    void operator delete[] (void* mem);
+    //void* operator new (size_t size);
+    //void* operator new[] (size_t size);
+    //void operator delete (void* mem);
+    //void operator delete[] (void* mem);
 
 #else//HEART_USE_DEFAULT_MEM
 
-#define hAlignMalloc( s, a ) _aligned_malloc( s, a )
-#define hMalloc( s ) hAlignMalloc( s, 16 )
-#define hRealloc( p, s ) _aligned_realloc( p, s, 16 )
-#define hFree( p ) _aligned_free( p )
-#define hFreeSafe( p ) _aligned_free( p ); p = NULL
-#define hHeapAlignMalloc( h, s, a )  hAlignMalloc( s, a )
-#define hHeapMalloc( h, s ) hMalloc( s )
-#define hHeapRealloc( h, p, s ) hRealloc( p, s )
-#define hHeapFree( h, p ) hFree( p )
-#define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
+#   define hAlignMalloc( s, a ) _aligned_malloc( s, a )
+#   define hAlignRealloc( p, a, s ) _aligned_realloc( p, s, a )
+#   define hMalloc( s ) hAlignMalloc( s, 16 )
+#   define hRealloc( p, s ) _aligned_realloc( p, s, 16 )
+#   define hFree( p ) _aligned_free( p )
+#   define hFreeSafe( p ) _aligned_free( p ); p = NULL
+#   define hHeapAlignMalloc( h, s, a )  hAlignMalloc( s, a )
+#   define hHeapMalloc( h, s ) hMalloc( s )
+#   define hHeapRealloc( h, p, s ) hRealloc( p, s )
+#   define hHeapFree( h, p ) hFree( p )
+#   define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
 
-    #define hNEW(heap, type)                    new type
-    #define hNEW_ALIGN(heap, align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
-    #define hNEW_ARRAY(heap, type, ele)         new type [ele]
-    //#define hNEW_ARRAY_ALIGN(heap, align, type) hPLACEMENT_NEW(hHeapAlignMalloc(heap,sizeof(type)*ele,align)) type
-    #define hDELETE(heap, ptr)                  delete ptr
-    #define hDELETE_ALIGNED(heap, ptr)          hFree(ptr)
-    #define hDELETE_ARRAY(heap, ptr)            delete[] ptr
-    #define hDELETE_SAFE(heap, ptr)             delete ptr; ptr = hNullptr
-    #define hDELETE_ARRAY_SAFE(heap, ptr)       delete[] ptr; ptr = hNullptr
+#   define hNEW(type)                    new type
+#   define hNEW_ALIGN(align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
+#   define hNEW_ARRAY(type, ele)         new type [ele]
+#   define hDELETE(ptr)                  delete ptr
+#   define hDELETE_ALIGNED(ptr)          hFree(ptr)
+#   define hDELETE_ARRAY(ptr)            delete[] ptr
+#   define hDELETE_SAFE(ptr)             delete ptr; ptr = hNullptr
+#   define hDELETE_ARRAY_SAFE(ptr)       delete[] ptr; ptr = hNullptr
+
 #endif
 
 #endif // HMEMORYDEFINES_H__

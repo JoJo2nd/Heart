@@ -52,12 +52,19 @@
 #   endif
 #endif
 
+#define HEART_MIN_ALLOC_ALIGNMENT (16)
+
 #ifndef USE_DL_PREFIX
 #   define USE_DL_PREFIX
 #endif
 
 #ifndef ONLY_MSPACES
 #   define ONLY_MSPACES 0
+#endif
+
+// To enable compile at load time of shaders.
+#ifdef HEART_DEBUG // or OpenGL when supported
+#   define HEART_ALLOW_SHADER_SOURCE_COMPILE
 #endif
 
 //#define HEART_ALLOW_NEW

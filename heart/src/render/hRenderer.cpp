@@ -128,34 +128,35 @@ namespace Heart
 //         materialManager_.registerGlobalTexture("depth_buffer", depthBuffer_, dbalias, hStaticArraySize(dbalias));
 
         createDebugShadersInternal();
-
+        
         hResourceHandler texreshandler;
         texreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   textureResourceLoader, this);
         texreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   textureResourceLink,   this);
         texreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, textureResourceUnlink, this);
         texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, textureResourceUnload, this);
-        resourceManager_->registerResourceHandler(hResourceType(TEXTURE_MAGIC_NUM), texreshandler);
-
+        resourceManager_->registerResourceHandler("texture", texreshandler);
+        
         hResourceHandler shaderreshandler;
         shaderreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   shaderResourceLoader, this);
         shaderreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   shaderResourceLink,   this);
         shaderreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, shaderResourceUnlink, this);
         shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, shaderResourceUnload, this);
-        resourceManager_->registerResourceHandler(hResourceType(SHADER_MAGIC_NUM), shaderreshandler);
-
+        resourceManager_->registerResourceHandler("gpu", shaderreshandler);
+        
         hResourceHandler matreshandler;
         matreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   materialResourceLoader, this);
         matreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   materialResourceLink,   this);
         matreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, materialResourceUnlink, this);
         matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, materialResourceUnload, this);
-        resourceManager_->registerResourceHandler(hResourceType(MATERIAL_MAGIC_NUM), matreshandler);
+        resourceManager_->registerResourceHandler("mfx", matreshandler);
 
         hResourceHandler meshreshandler;
         meshreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
         meshreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   meshResourceLink,   this);
         meshreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, meshResourceUnlink, this);
         meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
-        resourceManager_->registerResourceHandler(hResourceType(MESH_MAGIC_NUM), meshreshandler);
+        resourceManager_->registerResourceHandler("mesh", meshreshandler);
+        
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -246,8 +247,8 @@ namespace Heart
         {
             (*outTex)->levelDescs_[ i ].width_ = initialData[i].width;
             (*outTex)->levelDescs_[ i ].height_ = initialData[i].height;
-            (*outTex)->levelDescs_[ i ].mipdata_ = initialData[i].data;
-            (*outTex)->levelDescs_[ i ].mipdataSize_ = initialData[i].size;
+            (*outTex)->levelDescs_[ i ].mipdata_ = hNullptr;//initialData[i].data;
+            (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;//initialData[i].size;
         }
 
         ParentClass::createTextureDevice(levels, format, initialData, flags, (*outTex));
@@ -320,7 +321,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
+    void hRenderer::createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
     {
         hUint elementSize= nIndices > 0xFFFF ? sizeof(hUint32) : sizeof(hUint16);
         hIndexBuffer* pdata = hNEW(hIndexBuffer)(
@@ -347,7 +348,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB)
+    void hRenderer::createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB)
     {
         hVertexBuffer* pdata = hNEW(hVertexBuffer)(
             hFUNCTOR_BINDMEMBER(hVertexBuffer::hZeroProc, hRenderer, destroyVertexBuffer, this));
@@ -612,74 +613,74 @@ namespace Heart
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelWhite),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhite)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhite]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelWhite]);
         debugShaders_[eDebugVertexPosOnly]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosOnly),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosOnly)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosOnly]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosOnly]);
         debugShaders_[eConsoleVertex]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         debugShaders_[eConsoleVertex]->shaderType_=ShaderType_VERTEXPROG;
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eConsoleVertex),
             hStrLen(ParentClass::getDebugShaderSource(eConsoleVertex)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eConsoleVertex]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eConsoleVertex]);
         debugShaders_[eConsolePixel]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eConsolePixel),
             hStrLen(ParentClass::getDebugShaderSource(eConsolePixel)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eConsolePixel]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eConsolePixel]);
         debugShaders_[eDebugFontVertex]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugFontVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontVertex)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugFontVertex]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugFontVertex]);
         debugShaders_[eDebugFontPixel]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugFontPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontPixel)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugFontPixel]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugFontPixel]);
         debugShaders_[eDebugVertexPosNormal]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosNormal),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosNormal)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosNormal]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosNormal]);
         debugShaders_[eDebugPixelWhiteViewLit]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelWhiteViewLit]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelWhiteViewLit]);
         debugShaders_[eDebugTexVertex]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugTexVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexVertex)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugTexVertex]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugTexVertex]);
         debugShaders_[eDebugTexPixel]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugTexPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexPixel)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugTexPixel]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugTexPixel]);
         debugShaders_[eDebugVertexPosCol]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosCol),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosCol)),
-            "mainVP", eShaderProfile_vs4_0, debugShaders_[eDebugVertexPosCol]);
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosCol]);
         debugShaders_[eDebugPixelPosCol]=hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelPosCol),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelPosCol)),
-            "mainFP", eShaderProfile_ps4_0, debugShaders_[eDebugPixelPosCol]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelPosCol]);
 
     }
 
@@ -935,10 +936,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::compileShaderFromSource(const hChar* shaderProg, hUint32 len, 
-    const hChar* entry, hShaderProfile profile, hShaderProgram** out) {
+        const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram** out) {
         (*out) = hNEW(hShaderProgram)(this,
             hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
-        ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, *out);
+        ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, includes, defines, ndefines, *out);
         if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
             (*out)->SetShaderType(ShaderType_VERTEXPROG);
         } else if (profile >= eShaderProfile_ps4_0 && profile <= eShaderProfile_ps5_0) {
@@ -978,7 +979,31 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hRenderer::textureResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
+    hResourceClassBase* hRenderer::textureResourceLoader(const hResourceSection* sections, hUint sectioncount) {
+        Heart::hTexture* texture=hNullptr;
+        Heart::hMipDesc mips[24];
+        for (hUint i=0, n=sectioncount; i<n; ++i) {
+            if (hStrCmp("texture", sections[i].sectionName_) == 0) {
+                google::protobuf::io::ArrayInputStream input(sections[i].sectionData_, sections[i].sectionSize_);
+                google::protobuf::io::CodedInputStream inputstream(&input);
+                proto::TextureResource texresource;
+                hBool ok=texresource.ParseFromCodedStream(&inputstream);
+                hcAssertMsg(ok,"Failed to parse Texture Resource");
+                if (!ok) {
+                    return hNullptr;
+                }
+                for (hUint32 im = 0, nm=texresource.mips_size(); im < nm; ++im) {
+                    mips[im].width=texresource.mips(im).width();
+                    mips[im].height=texresource.mips(im).height();
+                    mips[im].data=(hByte*)texresource.mips(im).data().c_str();
+                    mips[im].size=(hUint)texresource.mips(im).data().length();
+                }
+                createTexture(texresource.mips_size(), mips, (Heart::hTextureFormat)texresource.format(), 0, &texture);
+            }
+        }
+
+        return texture;
+/*
         Heart::hTexture* texutre;
         Heart::hMipDesc* mips = NULL;
         hUint32 totalTextureSize = 0;
@@ -1002,13 +1027,14 @@ namespace Heart
         file->Read(textureData, totalTextureSize);
         createTexture(header.mipCount, mips, header.format, header.flags, &texutre);
         return texutre;
+*/
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::textureResourceLink(hResourceClassBase* texture, hResourceMemAlloc* memalloc) {
+    hBool hRenderer::textureResourceLink(hResourceClassBase* texture) {
         return hTrue; //Nothing to do
     }
 
@@ -1016,14 +1042,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::textureResourceUnlink(hResourceClassBase* texture, hResourceMemAlloc* memalloc) {
+    void hRenderer::textureResourceUnlink(hResourceClassBase* texture) {
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::textureResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::textureResourceUnload(hResourceClassBase* resource) {
         hTexture* tex=static_cast<hTexture*>(resource);
         // Package should be the only thing hold ref at this point...
         hcAssertMsg(tex->GetRefCount() == 1, "Texture ref count is %u, it should be 1", tex->GetRefCount());
@@ -1034,24 +1060,92 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hRenderer::shaderResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
-        hShaderProgram* shaderProg=NULL;
-        ShaderHeader header;
-        hInputLayoutDesc* inLayout = NULL;
-        void* shaderBlob = NULL;
-        file->Read(&header, sizeof(ShaderHeader));
-        hcAssert(header.version == SHADER_VERSION);
-        if (header.inputLayoutElements) {
-            inLayout = (hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*header.inputLayoutElements);
-            file->Read(inLayout, sizeof(hInputLayoutDesc)*header.inputLayoutElements);
+    hResourceClassBase* hRenderer::shaderResourceLoader(const hResourceSection* sections, hUint sectioncount) {
+        hShaderProgram* shaderProg=hNullptr;
+        hBool prefersource=hFalse;
+        proto::ShaderResource shaderres;
+
+#if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
+        class hIncluder : public hIIncludeHandler 
+        {
+        public:
+            hIncluder(const hResourceSection* sections, hUint sectioncount) 
+                : sections_(sections)
+                , sectioncount_(sectioncount)
+            {}
+            void findInclude(const hChar* includepath, const void** outdata, hUint* outlen) {
+                *outdata=hNullptr;
+                *outlen=0;
+                for (hUint i=0, n=sectioncount_; i<n; ++i) {
+                    if (hStrCmp(includepath, sections_[i].sectionName_) == 0) {
+                        *outdata=sections_[i].sectionData_;
+                        *outlen=sections_[i].sectionSize_;
+                        return;
+                    }
+                }
+            }
+
+            const hResourceSection* sections_;
+            hUint sectioncount_;
+        };
+        hIncluder includes(sections, sectioncount);
+        for (hUint i=0, n=sectioncount; i<n; ++i) {
+            if (hStrCmp("source", sections[i].sectionName_) == 0) {
+                prefersource=hTrue;
+            } else if (hStrCmp("shader", sections[i].sectionName_) == 0 && !prefersource) {
+                google::protobuf::io::ArrayInputStream input(sections[i].sectionData_, sections[i].sectionSize_);
+                google::protobuf::io::CodedInputStream inputstream(&input);
+                hBool ok=shaderres.ParseFromCodedStream(&inputstream);
+                hcAssertMsg(ok,"Failed to parse Shader Resource");
+                if (!ok) {
+                    return hNullptr;
+                }
+            }
         }
-
-        shaderBlob = hHeapMalloc("general", header.shaderBlobSize);
-        file->Read(shaderBlob, header.shaderBlobSize);
-
-        createShader((hChar*)shaderBlob, header.shaderBlobSize, header.type, &shaderProg);
-
-        hFreeSafe(shaderBlob);
+#endif
+        for (hUint i=0, n=sectioncount; i<n; ++i) {
+            if (hStrCmp("shader", sections[i].sectionName_) == 0 && !prefersource) {
+                google::protobuf::io::ArrayInputStream input(sections[i].sectionData_, sections[i].sectionSize_);
+                google::protobuf::io::CodedInputStream inputstream(&input);
+                hBool ok=shaderres.ParseFromCodedStream(&inputstream);
+                hcAssertMsg(ok,"Failed to parse Shader Resource");
+                if (!ok) {
+                    return hNullptr;
+                }
+                hShaderType type;
+                switch(shaderres.type()) {
+                case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
+                case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
+                case proto::eShaderType_Geometery:  type=ShaderType_GEOMETRYPROG;  break;
+                case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
+                case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
+                case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
+                }
+                createShader((hChar*)shaderres.compiledprogram().c_str(), (hUint)shaderres.compiledprogram().length(), type, &shaderProg);
+            } else if (hStrCmp("source", sections[i].sectionName_) == 0) {
+#if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
+                hShaderType type;
+                switch(shaderres.type()) {
+                case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
+                case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
+                case proto::eShaderType_Geometery:  type=ShaderType_GEOMETRYPROG;  break;
+                case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
+                case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
+                case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
+                }
+                hShaderDefine* defines=hNullptr;
+                hUint definecount=shaderres.defines_size();
+                if (definecount) {
+                    defines=(hShaderDefine*)hAlloca(sizeof(hShaderDefine)*definecount);
+                    for (hUint di=0; di<definecount; ++di) {
+                        defines[di].define_=shaderres.defines(di).define().c_str();
+                        defines[di].value_=shaderres.defines(di).value().c_str();
+                    }
+                }
+                compileShaderFromSource((hChar*)sections[i].sectionData_, sections[i].sectionSize_, shaderres.entry().c_str(), (hShaderProfile)shaderres.profile(), &includes, defines, definecount, &shaderProg);
+#endif
+            }
+        }
         return shaderProg;
     }
 
@@ -1059,7 +1153,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::shaderResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    hBool hRenderer::shaderResourceLink(hResourceClassBase* resource) {
         return hTrue;
     }
 
@@ -1067,7 +1161,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::shaderResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::shaderResourceUnlink(hResourceClassBase* resource) {
 
     }
 
@@ -1075,7 +1169,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::shaderResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::shaderResourceUnload(hResourceClassBase* resource) {
         hShaderProgram* sp = static_cast<hShaderProgram*>(resource);
         sp->DecRef();
     }
@@ -1084,84 +1178,231 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hRenderer::materialResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
-        hMaterial* material = hNEW(hMaterial)(this);
-        MaterialHeader header;
-        file->Read(&header, sizeof(header));
-        //TODO: handle this...
-        hcAssert(header.version == MATERIAL_VERSION);
-        //Read samplers
-        for (hUint32 i = 0, imax = header.samplerCount; i < imax; ++i)
-        {
-            SamplerDefinition samplerDef;
-            hSamplerParameter sampler;
-            file->Read(&samplerDef, sizeof(samplerDef));
-
-            hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), samplerDef.samplerName);
-            sampler.samplerState_ = createSamplerState(samplerDef.samplerState);
-
-            material->AddSamplerParameter(sampler);
-        }
-        //Read parameters
-        for (hUint32 i = 0, imax = header.parameterCount; i < imax; ++i)
-        {
-            ParameterDefinition paramDef;
-            file->Read(&paramDef, sizeof(paramDef));
-            material->addDefaultParameterValue(paramDef);
-        }
-        //Add Groups, Techniques & Passes
-        for (hUint32 groupidx = 0, groupCount = header.groupCount; groupidx < groupCount; ++groupidx)
-        {
-            GroupDefinition groupDef;
-            hMaterialGroup* group = NULL;
-            file->Read(&groupDef, sizeof(groupDef));
-
-            group = material->AddGroup(groupDef.groupName);
-
-            group->techniques_.Reserve(groupDef.techniques);
-            group->techniques_.Resize(groupDef.techniques);
-            for (hUint32 techniqueIdx = 0, techniqueCount = groupDef.techniques; techniqueIdx < techniqueCount; ++techniqueIdx)
-            {
-                TechniqueDefinition techDef;
-                file->Read(&techDef, sizeof(techDef));
-                hMaterialTechnique* tech = &group->techniques_[techniqueIdx];
-
-                tech->SetName(techDef.technqiueName);
-                tech->SetPasses(techDef.passes);
-                tech->SetLayer(techDef.layer);
-                tech->SetSort(techDef.transparent > 0);
-
-                for (hUint32 passIdx = 0, passCount = techDef.passes; passIdx < passCount; ++passIdx)
-                {
-                    PassDefintion passDef;
-                    hMaterialTechniquePass pass;
-
-                    file->Read(&passDef, sizeof(passDef));
-
-                    hBlendState* bs=createBlendState(passDef.blendState);
-                    hDepthStencilState* ds=createDepthStencilState(passDef.depthState);
-                    hRasterizerState* rs=createRasterizerState(passDef.rasterizerState);
-                    pass.bindBlendState(bs);
-                    pass.bindDepthStencilState(ds);
-                    pass.bindRasterizerState(rs);
-                    pass.SetVertexShaderResID(passDef.vertexProgramID);
-                    pass.SetFragmentShaderResID(passDef.fragmentProgramID);
-                    bs->DecRef();
-                    ds->DecRef();
-                    rs->DecRef();
-                    tech->AppendPass(pass);
+    hResourceClassBase* hRenderer::materialResourceLoader(const hResourceSection* sections, hUint sectioncount) {
+        for (hUint i=0, n=sectioncount; i<n; ++i) {
+            if (hStrCmp("material_blob", sections[i].sectionName_) == 0) {
+                hcAssertFailMsg("material blob section no longer supported");
+            } else if (hStrCmp("material", sections[i].sectionName_) == 0) {
+                google::protobuf::io::ArrayInputStream input(sections[i].sectionData_, sections[i].sectionSize_);
+                google::protobuf::io::CodedInputStream inputstream(&input);
+                proto::MaterialResource materialres;
+                hBool ok=materialres.ParseFromCodedStream(&inputstream);
+                hcAssertMsg(ok,"Failed to parse Shader Resource");
+                if (!ok) {
+                    return hNullptr;
                 }
+                hMaterial* material = hNEW(hMaterial)(this);
+                for (hUint gi=0, gn=materialres.groups_size(); gi<gn; ++gi) {
+                    const proto::MaterialGroup& groupdef=materialres.groups(gi);
+                    hMaterialGroup* group=material->addGroup(groupdef.groupname().c_str());
+                    group->techCountHint(groupdef.technique_size());
+                    for (hUint ti=0, tn=groupdef.technique_size(); ti<tn; ++ti) {
+                        const proto::MaterialTechnique& techdef=groupdef.technique(ti);
+                        hMaterialTechnique* tech=group->addTechnique(techdef.techniquename().c_str());
+                        tech->SetLayer(techdef.layer());
+                        tech->SetSort(techdef.transparent());
+                        tech->SetPasses(techdef.passes_size());
+                        for (hUint pi=0, pn=techdef.passes_size(); pi<pn; ++pi) {
+                            const proto::MaterialPass& passdef=techdef.passes(pi);
+                            hMaterialTechniquePass* pass=tech->appendPass();
+                            hBlendStateDesc blenddesc;
+                            hDepthStencilStateDesc depthdesc;
+                            hRasterizerStateDesc rasterdesc;
+                            if (passdef.has_pixel()) {
+                                pass->setProgramID(ShaderType_FRAGMENTPROG, hResourceID(passdef.pixel()));
+                            }
+                            if (passdef.has_vertex()) {
+                                pass->setProgramID(ShaderType_VERTEXPROG, hResourceID(passdef.vertex()));
+                            }
+                            if (passdef.has_geometry()) {
+                                pass->setProgramID(ShaderType_GEOMETRYPROG, hResourceID(passdef.geometry()));
+                            }
+                            if (passdef.has_domain()) {
+                                pass->setProgramID(ShaderType_DOMAINPROG, hResourceID(passdef.domain()));
+                            }
+                            if (passdef.has_hull()) {
+                                pass->setProgramID(ShaderType_HULLPROG, hResourceID(passdef.hull()));
+                            }
+                            if (passdef.has_compute()) {
+                                pass->setProgramID(ShaderType_COMPUTEPROG, hResourceID(passdef.compute()));
+                            }
+                            if (passdef.has_blend()) {
+                                const proto::BlendState& blenddef=passdef.blend();
+                                if (blenddef.has_blendenable()) {
+                                    blenddesc.blendEnable_=(RENDER_STATE_VALUE)blenddef.blendenable();
+                                }
+                                if (blenddef.has_srcblend()) {
+                                    blenddesc.srcBlend_=(RENDER_STATE_VALUE)blenddef.srcblend();
+                                }
+                                if (blenddef.has_destblend()) {
+                                    blenddesc.destBlend_=(RENDER_STATE_VALUE)blenddef.destblend();
+                                }
+                                if (blenddef.has_blendop()) {
+                                    blenddesc.blendOp_=(RENDER_STATE_VALUE)blenddef.blendop();
+                                }
+                                if (blenddef.has_srcblendalpha()) {
+                                    blenddesc.srcBlendAlpha_=(RENDER_STATE_VALUE)blenddef.srcblendalpha();
+                                }
+                                if (blenddef.has_destblendalpha()) {
+                                    blenddesc.destBlendAlpha_=(RENDER_STATE_VALUE)blenddef.destblendalpha();
+                                }
+                                if (blenddef.has_blendopalpha()) {
+                                    blenddesc.blendOpAlpha_=(RENDER_STATE_VALUE)blenddef.blendopalpha();
+                                }
+                                if (blenddef.has_rendertargetwritemask()) {
+                                    blenddesc.renderTargetWriteMask_=blenddef.rendertargetwritemask();
+                                }
+                            }
+                            hBlendState* bs=createBlendState(blenddesc);
+                            pass->bindBlendState(bs);
+                            bs->DecRef();
+                            if (passdef.has_depthstencil()) {
+                                const proto::DepthStencilState& depthdef=passdef.depthstencil();
+                                if (depthdef.has_depthenable()) {
+                                    depthdesc.depthEnable_ = (RENDER_STATE_VALUE)depthdef.depthenable();
+                                }
+                                if (depthdef.has_depthwritemask()) {
+                                    depthdesc.depthWriteMask_=(RENDER_STATE_VALUE)depthdef.depthwritemask();
+                                }
+                                if (depthdef.has_depthfunc()) {
+                                    depthdesc.depthFunc_=(RENDER_STATE_VALUE)depthdef.depthfunc();
+                                }
+                                if (depthdef.has_stencilenable()) {
+                                    depthdesc.stencilEnable_=(RENDER_STATE_VALUE)depthdef.stencilenable();
+                                }
+                                if (depthdef.has_stencilreadmask()) {
+                                    depthdesc.stencilReadMask_=depthdef.stencilreadmask();
+                                }
+                                if (depthdef.has_stencilwritemask()) {
+                                    depthdesc.stencilWriteMask_=depthdef.stencilwritemask();
+                                }
+                                if (depthdef.has_stencilfailop()) {
+                                    depthdesc.stencilFailOp_=(RENDER_STATE_VALUE)depthdef.stencilfailop();
+                                }
+                                if (depthdef.has_stencildepthfailop()) {
+                                    depthdesc.stencilDepthFailOp_=(RENDER_STATE_VALUE)depthdef.stencildepthfailop();
+                                }
+                                if (depthdef.has_stencilpassop()) {
+                                    depthdesc.stencilPassOp_=(RENDER_STATE_VALUE)depthdef.stencilpassop();
+                                }
+                                if (depthdef.has_stencilfunc()) {
+                                    depthdesc.stencilFunc_=(RENDER_STATE_VALUE)depthdef.stencilfunc();
+                                }
+                                if (depthdef.has_stencilref()) {
+                                    depthdesc.stencilRef_=depthdef.stencilref();
+                                }
+                            }
+                            hDepthStencilState* ds=createDepthStencilState(depthdesc);
+                            pass->bindDepthStencilState(ds);
+                            ds->DecRef();
+                            if (passdef.has_rasterizer()) {
+                                const proto::RasterizerState& rasterdef=passdef.rasterizer();
+                                if (rasterdef.has_fillmode()) {
+                                    rasterdesc.fillMode_=(RENDER_STATE_VALUE)rasterdef.fillmode();
+                                }
+                                if (rasterdef.has_cullmode()) {
+                                    rasterdesc.cullMode_=(RENDER_STATE_VALUE)rasterdef.cullmode();
+                                }
+                                if (rasterdef.has_frontcounterclockwise()) {
+                                    rasterdesc.frontCounterClockwise_=(RENDER_STATE_VALUE)rasterdef.frontcounterclockwise();
+                                }
+                                if (rasterdef.has_depthbias()) {
+                                    rasterdesc.depthBias_=(RENDER_STATE_VALUE)rasterdef.depthbias();
+                                }
+                                if (rasterdef.has_depthbiasclamp()) {
+                                    rasterdesc.depthBiasClamp_=rasterdef.depthbiasclamp();
+                                }
+                                if (rasterdef.has_slopescaleddepthbias()) {
+                                    rasterdesc.slopeScaledDepthBias_=rasterdef.slopescaleddepthbias();
+                                }
+                                if (rasterdef.has_depthclipenable()) {
+                                    rasterdesc.depthClipEnable_=(RENDER_STATE_VALUE)rasterdef.depthclipenable();
+                                }
+                                if (rasterdef.has_scissorenable()) {
+                                    rasterdesc.scissorEnable_=(RENDER_STATE_VALUE)rasterdef.scissorenable();
+                                }
+                            }
+                            hRasterizerState* rs=createRasterizerState(rasterdesc);
+                            pass->bindRasterizerState(rs);
+                            rs->DecRef();
+                        }
+                    }
+                }
+                //Read samplers
+                for (hUint32 is=0, ns=materialres.samplers_size(); is<ns; ++is)
+                {
+                    const proto::MaterialSampler& matsamplerdef=materialres.samplers(is);
+                   
+                    hSamplerParameter sampler;
+                    hSamplerStateDesc samplerdesc;
+                    hSamplerState* ss;
+
+                    if (matsamplerdef.has_samplerstate()) {
+                        const proto::SamplerState& samplerdef=matsamplerdef.samplerstate();
+                        if (samplerdef.has_filter()) {
+                            samplerdesc.filter_=(hSAMPLER_STATE_VALUE)samplerdef.filter();
+                        }
+                        if (samplerdef.has_addressu()) {
+                            samplerdesc.addressU_=(hSAMPLER_STATE_VALUE)samplerdef.addressu();
+                        }
+                        if (samplerdef.has_addressv()) {
+                            samplerdesc.addressV_=(hSAMPLER_STATE_VALUE)samplerdef.addressv();
+                        }
+                        if (samplerdef.has_addressw()) {
+                            samplerdesc.addressW_=(hSAMPLER_STATE_VALUE)samplerdef.addressw();
+                        }
+                        if (samplerdef.has_miplodbias()) {
+                            samplerdesc.mipLODBias_=samplerdef.miplodbias();
+                        }
+                        if (samplerdef.has_maxanisotropy()) {
+                            samplerdesc.maxAnisotropy_=samplerdef.maxanisotropy();
+                        }
+                        if (samplerdef.has_bordercolour()) {
+                            const proto::Colour& colour=samplerdef.bordercolour();
+                            hFloat alpha=colour.has_alpha() ? (colour.alpha()/255.f) : 1.f;
+                            samplerdesc.borderColour_=hColour((colour.red()/255.f), (colour.green()/255.f), (colour.blue()/255.f), alpha);
+                        }
+                        if (samplerdef.has_minlod()) {
+                            samplerdesc.minLOD_=samplerdef.minlod();
+                        }
+                        if (samplerdef.has_maxlod()) {
+                            samplerdesc.maxLOD_=samplerdef.maxlod();
+                        }
+                    }
+                    ss = createSamplerState(samplerdesc);
+
+                    hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), matsamplerdef.samplername().c_str());
+                    sampler.paramID_=hCRC32::StringCRC(sampler.name_);
+                    sampler.samplerState_=ss;
+                    material->addSamplerParameter(sampler);
+                }
+                //Read parameters
+                for (hUint pi=0, pn=materialres.parameters_size(); pi<pn; ++pi) {
+                    const proto::MaterialParameter& paramdef=materialres.parameters(pi);
+                    if (paramdef.has_resourceid()) {
+                        material->addDefaultParameterValue(paramdef.paramname().c_str(), hResourceID(paramdef.resourceid()));
+                    } else if (paramdef.floatvalues_size()) {
+                        material->addDefaultParameterValue(paramdef.paramname().c_str(), paramdef.floatvalues().data(), paramdef.floatvalues_size());
+                    } else if (paramdef.intvalues_size()) {
+                        material->addDefaultParameterValue(paramdef.paramname().c_str(), (const hInt32*)paramdef.intvalues().data(), paramdef.intvalues_size());
+                    } else if (paramdef.colourvalues_size()) {
+                        proto::Colour c=paramdef.colourvalues(0);
+                        hColour colour(c.red()/255.f, c.green()/255.f, c.blue()/255.f, c.has_alpha() ? c.alpha()/255.f : 1.f);
+                        material->addDefaultParameterValue(paramdef.paramname().c_str(), colour);
+                    }
+                }
+                return material;
             }
         }
-        
-        return material;
+
+        return hNullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::materialResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    hBool hRenderer::materialResourceLink(hResourceClassBase* resource) {
         hMaterial* mat = static_cast< hMaterial* >(resource);
         return mat->Link(resourceManager_, this, &materialManager_);
     }
@@ -1170,7 +1411,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::materialResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::materialResourceUnlink(hResourceClassBase* resource) {
         hcAssert(resource);
         hMaterial* mat = static_cast<hMaterial*>(resource);
         mat->unbind();
@@ -1180,7 +1421,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::materialResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::materialResourceUnload(hResourceClassBase* resource) {
         hMaterial* mat = static_cast<hMaterial*>(resource);
         hDELETE(mat);
     }
@@ -1189,113 +1430,88 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hRenderer::meshResourceLoader(hIFile* file, hResourceMemAlloc* memalloc) {
-        MeshHeader header = {0};
-        hRenderModel* rmodel = hNEW(hRenderModel)();
-        hInputLayoutDesc inputDesc[32];
-        hInputLayoutDesc streamInputDesc[32];
-        void* tmpBuffer = NULL;
-        hUint32 tmpbufsize = 0;
+    hResourceClassBase* hRenderer::meshResourceLoader(const hResourceSection* sections, hUint sectioncount) {
+        for (hUint i=0, n=sectioncount; i<n; ++i) {
+            if (hStrCmp("mesh", sections[i].sectionName_) == 0) {
+                google::protobuf::io::ArrayInputStream input(sections[i].sectionData_, sections[i].sectionSize_);
+                google::protobuf::io::CodedInputStream inputstream(&input);
+                proto::Mesh meshres;
+                hBool ok=meshres.ParseFromCodedStream(&inputstream);
+                hcAssertMsg(ok,"Failed to parse Shader Resource");
+                if (!ok) {
+                    return hNullptr;
+                }
 
-        file->Read(&header, sizeof(header));
+                hRenderModel* rmodel = hNEW(hRenderModel)();
+                rmodel->setRenderableCountHint(meshres.renderables_size());
+                for (hUint ri=0, rn=meshres.renderables_size(); ri<rn; ++ri) {
+                    const proto::Renderable& renderableres=meshres.renderables(ri);
+                    hRenderable* renderable=rmodel->appendRenderable();
+                    PrimitiveType primtype=(PrimitiveType)renderableres.primtype();
+                    hAABB aabb;
 
-        rmodel->SetLODCount(header.lodCount);
+                    aabb.reset();
 
-        for (hUint32 lIdx = 0; lIdx < header.lodCount; ++lIdx)
-        {
-            LODHeader lodHeader;
-            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-            file->Read(&lodHeader, sizeof(lodHeader));
+                    if (renderableres.has_aabb()) {
+                        const proto::AxisAlignedBoundingBox& aabbres=renderableres.aabb();
+                        hVec3 bounds[] = {
+                            hVec3(aabbres.minx(), aabbres.miny(), aabbres.minz()),
+                            hVec3(aabbres.maxx(), aabbres.maxy(), aabbres.maxz())
+                        };
+                        aabb = hAABB::computeFromPointSet(bounds, (hUint)hStaticArraySize(bounds));
+                    }
+                    renderable->SetStartIndex(0);
+                    renderable->SetPrimativeType(primtype);
+                    renderable->SetPrimativeCount(renderableres.primcount());
+                    renderable->SetAABB(aabb);
+                    renderable->SetMaterialResourceID(hResourceID(renderableres.materialresource()));
 
-            lod->minRange_ = lodHeader.minRange;
-            lod->renderObjects_.Resize(lodHeader.renderableCount);
-
-            for (hUint32 rIdx = 0; rIdx < lodHeader.renderableCount; ++rIdx)
-            {
-                RenderableHeader rHeader={0};
-                hRenderable* renderable = &lod->renderObjects_[rIdx];
-                hIndexBuffer* ib;
-                hVertexBuffer* vb;
-                hVec3 bounds[2];//min,max;
-                hAABB aabb;
-
-                file->Read(&rHeader, sizeof(rHeader));
-                hcAssert(rHeader.inputElements < 32);
-                file->Read(inputDesc, sizeof(hInputLayoutDesc)*rHeader.inputElements);
-
-                tmpbufsize = hMax(tmpbufsize, rHeader.ibSize);
-                tmpBuffer = hHeapRealloc("general", tmpBuffer, tmpbufsize);
-
-                bounds[0] = hVec3(rHeader.boundsMin[0], rHeader.boundsMin[1], rHeader.boundsMin[2]);
-                bounds[1] = hVec3(rHeader.boundsMax[0], rHeader.boundsMax[1], rHeader.boundsMax[2]);
-                aabb = hAABB::computeFromPointSet(bounds, 2);
-
-                file->Read(tmpBuffer, rHeader.ibSize);
-                createIndexBuffer(tmpBuffer, rHeader.nPrimatives*3, 0, &ib);
-
-                renderable->SetStartIndex(rHeader.startIndex);
-                renderable->SetPrimativeCount(rHeader.nPrimatives);
-                renderable->SetPrimativeType((PrimitiveType)rHeader.primType);
-                renderable->SetAABB(aabb);
-                renderable->SetIndexBuffer(ib);
-                renderable->SetMaterialResourceID(rHeader.materialID);
-
-                hUint32 streams = rHeader.streams;
-                for (hUint32 streamIdx = 0; streamIdx < streams; ++streamIdx)
-                {
-                    StreamHeader sHeader = {0};
-                    file->Read(&sHeader, sizeof(sHeader));
-
-                    tmpbufsize = hMax(tmpbufsize, sHeader.size);
-                    tmpBuffer = hHeapRealloc("general", tmpBuffer, tmpbufsize);
-
-                    file->Read(tmpBuffer, sHeader.size);
-
-                    //Builder stream inputDesc
-                    hUint32 sidc = rHeader.inputElements;
-                    hUint32 side = 0;
-                    for (hUint32 sid = 0; sid < sidc; ++sid)
-                    {
-                        if (inputDesc[sid].inputStream_ == sHeader.index)
-                        {
-                            streamInputDesc[side] = inputDesc[sid];
-                            ++side;
-                        }
+                    if (renderableres.has_indexbuffer()) {
+                        hIndexBuffer* ib;
+                        createIndexBuffer(renderableres.indexbuffer().data(), renderableres.indexcount(), 0, &ib);
+                        renderable->SetIndexBuffer(ib);
                     }
 
-                    createVertexBuffer(tmpBuffer, rHeader.verts, streamInputDesc, side, 0, &vb);
-                    renderable->SetVertexBuffer(sHeader.index, vb);
+                    rmodel->setRenderableCountHint(renderableres.vertexstreams_size());
+                    for (hUint rsi=0, rsn=renderableres.vertexstreams_size(); rsi<rsn; ++rsi) {
+                        hUint vtxcount=renderableres.vertexcount();
+                        const proto::VertexStream& vtxstreamres=renderableres.vertexstreams(rsi);
+                        hInputLayoutDesc vtxstreamdesc(
+                            vtxstreamres.semantic().c_str(),
+                            vtxstreamres.semanticindex(),
+                            (hInputFormat)vtxstreamres.format(),
+                            rsi, 0);
+                        hVertexBuffer* vb=hNullptr;
+                        createVertexBuffer(vtxstreamres.streamdata().data(), vtxcount, &vtxstreamdesc, 1, 0, &vb);
+                        renderable->setVertexStream(rsi, vb);
+                    }
                 }
+                return rmodel;
             }
         }
 
-        hFreeSafe(tmpBuffer);
-        return rmodel;
+        return hNullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::meshResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    hBool hRenderer::meshResourceLink(hResourceClassBase* resource) {
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-        hUint32 lodcount = rmodel->GetLODCount();
-        for(hUint32 i = 0; i < lodcount; ++i) {
-            hGeomLODLevel* lod = rmodel->GetLOD(i);
-            hUint32 objcount = lod->renderObjects_.GetSize();
-            for (hUint32 j = 0; j < objcount; ++j) {
-                if (lod->renderObjects_[j].GetMaterial() == 0) {
-                    hMaterial* mat = static_cast<hMaterial*>(resourceManager_->ltGetResource(lod->renderObjects_[j].GetMaterialResourceID()));
-                    // Possible the material won't have loaded just yet...
-                    if (!mat) {
-                        return hFalse;
-                    }
-                    lod->renderObjects_[j].SetMaterial(mat);
-                    lod->renderObjects_[j].bind();
+        hUint32 renderablecount = rmodel->getRenderableCount();
+        for(hUint32 i = 0; i < renderablecount; ++i) {
+            hRenderable* renderable=rmodel->getRenderable(i);
+            if (renderable->GetMaterial() == 0) {
+                hMaterial* mat = static_cast<hMaterial*>(resourceManager_->ltGetResource(renderable->GetMaterialResourceID()));
+                // Possible the material won't have loaded just yet...
+                if (!mat) {
+                    return hFalse;
                 }
+                renderable->setMaterial(mat);
+                renderable->bind();
             }
         }
-
         rmodel->initialiseRenderCommands();
         return hTrue;
     }
@@ -1304,13 +1520,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::meshResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::meshResourceUnlink(hResourceClassBase* resource) {
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-        for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
-            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-            for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-                lod->renderObjects_[rIdx].SetMaterial(hNullptr);
-            }
+        hUint32 renderablecount = rmodel->getRenderableCount();
+        for(hUint32 i = 0; i < renderablecount; ++i) {
+            rmodel->getRenderable(i)->setMaterial(hNullptr);
         }
     }
 
@@ -1318,20 +1532,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::meshResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc) {
+    void hRenderer::meshResourceUnload(hResourceClassBase* resource) {
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-        for (hUint32 lIdx = 0, lodc = rmodel->GetLODCount(); lIdx < lodc; ++lIdx) {
-            hGeomLODLevel* lod = rmodel->GetLOD(lIdx);
-            for (hUint32 rIdx = 0, rCnt = lod->renderObjects_.GetSize(); rIdx < rCnt; ++rIdx) {
-                for (hUint32 s = 0, sc=lod->renderObjects_[rIdx].getVertexBufferCount(); s < sc; ++s) {
-                    hVertexBuffer* vb=lod->renderObjects_[rIdx].GetVertexBuffer(s);
-                    if (vb) {
-                        vb->DecRef();
-                        vb=NULL;
-                    }
+        hUint32 renderablecount = rmodel->getRenderableCount();
+        for(hUint32 i = 0; i < renderablecount; ++i) {
+            hRenderable* renderable=rmodel->getRenderable(i);
+            for (hUint32 s = 0, sc=renderable->getVertexStreamCount(); s < sc; ++s) {
+                hVertexBuffer* vb=renderable->getVertexStream(s);
+                if (vb) {
+                    vb->DecRef();
+                    vb=NULL;
                 }
-                lod->renderObjects_[rIdx].GetIndexBuffer()->DecRef();
             }
+            renderable->getIndexBuffer()->DecRef();
         }
         hDELETE_SAFE(rmodel);
     }

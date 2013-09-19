@@ -35,6 +35,55 @@ namespace Heart
 
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
 
+    class hResourceFileStream : public google::protobuf::io::ZeroCopyInputStream
+    {
+    public:
+        hResourceFileStream(hIFile* file) 
+            : file_(file)
+            , pos_(0)
+            , bytesRead_(0)
+        {
+            bytes_=hNEW_ARRAY(hByte, s_bufferSize);
+        }
+        ~hResourceFileStream() {
+            hDELETE_ARRAY_SAFE(bytes_);
+        }
+
+        virtual bool Next(const void** data, int* size) {
+            // read in 32K
+            hUint32 read = file_->Read(bytes_, s_bufferSize);
+            *data = bytes_;
+            *size = read;
+            pos_=file_->Tell();
+            bytesRead_ += read;
+            return read != 0;
+        };
+
+        virtual void BackUp(int count) {
+            file_->Seek(count, SEEKOFFSET_CURRENT);
+            pos_=file_->Tell();
+        };
+
+        virtual bool Skip(int count) { 
+            hUint64 expectpos=pos_+count;
+            file_->Seek(count, SEEKOFFSET_CURRENT);
+            pos_=file_->Tell();
+            return expectpos==file_->Tell();
+        };
+        virtual google::protobuf::int64 ByteCount() const { return bytesRead_; };
+
+    private:
+        hResourceFileStream(const hResourceFileStream& rhs);
+        hResourceFileStream& operator = (hResourceFileStream);
+
+        static const hUint32 s_bufferSize = 32*1024;
+
+        hIFile* file_;
+        hUint64 pos_;
+        hUint64 bytesRead_;
+        hByte*  bytes_;
+    };
+
     //typedef hUint64 hResourceID;
     struct hResourceID
     {
@@ -49,16 +98,26 @@ namespace Heart
         operator hUint64() { return hash_; }
     };
 
-    
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    struct hResourceSection
+    {
+        const hChar*                     sectionName_;
+        hUint32                          sectionSize_;
+        void*                            sectionData_;
+        proto::ResourceSectionMemoryType memType_;
+    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(hIFile*,             hResourceMemAlloc*), hResourceLoadProc);
-    hFUNCTOR_TYPEDEF(hBool               (*)(hResourceClassBase*, hResourceMemAlloc*), hResourceLinkProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*, hResourceMemAlloc*), hResourceUnlinkProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*, hResourceMemAlloc*), hResourceUnloadProc);
+    hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(const hResourceSection*,   hUint), hResourceLoadProc);
+    hFUNCTOR_TYPEDEF(hBool               (*)(hResourceClassBase*), hResourceLinkProc);
+    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*), hResourceUnlinkProc);
+    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*), hResourceUnloadProc);
 
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
     {

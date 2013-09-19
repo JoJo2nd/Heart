@@ -49,11 +49,8 @@ hBool hRenderModel::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
 
 void hRenderModel::initialiseRenderCommands() {
     hRenderCommandGenerator rcGen(&renderCommands_);
-    for (hUint lodIdx=0,lodCnt=levelCount_; lodIdx<lodCnt; ++lodIdx) {
-        hGeomLODLevel* lod=&lodLevels_[lodIdx];
-        for (hUint rndIdx=0,rndCnt=lod->renderObjects_.GetSize(); rndIdx<rndCnt; ++rndIdx) {
-            lod->renderObjects_[rndIdx].initialiseRenderCommands(&rcGen);
-        }
+    for (auto i=renderables_.begin(),n=renderables_.end(); i<n; ++i) {
+        i->initialiseRenderCommands(&rcGen);
     }
 }
 

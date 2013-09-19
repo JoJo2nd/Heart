@@ -34,7 +34,7 @@ namespace Heart
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
 
-
+    hFUNCTOR_TYPEDEF(void (*)(const hChar*, void**, hUint32*), hShaderIncludeCallback);
     hFUNCTOR_TYPEDEF(void (*)(hRenderer*, hRenderSubmissionCtx*), hCustomRenderCallback);
 
     struct HEART_DLLEXPORT hDrawCall
@@ -145,12 +145,12 @@ namespace Heart
         /*
             pimpl methods
         */
-        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram** out);
+        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram** out);
         void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out);
         void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
         void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
-        void  createIndexBuffer(void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
-        void  createVertexBuffer(void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
+        void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
+        void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
         void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
         void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
         void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
@@ -208,25 +208,25 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        hResourceClassBase*  textureResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
-        hBool                textureResourceLink(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
-        void                 textureResourceUnlink(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
-        void                 textureResourceUnload(hResourceClassBase* texture, hResourceMemAlloc* memalloc);
+        hResourceClassBase*  textureResourceLoader(const hResourceSection* sections, hUint sectioncount);
+        hBool                textureResourceLink(hResourceClassBase* texture);
+        void                 textureResourceUnlink(hResourceClassBase* texture);
+        void                 textureResourceUnload(hResourceClassBase* texture);
 
-        hResourceClassBase*  shaderResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
-        hBool                shaderResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 shaderResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 shaderResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        hResourceClassBase*  shaderResourceLoader(const hResourceSection* sections, hUint sectioncount);
+        hBool                shaderResourceLink(hResourceClassBase* resource);
+        void                 shaderResourceUnlink(hResourceClassBase* resource);
+        void                 shaderResourceUnload(hResourceClassBase* resource);
 
-        hResourceClassBase*  materialResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
-        hBool                materialResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 materialResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 materialResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        hResourceClassBase*  materialResourceLoader(const hResourceSection* sections, hUint sectioncount);
+        hBool                materialResourceLink(hResourceClassBase* resource);
+        void                 materialResourceUnlink(hResourceClassBase* resource);
+        void                 materialResourceUnload(hResourceClassBase* resource);
 
-        hResourceClassBase*  meshResourceLoader(hIFile* file, hResourceMemAlloc* memalloc);
-        hBool                meshResourceLink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 meshResourceUnlink(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
-        void                 meshResourceUnload(hResourceClassBase* resource, hResourceMemAlloc* memalloc);
+        hResourceClassBase*  meshResourceLoader(const hResourceSection* sections, hUint sectioncount);
+        hBool                meshResourceLink(hResourceClassBase* resource);
+        void                 meshResourceUnlink(hResourceClassBase* resource);
+        void                 meshResourceUnload(hResourceClassBase* resource);
 
         // Init params
         hSystem*												system_;

@@ -60,51 +60,20 @@ file(GLOB HEART_BASE_FILES
     "${HEART_SOURCE_DIR}/include/base/*.h"
     "${HEART_SOURCE_DIR}/src/base/*.cpp"
 )
-
 file(GLOB HEART_COMPONENTS_FILES 
     "${HEART_SOURCE_DIR}/include/components/*.h"
     "${HEART_SOURCE_DIR}/src/components/*.cpp"
 )
+file(GLOB HEART_CORE_FILES 
+    "${HEART_SOURCE_DIR}/include/core/*.h"
+    "${HEART_SOURCE_DIR}/src/core/*.cpp"
+)
 
-set(HEART_COMPUTE_FILES 
-    "${HEART_SOURCE_DIR}/include/compute/hComputeUAV.h"
+file(GLOB HEART_COMPUTE_FILES 
+    "${HEART_SOURCE_DIR}/include/compute/*.h"
+    "${HEART_SOURCE_DIR}/src/compute/*.cpp"
 )
-set(HEART_CORE_FILES
-    "${HEART_SOURCE_DIR}/include/core/hConfigOptions.h"
-    "${HEART_SOURCE_DIR}/include/core/hDeferredReturn.h"
-    "${HEART_SOURCE_DIR}/include/core/hDriveFile.h"
-    "${HEART_SOURCE_DIR}/include/core/hDriveFileSystem.h"
-    "${HEART_SOURCE_DIR}/include/core/hHeart.h"
-    "${HEART_SOURCE_DIR}/include/core/hIFile.h"
-    "${HEART_SOURCE_DIR}/include/core/hIFileSystem.h"
-    "${HEART_SOURCE_DIR}/include/core/hMemoryHeap.h"
-    "${HEART_SOURCE_DIR}/include/core/hResource.h"
-    "${HEART_SOURCE_DIR}/include/core/hResourceManager.h"
-    "${HEART_SOURCE_DIR}/include/core/hResourcePackage.h"
-    "${HEART_SOURCE_DIR}/include/core/hSerialiserFileStream.h"
-    "${HEART_SOURCE_DIR}/include/core/hStateBase.h"
-    "${HEART_SOURCE_DIR}/include/core/hStackMemoryHeap.h"
-    "${HEART_SOURCE_DIR}/include/core/hSystem.h"
-    "${HEART_SOURCE_DIR}/include/core/hSystemConsole.h"
-    "${HEART_SOURCE_DIR}/include/core/hTypePoolMemoryHeap.h"
-    "${HEART_SOURCE_DIR}/include/core/hZipFile.h"
-    "${HEART_SOURCE_DIR}/include/core/hZipFileSystem.h"
-    
-    "${HEART_SOURCE_DIR}/src/core/hDriveFile.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hDriveFileSystem.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hHeart.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hMemoryHeap.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hResource.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hResourceManager.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hResourcePackage.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hStateBase.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hStackMemoryHeap.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hSystem.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hSystemConsole.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hWildcard.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hZipFile.cpp"
-    "${HEART_SOURCE_DIR}/src/core/hZipFileSystem.cpp"
-)
+
 set(HEART_DEBUG_FILES
     "${HEART_SOURCE_DIR}/include/debug/hDebugMenuManager.h"
     "${HEART_SOURCE_DIR}/include/debug/hDebugInfo.h"
@@ -140,48 +109,9 @@ set(HEART_MATH_FILES
     "${HEART_SOURCE_DIR}/src/math/hCollision.cpp"
     "${HEART_SOURCE_DIR}/src/math/hViewFrustum.cpp"
 )
-set(HEART_RENDER_FILES
-    "${HEART_SOURCE_DIR}/include/render/hCompute.h"
-    "${HEART_SOURCE_DIR}/include/render/hDrawCallContext.h"
-	"${HEART_SOURCE_DIR}/include/render/hDebugDraw.h"
-    "${HEART_SOURCE_DIR}/include/render/hFont.h"
-    "${HEART_SOURCE_DIR}/include/render/hGeometryObject.h"
-    "${HEART_SOURCE_DIR}/include/render/hIndexBuffer.h"
-    "${HEART_SOURCE_DIR}/include/render/hMaterial.h"
-    "${HEART_SOURCE_DIR}/include/render/hMaterialTypes.h"
-    "${HEART_SOURCE_DIR}/include/render/hParameterConstBlock.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderable.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderer.h"
-    "${HEART_SOURCE_DIR}/include/render/hRendererCamera.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderMaterialManager.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderModel.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderShaderProgram.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderStateBlock.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderSubmissionContext.h"
-    "${HEART_SOURCE_DIR}/include/render/hRenderUtility.h"
-    "${HEART_SOURCE_DIR}/include/render/hTexture.h"
-    "${HEART_SOURCE_DIR}/include/render/hVertexBuffer.h"
-    "${HEART_SOURCE_DIR}/include/render/hViews.h"
-    
-    "${HEART_SOURCE_DIR}/src/render/hDebugFontData.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hDrawCallContext.cpp"
-	"${HEART_SOURCE_DIR}/src/render/hDebugDraw.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hFont.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hIndexBuffer.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hMaterial.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hMaterialTypes.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hParameterConstBlock.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderable.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderer.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRendererCamera.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderMaterialManager.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderModel.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderShaderProgram.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderSubmissionContext.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hRenderUtility.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hTexture.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hVertexBuffer.cpp"
-    "${HEART_SOURCE_DIR}/src/render/hViews.cpp"
+file(GLOB HEART_RENDER_FILES
+    "${HEART_SOURCE_DIR}/include/render/*.h"
+    "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
 set(HEART_SCENE_FILES
     "${HEART_SOURCE_DIR}/include/scene/hSceneBundle.h"

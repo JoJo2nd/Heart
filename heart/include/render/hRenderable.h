@@ -43,13 +43,22 @@ namespace Heart
         hRenderable() 
             : materialID_(0)
             , materialKey_(0)
-            , material_(NULL)
+            , material_(hNullptr)
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
         }
-        virtual ~hRenderable() 
+        hRenderable(hRenderable&& rhs)
+            : material_(hNullptr)
+            , indexBuffer_(hNullptr)
         {
+            swap(this, &rhs);
+        }
+        hRenderable& operator = (hRenderable&& rhs) {
+            swap(this, &rhs);
+            return *this;
+        }
+        virtual ~hRenderable() {
             for (hUint i=0, n=inputLayouts_.GetSize(); i<n; ++i) {
                 if (inputLayouts_[i]) {
                     inputLayouts_[i]->Release();
@@ -58,15 +67,16 @@ namespace Heart
             }
         }
 
-        hUint                                   getVertexBufferCount() const { return vertexBuffer_.GetSize(); }
-        hVertexBuffer*                          GetVertexBuffer(hUint32 stream) const { return vertexBuffer_[stream]; }
-        void                                    SetVertexBuffer(hUint16 stream, hVertexBuffer* vtx) {
-            if (vertexBuffer_.GetSize() <= stream) {
-                vertexBuffer_.Resize(stream+1);
+        hUint                                   vertexStreamCountHint(hUint val) { vertexBuffer_.reserve(val); }
+        hUint                                   getVertexStreamCount() const { return (hUint)vertexBuffer_.size(); }
+        hVertexBuffer*                          getVertexStream(hUint32 stream) const { return vertexBuffer_[stream]; }
+        void                                    setVertexStream(hUint16 stream, hVertexBuffer* vtx) {
+            if (vertexBuffer_.size() <= stream) {
+                vertexBuffer_.resize(stream+1);
             }
             vertexBuffer_[stream]=vtx;
         }
-        hIndexBuffer*                           GetIndexBuffer() const { return indexBuffer_; }
+        hIndexBuffer*                           getIndexBuffer() const { return indexBuffer_; }
         void                                    SetIndexBuffer(hIndexBuffer* idx) {
             indexBuffer_=idx;
         }
@@ -81,7 +91,7 @@ namespace Heart
         void                                    SetPrimativeCount(hUint primCount) { primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
-        void                                    SetMaterial(hMaterial* material);
+        void                                    setMaterial(hMaterial* material);
         hMaterial*                              GetMaterial() const { return material_; }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB						            GetAABB() const { return aabb_; }
@@ -96,17 +106,33 @@ namespace Heart
     
     private:
 
-        hResourceID              materialID_;
-        hUint32                  materialKey_;
-        hUint                    primCount_;
-        hUint                    startVertex_;
-        hMaterial*               material_;
-        hAABB                    aabb_;
-        PrimitiveType            primType_;
-        hIndexBuffer*            indexBuffer_;
-        hVector<hVertexBuffer*>  vertexBuffer_;
-        hMaterialCmdLookUpHelper cmdLookUp_;
-        hVector<hdInputLayout*>  inputLayouts_;
+        hRenderable(const hRenderable&);
+        hRenderable operator = (const hRenderable&);
+        void swap(hRenderable* lhs, hRenderable* rhs) {
+            std::swap(lhs->materialID_, rhs->materialID_);
+            std::swap(lhs->materialKey_, rhs->materialKey_);
+            std::swap(lhs->primCount_, rhs->primCount_);
+            std::swap(lhs->startVertex_, rhs->startVertex_);
+            std::swap(lhs->material_, rhs->material_);
+            std::swap(lhs->aabb_, rhs->aabb_);
+            std::swap(lhs->primType_, lhs->primType_);
+            std::swap(lhs->indexBuffer_, rhs->indexBuffer_);
+            std::swap(lhs->vertexBuffer_, rhs->vertexBuffer_);
+            std::swap(lhs->cmdLookUp_, cmdLookUp_);
+            lhs->inputLayouts_.swap(&rhs->inputLayouts_);
+        }
+
+        hResourceID                 materialID_;
+        hUint32                     materialKey_;
+        hUint                       primCount_;
+        hUint                       startVertex_;
+        hMaterial*                  material_;
+        hAABB                       aabb_;
+        PrimitiveType               primType_;
+        hIndexBuffer*               indexBuffer_;
+        std::vector<hVertexBuffer*> vertexBuffer_;
+        hMaterialCmdLookUpHelper    cmdLookUp_;
+        hVector<hdInputLayout*>     inputLayouts_;
     };
 }
 

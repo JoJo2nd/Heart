@@ -45,54 +45,124 @@ namespace Heart
     public:
 
         hMaterialTechniquePass()
-            : vertexProgram_(NULL)
-            , fragmentProgram_(NULL)
-            , blendState_(NULL)
-            , depthStencilState_(NULL)
-            , rasterizerState_(NULL)
+            : vertexProgram_(hNullptr)
+            , fragmentProgram_(hNullptr)
+            , geometryProgram_(hNullptr)
+            , hullProgram_(hNullptr)
+            , domainProgram_(hNullptr)
+            , computeProgram_(hNullptr)
+            , blendState_(hNullptr)
+            , depthStencilState_(hNullptr)
+            , rasterizerState_(hNullptr)
         {
-            hZeroMem(programs_, sizeof(programs_));
+        }
+        hMaterialTechniquePass(hMaterialTechniquePass&& rhs)
+            : vertexProgram_(hNullptr)
+            , fragmentProgram_(hNullptr)
+            , geometryProgram_(hNullptr)
+            , hullProgram_(hNullptr)
+            , domainProgram_(hNullptr)
+            , computeProgram_(hNullptr)
+            , blendState_(hNullptr)
+            , depthStencilState_(hNullptr)
+            , rasterizerState_(hNullptr)
+        {
+            swap(this, &rhs);
+        }
+        hMaterialTechniquePass& operator = (hMaterialTechniquePass&& rhs) {
+            swap(this, &rhs);
+            return *this;
+        }
+        ~hMaterialTechniquePass() {
+            vertexProgram_=hNullptr;
+            fragmentProgram_=hNullptr;
+            geometryProgram_=hNullptr;
+            hullProgram_=hNullptr;
+            domainProgram_=hNullptr;
+            computeProgram_=hNullptr;
+            if (blendState_) {
+                blendState_->DecRef();
+                blendState_=hNullptr;
+            }
+            if (depthStencilState_) {
+                depthStencilState_->DecRef();
+                depthStencilState_=hNullptr;
+            }
+            if (rasterizerState_) {
+                rasterizerState_->DecRef();
+                rasterizerState_=hNullptr;
+            }
         }
 
         hShaderProgram*         GetVertexShader() { return vertexProgram_; }
         void                    SetVertexShader(hShaderProgram* prog) { vertexProgram_=prog; }
-        void                    SetVertexShaderResID(hResourceID id) { vertexProgramID_ = id; }
         hShaderProgram*         GetFragmentShader() { return fragmentProgram_; }
         void                    SetFragmentShader(hShaderProgram* prog) { fragmentProgram_=prog; }
-        void                    SetFragmentShaderResID(hResourceID id) { fragmentProgramID_ = id; }
+        void                    setProgramID(hUint shadertype, hResourceID resid) { programID_[shadertype]=resid; }
+        hResourceID             getProgramID(hUint shadertype) const { return programID_[shadertype]; }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
         hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i];}
         hBlendState*            GetBlendState() { return blendState_; }
         hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
         hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
         void                    bindBlendState(hBlendState* state) { 
-            state->AddRef();
+            if (blendState_) {
+                blendState_->DecRef();
+            }
+            if (state) {
+                state->AddRef();
+            }
             blendState_ = state; 
         }
         void                    bindDepthStencilState(hDepthStencilState* state) { 
-            state->AddRef();
+            if (depthStencilState_) {
+                depthStencilState_->DecRef();
+            }
+            if (state) {
+                state->AddRef();
+            }
             depthStencilState_ = state;
         }
         void                    bindRasterizerState(hRasterizerState* state) { 
-            state->AddRef();
+            if (rasterizerState_) {
+                rasterizerState_->DecRef();
+            }
+            if (state) {
+                state->AddRef();
+            }
             rasterizerState_ = state;
         }
-        void                    ReleaseResources(hRenderer* renderer);
 
         hBool   setSamplerInput(hShaderParameterID paramID, hSamplerState* srv);
         hBool   setResourceView(hShaderParameterID paramID, hShaderResourceView* view);
         hBool   setConstantBuffer(hShaderParameterID paramID, hRenderBuffer* buffer);
-
-        hUint   getConstantBufferCount(hShaderType progtype) const { return inputResources_[progtype].buffers_.GetSize();}
-        hUint   getSamplerCount(hShaderType progtype) const { return inputResources_[progtype].samplerStates_.GetSize();}
-        hUint   getShaderResourceViewCount(hShaderType progtype) const { return inputResources_[progtype].srView_.GetSize();}
-        hRenderBuffer** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.GetBuffer(); }
-        hSamplerState**           getSamplers(hShaderType progtype) { return inputResources_[progtype].samplerStates_.GetBuffer(); }
-        hShaderResourceView**     getShaderResourceViews(hShaderType progtype) { return inputResources_[progtype].srView_.GetBuffer(); }
+        hUint   getConstantBufferCount(hShaderType progtype) const { return (hUint)inputResources_[progtype].buffers_.size();}
+        hUint   getSamplerCount(hShaderType progtype) const { return (hUint)inputResources_[progtype].samplerStates_.size();}
+        hUint   getShaderResourceViewCount(hShaderType progtype) const { return (hUint)inputResources_[progtype].srView_.size();}
+        hRenderBuffer** getConstantBuffers(hShaderType progtype) { return inputResources_[progtype].buffers_.data(); }
+        hSamplerState**           getSamplers(hShaderType progtype) { return inputResources_[progtype].samplerStates_.data(); }
+        hShaderResourceView**     getShaderResourceViews(hShaderType progtype) { return inputResources_[progtype].srView_.data(); }
 
     private:
 
-        HEART_ALLOW_SERIALISE_FRIEND();
+        hMaterialTechniquePass(const hMaterialTechniquePass& rhs);
+        hMaterialTechniquePass& operator = (const hMaterialTechniquePass& rhs);
+        static void swap(hMaterialTechniquePass* lhs, hMaterialTechniquePass* rhs) {
+            std::swap(lhs->vertexProgram_, rhs->vertexProgram_);
+            std::swap(lhs->fragmentProgram_, rhs->fragmentProgram_);
+            std::swap(lhs->geometryProgram_, rhs->geometryProgram_);
+            std::swap(lhs->hullProgram_, rhs->hullProgram_);
+            std::swap(lhs->domainProgram_, rhs->domainProgram_);
+            std::swap(lhs->computeProgram_, rhs->computeProgram_);
+            std::swap(lhs->blendState_, rhs->blendState_);
+            std::swap(lhs->depthStencilState_, rhs->depthStencilState_);
+            std::swap(lhs->rasterizerState_, rhs->rasterizerState_);
+            for (hUint i=0; i<s_maxPrograms; ++i) {
+                std::swap(lhs->inputResources_[i].srView_, rhs->inputResources_[i].srView_);
+                std::swap(lhs->inputResources_[i].samplerStates_, rhs->inputResources_[i].samplerStates_);
+                std::swap(lhs->inputResources_[i].buffers_, rhs->inputResources_[i].buffers_);
+            }
+        }
 
         friend class hRenderer;
         friend class hMaterial;
@@ -112,18 +182,14 @@ namespace Heart
                 hShaderProgram* geometryProgram_;
                 hShaderProgram* hullProgram_;
                 hShaderProgram* domainProgram_;
+                hShaderProgram* computeProgram_;
             };
-        };
-        struct
-        {
-            hResourceID vertexProgramID_;
-            hResourceID fragmentProgramID_;
         };
         struct 
         {
-            hVector< hShaderResourceView* >     srView_;
-            hVector< hSamplerState* >           samplerStates_;
-            hVector< hRenderBuffer* >           buffers_;
+            std::vector< hShaderResourceView* >     srView_;
+            std::vector< hSamplerState* >           samplerStates_;
+            std::vector< hRenderBuffer* >           buffers_;
         } inputResources_[s_maxPrograms];
 
         /*
@@ -132,6 +198,8 @@ namespace Heart
         hBlendState*                        blendState_;
         hDepthStencilState*                 depthStencilState_;
         hRasterizerState*                   rasterizerState_;
+
+        hArray<hResourceID, s_maxPrograms> programID_;
     };
 
     class HEART_DLLEXPORT hMaterialTechnique
@@ -140,84 +208,108 @@ namespace Heart
 
         hMaterialTechnique()
             : mask_(0)
+            , transparent_(false)
+            , layer_(0)
         {
-            hZeroMem( name_, MAX_NAME_LEN );
         }
-        hMaterialTechnique(const hMaterialTechnique& rhs)
+        hMaterialTechnique(const hChar* name)
+            : name_(name)
+            , mask_(0)
+            , transparent_(false)
+            , layer_(0)
         {
-            name_ = rhs.name_;
-            transparent_ = rhs.transparent_;
-            layer_ = rhs.layer_;
-            mask_ = rhs.mask_;
-            passes_=rhs.passes_;
         }
-        hMaterialTechnique&             operator = ( const hMaterialTechnique& rhs )
-        {
-            name_ = rhs.name_;
-            transparent_ = rhs.transparent_;
-            layer_ = rhs.layer_;
-            mask_ = rhs.mask_;
-            passes_=rhs.passes_;
-
+        hMaterialTechnique(hMaterialTechnique&& rhs) {
+            swap(this, &rhs);
+        }
+        hMaterialTechnique& operator = (hMaterialTechnique&& rhs) {
+            swap(this, &rhs);
             return *this;
         }
-        ~hMaterialTechnique()
-        {
-
+        ~hMaterialTechnique() {
         }
 
-        const hChar*            GetName() const { return &name_[0]; }
-        void                    SetName(const hChar* name) { hStrCopy(name_.GetBuffer(), MAX_NAME_LEN, name); }
+        const hChar*            getName() const { return name_.c_str(); }
+        void                    SetName(const hChar* name) { name_=name; }
         hUint32                 GetMask() const { return mask_; }
         void                    SetMask(hUint32 v) { mask_=v; }
         void                    SetPasses(hUint32 count);
-        hUint32                 GetPassCount() const { return passes_.GetSize(); }
+        hUint32                 GetPassCount() const { return (hUint)passes_.size(); }
         hMaterialTechniquePass* GetPass( hUint32 idx ) { return &passes_[idx]; }
         void                    SetSort(hBool val) { transparent_ = val; }
         hBool                   GetSort() const { return transparent_; }
         void                    SetLayer(hByte layer) { layer_ = layer; }
         hByte                   GetLayer() const { return layer_; }
-        void                    AppendPass(const hMaterialTechniquePass& pass);
+        hMaterialTechniquePass* appendPass();
 
     private:
 
-        HEART_ALLOW_SERIALISE_FRIEND();
+        hMaterialTechnique(const hMaterialTechnique& rhs);
+        hMaterialTechnique& operator = (const hMaterialTechnique& rhs);
+        static void swap(hMaterialTechnique* lhs, hMaterialTechnique* rhs) {
+            std::swap(lhs->name_, rhs->name_);
+            std::swap(lhs->passes_, rhs->passes_);
+            std::swap(lhs->mask_, rhs->mask_);
+            std::swap(lhs->transparent_, rhs->transparent_);
+            std::swap(lhs->layer_, rhs->layer_);
+        }
 
         friend class hRenderer;
         friend class hMaterial;
-        friend class hMaterialInstance;
 
         static const hUint32 MAX_NAME_LEN = 32;
-        typedef hVector< hMaterialTechniquePass > PassArrayType;
+        typedef std::vector< hMaterialTechniquePass > PassArrayType;
 
-        hArray< hChar, MAX_NAME_LEN >   name_;
-        PassArrayType                   passes_;
-        hUint32                         mask_;//Set on load/create
-        hBool                           transparent_;
-        hByte                           layer_;
+        std::string   name_;
+        PassArrayType passes_;
+        hUint32       mask_;            //Set on load/create
+        hBool         transparent_;
+        hByte         layer_;
     };
 
     struct HEART_DLLEXPORT hMaterialGroup
     {
         static const hUint32 MAX_NAME_LEN = 32;
-        typedef hVector< hMaterialTechnique > TechniqueArrayType;
+        typedef std::vector< hMaterialTechnique > TechniqueArrayType;
 
-        hMaterialGroup& operator = ( const hMaterialGroup& rhs )
+        hMaterialGroup()
         {
-            name_ = rhs.name_;
-            rhs.techniques_.CopyTo(&techniques_);
+        }
+        hMaterialGroup(const hChar* name) 
+            : name_(name)
+        {
+        }
+        hMaterialGroup(hMaterialGroup&& rhs) {
+            swap(this, &rhs);
+        }
+        hMaterialGroup& operator = (hMaterialGroup&& rhs) {
+            swap(this, &rhs);
             return *this;
         }
+        ~hMaterialGroup() {
+        }
 
-        const hChar* getName() const { return name_.GetBuffer(); }
-        hUint getTechCount() const { return techniques_.GetSize(); }
+        void setName(const hChar* name) { name_=name; }
+        const hChar* getName() const { return name_.data(); }
+        void  techCountHint(hUint count) { techniques_.reserve(count); }
+        hUint getTechCount() const { return (hUint)techniques_.size(); }
+        hMaterialTechnique* addTechnique(const hChar* name);
         hMaterialTechnique* getTech(hUint idx) { return &techniques_[idx]; }
         hMaterialTechnique* getTechniqueByName(const hChar* name);
         hMaterialTechnique* getTechniqueByMask(hUint32 mask);
         hUint getTechniqueIndexByMask(hUint32 mask);
+    private:
+        friend class hMaterial;
+
+        hMaterialGroup(const hMaterialGroup& rhs);
+        hMaterialGroup& operator = (const hMaterialGroup& rhs);
+        static void swap(hMaterialGroup* rhs, hMaterialGroup* lhs) {
+            std::swap(lhs->name_, rhs->name_);
+            std::swap(lhs->techniques_, rhs->techniques_);
+        }
     
-        hArray< hChar, MAX_NAME_LEN >   name_;
-        TechniqueArrayType              techniques_;
+        std::string        name_;
+        TechniqueArrayType techniques_;
     };
 }
 

@@ -32,7 +32,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hRenderable::SetMaterial(hMaterial* material)
+void hRenderable::setMaterial(hMaterial* material)
 {
     materialKey_=0;
     material_ = material;
@@ -50,14 +50,14 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
     hUint layoutdesccount=0;
     hInputLayoutDesc* layoutdesc=hNullptr;
 
-    for (hUint i=0, n=vertexBuffer_.GetSize(); i<n; ++i) {
+    for (hUint i=0, n=(hUint)vertexBuffer_.size(); i<n; ++i) {
         if (vertexBuffer_[i]) {
             layoutdesccount+=vertexBuffer_[i]->getDescCount();
         }
     }
     layoutdesc=(hInputLayoutDesc*)hAlloca(sizeof(hInputLayoutDesc)*layoutdesccount);
     layoutdesccount=0;
-    for (hUint i=0, n=vertexBuffer_.GetSize(); i<n; ++i) {
+    for (hUint i=0, n=(hUint)vertexBuffer_.size(); i<n; ++i) {
         if (vertexBuffer_[i]) {
             hMemCpy(layoutdesc+layoutdesccount, vertexBuffer_[i]->getLayoutDesc(), vertexBuffer_[i]->getDescCount()*sizeof(hInputLayoutDesc));
             layoutdesccount+=vertexBuffer_[i]->getDescCount();
@@ -79,8 +79,8 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
                     indexBuffer_, 
                     indexBuffer_ ? indexBuffer_->getIndexBufferType() : hIndexBufferType_Index16, 
                     inputlayout, 
-                    vertexBuffer_.GetBuffer(), 
-                    0, vertexBuffer_.GetSize());
+                    vertexBuffer_.data(), 
+                    0, (hUint)vertexBuffer_.size());
                 if (indexBuffer_) {
                     rcGen->setDrawIndex(primCount_, 0);
                 } else {

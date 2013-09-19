@@ -44,6 +44,10 @@
 #include <new>
 #include <string>
 #include <deque>
+#include <vector>
+#include <algorithm>
+#include <map>
+#include <set>
 #include <math.h>
 #include <float.h>
 
@@ -77,6 +81,7 @@ extern "C"
 //////////////////////////////////////////////////////////////////////////
 /// Proto buffer classes /////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
 /*
     Proto buffers spits out a lot of warnings about 64 bit to 32 bit conversions.
     We disable these warnings just around these sections.
@@ -88,8 +93,17 @@ extern "C"
 #else
 #   pragma error ("Unknown platform")
 #endif
+
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
+
 #include "resource_common.pb.h"
 #include "resource_shader.pb.h"
+#include "resource_texture.pb.h"
+#include "resource_material_fx.pb.h"
+#include "resource_mesh.pb.h"
+
 #if defined (_MSC_VER)
 #   pragma warning(pop)
 #endif
@@ -134,6 +148,7 @@ extern "C"
 #include "core/hDriveFile.h"
 #include "core/hZipFile.h"
 #include "core/hZipFileSystem.h"
+#include "core/hResourceStreamHelpers.h"
 #include "core/hResource.h"
 #include "core/hResourcePackage.h"
 #include "core/hResourceManager.h"

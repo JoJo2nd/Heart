@@ -51,8 +51,7 @@ namespace Heart
         hViewport( hUint32 x,hUint32 y,hUint32 w,hUint32 h )
             : x_(x), y_(y), width_(w), height_(h)
         {}
-        hViewport(hViewport&& rhs)
-        {
+        hViewport(hViewport&& rhs) {
             hPLACEMENT_NEW(this) hViewport();
             swap(*this, rhs);
         }
@@ -214,6 +213,19 @@ namespace Heart
         hUint32     height;
         hByte*      data;
         hUint32     size;
+    };
+
+    struct hShaderDefine 
+    {
+        const hChar* define_;
+        const hChar* value_;
+    };
+
+    class hIIncludeHandler
+    {
+    public:
+        virtual ~hIIncludeHandler() {}
+        virtual void findInclude(const hChar* includepath, const void** outdata, hUint* outlen) = 0;
     };
 
     enum hRenderCmdOpCode 
@@ -670,11 +682,44 @@ namespace Heart
 
     struct hInputLayoutDesc
     {
-        hInputSemantic  semantic_;
+    public:
+        hInputLayoutDesc()
+            : semanticName_(0)
+            , semIndex_(0)
+            , typeFormat_(eIF_FLOAT1)
+            , inputStream_(0)
+            , instanceDataRepeat_(0)
+        {}
+        hInputLayoutDesc(const hChar* semanticname, hByte semidx, hInputFormat fmt, hUint32 stream, hUint16 instancerepeat)
+            : semanticName_(0)
+            , semIndex_(semidx)
+            , typeFormat_(fmt)
+            , inputStream_(stream)
+            , instanceDataRepeat_(instancerepeat)
+        {
+            setSemanticName(semanticname);
+        }
+        
+        void         setSemanticName(const hChar* name);
+        const hChar* getSemanticName() const;
+        void         setSemanticIndex(hByte idx) { semIndex_=idx; }
+        hByte        getSemanticIndex() const { return semIndex_; }
+        void         setInputFormat(hInputFormat fmt) { typeFormat_=fmt; }
+        hInputFormat getInputFormat() const { return typeFormat_; }
+        void         setInputStream(hUint32 stream) { inputStream_=stream; }
+        hUint32      getInputStream() const { return inputStream_; }
+        void         setInstanceRepeat(hUint16 repeat) { instanceDataRepeat_=repeat; }
+        hUint16      getInstanceRepeat() const { return instanceDataRepeat_; }
+        
+    private:
+
+        hUint           semanticName_;
         hByte           semIndex_;
         hInputFormat    typeFormat_;
         hUint32         inputStream_;
         hUint16         instanceDataRepeat_;
+
+        static std::vector<std::string> s_semanticNameMap;
     };
 
     enum ResourceFlags
@@ -721,8 +766,6 @@ namespace Heart
         eDebugTexPixel,
         eDebugVertexPosCol,
         eDebugPixelPosCol,
-        eDebugVertexPosColUV,
-        eDebugPixelPosColUV,
 
         eDebugShaderMax
     };

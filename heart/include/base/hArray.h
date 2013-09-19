@@ -113,7 +113,6 @@ namespace Heart
         hVector& operator = ( const hVector& rhs )
         {
             rhs.CopyTo( this );
-
             return *this;
         }
         ~hVector()
@@ -131,6 +130,14 @@ namespace Heart
             {
                 rhs->PushBack( values_[i] );
             }
+        }
+
+        template< typename _Uy, hUint32 _OtherGranularity >
+        void swap( hVector< _Uy, _OtherGranularity >* rhs )
+        {
+            std::swap(values_, rhs->values_);
+            std::swap(size_, rhs->size_);
+            std::swap(reserve_, rhs->reserve_);
         }
 
         hFORCEINLINE _Ty& operator [] ( hSizeT i )

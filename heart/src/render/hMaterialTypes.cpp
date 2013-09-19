@@ -27,27 +27,6 @@
 
 namespace Heart
 {
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterialTechniquePass::ReleaseResources(hRenderer* renderer)
-    {
-        vertexProgram_ = NULL;
-        fragmentProgram_ = NULL;
-        if (blendState_) {
-            blendState_->DecRef();
-        }
-        blendState_ = NULL;
-        if (depthStencilState_) {
-            depthStencilState_->DecRef();
-        }
-        depthStencilState_ = NULL;
-        if (rasterizerState_) {
-            rasterizerState_->DecRef();
-        }
-        rasterizerState_ = NULL;
-    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -63,9 +42,9 @@ namespace Heart
                     continue;
                 }
                 succ=true;
-                if (idx+1>inputResources_[i].buffers_.GetSize()) {
-                    hUint oldsize=inputResources_[i].buffers_.GetSize();
-                    inputResources_[i].buffers_.Resize(idx+1);
+                if (idx+1>inputResources_[i].buffers_.size()) {
+                    hUint oldsize=(hUint)inputResources_[i].buffers_.size();
+                    inputResources_[i].buffers_.resize(idx+1);
                     for (hUint b=oldsize; b<idx+1; ++b) {
                         inputResources_[i].buffers_[b]=hNullptr;
                     }
@@ -90,9 +69,9 @@ namespace Heart
                     continue;
                 }
                 succ=true;
-                if (idx+1>inputResources_[i].samplerStates_.GetSize()) {
-                    hUint oldsize=inputResources_[i].samplerStates_.GetSize();
-                    inputResources_[i].samplerStates_.Resize(idx+1);
+                if (idx+1>inputResources_[i].samplerStates_.size()) {
+                    hUint oldsize=(hUint)inputResources_[i].samplerStates_.size();
+                    inputResources_[i].samplerStates_.resize(idx+1);
                     for (hUint b=oldsize; b<idx+1; ++b) {
                         inputResources_[i].samplerStates_[b]=hNullptr;
                     }
@@ -117,9 +96,9 @@ namespace Heart
                     continue;
                 }
                 succ=true;
-                if (idx+1>inputResources_[i].srView_.GetSize()) {
-                    hUint oldsize=inputResources_[i].srView_.GetSize();
-                    inputResources_[i].srView_.Resize(idx+1);
+                if (idx+1>inputResources_[i].srView_.size()) {
+                    hUint oldsize=(hUint)inputResources_[i].srView_.size();
+                    inputResources_[i].srView_.resize(idx+1);
                     for (hUint b=oldsize; b<idx+1; ++b) {
                         inputResources_[i].srView_[b]=hNullptr;
                     }
@@ -134,18 +113,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterialTechnique::AppendPass( const hMaterialTechniquePass& pass )
+    hMaterialTechniquePass* hMaterialTechnique::appendPass()
     {
-        passes_.PushBack(pass);
+        passes_.push_back(hMaterialTechniquePass());
+        return &(*passes_.rbegin());
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterialTechnique::SetPasses( hUint32 count )
+    void hMaterialTechnique::SetPasses(hUint32 count)
     {
-        passes_.Reserve(count);
+        passes_.reserve(count);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -153,8 +133,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hMaterialTechnique* hMaterialGroup::getTechniqueByName(const hChar* name) {
-        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
-            if (hStrICmp(name, techniques_[i].GetName()) == 0) {
+        for (hUint i=0,n=(hUint)techniques_.size(); i<n; ++i) {
+            if (hStrICmp(name, techniques_[i].getName()) == 0) {
                 return &techniques_[i];
             }
         }
@@ -166,7 +146,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hMaterialTechnique* hMaterialGroup::getTechniqueByMask(hUint32 mask) {
-        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
+        for (hUint i=0,n=(hUint)techniques_.size(); i<n; ++i) {
             if (techniques_[i].GetMask()==mask) {
                 return &techniques_[i];
             }
@@ -179,12 +159,28 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hUint hMaterialGroup::getTechniqueIndexByMask(hUint32 mask) {
-        for (hUint i=0,n=techniques_.GetSize(); i<n; ++i) {
+        for (hUint i=0,n=(hUint)techniques_.size(); i<n; ++i) {
             if (techniques_[i].GetMask()==mask) {
                 return i;
             }
         }
         return hErrorCode;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hMaterialTechnique* hMaterialGroup::addTechnique(const hChar* name) {
+        for (auto i=techniques_.begin(),n=techniques_.end(); i!=n; ++i) {
+            if (hStrCmp(i->getName(), name)==0) {
+                //overwrite technique that matches this name
+                i->SetName(name);
+                return &(*i);
+            }
+        }
+        techniques_.push_back(name);
+        return &(*techniques_.rbegin());
     }
 
 }

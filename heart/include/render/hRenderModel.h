@@ -32,39 +32,41 @@ class ModelBuilder;
 
 namespace Heart
 {
-    struct hGeomLODLevel
-    {
-        hVector< hRenderable >      renderObjects_;
-        hFloat                      minRange_;
-    };
 
     class HEART_DLLEXPORT hRenderModel : public hResourceClassBase
     {
     public:
-        static const hUint32 MAX_LOD_LEVEL = 9;
 
         hRenderModel() {}
         ~hRenderModel() {}
     
         void            initialiseRenderCommands();
-        hGeomLODLevel*  GetLODLevel( hFloat dist ) {
-            for (hUint32 i = 0; i < levelCount_; ++i)
-                if (dist < lodLevels_[i].minRange_) return &lodLevels_[i];
-            return NULL;
-        }
-        hAABB           GetBounds() const { return totalBounds_; }
-        hUint32         GetLODCount() const { return levelCount_; }
-        void            SetLODCount(hUint32 val) { levelCount_ = val; }
-        hGeomLODLevel*  GetLOD(hUint32 idx) { hcAssert(idx < levelCount_); return &lodLevels_[idx]; }
+        hAABB           getBounds() const { return totalBounds_; }
         hBool           bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
         hRCmd*          getRenderCommands(hUint offset) {
             return renderCommands_.getCommandAtOffset(offset);
         }
+        void            setRenderableCountHint(hUint val) {
+            renderables_.reserve(val);
+        }
+        hRenderable*    appendRenderable() {
+            renderables_.push_back(hRenderable());
+            return &(*renderables_.rbegin());
+        }
+        hUint           getRenderableCount() const {
+            return (hUint)renderables_.size();
+        }
+        hRenderable*    getRenderable(hUint i) {
+            return &renderables_[i];
+        }
+        const hRenderable*    getRenderable(hUint i) const {
+            return &renderables_[i];
+        }
+        void calculateBounds();
 
     private:
 
-        hUint32                                     levelCount_;
-        hArray< hGeomLODLevel, MAX_LOD_LEVEL >      lodLevels_;
+        std::vector< hRenderable >                  renderables_;
         hAABB                                       totalBounds_;
         hRenderCommands                             renderCommands_;
     };

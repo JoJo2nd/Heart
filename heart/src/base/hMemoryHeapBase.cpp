@@ -66,12 +66,12 @@ namespace HeapPrivate
         }
     };
 
-    static hMutex g_initMutex;
     static hBool g_heapInit = false;
     static HeapLookup g_heapArray[128];
     static hUint g_heapCount = 0;
 
     static hUint readMemoryMap() {
+        static hMutex g_initMutex;
         hMutexAutoScope mas(&g_initMutex);
         if (g_heapInit) {
             return g_heapCount;
@@ -149,24 +149,45 @@ namespace HeapPrivate
     }
 }
 
-void* operator new (size_t size)
-{
+void* operator new (size_t size) {
     Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
-    return heap->alloc(size, 16);
+    return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT);
 }
 
-void* operator new[] (size_t size)
-{
+void* operator new[] (size_t size) {
     Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
-    return heap->alloc(size, 16);
+    return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT);
 }
 
-void operator delete (void* mem)
-{
+void operator delete (void* mem) {
     Heart::hGlobalMemoryFree(mem);
 }
 
-void operator delete[] (void* mem)
-{
+void operator delete[] (void* mem) {
     Heart::hGlobalMemoryFree(mem);
 }
+
+//define malloc, calloc, realloc & free for weak linkage
+//extern "C" {
+// #ifdef HEART_PLAT_WINDOWS
+//     void* malloc (size_t size) {
+//         Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
+//         return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT);
+//     }
+//     void* calloc (size_t /*num*/, size_t /*size*/) {
+//         //TODO: Support?
+//         hcAssertFailMsg("Don't support calloc");
+//         //Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
+//         //return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT);
+//     }
+//     void* realloc (void* ptr, size_t size) {
+//         Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
+//         return heap->realloc(ptr, HEART_MIN_ALLOC_ALIGNMENT, size);
+//     }
+//     void free (void* ptr) {
+//         Heart::hGlobalMemoryFree(ptr);
+//     }
+// #else
+// #   pragma error ("Unknown platform")
+// #endif
+//};

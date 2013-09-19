@@ -26,15 +26,18 @@
 *********************************************************************/
 
 //#define HEART_DO_FRAMETIMES
+//#define DO_RESIZE
 
 namespace Heart
 {
-#if 0// defined (HEART_DEBUG)
+#if 1// defined (HEART_DEBUG)
 #   define HEART_D3D_OBJECT_REPORT(device) {\
         ID3D11Debug* debuglayer;\
         device->QueryInterface(__uuidof(ID3D11Debug), (void**)&debuglayer);\
-        debuglayer->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);\
-        debuglayer->Release();\
+        if (debuglayer) { \
+            debuglayer->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);\
+            debuglayer->Release();\
+        }\
     }
 #   define HEART_D3D_DEBUG_NAME_OBJECT(obj, name) obj->SetPrivateData( WKPDID_D3DDebugObjectName, hStrLen(name), name)
 #else
@@ -315,8 +318,29 @@ namespace Heart
         s_debugTexture,
         s_debugWSVertexCol,
         s_debugWSVertexCol,
-        s_debugTexture,
-        s_debugTexture,
+    };
+
+    class hSourceIncludeHandler : public ID3DInclude
+    {
+    public:
+        hSourceIncludeHandler(hIIncludeHandler* impl)
+            : impl_(impl)
+        {}
+        STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
+            if (!impl_) {
+                return E_FAIL;
+            }
+            impl_->findInclude(pFileName, ppData, pBytes);
+            if (*ppData==hNullptr) {
+                return E_FAIL;
+            }
+            return S_OK;
+        }
+        STDMETHOD(Close)(THIS_ LPCVOID pData) {
+            return S_OK;
+        }
+    private:
+        hIIncludeHandler* impl_;
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -462,8 +486,6 @@ namespace Heart
 #endif
 
         frameCounter_ = 0;
-
-        HEART_D3D_OBJECT_REPORT(d3d11Device_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -498,10 +520,12 @@ namespace Heart
         if ( mainSwapChain_ ) {
             mainSwapChain_->Release();
         }
-        HEART_D3D_OBJECT_REPORT(d3d11Device_);
         if ( d3d11Device_ ) {
             ULONG ref=d3d11Device_->Release();
             hcPrintf("D3DDevice Ref %u", ref);
+            if (ref != 0) {
+                HEART_D3D_OBJECT_REPORT(d3d11Device_);
+            }
         }
     }
 
@@ -760,15 +784,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(
-    const hChar* shaderProg, hSizeT len, const hChar* entry, 
-    hShaderProfile profile, hdDX11ShaderProgram* out) {
+        const hChar* shaderProg, hSizeT len, const hChar* entry, 
+        hShaderProfile profile, hIIncludeHandler* includesimpl, 
+        hShaderDefine* defines, hUint ndefines, hdDX11ShaderProgram* out) {
         HRESULT hr;
+        hSourceIncludeHandler includes(includesimpl);
         hdDX11ShaderProgram* shader=out;
         const hChar* profileStr=s_shaderProfileNames[profile];
         ID3DBlob* codeBlob;
         ID3DBlob* errorBlob;
         hShaderType type=ShaderType_MAX;
         DWORD compileflags = 0;
+        D3D_SHADER_MACRO* macros=hNullptr;
+
 #ifdef HEART_DEBUG
         compileflags |= D3DCOMPILE_DEBUG;
         compileflags |= D3DCOMPILE_SKIP_OPTIMIZATION;
@@ -788,7 +816,17 @@ namespace Heart
             type=ShaderType_DOMAINPROG;
         }
 
-        hr=D3DCompile(shaderProg, len, "memory", NULL, NULL, entry, profileStr, compileflags, 0, &codeBlob, &errorBlob);
+        if (ndefines > 0) {
+            macros=(D3D_SHADER_MACRO*)hAlloca((ndefines+1)*sizeof(D3D_SHADER_MACRO));
+            for (hUint di=0; di<ndefines; ++di) {
+                macros[di].Name=defines[di].define_;
+                macros[di].Definition=defines[di].value_;
+            }
+            macros[ndefines].Name=hNullptr;
+            macros[ndefines].Definition=hNullptr;
+        }
+        
+        hr=D3DCompile(shaderProg, len, NULL, macros, &includes, entry, profileStr, compileflags, 0, &codeBlob, &errorBlob);
         if (errorBlob) {
             hcPrintf("Shader Output:\n%s", errorBlob->GetBufferPointer());
             errorBlob->Release();
@@ -997,7 +1035,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::createIndexBufferDevice( hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11IndexBuffer* idxBuf )
+    void hdDX11RenderDevice::createIndexBufferDevice( hUint32 sizeInBytes, const void* initialDataPtr, hUint32 flags, hdDX11IndexBuffer* idxBuf )
     {
         HRESULT hr;
         D3D11_BUFFER_DESC desc;
@@ -1066,7 +1104,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, void* initialDataPtr, hUint32 flags, hdDX11VertexBuffer* vtxBuf)
+    void hdDX11RenderDevice::createVertexBufferDevice(hInputLayoutDesc* desc, hUint32 desccount, hUint stride, hUint32 sizeInBytes, const void* initialDataPtr, hUint32 flags, hdDX11VertexBuffer* vtxBuf)
     {
         HRESULT hr;
         D3D11_BUFFER_DESC bufdesc;
@@ -1529,7 +1567,7 @@ namespace Heart
 
         for (hUint32 i = 0; i < desccount; ++i)
         {
-            switch(desc[i].typeFormat_)
+            switch(desc[i].getInputFormat())
             {
             case eIF_FLOAT4: stride += 4*sizeof(hFloat); break;
             case eIF_FLOAT3: stride += 3*sizeof(hFloat); break;
@@ -1560,7 +1598,8 @@ namespace Heart
         {
             hZeroMem(&elements[i], sizeof(D3D11_INPUT_ELEMENT_DESC));
 
-            switch(desc[i].semantic_)
+            elements[i].SemanticName=desc[i].getSemanticName();
+            /*switch(desc[i].semantic_)
             {
             case eIS_POSITION:  elements[i].SemanticName = "POSITION";  break;
             case eIS_TEXCOORD:  elements[i].SemanticName = "TEXCOORD";  break;
@@ -1569,9 +1608,9 @@ namespace Heart
             case eIS_BITANGENT: elements[i].SemanticName = "BITANGENT"; break;
             case eIS_COLOUR:    elements[i].SemanticName = "COLOR";     break;
             case eIS_INSTANCE:  elements[i].SemanticName = "INSTANCE";  break;
-            }
+            }*/
 
-            switch(desc[i].typeFormat_)
+            switch(desc[i].getInputFormat())
             {
             case eIF_FLOAT4: *stride += 4*sizeof(hFloat); elements[i].Format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
             case eIF_FLOAT3: *stride += 3*sizeof(hFloat); elements[i].Format = DXGI_FORMAT_R32G32B32_FLOAT; break;
@@ -1581,11 +1620,11 @@ namespace Heart
             case eIF_UBYTE4_SNORM: *stride += 4*sizeof(hByte); elements[i].Format = DXGI_FORMAT_R8G8B8A8_SNORM; break;
             }
 
-            elements[i].InputSlot=desc[i].inputStream_;
-            elements[i].SemanticIndex = desc[i].semIndex_;
+            elements[i].InputSlot=desc[i].getInputStream();
+            elements[i].SemanticIndex = desc[i].getSemanticIndex();
             elements[i].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-            elements[i].InputSlotClass = desc[i].instanceDataRepeat_ == 0 ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
-            elements[i].InstanceDataStepRate = desc[i].instanceDataRepeat_;
+            elements[i].InputSlotClass = desc[i].getInstanceRepeat() == 0 ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
+            elements[i].InstanceDataStepRate = desc[i].getInstanceRepeat();
 
             ++elementsadded;
         }

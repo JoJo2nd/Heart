@@ -43,6 +43,8 @@
 #include <tchar.h>
 #include <new>
 #include <string>
+#include <vector>
+#include <set>
 #include <deque>
 #include <math.h>
 #include <float.h>

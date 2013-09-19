@@ -78,7 +78,7 @@ namespace Heart
 
         hBool                           Initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources);
         hBool                           RequiredResourcesReady();
-        void                            registerResourceHandler(hResourceType restype, hResourceHandler handler);
+        void                            registerResourceHandler(const hChar* resourcetypename, hResourceHandler handler);
         void                            MainThreadUpdate();
         static hResourceID              BuildResourceID(const hChar* fullPath){
             if (!fullPath)

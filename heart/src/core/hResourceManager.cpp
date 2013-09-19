@@ -428,10 +428,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceManager::registerResourceHandler(hResourceType restype, hResourceHandler handler) {
+    void hResourceManager::registerResourceHandler(const hChar* resourcetypename, hResourceHandler handler) {
+        hUint32 typecrc=hCRC32::StringCRC(resourcetypename);
         hResourceHandler* newhandler=hNEW(hResourceHandler)();
         *newhandler=handler;
-        resourceHandlers_.Insert(restype, newhandler);
+        resourceHandlers_.Insert(hResourceType(typecrc), newhandler);
     }
 
 }

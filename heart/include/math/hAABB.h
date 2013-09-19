@@ -36,8 +36,12 @@ namespace Heart
         hVec3                       c_;
         hVec3                       r_;// half widths across x, y & z
 
-		hFORCEINLINE hVec3			Max() const { return c_ + r_; }
-		hFORCEINLINE hVec3			Min() const { return c_ - r_; }
+        hFORCEINLINE void  reset() {
+            c_=hVec3(0.f, 0.f, 0.f);
+            r_=hVec3(0.f, 0.f, 0.f);
+        }
+		hFORCEINLINE hVec3 Max() const { return c_ + r_; }
+		hFORCEINLINE hVec3 Min() const { return c_ - r_; }
 
 	    hFORCEINLINE static hBool hAABB::PointWithinAABBSphere( const hVec3& point, const hAABB& a )
 	    {

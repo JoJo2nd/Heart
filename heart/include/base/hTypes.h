@@ -157,4 +157,10 @@ namespace Heart
 #define hFabs( x ) (fabs( x ))
 #define hFloor( x ) (floor(x))
 
+#if defined (_MSC_VER)
+#   define hNoExcept(func) __declspec(nothrow) func
+#else 
+#   define hNoExcept(func) func noexcept 
+#endif
+
 #endif // hcTypes_h__

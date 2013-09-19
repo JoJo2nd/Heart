@@ -298,24 +298,49 @@ namespace Heart
                 hIFile* file=hNullptr;
                 file=fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
 
-                if (file)
-                {
-                    hResourceBinHeader resourceHeader={0};
-                    file->Read(&resourceHeader, sizeof(resourceHeader));
-                    typehandler.fourCC=resourceHeader.resourceType;
-                    file->Seek(0, SEEKOFFSET_BEGIN);
-                    hResourceHandler* handler = handlerMap_->Find(typehandler);
-                    hcAssertMsg(handler, "Couldn't file handler for data type %s", typehandler.ext);
+                if (file) {
+                    proto::ResourceHeader resheader;
+                    hResourceFileStream resourcefilestream(file);
+                    google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
+
+                    google::protobuf::uint32 headersize;
+                    resourcestream.ReadVarint32(&headersize);
+                    auto limit=resourcestream.PushLimit(headersize);
+                    resheader.ParseFromCodedStream(&resourcestream);
+                    resourcestream.PopLimit(limit);
+                    file->Seek(resourcestream.CurrentPosition(), SEEKOFFSET_BEGIN);
+                    hResourceType restypecrc(hCRC32::StringCRC(resheader.type().c_str()));
+                    hResourceHandler* handler = handlerMap_->Find(restypecrc);
+                    hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
+                    typehandler=handler->GetKey();
                     // Load the binary file
                     hTimer timer;
                     hcPrintf("Loading %s (crc:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
+                    hResourceSection* sections=(hResourceSection*)hAlloca(sizeof(hResourceSection)*resheader.sections_size());
+                    for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
+                        sections[i].sectionData_ = hHeapMalloc("general", resheader.sections(i).size());
+                        sections[i].sectionName_ = resheader.sections(i).sectionname().c_str();
+                        sections[i].sectionSize_ = resheader.sections(i).size();
+                        sections[i].memType_ = resheader.sections(i).type();
+                        hUint read=file->Read(sections[i].sectionData_, (hUint32)sections[i].sectionSize_);
+                        hcAssertMsg(read == sections[i].sectionSize_, "Failed to read resource section %s (expected size %u, got %u)",
+                            sections[i].sectionName_, sections[i].sectionSize_, read);
+                    }
+                    
                     hClock::BeginTimer(timer);
-                    res = handler->loadProc_(file, &memAlloc);
+                    res = handler->loadProc_(sections, resheader.sections_size());
                     hClock::EndTimer(timer);
-                    fileSystem_->CloseFile(file);
+                    for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
+                        if (sections[i].memType_==proto::eResourceSection_Temp) {
+                            hFreeSafe(sections[i].sectionData_);
+                        }
+                    }
                     hcPrintf("Load Time = %f Secs", timer.ElapsedMS()/1000.0f);
                 }
 
+                if (file) {
+                    fileSystem_->CloseFile(file);
+                }
                 hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
                                  "and so serialiser could not load the data correctly" 
                                  "This is a Fatal Error.");
@@ -343,14 +368,13 @@ namespace Heart
 
     hBool hResourcePackage::DoPostLoadLink()
     {
-        hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
         hUint32 totallinked = 0;
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             if (!res->GetIsLinked())
             {
-                if (handler->linkProc_(res, &memAlloc))
+                if (handler->linkProc_(res))
                 {
                     hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
                     res->SetIsLinked(hTrue);
@@ -369,12 +393,10 @@ namespace Heart
 
     void hResourcePackage::DoPreUnloadUnlink()
     {
-        hResourceMemAlloc memAlloc = { packageHeap_, NULL };
-
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            handler->unlinkProc_(res, &memAlloc);
+            handler->unlinkProc_(res);
         }
     }
 
@@ -384,12 +406,11 @@ namespace Heart
 
     void hResourcePackage::DoUnload()
     {
-        hResourceMemAlloc memAlloc = { packageHeap_, NULL };
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res;)
         {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             resourceMap_.Erase(res, &next);
-            handler->unloadProc_(res, &memAlloc);
+            handler->unloadProc_(res);
             res = next;
         }
     }
@@ -415,8 +436,8 @@ namespace Heart
     {
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
             hcPrintf("  Resource %s:"
-                " Type: %.*s | Linked: %s | crc: 0x%08X", 
-                res->GetName(), 4, res->GetType().ext, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
+                " Type: 0x%08X | Linked: %s | crc: 0x%08X", 
+                res->GetName(), res->GetType().typeCRC, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
         }
     }
 

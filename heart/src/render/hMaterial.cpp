@@ -102,19 +102,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hMaterialGroup* hMaterial::AddGroup( const hChar* name )
-    {
-        hMaterialGroup newGroup;
-        hStrCopy(newGroup.name_.GetBuffer(), newGroup.name_.GetMaxSize(), name);
-        groups_.PushBack(newGroup);
-        return &groups_[groups_.GetSize()-1];
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterial::AddSamplerParameter(const hSamplerParameter& samp)
+    void hMaterial::addSamplerParameter(const hSamplerParameter& samp)
     {
         defaultSamplers_.PushBack(samp);
     }
@@ -124,8 +112,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hMaterialGroup* hMaterial::getGroupByName(const hChar* name) {
-        for (hUint i=0,n=groups_.GetSize(); i<n; ++i) {
-            if (hStrICmp(name, groups_[i].name_)==0) {
+        for (hUint i=0,n=(hUint)groups_.size(); i<n; ++i) {
+            if (hStrICmp(name, groups_[i].name_.c_str())==0) {
                 return &groups_[i];
             }
         }
@@ -158,15 +146,15 @@ namespace Heart
         }
 
         // Grab all the shader programs
-        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
-                groups_[group].techniques_[tech].mask_ = matManager->AddRenderTechnique( groups_[group].techniques_[tech].name_ )->mask_;
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
+                groups_[group].techniques_[tech].mask_ = matManager->AddRenderTechnique( groups_[group].techniques_[tech].name_.c_str() )->mask_;
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
                     hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
-                    passptr->vertexProgram_ = static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->vertexProgramID_));
-                    passptr->fragmentProgram_ = static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->fragmentProgramID_));
-                    if (passptr->vertexProgramID_ && !passptr->vertexProgram_) return hFalse;
-                    if (passptr->fragmentProgramID_ && !passptr->fragmentProgram_) return hFalse;
+                    for (hUint shader=0; shader<ShaderType_MAX; ++shader) {
+                        passptr->programs_[shader]=static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->getProgramID(shader)));
+                        if (passptr->programID_[shader] && !passptr->programs_[shader]) return hFalse;
+                    }
                 }
             }
         }
@@ -182,8 +170,8 @@ namespace Heart
     hBool hMaterial::bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb)
     {
         hBool succ = true;
-        for (hUint group=0, ngroups=groups_.GetSize(); group<ngroups; ++group) {
-            for (hUint32 tech=0, nTech=groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
+        for (hUint group=0, ngroups=(hUint)groups_.size(); group<ngroups; ++group) {
+            for (hUint32 tech=0, nTech=(hUint)groups_[group].techniques_.size(); tech < nTech; ++tech) {
                 for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                     hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
                     succ &= pass->setConstantBuffer(id, cb);
@@ -248,11 +236,11 @@ namespace Heart
         hUint32 cbcount = 0;
         totalTechniqueCount_=0;
         totalPassCount_=0;
-        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
                 ++totalTechniqueCount_;
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
-                    hMaterialTechniquePass* passptr = &groups_[group].techniques_[tech].passes_[pass];
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
+                    hMaterialTechniquePass* passptr = &groups_[group].getTech(tech)->passes_[pass];
                     ++totalPassCount_;
                     for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
                         hShaderProgram* prog = passptr->GetProgram(progidx);
@@ -375,8 +363,8 @@ namespace Heart
     hBool hMaterial::bindResource(hShaderParameterID id, hShaderResourceView* srv)
     {
         hBool succ = hFalse;
-        for (hUint group=0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0, nTech = groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
+        for (hUint group=0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0, nTech=(hUint)groups_[group].techniques_.size(); tech < nTech; ++tech) {
                 for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                     hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
                     succ |= pass->setResourceView(id, srv);
@@ -419,8 +407,8 @@ namespace Heart
     hBool hMaterial::bindSampler(hShaderParameterID id, hSamplerState* samplerState)
     {
         hBool succ = true;
-        for (hUint group=0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0, nTech = groups_[group].techniques_.GetSize(); tech < nTech; ++tech) {
+        for (hUint group=0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0, nTech=(hUint)groups_[group].techniques_.size(); tech < nTech; ++tech) {
                 for (hUint32 passIdx = 0, nPasses = groups_[group].techniques_[tech].GetPassCount(); passIdx < nPasses; ++passIdx) {
                     hMaterialTechniquePass* pass = groups_[group].techniques_[tech].GetPass(passIdx);
                     succ |= pass->setSamplerInput(id, samplerState);
@@ -460,19 +448,64 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::addDefaultParameterValue(const ParameterDefinition& paramdef) {
+    void hMaterial::addDefaultParameterValue(const hChar* name, const hResourceID& resid) {
         hDefaultParameterValue defVal;
-        hZeroMem(&defVal, sizeof(defVal));
-        defVal.type=paramdef.type;
-        defVal.paramid=hCRC32::StringCRC(paramdef.parameterName);
-        defVal.resourceID=paramdef.resourceID;
-        defVal.count=paramdef.count;
-        if (defVal.type==ePTFloat || defVal.type==ePTInt || defVal.type==ePTColour) {
-            defVal.dataOffset=defaultDataSize_;
-            defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_);
-            hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, paramdef.floatData, paramdef.count);
-        }
+        defVal.type=ePTTexture;
+        defVal.paramid=hCRC32::StringCRC(name);
+        defVal.resourceID=resid;
+        defVal.count=0;
         defaultValues_.PushBack(defVal);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::addDefaultParameterValue(const hChar* name, const hInt32* data, hUint count) {
+        hDefaultParameterValue defVal;
+        hUint bytecount=count*sizeof(hInt32);
+        defVal.type=ePTInt;
+        defVal.paramid=hCRC32::StringCRC(name);
+        defVal.count=count;
+        defVal.dataOffset=defaultDataSize_;
+        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
+        defaultValues_.PushBack(defVal);
+        defaultDataSize_=bytecount;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::addDefaultParameterValue(const hChar* name, const hFloat* data, hUint count) {
+        hDefaultParameterValue defVal;
+        hUint bytecount=count*sizeof(hFloat);
+        defVal.type=ePTFloat;
+        defVal.paramid=hCRC32::StringCRC(name);
+        defVal.count=count;
+        defVal.dataOffset=defaultDataSize_;
+        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
+        defaultValues_.PushBack(defVal);
+        defaultDataSize_=bytecount;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::addDefaultParameterValue(const hChar* name, const hColour& colour) {
+        hDefaultParameterValue defVal;
+        hUint bytecount=sizeof(hColour);
+        defVal.type=ePTColour;
+        defVal.paramid=hCRC32::StringCRC(name);
+        defVal.count=1;
+        defVal.dataOffset=defaultDataSize_;
+        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, &colour, bytecount);
+        defaultValues_.PushBack(defVal);
+        defaultDataSize_=bytecount;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -502,11 +535,10 @@ namespace Heart
 
         releaseRenderCommands();
 
-        for (hUint32 group = 0; group < groups_.GetSize(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.GetSize(); ++tech) {
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.GetSize(); ++pass) {
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
                     hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
-                    passptr->ReleaseResources(renderer_);
                 }
             }
         }
@@ -650,6 +682,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hMaterialGroup* hMaterial::addGroup(const hChar* name) {
+        for (auto i=groups_.begin(),n=groups_.end(); i!=n; ++i) {
+            if (hStrCmp(i->getName(), name)==0) {
+                return &(*i);
+            }
+        }
+        groups_.push_back(name);
+        return &(*groups_.rbegin());
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
     void hMaterialCmdLookUpHelper::init(hMaterial* material) {
         count_=material->getGroupCount()+material->getTotalTechniqueCount()+material->getTotalPassCount();
         group_=hNEW_ARRAY(hUint, count_);
@@ -677,6 +723,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterialCmdLookUpHelper::destroy() {
+        count_=0;
         hDELETE_ARRAY_SAFE(group_);
         tech_=hNullptr;
         pass_=hNullptr;

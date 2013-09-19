@@ -39,6 +39,12 @@ namespace Heart
     __declspec(selectany)
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    void hHeartEngine::ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message) {
+        hcPrintf("ProtoBuf Log: %s, file: %s(%u)", message.c_str(), filename, line);
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -47,6 +53,8 @@ namespace Heart
     hHeartEngine::hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig)
     {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+        google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 
         if (rootdir) hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), rootdir);
         else hSysCall::GetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
@@ -314,8 +322,6 @@ namespace Heart
         hDELETE_SAFE(jobManager_);
         hDELETE_SAFE(mainPublisherCtx_);
         hDELETE_SAFE(system_);
-
-        hDebugDraw::release();
 
         // Delete all global objects allocated by libprotobuf.
         google::protobuf::ShutdownProtobufLibrary();

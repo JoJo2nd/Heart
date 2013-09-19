@@ -84,10 +84,19 @@ namespace Heart
     {
     public:
         hMaterialCmdLookUpHelper() 
-            : group_(hNullptr)
+            : count_(0)
+            , group_(hNullptr)
             , tech_(hNullptr)
             , pass_(hNullptr)
         {}
+        hMaterialCmdLookUpHelper(hMaterialCmdLookUpHelper&& rhs) {
+            hPLACEMENT_NEW(this) hMaterialCmdLookUpHelper();
+            swap(this, &rhs);
+        }
+        hMaterialCmdLookUpHelper& operator = (hMaterialCmdLookUpHelper&& rhs) {
+            swap(this, &rhs);
+            return *this;
+        }
         ~hMaterialCmdLookUpHelper() {
             destroy();
         }
@@ -105,6 +114,12 @@ namespace Heart
 
     private:
         HEART_PRIVATE_COPY(hMaterialCmdLookUpHelper);
+        static void swap(hMaterialCmdLookUpHelper* lhs, hMaterialCmdLookUpHelper* rhs) {
+            std::swap(lhs->count_, rhs->count_);
+            std::swap(lhs->group_, rhs->group_);
+            std::swap(lhs->tech_,  rhs->tech_);
+            std::swap(lhs->pass_,  rhs->pass_);
+        }
 
         hUint  count_;
         hUint* group_;
@@ -132,7 +147,13 @@ namespace Heart
 
     struct hDefaultParameterValue
     {
-        hDefaultParameterValue() : resourcePtr(hNullptr) {}
+        hDefaultParameterValue() 
+            : type(ePTNone)
+            , count(0)
+            , paramid(0)
+            , resourcePtr(hNullptr) 
+            , dataOffset(0)
+        {}
         hParameterType      type;
         hUint               count;
         hShaderParameterID  paramid;
@@ -150,16 +171,19 @@ namespace Heart
 
         hRenderMaterialManager* GetManager() const { return manager_; }
         void                    SetManager(hRenderMaterialManager* val) { manager_ = val; }
-        hMaterialGroup*         AddGroup(const hChar* name);
-        hUint32                 getGroupCount() const { return groups_.GetSize(); }
+        hMaterialGroup*         addGroup(const hChar* name);
+        hUint32                 getGroupCount() const { return (hUint)groups_.size(); }
         hMaterialGroup*         getGroup(hUint idx) { return &groups_[idx]; }
         hMaterialGroup*         getGroupByName(const hChar* name);
         hUint                   getTotalTechniqueCount() const { return totalTechniqueCount_; }
         hUint                   getTotalPassCount() const { return totalPassCount_; }
         hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                 GetMatKey() const { return uniqueKey_; }
-        void                    AddSamplerParameter(const hSamplerParameter& samp);
-        void                    addDefaultParameterValue(const ParameterDefinition& paramdef);
+        void                    addSamplerParameter(const hSamplerParameter& samp);
+        void                    addDefaultParameterValue(const hChar* name, const hResourceID& resid);
+        void                    addDefaultParameterValue(const hChar* name, const hInt32* data, hUint count);
+        void                    addDefaultParameterValue(const hChar* name, const hFloat* data, hUint count);
+        void                    addDefaultParameterValue(const hChar* name, const hColour& resid);
 
         hRCmd* getRenderCommandsBegin(hUint group, hUint tech, hUint pass) {
             return renderCmds_.getCommandAtOffset(passCmds_[techCmds_[groupCmds_[group]]+pass]);
@@ -181,11 +205,13 @@ namespace Heart
 
     private:
 
-        HEART_ALLOW_SERIALISE_FRIEND();
+        hMaterial(const hMaterial&);
+        hMaterial& operator = (hMaterial);
+
         friend class hRenderer;
         friend class hRenderMaterialManager;
 
-        typedef hVector< hMaterialGroup >           GroupArrayType;
+        typedef std::vector< hMaterialGroup >           GroupArrayType;
         typedef hVector< hMaterialTechnique >       TechniqueArrayType;
         typedef hVector< hDefaultParameterValue >   DefaultValueArrayType;
         typedef hVector< hBoundConstBlock >         BoundConstBlockArrayType;
