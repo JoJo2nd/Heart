@@ -1,0 +1,96 @@
+import "resource_common.proto";
+
+option optimize_for = LITE_RUNTIME;
+
+package Heart.proto;
+
+message SamplerState {
+    optional uint32 filter = 1;          // hSAMPLER_STATE_VALUE
+    optional uint32 addressU = 2;        // hSAMPLER_STATE_VALUE
+    optional uint32 addressV = 3;        // hSAMPLER_STATE_VALUE
+    optional uint32 addressW = 4;        // hSAMPLER_STATE_VALUE
+    optional float  mipLODBias = 5;      // hFloat              
+    optional uint32 maxAnisotropy = 6;   // hUint32             
+    optional Colour borderColour = 7;    // hColour             
+    optional float  minLOD = 8;          // hFloat              
+    optional float  maxLOD = 9;          // hFloat              
+}
+
+message BlendState {
+	optional uint32 blendEnable = 1;			//  RENDER_STATE_VALUE    
+	optional uint32 srcBlend = 2;				//  RENDER_STATE_VALUE    
+	optional uint32 destBlend = 3;				//  RENDER_STATE_VALUE    
+	optional uint32 blendOp = 4;				//  RENDER_STATE_VALUE    
+	optional uint32 srcBlendAlpha = 5;			//  RENDER_STATE_VALUE    
+	optional uint32 destBlendAlpha = 6;		    //  RENDER_STATE_VALUE    
+	optional uint32 blendOpAlpha = 7;			//  RENDER_STATE_VALUE    
+	optional uint32 renderTargetWriteMask = 8;	//  hUint32               
+}
+
+message DepthStencilState {
+    optional uint32 depthEnable = 1;          // RENDER_STATE_VALUE
+    optional uint32 depthWriteMask = 2;	      // RENDER_STATE_VALUE
+    optional uint32 depthFunc = 3;			  // RENDER_STATE_VALUE
+    optional uint32 stencilEnable = 4;		  // RENDER_STATE_VALUE
+    optional uint32 stencilReadMask = 5;	  // hUint32           
+    optional uint32 stencilWriteMask = 6;	  // hUint32           
+    optional uint32 stencilFailOp = 7;		  // RENDER_STATE_VALUE
+    optional uint32 stencilDepthFailOp = 8;   // RENDER_STATE_VALUE
+    optional uint32 stencilPassOp = 9;		  // RENDER_STATE_VALUE
+    optional uint32 stencilFunc = 10;		  // RENDER_STATE_VALUE
+    optional uint32 stencilRef = 11;		  // hUint32           
+}
+
+message RasterizerState {
+    optional uint32 fillMode = 1;                  // RENDER_STATE_VALUE
+    optional uint32 cullMode = 2;                  // RENDER_STATE_VALUE
+    optional uint32 frontCounterClockwise = 3;     // RENDER_STATE_VALUE
+    optional uint32 depthBias = 4;                 // hInt32            
+    optional float depthBiasClamp = 5;            // hFloat            
+    optional float slopeScaledDepthBias = 6;      // hFloat            
+    optional uint32 depthClipEnable = 7;           // RENDER_STATE_VALUE
+    optional uint32 scissorEnable = 8;             // RENDER_STATE_VALUE
+}
+
+message MaterialPass {
+	optional BlendState blend = 1;
+	optional DepthStencilState depthStencil = 2;
+	optional RasterizerState rasterizer = 3;
+	optional uint64 vertex = 4;
+	optional uint64 pixel = 5;
+	optional uint64 geometry = 6;
+	optional uint64 hull = 7;
+	optional uint64 domain = 8;
+	optional uint64 compute = 9;
+}
+
+message MaterialTechnique {
+	required string techniqueName = 1;
+	repeated MaterialPass passes = 2;
+	optional bool transparent = 3;
+	optional uint32 layer = 4;
+}
+
+message MaterialGroup {
+	required string groupName = 1;
+	repeated MaterialTechnique technique = 2;
+}
+
+message MaterialSampler {
+	required string samplerName = 1;
+	optional SamplerState samplerState = 2;
+}
+
+message MaterialParameter {
+	required string paramName = 1;
+	optional uint64 resourceId = 2;
+	repeated float  floatValues = 3;
+	repeated sint32 intValues = 4;
+	repeated Colour colourValues = 5;
+}
+
+message MaterialResource {
+	repeated MaterialSampler samplers = 1;
+	repeated MaterialParameter parameters = 2;
+	repeated MaterialGroup groups = 3;
+}

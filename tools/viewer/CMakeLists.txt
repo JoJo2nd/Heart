@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization)
+find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization regex)
 #find_package(wxWidgets REQUIRED COMPONENTS core adv aui html media xrc gl qa richtext propgrid)
 find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext)
 
@@ -126,7 +126,7 @@ add_executable(viewer WIN32
 	${VIEWER_PRECOMPILED_SRC_FILES}
 )
 set_property(TARGET viewer PROPERTY DEBUG_POSTFIX _d)
-target_link_libraries(viewer heart freeimage nvtt assimp ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(viewer crypto freeimage nvtt assimp ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_CUSTOM_COMMAND(
 	TARGET viewer

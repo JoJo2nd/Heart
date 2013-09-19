@@ -1,0 +1,19 @@
+import "resource_common.proto";
+
+option optimize_for = LITE_RUNTIME;
+
+package Heart.proto;
+
+message TextureMip {
+	optional uint32 width = 1;
+	optional uint32 height = 2;
+	optional bytes  data = 3;
+}
+
+message TextureResource {
+	optional uint32 width = 1;
+	optional uint32 height = 2;
+	optional uint32 depth = 3;
+	optional uint32 format = 4;
+	repeated TextureMip mips = 5;
+}

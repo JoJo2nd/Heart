@@ -27,7 +27,7 @@
 
 #include "precompiled.h"
 
-boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
-boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
+boost::signals2::signal< void (const char*) > evt_consoleOutputSignal;
+boost::signals2::signal< void (const char*) > evt_consoleInputSignal;
 boost::signals2::signal< void () > evt_mainWindowCreate;
 boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;

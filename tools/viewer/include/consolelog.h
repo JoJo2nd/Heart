@@ -42,7 +42,7 @@ public:
     static void logString(const char* channel, const char* msg, ...);
 
 private:
-    void            consoleOutputString(const hChar* msg);
+    void            consoleOutputString(const char* msg);
     void            initFrame();
 
     void            evtConsoleSubmit(wxCommandEvent& event);

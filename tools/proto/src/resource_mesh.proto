@@ -1,0 +1,27 @@
+import "resource_common.proto";
+
+option optimize_for = LITE_RUNTIME;
+
+package Heart.proto;
+
+message VertexStream {
+	optional string semantic = 1;
+	optional uint32 semanticIndex = 2;
+	optional uint32 format = 3;
+	optional bytes  streamdata = 4;
+}
+
+message Renderable {
+	optional uint64 materialResource = 1;
+	optional uint32 vertexCount = 2;
+	repeated VertexStream vertexStreams = 3;
+	optional uint32 indexCount = 4;
+	optional bytes  indexBuffer = 5;
+	optional AxisAlignedBoundingBox aabb = 6;
+	optional uint32 primtype = 7;
+	optional uint32 primcount = 8;
+}
+
+message Mesh {
+	repeated Renderable renderables = 1;
+}

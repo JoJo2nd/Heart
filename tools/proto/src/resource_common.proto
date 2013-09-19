@@ -2,27 +2,37 @@ package Heart.proto;
 
 option optimize_for = LITE_RUNTIME;
 
-enum ResourceType {
-	eResourceType_None = 0;
-	eResourceType_GPUProgram = 1;
-	eResourceType_Texture = 2;
-}
-
-enum ResourceSectionType {
+enum ResourceSectionMemoryType {
 	eResourceSection_Temp = 0;
 	eResourceSection_Persistent = 1;
-	eResourceSection_VRAM = 2;
+	eResourceSection_Prealloc = 2;
+}
+
+message Colour {
+	required uint32 red = 1 [default = 1];
+	required uint32 green = 2 [default = 1];
+	required uint32 blue = 3 [default = 1];
+	optional uint32 alpha = 4;
+}
+
+message AxisAlignedBoundingBox {
+	required float minX = 1;
+	required float minY = 2;
+	required float minZ = 3;
+	required float maxX = 4;
+	required float maxY = 5;
+	required float maxZ = 6;
 }
 
 message ResourceSection {
-	optional ResourceSectionType type = 1;
-	optional uint64 size = 2;
+	required ResourceSectionMemoryType type = 1 [default = eResourceSection_Temp];
+	required string sectionName = 2;
+	required uint32 size = 3;
 }
 
 message ResourceHeader {
-	required ResourceType type = 1 [default = eResourceType_None];
+	required string type = 1 [default = "none"];
 	optional string sourceFile = 2;
 	optional string author = 3;
 	repeated ResourceSection sections = 4;
 }
-

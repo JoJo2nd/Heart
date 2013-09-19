@@ -13,13 +13,28 @@ enum eShaderType {
 	eShaderType_Compute = 5;
 }
 
+enum eShaderStreamType {
+	eShaderStreamType_float = 0;
+	eShaderStreamType_sint32 = 1;
+	eShaderStreamType_uint32 = 2;
+}
+
+message ShaderInputStream {
+	required string semantic = 1 [default = "position"];
+	required eShaderStreamType type = 2 [default = eShaderStreamType_float];
+	optional uint32 semanticIndex = 3;
+	optional uint32 elementCount = 4;
+}
+
 message ShaderResource {
-	required ResourceHeader header = 1;
+	optional eShaderType type = 1;
 	optional string source = 2;
-	optional string compiledProgram = 3;
+	optional bytes compiledProgram = 3;
 	repeated group  Defines = 4 {
 		required string define = 5;
 		optional string value = 6;
 	}
 	optional string entry = 7;
+	optional uint32 profile = 8;
+	repeated ShaderInputStream inputStreams = 9;
 }

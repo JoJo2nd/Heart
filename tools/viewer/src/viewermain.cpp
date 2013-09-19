@@ -162,6 +162,7 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 
     ConsoleLog* consoleLog = new ConsoleLog(this);
 
+#if 0
     hHeartEngineCallbacks callbacks = {0};
     callbacks.overrideFileRoot_ = NULL; 
     if (heartpath.length()>0) {
@@ -233,8 +234,9 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
     // The camera hold refs to this
     rtv->DecRef();
     dsv->DecRef();
+#endif
 
-    timer_.start(heart_);
+    timer_.start();
 
     moduleSystem_.initialiseAndLoadPlugins(
         auiManager_, 
@@ -252,7 +254,6 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 void ViewerMainFrame::evtClose( wxCloseEvent& evt )
 {
     timer_.Stop();
-    camera_.releaseRenderTargetSetup();
     moduleSystem_.shutdown();
 
     evt.Skip();
@@ -275,7 +276,7 @@ void ViewerMainFrame::evtShowConsole(wxCommandEvent& evt)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ViewerMainFrame::consoleMsgCallback(const hChar* msg, void* user)
+void ViewerMainFrame::consoleMsgCallback(const char* msg, void* user)
 {
     // Can't go to control here because this callback happens on any thread
     // so buffer the result
@@ -286,20 +287,8 @@ void ViewerMainFrame::consoleMsgCallback(const hChar* msg, void* user)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ViewerMainFrame::renderCallback(Heart::hHeartEngine* engine) {
-    Heart::hRendererCamera* camera = &g_mainFrame->camera_;
-    Heart::hRenderUtility::setCameraParameters(engine->GetRenderer()->GetMainSubmissionCtx(), camera);
-    engine->GetRenderer()->GetMainSubmissionCtx()->clearColour(camera->getTargets()[0], Heart::BLACK);
-    engine->GetRenderer()->GetMainSubmissionCtx()->clearDepth(camera->getDepthTarget(), 1.f);
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void ViewerMainFrame::consoleInput(const hChar* msg)
+void ViewerMainFrame::consoleInput(const char* msg)
 {
-    heart_->GetConsole()->ExecuteBuffer(msg);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -333,15 +322,4 @@ void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
 
 void RenderTimer::Notify()
 {
-    if (heart_) {
-        {
-            wxMutexLocker l(access_);
-            if (consoleOutput_.length() > 0) {
-                evt_consoleOutputSignal(consoleOutput_.c_str());
-                consoleOutput_.clear();
-            }
-        }
-
-        hHeartDoMainUpdate(heart_);
-    }
 }

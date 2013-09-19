@@ -195,8 +195,8 @@ public:
     TextureDBConstItr getFirstItem() const { return texMap_.begin(); }
     TextureDBItr getFirstItemMutable() { return texMap_.begin(); }
     TextureDBConstItr getEndItem() const { return texMap_.end(); }
-    hBool addTextureItem(const TextureDBItem& texitem);
-    hBool removeTextureItem(const TextureDBItem& texitem);
+    bool addTextureItem(const TextureDBItem& texitem);
+    bool removeTextureItem(const TextureDBItem& texitem);
     void  exportToXML(const char* exportpath, const char* packageName, const char* resourceName, const char* path);
 
 private:

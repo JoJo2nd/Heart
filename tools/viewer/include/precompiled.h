@@ -29,19 +29,29 @@
 #ifndef PRECOMPILED_H__
 #define PRECOMPILED_H__
 
+// #ifdef _CRTDBG_MAP_ALLOC
+// #   define _CRTDBG_MAP_ALLOC
+// #endif
+
 //include windows first then winundef.h otherwise we get some strange compile errors
 #include <windows.h>
 #include "wx/msw/winundef.h"
 //order of these 1st 3 is important
 
+// #ifdef _DELETE_CRT
+// #   undef _DELETE_CRT
+// #   define _DELETE_CRT(ptr) delete ptr
+// #endif
+// #ifdef _DELETE_CRT_VEC
+// #   undef _DELETE_CRT_VEC
+// #   define _DELETE_CRT_VEC(ptr) delete[] ptr
+// #endif
+
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"
 
-#include "heart.h"
-
-#ifndef _CRTDBG_MAP_ALLOC
-#   define _CRTDBG_MAP_ALLOC
-#endif
+//#include "heart.h"
+#include "cryptoBase64.h"
 
 #include "wx/wx.h"
 #include "wx/app.h"
@@ -70,6 +80,7 @@
 #include "wx/event.h"
 
 #include "boost/cstdint.hpp"
+#include "boost/regex.hpp"
 #include "boost/system/error_code.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/signals2.hpp"
@@ -77,8 +88,12 @@
 #include "boost/foreach.hpp"
 #include "boost/crc.hpp"
 #include "boost/bimap.hpp"
+#include "boost/algorithm/string.hpp"
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/archive/text_iarchive.hpp"
+#include "boost/archive/iterators/base64_from_binary.hpp"
+#include "boost/archive/iterators/binary_from_base64.hpp"
+#include "boost/archive/iterators/transform_width.hpp"
 #include "boost/serialization/version.hpp"
 #include "boost/serialization/split_member.hpp"
 #include "boost/serialization/map.hpp"
@@ -109,9 +124,12 @@ extern "C"
 typedef unsigned int        uint;
 typedef unsigned long long  uint64;
 
-extern boost::signals2::signal< void (const hChar*) > evt_consoleOutputSignal;
-extern boost::signals2::signal< void (const hChar*) > evt_consoleInputSignal;
+extern boost::signals2::signal< void (const char*) > evt_consoleOutputSignal;
+extern boost::signals2::signal< void (const char*) > evt_consoleInputSignal;
 extern boost::signals2::signal< void () > evt_mainWindowCreate;
 extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
+
+bool wildcardMatch(const std::string &text, std::string wildcardPattern, bool caseSensitive = true);
+
 
 #endif // PRECOMPILED_H__

@@ -222,9 +222,9 @@ size_t elements, const t_ty* inputbuf, bool axisswap=false) {
     }
 
 
-    base64len=Heart::hBase64::EncodeCalcRequiredSize(convertedBufferLen);
+    base64len=cyBase64EncodeCalcRequiredSize(convertedBufferLen);
     base64dest=xmldoc->allocate_string(NULL, base64len);
-    Heart::hBase64::Encode(convertedBuffer.get(), convertedBufferLen, base64dest, base64len);
+    cyBase64Encode(convertedBuffer.get(), convertedBufferLen, base64dest, base64len);
     streamnode->value(base64dest, base64len);
     return streamnode;
 }
@@ -346,9 +346,9 @@ MeshExportResult MeshLodLevel::exportToMDF(xml_doc* xmldoc, rapidxml::xml_node<>
         _itoa(indices, tmpbuf, 10);
         idxattr=xmldoc->allocate_attribute("count", xmldoc->allocate_string(tmpbuf));
         idxstreamnode->append_attribute(idxattr);
-        size_t idxBase64len=Heart::hBase64::EncodeCalcRequiredSize(indicessize);
+        size_t idxBase64len=cyBase64EncodeCalcRequiredSize(indicessize);
         char* idxBase64dest=xmldoc->allocate_string(NULL, idxBase64len);
-        Heart::hBase64::Encode(idxBuffer.get(), indicessize, idxBase64dest, idxBase64len);
+        cyBase64Encode(idxBuffer.get(), indicessize, idxBase64dest, idxBase64len);
         idxstreamnode->value(idxBase64dest, idxBase64len);
         renderablenode->append_node(idxstreamnode);
 

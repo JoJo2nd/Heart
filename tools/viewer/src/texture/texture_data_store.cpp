@@ -69,9 +69,9 @@ uint TextureDataStore::getTextureItems(const char* packageName, const char* reso
 
     outitems->clear();
     for (TextureDBConstItr i=texMap_.begin(), n=texMap_.end(); i!=n; ++i) {
-        if (Heart::hStrWildcardMatch(packageName, i->second->getPackageName()) &&
-            Heart::hStrWildcardMatch(resourceName, i->second->getResourceName()) &&
-            Heart::hStrWildcardMatch(path, i->second->getInputPath())) {
+        if (wildcardMatch(packageName, i->second->getPackageName()) &&
+            wildcardMatch(resourceName, i->second->getResourceName()) &&
+            wildcardMatch(path, i->second->getInputPath())) {
                 outitems->push_back(i->second);
         }
     }
@@ -83,7 +83,7 @@ uint TextureDataStore::getTextureItems(const char* packageName, const char* reso
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool TextureDataStore::addTextureItem(const TextureDBItem& val) {
+bool TextureDataStore::addTextureItem(const TextureDBItem& val) {
     TextureItemMapType::iterator itr;
     TextureDBItem texitem = val;
     texitem.setID(*freeIDs_.begin());
@@ -105,7 +105,7 @@ hBool TextureDataStore::addTextureItem(const TextureDBItem& val) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool TextureDataStore::removeTextureItem(const TextureDBItem& texitem) {
+bool TextureDataStore::removeTextureItem(const TextureDBItem& texitem) {
     TextureItemMapType::iterator itr;
     uint64 id=texitem.getID();
     itr=texMap_.find(id);
@@ -127,9 +127,9 @@ void TextureDataStore::exportToXML(const char* exportpath, const char* packageNa
     xmldoc.InsertEndChild(texturesroots);
     uint texturecount=0;
     for (TextureDBConstItr i=texMap_.begin(), n=texMap_.end(); i!=n; ++i) {
-        if (Heart::hStrWildcardMatch(packageName, i->second->getPackageName()) &&
-        Heart::hStrWildcardMatch(resourceName, i->second->getResourceName()) &&
-        Heart::hStrWildcardMatch(path, i->second->getInputPath())) {
+        if (wildcardMatch(packageName, i->second->getPackageName()) &&
+        wildcardMatch(resourceName, i->second->getResourceName()) &&
+        wildcardMatch(path, i->second->getInputPath())) {
             const TextureDBItem* dbi=i->second.get();
             tinyxml2::XMLElement* element=xmldoc.NewElement("texture");
             element->SetAttribute("inputfile", dbi->getInputPath());

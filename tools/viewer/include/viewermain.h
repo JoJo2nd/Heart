@@ -36,23 +36,19 @@ class RenderTimer : public wxTimer
 public:
     RenderTimer()
         : wxTimer()
-        , heart_(NULL)
     {
     }
     void Notify();
-    void start(Heart::hHeartEngine* pane)
-    {
+    void start() {
         wxTimer::Start(10);
-        heart_ = pane;
     }
-    void flushConsoleText(const hChar* msg) {
+    void flushConsoleText(const char* msg) {
         wxMutexLocker l(access_);
         consoleOutput_ += msg;
     }
 
 private:
     wxString             consoleOutput_;
-    Heart::hHeartEngine* heart_;
     wxMutex              access_;
 };
 
@@ -72,9 +68,9 @@ private:
     typedef std::vector<boost::signals2::connection> ConnectionVectorType;
     typedef std::map<wxString, wxString> SavedPaneInfo;
 
-    static void consoleMsgCallback(const hChar* msg, void*);
-    static void renderCallback(Heart::hHeartEngine* engine);
-    void consoleInput(const hChar* msg);
+    static void consoleMsgCallback(const char* msg, void*);
+    //static void renderCallback(Heart::hHeartEngine* engine);
+    void consoleInput(const char* msg);
     void initFrame(const wxString& heartpath, const wxString& pluginPaths);
     void dockPaneRegister(wxWindow* pane, const wxString&, const wxAuiPaneInfo&);
 
@@ -89,8 +85,8 @@ private:
     wxFileHistory           fileHistory_;
     wxMenuBar*              menuBar_;
     RenderTimer             timer_;
-    Heart::hHeartEngine*    heart_;
-    Heart::hRendererCamera  camera_;
+    //Heart::hHeartEngine*    heart_;
+    //Heart::hRendererCamera  camera_;
     boost::filesystem::path dataPath_;
     std::string             pathString_;
     ConnectionVectorType    connnections_;

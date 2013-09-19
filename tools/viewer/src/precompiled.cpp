@@ -26,3 +26,35 @@
 *********************************************************************/
 
 #include "precompiled.h"
+
+
+void escapeRegex(std::string &regex)
+{
+    boost::replace_all(regex, "\\", "\\\\");
+    boost::replace_all(regex, "^", "\\^");
+    boost::replace_all(regex, ".", "\\.");
+    boost::replace_all(regex, "$", "\\$");
+    boost::replace_all(regex, "|", "\\|");
+    boost::replace_all(regex, "(", "\\(");
+    boost::replace_all(regex, ")", "\\)");
+    boost::replace_all(regex, "[", "\\[");
+    boost::replace_all(regex, "]", "\\]");
+    boost::replace_all(regex, "*", "\\*");
+    boost::replace_all(regex, "+", "\\+");
+    boost::replace_all(regex, "?", "\\?");
+    boost::replace_all(regex, "/", "\\/");
+}
+
+bool wildcardMatch(const std::string &text, std::string wildcardPattern, bool caseSensitive /*= true*/)
+{
+    // Escape all regex special chars
+    escapeRegex(wildcardPattern);
+
+    // Convert chars '*?' back to their regex equivalents
+    boost::replace_all(wildcardPattern, "\\?", ".");
+    boost::replace_all(wildcardPattern, "\\*", ".*");
+
+    boost::regex pattern(wildcardPattern, caseSensitive ? boost::regex::normal : boost::regex::icase);
+
+    return regex_match(text, pattern);
+}
