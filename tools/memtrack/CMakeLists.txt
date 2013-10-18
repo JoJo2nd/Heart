@@ -19,31 +19,20 @@ set(MEMTRACK_SRC_DIR
 set( MEMTRACK_INCLUDE_DIRS
     "${MEMTRACK_SRC_DIR}/include"
 	"${EXTERNAL_SRC_ROOT}/lua/src"
+    "${EXTERNAL_SRC_ROOT}/crypto/include"
+    "${ENET_INCLUDE_DIR}"
+    ${LIBHEART_INCLUDES}
 )
 
-set( MEMTRACK_HDR_FILES 
-    "${MEMTRACK_SRC_DIR}/include/callstack.h"
-    "${MEMTRACK_SRC_DIR}/include/ioaccess.h"
-    "${MEMTRACK_SRC_DIR}/include/memleakpage.h"
-    "${MEMTRACK_SRC_DIR}/include/memlog.h"
-    "${MEMTRACK_SRC_DIR}/include/memlogmarker.h"
-    "${MEMTRACK_SRC_DIR}/include/memtrack.h"
-    "${MEMTRACK_SRC_DIR}/include/memtracktypes.h"
-    "${MEMTRACK_SRC_DIR}/include/records.h"
-    "${MEMTRACK_SRC_DIR}/include/uidefines.h"
+file(GLOB MEMTRACK_HDR_FILES 
+    "${MEMTRACK_SRC_DIR}/src/*.h"
 )
 
-set( MEMTRACK_SRC_FILES
-    "${MEMTRACK_SRC_DIR}/src/callstack.cpp"
-    "${MEMTRACK_SRC_DIR}/src/ioaccess.cpp"
-    "${MEMTRACK_SRC_DIR}/src/memleakpage.cpp"
-    "${MEMTRACK_SRC_DIR}/src/memlog.cpp"
-    "${MEMTRACK_SRC_DIR}/src/memlogmarker.cpp"
-    "${MEMTRACK_SRC_DIR}/src/memlogparser.cpp"
-    "${MEMTRACK_SRC_DIR}/src/memtrack.cpp"
+file(GLOB MEMTRACK_SRC_FILES
+    "${MEMTRACK_SRC_DIR}/src/*.cpp"
 )
 ADD_MSVC_PRECOMPILED_HEADER(
-	"${MEMTRACK_SRC_DIR}/include/precompiled.h" 
+	"${MEMTRACK_SRC_DIR}/src/precompiled.h" 
 	"${MEMTRACK_SRC_DIR}/src/precompiled.cpp" 
 	MEMTRACK_PRECOMPILED_SRC_FILES
 )
@@ -59,7 +48,7 @@ endif()
 include_directories(${MEMTRACK_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_executable(mem_track WIN32 ${MEMTRACK_SRC_FILES} ${MEMTRACK_HDR_FILES} ${MEMTRACK_PRECOMPILED_SRC_FILES})
 set_property(TARGET mem_track PROPERTY DEBUG_POSTFIX _d)
-target_link_libraries(mem_track ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(mem_track enet crypto proto ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_CUSTOM_COMMAND(
 	TARGET mem_track

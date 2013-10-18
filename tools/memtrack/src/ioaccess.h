@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	precompiled.h	
+	filename: 	ioaccess.h	
 	
-	Copyright (c) 9:11:2012 James Moran
+	Copyright (c) 14:11:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -26,35 +26,41 @@
 *********************************************************************/
 #pragma once
 
-#ifndef PRECOMPILED_H__
-#define PRECOMPILED_H__
+#ifndef IOACCESS_H__
+#define IOACCESS_H__
 
-//include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
-//order of these 1st 3 is important
+class InputStream
+{
+public:
+    enum SeekPos
+    {
+        Begin = SEEK_SET,
+        Current = SEEK_CUR,
+        End = SEEK_END,
+    };
+    virtual ~InputStream() {}
+    virtual char getChar() = 0;
+    virtual bool getEOF() = 0;
+    virtual uint read(void* buffer, uint size) = 0;
+    virtual int64 seek(int64 offset, SeekPos from) = 0;
+    virtual uint64 tell() = 0;
+    virtual uint64 size() = 0;
+};
 
-#include "memtracktypes.h"
+class IODevice
+{
+public:
+    IODevice()
+    {
 
-#include "wx/wx.h"
-#include "wx/busyinfo.h"
-#include "wx/aui/aui.h"
-#include "wx/treectrl.h"
-#include "wx/propgrid/propgrid.h"
-#include "wx/fileconf.h"
-#include "wx/msgdlg.h"
-#include "wx/filedlg.h"
-#include "wx/wfstream.h"
-#include "wx/filehistory.h"
-#include "wx/progdlg.h"
-#include "wx/richmsgdlg.h"
-#include "wx/listctrl.h"
+    }
+    ~IODevice()
+    {
 
-#include "boost/filesystem.hpp"
+    }
 
-#include "uidefines.h"
+    virtual InputStream* openInputStream(const char*);
+    virtual void         closeInputStream(InputStream*);
+};
 
-#include "enet/enet.h"
-
-#endif // PRECOMPILED_H__
+#endif // IOACCESS_H__

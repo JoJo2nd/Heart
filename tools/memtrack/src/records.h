@@ -1,8 +1,8 @@
 /********************************************************************
 
-	filename: 	precompiled.h	
+	filename: 	records.h	
 	
-	Copyright (c) 9:11:2012 James Moran
+	Copyright (c) 10:11:2012 James Moran
 	
 	This software is provided 'as-is', without any express or implied
 	warranty. In no event will the authors be held liable for any damages
@@ -26,35 +26,51 @@
 *********************************************************************/
 #pragma once
 
-#ifndef PRECOMPILED_H__
-#define PRECOMPILED_H__
+#ifndef RECORDS_H__
+#define RECORDS_H__
 
-//include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
-//order of these 1st 3 is important
+#include "callstack.h"
 
-#include "memtracktypes.h"
+struct AllocRecord;
+struct FreeRecord;
 
-#include "wx/wx.h"
-#include "wx/busyinfo.h"
-#include "wx/aui/aui.h"
-#include "wx/treectrl.h"
-#include "wx/propgrid/propgrid.h"
-#include "wx/fileconf.h"
-#include "wx/msgdlg.h"
-#include "wx/filedlg.h"
-#include "wx/wfstream.h"
-#include "wx/filehistory.h"
-#include "wx/progdlg.h"
-#include "wx/richmsgdlg.h"
-#include "wx/listctrl.h"
+struct AllocRecord
+{
+    uint64          address_;
+    uint64          uid_;
+    uint64          size_;
+    uint            heapID_;
+    Callstack       backtrace_;
+    uint64          freeID_;
 
-#include "boost/filesystem.hpp"
+    bool operator == (const AllocRecord& rhs) const
+    {
+        return address_ == rhs.address_;
+    }
 
-#include "uidefines.h"
+    bool operator < (const AllocRecord& rhs) const
+    {
+        return address_ < rhs.address_;
+    }
+};
 
-#include "enet/enet.h"
+struct FreeRecord
+{
+    uint64          address_;
+    uint64          uid_;
+    uint            heapID_;
+    Callstack       backtrace_;    
+    uint64          allocID_;
 
-#endif // PRECOMPILED_H__
+    bool operator == (const FreeRecord& rhs) const
+    {
+        return address_ == rhs.address_;
+    }
+
+    bool operator < (const FreeRecord& rhs) const
+    {
+        return address_ < rhs.address_;
+    }
+};
+
+#endif // RECORDS_H__

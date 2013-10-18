@@ -17,7 +17,7 @@ set(VIEWER_SRC_DIR
 )
 
 set( VIEWER_INCLUDE_DIRS
-    "${VIEWER_SRC_DIR}/include"
+    "${VIEWER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/lua/src"
 	"${EXTERNAL_SRC_ROOT}/tinyxml2"
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
@@ -26,52 +26,29 @@ set( VIEWER_INCLUDE_DIRS
 	${nvtt_INCLUDE_DIR}
 )
 
-set( VIEWER_HDR_FILES 
-    "${VIEWER_SRC_DIR}/include/consolelog.h"
-    "${VIEWER_SRC_DIR}/include/menuidprovider.h"
-    "${VIEWER_SRC_DIR}/include/modulesystem.h"
-    "${VIEWER_SRC_DIR}/include/uieventsids.h"
-    "${VIEWER_SRC_DIR}/include/viewermain.h"
-)
-set( VIEWER_SRC_FILES
-    "${VIEWER_SRC_DIR}/src/consolelog.cpp"
+file(GLOB VIEWER_SRC_FILES
+    "${VIEWER_SRC_DIR}/src/*.h"
+    "${VIEWER_SRC_DIR}/src/*.cpp"
     "${VIEWER_SRC_DIR}/src/modulesystem.cpp"
     "${VIEWER_SRC_DIR}/src/signals.cpp"
     "${VIEWER_SRC_DIR}/src/viewermain.cpp"
 )
-set(TEXTURE_SRC_FILES
-    "${VIEWER_SRC_DIR}/include/texture/texture_data_store.h"
-    "${VIEWER_SRC_DIR}/include/texture/texture_management_window.h"
-	"${VIEWER_SRC_DIR}/include/texture/texture_data_store_export_window.h"
-    "${VIEWER_SRC_DIR}/include/texture/texture_module.h"
-	"${VIEWER_SRC_DIR}/src/texture/texture_data_store.cpp"
-	"${VIEWER_SRC_DIR}/src/texture/texture_management_window.cpp"
-	"${VIEWER_SRC_DIR}/src/texture/texture_data_store_export_window.cpp"
-	"${VIEWER_SRC_DIR}/src/texture/texture_module.cpp"
+file(GLOB TEXTURE_SRC_FILES
+    "${VIEWER_SRC_DIR}/src/texture/*.h"
+    "${VIEWER_SRC_DIR}/src/texture/*.cpp"
 )
-set(MESH_SRC_FILES
-    "${VIEWER_SRC_DIR}/include/mesh/mesh_container.h"
-	"${VIEWER_SRC_DIR}/include/mesh/mesh_explorer_window.h"
-    "${VIEWER_SRC_DIR}/include/mesh/mesh_lod_level.h"
-	"${VIEWER_SRC_DIR}/include/mesh/mesh_module.h"
-	"${VIEWER_SRC_DIR}/include/mesh/xml_helpers.h"
-	"${VIEWER_SRC_DIR}/src/mesh/mesh_container.cpp"
-	"${VIEWER_SRC_DIR}/src/mesh/mesh_explorer_window.cpp"
-	"${VIEWER_SRC_DIR}/src/mesh/mesh_lod_level.cpp"
-	"${VIEWER_SRC_DIR}/src/mesh/mesh_module.cpp"
+file(GLOB MESH_SRC_FILES
+    "${VIEWER_SRC_DIR}/src/mesh/*.h"
+	"${VIEWER_SRC_DIR}/src/mesh/*.cpp"
 )
-set(COMMON_HDR_FILES
-    "${VIEWER_SRC_DIR}/include/common/action_stack.h"
-    "${VIEWER_SRC_DIR}/include/common/module.h"
-    "${VIEWER_SRC_DIR}/include/common/status_codes.h"
-	"${EXTERNAL_SRC_ROOT}/tinyxml2/tinyxml2.h"
-)
-set(COMMON_SRC_FILES
-    "${VIEWER_SRC_DIR}/src/common/action_stack.cpp"
-	"${EXTERNAL_SRC_ROOT}/tinyxml2/tinyxml2.cpp"
+file(GLOB COMMON_SRC_FILES
+    "${VIEWER_SRC_DIR}/src/common/*.h"
+    "${VIEWER_SRC_DIR}/src/common/*.cpp"
+	"${EXTERNAL_SRC_ROOT}/tinyxml2/*.h"
+    "${EXTERNAL_SRC_ROOT}/tinyxml2/*.cpp"
 )
 set( VIEWER_PRECOMPILED_SRC_FILES
-	"${VIEWER_SRC_DIR}/include/precompiled.h" 
+	"${VIEWER_SRC_DIR}/src/precompiled.h" 
 	"${VIEWER_SRC_DIR}/src/precompiled.cpp" 
 )
 
@@ -90,9 +67,9 @@ set(ALL_SRC_FILES
 )
 
 ADD_MSVC_PRECOMPILED_HEADER(
-	"${VIEWER_SRC_DIR}/include/precompiled.h" 
+	"${VIEWER_SRC_DIR}/src/precompiled.h" 
 	"${VIEWER_SRC_DIR}/src/precompiled.cpp" 
-	"${ALL_SRC_FILES}"
+	VIEWER_PRECOMPILED_SRC_FILES
 )
 
 if (MSVC)

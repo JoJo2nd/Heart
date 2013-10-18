@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	precompiled.h	
+	filename: 	uidefines.h	
 	
 	Copyright (c) 9:11:2012 James Moran
 	
@@ -24,37 +24,22 @@
 	distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef PRECOMPILED_H__
-#define PRECOMPILED_H__
+#ifndef UIDEFINES_H__
+#define UIDEFINES_H__
 
-//include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
-//order of these 1st 3 is important
+enum uiID
+{
+    uiID_FRIST = wxID_HIGHEST,
+    uiID_IMPORT,
+    uiID_GLOBALLEAKLIST,
+    uiID_CALLSTACK_TEXT,
+    uiID_MARKER_PAGE_TREE,
+    uiID_MARKER_PAGE_CALLSTACK_TEXT,
 
-#include "memtracktypes.h"
+    uiID_CONNECT_CHANGE,
+};
 
-#include "wx/wx.h"
-#include "wx/busyinfo.h"
-#include "wx/aui/aui.h"
-#include "wx/treectrl.h"
-#include "wx/propgrid/propgrid.h"
-#include "wx/fileconf.h"
-#include "wx/msgdlg.h"
-#include "wx/filedlg.h"
-#include "wx/wfstream.h"
-#include "wx/filehistory.h"
-#include "wx/progdlg.h"
-#include "wx/richmsgdlg.h"
-#include "wx/listctrl.h"
-
-#include "boost/filesystem.hpp"
-
-#include "uidefines.h"
-
-#include "enet/enet.h"
-
-#endif // PRECOMPILED_H__
+#endif // UIDEFINES_H__

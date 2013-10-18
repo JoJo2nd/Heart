@@ -1,0 +1,16 @@
+
+option optimize_for = LITE_RUNTIME;
+
+package Heart.proto;
+
+message ServiceRegister {
+	optional string seviceName = 1;
+}
+
+message ServiceUnregister {
+	optional string seviceName = 1;
+}
+
+message ConsoleLogUpdate {
+	optional string logUpdate = 1;
+}

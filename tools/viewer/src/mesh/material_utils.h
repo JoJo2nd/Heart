@@ -30,6 +30,7 @@
 #ifndef MATERIAL_UTILS_H__
 #define MATERIAL_UTILS_H__
 
+#include "precompiled.h"
 #include "heart.h"
 #include "boost/filesystem.hpp"
 #include <vector>
@@ -43,10 +44,12 @@ struct MeshExportResult
 };
 typedef std::map< std::string, std::string > MaterialRemap;
 
+#if 0
 bool extractVertexInputLayoutFromShaderSource(
     const char* source, uint len, const char* profile, 
     const char* entry, const char* filepath, const char* packagepath,
     std::vector< Heart::hInputLayoutDesc >* outLayout, std::string* outErrors);
+#endif
 void extractVertexProgramsFromMaterial(const boost::filesystem::path& xmlpath, const char* matxml, uint len, std::vector< std::string >* vertexProgNames);
 
 #endif // MATERIAL_UTILS_H__

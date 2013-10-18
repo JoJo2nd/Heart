@@ -29,23 +29,11 @@
 #ifndef PRECOMPILED_H__
 #define PRECOMPILED_H__
 
-// #ifdef _CRTDBG_MAP_ALLOC
-// #   define _CRTDBG_MAP_ALLOC
-// #endif
-
 //include windows first then winundef.h otherwise we get some strange compile errors
+#include <winsock2.h>
 #include <windows.h>
 #include "wx/msw/winundef.h"
 //order of these 1st 3 is important
-
-// #ifdef _DELETE_CRT
-// #   undef _DELETE_CRT
-// #   define _DELETE_CRT(ptr) delete ptr
-// #endif
-// #ifdef _DELETE_CRT_VEC
-// #   undef _DELETE_CRT_VEC
-// #   define _DELETE_CRT_VEC(ptr) delete[] ptr
-// #endif
 
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_print.hpp"

@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	precompiled.h	
+	filename: 	memtracktypes.h	
 	
 	Copyright (c) 9:11:2012 James Moran
 	
@@ -24,37 +24,25 @@
 	distribution.
 
 *********************************************************************/
+
 #pragma once
 
-#ifndef PRECOMPILED_H__
-#define PRECOMPILED_H__
+#ifndef MEMTRACKTYPES_H__
+#define MEMTRACKTYPES_H__
 
-//include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
-//order of these 1st 3 is important
+#include <type_traits>
 
-#include "memtracktypes.h"
+typedef unsigned char		uchar;
+typedef wchar_t             wchar;
+typedef char                int8;
+typedef unsigned char       uint8;
+typedef unsigned short		uint16;
+typedef short				int16;
+typedef unsigned long		uint32;
+typedef long				int32;
+typedef unsigned long long  uint64;
+typedef long long			int64;
+typedef unsigned int        uint;
 
-#include "wx/wx.h"
-#include "wx/busyinfo.h"
-#include "wx/aui/aui.h"
-#include "wx/treectrl.h"
-#include "wx/propgrid/propgrid.h"
-#include "wx/fileconf.h"
-#include "wx/msgdlg.h"
-#include "wx/filedlg.h"
-#include "wx/wfstream.h"
-#include "wx/filehistory.h"
-#include "wx/progdlg.h"
-#include "wx/richmsgdlg.h"
-#include "wx/listctrl.h"
 
-#include "boost/filesystem.hpp"
-
-#include "uidefines.h"
-
-#include "enet/enet.h"
-
-#endif // PRECOMPILED_H__
+#endif // MEMTRACKTYPES_H__

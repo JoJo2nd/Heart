@@ -1,6 +1,6 @@
 /********************************************************************
 
-	filename: 	precompiled.h	
+	filename: 	callstack.h	
 	
 	Copyright (c) 9:11:2012 James Moran
 	
@@ -26,35 +26,33 @@
 *********************************************************************/
 #pragma once
 
-#ifndef PRECOMPILED_H__
-#define PRECOMPILED_H__
+#ifndef CALLSTACK_H__
+#define CALLSTACK_H__
 
-//include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
-//order of these 1st 3 is important
+#include <map>
 
-#include "memtracktypes.h"
+struct Callstack
+{
+    typedef std::vector<uint64>             BacktraceType;
+    typedef std::map<uint64, std::string>   SymbolMapType;
 
-#include "wx/wx.h"
-#include "wx/busyinfo.h"
-#include "wx/aui/aui.h"
-#include "wx/treectrl.h"
-#include "wx/propgrid/propgrid.h"
-#include "wx/fileconf.h"
-#include "wx/msgdlg.h"
-#include "wx/filedlg.h"
-#include "wx/wfstream.h"
-#include "wx/filehistory.h"
-#include "wx/progdlg.h"
-#include "wx/richmsgdlg.h"
-#include "wx/listctrl.h"
+    Callstack() 
+        : line_(0)
+    {
+    }
 
-#include "boost/filesystem.hpp"
+    void            initilaise(const char* source, uint line);
+    void            insertBacktraceLevel(uint level, uint64 address);
 
-#include "uidefines.h"
+    static void     clearSymbolMap();
+    static void     insertSymbol(uint64 address, const char* symbol);
+    static bool     addressSymbolLookup(uint64 address, std::string* outsymbol);
 
-#include "enet/enet.h"
+    uint            line_;
+    std::string     sourcePath_;
+    BacktraceType   backtrace_;
 
-#endif // PRECOMPILED_H__
+    static SymbolMapType    s_symbolMap;
+};
+
+#endif // CALLSTACK_H__
