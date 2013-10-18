@@ -1685,7 +1685,7 @@ XMLError XMLDocument::Parse( const char* p, size_t len )
         return _errorID;
     }
 
-	int delta = p - start;	// skip initial whitespace, BOM, etc.
+	int delta = (int)(p - start);	// skip initial whitespace, BOM, etc.
     ParseDeep( _charBuffer+delta, 0 );
     return _errorID;
 }
