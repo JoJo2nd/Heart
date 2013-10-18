@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	hUTF8.h	
+    filename:   hNetwork.h  
     
-    Copyright (c) 5:9:2010 James Moran
+    Copyright (c) 20:9:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,25 +25,20 @@
 
 *********************************************************************/
 
+#pragma once
+
+#ifndef HNETWORK_H__
+#define HNETWORK_H__
+
+
 namespace Heart
 {
-namespace hUTF8
+namespace hNetwork
 {
-    static const hUint32 MASKBITS   = 0x3F;
-    static const hUint32 MASKBYTE   = 0x80;
-    static const hUint32 MASK2BYTES = 0xC0;
-    static const hUint32 MASK3BYTES = 0xE0;
-    static const hUint32 MASK4BYTES = 0xF0;
-    static const hUint32 MASK5BYTES = 0xF8;
-    static const hUint32 MASK6BYTES = 0xFC;
-
-    typedef hUint16   Unicode;
-
-    hUint32 encodeFromUnicode(Unicode ucIn, hChar* utf8Out);
-    hUint   encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit);
-    hUint   bytesRequiredForUTF8(const Unicode& ucin);
-    hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut );
-    hUint32 BytesInUTF8Character(const hChar* uft8In);
+    void initialise();
+    void shutdown();
+};
 
 }
-}
+
+#endif // HNETWORK_H__

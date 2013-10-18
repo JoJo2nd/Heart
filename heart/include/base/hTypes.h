@@ -47,6 +47,7 @@ typedef double				hDouble;
 typedef bool				hBool;
 typedef time_t              hTime;
 typedef uintptr_t           hUintptr_t;
+typedef ptrdiff_t           hPtrdiff_t;
 
 class hNullType {};
 struct hcEmptyType {};
@@ -70,6 +71,7 @@ namespace Heart
 
 #if defined (HEART_PLAT_WINDOWS)
     #define hThreadLocal  __declspec(thread)
+    #define hRestrict     __restrict
 #else
     #error ("Unknown platform ")
 #endif

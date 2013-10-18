@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	hUTF8.h	
+    filename:   hDeviceFileWatch.h  
     
-    Copyright (c) 5:9:2010 James Moran
+    Copyright (c) 16:10:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,26 +24,32 @@
     distribution.
 
 *********************************************************************/
+#pragma once
+
+#ifndef HDEVICEFILEWATCH_H__
+#define HDEVICEFILEWATCH_H__
 
 namespace Heart
 {
-namespace hUTF8
-{
-    static const hUint32 MASKBITS   = 0x3F;
-    static const hUint32 MASKBYTE   = 0x80;
-    static const hUint32 MASK2BYTES = 0xC0;
-    static const hUint32 MASK3BYTES = 0xE0;
-    static const hUint32 MASK4BYTES = 0xF0;
-    static const hUint32 MASK5BYTES = 0xF8;
-    static const hUint32 MASK6BYTES = 0xFC;
+    enum hdFilewatchEvents
+    {
+        hdFilewatchEvents_AddRemove      = 1 << 1,
+        hdFilewatchEvents_FileModified   = 1 << 2,
+        //hdFilewatchEvents_RecursiveWatch = 1 << 3,
 
-    typedef hUint16   Unicode;
+        hdFilewatchEvents_Added          = 1 << 4,
+        hdFilewatchEvents_Removed        = 1 << 5, 
+        hdFilewatchEvents_Modified       = 1 << 6,
+        hdFilewatchEvents_Rename         = 1 << 7,
 
-    hUint32 encodeFromUnicode(Unicode ucIn, hChar* utf8Out);
-    hUint   encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit);
-    hUint   bytesRequiredForUTF8(const Unicode& ucin);
-    hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut );
-    hUint32 BytesInUTF8Character(const hChar* uft8In);
+        hdFilewatchEvents_Unknown,
+    };
 
+    hFUNCTOR_TYPEDEF(void(*)(const hChar*, const hChar*, hdFilewatchEvents), hdFilewatchEventCallback);
+    typedef hUintptr_t hdFilewatchHandle;
+
+    hdFilewatchHandle hdBeginFilewatch(const hChar* path, hUint validevents, hdFilewatchEventCallback callback);
+    void              hdEndFilewatch(hdFilewatchHandle);
 }
-}
+
+#endif // HDEVICEFILEWATCH_H__

@@ -35,9 +35,15 @@ namespace Heart
     {
     public:
         hConfigOptions() 
-        {}
+            : filewatch_(0)
+        {
+        }
         ~hConfigOptions()
-        {}
+        {
+            if (filewatch_) {
+                hdEndFilewatch(filewatch_);
+            }
+        }
 
         void         readConfig( const hChar* filename, hIFileSystem* filesystem );
         hUint        getOptionUint(const hChar* key, hUint defval) const;
@@ -58,10 +64,12 @@ namespace Heart
 
         typedef hMap< hUint32, hOption > hConfigMap;
 
+        void configChange(const hChar* watchDir, const hChar* filepath, hdFilewatchEvents fileevent);
         void readDocToMap(const hXMLDocument& doc);
         
-        hXMLDocument    doc_;
-        hConfigMap      config_;
+        hXMLDocument        doc_;
+        hConfigMap          config_;
+        hdFilewatchHandle   filewatch_;
     };
 }
 

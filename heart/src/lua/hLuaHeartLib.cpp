@@ -118,11 +118,11 @@ by Lua can also return many results.
             if (s == NULL)
                 return luaL_error(L,
                 LUA_QL("tostring") " must return a string to " LUA_QL("print"));
-            if (i>1) hSystemConsole::PrintConsoleMessage("\t");
-            hSystemConsole::PrintConsoleMessage(s);
+            if (i>1) hSystemConsole::printConsoleMessage("\t");
+            hSystemConsole::printConsoleMessage(s);
             lua_pop(L, 1);  /* pop result */
         }
-        hSystemConsole::PrintConsoleMessage("\n");
+        hSystemConsole::printConsoleMessage("\n");
         return 0;
     }
 
@@ -194,7 +194,7 @@ by Lua can also return many results.
         while (path = pushNextSearchPath(L, path)) {
             const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
             lua_remove(L, -2);//remove path template left by pushNextSearchPath
-            file = fsys->OpenFileRoot(filename, FILEMODE_READ);
+            file = fsys->OpenFile(filename, FILEMODE_READ);
             if (file) {
                 //Opened file, read, parse and run
                 lrdata[0] = (void*)file;
@@ -234,7 +234,7 @@ by Lua can also return many results.
         while (path = pushNextSearchPath(L, path)) {
             const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
             lua_remove(L, -2);//remove path template left by pushNextSearchPath
-            file = fsys->OpenFileRoot(filename, FILEMODE_READ);
+            file = fsys->OpenFile(filename, FILEMODE_READ);
             if (file) {
                 //Opened file, read, parse and run
                 lrdata[0] = (void*)file;

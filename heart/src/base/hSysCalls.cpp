@@ -77,9 +77,7 @@ namespace hSysCall
     HEART_DLLEXPORT
     void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize)
     {
-        hcAssert(out);
-        out[bufsize-1] = 0;
-        GetCurrentDirectoryA(bufsize-1, out);
+        hdGetCurrentWorkingDir(out, bufsize);
     }
 }
 

@@ -176,12 +176,12 @@ namespace Heart
         void                            RegisterDefaultComponents();
         void                            PostCoreResourceLoad();
         void                            DoUpdate();
-        void                            DoUpdateNoApp();
 
         HeartConfig                     config_;
         hdDeviceConfig                  deviceConfig_;
         hHeartState                     engineState_;
         hArray< hChar, 1024 >           workingDir_;
+        hArray< hChar, 1024 >           processDir_;
         
         hDriveFileSystem*               fileMananger_;
         hResourceManager*               resourceMananger_;
@@ -199,6 +199,7 @@ namespace Heart
         //Debug 
         hDebugMenuManager*              debugMenuManager_;
         hDebugInfo*                     debugInfo_;
+        hNetHost*                       debugServer_;
 
         //app functions
     public:

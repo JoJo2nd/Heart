@@ -31,6 +31,8 @@ namespace Heart
     hFloat              hSystemConsole::s_fontSize = 1.f;
     hConsoleOutputProc  hSystemConsole::s_consoleOutputCallback = NULL;
     void*               hSystemConsole::s_consoleOutputUser = NULL;
+    std::string         hSystemConsole::frameMessages_;
+
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -143,11 +145,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::Initialise( hControllerManager* pControllerManager,
+    void hSystemConsole::initialise( hControllerManager* pControllerManager,
                                      hLuaStateManager* lua,
                                      hResourceManager* pResourceManager,
                                      hRenderer* renderer,
-                                     hPublisherContext* evtCtx)
+                                     hPublisherContext* evtCtx,
+                                     hNetHost* debugHost)
     {
         controllerManager_ = pControllerManager;
         resourceManager_ = pResourceManager;
@@ -155,23 +158,23 @@ namespace Heart
         vm_ = lua;
         keyboard_ = controllerManager_->GetSystemKeyboard();
         evtCtx_ = evtCtx;
+        debugHost_ = debugHost;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::Destroy()
+    void hSystemConsole::destroy()
     {
         consoleWindow_->destroyRenderResources(renderer_);
-
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::Update()
+    void hSystemConsole::update()
     {
         HEART_PROFILE_FUNC();
         if ( !loaded_ )
@@ -190,7 +193,7 @@ namespace Heart
         }
         else
         {
-            UpdateConsole();
+            updateConsole();
         }
     }
 
@@ -198,7 +201,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::ClearConsoleBuffer()
+    void hSystemConsole::clearConsoleBuffer()
     {
     }
 
@@ -206,10 +209,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::ExecuteBuffer(const hChar* input)
+    void hSystemConsole::executeBuffer(const hChar* input)
     {
         //add to the log of inputted commands
-        PrintConsoleMessage(input);
+        printConsoleMessage(input);
 
         //Run the command
         vm_->ExecuteBuffer(input, hStrLen(input));
@@ -219,7 +222,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::UpdateConsole()
+    void hSystemConsole::updateConsole()
     {
         if (consoleWindow_)
         {
@@ -277,6 +280,12 @@ namespace Heart
             hMutexAutoScope mas(&messagesMutex_);
             consoleWindow_->updateConsoleLogString(messageBuffer_, inputBuffer_);
 
+            proto::ConsoleLogUpdate msg;
+            msg.set_logupdate(frameMessages_);
+            msg.SerializeToString(&networkBuffer_);
+            debugHost_->dispatchReport("console.log", eDispatchReliable, networkBuffer_.c_str(), (hUint)networkBuffer_.size());
+            frameMessages_.clear();
+
             inputBuffer_[cursorPos_] = prevChar;
         }
     }
@@ -285,7 +294,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::PrintConsoleMessage( const hChar* string )
+    void hSystemConsole::printConsoleMessage( const hChar* string )
     {
         hMutexAutoScope mas(&messagesMutex_);
 
@@ -293,6 +302,8 @@ namespace Heart
         for (hUint32 i = 0; i < len; ++i) {
             messageBuffer_.pushChar(string[i]);
         }
+
+        frameMessages_.append(string);
         
         if (s_consoleOutputCallback){
             s_consoleOutputCallback(string, s_consoleOutputUser);
@@ -303,7 +314,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::ClearLog()
+    void hSystemConsole::clearLog()
     {
     }
 

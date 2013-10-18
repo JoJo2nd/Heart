@@ -33,13 +33,8 @@ namespace Heart
     class hDriveFileSystem : public hIFileSystem
     {
     public:
-        hDriveFileSystem(const hChar* workingDir) 
+        hDriveFileSystem() 
         {
-            hUint end = hStrLen(workingDir)-1;
-            hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), workingDir);
-            if (workingDir[end] != '\\' && workingDir[end] != '/') {
-                hStrCat(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), "/");
-            }
         }
         ~hDriveFileSystem()
         {
@@ -53,7 +48,6 @@ namespace Heart
         * @return   hIFile*
         */
         hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const;
-        hIFile* OpenFileRoot( const hChar* filename, hFileMode mode ) const;
         
         /**
         * CloseFile 
@@ -73,7 +67,6 @@ namespace Heart
         void    CreateDirectory(const hChar* path);
 
     private:
-        hArray< hChar, 1024 >   workingDir_;
     };
 }
 

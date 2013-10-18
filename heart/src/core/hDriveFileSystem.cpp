@@ -29,48 +29,28 @@ namespace Heart
 {
 namespace 
 {
-    static const hChar FILE_PREFIX[] = {"GAMEDATA/"};
+    struct hEnumerateFilesCallbackInfo
+    {
+        hEnumerateFilesCallback fn_;
 
-	struct hEnumerateFilesCallbackInfo
-	{
-		hEnumerateFilesCallback fn_;
+        hBool Callback(const hdFileHandleInfo* pInfo )
+        {
+            hFileInfo fi;
+            fi.name_ = pInfo->name_;
+            fi.directory_ = pInfo->directory_;
+            fi.path_ = pInfo->path_;//+(sizeof(FILE_PREFIX)-1);
 
-		hBool Callback(const hdFileHandleInfo* pInfo )
-		{
-			hFileInfo fi;
-			fi.name_ = pInfo->name_;
-			fi.directory_ = pInfo->directory_;
-			fi.path_ = pInfo->path_+(sizeof(FILE_PREFIX)-1);
-
-			return fn_( &fi );
-		}
-	};
+            return fn_( &fi );
+        }
+    };
 }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-
-	hIFile* hDriveFileSystem::OpenFile( const hChar* filename, hFileMode mode ) const
-	{
-        hUint32 len = hStrLen( filename )+hStrLen( FILE_PREFIX )+1;
-        hChar* fullFilename = (hChar*)hAlloca( len );
-        hStrCopy( fullFilename, len, FILE_PREFIX );
-        hStrCat( fullFilename, len, filename );
-
-		return OpenFileRoot( fullFilename, mode );
-	}
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hIFile* hDriveFileSystem::OpenFileRoot( const hChar* filename, hFileMode mode ) const
+    hIFile* hDriveFileSystem::OpenFile(const hChar* filename, hFileMode mode) const
     {
-        hUint32 len = hStrLen(filename)+hStrLen(workingDir_.GetBuffer())+1;
-        hChar* fullFilename = (hChar*)hAlloca(len);
-        hStrCopy(fullFilename, len, workingDir_.GetBuffer());
-        hStrCat(fullFilename, len, filename);
         hdFileHandle fh;
         const hChar* devMode;
 
@@ -87,7 +67,7 @@ namespace
             return NULL;
         }
 
-        if ( !hdFopen( fullFilename, devMode, &fh ) )
+        if ( !hdFopen( filename, devMode, &fh ) )
         {
             return NULL;
         }
@@ -98,39 +78,33 @@ namespace
         return pFile;
     }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hDriveFileSystem::CloseFile( hIFile* pFile ) const
-	{
-		if ( !pFile )
-		{
-			return;
-		}
+    void hDriveFileSystem::CloseFile( hIFile* pFile ) const
+    {
+        if ( !pFile )
+        {
+            return;
+        }
 
-		hdFclose(&((hDriveFile*)pFile)->fileHandle_);
+        hdFclose(&((hDriveFile*)pFile)->fileHandle_);
 
-		hDELETE(pFile);
-	}
+        hDELETE(pFile);
+    }
 
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
 
-	void hDriveFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
-	{
-		hEnumerateFilesCallbackInfo cbInfo;
+    void hDriveFileSystem::EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const
+    {
+        hEnumerateFilesCallbackInfo cbInfo;
         cbInfo.fn_ = fn;
 
-        hUint32 len = hStrLen(path)+hStrLen(FILE_PREFIX)+hStrLen(workingDir_.GetBuffer())+1;
-        hChar* fullFilename = (hChar*)hAlloca(len);
-        hStrCopy(fullFilename, len, workingDir_.GetBuffer());
-        hStrCat(fullFilename, len, FILE_PREFIX);
-        hStrCat(fullFilename, len, path);
-
-		hdEnumerateFiles( fullFilename, hdEnumerateFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ) );
-	}
+        hdEnumerateFiles(path, hdEnumerateFilesCallback::bind< hEnumerateFilesCallbackInfo, &hEnumerateFilesCallbackInfo::Callback >( &cbInfo ));
+    }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -138,13 +112,7 @@ namespace
 
     void hDriveFileSystem::CreateDirectory( const hChar* path )
     {
-        hUint32 len = hStrLen(path)+hStrLen(FILE_PREFIX)+hStrLen(workingDir_.GetBuffer())+1;
-        hChar* fullFilename = (hChar*)hAlloca(len);
-        hStrCopy(fullFilename, len, workingDir_);
-        hStrCat(fullFilename, len, FILE_PREFIX);
-        hStrCat(fullFilename, len, path);
-
-        hdCreateDirectory(fullFilename);
+        hdCreateDirectory(path);
     }
 
 }

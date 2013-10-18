@@ -51,8 +51,25 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hHeartEngine::hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig)
+        : firstLoaded_(hNullptr)
+        , coreAssetsLoaded_(hNullptr)
+        , mainUpdate_(hNullptr)
+        , mainRender_(hNullptr)
+        , shutdownUpdate_(hNullptr)
+        , onShutdown_(hNullptr)
     {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+        hdGetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
+        hdGetProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
+
+        hcPrintf("Current Directory: %s\nProcess Directory: %s", workingDir_.GetBuffer(), processDir_.GetBuffer());
+
+        hdMountPoint(processDir_, "proc");
+        hdMountPoint(workingDir_, "cd");
+        hdMountPoint("cd:/CONFIG/", "cfg");
+        hdMountPoint("cd:/SCRIPT/", "script");
+        hdMountPoint("cd:/GAMEDATA/", "data");
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 
@@ -64,6 +81,8 @@ namespace Heart
             hStrCat(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), "/");
         }
 
+        hNetwork::initialise();
+
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -71,7 +90,7 @@ namespace Heart
         jobManager_ = hNEW(hJobManager);
         controllerManager_ = hNEW(hControllerManager);
         system_ = hNEW(hSystem);
-        fileMananger_ = hNEW(hDriveFileSystem)(workingDir_);
+        fileMananger_ = hNEW(hDriveFileSystem)();
         resourceMananger_ = hNEW(hResourceManager);
         renderer_ = hNEW(hRenderer);
         soundManager_ = hNEW(hSoundManager);
@@ -79,11 +98,12 @@ namespace Heart
         luaVM_ = hNEW(hLuaStateManager);
         entityFactory_ = hNEW(hEntityFactory);
         debugMenuManager_ = hNEW(hDebugMenuManager);
+        debugServer_=hNEW(hNetHost);
 
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        configFile_.readConfig( "CONFIG/config.cfg", fileMananger_ );
+        configFile_.readConfig( "cfg:/config.cfg", fileMananger_ );
 
         config_.Width_ = configFile_.getOptionUint("renderer.width", 640);
         config_.Height_ = configFile_.getOptionUint("renderer.height", 480);
@@ -98,7 +118,8 @@ namespace Heart
         // Init Engine Classes ///////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         
-        hcSetOutputStringCallback(hSystemConsole::PrintConsoleMessage);
+        hcSetOutputStringCallback(hSystemConsole::printConsoleMessage);
+        debugServer_->initialise(configFile_.getOptionInt("debug.server.port", 8335));
         mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
         jobManager_->Initialise();
@@ -133,7 +154,7 @@ namespace Heart
         renderer_->GetMaterialManager()->openLuaMaterialLib(luaVM_->GetMainState());
 
         //Run the start up script
-        hIFile* startupscript = fileMananger_->OpenFileRoot("SCRIPT/startup.lua", FILEMODE_READ);
+        hIFile* startupscript = fileMananger_->OpenFile("script:/startup.lua", FILEMODE_READ);
         if (startupscript)
         {
             hChar* script = (hChar*)hAlloca((hSizeT)startupscript->Length()+1);
@@ -152,7 +173,7 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         renderer_->GetMaterialManager()->createDebugMaterials();
         renderer_->initialiseCameras();
-        console_->Initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_);
+        console_->initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_, debugServer_);
         debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
 
         debugInfo_ = hNEW(hDebugInfo)(this);
@@ -188,6 +209,7 @@ namespace Heart
         g_ProfilerManager_->BeginFrame();
 #endif
         hTimer frameTimer;
+        hBool runnableState=engineState_==hHeartState_Running||engineState_==hHeartState_Paused;
 
         {
             HEART_PROFILE_SCOPE("MainUpdate");
@@ -195,20 +217,21 @@ namespace Heart
             hClock::BeginTimer(frameTimer);
             hClock::Update();
             GetSystem()->Update();
+            debugServer_->service();
             GetResourceManager()->MainThreadUpdate();
             GetControllerManager()->Update();
-            GetConsole()->Update();
+            GetConsole()->update();
             if (GetSystem()->ExitSignaled()) {
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
                     //wait on game to say ok to shutdown
                     //GetJobManager()->Destory(); // Should this be here?
-                    if (onShutdown_) onShutdown_(this);
+                    if (onShutdown_ && runnableState) onShutdown_(this);
                     engineState_ = hHeartState_ShuttingDown;
                     return;
                 }
             }
             GetSoundManager()->Update();
-            if (mainUpdate_)
+            if (mainUpdate_ && runnableState)
                 (*mainUpdate_)( this );
             GetVM()->Update();
             //before calling Update dispatch the last frames messages
@@ -219,7 +242,9 @@ namespace Heart
              * Begin new frame of draw calls
              **/
             GetRenderer()->BeginRenderFrame();
-            if (mainRender_)
+            debugServer_->printDebugInfo((hFloat)GetRenderer()->GetWidth(), (hFloat)GetRenderer()->GetHeight());
+
+            if (mainRender_ && runnableState)
                 (*mainRender_)( this );
 
             GetRenderer()->rendererFrameSubmit();
@@ -245,68 +270,18 @@ namespace Heart
         debugMenuManager_->EndFrameUpdate();
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hHeartEngine::DoUpdateNoApp()
-    {
-#ifdef HEART_DO_PROFILE
-        g_ProfilerManager_->BeginFrame();
-#endif
-
-        {
-            HEART_PROFILE_SCOPE("MainUpdateNoApp");
-
-            hClock::Update();
-            GetSystem()->Update();
-            GetResourceManager()->MainThreadUpdate();
-            GetControllerManager()->Update();
-            GetConsole()->Update();
-            if (GetSystem()->ExitSignaled()) {
-                exit(0);// emergency exit
-            }
-            GetSoundManager()->Update();
-            GetVM()->Update();
-            //before calling Update dispatch the last frames messages
-            GetMainEventPublisher()->updateDispatch();
-
-            debugMenuManager_->PreRenderUpdate();
-            /*
-             * Begin new frame of draw calls
-             **/
-            GetRenderer()->BeginRenderFrame();
-            GetRenderer()->rendererFrameSubmit();
-            /*
-             * Frame isn't swapped until next call to EndRenderFrame() so
-             * can render to back buffer here
-             **/
-            debugMenuManager_->RenderMenus(
-                GetRenderer()->GetMainSubmissionCtx(), 
-                GetRenderer()->GetMaterialManager());
-            /*
-             * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
-             **/
-            GetRenderer()->EndRenderFrame();
-
-            GetControllerManager()->EndOfFrameUpdate();
-        }
-
-        debugMenuManager_->EndFrameUpdate();
-    }
-
-
     hHeartEngine::~hHeartEngine()
     {
         hMemTracking::TrackPopMarker();
 
         jobManager_->Destory();
         debugMenuManager_->Destroy();
-        console_->Destroy();
+        console_->destroy();
         soundManager_->Destory(); 
         resourceMananger_->Shutdown( renderer_ );
         luaVM_->Destroy();
         renderer_->Destroy();
+        debugServer_->destroy();
 
         //hDELETE_SAFE(GetGlobalHeap(), debugInfo_);
         hDELETE_SAFE(g_ProfilerManager_);
@@ -322,6 +297,9 @@ namespace Heart
         hDELETE_SAFE(jobManager_);
         hDELETE_SAFE(mainPublisherCtx_);
         hDELETE_SAFE(system_);
+        hDELETE_SAFE(debugServer_);
+
+        hNetwork::shutdown();
 
         // Delete all global objects allocated by libprotobuf.
         google::protobuf::ShutdownProtobufLibrary();
@@ -336,7 +314,7 @@ namespace Heart
         {
         case hHeartState_LoadingCore:
             {
-                DoUpdateNoApp();
+                DoUpdate();
 
                 if (GetResourceManager()->RequiredResourcesReady())
                 {

@@ -152,6 +152,14 @@ namespace Heart
 
     HEART_DLLEXPORT
     void        HEART_API hdCreateDirectory(const hChar* path);
+
+    void hdMountPoint(const hChar* path, const hChar* mount);
+    void hdUnmountPoint(const hChar* mount);
+    void hdGetCurrentWorkingDir(hChar* out, hUint bufsize);
+    void hdGetProcessDirectory(hChar* outdir, hUint size);
+    hBool hdIsAbsolutePath(const hChar* path);
+    void hdGetSystemPath(const hChar* path, hChar* outdir, hUint size);
+    hUint hdGetSystemPathSize(const hChar* path);
 }
 
 #endif // FILESYSTEM_H__

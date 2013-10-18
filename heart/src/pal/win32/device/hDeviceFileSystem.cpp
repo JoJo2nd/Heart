@@ -37,6 +37,95 @@ namespace Heart
         FILEOP_MAX
     };
 
+class hdFileSystemMountInfo
+{
+public:
+    hdFileSystemMountInfo() 
+        : mountCount_(0)
+    {}
+    ~hdFileSystemMountInfo() {
+        while (mountCount_) {
+            unmount(mounts_[0].mountName_);
+        }
+    }
+
+    static const hUint s_maxMountLen=8;
+    static const hUint s_maxMounts=64;
+
+    void lock() { mountAccessMutex_.Lock(); }
+    void unlock() { mountAccessMutex_.Unlock(); }
+    void mount(const hChar* mount, const hChar* path) {
+        mountAccessMutex_.Lock();
+        hcAssert(findMountIndex(mount)==s_maxMounts);
+
+        hStrNCopy(mounts_[mountCount_].mountName_, s_maxMountLen, mount);
+        mounts_[mountCount_].pathLen_=hStrLen(path);
+        mounts_[mountCount_].mountPath_=hNEW_ARRAY(hChar, mounts_[mountCount_].pathLen_+1);
+        hStrCopy(mounts_[mountCount_].mountPath_, mounts_[mountCount_].pathLen_+1, path);
+        ++mountCount_;
+        hcPrintf("Mounting [%s] to %s:/", path, mount);
+        mountAccessMutex_.Unlock();
+    }
+    void unmount(const hChar* mount) {
+        mountAccessMutex_.Lock();
+        if (mountCount_ > 0) {
+            hUint midx=findMountIndex(mount);
+            hcPrintf("Unmounting [%s] from %s:/", mounts_[midx].mountPath_, mounts_[midx].mountName_);
+            hDELETE_SAFE(mounts_[midx].mountPath_);
+            --mountCount_;
+            mounts_[midx]=mounts_[mountCount_];
+        }
+        mountAccessMutex_.Unlock();
+    }
+    hUint getMountPathLenght(const hChar* mount) {
+        mountAccessMutex_.Lock();
+        hUint len=0;
+        hUint midx=findMountIndex(mount);
+        if (midx < s_maxMounts) {
+            len = mounts_[midx].pathLen_;
+        }
+        mountAccessMutex_.Unlock();
+        return len;
+    }
+    hUint getMount(const hChar* mount, hChar* outpath, hUint size) {
+        hcAssert(outpath && mount);
+        hUint ret=0;
+        mountAccessMutex_.Lock();
+        outpath[0]=0;
+        hUint midx=findMountIndex(mount);
+        if (midx < s_maxMounts) {
+            ret=mounts_[midx].pathLen_;
+            hStrCopy(outpath, size, mounts_[midx].mountPath_);
+        }
+        mountAccessMutex_.Unlock();
+        return ret;
+    }
+
+private:
+
+    struct hdMount
+    {
+        hChar   mountName_[s_maxMountLen];
+        hUint   pathLen_;
+        hChar*  mountPath_;
+    };
+
+    hUint findMountIndex(const hChar* mount) const {
+        for (hUint i=0; i<mountCount_; ++i) {
+            if (hStrCmp(mount, mounts_[i].mountName_) == 0) {
+                return i;
+            }
+        }
+        return s_maxMounts;
+    }
+
+    hdW32Mutex mountAccessMutex_;
+    hUint      mountCount_;
+    hdMount    mounts_[s_maxMounts];
+};
+
+    hdFileSystemMountInfo g_fileSystemInfo;
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -64,8 +153,13 @@ namespace Heart
             creation = CREATE_ALWAYS;
         }
 
+        g_fileSystemInfo.lock();
+        hUint syspathlen=hdGetSystemPathSize(filename);
+        hChar* syspath=(hChar*)hAlloca(syspathlen+1);
+        hdGetSystemPath(filename, syspath, syspathlen+1);
+        g_fileSystemInfo.unlock();
         
-        fhandle = CreateFile( filename, access, share, secatt, creation, flags, hNullptr );
+        fhandle = CreateFile(syspath, access, share, secatt, creation, flags, hNullptr);
 
         if ( fhandle == INVALID_HANDLE_VALUE )
         {
@@ -209,13 +303,16 @@ namespace Heart
     void HEART_API hdEnumerateFiles(const hChar* path, hdEnumerateFilesCallback fn)
     {
         WIN32_FIND_DATA found;
-        hUint32 searchPathLen = hStrLen(path) + 3;
-        hChar* searchPath = (hChar*)alloca( searchPathLen );
 
-        hStrCopy( searchPath, searchPathLen, path );
-        hStrCat( searchPath, searchPathLen, "/*" );
+        g_fileSystemInfo.lock();
+        hUint syspathlen=hdGetSystemPathSize(path);
+        hChar* syspath=(hChar*)hAlloca(syspathlen+3);
+        hdGetSystemPath(path, syspath, syspathlen+1);
+        g_fileSystemInfo.unlock();
 
-        HANDLE searchHandle = FindFirstFile( searchPath, &found );
+        hStrCat(syspath, syspathlen+3, "/*" );
+
+        HANDLE searchHandle = FindFirstFile(syspath, &found);
 
         if ( searchHandle == INVALID_HANDLE_VALUE )
             return;
@@ -262,9 +359,104 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void        HEART_API hdCreateDirectory(const hChar* path)
-    {
-        CreateDirectory(path, NULL);
+    void        HEART_API hdCreateDirectory(const hChar* path) {
+        g_fileSystemInfo.lock();
+        hUint syspathlen=hdGetSystemPathSize(path);
+        hChar* syspath=(hChar*)hAlloca(syspathlen+1);
+        hdGetSystemPath(path, syspath, syspathlen+1);
+        g_fileSystemInfo.unlock();
+        CreateDirectory(syspath, NULL);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdMountPoint(const hChar* path, const hChar* mount) {
+        if (hdIsAbsolutePath(path)) {
+            hUint syspathlen=hdGetSystemPathSize(path);
+            hChar* syspath=(hChar*)hAlloca(syspathlen+1);
+            hdGetSystemPath(path, syspath, syspathlen+1);
+            g_fileSystemInfo.mount(mount, syspath);
+        } else {
+            g_fileSystemInfo.mount(mount, path);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdUnmountPoint(const hChar* mount) {
+        g_fileSystemInfo.unmount(mount);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdGetCurrentWorkingDir(hChar* out, hUint bufsize) {
+        hcAssert(out);
+        out[bufsize-1] = 0;
+        GetCurrentDirectoryA(bufsize-1, out);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdGetProcessDirectory(hChar* out, hUint bufsize) {
+        hcAssert(out);
+        out[bufsize-1] = 0;
+        GetModuleFileNameA(0, out, bufsize-1);
+        hChar* path=hStrRChr(out, '\\');
+        if (path) {
+            *path=0;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hdIsAbsolutePath(const hChar* path) {
+        return hStrChr(path, ':') != hNullptr; //look for ':' e.g. C:/ or data:/ (It's cant be that simple can it?)
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdGetSystemPath(const hChar* path, hChar* outdir, hUint size) {
+        hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
+        const hChar* term=hStrChr(path, ':');
+        if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
+            hUint os=(hUint)((hPtrdiff_t)term-(hPtrdiff_t)path);
+            hStrNCopy(mnt, os+1, path);
+            hUint mountlen=g_fileSystemInfo.getMount(mnt, outdir, size);
+            if (mountlen==0) {
+                hStrCopy(outdir, size, path);
+            } else {
+                hStrCopy(outdir+mountlen, size-mountlen, path+os+1);
+            }
+        } else {
+            hStrCopy(outdir, size, path);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hUint hdGetSystemPathSize(const hChar* path) {
+        hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
+        hUint ret=hStrLen(path);
+        const hChar* term=hStrChr(path, ':');
+        if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
+            hStrNCopy(mnt, (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path)+1, path);
+            ret+=g_fileSystemInfo.getMountPathLenght(mnt);
+        }
+        return ret;
     }
 
 }

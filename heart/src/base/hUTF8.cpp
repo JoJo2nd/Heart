@@ -30,8 +30,24 @@ namespace Heart
 namespace hUTF8
 {   
 
-HEART_DLLEXPORT
-hUint32 EncodeFromUnicode( Unicode ucIn, hChar* utf8Out )
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint bytesRequiredForUTF8(const Unicode& ucin) {
+    if( ucin < 0x80 ) {
+        return 1;
+    } else if( ucin < 0x800 ) { // 110xxxxx 10xxxxxx
+        return 2;
+    } else if( ucin < 0x10000 ) { // 1110xxxx 10xxxxxx 10xxxxxx
+        return 3;
+    }
+
+    return 0;
+}
+
+
+hUint32 encodeFromUnicode(Unicode ucIn, hChar* utf8Out)
 {
     hUint32 ret = 0;
     // 0xxxxxxx
@@ -56,8 +72,7 @@ hUint32 EncodeFromUnicode( Unicode ucIn, hChar* utf8Out )
     return ret;
 }
 
-HEART_DLLEXPORT
-hUint32 HEART_API DecodeToUnicode( const hChar* uft8In, Unicode& ucOut )
+hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut )
 {
     hUint32 ret = 0;
     // 1110xxxx 10xxxxxx 10xxxxxx
@@ -81,8 +96,8 @@ hUint32 HEART_API DecodeToUnicode( const hChar* uft8In, Unicode& ucOut )
     return ret;
 }
 
-HEART_DLLEXPORT 
-hUint32 HEART_API BytesInUTF8Character(const hChar* uft8In)
+
+hUint32 BytesInUTF8Character(const hChar* uft8In)
 {
     hUint32 ret = 1;
     // 1110xxxx 10xxxxxx 10xxxxxx
@@ -100,5 +115,21 @@ hUint32 HEART_API BytesInUTF8Character(const hChar* uft8In)
     return ret;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hUint encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit) {
+    hUint written=0;
+    for (hUint i=0; i<inlimit; ++i) {
+        hUint32 bytes=bytesRequiredForUTF8(ucin[i]);
+        if (written+bytes>=outlimit) {
+            break;
+        }
+        encodeFromUnicode(ucin[i], utf8out+written);
+        written+=bytes;
+    }
+    return written;
+}
 }
 }

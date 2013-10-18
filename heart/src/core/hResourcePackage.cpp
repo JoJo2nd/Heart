@@ -30,9 +30,10 @@ namespace Heart
 
 #define hBuildResFilePath(outpath, packagePack, file) \
     { \
-    hUint32 len = hStrLen(packagePack)+hStrLen(file)+2; \
+    hUint32 len = hStrLen(packagePack)+hStrLen(file)+2+6; \
     outpath = (hChar*)hAlloca(len); \
-    hStrCopy(outpath, len, packagePack); \
+    hStrCopy(outpath, len, "data:/"); \
+    hStrCat(outpath, len, packagePack); \
     hStrCat(outpath, len, "/"); \
     hStrCat(outpath, len, file); \
     }
@@ -76,7 +77,8 @@ namespace Heart
         hChar zipname[MAX_PACKAGE_NAME+10];
         
         hStrCopy(packageName_, MAX_PACKAGE_NAME, packname);
-        hStrCopy(zipname, MAX_PACKAGE_NAME, packname);
+        hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
+        hStrCat(zipname, MAX_PACKAGE_NAME, packname);
         hStrCat(zipname,MAX_PACKAGE_NAME,".PKG");
 
         packageCRC_ = hCRC32::StringCRC(packname);
@@ -94,8 +96,8 @@ namespace Heart
 
         hcAssert(fileSystem_);
 
-        hStrCopy(packageName_, MAX_PACKAGE_NAME, packname);
-        hStrCopy(zipname, MAX_PACKAGE_NAME, packname);
+        hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
+        hStrCat(zipname, MAX_PACKAGE_NAME, packname);
         hStrCat(zipname,MAX_PACKAGE_NAME,"/DAT");
 
         hIFile* pakDesc = fileSystem_->OpenFile(zipname, FILEMODE_READ);

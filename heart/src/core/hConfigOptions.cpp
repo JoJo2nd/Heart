@@ -32,9 +32,9 @@ namespace Heart
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void hConfigOptions::readConfig( const hChar* filename, hIFileSystem* filesystem )
+    void hConfigOptions::readConfig(const hChar* filename, hIFileSystem* filesystem)
     {
-        hIFile* file = filesystem->OpenFileRoot( filename, FILEMODE_READ );
+        hIFile* file = filesystem->OpenFile(filename, FILEMODE_READ);
         if ( file ) {
             hUint32 read;
             char* data = (hChar*)hHeapMalloc("general", (hUint32)file->Length());
@@ -48,6 +48,8 @@ namespace Heart
             }
             filesystem->CloseFile( file );
         }
+
+        filewatch_=hdBeginFilewatch("cfg:/", hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hConfigOptions, configChange, this));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -170,6 +172,14 @@ namespace Heart
         } else {
             return op->op.GetValueString(defval);
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hConfigOptions::configChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent) {
+        hcPrintf("Config file \"%s%s\" event %u", watchDirectory, filepath, fileevent);
     }
 
 }

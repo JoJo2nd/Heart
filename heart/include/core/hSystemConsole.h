@@ -60,16 +60,17 @@ namespace Heart
         {
         }
 
-        void            Initialise( hControllerManager* pControllerManager,
-                                    hLuaStateManager* pSquirrel,
+        void            initialise( hControllerManager* pControllerManager,
+                                    hLuaStateManager* lua,
                                     hResourceManager* pResourceManager,
                                     hRenderer* renderer,
-                                    hPublisherContext* evtCtx);
-        void            Destroy();
-        void            Update();
-        void            ClearLog();
-        void            ExecuteBuffer(const hChar* input);
-        static void     PrintConsoleMessage(const hChar* string);
+                                    hPublisherContext* evtCtx,
+                                    hNetHost* debugHost);
+        void            destroy();
+        void            update();
+        void            clearLog();
+        void            executeBuffer(const hChar* input);
+        static void     printConsoleMessage(const hChar* string);
 
         template< hUint32 t_size >
         class HEART_FORCEDLLEXPORT hStringRingBuffer
@@ -184,17 +185,19 @@ namespace Heart
         
 
 
-        void    UpdateConsole();
-        void    ClearConsoleBuffer();
+        void    updateConsole();
+        void    clearConsoleBuffer();
 
         hRenderer*          renderer_;
         hResourceManager*   resourceManager_;
         const hdKeyboard*   keyboard_;
         hBool               visible_;
         hPublisherContext*  evtCtx_;
+        hNetHost*           debugHost_;
 
         hConsoleLogType consoleLog_;
         hUint           cursorPos_;
+        std::string     networkBuffer_;
         hChar           inputBuffer_[INPUT_BUFFER_LEN];
         hChar           prevInputs_[MAX_PREV_COMMAND_LOGS][INPUT_BUFFER_LEN];
 
@@ -210,6 +213,7 @@ namespace Heart
         static hConsoleLogType  messageBuffer_;  
         static hUint32          msgBufferLen_;
         static hBool            alive_;
+        static std::string      frameMessages_;
         hBool                   loaded_;
     };
 }

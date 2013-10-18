@@ -12,6 +12,7 @@ set(heart_BINARY_DIR "${HEART_SOURCE_DIR}/../bin/heart")
 # heart include directorys
 set( HEART_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}
+    "${ENET_INCLUDE_DIR}"
     "${HEART_SRC_ROOT}/include"
     "${EXTERNAL_SRC_ROOT}/zlib/include"
     "${EXTERNAL_SRC_ROOT}/lua/src"
@@ -23,8 +24,6 @@ set( HEART_INCLUDE_DIRS
     "${EXTERNAL_SRC_ROOT}/libvorbis/include"
     "${PROTOBUF_INCLUDE_DIR}"
     "${GENERATED_PROTO_INC_DIRS}"
-
-    "${PROJECT_SOURCE_DIR}/resourceloaders/textureloader/include"
 )
 set(HEART_LIB_DIRS)
 if (WIN32)
@@ -73,7 +72,10 @@ file(GLOB HEART_COMPUTE_FILES
     "${HEART_SOURCE_DIR}/include/compute/*.h"
     "${HEART_SOURCE_DIR}/src/compute/*.cpp"
 )
-
+file(GLOB HEART_NETWORK_FILES 
+    "${HEART_SOURCE_DIR}/src/network/*.h"
+    "${HEART_SOURCE_DIR}/src/network/*.cpp"
+)
 set(HEART_DEBUG_FILES
     "${HEART_SOURCE_DIR}/include/debug/hDebugMenuManager.h"
     "${HEART_SOURCE_DIR}/include/debug/hDebugInfo.h"
@@ -160,60 +162,17 @@ if (WIN32)
         "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hWin32DX11.h"
 	)
     # Add platform math files.
-    set( HEART_DEVICE_MATH_FILES
-		${HEART_DEVICE_MATH_FILES}
-		"${HEART_SOURCE_DIR}/include/pal/win32/device/math/hMatrix.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hQuaternion.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVec2.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVec3.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVec4.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVector.h"
-		"${HEART_SOURCE_DIR}/include/pal/win32/device/math/hVectorOps.h"
+    file(GLOB HEART_DEVICE_MATH_FILES
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/*.h"
 	)
     set( HEART_SRC_FILES 
         ${HEART_SRC_FILES}
         "${HEART_SOURCE_DIR}/src/pal/win32/heartWin32Unity.cpp"
     )
-    set(HEART_PLATFORM_NON_UNITY_FILES
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceConfig.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceFileSystem.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceInput.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceInputDeviceManager.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceKeyboard.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceMouse.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSoundCore.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSoundVoice.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceSystemWindow.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hDeviceThread.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hEvent.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hMalloc.h"
-        #"${HEART_SOURCE_DIR}/include/pal/win32/device/hMiniDumper.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/hMutex.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11ComputeTypes.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11IndexBuffer.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderDevice.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderStateBlock.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11RenderSubmissionCtx.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11ShaderProgram.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11Texture.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11VertexBuffer.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11VertexLayout.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hDX11View.h"
-        
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceFileSystem.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceInputDeviceManager.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceKeyboard.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceMouse.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundCore.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundUtil.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSoundVoice.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceSystemWindow.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hDeviceThread.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/hMalloc.c"
-        #"${HEART_SOURCE_DIR}/src/pal/win32/device/hMiniDumper.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11RenderDevice.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11RenderSubmissionCtx.cpp"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hDX11ShaderProgram.cpp"
+    file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
+        "${HEART_SOURCE_DIR}/include/pal/win32/device/*.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.cpp"
     )
 endif (WIN32)
 
@@ -234,6 +193,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_DEVICE_MATH_FILES}
 	${HEART_PLATFORM_NON_UNITY_FILES}
 	${HEART_RESOURCE_FILES}
+    ${HEART_NETWORK_FILES}
 )
 #common vars to pass up to parent directory
 set( LIBHEART_INCLUDES
@@ -266,6 +226,7 @@ source_group(thread FILES ${HEART_THREAD_FILES})
 source_group(utils FILES ${HEART_UTILS_FILES})
 source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
+source_group(network FILES ${HEART_NETWORK_FILES})
 
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)
@@ -273,4 +234,4 @@ set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPusli
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto ${PLATFORM_LIBS})
+target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto enet ${PLATFORM_LIBS})
