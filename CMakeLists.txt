@@ -59,6 +59,31 @@ option(USE_OLD_DXSDK "Use old DirectX SDK. Will cause issues with Windows 8 SDK"
 option(BUILD_HEART_TESTBED "Build testbed for heart" OFF)
 option(BUILD_BUILDER_PROJECT "Build builder lib and stand alone" ON)
 option(USE_ASSIMP_DEBUG "Use debug assimp libraries" OFF)
+option(DO_PROFILE "Enable profiling in exe" OFF)
+option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including debug builds" OFF)
+option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
+
+MACRO(ENABLE_PROFILE_IF_SET)
+	if (DO_PROFILE)
+		add_definitions(-DUSING_LIB_PROF)
+		include_directories("${EXTERNAL_SRC_ROOT}/libprof/src")
+		set(PROFILE_LIBS libprof dbghelp)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gh /GH")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Gh /GH")
+	endif (DO_PROFILE)
+ENDMACRO(ENABLE_PROFILE_IF_SET)
+
+if (DO_PROFILE)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /PROFILE")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /PROFILE")
+	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /PROFILE")
+endif(DO_PROFILE)
+
+if (FORCE_DISABLE_MEMORY_TRACKING)
+	add_definitions(-DHEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
+elseif (FORCE_ENABLE_MEMORY_TRACKING)
+	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
+endif(FORCE_ENABLE_MEMORY_TRACKING)
 
 #cache vars
 set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
@@ -89,9 +114,13 @@ set(GENERATED_PROTO_INC_DIRS
     "${CMAKE_BINARY_DIR}/tools/proto"
     #add more as needed
 )
+set(ENET_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/enet/include"
+)
 
 if (WIN32)
-	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32)
+    #OpenAL and ws2 are still called "32" 64bit build...
+	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32 ws2_32 Winmm)
 	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
 endif()
 if (USE_ASSIMP_DEBUG)
@@ -160,6 +189,8 @@ add_subdirectory ("external/lua")
 add_subdirectory ("external/minizip")
 add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
+add_subdirectory ("external/enet")
+add_subdirectory ("external/libprof")
 add_subdirectory ("heart")
 if (BUILD_HEART_TESTBED)
 	add_subdirectory ("testbed")
@@ -180,5 +211,6 @@ add_subdirectory("tools/lualibs/luaxml")
 add_subdirectory("tools/proto")
 add_subdirectory("tools/memtrack")
 add_subdirectory("tools/viewer")
+add_subdirectory("tools/profiler")
 
 message(${CMAKE_BINARY_DIR})
