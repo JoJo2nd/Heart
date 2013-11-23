@@ -28,9 +28,12 @@
 #include "precompiled.h"
 #include "memlog.h"
 #include "ioaccess.h"
+#include <dbghelp.h>
 
 typedef std::pair< std::string,std::string >    StrValuePair;
 typedef std::vector< StrValuePair >             StrValuePairArray;
+
+int resolveSymbols(uint64 address, uint64 oldbase, uint64 newbase);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -133,7 +136,7 @@ int parseMemItem(InputStream* fis, MemLog* log, char* strbuffer, uint maxlen)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int resolveAlloc(MemLog* log, const StrValuePairArray& strValueArray)
+int resolveAlloc(MemLog* log, const StrValuePairArray& strValueArray, uint64 oldbase, uint64 newbase)
 {
     uint64 address = 0;
     uint64 size = 0;
@@ -169,6 +172,7 @@ int resolveAlloc(MemLog* log, const StrValuePairArray& strValueArray)
             uint64 funcaddress;
             if (sscanf_s(strValueArray[i].second.c_str(), "%u,%llX", &level, &funcaddress) != 2) return -3;//Failed to parse pair
             backtrace.insertBacktraceLevel(level, funcaddress);
+            resolveSymbols(funcaddress, oldbase, newbase);
         }
     }
     backtrace.sourcePath_ = file;
@@ -183,7 +187,7 @@ int resolveAlloc(MemLog* log, const StrValuePairArray& strValueArray)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int resolveFree(MemLog* log, const StrValuePairArray& strValueArray)
+int resolveFree(MemLog* log, const StrValuePairArray& strValueArray, uint64 oldbase, uint64 newbase)
 {
     uint64 address;
     uint line = 0;
@@ -214,6 +218,7 @@ int resolveFree(MemLog* log, const StrValuePairArray& strValueArray)
             uint64 funcaddress;
             if (sscanf_s(strValueArray[i].second.c_str(), "%u,%llX", &level, &funcaddress) != 2) return -3;//Failed to parse pair
             backtrace.insertBacktraceLevel(level, funcaddress);
+            resolveSymbols(funcaddress, oldbase, newbase);
         }
     }
     backtrace.sourcePath_ = file;
@@ -228,23 +233,67 @@ int resolveFree(MemLog* log, const StrValuePairArray& strValueArray)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int resolveSymbols(const StrValuePairArray& strValueArray)
-{
-    for (uint i = 0, iend = strValueArray.size(); i < iend; ++i)
-    {
-        if (strValueArray[i].first == "st")
-        {
-            size_t p = strValueArray[i].second.find_first_of(',');
-            if (p == std::string::npos) return -3; //Failed to parse
-            
-            uint64 address;
-            std::string sym = strValueArray[i].second.substr(p+1);
-            sscanf_s(strValueArray[i].second.c_str(), "%llX , ", &address);
+// int resolveSymbols(const StrValuePairArray& strValueArray)
+// {
+//     for (uint i = 0, iend = strValueArray.size(); i < iend; ++i)
+//     {
+//         if (strValueArray[i].first == "st")
+//         {
+//             size_t p = strValueArray[i].second.find_first_of(',');
+//             if (p == std::string::npos) return -3; //Failed to parse
+//             
+//             uint64 address;
+//             std::string sym = strValueArray[i].second.substr(p+1);
+//             sscanf_s(strValueArray[i].second.c_str(), "%llX , ", &address);
+// 
+//             Callstack::insertSymbol(address, sym.c_str());
+//         }
+//     }
+//     return 0;
+// }
 
-            Callstack::insertSymbol(address, sym.c_str());
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+int resolveSymbols(uint64 funcaddress, uint64 oldbase, uint64 newbase)
+{
+    uint64 address=funcaddress;
+    address -= oldbase;
+    address += newbase;
+    if (Callstack::findSymbol(funcaddress)) {
+        return 0;
+    }
+
+    char            buffer[2048+sizeof(SYMBOL_INFO)];
+    char            outbuffer[4096];
+    SYMBOL_INFO*    symbol=(SYMBOL_INFO*)buffer;
+    DWORD           dwDisplacement;
+    IMAGEHLP_LINE64 line;
+
+    symbol->MaxNameLen   = 2047;
+    symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
+    DWORD errorcode=0;
+    HANDLE process=GetCurrentProcess();
+    if (!SymFromAddr(process, (DWORD64)address, 0, symbol)) {
+        errorcode=GetLastError();
+    }
+    if (SymGetLineFromAddr64(process, (DWORD64)address, &dwDisplacement, &line)) {
+        if (errorcode!=0) {
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(%u)", address, line.LineNumber);
+        } else {
+            sprintf_s(outbuffer, sizeof(outbuffer), "%s(%u)", symbol->Name, line.LineNumber);
+        }
+    } else {
+        if (errorcode!=0) {
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(NoLineNumber)", address);
+        } else {
+            sprintf_s(outbuffer, sizeof(outbuffer), "%s(NoLineNumber)", symbol->Name);
         }
     }
-    return 0;
+    Callstack::insertSymbol(funcaddress, outbuffer);
+
+    return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -261,6 +310,20 @@ int parseMemLog(const char* filepath, MemLog* log, IODevice* ioaccess)
     int itemtype = 0;
     StrValuePairArray valuePairs;
 
+    //read the header
+    uint64 baseaddress;
+    char modulename[512];
+    fis->read(&baseaddress, sizeof(baseaddress));
+    fis->read(modulename, sizeof(modulename));
+    modulename[sizeof(modulename)-1]=0;
+
+    SymSetOptions(SYMOPT_DEFERRED_LOADS|SYMOPT_FAIL_CRITICAL_ERRORS|SYMOPT_ALLOW_ABSOLUTE_SYMBOLS|SYMOPT_UNDNAME|SYMOPT_DEBUG|SYMOPT_LOAD_LINES|SYMOPT_INCLUDE_32BIT_MODULES);
+    if (SymInitialize(GetCurrentProcess(), NULL, true)==0) {
+        return -1;
+    }
+    uint64 newbase=SymLoadModuleEx(GetCurrentProcess(), 0, modulename, 0, 0, 0, 0, 0);
+
+    log->setBaseAddresses(baseaddress, newbase);
     log->pushMemoryMarker("PARSEBASE");
 
     while (tokenize(fis, strbuffer, MAX_STRBUF_SIZE, &written))
@@ -269,16 +332,16 @@ int parseMemLog(const char* filepath, MemLog* log, IODevice* ioaccess)
         {
             if (itemtype == 1)
             {
-                resolveAlloc(log, valuePairs);
+                resolveAlloc(log, valuePairs, baseaddress, newbase);
             }
             else if (itemtype == 2)
             {
-                resolveFree(log, valuePairs);
+                resolveFree(log, valuePairs, baseaddress, newbase);
             }
-            else if (itemtype == 3)
-            {
-                resolveSymbols(valuePairs);
-            }
+//             else if (itemtype == 3)
+//             {
+//                 resolveSymbols(valuePairs);
+//             }
 
             valuePairs.clear();
 
@@ -298,18 +361,20 @@ int parseMemLog(const char* filepath, MemLog* log, IODevice* ioaccess)
 
     if (itemtype == 1)
     {
-        resolveAlloc(log, valuePairs);
+        resolveAlloc(log, valuePairs, baseaddress, newbase);
     }
     else if (itemtype == 2)
     {
-        resolveFree(log, valuePairs);
+        resolveFree(log, valuePairs, baseaddress, newbase);
     }
-    else if (itemtype == 3)
-    {
-        resolveSymbols(valuePairs);
-    }
+//     else if (itemtype == 3)
+//     {
+//         resolveSymbols(valuePairs);
+//     }
 
     log->popMemoryMarker();
+
+    SymCleanup(GetCurrentProcess());
 
     return ret;
     #undef MAX_STRBUF_SIZE

@@ -89,3 +89,16 @@ void Callstack::insertSymbol( uint64 address, const char* symbol )
         s_symbolMap[address] = symbol;
     }
 }
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+bool Callstack::findSymbol(uint64 address) {
+    SymbolMapType::const_iterator ci = s_symbolMap.find(address);
+    if (ci != s_symbolMap.end()) 
+    {
+        return true;
+    }
+    return false;
+}

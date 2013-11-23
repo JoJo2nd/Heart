@@ -46,6 +46,7 @@ struct Callstack
 
     static void     clearSymbolMap();
     static void     insertSymbol(uint64 address, const char* symbol);
+    static bool     findSymbol(uint64 address);
     static bool     addressSymbolLookup(uint64 address, std::string* outsymbol);
 
     uint            line_;

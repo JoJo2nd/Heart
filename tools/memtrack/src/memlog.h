@@ -46,6 +46,10 @@ public:
     ~MemLog() {}
 
     void clear();
+    void setBaseAddresses(uint64 oldbase, uint64 newbase) {
+        oldBaseAddress_=oldbase;
+        newBaseAddress_=newbase;
+    }
     void pushMemoryMarker(const char* name);
     void popMemoryMarker();
     void logMemoryAlloc(uint64 address, uint64 size, const char* heap, const Callstack& backtrace);
@@ -58,6 +62,8 @@ private:
 
     typedef std::list<MemLogMarker>     MarkerListType;
 
+    uint64          oldBaseAddress_;
+    uint64          newBaseAddress_;
     MarkerStackType rootList_;
     MarkerListType  markerList_;
     MarkerStackType markerStack_;

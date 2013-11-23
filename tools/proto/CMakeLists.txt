@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 find_package(Protobuf REQUIRED)
 
+ENABLE_PROFILE_IF_SET()
+
 if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings
     add_definitions(/wd"4267") # proto buffers spits out a lot of size_t to int conversion warnings
@@ -28,5 +30,5 @@ source_group(autogen FILES ${ProtoSources} ${ProtoHeaders})
 
 include_directories(${PROTO_INCLUDE_DIRS})
 add_library(proto ${PROTO_SRC_FILES} ${ProtoSources} ${ProtoHeaders})
-target_link_libraries(proto debug ${PROTOBUF_LIBRARY_DEBUG})
-target_link_libraries(proto optimized ${PROTOBUF_LIBRARY})
+target_link_libraries(proto debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS})
+target_link_libraries(proto optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})

@@ -48,7 +48,7 @@ endif()
 include_directories(${MEMTRACK_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_executable(mem_track WIN32 ${MEMTRACK_SRC_FILES} ${MEMTRACK_HDR_FILES} ${MEMTRACK_PRECOMPILED_SRC_FILES})
 set_property(TARGET mem_track PROPERTY DEBUG_POSTFIX _d)
-target_link_libraries(mem_track enet crypto proto ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(mem_track enet crypto proto dbghelp ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_CUSTOM_COMMAND(
 	TARGET mem_track
