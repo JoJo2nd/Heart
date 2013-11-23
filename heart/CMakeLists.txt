@@ -6,6 +6,8 @@ project(HEART)
 
 find_package(Protobuf REQUIRED)
 
+ENABLE_PROFILE_IF_SET()
+
 # set project directories
 set(heart_BINARY_DIR "${HEART_SOURCE_DIR}/../bin/heart")
 
@@ -234,4 +236,4 @@ set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPusli
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto enet ${PLATFORM_LIBS})
+target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto enet ${PLATFORM_LIBS} ${PROFILE_LIBS})

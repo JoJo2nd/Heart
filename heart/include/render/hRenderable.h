@@ -43,14 +43,12 @@ namespace Heart
         hRenderable() 
             : materialID_(0)
             , materialKey_(0)
-            , material_(hNullptr)
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
         }
         hRenderable(hRenderable&& rhs)
-            : material_(hNullptr)
-            , indexBuffer_(hNullptr)
+            : indexBuffer_(hNullptr)
         {
             swap(this, &rhs);
         }
@@ -64,6 +62,9 @@ namespace Heart
                     inputLayouts_[i]->Release();
                     inputLayouts_[i]=NULL;
                 }
+            }
+            if (materialHandle_.getIsValid()) {
+                materialHandle_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
             }
         }
 
@@ -87,18 +88,15 @@ namespace Heart
         }
         hUint                                   GetStartIndex() const { return startVertex_; }
         void                                    SetStartIndex(hUint startIdx) { startVertex_ = startIdx; }
-        hUint  									GetPrimativeCount() const { return primCount_; }
+        hUint                                   GetPrimativeCount() const { return primCount_; }
         void                                    SetPrimativeCount(hUint primCount) { primCount_ = primCount; }
         void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
         hResourceID                             GetMaterialResourceID() const { return materialID_; }
-        void                                    setMaterial(hMaterial* material);
-        hMaterial*                              GetMaterial() const { return material_; }
+        void                                    setMaterial(const hResourceHandle& material);
+        hMaterial*                              GetMaterial() const { return materialHandle_.weakPtr<hMaterial>(); }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
-        hAABB						            GetAABB() const { return aabb_; }
-        void									SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
-        void                                    bind() { 
-            //matInstance_->bindInputStreams(primType_, indexBuffer_, vertexBuffer_.GetBuffer(), vertexBuffer_.GetSize()); 
-        }
+        hAABB   GetAABB() const { return aabb_; }
+        void    SetAABB( const Heart::hAABB& aabb ) { aabb_ = aabb; }
         void initialiseRenderCommands(hRenderCommandGenerator* rcGen);
         hUint getRenderCommandOffset(hUint g, hUint t, hUint p) const {
             return cmdLookUp_.getCommand(g, t, p);
@@ -113,7 +111,7 @@ namespace Heart
             std::swap(lhs->materialKey_, rhs->materialKey_);
             std::swap(lhs->primCount_, rhs->primCount_);
             std::swap(lhs->startVertex_, rhs->startVertex_);
-            std::swap(lhs->material_, rhs->material_);
+            std::swap(lhs->materialHandle_, rhs->materialHandle_);
             std::swap(lhs->aabb_, rhs->aabb_);
             std::swap(lhs->primType_, lhs->primType_);
             std::swap(lhs->indexBuffer_, rhs->indexBuffer_);
@@ -122,11 +120,13 @@ namespace Heart
             lhs->inputLayouts_.swap(&rhs->inputLayouts_);
         }
 
+        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource);
+
         hResourceID                 materialID_;
         hUint32                     materialKey_;
         hUint                       primCount_;
         hUint                       startVertex_;
-        hMaterial*                  material_;
+        hResourceHandle             materialHandle_;
         hAABB                       aabb_;
         PrimitiveType               primType_;
         hIndexBuffer*               indexBuffer_;

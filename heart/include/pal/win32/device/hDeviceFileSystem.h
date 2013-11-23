@@ -46,6 +46,13 @@ namespace Heart
 		FILEERROR_FAILED	= -2,
 	};
 
+    enum hdMMapMode
+    {
+        MMapMode_ReadOnly,
+        MMapMode_Write,
+        MMapMode_None,
+    };
+
 	struct HEART_DLLEXPORT hdFileHandleInfo
 	{
 		const hChar*	path_;
@@ -68,6 +75,12 @@ namespace Heart
         OVERLAPPED			operation_;
         hUint64				filePos_;
         hUint32				opPending_;
+    };
+
+    struct hdMemoryMappedFile : public hLinkedListElement<hdMemoryMappedFile>
+    {
+        HANDLE  mmap_;
+        void*   basePtr_;
     };
 
     hFUNCTOR_TYPEDEF(hBool(*)(const hdFileHandleInfo*), hdEnumerateFilesCallback);
@@ -149,6 +162,9 @@ namespace Heart
 
     HEART_DLLEXPORT
     hdFileStat   HEART_API hdFstat(hdFileHandle* handle);
+
+    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSizeT offset, hSizeT size, hdMMapMode mode);
+    void                hdUnmap(hdMemoryMappedFile* mmapview);
 
     HEART_DLLEXPORT
     void        HEART_API hdCreateDirectory(const hChar* path);

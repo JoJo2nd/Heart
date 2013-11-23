@@ -63,7 +63,7 @@ namespace Heart
         }
         void PreRenderUpdate() 
         {
-            windowOffset_ += GetVisible() ? hClock::Delta()*4.f : -hClock::Delta()*4.f;
+            windowOffset_ += GetVisible() ? hClock::delta()*4.f : -hClock::delta()*4.f;
             windowOffset_ = hMax(windowOffset_, 0.f);
             windowOffset_ = hMin(windowOffset_, 1.f);
         }
@@ -135,7 +135,7 @@ namespace Heart
 
     const hResourceID               hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
     const hResourceID               hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
-    hMutex				            hSystemConsole::messagesMutex_;
+    hdMutex				            hSystemConsole::messagesMutex_;
     hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
     hUint32				            hSystemConsole::msgBufferLen_ = 0;
     hBool				            hSystemConsole::alive_ = hTrue;

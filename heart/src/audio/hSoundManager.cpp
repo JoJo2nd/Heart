@@ -43,7 +43,7 @@ namespace Heart
     void hSoundManager::Update()
     {
         HEART_PROFILE_FUNC();
-        for ( hSoundSource* i = soundSources_.GetHead(); i; i = i->GetNext() )
+        for ( hSoundSource* i = soundSources_.begin(); i!=soundSources_.end(); i = i->GetNext() )
         {
             i->Update();
         }
@@ -65,7 +65,7 @@ namespace Heart
     hSoundSource* hSoundManager::CreateSoundSource( hUint32 channel )
     {
         hSoundSource* sound = hNEW(hSoundSource);
-        soundSources_.PushBack( sound );
+        soundSources_.pushBack( sound );
 
         return sound;
     }
@@ -76,7 +76,7 @@ namespace Heart
 
     void hSoundManager::DestroySoundSource( hSoundSource* source )
     {
-        soundSources_.Remove( source );
+        soundSources_.remove( source );
         hDELETE(source);
     }
 

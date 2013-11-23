@@ -70,7 +70,8 @@ namespace Heart
             hUint16 size_;
         };
 
-        void                        SetRenderer(hRenderer* renderer) { renderer_ = renderer; }
+        void                        setRenderer(hRenderer* renderer) { renderer_ = renderer; }
+        void                        setResourceManager(hResourceManager* resourcemanager) { resourceManager_=resourcemanager; }
         void                        createDebugMaterials();
         void                        destroyRenderResources();
         hMaterial*                  getDebugFontMat() const { return debugFontMat_; }
@@ -140,8 +141,9 @@ namespace Heart
         void onWindowResize(hUint width, hUint height);
 
         hRenderer*              renderer_;
+        hResourceManager*       resourceManager_;
         lua_State*              mainLuaState_;
-        hMutex                  accessMutex_;
+        hdMutex                 accessMutex_;
         hUint32                 nMatKeys_;
         hUint32                 maxKeys_;
         hMaterialKeyContainer*  matKeys_;

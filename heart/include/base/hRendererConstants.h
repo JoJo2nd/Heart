@@ -770,6 +770,19 @@ namespace Heart
         eDebugShaderMax
     };
 
+#define hDebugShaderResourceID_VertexPosOnly     (Heart::hResourceManager::BuildResourceID("?builtin.vertex_pos_only"       ))
+#define hDebugShaderResourceID_PixelWhite        (Heart::hResourceManager::BuildResourceID("?builtin.pixel_white"           ))
+#define hDebugShaderResourceID_ConsoleVertex     (Heart::hResourceManager::BuildResourceID("?builtin.console_vertex"        ))
+#define hDebugShaderResourceID_ConsolePixel      (Heart::hResourceManager::BuildResourceID("?builtin.console_pixel"         ))
+#define hDebugShaderResourceID_FontVertex        (Heart::hResourceManager::BuildResourceID("?builtin.font_vertex"           ))
+#define hDebugShaderResourceID_FontPixel         (Heart::hResourceManager::BuildResourceID("?builtin.font_pixel"            ))
+#define hDebugShaderResourceID_VertexPosNormal   (Heart::hResourceManager::BuildResourceID("?builtin.vertex_pos_normal"     ))
+#define hDebugShaderResourceID_PixelWhiteViewLit (Heart::hResourceManager::BuildResourceID("?builtin.pixel_white_view_lit"  ))
+#define hDebugShaderResourceID_TexVertex         (Heart::hResourceManager::BuildResourceID("?builtin.texture_vertex"        ))
+#define hDebugShaderResourceID_TexPixel          (Heart::hResourceManager::BuildResourceID("?builtin.texture_pixel"         ))
+#define hDebugShaderResourceID_VertexPosCol      (Heart::hResourceManager::BuildResourceID("?builtin.vertex_pos_col"        ))
+#define hDebugShaderResourceID_PixelPosCol       (Heart::hResourceManager::BuildResourceID("?builtin.pixel_pos_col"         ))
+
     struct hBlendStateDesc
     {
         hBlendStateDesc()

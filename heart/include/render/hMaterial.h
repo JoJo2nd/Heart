@@ -151,14 +151,14 @@ namespace Heart
             : type(ePTNone)
             , count(0)
             , paramid(0)
-            , resourcePtr(hNullptr) 
+            //, resourcePtr(hNullptr) 
             , dataOffset(0)
         {}
         hParameterType      type;
         hUint               count;
         hShaderParameterID  paramid;
         hResourceID         resourceID;
-        hResourceClassBase* resourcePtr;
+        hResourceHandle     resourcePtr;
         hUint16             dataOffset;
     };
 
@@ -177,7 +177,7 @@ namespace Heart
         hMaterialGroup*         getGroupByName(const hChar* name);
         hUint                   getTotalTechniqueCount() const { return totalTechniqueCount_; }
         hUint                   getTotalPassCount() const { return totalPassCount_; }
-        hBool                   Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
+        hBool                   link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    addSamplerParameter(const hSamplerParameter& samp);
         void                    addDefaultParameterValue(const hChar* name, const hResourceID& resid);
@@ -197,11 +197,14 @@ namespace Heart
         hBool bindConstanstBuffer(hShaderParameterID id, hRenderBuffer* cb);
         hBool bindResource(hShaderParameterID id, hShaderResourceView* srv);
         hBool bindSampler(hShaderParameterID id, hSamplerState* samplerState);
-        hBool bindMaterial(hRenderMaterialManager* matManager);
+        hBool bind();
         void  unbind();
 
         /* Allow access to parameter blocks and updating of parameters */
         hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
+
+        void postLoad();
+        void preUnload();
 
     private:
 
@@ -222,6 +225,11 @@ namespace Heart
         void generateRenderCommands();
         void releaseRenderCommands();
         void updateRenderCommands();
+
+        void listenToResourceEvents();
+        void stopListeningToResourceEvents();
+        hBool linkDependeeResources(hResourceManager* resManager);
+        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
 
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;

@@ -70,20 +70,18 @@ namespace Heart
 #       define hHeapFreeSafe( h, p ) Heart::hGlobalMemoryFree( p ); p = NULL
 #   endif
 
-    #define hNEW(type)                    hPLACEMENT_NEW(hAlignMalloc(sizeof(type),hAlignOf(type))) type
-    #define hNEW_ALIGN(align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
-    #define hNEW_ARRAY(type, ele)         new type [ele]
+void* operator new (size_t size, const hChar* file, hSizeT line);
+void* operator new[] (size_t size, const hChar* file, hSizeT line);
+void operator delete (void* mem, const hChar*, hSizeT);
+void operator delete[] (void* mem, const hChar*, hSizeT);
+
+    #define hNEW(type)                    new(__FILE__, __LINE__) type
+    #define hNEW_ARRAY(type, ele)         new(__FILE__, __LINE__) type [ele]
     #define hDELETE(ptr)                  delete ptr
     #define hDELETE_ALIGNED(ptr)          delete ptr
     #define hDELETE_SAFE(ptr)             delete ptr; ptr = hNullptr
     #define hDELETE_ARRAY(ptr)            delete [] ptr
     #define hDELETE_ARRAY_SAFE(ptr)       delete [] ptr; ptr = hNullptr
-
-    // These are defined in hMemoryHeapBase.cpp
-    //void* operator new (size_t size);
-    //void* operator new[] (size_t size);
-    //void operator delete (void* mem);
-    //void operator delete[] (void* mem);
 
 #else//HEART_USE_DEFAULT_MEM
 
@@ -100,7 +98,6 @@ namespace Heart
 #   define hHeapFreeSafe( h, p ) hFreeSafe( p ); p = NULL
 
 #   define hNEW(type)                    new type
-#   define hNEW_ALIGN(align, type)       hPLACEMENT_NEW(hAlignMalloc(sizeof(type),align)) type
 #   define hNEW_ARRAY(type, ele)         new type [ele]
 #   define hDELETE(ptr)                  delete ptr
 #   define hDELETE_ALIGNED(ptr)          hFree(ptr)

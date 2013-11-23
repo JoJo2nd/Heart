@@ -44,16 +44,24 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    struct hLoadedResourcePackages : public hMapElement< hUint32, hLoadedResourcePackages >
-    {
-        hLoadedResourcePackages() 
-            : loading_(hFalse)
-            , package_(NULL)
-        {
-        }
+    typedef std::unordered_multimap< hResourceID, hResourceEventProc, hResourceID::hash > hResourceEventMap;
+    typedef std::unordered_map< hResourceID, hResourceClassBase*, hResourceID::hash > hResourceHandleMap;
 
-        hBool                         loading_;
-        hResourcePackage*             package_;
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    class hResourceEventUpdateProcess
+    {
+    public:
+        hResourceEventUpdateProcess();
+        ~hResourceEventUpdateProcess();
+
+        hBool update();
+        hBool isComplete() const;
+
+    private:
+        HEART_PRIVATE_COPY(hResourceEventUpdateProcess);
     };
 
     //////////////////////////////////////////////////////////////////////////
@@ -76,111 +84,53 @@ namespace Heart
         hResourceManager();
         ~hResourceManager();
 
-        hBool                           Initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, const char** requiredResources);
-        hBool                           RequiredResourcesReady();
+        hBool                           initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, hJobManager* jobmanager, const char** requiredResources);
         void                            registerResourceHandler(const hChar* resourcetypename, hResourceHandler handler);
-        void                            MainThreadUpdate();
-        static hResourceID              BuildResourceID(const hChar* fullPath){
-            if (!fullPath)
-                return hResourceID();
-
-            const hChar* resName = hStrChr(fullPath, '.');
-            if (!resName)
-                return hResourceID();
-
-            hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
-            hUint32 resCRC = hCRC32::StringCRC(resName+1);
-
-            return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
-        }
-        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName){
-            if (!package || !resourceName)
-                return hResourceID();
-
-            hUint32 pakCRC = hCRC32::StringCRC(package);
-            hUint32 resCRC = hCRC32::StringCRC(resourceName);
-
-            return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
-        }
-        void                            Shutdown( hRenderer* prenderer );
-        hRenderMaterialManager*         GetMaterialManager() { return materialManager_; }
-        hRenderer*                      GetRederer() { return renderer_; }
-        void                            printResourceInfo() { printInfo_.Signal(); loaderSemaphone_.Post(); }
+        void                            registerResourceEventHandler(hResourceID resid, hResourceEventProc proc);
+        void                            unregisterResourceEventHandler(hResourceID resid, hResourceEventProc proc);
+        void                            submitResourceEvent(hResourceEventUpdateProcess& updater);
+        void                            update();
+        static hResourceID              BuildResourceID(const hChar* fullPath){ return hResourceID::buildResourceID(fullPath); }
+        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName) { return hResourceID::buildResourceID(package, resourceName); }
+        void                            shutdown( hRenderer* prenderer );
+        void                            printResourceInfo();
 
         //Main Thread interface
-        hResourceClassBase*             mtGetResource(const hChar* path);
-        hResourceClassBase*             mtGetResource(hResourceID crc);
-
-        //Loader thread interface   
-        void                            ltLoadPackage(const hChar* name);
-        void                            ltUnloadPackage(const hChar* name);
-        hBool                           ltIsPackageLoaded(const hChar* name);
-        hResourceClassBase*             ltGetResource(hResourceID crc);
+        void                            insertResource(const hChar* name, hResourceClassBase* res) {
+            insertResource(hResourceManager::BuildResourceID(name), res);
+        }
+        void                            insertResource(hResourceID id, hResourceClassBase* res);
+        hUint                           removeResource(const hChar* name) {
+            return removeResource(hResourceManager::BuildResourceID(name));
+        }
+        hUint                           removeResource(hResourceID id);
 
         // New interface
-        void                            mtLoadPackage(const hChar* name);
-        void                            mtUnloadPackage(const hChar* name);
-        hBool                           mtIsPackageLoaded(const hChar* name);
+        void                            loadPackage(const hChar* name);
+        void                            unloadPackage(const hChar* name);
+        hBool                           getIsPackageLoaded(const hChar* name);
 
     private:
 
-        static const hUint32 QUEUE_MAX_SIZE = 64;
+        friend hResourceClassBase* hResourceHandle::acquire();
+        friend hResourceClassBase* hResourceHandle::weakPtr() const;
+        friend void hResourceHandle::release();
 
         struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
         {
             hStreamingResourceBase*     stream_;
         };
 
-        struct ResourcePackageQueueMsg
-        {
-            hUint32                   packageCRC_;
-            hResourcePackage*         package_;
-        };
+        typedef hMap< hUint32, StreamingResouce >                       StreamingResourceMap;
+        typedef hMap< hUint32, hResourcePackage >                       ResourcePackageMap;
 
-        struct ResourcePackageLoadMsg
-        {
-            hChar					    path_[HEART_RESOURCE_PATH_SIZE];
-        };
-
-        typedef hMap< hUint32, StreamingResouce >                   StreamingResourceMap;
-        typedef hMap< hUint32, hResourcePackage >                 ResourcePackageMap;
-        typedef hMap< hUint32, hLoadedResourcePackages >            LoadedResourcePackageMap;
-        typedef hQueue< ResourcePackageLoadMsg, QUEUE_MAX_SIZE >    ResourceLoadRequestQueue;
-        typedef hQueue< ResourcePackageQueueMsg, QUEUE_MAX_SIZE >   ResourceMsgQueue;
-
-        hUint32                         LoadedThreadFunc( void* );
-        void                            loaderThreadPrintResourceInfo();
-        static void*                    resourceThreadID_;
-
-        hBool                           requireAssetsReady_;
-        hThreadEvent                    printInfo_;
+        hResourceClassBase* getResourceForHandle(hResourceID crc);
 
         //NEW
         hRenderer*                      renderer_;
         hRenderMaterialManager*         materialManager_;
         hIFileSystem*                   filesystem_;
-
-        //
-        hThread                         resourceLoaderThread_;
-        hSemaphore                      loaderSemaphone_;
-        hThreadEvent                    exitSignal_;
-        hAtomicInt                      resourceSweepCount_;
-
-        //Loader Thread var
-        ResourceLoadRequestQueue        ltLoadRequests_;
-        ResourceMsgQueue                ltUnloadRequest_;
-        ResourcePackageMap              ltLoadedPackages_;
-
-        //Intermediate-ish Vars
-        hMutex                          ltAccessMutex_;
-        ResourceMsgQueue                ltPackageLoadCompleteQueue_;
-        
-        //Main Thread vars
-        LoadedResourcePackageMap        mtLoadedPackages_;
-        ResourceLoadRequestQueue        mtLoadRequests_;
-        ResourceMsgQueue                mtUnloadRequest_;
-
-        
+        hJobManager*                    jobManager_;
 
         //New vars
         hXMLDocument                    gamedataDescXML_;
@@ -188,6 +138,14 @@ namespace Heart
 
         //main thread loaded packages
         hHeartEngine*                    engine_;
+
+        hJobQueue fileReadJobQueue_;
+        hJobQueue workerQueue_;
+
+        ResourcePackageMap  activePackages_;
+
+        hResourceHandleMap  resourceHandleMap_;
+        hResourceEventMap   resourceEventMap_;
     };
 
 }

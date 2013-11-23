@@ -41,7 +41,7 @@ typedef void* mspace;
 // #   undef HEART_TRACK_MEMORY_ALLOCS
 // #endif
 
-#define HEART_MEMORY_HEAP_CLASS private: hMutex			lock_;
+#define HEART_MEMORY_HEAP_CLASS private: hdMutex			lock_;
 
 #if defined (HEART_DEBUG)
 #   define hMH_THREAD_CHECK()	{ hcAssert( (lastThreadID_ == NULL || lastThreadID_ == Heart::Device::GetCurrentThreadID()) ); lastThreadID_ = Heart::Device::GetCurrentThreadID(); }

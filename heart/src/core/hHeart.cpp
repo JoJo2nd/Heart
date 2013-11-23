@@ -90,7 +90,13 @@ namespace Heart
         jobManager_ = hNEW(hJobManager);
         controllerManager_ = hNEW(hControllerManager);
         system_ = hNEW(hSystem);
-        fileMananger_ = hNEW(hDriveFileSystem)();
+        hZipFileSystem* zipPak=hNEW(hZipFileSystem)("cd:/data.jaaf");
+        if (zipPak->IsOpen()) {
+            fileMananger_=zipPak;
+        } else {
+            fileMananger_ = hNEW(hDriveFileSystem)();
+            hDELETE(zipPak);
+        }
         resourceMananger_ = hNEW(hResourceManager);
         renderer_ = hNEW(hRenderer);
         soundManager_ = hNEW(hSoundManager);
@@ -122,9 +128,9 @@ namespace Heart
         debugServer_->initialise(configFile_.getOptionInt("debug.server.port", 8335));
         mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
-        jobManager_->Initialise();
+        jobManager_->initialise();
         controllerManager_->Initialise(system_);
-        hClock::Initialise();
+        hClock::initialise();
         config_.Width_ = system_->getWindowWidth();
         config_.Height_ = system_->getWindowHeight();
         renderer_->Create( 
@@ -137,7 +143,7 @@ namespace Heart
             config_.vsync_,
             resourceMananger_
             );
-        resourceMananger_->Initialise( this, renderer_, fileMananger_, NULL );
+        resourceMananger_->initialise( this, renderer_, fileMananger_, jobManager_, NULL );
         soundManager_->Initialise();
         luaVM_->Initialise();
         entityFactory_->initialise( fileMananger_, resourceMananger_, this );
@@ -157,10 +163,15 @@ namespace Heart
         hIFile* startupscript = fileMananger_->OpenFile("script:/startup.lua", FILEMODE_READ);
         if (startupscript)
         {
-            hChar* script = (hChar*)hAlloca((hSizeT)startupscript->Length()+1);
-            startupscript->Read(script, (hUint)startupscript->Length());
-            script[startupscript->Length()] = 0;
-            if (luaL_dostring(luaVM_->GetMainState(), script) != 0) {
+            hChar* script=hNullptr;
+            if (startupscript->getIsMemMapped()) {
+                script=(hChar*)startupscript->getMemoryMappedBase();
+            } else {
+                script = (hChar*)hAlloca((hSizeT)startupscript->Length()+1);
+                startupscript->Read(script, (hUint)startupscript->Length());
+            }
+            luaL_loadbuffer(luaVM_->GetMainState(), script, startupscript->Length(), "script:/startup.lua");
+            if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
                 hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
                 lua_pop(luaVM_->GetMainState(), 1);
             }
@@ -214,11 +225,11 @@ namespace Heart
         {
             HEART_PROFILE_SCOPE("MainUpdate");
 
-            hClock::BeginTimer(frameTimer);
-            hClock::Update();
+            frameTimer.reset();
+            hClock::update();
             GetSystem()->Update();
             debugServer_->service();
-            GetResourceManager()->MainThreadUpdate();
+            GetResourceManager()->update();
             GetControllerManager()->Update();
             GetConsole()->update();
             if (GetSystem()->ExitSignaled()) {
@@ -261,11 +272,10 @@ namespace Heart
             GetRenderer()->EndRenderFrame();
             
             GetControllerManager()->EndOfFrameUpdate();
-            hClock::EndTimer(frameTimer);
         }
 
 #ifdef HEART_DO_PROFILE
-        g_ProfilerManager_->SetFrameTime(frameTimer.ElapsedmS()/1000.f);
+        g_ProfilerManager_->SetFrameTime(frameTimer.elapsedMicroSec()/1000.f);
 #endif
         debugMenuManager_->EndFrameUpdate();
     }
@@ -274,14 +284,14 @@ namespace Heart
     {
         hMemTracking::TrackPopMarker();
 
-        jobManager_->Destory();
         debugMenuManager_->Destroy();
         console_->destroy();
         soundManager_->Destory(); 
-        resourceMananger_->Shutdown( renderer_ );
+        resourceMananger_->shutdown( renderer_ );
         luaVM_->Destroy();
         renderer_->Destroy();
         debugServer_->destroy();
+        jobManager_->shutdown();
 
         //hDELETE_SAFE(GetGlobalHeap(), debugInfo_);
         hDELETE_SAFE(g_ProfilerManager_);
@@ -310,21 +320,22 @@ namespace Heart
 
     void hHeartEngine::DoEngineTick()
     {
+        static int framecount=0;
+        if (framecount==1)
+        {
+            heart_thread_prof_begin("profile_frame.prof");
+        }
         switch(engineState_)
         {
         case hHeartState_LoadingCore:
             {
                 DoUpdate();
-
-                if (GetResourceManager()->RequiredResourcesReady())
+                PostCoreResourceLoad();
+                if (coreAssetsLoaded_)
                 {
-                    PostCoreResourceLoad();
-                    if (coreAssetsLoaded_)
-                    {
-                        (*coreAssetsLoaded_)(this);
-                    }
-                    engineState_ = hHeartState_Running;
+                    (*coreAssetsLoaded_)(this);
                 }
+                engineState_ = hHeartState_Running;
             }
             break;
         case hHeartState_Running: 
@@ -341,6 +352,11 @@ namespace Heart
             hcAssertFailMsg("Engine in unknown state!");
             break;
         }
+        if (framecount==1)
+        {
+            heart_thread_prof_end(0);
+        }
+        framecount=0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -436,6 +452,8 @@ namespace Heart
 
 HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
+    Heart::hSysCall::hInitSystemDebugLibs();
+    heart_thread_prof_begin("profile_startup.prof");
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
     deviceConfig.hWnd_ = hWnd;
@@ -455,6 +473,7 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCall
         (*engine->firstLoaded_)(engine);
     }
 
+    heart_thread_prof_end(0);
     return engine;
 }
 

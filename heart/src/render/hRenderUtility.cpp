@@ -431,7 +431,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         
@@ -482,10 +482,10 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(rndr->getDebugShader(eDebugFontVertex));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugFontPixel));
+        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_FontVertex));
+        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_FontPixel));
 
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bind();
 
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_POINT;
@@ -501,6 +501,9 @@ namespace hRenderUtility
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         ss->DecRef();
 
+        ddrawmat->postLoad();
+        resmana->insertResource("?builtin.debug_font_material", ddrawmat);
+
         return ddrawmat;
     }
 
@@ -509,7 +512,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -569,13 +572,16 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
+        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_TexVertex));
+        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_TexPixel));
 
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bind();
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         ss->DecRef();
+
+        ddrawmat->postLoad();
+        resmana->insertResource("?builtin.debug_pos_col_uv_material", ddrawmat);
 
         return ddrawmat;
     }
@@ -585,7 +591,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -635,10 +641,12 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosCol));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelPosCol));
+        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_VertexPosCol));
+        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_PixelPosCol));
 
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bind();
+        ddrawmat->postLoad();
+        resmana->insertResource("?builtin.debug_pos_col_material", ddrawmat);
 
         return ddrawmat;
     }
@@ -648,7 +656,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -708,13 +716,15 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(rndr->getDebugShader(eDebugTexVertex));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugTexPixel));
+        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_TexVertex));
+        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_TexPixel));
 
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        ddrawmat->bind();
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
         ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         ss->DecRef();
+        ddrawmat->postLoad();
+        resmana->insertResource("?builtin.debug_pos_col_uv_alpha_material", ddrawmat);
 
         return ddrawmat;
     }
@@ -724,7 +734,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -774,9 +784,11 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(rndr->getDebugShader(eDebugVertexPosCol));
-        pass->SetFragmentShader(rndr->getDebugShader(eDebugPixelPosCol));
-        ddrawmat->bindMaterial(rndr->GetMaterialManager());
+        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_VertexPosCol));
+        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_PixelPosCol));
+        ddrawmat->bind();
+        ddrawmat->postLoad();
+        resmana->insertResource("?builtin.debug_pos_col_alpha_material", ddrawmat);
 
         return ddrawmat;
     }
@@ -786,7 +798,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex) {
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* outfont, hTexture** outtex) {
         hcAssert(rndr && outfont && outtex);
 
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
@@ -806,6 +818,9 @@ namespace hRenderUtility
         };
         rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, outtex);
 
+        resmana->insertResource("?builtin.debug_font_surface", *outtex);
+        resmana->insertResource("?builtin.debug_font", outfont);
+
         return outfont;
     }
 
@@ -814,8 +829,14 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
+    void HEART_API destroyDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
+        hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
+        resmana->removeResource("?builtin.debug_font");
+        hDELETE(fontres);
+
+        hTexture* texres=hResourceHandle("?builtin.debug_font_surface").weakPtr<hTexture>();
+        resmana->removeResource("?builtin.debug_font_surface");
         tex->DecRef();
     }
 

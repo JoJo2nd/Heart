@@ -38,10 +38,12 @@ namespace Heart
 
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
-        hUint32     		Seek( hUint64 offset, hdSeekOffset from );
+        hUint32     		Seek( hInt64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
         hTime               GetTimestamp();
+        hBool               getIsMemMapped() const { return hFalse; }
+        void*               getMemoryMappedBase() const { return hNullptr; }
 
 	private:
 

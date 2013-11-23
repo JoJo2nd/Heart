@@ -84,19 +84,6 @@ namespace Heart
         hByte*  bytes_;
     };
 
-    //typedef hUint64 hResourceID;
-    struct hResourceID
-    {
-        hUint64 hash_;
-
-        hResourceID() : hash_(0) {}
-        explicit hResourceID(hUint64 v) : hash_(v) {}
-        hResourceID(const hResourceID& rhs) : hash_(rhs.hash_) {}
-        hBool operator == (const hResourceID& rhs) const { return hash_ == rhs.hash_; }
-        hBool operator != (const hResourceID& rhs) const { return hash_ != rhs.hash_; }
-        hResourceID& operator = (const hResourceID& rhs) { hash_ = rhs.hash_; return *this; }
-        operator hUint64() { return hash_; }
-    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -137,24 +124,18 @@ namespace Heart
                            , public hIReferenceCounted
     {
     public:
-        hResourcePackage(hHeartEngine* engine, hIFileSystem* filesystem, const hResourceHandlerMap* handlerMap );
+        hResourcePackage(hHeartEngine* engine, hIFileSystem* filesystem, const hResourceHandlerMap* handlerMap, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
         ~hResourcePackage();
 
-        const hChar*            GetPackageName() const { return packageName_; }
-        hUint32                 GetPackageCRC() const { return packageCRC_; }
-        hResourceClassBase*     GetResource(hUint32 crc) const;
-
-        //Only call the following on the loader thread...
-        hUint32                 LoadPackageDescription(const hChar* );
-        void                    prepareReload() { doReload_ = hTrue; }
-        hUint32                 GetPackageDependancyCount() const;
-        const hChar*            GetPackageDependancy(hUint32 i) const;
-        hUint32                 GetLoadCompletionPercent() { return (loadedResources_*100) / totalResources_;  }
-        hBool                   Update(hResourceManager* manager);//Returns true when package whiches to loaded state
-        void                    Unload();
-        hBool                   IsInPassiveState() const { return packageState_ == State_Ready; }
+        const hChar*            getPackageName() const { return packageName_; }
+        hUint32                 getPackageCRC() const { return packageCRC_; }
+        hResourceClassBase*     getResource(hUint32 crc) const;
+        void                    beginLoad() { packageState_=State_Load_PkgDesc; }
+        hBool                   mainUpdate(hResourceManager* manager);
+        void                    beginUnload();
+        hBool                   isInReadyState() const { return packageState_ == State_Ready; }
         hBool                   isUnloading() const { return packageState_ > State_Ready; }
-        hBool                   ToUnload() const { return packageState_ == State_Unloaded; }
+        hBool                   unloaded() const { return packageState_ == State_Unloaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
         hUint                   getLinkCount() const { return links_.GetSize(); }
@@ -164,43 +145,59 @@ namespace Heart
 
         static const hUint32    MAX_PACKAGE_NAME = 128;
 
+        struct hResourceLoadJobInputOutput
+        {
+            hXMLGetter  resourceDesc_;
+            hResourceClassBase* createdResource_;
+            hUint32 crc;
+        };
+
         typedef hVector< const hChar* > PkgLinkArray;
+        typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
         typedef hMap< hUint32, hResourceClassBase > ResourceMap;
 
-        void                        LoadResourcesState();
-        hBool                       DoPostLoadLink();
-        void                        DoPreUnloadUnlink();
-        void                        DoUnload();
+        // Jobs
+        void                        loadPackageDescription(void*, void*);
+        void                        loadResource(void* in, void* out);
+        void                        unloadResource(void* in, void* out);
+        hBool                       doPostLoadLink(hResourceManager* manager);
+        void                        doPreUnloadUnlink(hResourceManager* manager);
+
         enum State
         {
+            State_Load_PkgDesc,
+            State_Load_WaitPkgDesc,
             State_Load_DepPkgs,
             State_Load_WaitDeps,
-            State_Load_Reources,
+            State_Kick_ResourceLoads,
+            State_Wait_ReourcesLoads,
             State_Link_Resources,
             State_Ready,
             State_Unlink_Resoruces,
             State_Unload_Resources,
+            State_Wait_Unload_Resources,
             State_Unload_DepPkg,
             State_Unloaded,
         };
 
         hChar                       packageName_[MAX_PACKAGE_NAME];
         hUint32                     packageCRC_;
-        hBool                       doReload_;
         State                       packageState_;
-        hHeartEngine*                engine_;
+        hHeartEngine*               engine_;
         const hResourceHandlerMap*  handlerMap_;
         hMemoryHeapBase*            packageHeap_;
         hMemoryHeap                 tempHeap_;
         hZipFileSystem*             zipPackage_;
-        hIFileSystem*               driveFileSystem_;
         hIFileSystem*               fileSystem_;
-        hUint32                     loadedResources_;
         hUint32                     totalResources_;
+        hIFile*                     pkgDescFile_;
         hXMLDocument                descXML_;
         PkgLinkArray                links_;
-        hXMLGetter                  currentResource_;
         ResourceMap                 resourceMap_;
+        ResourceJobArray            resourceJobArray_;
+        hTimer                      timer_;
+        hJobQueue*                  fileQueue_;
+        hJobQueue*                  workerQueue_;
     };
 
 }

@@ -36,8 +36,9 @@ namespace Heart
     {
         hBool succ=false;
         for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
-            if (programs_[i]) {
-                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+            hShaderProgram* prog=programs_[i].weakPtr<hShaderProgram>();
+            if (prog) {
+                hUint32 idx = prog->GetInputRegister(paramID);
                 if (idx > HEART_MAX_RESOURCE_INPUTS) {
                     continue;
                 }
@@ -63,8 +64,9 @@ namespace Heart
     {
         hBool succ=false;
         for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
-            if (programs_[i]) {
-                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+            hShaderProgram* prog=programs_[i].weakPtr<hShaderProgram>();
+            if (prog) {
+                hUint32 idx = prog->GetInputRegister(paramID);
                 if (idx > HEART_MAX_RESOURCE_INPUTS) {
                     continue;
                 }
@@ -90,8 +92,9 @@ namespace Heart
     {
         hBool succ=false;
         for (hUint i=0, n=s_maxPrograms; i<n; ++i) {
-            if (programs_[i]) {
-                hUint32 idx = programs_[i]->GetInputRegister(paramID);
+            hShaderProgram* prog=programs_[i].weakPtr<hShaderProgram>();
+            if (prog) {
+                hUint32 idx = prog->GetInputRegister(paramID);
                 if (idx > HEART_MAX_RESOURCE_INPUTS) {
                     continue;
                 }

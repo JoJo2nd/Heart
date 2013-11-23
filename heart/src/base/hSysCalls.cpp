@@ -79,10 +79,16 @@ namespace hSysCall
     {
         hdGetCurrentWorkingDir(out, bufsize);
     }
+
 }
 
 namespace hMemTracking
 {
+    struct hMemTrackingHeader
+    {
+        hUint64   baseAddress_;
+        char      moduleName_[512];
+    };
 
 namespace
 {
@@ -94,81 +100,32 @@ namespace
     static hUintptr_t               g_symbols[g_maxSymbols];
 }
 
-void FlushSymbolsToLogFile();
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
-    int SymCmp(const void* a, const void* b)
-    {
-        if ( *(hUintptr_t*)a >  *(hUintptr_t*)b ) return 1;
-        //if ( *(hUint32*)a == *(hUint32*)b ) return 0;
-        if ( *(hUintptr_t*)a <  *(hUintptr_t*)b ) return -1;
-        return 0;
-    }
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-    static void AddSymbolToLogFile(void* symadd)
-    {
-        if (bsearch(&symadd, g_symbols, g_symbolsCount, sizeof(hUintptr_t), SymCmp) != NULL) return;
-
-        g_symbols[g_symbolsCount++] = (hUintptr_t)symadd;
-
-        qsort(g_symbols, g_symbolsCount, sizeof(hUintptr_t), SymCmp);
-
-        if (g_symbolsCount >= g_maxSymbols)
-        {
-            FlushSymbolsToLogFile();
-            g_symbolsCount = 0;
-        }
-    }
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-    static void FlushSymbolsToLogFile()
-    {
-        static HANDLE   process = 0;
-        SYMBOL_INFO*    symbol;
-        DWORD           dwDisplacement;
-        IMAGEHLP_LINE64 line;
-
-        if (!process) {
-            process = GetCurrentProcess();
-
-            if (!SymInitialize( process, NULL, TRUE )) {
-                hcPrintf("SymInitialize Failed: GetLastError()=%u", GetLastError());
-            }
+namespace hSysCall
+{
+namespace
+{
+    static hBool                    g_doneInit=hFalse;
+}
+    void hInitSystemDebugLibs() {
+        if (!g_doneInit) {
+            hcAssert(g_doneInit==hFalse);
+#ifdef HEART_PLAT_WINDOWS
+            SymInitialize(GetCurrentProcess(), NULL, TRUE);
             SymSetOptions(SYMOPT_LOAD_LINES|SYMOPT_INCLUDE_32BIT_MODULES|SYMOPT_LOAD_ANYTHING);
-        }
-
-        if (!g_symbolsCount) return;
-
-        symbol               = ( SYMBOL_INFO * )hAlloca(sizeof( SYMBOL_INFO ) + 256 * sizeof( char ));
-        symbol->MaxNameLen   = 255;
-        symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
-
-        line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-
-        fprintf(g_file, "!! SYMBOLTABLE\n");
-        for (hUint32 i = 0; i < g_symbolsCount; ++i)
-        {
-            DWORD errorcode=0;
-            if (!SymFromAddr(process, (DWORD64)(g_symbols[i]), 0, symbol)) {
-                errorcode=GetLastError();
-            }
-            if (SymGetLineFromAddr64(process, (DWORD64)(g_symbols[i]), &dwDisplacement, &line)) {
-                fprintf(g_file, "st(%LLX,%s[%u])\n", g_symbols[i], symbol->Name, line.LineNumber);
-            } else {
-                fprintf(g_file, "st(%LLX,%s[GetLastError(1)=%u::GetLastError(2)=%u])\n", g_symbols[i], "[ERROR: Failed to read symbol address]", errorcode, GetLastError());
-            }
+#endif
+            g_doneInit=hFalse;
         }
     }
+}
+
+namespace hMemTracking
+{
+
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -176,16 +133,14 @@ void FlushSymbolsToLogFile();
 
     static void memTrackExitHandle()
     {
-        EnterCriticalSection(&g_access);
-        FlushSymbolsToLogFile();
-        LeaveCriticalSection(&g_access);
+
     }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-    static void StackTraceToFile(FILE* f)
+    static hForceInline void StackTraceToFile(FILE* f)
     {
         static const hUint32 callstackLimit = 256;
         unsigned int   i;
@@ -196,8 +151,7 @@ void FlushSymbolsToLogFile();
         hcAssert(frames > 0 && frames < 256);
         for( i = 0; i < frames && i < 256; i++ )
         {
-            AddSymbolToLogFile(stack[i]);
-            fprintf(g_file, "bt(%u,%LLX)\n", frames - i - 1, stack[i]);
+            fprintf(g_file, "bt(%u,%p)\n", frames - i - 1, stack[i]);
         }
     }
 
@@ -210,11 +164,17 @@ void FlushSymbolsToLogFile();
     {
 #ifdef HEART_TRACK_MEMORY_ALLOCS
         InitializeCriticalSection(&g_access);
+        hSysCall::hInitSystemDebugLibs();
         if (g_file == NULL)
         {
             if (g_file = fopen("mem_track.txt", "w"))
             {
                 g_open = hTrue;
+                hMemTrackingHeader header;
+                header.baseAddress_=SymGetModuleBase64(GetCurrentProcess(), (DWORD64)&InitMemTracking);
+                GetModuleFileName(0, header.moduleName_, (hUint)hArraySize(header.moduleName_));
+                fwrite(&header, sizeof(hMemTrackingHeader), 1, g_file);
+                fwrite("\n", 1, 1, g_file);
                 atexit(memTrackExitHandle);
                 //TrackPushMarker("ROOT");
             }

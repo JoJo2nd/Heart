@@ -101,7 +101,7 @@ namespace Heart
             GetProfiler()->ExitScope( entry_, (hUint32)cycles_ );
 #else
 			hClock::EndTimer( timer_ );
-            GetProfiler()->ExitScope( entry_, timer_.ElapsedmS() );
+            GetProfiler()->ExitScope( entry_, timer_.elapsedMicroSec() );
 #endif
 #endif // HEART_PROFILE_QUICK_OFF
 		}

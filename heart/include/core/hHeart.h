@@ -101,7 +101,7 @@ namespace Heart
 
     private:
 
-        hMutex            lock_;
+        hdMutex            lock_;
         std::vector<_ty*> objectList_;
     };
 
@@ -143,7 +143,7 @@ namespace Heart
         hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig);
         ~hHeartEngine();
 
-        hDriveFileSystem*   GetFileManager()        { return fileMananger_; }
+        hIFileSystem*       GetFileManager()        { return fileMananger_; }
         hSystem*            GetSystem()             { return system_; }
         hRenderer*          GetRenderer()           { return renderer_; }
         hResourceManager*   GetResourceManager()    { return resourceMananger_; }
@@ -169,7 +169,7 @@ namespace Heart
         static const hFloat  HEART_VERSION; 
         static const hUint32 HEART_VERSION_MAJOR = 0;
         static const hUint32 HEART_VERSION_MINOR = 4;
-        static hdThreadEvent exitSignal_;
+        static hdW32ThreadEvent exitSignal_;
 
         static void                     ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message);
 
@@ -183,7 +183,7 @@ namespace Heart
         hArray< hChar, 1024 >           workingDir_;
         hArray< hChar, 1024 >           processDir_;
         
-        hDriveFileSystem*               fileMananger_;
+        hIFileSystem*                   fileMananger_;
         hResourceManager*               resourceMananger_;
         hSystem*                        system_;
         hRenderer*                      renderer_;

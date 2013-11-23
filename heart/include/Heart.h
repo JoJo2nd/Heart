@@ -53,9 +53,22 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <set>
 #include <math.h>
 #include <float.h>
+
+#ifdef USING_LIB_PROF
+#   include "libprof.h"
+#   define heart_thread_prof_begin(filename)        lpf_begin_thread_profile(filename)
+#   define heart_thread_prof_end(discard)           lpf_end_thread_profile(discard)
+#   define heart_thread_prof_is_running()           lpf_is_thread_profiling()
+#else
+#   define heart_thread_prof_begin(filename)
+#   define heart_thread_prof_end(discard)
+#   define heart_thread_prof_is_running()
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // zlib includes /////////////////////////////////////////////////////////
@@ -138,7 +151,6 @@ extern "C"
 // Threading /////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 #include "threading/hLocklessComPipe.h"
-#include "threading/hJobManager.h"
 #include "threading/hMutexAutoScope.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,6 +164,7 @@ extern "C"
 #include "core/hMemoryHeap.h"
 #include "core/hStackMemoryHeap.h"
 #include "core/hTypePoolMemoryHeap.h"
+#include "threading/hJobManager.h"
 #include "core/hDeferredReturn.h"
 #include "utils/hRapidXML.h"
 #include "core/hConfigOptions.h"

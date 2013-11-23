@@ -35,22 +35,29 @@ namespace Heart
 	public:
 
         hDriveFile()
+            : mmap_(hNullptr)
         {}
         ~hDriveFile()
         {}
 
         hUint32				Read( void* pBuffer, hUint32 size );
         hUint32				Write( const void* pBuffer, hUint32 size );
-        hUint32     		Seek( hUint64 offset, hdSeekOffset from );
+        hUint32     		Seek( hInt64 offset, hdSeekOffset from );
 		hUint64				Tell();
 		hUint64				Length();
         hTime               GetTimestamp();
+        hBool               getIsMemMapped() const;
+        void*               getMemoryMappedBase() const;
 
 	private:
 
 		friend class		hDriveFileSystem;
 
-		hdFileHandle    fileHandle_;
+		hdFileHandle        fileHandle_;
+        hdFileStat          stat_;
+        hdMemoryMappedFile* mmap_;
+        hUint64             mmapPos_;
+        hUint64             size_;
 	};
 }
 

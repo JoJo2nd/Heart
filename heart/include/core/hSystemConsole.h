@@ -209,7 +209,7 @@ namespace Heart
         hLuaStateManager*   vm_;
 
         //console print mutex
-        static hMutex           messagesMutex_;
+        static hdMutex           messagesMutex_;
         static hConsoleLogType  messageBuffer_;  
         static hUint32          msgBufferLen_;
         static hBool            alive_;

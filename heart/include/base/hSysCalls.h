@@ -37,6 +37,9 @@ namespace hSysCall
 
     HEART_DLLEXPORT
     void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize);
+
+    HEART_DLLEXPORT
+    void HEART_API hInitSystemDebugLibs();
 }
 
 namespace hMemTracking

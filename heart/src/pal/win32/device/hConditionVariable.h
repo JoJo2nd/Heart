@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	DeviceSemaphore.h	
+    filename:   hConditionVariable.h  
     
-    Copyright (c) 20:3:2011 James Moran
+    Copyright (c) 19:10:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,38 +24,39 @@
     distribution.
 
 *********************************************************************/
+#pragma once
 
-#ifndef DEVICESEMAPHORE_H__
-#define DEVICESEMAPHORE_H__
+#ifndef HCONDITIONVARIABLE_H__
+#define HCONDITIONVARIABLE_H__
 
 namespace Heart
 {
-    class HEART_DLLEXPORT hSemaphore
+    class hdW32ConditionVariable
     {
     public:
-        
-        bool Create( hUint32 initCount, hUint32 maxCount ) {
-            hSema_ = CreateSemaphore( NULL, initCount, maxCount, NULL );
-            return hSema_ != INVALID_HANDLE_VALUE;
+        hdW32ConditionVariable() {
+            InitializeConditionVariable(&var_);
         }
-        void Wait() {
-            WaitForSingleObject(hSema_, INFINITE);
-        }
-        hBool poll() {
-            DWORD ret=WaitForSingleObject(hSema_, 0);
-            return ret == WAIT_OBJECT_0 ? hTrue : hFalse;
-        }
-        void Post() {
-            ReleaseSemaphore( hSema_, 1, NULL );
-        }
-        void Destroy() {
-            CloseHandle( hSema_ );
-        }
+        ~hdW32ConditionVariable() {
 
+        }
+        void wait(hdW32Mutex* mtx) {
+            SleepConditionVariableCS(&var_, &mtx->mutex_, INFINITE);
+        }
+        /* Wake a single thread waiting on CV */
+        void signal() {
+            WakeConditionVariable(&var_);
+        }
+        /* Wake ALL threads waiting on CV */
+        void broadcast() {
+            WakeAllConditionVariable(&var_);
+        }
     private:
+        hdW32ConditionVariable(const hdW32ConditionVariable&);
+        hdW32ConditionVariable& operator = (const hdW32ConditionVariable&);
 
-        HANDLE hSema_;
+        CONDITION_VARIABLE var_;
     };
 }
 
-#endif // DEVICESEMAPHORE_H__
+#endif // HCONDITIONVARIABLE_H__

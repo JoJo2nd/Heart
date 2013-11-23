@@ -38,21 +38,17 @@ namespace Heart
         HEART_MEMORY_HEAP_CLASS;
     public:
 
-        hTypePoolMemoryHeap(hMemoryHeapBase* base) 
+        hTypePoolMemoryHeap() 
             : hMemoryHeapBase("TypePoolHeap")
-            , baseHeap_(base)
             , alloced_(0)
-            , poolBlocks_(base)
-            , freeList_(NULL)
         {
-            freeList_.SetAutoDelete(hFalse);
         }
 
         ~hTypePoolMemoryHeap()
         {
-
+            destroy();
         }
-        void                        create(hUint32 /*sizeInBytes*/, hBool /*threadLocal*/) 
+        void                        create(hSizeT /*sizeInBytes*/, hBool /*threadLocal*/) 
         {
         }
         void		                destroy() {
@@ -62,25 +58,25 @@ namespace Heart
                 releasePoolBlock(&poolBlocks_[i]);
             }
         }
-        void*		                alloc(hUint32 size, hUint32 alignment) {
+        void*		                alloc(hSizeT size, hSizeT alignment) {
             hcAssert(size==sizeof(t_ty));
             void* ptr=allocInternal();
             hMH_TRACK_ALLOC_UNKNOWN(ptr, s_typeSize, 0);
             return ptr;
         }
-        void*		                alloc(hUint32 size, hUint32 alignment, const hChar* file, hUint32 line) {
+        void*		                alloc(hSizeT size, hSizeT alignment, const hChar* file, hSizeT line) {
             hcAssert(size==sizeof(t_ty));
             void* ptr=allocInternal();
             hMH_TRACK_ALLOC(ptr, file, line, s_typeSize, 0);
             return ptr;
         }
-        void*		                realloc(void* ptr, hUint32 size) {
+        void*		                realloc(void* ptr, hSizeT alignment, hSizeT size) {
             hcAssert(ptr==NULL && size==sizeof(t_ty));
             void* block=allocInternal();
             hMH_TRACK_ALLOC_UNKNOWN(ptr, s_typeSize, 0);
             return block;
         }
-        void*		                realloc(void* ptr, hUint32 size, const hChar* file, hUint32 line) {
+        void*		                realloc(void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line) {
             hcAssert(ptr==NULL && size==sizeof(t_ty));
             void* block=allocInternal();
             hMH_TRACK_ALLOC(ptr, file, line, s_typeSize, 0);
@@ -90,7 +86,7 @@ namespace Heart
             if (!ptr) return;
             hcAssert(pointerBelongsToMe(ptr));
 
-            freeList_.PushBack((hFreeLink*)ptr);
+            freeList_.pushBack((hFreeLink*)ptr);
 
             for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
                 if (ptr >= poolBlocks_[i].mem_ && ptr < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
@@ -106,8 +102,10 @@ namespace Heart
         hMemoryHeapBase::HeapInfo	usage() {
             return hMemoryHeapBase::HeapInfo();
         }
-        hUint32                     totalAllocationCount() const { return alloced_; }
-        hBool		                pointerBelongsToMe(void* ptr) {
+        hSizeT totalAllocationCount() const { 
+            return alloced_;
+        }
+        hBool pointerBelongsToMe(void* ptr) {
             for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
                 if (ptr >= poolBlocks_[i].mem_ && ptr < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
                     return true;
@@ -140,11 +138,11 @@ namespace Heart
 
         void* allocInternal() {
             hMH_PRE_ACTION();
-            if (freeList_.GetSize() == 0) {
+            if (freeList_.getSize() == 0) {
                 createPoolBlock();
             }
-            hFreeLink* block=freeList_.GetHead();
-            freeList_.Remove(block);
+            hFreeLink* block=freeList_.begin();
+            freeList_.remove(block);
             for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
                 if ((hUint8*)block >= poolBlocks_[i].mem_ && (hUint8*)block < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
                     ++poolBlocks_[i].alloced_;
@@ -172,17 +170,18 @@ namespace Heart
             poolblock->mem_=(void*)ptr;
             poolblock->alloced_=0;
             for (hUint ele=0; ele<t_blockSize; ++ele) {
-                freeList_.PushBack((hFreeLink*)ptr);
+                hPLACEMENT_NEW(ptr)hFreeLink();
+                freeList_.pushBack((hFreeLink*)ptr);
                 ptr+=s_typeSize;
             }
         }
         void releasePoolBlock(hTypePoolBlock* block) {
             hcAssert(block->alloced_==0);
-            for (hFreeLink* i=freeList_.GetHead(); i; ) {
+            for (hFreeLink* i=freeList_.begin(), *n=freeList_.end(); i!=n; ) {
                 if ((void*)i >= block->mem_ && (void*)i < ((hUint8*)block->mem_+s_poolBlockSize)) {
                     hFreeLink* del=i;
                     i=i->GetNext();
-                    freeList_.Remove(del);
+                    freeList_.remove(del);
                 }
                 else {
                     i=i->GetNext();

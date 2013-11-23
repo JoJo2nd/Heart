@@ -70,7 +70,13 @@ namespace Heart
     }
 
     HEART_DLLEXPORT
-    inline hChar* HEART_API hStrRChr( hChar* s1, hChar ch)
+    inline hChar* HEART_API hStrRChr(hChar* s1, hChar ch)
+    {
+        return strrchr(s1,(hInt)ch);
+    }
+
+    HEART_DLLEXPORT
+    inline const hChar* HEART_API hStrRChr(const hChar* s1, hChar ch)
     {
         return strrchr(s1,(hInt)ch);
     }

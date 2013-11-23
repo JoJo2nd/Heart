@@ -66,19 +66,19 @@ namespace hRenderUtility
     // Materials /////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat);
+    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat);
     HEART_DLLEXPORT
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex);
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* outfont, hTexture** outtex);
     HEART_DLLEXPORT
-    void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex);
+    void HEART_API destroyDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* font, hTexture* tex);
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

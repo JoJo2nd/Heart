@@ -38,7 +38,7 @@ namespace Heart
 		hZipFileSystem(const hChar* zipFile) 
             : zipFileHandle_( NULL )
             , openHandles_(0)
-            , pkgNameLen_(0)
+            , basePathLen_(0)
 		{
             Initialise(zipFile);
 		}
@@ -48,7 +48,9 @@ namespace Heart
             Destory();
 		}
 
-        hBool IsOpen() const { return zipFileHandle_ != 0; }
+        hBool IsOpen() const { 
+            return zipFileHandle_ != 0;
+        }
 
 		/**
 		* OpenFile 
@@ -84,8 +86,8 @@ namespace Heart
 
 		zlib_filefunc64_def					zipFileIODefs_;
 		unzFile								zipFileHandle_;
+        hUint                               basePathLen_;
         mutable hUint32                     openHandles_;
-        hUint32                             pkgNameLen_;
 	};
 
 }

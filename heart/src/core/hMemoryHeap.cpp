@@ -202,14 +202,10 @@ hSizeT hMemoryHeap::totalAllocationCount() const
 hMemoryHeapBase::HeapInfo hMemoryHeap::usage()
 {
     hMemoryHeapBase::HeapInfo info;
-#ifdef HEART_TRACK_MEMORY_ALLOCS
     hMH_PRE_ACTION();
     info.allocs_ = alloced_;
     mspace_malloc_stats( localMspace_, &info.peakBytesReserved_, &info.currBytesReserved_, &info.totalBytesAllocated_ );
-    //hMemCpy(&info.exData_, &mspace_mallinfo(localMspace_), sizeof(mallinfo));
-
     hMH_POST_ACTION();
-#endif
     return info;
 }
 

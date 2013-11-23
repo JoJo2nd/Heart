@@ -77,12 +77,12 @@ namespace Heart
     void hLuaStateManager::Update()
     {
         HEART_PROFILE_FUNC();
-        for ( hLuaThreadState* i = luaThreads_.GetHead(); i != NULL; )
+        for ( hLuaThreadState* i = luaThreads_.begin(), *n=luaThreads_.end(); i != n; )
         {
             hLuaThreadState* next = i->GetNext();
             if ( RunLuaThread( i ) )
             {
-                hLuaThreadState* removed = luaThreads_.Remove( i );
+                hLuaThreadState* removed = luaThreads_.remove( i );
                 hDELETE(removed);
             }
 

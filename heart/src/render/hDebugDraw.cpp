@@ -182,7 +182,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugDrawRenderer::initialiseResources(hRenderer* renderer) {
+    void hDebugDrawRenderer::initialiseResources(hRenderer* renderer, hResourceManager* resourceManager) {
         hInputLayoutDesc poscoldesc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT4, 0, 0),
             hInputLayoutDesc("COLOR", 0, eIF_FLOAT4, 0, 0),
@@ -199,7 +199,7 @@ namespace Heart
         debugPosColAlphaMat_=matmgr->getDebugPosColAlphaMat();
         debugPosColUVAlphaMat_=matmgr->getDebugPosColUVAlphaMat();
         debugFont_=hNEW(hFont)();
-        hRenderUtility::createDebugFont(renderer, debugFont_, &debugFontTex_);
+        hRenderUtility::createDebugFont(renderer, resourceManager, debugFont_, &debugFontTex_);
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoldesc, (hUint)hArraySize(poscoldesc), RESOURCEFLAG_DYNAMIC, &posColBuffer_);
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoluvdesc, (hUint)hArraySize(poscoluvdesc), RESOURCEFLAG_DYNAMIC, &posColUVBuffer_);
         hShaderResourceViewDesc srvdesc;

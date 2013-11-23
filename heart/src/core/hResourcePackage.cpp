@@ -42,19 +42,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackage::hResourcePackage(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap)
+    hResourcePackage::hResourcePackage(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName)
         : packageState_(State_Unloaded)
         , engine_(engine)
         , handlerMap_(handlerMap)
         , zipPackage_(NULL)
-        , driveFileSystem_(fileSystem)
         , fileSystem_(fileSystem)
-        , currentResource_(NULL)
         , tempHeap_("ResPackageTempHeap")
         , totalResources_(0)
         , packageHeap_(NULL)
+        , fileQueue_(fileQueue)
+        , workerQueue_(workerQueue)
     {
-        hZeroMem(packageName_, sizeof(packageName_));
+        hStrCopy(packageName_, (hUint)hArraySize(packageName_), packageName);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -72,16 +72,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourcePackage::LoadPackageDescription(const hChar* packname)
+    void hResourcePackage::loadPackageDescription(void*, void*)
     {
         hChar zipname[MAX_PACKAGE_NAME+10];
         
-        hStrCopy(packageName_, MAX_PACKAGE_NAME, packname);
         hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
-        hStrCat(zipname, MAX_PACKAGE_NAME, packname);
+        hStrCat(zipname, MAX_PACKAGE_NAME, packageName_);
         hStrCat(zipname,MAX_PACKAGE_NAME,".PKG");
 
-        packageCRC_ = hCRC32::StringCRC(packname);
+        packageCRC_ = hCRC32::StringCRC(packageName_);
 
         zipPackage_ = hNEW(hZipFileSystem)(zipname);
 
@@ -97,143 +96,123 @@ namespace Heart
         hcAssert(fileSystem_);
 
         hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
-        hStrCat(zipname, MAX_PACKAGE_NAME, packname);
+        hStrCat(zipname, MAX_PACKAGE_NAME, packageName_);
         hStrCat(zipname,MAX_PACKAGE_NAME,"/DAT");
 
-        hIFile* pakDesc = fileSystem_->OpenFile(zipname, FILEMODE_READ);
-
-        if (!pakDesc)
-        {
-            return -1;
-        }
+        pkgDescFile_ = fileSystem_->OpenFile(zipname, FILEMODE_READ);
 
         tempHeap_.create(0, hTrue);
 
-        hChar* xmldata = (hChar*)hHeapMalloc("general", (hUint32)(pakDesc->Length()+1));
+        hChar* xmldata = (hChar*)hHeapMalloc("general", (hUint32)(pkgDescFile_->Length()+1));
+        pkgDescFile_->Read(xmldata, (hUint32)pkgDescFile_->Length());
+        xmldata[pkgDescFile_->Length()] = 0;
 
-        pakDesc->Read(xmldata, (hUint32)pakDesc->Length());
-        xmldata[pakDesc->Length()] = 0;
-
-        if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata))
-        {
-            return -1;
+        if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata)) {
+            return;
         }
 
         const hChar* memuse = hXMLGetter(&descXML_).FirstChild("package").FirstChild("memory").GetAttributeString("alloc", NULL);
         hUint32 sizeBytes = 0;
-        if (memuse)
-        {
+        if (memuse) {
             // Create stack allocator size
-            if (hStrWildcardMatch("*MB",memuse))
-            {
+            if (hStrWildcardMatch("*MB",memuse)) {
                 hFloat mbs;
                 hScanf("%fMB", &mbs);
                 sizeBytes = (hUint32)((mbs*(1024.f*1024.f*1024.f))+.5f);
-            }
-            else if (hStrWildcardMatch("*KB",memuse))
-            {
+            } else if (hStrWildcardMatch("*KB",memuse)) {
                 hFloat kbs;
                 hScanf("%fMB", &kbs);
                 sizeBytes = (hUint32)((kbs*(1024.f*1024.f))+.5f);
-            }
-            else
-            {
+            } else {
                 sizeBytes = hAtoI(memuse);
             }
         }
 
         if (!packageHeap_) {
             packageHeap_=Heart::hFindMemoryHeapByName("general");// maybe resources?
-//             if (sizeBytes == 0)
-//             {
-//                 // Create base/normal allocator, useful for debug
-//                 packageHeap_ = hNEW(hMemoryHeap)(packageName_);
-//                 packageHeap_->create(0, hTrue);
-//             }
-//             else
-//             {
-//                 packageHeap_ = hNEW(hStackMemoryHeap)();
-//                 packageHeap_->create(sizeBytes, hTrue);
-//             }
         }
 
         links_.Resize(0);
         links_.Reserve(16);
-        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling())
-        {
-            if (hStrCmp(i.GetAttributeString("name"), packname)) {
+        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling()) {
+            if (hStrCmp(i.GetAttributeString("name"), packageName_)) {
                 links_.PushBack(i.GetAttributeString("name"));
             }
         }
 
-        currentResource_.SetNode(hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource").ToNode());
-
-        loadedResources_ = 0;
         totalResources_ = 0;
-        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource"); i.ToNode(); i = i.NextSibling())
-        {
+        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource"); i.ToNode(); i = i.NextSibling()) {
             ++totalResources_;
         }
 
-        fileSystem_->CloseFile(pakDesc);
+        fileSystem_->CloseFile(pkgDescFile_);
+        pkgDescFile_=hNullptr;
 
-        //TODO: resource Package links/deps requests
-
-        packageState_ = State_Load_DepPkgs;
-        doReload_ = hFalse;
-
-        return 0;
+        resourceJobArray_.resize(totalResources_);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hResourcePackage::GetPackageDependancyCount() const
-    {
-        return links_.GetSize();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    const hChar* hResourcePackage::GetPackageDependancy( hUint32 i ) const
-    {
-        return links_[i];
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourcePackage::Update(hResourceManager* manager)
-    {
+    hBool hResourcePackage::update(hResourceManager* manager) {
         hBool ret = hFalse;
-        switch(packageState_)
-        {
+        switch(packageState_) {
+        case State_Load_PkgDesc: {
+                hJob* descreadjob=hNEW(hJob)();
+                descreadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadPackageDescription, this));
+                descreadjob->setWorkerMask(1);
+                fileQueue_->pushJob(descreadjob);
+                //the resource manager will kick the queue
+                packageState_=State_Load_WaitPkgDesc;
+            } break;
+        case State_Load_WaitPkgDesc: {
+                if (fileQueue_->queueIdle()) {
+                    packageState_=State_Load_DepPkgs;
+                }
+            } break;
         case State_Load_DepPkgs: {
                 for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
-                    manager->ltLoadPackage(links_[i]);
+                    manager->loadPackage(links_[i]);
                 }
-                packageState_ = State_Load_WaitDeps; 
+                packageState_ = State_Kick_ResourceLoads; 
             } break;
         case State_Load_WaitDeps: {
                 hBool loaded=hTrue;
                 for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
-                    loaded &= manager->ltIsPackageLoaded(links_[i]);
+                    loaded &= manager->getIsPackageLoaded(links_[i]);
                 }
                 if (loaded) {
-                    hcPrintf("Package %s Beginning Load Resources", packageName_);
-                    packageState_ = State_Load_Reources;
+                    packageState_ = State_Link_Resources;
                 }
             } break;
-        case State_Load_Reources: {
-                LoadResourcesState();
+        case State_Kick_ResourceLoads: {
+                hXMLGetter currentResource_ = hXMLGetter(descXML_.first_node()).FirstChild("resources").FirstChild("resource");
+                for (hUint i=0; currentResource_.ToNode(); currentResource_=currentResource_.NextSibling(), ++i) {
+                    hJob* loadjob=hNEW(hJob)();
+                    resourceJobArray_[i].resourceDesc_=currentResource_;
+                    resourceJobArray_[i].createdResource_=hNullptr;
+                    resourceJobArray_[i].crc=0;
+                    loadjob->setInput(&resourceJobArray_[i]);
+                    loadjob->setOutput(&resourceJobArray_[i]);
+                    loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadResource, this));
+                    workerQueue_->pushJob(loadjob);
+                }
+                timer_.reset();
+                packageState_=State_Wait_ReourcesLoads;
+            } break;
+        case State_Wait_ReourcesLoads: {
+                if (workerQueue_->queueIdle()) {
+                    hcPrintf("Package %s: %u resources loaded in %f sec", packageName_, totalResources_, timer_.elapsedMilliSec()/1000.f);
+                    for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
+                        resourceMap_.Insert(resourceJobArray_[i].crc, resourceJobArray_[i].createdResource_);
+                        resourceJobArray_[i].createdResource_->postLoad();
+                    }
+                    packageState_=State_Load_WaitDeps;
+                }
             } break;
         case State_Link_Resources: {
-                if (DoPostLoadLink())
-                {
+                if (doPostLoadLink(manager)) {
                     tempHeap_.destroy();
                     hcPrintf("Package %s is Loaded & Linked", packageName_);
                     packageState_ = State_Ready;
@@ -241,25 +220,32 @@ namespace Heart
                 }
             } break;
         case State_Unlink_Resoruces: {
-                DoPreUnloadUnlink();
+                doPreUnloadUnlink(manager);
                 hcPrintf("Package %s Unload started", packageName_);
                 packageState_ = State_Unload_Resources;
             } break;
         case State_Unload_Resources: {
-                DoUnload();
-                hcPrintf("Package %s is Unloaded", packageName_);
-                packageState_ = State_Unload_DepPkg;
+                resourceMap_.Clear(hFalse);
+                for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
+                    hJob* loadjob=hNEW(hJob)();
+                    loadjob->setInput(&resourceJobArray_[i]);
+                    loadjob->setOutput(&resourceJobArray_[i]);
+                    loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, unloadResource, this));
+                    workerQueue_->pushJob(loadjob);
+                }
+                packageState_ = State_Wait_Unload_Resources;
+            } break;
+        case State_Wait_Unload_Resources: {
+                if (workerQueue_->queueIdle()) {
+                    hcPrintf("Package %s is Unloaded", packageName_);
+                    packageState_ = State_Unload_DepPkg;
+                }
             } break;
         case State_Unload_DepPkg: {
                 for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
-                    manager->ltUnloadPackage(links_[i]);
+                    manager->unloadPackage(links_[i]);
                 }
-                if (doReload_) {
-                    hcPrintf("Package %s is Reloading", packageName_);
-                    LoadPackageDescription(packageName_);
-                } else {
-                    packageState_ = State_Unloaded;
-                }
+                packageState_ = State_Unloaded;
             } break;
         case State_Unloaded:
         case State_Ready:
@@ -274,101 +260,112 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::Unload()
+    void hResourcePackage::beginUnload()
     {
-        hcPrintf("Package %s Unlink started", packageName_);
-        packageState_ = State_Unlink_Resoruces;
+        if (isInReadyState()) {
+            hcPrintf("Package %s Unlink started", packageName_);
+            packageState_ = State_Unlink_Resoruces;
+        }
     }
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::LoadResourcesState()
-    {
-        hResourceMemAlloc memAlloc = { packageHeap_, &tempHeap_ };
-        while (currentResource_.ToNode())
+    void hResourcePackage::loadResource(void* in, void* out) {
+        hcAssert(in==out);
+        hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
+        const hXMLGetter& resxml=jobinfo->resourceDesc_;
+        if (resxml.GetAttributeString("name"))
         {
-            //hIFile* file, const hChar* packagePath, const hChar* resName, const hChar* resourcePath, hUint32 parameterHash
-            if (currentResource_.GetAttributeString("name"))
-            {
-                hResourceType typehandler;
-                hResourceClassBase* res = NULL;
-                hUint32 crc = hCRC32::StringCRC(currentResource_.GetAttributeString("name"));
+            hResourceType typehandler;
+            hResourceClassBase* res = NULL;
+            hUint32 crc = hCRC32::StringCRC(resxml.GetAttributeString("name"));
+            jobinfo->crc=crc;
 
-                hChar* binFilepath;
-                hBuildResFilePath(binFilepath, packageName_, currentResource_.GetAttributeString("name"));
-                hIFile* file=hNullptr;
-                file=fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
+            hChar* binFilepath;
+            hBuildResFilePath(binFilepath, packageName_, resxml.GetAttributeString("name"));
+            hIFile* file=hNullptr;
+            file=fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
 
-                if (file) {
-                    proto::ResourceHeader resheader;
-                    hResourceFileStream resourcefilestream(file);
-                    google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
+            if (file) {
+                proto::ResourceHeader resheader;
+                hResourceFileStream resourcefilestream(file);
+                google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
 
-                    google::protobuf::uint32 headersize;
-                    resourcestream.ReadVarint32(&headersize);
-                    auto limit=resourcestream.PushLimit(headersize);
-                    resheader.ParseFromCodedStream(&resourcestream);
-                    resourcestream.PopLimit(limit);
-                    file->Seek(resourcestream.CurrentPosition(), SEEKOFFSET_BEGIN);
-                    hResourceType restypecrc(hCRC32::StringCRC(resheader.type().c_str()));
-                    hResourceHandler* handler = handlerMap_->Find(restypecrc);
-                    hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
-                    typehandler=handler->GetKey();
-                    // Load the binary file
-                    hTimer timer;
-                    hcPrintf("Loading %s (crc:0x%08X.0x%08X)", binFilepath, GetKey(), crc);
-                    hResourceSection* sections=(hResourceSection*)hAlloca(sizeof(hResourceSection)*resheader.sections_size());
-                    for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
+                google::protobuf::uint32 headersize;
+                resourcestream.ReadVarint32(&headersize);
+                auto limit=resourcestream.PushLimit(headersize);
+                resheader.ParseFromCodedStream(&resourcestream);
+                resourcestream.PopLimit(limit);
+                file->Seek(resourcestream.CurrentPosition(), SEEKOFFSET_BEGIN);
+                hResourceType restypecrc(hCRC32::StringCRC(resheader.type().c_str()));
+                hResourceHandler* handler = handlerMap_->Find(restypecrc);
+                hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
+                typehandler=handler->GetKey();
+                // Load the binary file
+                hTimer timer;
+                hUint64 offset=resourcestream.CurrentPosition();
+                hResourceSection* sections=(hResourceSection*)hAlloca(sizeof(hResourceSection)*resheader.sections_size());
+                for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
+                    sections[i].sectionName_ = resheader.sections(i).sectionname().c_str();
+                    sections[i].sectionSize_ = resheader.sections(i).size();
+                    sections[i].memType_ = resheader.sections(i).type();
+                    if (!file->getIsMemMapped() || sections[i].memType_!=proto::eResourceSection_Temp) {
                         sections[i].sectionData_ = hHeapMalloc("general", resheader.sections(i).size());
-                        sections[i].sectionName_ = resheader.sections(i).sectionname().c_str();
-                        sections[i].sectionSize_ = resheader.sections(i).size();
-                        sections[i].memType_ = resheader.sections(i).type();
                         hUint read=file->Read(sections[i].sectionData_, (hUint32)sections[i].sectionSize_);
-                        hcAssertMsg(read == sections[i].sectionSize_, "Failed to read resource section %s (expected size %u, got %u)",
-                            sections[i].sectionName_, sections[i].sectionSize_, read);
+                        hcAssertMsg(read == sections[i].sectionSize_, "Failed to read resource section %s (expected size %u, got %u)", sections[i].sectionName_, sections[i].sectionSize_, read);
+                    } else {
+                        sections[i].sectionData_ = (hByte*)file->getMemoryMappedBase()+offset;
+                        offset+=resheader.sections(i).size();
                     }
-                    
-                    hClock::BeginTimer(timer);
-                    res = handler->loadProc_(sections, resheader.sections_size());
-                    hClock::EndTimer(timer);
-                    for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
-                        if (sections[i].memType_==proto::eResourceSection_Temp) {
-                            hFreeSafe(sections[i].sectionData_);
-                        }
-                    }
-                    hcPrintf("Load Time = %f Secs", timer.ElapsedMS()/1000.0f);
                 }
 
-                if (file) {
-                    fileSystem_->CloseFile(file);
+                timer.reset();
+                res = handler->loadProc_(sections, resheader.sections_size());
+                timer.setPause(hTrue);
+                for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
+                    if (sections[i].memType_==proto::eResourceSection_Temp && !file->getIsMemMapped()) {
+                        hFreeSafe(sections[i].sectionData_);
+                    }
                 }
-                hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
-                                 "and so serialiser could not load the data correctly" 
-                                 "This is a Fatal Error.");
-                if (res)
-                {
-                    res->SetName(currentResource_.GetAttributeString("name"));
-                    res->SetType(typehandler);
-                    resourceMap_.Insert(crc, res);
-                    ++loadedResources_;
-                    currentResource_ = currentResource_.NextSibling();
-                }
+                hcPrintf("Loaded %s (crc:0x%08X.0x%08X) in %f Secs on thread %p", binFilepath, GetKey(), crc, timer.elapsedMilliSec()/1000.0f, Device::GetCurrentThreadID());
+            }
+
+            if (file) {
+                fileSystem_->CloseFile(file);
+            }
+            hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
+                "and so serialiser could not load the data correctly" 
+                "This is a Fatal Error.");
+            if (res)
+            {
+                res->setResourceID(hResourceID(GetKey(), res->GetKey()));
+                res->SetName(resxml.GetAttributeString("name"));
+                res->SetType(typehandler);
+                jobinfo->createdResource_=res;
             }
         }
-        //else
-        {
-            //finished
-            hcPrintf("Package %s Beginning Link Resources", packageName_);
-            packageState_ = State_Link_Resources;
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackage::DoPostLoadLink()
+    void hResourcePackage::unloadResource(void* in, void* out) {
+        hcAssert(in==out);
+        hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
+        hResourceClassBase* res=jobinfo->createdResource_;
+        hResourceHandler* handler = handlerMap_->Find(res->GetType());
+        handler->unloadProc_(res);
+        jobinfo->createdResource_=hNullptr;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hResourcePackage::doPostLoadLink(hResourceManager* manager)
     {
         hUint32 totallinked = 0;
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
@@ -376,10 +373,10 @@ namespace Heart
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             if (!res->GetIsLinked())
             {
-                if (handler->linkProc_(res))
-                {
+                if (handler->linkProc_(res)) {
                     hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
                     res->SetIsLinked(hTrue);
+                    manager->insertResource(hResourceID(GetKey(), res->GetKey()), res);
                 }
             }
 
@@ -393,10 +390,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::DoPreUnloadUnlink()
+    void hResourcePackage::doPreUnloadUnlink(hResourceManager* manager)
     {
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
         {
+            res->preUnload();
+            manager->removeResource(hResourceID(GetKey(), res->GetKey()));
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             handler->unlinkProc_(res);
         }
@@ -406,22 +405,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::DoUnload()
-    {
-        for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res;)
-        {
-            hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            resourceMap_.Erase(res, &next);
-            handler->unloadProc_(res);
-            res = next;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourcePackage::GetResource( hUint32 crc ) const
+    hResourceClassBase* hResourcePackage::getResource( hUint32 crc ) const
     {
         hResourceClassBase* res = resourceMap_.Find(crc);
         if (res && res->GetIsLinked())
@@ -450,15 +434,19 @@ namespace Heart
     const hChar* hResourcePackage::getPackageStateString() const
     {
         static const hChar* stateStr [] = {
-            "State_Load_DepPkgs"     ,
-            "State_Load_WaitDeps"    ,
-            "State_Load_Reources"    ,
-            "State_Link_Resources"   ,
-            "State_Ready"            ,
-            "State_Unlink_Resoruces" ,
-            "State_Unload_Resources" ,
-            "State_Unload_DepPkg"    ,
-            "State_Unloaded"         ,
+            "State_Load_PkgDesc",
+            "State_Load_WaitPkgDesc",
+            "State_Load_DepPkgs",
+            "State_Load_WaitDeps",
+            "State_Kick_ResourceLoads",
+            "State_Wait_ReourcesLoads",
+            "State_Link_Resources",
+            "State_Ready",
+            "State_Unlink_Resoruces",
+            "State_Unload_Resources",
+            "State_Wait_Unload_Resources",
+            "State_Unload_DepPkg",
+            "State_Unloaded",
         };
         return stateStr[packageState_];
     }

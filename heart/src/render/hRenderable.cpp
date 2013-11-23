@@ -32,12 +32,15 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hRenderable::setMaterial(hMaterial* material)
+void hRenderable::setMaterial(const hResourceHandle& material)
 {
+    if (materialHandle_.getIsValid()) {
+        materialHandle_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
+    }
     materialKey_=0;
-    material_ = material;
-    if (material_) {
-        materialKey_ = material_->GetMatKey();
+    materialHandle_ = material;
+    if (materialHandle_.getIsValid()) {
+        materialHandle_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
     }
 }
 
@@ -46,7 +49,17 @@ void hRenderable::setMaterial(hMaterial* material)
 //////////////////////////////////////////////////////////////////////////
 
 void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
-    hcAssert(material_);
+
+    hMaterial* material;
+    hResourceHandleScope<hMaterial> materialResScope(materialHandle_, &material);
+    materialKey_=0;
+
+    if (!material) {
+        return;
+    }
+
+    materialKey_ = material->GetMatKey();
+
     hUint layoutdesccount=0;
     hInputLayoutDesc* layoutdesc=hNullptr;
 
@@ -64,9 +77,9 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
         }
     }
 
-    cmdLookUp_.init(material_);
-    for(hUint g=0, ng=material_->getGroupCount(); g<ng; ++g) {
-        hMaterialGroup* group=material_->getGroup(g);
+    cmdLookUp_.init(material);
+    for(hUint g=0, ng=material->getGroupCount(); g<ng; ++g) {
+        hMaterialGroup* group=material->getGroup(g);
         for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
             hMaterialTechnique* tech=group->getTech(t);
             for (hUint p=0, np=tech->GetPassCount(); p<np; ++p) {
@@ -74,7 +87,7 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
                 hdInputLayout* inputlayout=pass->GetVertexShader()->createVertexLayout(layoutdesc, layoutdesccount);
                 inputLayouts_.PushBack(inputlayout);
                 cmdLookUp_.setCommand(g, t, p, rcGen->getRenderCommandsSize());
-                rcGen->setJump(material_->getRenderCommandsBegin(g, t, p));
+                rcGen->setJump(material->getRenderCommandsBegin(g, t, p));
                 rcGen->setStreamInputs(primType_, 
                     indexBuffer_, 
                     indexBuffer_ ? indexBuffer_->getIndexBufferType() : hIndexBufferType_Index16, 
@@ -90,6 +103,19 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
             }
         }
     }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool hRenderable::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource) {
+    if (event==hResourceEvent_DBInsert || event==hResourceEvent_HotSwap) {
+
+    } else if (event==hResourceEvent_DBRemove) {
+
+    }
+    return hTrue;
 }
 
 }

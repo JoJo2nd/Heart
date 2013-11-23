@@ -34,7 +34,11 @@ namespace Heart
 
 	hUint64 hDriveFile::Tell()
 	{
-		return hdFtell(&fileHandle_);
+        if (mmap_) {
+            return mmapPos_;
+        } else {
+            return hdFtell(&fileHandle_);
+        }
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -43,7 +47,7 @@ namespace Heart
 
 	hUint64 hDriveFile::Length()
 	{
-		return hdFsize(&fileHandle_);
+		return size_;
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -53,8 +57,14 @@ namespace Heart
     hUint32 hDriveFile::Read( void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( hdFread(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
-            return 0;
+        if (mmap_) {
+            ret=(hUint32)hMin(size, size_-mmapPos_);
+            hMemCpy(pBuffer, (hByte*)(mmap_->basePtr_)+mmapPos_, ret);
+            Seek(size, SEEKOFFSET_CURRENT);
+        } else {
+            if ( hdFread(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
+                return 0;
+        }
         return ret;
     }
 
@@ -65,8 +75,12 @@ namespace Heart
     hUint32 hDriveFile::Write( const void* pBuffer, hUint32 size )
     {
         hUint32 ret;
-        if ( hdFwrite(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
-            return 0;
+        if (mmap_) {
+            hcAssertFailMsg("not supported yet...");
+        } else {
+            if ( hdFwrite(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
+                return 0;
+        }
         return ret;
     }
 
@@ -74,10 +88,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hDriveFile::Seek( hUint64 offset, hdSeekOffset from )
+    hUint32 hDriveFile::Seek( hInt64 offset, hdSeekOffset from )
     {
-        hdSeekOffset devFrom = (hdSeekOffset)from;
-        hdFseek(&fileHandle_, offset, devFrom);
+        if (mmap_) {
+            switch(from) {
+            case SEEKOFFSET_BEGIN:      mmapPos_=offset; break;
+            case SEEKOFFSET_CURRENT:    mmapPos_+=offset; break;
+            case SEEKOFFSET_END:        mmapPos_=size_+offset; break;
+            }
+            mmapPos_=hMin(size_, mmapPos_);
+        } else {
+            hdSeekOffset devFrom = (hdSeekOffset)from;
+            hdFseek(&fileHandle_, offset, devFrom);
+        }
         return 0;
     }
 
@@ -87,7 +110,23 @@ namespace Heart
 
     hTime hDriveFile::GetTimestamp()
     {
-        return hdFstat(&fileHandle_).lastModTime_;
+        return stat_.lastModTime_;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hDriveFile::getIsMemMapped() const {
+        return mmap_ != hNullptr;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void* hDriveFile::getMemoryMappedBase() const {
+        return mmap_ ? mmap_->basePtr_ : hNullptr;
     }
 
 }

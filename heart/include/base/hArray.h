@@ -86,11 +86,6 @@ namespace Heart
 
     private:
 
-        template< typename _Ty, hUint32 arraySize >
-        friend void SerialiseMethod( Heart::hSerialiser* , const Heart::hArray< _Ty, arraySize >& );
-        template< typename _Ty, hUint32 arraySize >
-        friend void DeserialiseMethod( Heart::hSerialiser* , const Heart::hArray< _Ty, arraySize >& );
-
         _Ty values_[ ArraySize ];
     };
 

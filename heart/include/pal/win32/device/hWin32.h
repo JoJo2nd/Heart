@@ -42,18 +42,19 @@
 
 // Modify the following defines if you have to target a platform prior to the ones specified below.
 // Refer to MSDN for the latest info on corresponding values for different platforms.
-#ifndef WINVER				// Allow use of features specific to Windows XP(SP1) or later.
-#define WINVER 0x0502		// Change this to the appropriate value to target other versions of Windows.
+#ifndef WINVER				// Allow use of features specific to Windows Vista or later.
+#define WINVER 0x0600		// Change this to the appropriate value to target other versions of Windows.
 #endif
 
-#ifndef _WIN32_WINNT		// Allow use of features specific to Windows XP(SP1) or later.                   
-#define _WIN32_WINNT 0x0502	// Change this to the appropriate value to target other versions of Windows.
+#ifndef _WIN32_WINNT		// Allow use of features specific to Windows Vista or later.                   
+#define _WIN32_WINNT 0x0600	// Change this to the appropriate value to target other versions of Windows.
 #endif	
 
 #define WIN32_LEAN_AND_MEAN
 
 #include <WinSock2.h>   // it's important this is included before <windows.h>
 #include <windows.h>
+#include <synchapi.h>
 #include <al.h>         //openAL
 #include <alc.h>
 #include <malloc.h>
@@ -104,6 +105,7 @@
 #include "device/hMutex.h"
 #include "device/hSemaphore.h"
 #include "device/hEvent.h"
+#include "device/hConditionVariable.h"
 #include "device/hDeviceThread.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -142,10 +144,11 @@
 
 namespace Heart
 {
-    typedef hdW32Mutex                  hMutex;
+    typedef hdW32Mutex                  hdMutex;
+    typedef hdW32ConditionVariable      hdConditionVariable;
+    typedef hdW32ThreadEvent            hdW32ThreadEvent;
     typedef hdW32ThreadEvent            hdThreadEvent;
-    typedef hdThreadEvent               hThreadEvent;
-    typedef hdW32Thread                 hThread;
+    typedef hdW32Thread                 hdThread;
     typedef hdW32SoundCoreDevice        hdSoundCore;
     typedef hdW32SoundVoiceDevice       hdSoundVoice;
     typedef hdW32SoundVoiceInfo         hdSoundVoiceInfo;

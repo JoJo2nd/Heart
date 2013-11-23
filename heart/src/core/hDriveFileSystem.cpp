@@ -72,8 +72,22 @@ namespace
             return NULL;
         }
 
+        hdFileStat fhstat=hdFstat(&fh);
+        hUint64 fsize=hdFsize(&fh);
         hDriveFile* pFile = hNEW(hDriveFile);
         pFile->fileHandle_ = fh;
+        pFile->stat_=fhstat;
+        pFile->size_=fsize;
+        pFile->mmapPos_=0;
+
+        if (mode==FILEMODE_READ) {
+            //attempt to memory map the file
+            pFile->mmap_=hdMMap(&fh, 0, fsize, MMapMode_ReadOnly);
+            if (pFile->mmap_) {
+                hcPrintf("Opened memory mapped file %s [%p]", filename, pFile->mmap_);
+                hdFclose(&pFile->fileHandle_);
+            }
+        }
 
         return pFile;
     }
@@ -88,8 +102,15 @@ namespace
         {
             return;
         }
+        hDriveFile* f=static_cast<hDriveFile*>(pFile);
 
-        hdFclose(&((hDriveFile*)pFile)->fileHandle_);
+        if (f->mmap_) {
+            hcPrintf("Closed memory mapped file [%p]", f->mmap_);
+            hdUnmap(f->mmap_);
+            f->mmap_=hNullptr;
+        } else {
+            hdFclose(&f->fileHandle_);
+        }
 
         hDELETE(pFile);
     }

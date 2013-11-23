@@ -80,6 +80,9 @@ namespace Heart
         
         unzSetOffset64( zipPak_, filePos_);
         ret = unzReadCurrentFile( zipPak_, pBuffer, size );
+        if (ret > 0) {
+            Seek(ret, SEEKOFFSET_CURRENT);
+        }
         unzCloseCurrentFile( zipPak_ );
         return ret;
     }
@@ -97,7 +100,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hZipFile::Seek( hUint64 offset, hdSeekOffset from )
+    hUint32 hZipFile::Seek(hInt64 offset, hdSeekOffset from)
     {
         hUint64 size = Length();
         switch ( from )

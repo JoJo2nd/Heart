@@ -45,25 +45,13 @@ namespace Heart
     public:
 
         hMaterialTechniquePass()
-            : vertexProgram_(hNullptr)
-            , fragmentProgram_(hNullptr)
-            , geometryProgram_(hNullptr)
-            , hullProgram_(hNullptr)
-            , domainProgram_(hNullptr)
-            , computeProgram_(hNullptr)
-            , blendState_(hNullptr)
+            : blendState_(hNullptr)
             , depthStencilState_(hNullptr)
             , rasterizerState_(hNullptr)
         {
         }
         hMaterialTechniquePass(hMaterialTechniquePass&& rhs)
-            : vertexProgram_(hNullptr)
-            , fragmentProgram_(hNullptr)
-            , geometryProgram_(hNullptr)
-            , hullProgram_(hNullptr)
-            , domainProgram_(hNullptr)
-            , computeProgram_(hNullptr)
-            , blendState_(hNullptr)
+            : blendState_(hNullptr)
             , depthStencilState_(hNullptr)
             , rasterizerState_(hNullptr)
         {
@@ -74,12 +62,6 @@ namespace Heart
             return *this;
         }
         ~hMaterialTechniquePass() {
-            vertexProgram_=hNullptr;
-            fragmentProgram_=hNullptr;
-            geometryProgram_=hNullptr;
-            hullProgram_=hNullptr;
-            domainProgram_=hNullptr;
-            computeProgram_=hNullptr;
             if (blendState_) {
                 blendState_->DecRef();
                 blendState_=hNullptr;
@@ -94,14 +76,14 @@ namespace Heart
             }
         }
 
-        hShaderProgram*         GetVertexShader() { return vertexProgram_; }
-        void                    SetVertexShader(hShaderProgram* prog) { vertexProgram_=prog; }
-        hShaderProgram*         GetFragmentShader() { return fragmentProgram_; }
-        void                    SetFragmentShader(hShaderProgram* prog) { fragmentProgram_=prog; }
+        hShaderProgram*         GetVertexShader() { return programs_[ShaderType_VERTEXPROG].weakPtr<hShaderProgram>(); }
+        void                    SetVertexShader(hResourceHandle prog) { programs_[ShaderType_VERTEXPROG]=prog; }
+        hShaderProgram*         GetFragmentShader() { return programs_[ShaderType_FRAGMENTPROG].weakPtr<hShaderProgram>(); }
+        void                    SetFragmentShader(hResourceHandle prog) { programs_[ShaderType_FRAGMENTPROG]=prog; }
         void                    setProgramID(hUint shadertype, hResourceID resid) { programID_[shadertype]=resid; }
         hResourceID             getProgramID(hUint shadertype) const { return programID_[shadertype]; }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
-        hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i];}
+        hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i].weakPtr<hShaderProgram>();}
         hBlendState*            GetBlendState() { return blendState_; }
         hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
         hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
@@ -148,12 +130,9 @@ namespace Heart
         hMaterialTechniquePass(const hMaterialTechniquePass& rhs);
         hMaterialTechniquePass& operator = (const hMaterialTechniquePass& rhs);
         static void swap(hMaterialTechniquePass* lhs, hMaterialTechniquePass* rhs) {
-            std::swap(lhs->vertexProgram_, rhs->vertexProgram_);
-            std::swap(lhs->fragmentProgram_, rhs->fragmentProgram_);
-            std::swap(lhs->geometryProgram_, rhs->geometryProgram_);
-            std::swap(lhs->hullProgram_, rhs->hullProgram_);
-            std::swap(lhs->domainProgram_, rhs->domainProgram_);
-            std::swap(lhs->computeProgram_, rhs->computeProgram_);
+            for (hUint i=0; i<ShaderType_MAX; ++i) {
+                std::swap(lhs->programs_[i], rhs->programs_[i]);
+            }
             std::swap(lhs->blendState_, rhs->blendState_);
             std::swap(lhs->depthStencilState_, rhs->depthStencilState_);
             std::swap(lhs->rasterizerState_, rhs->rasterizerState_);
@@ -169,22 +148,8 @@ namespace Heart
 
         static const hUint32 s_maxPrograms = ShaderType_MAX;
 
-        /*
-         * Following should be in an array
-         **/
-        union 
-        {
-            hShaderProgram*     programs_[s_maxPrograms];
-            struct
-            {
-                hShaderProgram* vertexProgram_;
-                hShaderProgram* fragmentProgram_;
-                hShaderProgram* geometryProgram_;
-                hShaderProgram* hullProgram_;
-                hShaderProgram* domainProgram_;
-                hShaderProgram* computeProgram_;
-            };
-        };
+
+        hResourceHandle     programs_[s_maxPrograms];
         struct 
         {
             std::vector< hShaderResourceView* >     srView_;

@@ -59,11 +59,15 @@ public:
         hcAssert(findMountIndex(mount)==s_maxMounts);
 
         hStrNCopy(mounts_[mountCount_].mountName_, s_maxMountLen, mount);
-        mounts_[mountCount_].pathLen_=hStrLen(path);
+        mounts_[mountCount_].pathLen_=hMax(hStrLen(path),1);
         mounts_[mountCount_].mountPath_=hNEW_ARRAY(hChar, mounts_[mountCount_].pathLen_+1);
         hStrCopy(mounts_[mountCount_].mountPath_, mounts_[mountCount_].pathLen_+1, path);
+        if (mounts_[mountCount_].mountPath_[mounts_[mountCount_].pathLen_-1]=='/' || mounts_[mountCount_].mountPath_[mounts_[mountCount_].pathLen_-1]=='\\') {
+            mounts_[mountCount_].mountPath_[mounts_[mountCount_].pathLen_-1]=0;
+            --mounts_[mountCount_].pathLen_;
+        }
+        hcPrintf("Mounting [%s] to %s:/", mounts_[mountCount_].mountPath_, mounts_[mountCount_].mountName_);
         ++mountCount_;
-        hcPrintf("Mounting [%s] to %s:/", path, mount);
         mountAccessMutex_.Unlock();
     }
     void unmount(const hChar* mount) {
@@ -124,7 +128,12 @@ private:
     hdMount    mounts_[s_maxMounts];
 };
 
-    hdFileSystemMountInfo g_fileSystemInfo;
+    hdFileSystemMountInfo   g_fileSystemInfo;
+    hdW32Mutex              g_mmapAccessMutex;
+    hBool                           g_mmapInit=hFalse;
+    hLinkedList<hdMemoryMappedFile> g_freeList;
+    hLinkedList<hdMemoryMappedFile> g_usedList;
+    hdMemoryMappedFile              g_mmapFiles[128];
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -181,6 +190,7 @@ private:
     hBool HEART_API hdFclose(hdFileHandle* pHandle)
     {
         CloseHandle( pHandle->fileHandle_ );
+        pHandle->fileHandle_=INVALID_HANDLE_VALUE;
 
         return hTrue;
     }
@@ -304,11 +314,9 @@ private:
     {
         WIN32_FIND_DATA found;
 
-        g_fileSystemInfo.lock();
         hUint syspathlen=hdGetSystemPathSize(path);
         hChar* syspath=(hChar*)hAlloca(syspathlen+3);
         hdGetSystemPath(path, syspath, syspathlen+1);
-        g_fileSystemInfo.unlock();
 
         hStrCat(syspath, syspathlen+3, "/*" );
 
@@ -428,6 +436,7 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     void hdGetSystemPath(const hChar* path, hChar* outdir, hUint size) {
+        g_fileSystemInfo.lock();
         hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
         const hChar* term=hStrChr(path, ':');
         if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
@@ -442,6 +451,7 @@ private:
         } else {
             hStrCopy(outdir, size, path);
         }
+        g_fileSystemInfo.unlock();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -449,6 +459,7 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     hUint hdGetSystemPathSize(const hChar* path) {
+        g_fileSystemInfo.lock();
         hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
         hUint ret=hStrLen(path);
         const hChar* term=hStrChr(path, ':');
@@ -456,7 +467,82 @@ private:
             hStrNCopy(mnt, (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path)+1, path);
             ret+=g_fileSystemInfo.getMountPathLenght(mnt);
         }
+        g_fileSystemInfo.unlock();
         return ret;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSizeT offset, hSizeT size, hdMMapMode mode) {
+        g_mmapAccessMutex.Lock();
+        if (!g_mmapInit) {
+            for (hUint i=0; i<(hUint)hArraySize(g_mmapFiles); ++i) {
+                g_freeList.addHead(&g_mmapFiles[i]);
+            }
+            g_mmapInit=hTrue;
+        }
+        g_mmapAccessMutex.Unlock();
+
+        if (g_freeList.getSize()==0) {
+            // NoMem
+            return hNullptr;
+        }
+
+        DWORD protect;
+        DWORD access;
+        switch(mode) {
+        case MMapMode_ReadOnly: protect=PAGE_READONLY; access=FILE_MAP_READ; break;
+        case MMapMode_Write:
+        case MMapMode_None:
+        default: return hNullptr;
+        }
+        DWORD sizehi=0;
+        DWORD sizelow=0;
+        DWORD offsethi=0;
+        DWORD offsetlow=0;
+        if (sizeof(hSizeT)==8) {
+            sizehi  = (DWORD)(size >> 32);
+            sizelow = (DWORD)size & 0xFFFFFFFF;
+            offsethi  = (DWORD)(offset >> 32);
+            offsetlow = (DWORD)offset & 0xFFFFFFFF;
+        } else {
+            sizelow = (DWORD)size;
+            offsetlow = (DWORD)offset;
+        }
+
+        HANDLE mmaphandle=CreateFileMapping(handle->fileHandle_, NULL, protect, sizehi, sizelow, hNullptr);
+        if (mmaphandle==INVALID_HANDLE_VALUE) {
+            return hNullptr;
+        }
+        void* ptr=MapViewOfFile(mmaphandle, access, offsethi, offsetlow, 0);
+        if (!ptr) {
+            return hNullptr;
+        }
+        hdMemoryMappedFile* mm=g_freeList.begin();
+        g_freeList.remove(mm);
+        g_usedList.addHead(mm);
+
+        mm->mmap_=mmaphandle;
+        mm->basePtr_=ptr;
+
+        return mm;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdUnmap(hdMemoryMappedFile* mmapview) {
+        UnmapViewOfFile(mmapview->basePtr_);
+        CloseHandle(mmapview->mmap_);
+
+        mmapview->basePtr_=hNullptr;
+        mmapview->mmap_=INVALID_HANDLE_VALUE;
+
+        g_usedList.remove(mmapview);
+        g_freeList.addHead(mmapview);
     }
 
 }

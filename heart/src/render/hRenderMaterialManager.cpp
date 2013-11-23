@@ -343,15 +343,15 @@ namespace Heart
 
     void hRenderMaterialManager::createDebugMaterials() {
         debugFontMat_=hNEW(hMaterial)(renderer_);
-        hRenderUtility::buildDebugFontMaterial(renderer_, debugFontMat_);
+        hRenderUtility::buildDebugFontMaterial(renderer_, resourceManager_, debugFontMat_);
         debugPosColUVMat_=hNEW(hMaterial)(renderer_);
-        hRenderUtility::buildDebugPosColUVMaterial(renderer_, debugPosColUVMat_);
+        hRenderUtility::buildDebugPosColUVMaterial(renderer_, resourceManager_, debugPosColUVMat_);
         debugPosColMat_=hNEW(hMaterial)(renderer_);
-        hRenderUtility::buildDebugPosColMaterial(renderer_, debugPosColMat_);
+        hRenderUtility::buildDebugPosColMaterial(renderer_, resourceManager_, debugPosColMat_);
         debugPosColUVAlphaMat_=hNEW(hMaterial)(renderer_);
-        hRenderUtility::buildDebugPosColUVAlphaMaterial(renderer_, debugPosColUVAlphaMat_);
+        hRenderUtility::buildDebugPosColUVAlphaMaterial(renderer_, resourceManager_, debugPosColUVAlphaMat_);
         debugPosColAlphaMat_=hNEW(hMaterial)(renderer_);
-        hRenderUtility::buildDebugPosColAlphaMaterial(renderer_, debugPosColAlphaMat_);
+        hRenderUtility::buildDebugPosColAlphaMaterial(renderer_, resourceManager_, debugPosColAlphaMat_);
     }
 
     //////////////////////////////////////////////////////////////////////////

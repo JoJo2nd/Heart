@@ -82,10 +82,13 @@
 #   define HEART_SHARED_LIB_EXT ".dll"
 #endif
 
+#if defined (HEART_FORCE_TRACK_MEMORY_ALLOCS) && !defined (HEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
+#   define HEART_TRACK_MEMORY_ALLOCS
+#endif
+
 #ifdef HEART_DEBUG
-#   ifndef HEART_TRACK_MEMORY_ALLOCS
+#   if !defined (HEART_TRACK_MEMORY_ALLOCS) && !defined (HEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
 #       define HEART_TRACK_MEMORY_ALLOCS
-//#       define HEART_MEMTRACK_FULL_STACKTRACK
 #   endif
 #endif
 
@@ -135,6 +138,16 @@
 #endif
 
 #define RAPIDXML_NO_EXCEPTIONS
+
+#ifdef HEART_NO_FORCE_INLINE
+#   define hForceInline
+#else
+#   ifdef HEART_PLAT_WINDOWS
+#      define hForceInline   __forceinline
+#   else
+#      error "Platform not supported"
+#   endif
+#endif
 
 //#define HEART_DO_PROFILE
 

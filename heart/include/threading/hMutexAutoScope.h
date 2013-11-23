@@ -33,7 +33,7 @@ namespace Heart
     class hMutexAutoScope
     {
     public:
-        hMutexAutoScope( hMutex* mtx )
+        hMutexAutoScope( hdMutex* mtx )
             : mtx_(mtx)
         {
             mtx_->Lock();
@@ -46,7 +46,7 @@ namespace Heart
         
         hMutexAutoScope( const hMutexAutoScope& rhs );
 
-        hMutex*     mtx_;
+        hdMutex*     mtx_;
     };
 
 }

@@ -77,8 +77,9 @@ namespace Heart
         hBool vsync,
         hResourceManager* pResourceManager	)
     {
-        hClock::BeginTimer(frameTimer_);
-        materialManager_.SetRenderer(this);
+        frameTimer_.reset();
+        materialManager_.setRenderer(this);
+        materialManager_.setResourceManager(pResourceManager);
 
         width_			= width;
         height_			= height;
@@ -170,12 +171,45 @@ namespace Heart
             GetRenderCamera(i)->releaseRenderTargetSetup();
         }
         materialManager_.destroyRenderResources();
-        for (hUint i=0; i<eDebugShaderMax; ++i) {
-            if (debugShaders_[i]) {
-                debugShaders_[i]->DecRef();
-                debugShaders_[i]=hNullptr;
-            }
-        }
+
+        hShaderProgram* prog=hNullptr;
+        prog=hResourceHandle(hDebugShaderResourceID_PixelWhite).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_PixelWhite);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_VertexPosOnly).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_VertexPosOnly);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_ConsoleVertex).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_ConsoleVertex);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_ConsolePixel).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_ConsolePixel);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_FontVertex).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_FontVertex);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_FontPixel).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_FontPixel);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_VertexPosNormal).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_VertexPosNormal);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_PixelWhiteViewLit).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_PixelWhiteViewLit);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_TexVertex).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_TexVertex);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_TexPixel).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_TexPixel);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_VertexPosCol).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_VertexPosCol);
+        prog->DecRef();
+        prog=hResourceHandle(hDebugShaderResourceID_PixelPosCol).weakPtr<hShaderProgram>();
+        resourceManager_->removeResource(hDebugShaderResourceID_PixelPosCol);
+        prog->DecRef();
+
         //hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
         //depthBuffer_->DecRef();
         ParentClass::Destroy();
@@ -216,11 +250,10 @@ namespace Heart
         hDebugDrawRenderer::it()->render(this, &mainSubmissionCtx_);
         ParentClass::SwapBuffers(backBuffer_);
 
-        hClock::EndTimer(frameTimer_);
         hZeroMem(&stats_, sizeof(stats_));
         stats_.gpuTime_=0.f;
-        stats_.frametime_=(hFloat)frameTimer_.ElapsedmS()/1000.f;
-        hClock::BeginTimer(frameTimer_);
+        stats_.frametime_=(hFloat)frameTimer_.elapsedMilliSec();
+        frameTimer_.reset();
         mainSubmissionCtx_.appendRenderStats(&stats_);
         mainSubmissionCtx_.resetStats();
     }
@@ -591,16 +624,7 @@ namespace Heart
         rtv->DecRef();
         dsv->DecRef();
 
-        hDebugDrawRenderer::it()->initialiseResources(this);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hShaderProgram* hRenderer::getDebugShader(hDebugShaderID shaderID) {
-        hcAssert(shaderID < eDebugShaderMax);
-        return debugShaders_[shaderID];
+        hDebugDrawRenderer::it()->initialiseResources(this, resourceManager_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -608,79 +632,89 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createDebugShadersInternal() {
-        debugShaders_[eDebugPixelWhite]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+        hShaderProgram* prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelWhite),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhite)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelWhite]);
-        debugShaders_[eDebugVertexPosOnly]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_PixelWhite, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosOnly),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosOnly)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosOnly]);
-        debugShaders_[eConsoleVertex]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
-        debugShaders_[eConsoleVertex]->shaderType_=ShaderType_VERTEXPROG;
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_VertexPosOnly, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eConsoleVertex),
             hStrLen(ParentClass::getDebugShaderSource(eConsoleVertex)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eConsoleVertex]);
-        debugShaders_[eConsolePixel]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_ConsoleVertex, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eConsolePixel),
             hStrLen(ParentClass::getDebugShaderSource(eConsolePixel)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eConsolePixel]);
-        debugShaders_[eDebugFontVertex]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_ConsolePixel, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugFontVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontVertex)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugFontVertex]);
-        debugShaders_[eDebugFontPixel]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_FontVertex, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugFontPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugFontPixel)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugFontPixel]);
-        debugShaders_[eDebugVertexPosNormal]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_FontPixel, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosNormal),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosNormal)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosNormal]);
-        debugShaders_[eDebugPixelWhiteViewLit]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_VertexPosNormal, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelWhiteViewLit)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelWhiteViewLit]);
-        debugShaders_[eDebugTexVertex]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_PixelWhiteViewLit, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugTexVertex),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexVertex)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugTexVertex]);
-        debugShaders_[eDebugTexPixel]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_TexVertex, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugTexPixel),
             hStrLen(ParentClass::getDebugShaderSource(eDebugTexPixel)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugTexPixel]);
-        debugShaders_[eDebugVertexPosCol]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_TexPixel, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugVertexPosCol),
             hStrLen(ParentClass::getDebugShaderSource(eDebugVertexPosCol)),
-            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugVertexPosCol]);
-        debugShaders_[eDebugPixelPosCol]=hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
+            "mainVP", eShaderProfile_vs4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_VertexPosCol, prog);
+
+        prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelPosCol),
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelPosCol)),
-            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, debugShaders_[eDebugPixelPosCol]);
+            "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
+        resourceManager_->insertResource(hDebugShaderResourceID_PixelPosCol, prog);
 
     }
 
@@ -1391,6 +1425,7 @@ namespace Heart
                         material->addDefaultParameterValue(paramdef.paramname().c_str(), colour);
                     }
                 }
+
                 return material;
             }
         }
@@ -1404,7 +1439,7 @@ namespace Heart
 
     hBool hRenderer::materialResourceLink(hResourceClassBase* resource) {
         hMaterial* mat = static_cast< hMaterial* >(resource);
-        return mat->Link(resourceManager_, this, &materialManager_);
+        return mat->link(resourceManager_, this, &materialManager_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1503,13 +1538,12 @@ namespace Heart
         for(hUint32 i = 0; i < renderablecount; ++i) {
             hRenderable* renderable=rmodel->getRenderable(i);
             if (renderable->GetMaterial() == 0) {
-                hMaterial* mat = static_cast<hMaterial*>(resourceManager_->ltGetResource(renderable->GetMaterialResourceID()));
+                hResourceHandle mat(renderable->GetMaterialResourceID());
                 // Possible the material won't have loaded just yet...
-                if (!mat) {
+                if (!mat.weakPtr()) {
                     return hFalse;
                 }
                 renderable->setMaterial(mat);
-                renderable->bind();
             }
         }
         rmodel->initialiseRenderCommands();
@@ -1524,7 +1558,7 @@ namespace Heart
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
         hUint32 renderablecount = rmodel->getRenderableCount();
         for(hUint32 i = 0; i < renderablecount; ++i) {
-            rmodel->getRenderable(i)->setMaterial(hNullptr);
+            rmodel->getRenderable(i)->setMaterial(hResourceHandle());
         }
     }
 
@@ -1969,7 +2003,7 @@ namespace Heart
         renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
         renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
         renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
-        renderer->createBuffer(sizeof(hSphereLight)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLight), &sphereLightData_);
+        renderer->createBuffer(sizeof(hSphereLightRenderData)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLightRenderData), &sphereLightData_);
         hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, &screenQuadIB_, &screenQuadVB_);
         hBlendStateDesc blendstatedesc;
         hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
@@ -2121,7 +2155,7 @@ namespace Heart
                 srvdesc.format_=eTextureFormat_Unknown;
                 srvdesc.buffer_.firstElement_=0;
                 srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hSphereLight);
+                srvdesc.buffer_.elementWidth_=sizeof(hSphereLightRenderData);
                 srvdesc.buffer_.numElements_=s_maxSphereLights;
                 renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
                 if (srv_.GetSize() < shaderInput.bindPoint_+1) {
@@ -2137,6 +2171,10 @@ namespace Heart
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
         rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
         rcGen.setReturn();
+
+        for (hUint i=0, n=sphereLights_.GetMaxSize(); i<n; ++i) {
+            freeSphereLights_.addTail(&sphereLights_[i]);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -2144,7 +2182,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::destroy() {
-        activeSphereLights_.Clear(false);
 
         for (hUint i=0, n=srv_.GetSize(); i<n; ++i) {
             if (srv_[i]) {
@@ -2270,10 +2307,10 @@ namespace Heart
             ctx->Unmap(&mapinfo);
         }
         ctx->Map(sphereLightData_, &mapinfo); {
-            hSphereLight* mapptr=(hSphereLight*)mapinfo.ptr;
-            for (hSphereLightContainer* i=activeSphereLights_.GetHead(); i; i=i->GetNext()) {
-                mapptr->centreRadius_=i->light_.centreRadius_;
-                mapptr->colour_=i->light_.colour_;
+            hSphereLightRenderData* mapptr=(hSphereLightRenderData*)mapinfo.ptr;
+            for (hSphereLight* i=activeSphereLights_.begin(), *n=activeSphereLights_.end(); i!=n; i=i->GetNext()) {
+                mapptr->centreRadius_=i->centreRadius_;
+                mapptr->colour_=i->colour_;
                 mapptr->colour_.r_=12.57f*10.f;//light power
                 mapptr->colour_.g_=12.57f*10.f;//light power
                 mapptr->colour_.b_=12.57f*10.f;//light power
@@ -2309,8 +2346,8 @@ namespace Heart
             dd->drawLines(quadlight, (hUint)hArraySize(quadlight), eDebugSet_3DDepth);
         }
 
-        for (hSphereLightContainer* i=activeSphereLights_.GetHead(); i; i=i->GetNext()) {
-            const hSphereLight& l=i->light_;
+        for (hSphereLight* i=activeSphereLights_.begin(), *n=activeSphereLights_.end(); i!=n; i=i->GetNext()) {
+            const hSphereLight& l=*i;
             Heart::hDebugLine spherelines[] = {
                 { l.centreRadius_+hVec3(l.centreRadius_.getW(), 0.f, 0.f), l.centreRadius_-hVec3(l.centreRadius_.getW(), 0.f, 0.f), hColour(1.f, 0.f, 0.f, 1.f) },
                 { l.centreRadius_+hVec3(0.f, l.centreRadius_.getW(), 0.f), l.centreRadius_-hVec3(0.f, l.centreRadius_.getW(), 0.f), hColour(0.f, 1.f, 0.f, 1.f) },
@@ -2346,13 +2383,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::enableSphereLight(hUint light, hBool enable) {
-        if (enable && !sphereLights_[light].enabled_) {
-            activeSphereLights_.PushBack(&sphereLights_[light]);
-        } else if (!enable && sphereLights_[light].enabled_) {
-            activeSphereLights_.Remove(&sphereLights_[light]);
+        if (enable) {
+            hcAssert(!activeSphereLights_.existInList(&sphereLights_[light]));
+            freeSphereLights_.remove(&sphereLights_[light]);
+            activeSphereLights_.addHead(&sphereLights_[light]);
+        } else if (!enable) {
+            hcAssert(activeSphereLights_.existInList(&sphereLights_[light]));
+            activeSphereLights_.remove(&sphereLights_[light]);
+            freeSphereLights_.addHead(&sphereLights_[light]);
         }
-        sphereLights_[light].enabled_=enable;
-        lightInfo_.sphereLightCount_=activeSphereLights_.GetSize();
+        lightInfo_.sphereLightCount_=activeSphereLights_.getSize();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -2360,8 +2400,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::setSphereLight(hUint light, const hVec3& centre, hFloat radius) {
-        sphereLights_[light].light_.centreRadius_=hVec4(centre, radius);
-        sphereLights_[light].light_.colour_=WHITE;
+        sphereLights_[light].centreRadius_=hVec4(centre, radius);
+        sphereLights_[light].colour_=WHITE;
     }
 
 }

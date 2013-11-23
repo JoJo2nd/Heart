@@ -95,6 +95,7 @@ namespace Heart
 
     hMaterial::~hMaterial()
     {
+        stopListeningToResourceEvents();
         unbind();
     }
 
@@ -124,7 +125,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::Link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager)
+    hBool hMaterial::link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager)
     {
         /*
          * This code ain't pretty, so do it here in the link where we are on the loader
@@ -133,34 +134,12 @@ namespace Heart
         renderer_ = renderer;
         manager_ = matManager;
 
-        // Grab default resources
-        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
-            if (defaultValues_[i].type==ePTTexture) {
-                if (!defaultValues_[i].resourcePtr) {
-                    defaultValues_[i].resourcePtr=resManager->ltGetResource(defaultValues_[i].resourceID);
-                    if (!defaultValues_[i].resourcePtr) {
-                        return hFalse;
-                    }
-                }
-            }
-        }
-
-        // Grab all the shader programs
-        for (hUint32 group = 0; group < groups_.size(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
-                groups_[group].techniques_[tech].mask_ = matManager->AddRenderTechnique( groups_[group].techniques_[tech].name_.c_str() )->mask_;
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
-                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
-                    for (hUint shader=0; shader<ShaderType_MAX; ++shader) {
-                        passptr->programs_[shader]=static_cast<hShaderProgram*>(resManager->ltGetResource(passptr->getProgramID(shader)));
-                        if (passptr->programID_[shader] && !passptr->programs_[shader]) return hFalse;
-                    }
-                }
-            }
+        if(!linkDependeeResources(resManager)) {
+            return hFalse;
         }
 
         // All resources linked...
-        return bindMaterial(matManager);
+        return bind();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -226,7 +205,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::bindMaterial(hRenderMaterialManager* matManager) {
+    hBool hMaterial::bind() {
         // Grab and Bind const block info
         struct {
             hUint32 hash;
@@ -286,7 +265,7 @@ namespace Heart
                             }
 #endif // HEART_DEBUG
                             hShaderParameterID cbID = hCRC32::StringCRC(desc.name_);
-                            hRenderBuffer* globalCB = matManager->GetGlobalConstantBlockByAlias(desc.name_);
+                            hRenderBuffer* globalCB = manager_->GetGlobalConstantBlockByAlias(desc.name_);
                             hRenderBuffer* tmp=NULL;
                             hBool alreadyAdded = hFalse;
                             if (!globalCB) {
@@ -319,7 +298,7 @@ namespace Heart
             if (defaultValues_[dv].type==ePTTexture) {
                 hShaderResourceView* srv;
                 hShaderResourceViewDesc srvdesc;
-                hTexture* texture=static_cast<hTexture*>(defaultValues_[dv].resourcePtr);
+                hTexture* texture=defaultValues_[dv].resourcePtr.weakPtr<hTexture>();
                 hZeroMem(&srvdesc, sizeof(srvdesc));
                 srvdesc.resourceType_=texture->getRenderType();
                 srvdesc.format_=texture->getTextureFormat();
@@ -690,6 +669,125 @@ namespace Heart
         }
         groups_.push_back(name);
         return &(*groups_.rbegin());
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterial::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+        // if a resource is missing, unbind and *THEN* remove ourselves from the resource database
+        if (event == hResourceEvent_DBRemove) {
+            unbind();
+            resManager->removeResource(getResourceID());
+        } else if (event == hResourceEvent_DBInsert) {
+            if (linkDependeeResources(resManager)) {
+                bind();
+                resManager->insertResource(resourceid, this);
+            }
+        }
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hMaterial::linkDependeeResources(hResourceManager* resManager) {
+        // Grab default resources
+        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+            if (defaultValues_[i].type==ePTTexture) {
+                defaultValues_[i].resourcePtr=hResourceHandle(defaultValues_[i].resourceID);
+                if (!defaultValues_[i].resourcePtr.weakPtr()) {
+                    return hFalse;
+                }
+            }
+        }
+
+        // Grab all the shader programs
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
+                groups_[group].techniques_[tech].mask_ = manager_->AddRenderTechnique( groups_[group].techniques_[tech].name_.c_str() )->mask_;
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
+                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
+                    for (hUint shader=0; shader<ShaderType_MAX; ++shader) {
+                        passptr->programs_[shader]=hResourceHandle(passptr->getProgramID(shader));
+                        if (passptr->programs_[shader].getIsValid() && !passptr->programs_[shader].weakPtr()) {
+                            return hFalse;
+                        }
+                    }
+                }
+            }
+        }
+
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::listenToResourceEvents() {
+        // register for resource updates
+        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+            if (defaultValues_[i].type==ePTTexture) {
+                defaultValues_[i].resourcePtr.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+            }
+        }
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
+                groups_[group].techniques_[tech].mask_ = manager_->AddRenderTechnique( groups_[group].techniques_[tech].name_.c_str() )->mask_;
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
+                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
+                    for (hUint shader=0; shader<ShaderType_MAX; ++shader) {
+                        if (passptr->programs_[shader].getIsValid()) {
+                            passptr->programs_[shader].registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::stopListeningToResourceEvents() {
+        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+            if (defaultValues_[i].type==ePTTexture) {
+                defaultValues_[i].resourcePtr.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+            }
+        }
+        for (hUint32 group = 0; group < groups_.size(); ++group) {
+            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
+                groups_[group].techniques_[tech].mask_ = manager_->AddRenderTechnique( groups_[group].techniques_[tech].name_.c_str() )->mask_;
+                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
+                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
+                    for (hUint shader=0; shader<ShaderType_MAX; ++shader) {
+                        if (passptr->programs_[shader].getIsValid()) {
+                            passptr->programs_[shader].unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::postLoad() {
+        listenToResourceEvents();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hMaterial::preUnload() {
+        stopListeningToResourceEvents();
     }
 
     //////////////////////////////////////////////////////////////////////////

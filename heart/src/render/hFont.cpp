@@ -146,8 +146,9 @@ void hFont::SortCharacters()
 
 hBool hFont::Link( hResourceManager* resManager )
 {
-    texturePages_ = static_cast<hTexture*>(resManager->ltGetResource(texturePageResID_));    
-    fontMaterial_ = static_cast<hMaterial*>(resManager->ltGetResource(fontMaterialID_));
+    hcAssertFailMsg("This needs implementing");
+    //texturePages_ = static_cast<hTexture*>(resManager->getResource(texturePageResID_));    
+    //fontMaterial_ = static_cast<hMaterial*>(resManager->getResource(fontMaterialID_));
 
     if (texturePages_ && fontMaterial_)
     {

@@ -185,7 +185,6 @@ namespace Heart
         void                                                    rendererFrameSubmit();
 
         hFloat                                                  GetLastGPUTime() { return gpuTime_; }
-        hShaderProgram*                                         getDebugShader(hDebugShaderID shaderID);
 
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -238,7 +237,7 @@ namespace Heart
         hBool													vsync_;
         hFloat                                                  gpuTime_;
 
-        hMutex                   resourceMutex_;
+        hdMutex                   resourceMutex_;
         BlendStateMapType        blendStates_;
         RasterizerStateMapType   rasterizerStates_;
         DepthStencilStateMapType depthStencilStates_;
@@ -249,8 +248,6 @@ namespace Heart
         hResourceManager*       resourceManager_;
         hRenderMaterialManager  materialManager_;
         hRenderSubmissionCtx    mainSubmissionCtx_;
-
-        hShaderProgram*         debugShaders_[eDebugShaderMax];
 
         hTexture*               backBuffer_;
 
@@ -286,15 +283,15 @@ namespace Heart
             : inputLayout_(hNullptr)
             , inputLightData_(hNullptr)
             , directionLightData_(hNullptr)
+            , quadLightData_(hNullptr)
+            , sphereLightData_(hNullptr)
             , screenQuadIB_(hNullptr)
             , screenQuadVB_(hNullptr)
             , blendState_(hNullptr)
             , rasterState_(hNullptr)
             , depthStencilState_(hNullptr)
             , samplerState_(hNullptr)
-            , samplerBindPoint_(0)
         {
-            activeSphereLights_.SetAutoDelete(false);
         }
         ~hLightingManager()
         {
@@ -338,16 +335,16 @@ namespace Heart
             hColour colour_;
         };
 
-        struct hSphereLight
+        struct hSphereLightRenderData
         {
             hVec4   centreRadius_;
             hColour colour_;
         };
 
-        struct hSphereLightContainer : public hLinkedListElement<hSphereLightContainer>
+        struct hSphereLight : public hLinkedListElement<hSphereLight>
         {
-            hSphereLight    light_;
-            hBool           enabled_;
+            hVec4   centreRadius_;
+            hColour colour_;
         };
 
         static const hUint s_maxDirectionalLights = 15;
@@ -376,8 +373,9 @@ namespace Heart
         hInputLightData                                     lightInfo_;
         hArray<hDirectionalLight, s_maxDirectionalLights>   directionalLights_;
         hArray<hQuadLight, s_maxDirectionalLights>          quadLights_;
-        hArray<hSphereLightContainer, s_maxSphereLights>    sphereLights_;
-        hLinkedList<hSphereLightContainer>                  activeSphereLights_;
+        hArray<hSphereLight, s_maxSphereLights>             sphereLights_;
+        hLinkedList<hSphereLight>                           freeSphereLights_;
+        hLinkedList<hSphereLight>                           activeSphereLights_;
     };
 }
 

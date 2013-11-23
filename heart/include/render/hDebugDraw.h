@@ -113,7 +113,7 @@ namespace Heart
         hDebugDrawRenderer();
         ~hDebugDrawRenderer();
 
-        void initialiseResources(hRenderer* renderer);
+        void initialiseResources(hRenderer* renderer, hResourceManager* resourceManager);
         void destroyResources();
         void setMainViewCameraIndex(hUint camIndex);
 
@@ -125,7 +125,7 @@ namespace Heart
 
         static const hUint s_maxDebugPrims = 20000;
 
-        hMutex              critSection_;
+        hdMutex              critSection_;
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];
