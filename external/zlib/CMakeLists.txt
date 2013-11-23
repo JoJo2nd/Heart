@@ -4,6 +4,8 @@ if (MSVC)
     add_definitions(/wd"4996")
 endif()
 
+ENABLE_PROFILE_IF_SET()
+
 set(ZLIB_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

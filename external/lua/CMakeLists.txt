@@ -8,6 +8,8 @@ if (MSVC)
     add_definitions(/wd"4305")
 endif()
 
+ENABLE_PROFILE_IF_SET()
+
 set(LUA_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -85,6 +87,7 @@ source_group(source  FILES ${LUA_SRC_FILES})
 
 include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
+target_link_libraries(lua ${PROFILE_LIBS})
 
 ADD_CUSTOM_COMMAND(
 	TARGET lua
