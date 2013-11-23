@@ -10,6 +10,8 @@ set( TESTBED_INCLUDE_DIRS
     "${TESTBED_SOURCE_DIR}/include"
 )
 
+ENABLE_PROFILE_IF_SET()
+
 set( TESTBED_HDR_FILES
 	"${TESTBED_SOURCE_DIR}/include/Base64Test.h"
 #    "${TESTBED_SOURCE_DIR}/include/ComplexMesh1.h"

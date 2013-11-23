@@ -40,12 +40,12 @@ void HEART_API HeartAppCoreAssetsLoaded(Heart::hHeartEngine* engine)
 
 void HEART_API HeartAppMainUpate(Heart::hHeartEngine* engine)
 {
-    g_TestCore.EngineUpdateTick(Heart::hClock::Delta(), engine);
+    g_TestCore.EngineUpdateTick(Heart::hClock::delta(), engine);
 }
 
 void HEART_API HeartAppMainRender(Heart::hHeartEngine* engine)
 {
-    g_TestCore.EngineRenderTick(Heart::hClock::Delta(), engine);
+    g_TestCore.EngineRenderTick(Heart::hClock::delta(), engine);
 }
 
 hBool HEART_API HeartAppShutdownUpdate(Heart::hHeartEngine* engine)

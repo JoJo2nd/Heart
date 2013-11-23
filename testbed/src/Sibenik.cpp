@@ -55,14 +55,14 @@ hUint32 Sibenik::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
-            engine_->GetResourceManager()->mtLoadPackage(PACKAGE_NAME);
+            engine_->GetResourceManager()->loadPackage(PACKAGE_NAME);
             fpCamera_.setInput(pad);
             state_ = eLoading;
         }
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->mtIsPackageLoaded(PACKAGE_NAME))
+            if (engine_->GetResourceManager()->getIsPackageLoaded(PACKAGE_NAME))
             {
                 hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
                 state_ = eRender;
@@ -74,7 +74,7 @@ hUint32 Sibenik::RunUnitTest()
         break;
     case eRender:
         {
-            timer_ += Heart::hClock::Delta();
+            timer_ += Heart::hClock::delta();
             UpdateCamera();
             deferredLightManager_.setSphereLight(0, Heart::hVec3(Heart::hCos(timer_*0.5f)*0.f, 250.f, 0.f), 100.f+Heart::hSin(timer_*0.5f)*99.f);
             deferredLightManager_.setSphereLight(1, Heart::hVec3(Heart::hCos(timer_*0.5f)*1000.f, 600.f, 0.f), 100.f);
@@ -87,7 +87,7 @@ hUint32 Sibenik::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->mtUnloadPackage(PACKAGE_NAME);
+            engine_->GetResourceManager()->unloadPackage(PACKAGE_NAME);
             hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
             state_ = eExit;
         }
@@ -113,31 +113,35 @@ void Sibenik::RenderUnitTest()
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
     Heart::hDrawCall drawcall;
     drawCtx_.Begin(renderer);
+    Heart::hRenderModel* renderModel;
+    Heart::hResourceHandleScope<Heart::hRenderModel> handleScope(renderModelHandle_, &renderModel);
 
-    for (hUint32 i=0, n=renderModel_->getRenderableCount(); i<n; ++i) {
-        // Should a renderable simply store a draw call?
-        Heart::hRenderable* renderable=renderModel_->getRenderable(i);
+    if (renderModel) {
+        for (hUint32 i=0, n=renderModel->getRenderableCount(); i<n; ++i) {
+            // Should a renderable simply store a draw call?
+            Heart::hRenderable* renderable=renderModel->getRenderable(i);
 
-        hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderModel_->getBounds().c_);
-        Heart::hMaterialGroup* group = renderable->GetMaterial()->getGroup(0);
-        for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
-            Heart::hMaterialTechnique* tech=group->getTech(t);
-            if (tech->GetMask()!=techinfo->mask_) {
-                continue;
-            }
-            for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
-                drawcall.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
-                drawcall.rCmds_ = renderModel_->getRenderCommands(renderable->getRenderCommandOffset(0, t, pass));
-                drawCtx_.SubmitDrawCall(drawcall);
+            hFloat dist=Heart::hVec3Func::lengthFast(fpCamera_.getCameraPosition()-renderModel->getBounds().c_);
+            Heart::hMaterialGroup* group = renderable->GetMaterial()->getGroup(0);
+            for (hUint t=0, nt=group->getTechCount(); t<nt; ++t) {
+                Heart::hMaterialTechnique* tech=group->getTech(t);
+                if (tech->GetMask()!=techinfo->mask_) {
+                    continue;
+                }
+                for (hUint32 pass = 0, passcount = tech->GetPassCount(); pass < passcount; ++pass ) {
+                    drawcall.sortKey_ = Heart::hBuildRenderSortKey(0/*cam*/, tech->GetLayer(), tech->GetSort(), dist, renderable->GetMaterialKey(), pass);
+                    drawcall.rCmds_ = renderModel->getRenderCommands(renderable->getRenderCommandOffset(0, t, pass));
+                    drawCtx_.SubmitDrawCall(drawcall);
+                }
             }
         }
-    }
 
-    //submit the lighting pass
-    drawcall.customCallFlag_=true;
-    drawcall.sortKey_=Heart::hBuildRenderSortKey(1/*cam*/, 1, 0, 0.f, 0, 0);
-    drawcall.customCall_=hFUNCTOR_BINDMEMBER(Heart::hCustomRenderCallback, Heart::hLightingManager, doDeferredLightPass, &deferredLightManager_);
-    drawCtx_.SubmitDrawCall(drawcall);
+        //submit the lighting pass
+        drawcall.customCallFlag_=true;
+        drawcall.sortKey_=Heart::hBuildRenderSortKey(1/*cam*/, 1, 0, 0.f, 0, 0);
+        drawcall.customCall_=hFUNCTOR_BINDMEMBER(Heart::hCustomRenderCallback, Heart::hLightingManager, doDeferredLightPass, &deferredLightManager_);
+        drawCtx_.SubmitDrawCall(drawcall);
+    }
 
     drawCtx_.End();
 
@@ -245,8 +249,7 @@ void Sibenik::CreateRenderResources()
     camera->setViewport(vp);
     camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
 
-    renderModel_ = static_cast<hRenderModel*>(engine_->GetResourceManager()->mtGetResource(ASSET_PATH));
-    hcAssert(renderModel_);
+    renderModelHandle_ = Heart::hResourceHandle(ASSET_PATH);
     Heart::hRenderBuffer* constblock_;
     MaterialConstants initdata = {
         Heart::hVec4(1.f, 1.f, 1.f, 1.f),
@@ -334,8 +337,8 @@ void Sibenik::CreateRenderResources()
     lightInput.normal_=normal;
     lightInput.spec_=spec;
     lightInput.depth_=depth;
-    lightInput.vertexLightShader_=static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource("MATERIALS.DEFERRED_VS"));
-    lightInput.pixelLightShader_=static_cast<hShaderProgram*>(engine_->GetResourceManager()->mtGetResource("MATERIALS.DEFERRED_PS"));
+    lightInput.vertexLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr<hShaderProgram>();//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_VS"));
+    lightInput.pixelLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr<hShaderProgram>();//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_PS"));
     lightInput.viewCameraIndex_=0;
     deferredLightManager_.initialise(renderer, &lightInput);
     //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
@@ -394,6 +397,6 @@ void Sibenik::UpdateCamera()
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
-    fpCamera_.update(hClock::Delta());
+    fpCamera_.update(hClock::delta());
     camera->SetViewMatrix(fpCamera_.getViewmatrix());
 }

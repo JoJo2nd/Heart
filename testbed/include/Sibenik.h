@@ -39,7 +39,6 @@ public:
     Sibenik(Heart::hHeartEngine* engine) 
         : IUnitTest( engine )
         , state_(eBeginLoad)
-        , renderModel_(NULL)
     {
         Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
     }
@@ -68,7 +67,7 @@ private:
 
     State                   state_;
     hFloat                  timer_;
-    Heart::hRenderModel*    renderModel_;
+    Heart::hResourceHandle  renderModelHandle_;
     Heart::hDrawCallContext drawCtx_;
     Heart::hLightingManager deferredLightManager_;
     Heart::hShaderResourceView* albedoSRV_;
