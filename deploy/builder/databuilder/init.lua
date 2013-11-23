@@ -120,7 +120,7 @@ local function addResource(resopt)
     elseif type(resopt.inputfiles) ~= "table" then
         error("resource option error: inputfiles are not a table or are an empty table")
     end
-    local fullresname=strfmt("%s.%s", strupr(resopt.package), strupr(resopt.resname))
+    local fullresname=strfmt("%s.%s", resopt.package, resopt.resname)
     if resources_[fullresname] ~= nil then 
         G.print(strfmt("Resource %s already exists, replacing", fullresname))
     else
