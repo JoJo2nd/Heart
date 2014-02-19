@@ -131,31 +131,31 @@ namespace Heart
         createDebugShadersInternal();
         
         hResourceHandler texreshandler;
-        texreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   textureResourceLoader, this);
-        texreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   textureResourceLink,   this);
-        texreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, textureResourceUnlink, this);
-        texreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, textureResourceUnload, this);
+        texreshandler.loadProc_     =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      textureResourceLoader,     this);
+        texreshandler.postLoadProc_ =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  textureResourcePostLoad,   this);
+        texreshandler.preUnloadProc_=hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, textureResourcePreUnload,  this);
+        texreshandler.unloadProc_   =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    textureResourceUnload,     this);
         resourceManager_->registerResourceHandler("texture", texreshandler);
         
         hResourceHandler shaderreshandler;
-        shaderreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   shaderResourceLoader, this);
-        shaderreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   shaderResourceLink,   this);
-        shaderreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, shaderResourceUnlink, this);
-        shaderreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, shaderResourceUnload, this);
+        shaderreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      shaderResourceLoader,    this);
+        shaderreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  shaderResourcePostLoad,  this);
+        shaderreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, shaderResourcePreUnload, this);
+        shaderreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    shaderResourceUnload,    this);
         resourceManager_->registerResourceHandler("gpu", shaderreshandler);
         
         hResourceHandler matreshandler;
-        matreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   materialResourceLoader, this);
-        matreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   materialResourceLink,   this);
-        matreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, materialResourceUnlink, this);
-        matreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, materialResourceUnload, this);
+        matreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      materialResourceLoader,    this);
+        matreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  materialResourcePostLoad,  this);
+        matreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, materialResourcePreUnload, this);
+        matreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    materialResourceUnload,    this);
         resourceManager_->registerResourceHandler("mfx", matreshandler);
 
         hResourceHandler meshreshandler;
-        meshreshandler.loadProc_  =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
-        meshreshandler.linkProc_  =hFUNCTOR_BINDMEMBER(hResourceLinkProc, hRenderer,   meshResourceLink,   this);
-        meshreshandler.unlinkProc_=hFUNCTOR_BINDMEMBER(hResourceUnlinkProc, hRenderer, meshResourceUnlink, this);
-        meshreshandler.unloadProc_=hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
+        meshreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
+        meshreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,   meshResourceLink,   this);
+        meshreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, meshResourceUnlink, this);
+        meshreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
         resourceManager_->registerResourceHandler("mesh", meshreshandler);
         
     }
@@ -1068,15 +1068,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::textureResourceLink(hResourceClassBase* texture) {
-        return hTrue; //Nothing to do
+    void hRenderer::textureResourcePostLoad(hResourceManager* manager, hResourceClassBase* texture) {
+        manager->insertResource(texture->getResourceID(), texture);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::textureResourceUnlink(hResourceClassBase* texture) {
+    void hRenderer::textureResourcePreUnload(hResourceManager* manager, hResourceClassBase* texture) {
+        manager->removeResource(texture->getResourceID());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1187,16 +1188,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::shaderResourceLink(hResourceClassBase* resource) {
-        return hTrue;
+    void hRenderer::shaderResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource) {
+        manager->insertResource(resource->getResourceID(), resource);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::shaderResourceUnlink(hResourceClassBase* resource) {
-
+    void hRenderer::shaderResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource) {
+        manager->removeResource(resource->getResourceID());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1437,19 +1438,21 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::materialResourceLink(hResourceClassBase* resource) {
+    void hRenderer::materialResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource) {
         hMaterial* mat = static_cast< hMaterial* >(resource);
-        return mat->link(resourceManager_, this, &materialManager_);
+        mat->listenToResourceEvents(manager);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::materialResourceUnlink(hResourceClassBase* resource) {
+    void hRenderer::materialResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource) {
         hcAssert(resource);
         hMaterial* mat = static_cast<hMaterial*>(resource);
+        mat->stopListeningToResourceEvents();
         mat->unbind();
+        manager->removeResource(mat->getResourceID());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1499,7 +1502,7 @@ namespace Heart
                     renderable->SetPrimativeType(primtype);
                     renderable->SetPrimativeCount(renderableres.primcount());
                     renderable->SetAABB(aabb);
-                    renderable->SetMaterialResourceID(hResourceID(renderableres.materialresource()));
+                    renderable->setMaterialResourceID(hResourceID(renderableres.materialresource()));
 
                     if (renderableres.has_indexbuffer()) {
                         hIndexBuffer* ib;
@@ -1532,34 +1535,19 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hRenderer::meshResourceLink(hResourceClassBase* resource) {
+    void hRenderer::meshResourceLink(hResourceManager* manager, hResourceClassBase* resource) {
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-        hUint32 renderablecount = rmodel->getRenderableCount();
-        for(hUint32 i = 0; i < renderablecount; ++i) {
-            hRenderable* renderable=rmodel->getRenderable(i);
-            if (renderable->GetMaterial() == 0) {
-                hResourceHandle mat(renderable->GetMaterialResourceID());
-                // Possible the material won't have loaded just yet...
-                if (!mat.weakPtr()) {
-                    return hFalse;
-                }
-                renderable->setMaterial(mat);
-            }
-        }
-        rmodel->initialiseRenderCommands();
-        return hTrue;
+        rmodel->listenForResourceEvents(manager);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::meshResourceUnlink(hResourceClassBase* resource) {
+    void hRenderer::meshResourceUnlink(hResourceManager* manager, hResourceClassBase* resource) {
         hRenderModel* rmodel = static_cast< hRenderModel* >(resource);
-        hUint32 renderablecount = rmodel->getRenderableCount();
-        for(hUint32 i = 0; i < renderablecount; ++i) {
-            rmodel->getRenderable(i)->setMaterial(hResourceHandle());
-        }
+        rmodel->cleanUp();
+        manager->removeResource(rmodel->getResourceID());
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1994,183 +1982,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo) {
+        stopResourceEventListening();
+
+
         destroy();
 
-        hRenderCommandGenerator rcGen(&renderCmds_);
         targetInfo_=*rndrinfo;
-        lightInfo_.directionalLightCount_=0;
-        lightInfo_.quadLightCount_=0;
-        renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
-        renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
-        renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
-        renderer->createBuffer(sizeof(hSphereLightRenderData)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLightRenderData), &sphereLightData_);
-        hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, &screenQuadIB_, &screenQuadVB_);
-        hBlendStateDesc blendstatedesc;
-        hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
-        blendstatedesc.blendEnable_           = RSV_DISABLE;
-        blendstatedesc.srcBlend_              = RSV_BLEND_OP_ONE;
-        blendstatedesc.destBlend_             = RSV_BLEND_OP_ZERO;
-        blendstatedesc.blendOp_               = RSV_BLEND_FUNC_ADD;
-        blendstatedesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
-        blendstatedesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
-        blendstatedesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
-        blendstatedesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        blendState_=renderer->createBlendState(blendstatedesc);
-        hRasterizerStateDesc rasterstatedesc;
-        hZeroMem(&rasterstatedesc, sizeof(rasterstatedesc));
-        rasterstatedesc.fillMode_              = RSV_FILL_MODE_SOLID;
-        rasterstatedesc.cullMode_              = RSV_CULL_MODE_NONE;
-        rasterstatedesc.frontCounterClockwise_ = RSV_DISABLE;
-        rasterstatedesc.depthBias_             = 0;
-        rasterstatedesc.depthBiasClamp_        = 0.f;
-        rasterstatedesc.slopeScaledDepthBias_  = 0.f;
-        rasterstatedesc.depthClipEnable_       = RSV_ENABLE;
-        rasterstatedesc.scissorEnable_         = RSV_DISABLE;
-        rasterState_=renderer->createRasterizerState(rasterstatedesc);
-        hDepthStencilStateDesc depthstatedesc;
-        hZeroMem(&depthstatedesc, sizeof(depthstatedesc));
-        depthstatedesc.depthEnable_        = RSV_DISABLE;
-        depthstatedesc.depthWriteMask_     = RSV_DISABLE;
-        depthstatedesc.depthFunc_          = RSV_Z_CMP_LESS;
-        depthstatedesc.stencilEnable_      = RSV_DISABLE;
-        depthstatedesc.stencilReadMask_    = ~0U;
-        depthstatedesc.stencilWriteMask_   = ~0U;
-        depthstatedesc.stencilFailOp_      = RSV_SO_KEEP;
-        depthstatedesc.stencilDepthFailOp_ = RSV_SO_KEEP;
-        depthstatedesc.stencilPassOp_      = RSV_SO_KEEP;
-        depthstatedesc.stencilFunc_        = RSV_SF_CMP_ALWAYS;
-        depthstatedesc.stencilRef_         = 0;  
-        depthStencilState_=renderer->createDepthStencilState(depthstatedesc);
-        hSamplerStateDesc samplerstatedesc;
-        samplerstatedesc.filter_        = SSV_POINT;
-        samplerstatedesc.addressU_      = SSV_CLAMP;
-        samplerstatedesc.addressV_      = SSV_CLAMP;
-        samplerstatedesc.addressW_      = SSV_CLAMP;
-        samplerstatedesc.mipLODBias_    = 0;
-        samplerstatedesc.maxAnisotropy_ = 16;
-        samplerstatedesc.borderColour_  = WHITE;
-        samplerstatedesc.minLOD_        = -FLT_MAX;
-        samplerstatedesc.maxLOD_        = FLT_MAX;
-        samplerState_=renderer->createSamplerState(samplerstatedesc);
-        inputLayout_=targetInfo_.vertexLightShader_->createVertexLayout(screenQuadVB_->getLayoutDesc(), screenQuadVB_->getDescCount());
-
-        
-        for (hUint i=0, n=targetInfo_.pixelLightShader_->getInputCount(); i<n; ++i) {
-            hShaderInput shaderInput;
-            targetInfo_.pixelLightShader_->getInput(i, &shaderInput);
-            if (hStrCmp(shaderInput.name_, "gbuffer_albedo")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=targetInfo_.albedo_->getTextureFormat();
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.albedo_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_normal")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=targetInfo_.normal_->getTextureFormat();
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.normal_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_spec")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                    hShaderResourceViewDesc srvdesc;
-                    hShaderResourceView* srv;
-                    hZeroMem(&srvdesc, sizeof(srvdesc));
-                    srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                    srvdesc.format_=targetInfo_.spec_->getTextureFormat();
-                    srvdesc.tex2D_.mipLevels_=~0;
-                    srvdesc.tex2D_.topMip_=0;
-                    renderer->createShaderResourceView(targetInfo_.spec_, srvdesc, &srv);
-                    if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                        srv_.Resize(shaderInput.bindPoint_+1);
-                    }
-                    srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_depth")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=eTextureFormat_R32_float;
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.depth_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "tex_sampler")==0 && shaderInput.type_==eShaderInputType_Sampler) {
-                samplerBindPoint_=shaderInput.bindPoint_;
-            } else if (hStrCmp(shaderInput.name_, "lighting_setup")==0 && shaderInput.type_==eShaderInputType_Buffer) {
-                if (buffers_.GetSize() < shaderInput.bindPoint_+1) {
-                    buffers_.Resize(shaderInput.bindPoint_+1);
-                }
-                buffers_[shaderInput.bindPoint_]=inputLightData_;
-            } else if (hStrCmp(shaderInput.name_, "direction_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hDirectionalLight);
-                srvdesc.buffer_.numElements_=s_maxDirectionalLights;
-                renderer->createShaderResourceView(directionLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "quad_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hQuadLight);
-                srvdesc.buffer_.numElements_=s_maxQuadLights;
-                renderer->createShaderResourceView(quadLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "sphere_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hSphereLightRenderData);
-                srvdesc.buffer_.numElements_=s_maxSphereLights;
-                renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            }
+        if (targetInfo_.vertexLightShader_.getIsValid()) {
+            targetInfo_.vertexLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
         }
-        rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
-        rcGen.setShader(targetInfo_.vertexLightShader_, ShaderType_VERTEXPROG);
-        rcGen.setShader(targetInfo_.pixelLightShader_, ShaderType_FRAGMENTPROG);
-        rcGen.setPixelInputs(&samplerState_, 1, srv_.GetBuffer(), srv_.GetSize(), buffers_.GetBuffer(), buffers_.GetSize());
-        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
-        rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
-        rcGen.setReturn();
+        if (targetInfo_.pixelLightShader_.getIsValid()) {
+            targetInfo_.pixelLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
+        }
+        renderer_=renderer;
+        generateRenderCommands(renderer);
 
         for (hUint i=0, n=sphereLights_.GetMaxSize(); i<n; ++i) {
             freeSphereLights_.addTail(&sphereLights_[i]);
@@ -2182,7 +2007,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::destroy() {
-
         for (hUint i=0, n=srv_.GetSize(); i<n; ++i) {
             if (srv_[i]) {
                 srv_[i]->DecRef();
@@ -2200,15 +2024,15 @@ namespace Heart
             rasterState_=hNullptr;
         }
         if (depthStencilState_) {
-            depthStencilState_->DecRef();
+            //depthStencilState_->DecRef();
             depthStencilState_=hNullptr;
         }
         if (samplerState_) {
             samplerState_->DecRef();
             samplerState_=hNullptr;
         }
-        if (inputLayout_) {
-            targetInfo_.vertexLightShader_->destroyVertexLayout(inputLayout_);
+        if (inputLayout_ && targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()) {
+            targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()->destroyVertexLayout(inputLayout_);
             inputLayout_=hNullptr;
         }
         if (inputLightData_) {
@@ -2270,6 +2094,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx) {
+        if (renderCmds_.isEmpty()) {
+            return;
+        }
+
         (void)renderer;
         hRenderBufferMapInfo mapinfo;
         hRendererCamera* viewcam=renderer->GetRenderCamera(targetInfo_.viewCameraIndex_);
@@ -2402,6 +2230,221 @@ namespace Heart
     void hLightingManager::setSphereLight(hUint light, const hVec3& centre, hFloat radius) {
         sphereLights_[light].centreRadius_=hVec4(centre, radius);
         sphereLights_[light].colour_=WHITE;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::generateRenderCommands(hRenderer* renderer) {
+        hRenderCommandGenerator rcGen(&renderCmds_);
+        if (!targetInfo_.pixelLightShader_.weakPtr() || !targetInfo_.vertexLightShader_.weakPtr()) {
+            return;
+        }
+
+        destroy();
+
+        lightInfo_.directionalLightCount_=0;
+        lightInfo_.quadLightCount_=0;
+        renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
+        renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
+        renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
+        renderer->createBuffer(sizeof(hSphereLightRenderData)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLightRenderData), &sphereLightData_);
+        hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, &screenQuadIB_, &screenQuadVB_);
+        hBlendStateDesc blendstatedesc;
+        hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
+        blendstatedesc.blendEnable_           = RSV_DISABLE;
+        blendstatedesc.srcBlend_              = RSV_BLEND_OP_ONE;
+        blendstatedesc.destBlend_             = RSV_BLEND_OP_ZERO;
+        blendstatedesc.blendOp_               = RSV_BLEND_FUNC_ADD;
+        blendstatedesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
+        blendstatedesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
+        blendstatedesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
+        blendstatedesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
+        blendState_=renderer->createBlendState(blendstatedesc);
+        hRasterizerStateDesc rasterstatedesc;
+        hZeroMem(&rasterstatedesc, sizeof(rasterstatedesc));
+        rasterstatedesc.fillMode_              = RSV_FILL_MODE_SOLID;
+        rasterstatedesc.cullMode_              = RSV_CULL_MODE_NONE;
+        rasterstatedesc.frontCounterClockwise_ = RSV_DISABLE;
+        rasterstatedesc.depthBias_             = 0;
+        rasterstatedesc.depthBiasClamp_        = 0.f;
+        rasterstatedesc.slopeScaledDepthBias_  = 0.f;
+        rasterstatedesc.depthClipEnable_       = RSV_ENABLE;
+        rasterstatedesc.scissorEnable_         = RSV_DISABLE;
+        rasterState_=renderer->createRasterizerState(rasterstatedesc);
+        hDepthStencilStateDesc depthstatedesc;
+        hZeroMem(&depthstatedesc, sizeof(depthstatedesc));
+        depthstatedesc.depthEnable_        = RSV_DISABLE;
+        depthstatedesc.depthWriteMask_     = RSV_DISABLE;
+        depthstatedesc.depthFunc_          = RSV_Z_CMP_LESS;
+        depthstatedesc.stencilEnable_      = RSV_DISABLE;
+        depthstatedesc.stencilReadMask_    = ~0U;
+        depthstatedesc.stencilWriteMask_   = ~0U;
+        depthstatedesc.stencilFailOp_      = RSV_SO_KEEP;
+        depthstatedesc.stencilDepthFailOp_ = RSV_SO_KEEP;
+        depthstatedesc.stencilPassOp_      = RSV_SO_KEEP;
+        depthstatedesc.stencilFunc_        = RSV_SF_CMP_ALWAYS;
+        depthstatedesc.stencilRef_         = 0;  
+        depthStencilState_=renderer->createDepthStencilState(depthstatedesc);
+        hSamplerStateDesc samplerstatedesc;
+        samplerstatedesc.filter_        = SSV_POINT;
+        samplerstatedesc.addressU_      = SSV_CLAMP;
+        samplerstatedesc.addressV_      = SSV_CLAMP;
+        samplerstatedesc.addressW_      = SSV_CLAMP;
+        samplerstatedesc.mipLODBias_    = 0;
+        samplerstatedesc.maxAnisotropy_ = 16;
+        samplerstatedesc.borderColour_  = WHITE;
+        samplerstatedesc.minLOD_        = -FLT_MAX;
+        samplerstatedesc.maxLOD_        = FLT_MAX;
+        samplerState_=renderer->createSamplerState(samplerstatedesc);
+        inputLayout_=targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()->createVertexLayout(screenQuadVB_->getLayoutDesc(), screenQuadVB_->getDescCount());
+
+
+        for (hUint i=0, n=targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>()->getInputCount(); i<n; ++i) {
+            hShaderInput shaderInput;
+            targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>()->getInput(i, &shaderInput);
+            if (hStrCmp(shaderInput.name_, "gbuffer_albedo")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=targetInfo_.albedo_->getTextureFormat();
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.albedo_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_normal")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=targetInfo_.normal_->getTextureFormat();
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.normal_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_spec")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=targetInfo_.spec_->getTextureFormat();
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.spec_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "gbuffer_depth")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Tex2D;
+                srvdesc.format_=eTextureFormat_R32_float;
+                srvdesc.tex2D_.mipLevels_=~0;
+                srvdesc.tex2D_.topMip_=0;
+                renderer->createShaderResourceView(targetInfo_.depth_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "tex_sampler")==0 && shaderInput.type_==eShaderInputType_Sampler) {
+                samplerBindPoint_=shaderInput.bindPoint_;
+            } else if (hStrCmp(shaderInput.name_, "lighting_setup")==0 && shaderInput.type_==eShaderInputType_Buffer) {
+                if (buffers_.GetSize() < shaderInput.bindPoint_+1) {
+                    buffers_.Resize(shaderInput.bindPoint_+1);
+                }
+                buffers_[shaderInput.bindPoint_]=inputLightData_;
+            } else if (hStrCmp(shaderInput.name_, "direction_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hDirectionalLight);
+                srvdesc.buffer_.numElements_=s_maxDirectionalLights;
+                renderer->createShaderResourceView(directionLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "quad_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hQuadLight);
+                srvdesc.buffer_.numElements_=s_maxQuadLights;
+                renderer->createShaderResourceView(quadLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            } else if (hStrCmp(shaderInput.name_, "sphere_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
+                hShaderResourceViewDesc srvdesc;
+                hShaderResourceView* srv;
+                hZeroMem(&srvdesc, sizeof(srvdesc));
+                srvdesc.resourceType_=eRenderResourceType_Buffer;
+                srvdesc.format_=eTextureFormat_Unknown;
+                srvdesc.buffer_.firstElement_=0;
+                srvdesc.buffer_.elementOffset_=0;
+                srvdesc.buffer_.elementWidth_=sizeof(hSphereLightRenderData);
+                srvdesc.buffer_.numElements_=s_maxSphereLights;
+                renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
+                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
+                    srv_.Resize(shaderInput.bindPoint_+1);
+                }
+                srv_[shaderInput.bindPoint_]=srv;
+            }
+        }
+        rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
+        rcGen.setShader(targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>(), ShaderType_VERTEXPROG);
+        rcGen.setShader(targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>(), ShaderType_FRAGMENTPROG);
+        rcGen.setPixelInputs(&samplerState_, 1, srv_.GetBuffer(), srv_.GetSize(), buffers_.GetBuffer(), buffers_.GetSize());
+        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
+        rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
+        rcGen.setReturn();
+
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hLightingManager::resourceUpdate(hResourceID , hResurceEvent event, hResourceManager*, hResourceClassBase*) {
+        destroy();
+        if (event == hResourceEvent_DBInsert) {
+            generateRenderCommands(renderer_);
+        }
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hLightingManager::stopResourceEventListening() {
+        if (targetInfo_.vertexLightShader_.getIsValid()) {
+            targetInfo_.vertexLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
+            targetInfo_.vertexLightShader_=hResourceHandle();
+        }
+        if (targetInfo_.pixelLightShader_.getIsValid()) {
+            targetInfo_.pixelLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
+            targetInfo_.pixelLightShader_=hResourceHandle();
+        }
     }
 
 }

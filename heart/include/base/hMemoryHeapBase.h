@@ -140,6 +140,7 @@ protected:
     void*				lastThreadID_;
     hSizeT				allocNum_;
     hSizeT				debugAlloc_;
+
 };
 
 // HEART_DLLEXPORT void               HEART_API SetGlobalHeap(hMemoryHeapBase*);

@@ -341,6 +341,7 @@ namespace Heart
             release();
         }
 
+        void    reset() { cmdSize_ = 0; }
         hBool   isEmpty() const { return cmdSize_ == 0; }
         hRCmd*  getFirst() { return cmds_; }
         hRCmd*  getEnd() { return (hRCmd*)((hByte*)cmds_+cmdSize_); }

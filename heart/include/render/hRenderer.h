@@ -208,23 +208,23 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         hResourceClassBase*  textureResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        hBool                textureResourceLink(hResourceClassBase* texture);
-        void                 textureResourceUnlink(hResourceClassBase* texture);
+        void                 textureResourcePostLoad(hResourceManager* manager, hResourceClassBase* texture);
+        void                 textureResourcePreUnload(hResourceManager* manager, hResourceClassBase* texture);
         void                 textureResourceUnload(hResourceClassBase* texture);
 
         hResourceClassBase*  shaderResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        hBool                shaderResourceLink(hResourceClassBase* resource);
-        void                 shaderResourceUnlink(hResourceClassBase* resource);
+        void                 shaderResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource);
+        void                 shaderResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource);
         void                 shaderResourceUnload(hResourceClassBase* resource);
 
         hResourceClassBase*  materialResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        hBool                materialResourceLink(hResourceClassBase* resource);
-        void                 materialResourceUnlink(hResourceClassBase* resource);
+        void                 materialResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource);
+        void                 materialResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource);
         void                 materialResourceUnload(hResourceClassBase* resource);
 
         hResourceClassBase*  meshResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        hBool                meshResourceLink(hResourceClassBase* resource);
-        void                 meshResourceUnlink(hResourceClassBase* resource);
+        void                 meshResourceLink(hResourceManager* manager, hResourceClassBase* resource);
+        void                 meshResourceUnlink(hResourceManager* manager, hResourceClassBase* resource);
         void                 meshResourceUnload(hResourceClassBase* resource);
 
         // Init params
@@ -270,8 +270,8 @@ namespace Heart
 
         struct hRenderTargetInfo
         {
-            hShaderProgram* vertexLightShader_;
-            hShaderProgram* pixelLightShader_;
+            hResourceHandle vertexLightShader_;
+            hResourceHandle pixelLightShader_;
             hTexture*       albedo_;
             hTexture*       normal_;
             hTexture*       spec_;
@@ -293,12 +293,15 @@ namespace Heart
             , samplerState_(hNullptr)
         {
         }
-        ~hLightingManager()
-        {
+        ~hLightingManager() {
+            stopResourceEventListening();
             destroy();
         }
 
         void initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo);
+
+        void stopResourceEventListening();
+
         void destroy();
         void addDirectionalLight(const hVec3& direction, const hColour& colour);
         void addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour);
@@ -306,6 +309,7 @@ namespace Heart
         void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
+        hBool resourceUpdate(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*);
 
     private:
 
@@ -352,7 +356,9 @@ namespace Heart
         static const hUint s_maxSphereLights = 64;
 
         void drawDebugLightInfo();
+        void generateRenderCommands(hRenderer* renderer);
 
+        hRenderer*                                          renderer_;
         hRenderTargetInfo                                   targetInfo_;
         hdInputLayout*                                      inputLayout_;
         hRenderBuffer*                                      inputLightData_;

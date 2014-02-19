@@ -167,6 +167,9 @@ namespace Heart
 
     void hdEndFilewatch(hdFilewatchHandle filewatchhandle) {
         hdFilewatch* filewatch=(hdFilewatch*)filewatchhandle;
+        if (!filewatch) {
+            return;
+        }
         hcAssert(filewatch);
         if (filewatch->watchHandle_!=INVALID_HANDLE_VALUE) {
             CloseHandle(filewatch->watchHandle_);

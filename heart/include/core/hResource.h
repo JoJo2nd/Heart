@@ -118,9 +118,6 @@ namespace Heart
     public:
         hResourceClassBase() 
             : resourceID_( 0 )
-            , linked_(hFalse)
-            , lockedCount_(0)
-            , inResourceDatabase_(hFalse)
         {}
         virtual ~hResourceClassBase() {}
         void                    setResourceID(const hResourceID& resid) { resourceID_=resid; }
@@ -129,16 +126,10 @@ namespace Heart
         const hChar*            GetName() const { return name_.GetBuffer(); }
         void                    SetType(const hResourceType& type) { type_ = type; }
         hResourceType           GetType() const { return type_; }
-        void                    SetIsLinked(hBool val){ linked_ = val; }
-        hBool                   GetIsLinked() const { return linked_; }
-        hBool                   getIsLocked() const { return lockedCount_ > 0; }
-        hUint                   getLockCount() const { return lockedCount_; }
-        void                    lock() { ++lockedCount_; }
-        void                    unlock() { hcAssert(lockedCount_ > 0); --lockedCount_; }
-        hBool                   getInResourceDatabase() const { return inResourceDatabase_; }
-        void                    setInResourceDatabase(hBool val) { inResourceDatabase_=val; }
-        virtual void            postLoad() {}
-        virtual void            preUnload() {}
+//         hBool                   getIsLocked() const { return lockedCount_ > 0; }
+//         hUint                   getLockCount() const { return lockedCount_; }
+//         void                    lock() { ++lockedCount_; }
+//         void                    unlock() { hcAssert(lockedCount_ > 0); --lockedCount_; }
 
     protected:
 
@@ -148,9 +139,6 @@ namespace Heart
         hArray<hChar, 32>  name_;
         hResourceID        resourceID_;
         hResourceType      type_;
-        hUint              lockedCount_;
-        hBool              linked_ : 1;
-        hBool              inResourceDatabase_ : 1;
     };
 
     class hResourceManager;
@@ -200,40 +188,30 @@ namespace Heart
 
         hResourceHandle()
             : resourceID_(0)
-            , lastPtr_(hNullptr)
             , flags_(0)
         {
 
         }
         explicit hResourceHandle(hResourceID resid)
             : resourceID_(resid)
-            , lastPtr_(hNullptr)
             , flags_(0)
         {
 
         }
         explicit hResourceHandle(const hChar* path)
             : resourceID_(hResourceID::buildResourceID(path))
-            , lastPtr_(hNullptr)
             , flags_(0)
         {
 
         }
         ~hResourceHandle()
         {
-            if (acquired_) {
-                lastPtr_->unlock();
-            }
         }
         hResourceHandle(const hResourceHandle& rhs) 
             : resourceID_(rhs.resourceID_)
-            , lastPtr_(rhs.lastPtr_)
             , flags_(rhs.flags_)
         {
             registeredForUpdates_=hFalse;
-            if (acquired_) {
-                lastPtr_->lock();
-            }
         }
         /*hResourceHandle(hResourceHandle&& rhs) {
             swap(this, &rhs);
@@ -247,25 +225,20 @@ namespace Heart
             return *this;
         }
 
-        hResourceClassBase* acquire();
-        template< typename t_ty >
-        t_ty*               acquire() { return static_cast< t_ty* >(acquire()); }
         hResourceClassBase* weakPtr() const;
         template< typename t_ty >
         t_ty*               weakPtr() const { return static_cast< t_ty* >(weakPtr()); }
-        void                release() ;
-        hBool               updateRequired() const { return updateRequired_; }
-        void                clearUpdate() { updateRequired_=hFalse; }
         void                registerForUpdates(hResourceEventProc proc);
         void                unregisterForUpdates(hResourceEventProc proc);
         hBool               getIsValid() const { return resourceID_ != hResourceID(); }
+        hResourceID         getResourceID() const { return resourceID_; }
+
     private:
 
         friend class hResourceManager;
 
         hResourceHandle(hResourceManager* manager, hResourceID resid)
             : resourceID_(resid)
-            , lastPtr_(hNullptr)
             , flags_(0)
         {
             if (!manager_) {
@@ -276,19 +249,15 @@ namespace Heart
         static void swap(hResourceHandle* lhs, hResourceHandle* rhs) {
             std::swap(lhs->manager_, rhs->manager_);
             std::swap(lhs->resourceID_, rhs->resourceID_);
-            std::swap(lhs->lastPtr_, rhs->lastPtr_);
             std::swap(lhs->flags_, rhs->flags_);
         }
 
         static hResourceManager*    manager_;
         hResourceID                 resourceID_;
-        hResourceClassBase*         lastPtr_;
         union {
             hUint                   flags_;
             struct {
-                hBool               acquired_;
-                hBool               updateRequired_;
-                hBool               registeredForUpdates_; //this flag should not be copied
+                hBool               registeredForUpdates_; //this flag should not be copied?
             };
         };
     };
@@ -301,13 +270,12 @@ namespace Heart
             : addr_(ptr)
             , handle_(handle)
         {
-            *addr_ = handle_.acquire<t_ty>();
+            *addr_ = handle_.weakPtr<t_ty>();
         }
 
         ~hResourceHandleScope()
         {
             *addr_=hNullptr;
-            handle_.release();
         }
 
         operator hBool () const {

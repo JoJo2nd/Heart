@@ -100,11 +100,15 @@ namespace Heart
             NodeLink* next=node->lnext_;
             node->lprev_->lnext_ = node->lnext_;
             node->lnext_->lprev_ = node->lprev_;
+            hcAssert(size_ > 0);
             --size_;
             breakElementLinks(node);
             return static_cast<NodePtr>(next);
         }
         void clear() { 
+            if (size_ == 0) {
+                return;
+            }
             while(begin() != end()) { 
                 remove(begin()); 
             }

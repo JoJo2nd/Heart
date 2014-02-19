@@ -53,7 +53,9 @@ namespace Heart
         , packageHeap_(NULL)
         , fileQueue_(fileQueue)
         , workerQueue_(workerQueue)
+        , hotSwapping_(hFalse)
     {
+        hotSwapSignal_.Create(0, 4096);
         hStrCopy(packageName_, (hUint)hArraySize(packageName_), packageName);
     }
 
@@ -66,6 +68,7 @@ namespace Heart
         hDELETE_SAFE(zipPackage_);
         resourceMap_.Clear(hTrue);
         //hDELETE_SAFE(packageHeap_);
+        hotSwapSignal_.Destroy();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -78,6 +81,8 @@ namespace Heart
         
         hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
         hStrCat(zipname, MAX_PACKAGE_NAME, packageName_);
+        hStrCopy(packageRoot_, MAX_PACKAGE_NAME, zipname);
+        hStrCat(packageRoot_, MAX_PACKAGE_NAME, "/");
         hStrCat(zipname,MAX_PACKAGE_NAME,".PKG");
 
         packageCRC_ = hCRC32::StringCRC(packageName_);
@@ -172,7 +177,7 @@ namespace Heart
                 }
             } break;
         case State_Load_DepPkgs: {
-                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                for (hUint i=0, n=links_.GetSize(); i<n && !hotSwapping_; ++i) {
                     manager->loadPackage(links_[i]);
                 }
                 packageState_ = State_Kick_ResourceLoads; 
@@ -203,12 +208,11 @@ namespace Heart
             } break;
         case State_Wait_ReourcesLoads: {
                 if (workerQueue_->queueIdle()) {
-                    hcPrintf("Package %s: %u resources loaded in %f sec", packageName_, totalResources_, timer_.elapsedMilliSec()/1000.f);
                     for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
                         resourceMap_.Insert(resourceJobArray_[i].crc, resourceJobArray_[i].createdResource_);
-                        resourceJobArray_[i].createdResource_->postLoad();
                     }
-                    packageState_=State_Load_WaitDeps;
+                    hcPrintf("Package %s: %u resources loaded in %f sec", packageName_, totalResources_, timer_.elapsedMilliSec()/1000.f);
+                    packageState_=State_Link_Resources;
                 }
             } break;
         case State_Link_Resources: {
@@ -216,6 +220,8 @@ namespace Heart
                     tempHeap_.destroy();
                     hcPrintf("Package %s is Loaded & Linked", packageName_);
                     packageState_ = State_Ready;
+                    hotSwapping_ = hFalse;
+                    resourceFilewatch_ = hdBeginFilewatch(packageRoot_, hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hResourcePackage, resourceDirChange, this));
                     ret = hTrue;
                 }
             } break;
@@ -242,13 +248,26 @@ namespace Heart
                 }
             } break;
         case State_Unload_DepPkg: {
-                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                for (hUint i=0, n=links_.GetSize(); i<n && !hotSwapping_; ++i) {
                     manager->unloadPackage(links_[i]);
                 }
+                hdEndFilewatch(resourceFilewatch_);
+                resourceFilewatch_=0;
                 packageState_ = State_Unloaded;
             } break;
-        case State_Unloaded:
-        case State_Ready:
+        case State_Unloaded: {
+                if (hotSwapping_) {
+                    hotSwapping_=hFalse;
+                }
+            } break;
+        case State_Ready: {
+                {
+                    if (hotSwapSignal_.poll()) {
+                        beginUnload();
+                        hotSwapping_=hTrue;
+                    }
+                }
+            } break;
         default:{
             } break;
         }
@@ -263,6 +282,7 @@ namespace Heart
     void hResourcePackage::beginUnload()
     {
         if (isInReadyState()) {
+            hotSwapping_=hFalse;
             hcPrintf("Package %s Unlink started", packageName_);
             packageState_ = State_Unlink_Resoruces;
         }
@@ -340,7 +360,7 @@ namespace Heart
                 "This is a Fatal Error.");
             if (res)
             {
-                res->setResourceID(hResourceID(GetKey(), res->GetKey()));
+                res->setResourceID(hResourceID(GetKey(), crc));
                 res->SetName(resxml.GetAttributeString("name"));
                 res->SetType(typehandler);
                 jobinfo->createdResource_=res;
@@ -368,22 +388,13 @@ namespace Heart
     hBool hResourcePackage::doPostLoadLink(hResourceManager* manager)
     {
         hUint32 totallinked = 0;
-        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
-        {
+        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            if (!res->GetIsLinked())
-            {
-                if (handler->linkProc_(res)) {
-                    hcPrintf("Resource 0x%08X.0x%08X is linked", GetKey(), res->GetKey());
-                    res->SetIsLinked(hTrue);
-                    manager->insertResource(hResourceID(GetKey(), res->GetKey()), res);
-                }
-            }
-
-            totallinked = res->GetIsLinked() ? totallinked + 1 : totallinked;
+            handler->postLoadProc_(manager, res);
+            ++totallinked;
         }
 
-        return totallinked == totalResources_;
+        return hTrue;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -392,12 +403,9 @@ namespace Heart
 
     void hResourcePackage::doPreUnloadUnlink(hResourceManager* manager)
     {
-        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext())
-        {
-            res->preUnload();
-            manager->removeResource(hResourceID(GetKey(), res->GetKey()));
+        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            handler->unlinkProc_(res);
+            handler->preUnloadProc_(manager, res);
         }
     }
 
@@ -407,12 +415,7 @@ namespace Heart
 
     hResourceClassBase* hResourcePackage::getResource( hUint32 crc ) const
     {
-        hResourceClassBase* res = resourceMap_.Find(crc);
-        if (res && res->GetIsLinked())
-        {
-            return res;
-        }
-        return NULL;
+        return resourceMap_.Find(crc);;
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -422,8 +425,8 @@ namespace Heart
     {
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
             hcPrintf("  Resource %s:"
-                " Type: 0x%08X | Linked: %s | crc: 0x%08X", 
-                res->GetName(), res->GetType().typeCRC, res->GetIsLinked() ? "Yes" : " No", res->GetKey());
+                " Type: 0x%08X | crc: 0x%08X", 
+                res->GetName(), res->GetType().typeCRC, res->GetKey());
         }
     }
 
@@ -449,6 +452,21 @@ namespace Heart
             "State_Unloaded",
         };
         return stateStr[packageState_];
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent) {
+        hotSwapSignal_.Post();
+//         if (fileevent&(hdFilewatchEvents_Added|hdFilewatchEvents_Removed|hdFilewatchEvents_Rename)) {
+//             // These options require an entire reload of the package
+//             hcPrintf("Package %s needs Hot-Swapping", packageRoot_); // !! Not thread safe, but just testing
+//         } else if (fileevent&hdFilewatchEvents_Modified) {
+//             // This is simply a case of reloading a resource
+//             hcPrintf("Resource %s needs Hot-Swapping", filepath);
+//         }
     }
 
 #undef hBuildResFilePath

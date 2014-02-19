@@ -77,13 +77,10 @@ namespace Heart
         }
 
         hShaderProgram*         GetVertexShader() { return programs_[ShaderType_VERTEXPROG].weakPtr<hShaderProgram>(); }
-        void                    SetVertexShader(hResourceHandle prog) { programs_[ShaderType_VERTEXPROG]=prog; }
-        hShaderProgram*         GetFragmentShader() { return programs_[ShaderType_FRAGMENTPROG].weakPtr<hShaderProgram>(); }
-        void                    SetFragmentShader(hResourceHandle prog) { programs_[ShaderType_FRAGMENTPROG]=prog; }
-        void                    setProgramID(hUint shadertype, hResourceID resid) { programID_[shadertype]=resid; }
-        hResourceID             getProgramID(hUint shadertype) const { return programID_[shadertype]; }
+        void                    setProgramID(hUint shadertype, hResourceID resid) { programs_[shadertype]=hResourceHandle(resid); }
+        hResourceID             getProgramID(hUint shadertype) const { return programs_[shadertype].getResourceID(); }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
-        hShaderProgram*         GetProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i].weakPtr<hShaderProgram>();}
+        hShaderProgram*         getProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i].weakPtr<hShaderProgram>();}
         hBlendState*            GetBlendState() { return blendState_; }
         hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
         hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
@@ -163,8 +160,6 @@ namespace Heart
         hBlendState*                        blendState_;
         hDepthStencilState*                 depthStencilState_;
         hRasterizerState*                   rasterizerState_;
-
-        hArray<hResourceID, s_maxPrograms> programID_;
     };
 
     class HEART_DLLEXPORT hMaterialTechnique

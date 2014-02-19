@@ -40,7 +40,6 @@ namespace Heart
         hRenderModel() {}
         ~hRenderModel() {}
     
-        void            initialiseRenderCommands();
         hAABB           getBounds() const { return totalBounds_; }
         hBool           bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
         hRCmd*          getRenderCommands(hUint offset) {
@@ -63,8 +62,18 @@ namespace Heart
             return &renderables_[i];
         }
         void calculateBounds();
+        void listenForResourceEvents(hResourceManager* resmanager);
+        void stopListeningForResourceEvents();
+        void cleanUp();
 
     private:
+
+        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
+
+        hBool attemptResourceInsert(hResourceManager* resManager);
+
+        void  initialiseRenderCommands();
+        void  destroyRenderCommands();
 
         std::vector< hRenderable >                  renderables_;
         hAABB                                       totalBounds_;

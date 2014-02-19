@@ -72,6 +72,11 @@ namespace Heart
         ~hSamplerParameter()
         {
         }
+        void init(const hChar* name, hSamplerState* ss) {
+            hStrCopy(name_, name_.GetMaxSize(), name);
+            paramID_=hCRC32::StringCRC(name_);
+            samplerState_=ss;
+        }
 
         hArray<hChar, hMAX_PARAMETER_NAME_LEN>  name_;
         hShaderParameterID                      paramID_;
@@ -158,7 +163,7 @@ namespace Heart
         hUint               count;
         hShaderParameterID  paramid;
         hResourceID         resourceID;
-        hResourceHandle     resourcePtr;
+        hResourceHandle     resourcePtr; // Needs to be merged with resourceID. Resource Handles can be loaded from disk safely now...
         hUint16             dataOffset;
     };
 
@@ -177,7 +182,6 @@ namespace Heart
         hMaterialGroup*         getGroupByName(const hChar* name);
         hUint                   getTotalTechniqueCount() const { return totalTechniqueCount_; }
         hUint                   getTotalPassCount() const { return totalPassCount_; }
-        hBool                   link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager);
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    addSamplerParameter(const hSamplerParameter& samp);
         void                    addDefaultParameterValue(const hChar* name, const hResourceID& resid);
@@ -203,8 +207,8 @@ namespace Heart
         /* Allow access to parameter blocks and updating of parameters */
         hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
 
-        void postLoad();
-        void preUnload();
+        void listenToResourceEvents(hResourceManager* resmanager);
+        void stopListeningToResourceEvents();
 
     private:
 
@@ -225,10 +229,9 @@ namespace Heart
         void generateRenderCommands();
         void releaseRenderCommands();
         void updateRenderCommands();
+        void cleanup();
 
-        void listenToResourceEvents();
-        void stopListeningToResourceEvents();
-        hBool linkDependeeResources(hResourceManager* resManager);
+        hBool linkDependeeResources();
         hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
 
         hUint32                             uniqueKey_;

@@ -112,9 +112,7 @@ namespace Heart
 
     private:
 
-        friend hResourceClassBase* hResourceHandle::acquire();
         friend hResourceClassBase* hResourceHandle::weakPtr() const;
-        friend void hResourceHandle::release();
 
         struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
         {
