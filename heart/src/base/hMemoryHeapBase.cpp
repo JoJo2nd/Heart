@@ -142,6 +142,9 @@ namespace HeapPrivate
     //////////////////////////////////////////////////////////////////////////
 
     void hGlobalMemoryFree(void* ptr) {
+        if (!ptr) {
+            return;
+        }
         hMemoryHeapBase* h=hFindMemoryHeapByPtr(ptr);
         if (h) {
             h->release(ptr);
