@@ -62,7 +62,9 @@ hUint32 Sibenik::RunUnitTest()
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->getIsPackageLoaded(PACKAGE_NAME))
+            if (engine_->GetResourceManager()->getIsPackageLoaded(PACKAGE_NAME) &&
+                Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr() && // <- Not correct way to handle this!
+                Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr())
             {
                 hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
                 state_ = eRender;
@@ -337,8 +339,8 @@ void Sibenik::CreateRenderResources()
     lightInput.normal_=normal;
     lightInput.spec_=spec;
     lightInput.depth_=depth;
-    lightInput.vertexLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr<hShaderProgram>();//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_VS"));
-    lightInput.pixelLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr<hShaderProgram>();//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_PS"));
+    lightInput.vertexLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_VS");//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_VS"));
+    lightInput.pixelLightShader_= Heart::hResourceHandle("MATERIALS.DEFERRED_PS");//static_cast<hShaderProgram*>(engine_->GetResourceManager()->getResource("MATERIALS.DEFERRED_PS"));
     lightInput.viewCameraIndex_=0;
     deferredLightManager_.initialise(renderer, &lightInput);
     //deferredLightManager_.addDirectionalLight(Heart::hVec3Func::normalise(hVec3(2.f, -.1f, .2f)), Heart::WHITE);
