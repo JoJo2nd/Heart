@@ -181,7 +181,7 @@ namespace Heart
                 if ((void*)i >= block->mem_ && (void*)i < ((hUint8*)block->mem_+s_poolBlockSize)) {
                     hFreeLink* del=i;
                     i=i->GetNext();
-                    freeList_.remove(del);
+                    freeList_.pushBack(del);
                 }
                 else {
                     i=i->GetNext();

@@ -459,7 +459,7 @@ namespace Heart
         if (!m) {
             luaL_error(L, "Unable to grab engine pointer" );
         }
-        m->resizeGlobalTexture(lua_tostring(L, -3), lua_tointeger(L, -2), lua_tointeger(L, -1));
+        m->resizeGlobalTexture(lua_tostring(L, -3), (hUint)lua_tointeger(L, -2), (hUint)lua_tointeger(L, -1));
         return 0;
     }
 
@@ -601,11 +601,11 @@ namespace Heart
 
         lua_getfield(L, -1, "width");
         luaL_checkinteger(L, -1);
-        texdesc.width = lua_tointeger(L, -1);
+        texdesc.width = (hUint)lua_tointeger(L, -1);
         lua_pop(L, 1);
         lua_getfield(L, -1, "height");
         luaL_checkinteger(L, -1);
-        texdesc.height = lua_tointeger(L, -1);
+        texdesc.height = (hUint)lua_tointeger(L, -1);
         lua_pop(L, 1);
         lua_getfield(L, -1, "format");
         tformat=formats[luaL_checkoption(L, -1, NULL, formatnames)];

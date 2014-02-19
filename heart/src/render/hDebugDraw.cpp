@@ -587,7 +587,6 @@ namespace Heart
         }
         if (debugcalls[eDebugSet_2DNoDepth].text.prims) {
             ctx->runRenderCommands(textRdrCmds_.getFirst());
-            ctx->setViewPixel(0, debugFontSRV_);
             ctx->DrawPrimitive(debugcalls[eDebugSet_2DNoDepth].text.prims, debugcalls[eDebugSet_2DNoDepth].text.start);
         }
 

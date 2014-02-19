@@ -54,4 +54,88 @@ void hRenderModel::initialiseRenderCommands() {
     }
 }
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hRenderModel::destroyRenderCommands() {
+    renderCommands_.reset();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool hRenderModel::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+    if (event == hResourceEvent_DBInsert) {
+        attemptResourceInsert(resManager);
+    } else if (event == hResourceEvent_DBRemove) {
+        resManager->removeResource(getResourceID());
+        destroyRenderCommands();
+    }
+    return hTrue;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hRenderModel::listenForResourceEvents(hResourceManager* resmanager) {
+    hUint32 renderablecount = getRenderableCount();
+    for(hUint32 i = 0; i < renderablecount; ++i) {
+        hRenderable* renderable=getRenderable(i);
+        hResourceHandle mat(renderable->getMaterialResourceID());
+        if (mat.getIsValid()) {
+            mat.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderModel, resourceUpdate, this));
+        }
+    }
+    //update
+    attemptResourceInsert(resmanager);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hRenderModel::stopListeningForResourceEvents() {
+    hUint32 renderablecount = getRenderableCount();
+    for(hUint32 i = 0; i < renderablecount; ++i) {
+        hRenderable* renderable=getRenderable(i);
+        if (renderable->GetMaterial() == 0) {
+            hResourceHandle mat(renderable->getMaterialResourceID());
+            mat.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderModel, resourceUpdate, this));
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void hRenderModel::cleanUp() {
+    stopListeningForResourceEvents();
+    destroyRenderCommands();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+hBool hRenderModel::attemptResourceInsert(hResourceManager* resManager) {
+    hUint32 renderablecount = getRenderableCount();
+    for(hUint32 i = 0; i < renderablecount; ++i) {
+        hRenderable* renderable=getRenderable(i);
+        if (renderable->GetMaterial() == 0) {
+            hResourceHandle mat(renderable->getMaterialResourceID());
+            if (mat.getIsValid() && !mat.weakPtr()) {
+                return hFalse;
+            }
+        }
+    }
+    // all in place
+    initialiseRenderCommands();
+    resManager->insertResource(getResourceID(), this);
+    return hTrue;
+}
+
 }

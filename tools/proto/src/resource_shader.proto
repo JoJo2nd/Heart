@@ -30,6 +30,7 @@ message ShaderResource {
 	optional eShaderType type = 1;
 	optional string source = 2;
 	optional bytes compiledProgram = 3;
+	// NOTE: lua protobuf doesn't support this yet...
 	repeated group  Defines = 4 {
 		required string define = 5;
 		optional string value = 6;

@@ -4,7 +4,7 @@ find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
 #find_package(wxWidgets REQUIRED COMPONENTS core adv aui html media xrc gl qa richtext propgrid)
 find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext)
 
-add_definitions(-DWXUSINGDLL)
+#add_definitions(-DWXUSINGDLL)
 
 if (MSVC)
     #add_definitions(/wd"4244")

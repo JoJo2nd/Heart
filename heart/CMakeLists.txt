@@ -18,7 +18,7 @@ set( HEART_INCLUDE_DIRS
     "${HEART_SRC_ROOT}/include"
     "${EXTERNAL_SRC_ROOT}/zlib/include"
     "${EXTERNAL_SRC_ROOT}/lua/src"
-    "${EXTERNAL_SRC_ROOT}/crypto/include"
+    "${EXTERNAL_SRC_ROOT}/crypto/src"
     "${EXTERNAL_SRC_ROOT}/rapidxml-1.13/include"
     "${EXTERNAL_SRC_ROOT}/openal/include"
     "${EXTERNAL_SRC_ROOT}/minizip/include"
@@ -236,4 +236,4 @@ set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPusli
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib crypto lua minizip libogg libvorbis proto enet ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart zlib crypto lua52 minizip libogg libvorbis proto enet ${PLATFORM_LIBS} ${PROFILE_LIBS})

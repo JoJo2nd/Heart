@@ -30,14 +30,15 @@ endif()
 
 include_directories(${LUAXML_INCLUDE_DIRS})
 add_library(lua_xml SHARED  ${LUAXML_SRC_FILES} ${LUAXML_LUA_FILES})
-target_link_libraries(lua_xml lua)
+target_link_libraries(lua_xml lua52)
 set_target_properties(lua_xml PROPERTIES OUTPUT_NAME LuaXML_lib)
+set_property(TARGET lua_xml PROPERTY DEBUG_POSTFIX)
 
 #set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES LANGUAGE CXX)
 
 ADD_CUSTOM_COMMAND(
 	TARGET lua_xml
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" LuaXML_lib "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/LuaXML_lib"
-	COMMAND ROBOCOPY "${LUAXML_SRC_DIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/lua" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" LuaXML_lib "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND ROBOCOPY "${LUAXML_SRC_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}/lua" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
 )

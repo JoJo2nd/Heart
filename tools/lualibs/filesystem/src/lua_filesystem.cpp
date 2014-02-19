@@ -122,6 +122,161 @@ static int fs_makeDirectories(lua_State* L) {
     return 1;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_getCurrentPath(lua_State* L) {
+    boost::system::error_code ec;
+    boost::filesystem::path cd;
+    cd=boost::filesystem::current_path(ec);
+    if (ec) {
+        lua_pushnil(L);
+    } else {
+        std::string cdstr=cd.generic_string();
+        lua_pushstring(L, cdstr.c_str());
+    }
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_absolute(lua_State* L) {
+    std::string ret;
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    if (lua_isstring(L, 2)) {
+        boost::filesystem::path base = luaL_checkstring(L, 2);
+        ret = boost::filesystem::absolute(path, base).generic_string();
+        lua_pushstring(L, ret.c_str());
+    } else {
+        ret = boost::filesystem::absolute(path).generic_string();
+        lua_pushstring(L, ret.c_str());
+    }
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_canonical(lua_State* L) {
+    std::string ret;
+    boost::system::error_code ec;
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    if (lua_isstring(L, 2)) {
+        boost::filesystem::path base = luaL_checkstring(L, 2);
+        ret = boost::filesystem::canonical(path, base, ec).generic_string();
+        if (ec) {
+            lua_pushnil(L);
+        } else {
+            lua_pushstring(L, ret.c_str());
+        }
+    } else {
+        ret = boost::filesystem::canonical(path, ec).generic_string();
+        if (ec) {
+            lua_pushnil(L);
+        } else {
+            lua_pushstring(L, ret.c_str());
+        }
+    }
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_genericPath(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    std::string ret = path.generic_string();
+    lua_pushstring(L, ret.c_str());
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_nativePath(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    std::string ret = path.string();
+    lua_pushstring(L, ret.c_str());
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_fileWithExt(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    std::string ret = path.filename().generic_string();
+    lua_pushstring(L, ret.c_str());
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_pathRoot(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    std::string ret = path.parent_path().generic_string();
+    lua_pushstring(L, ret.c_str());
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_readDir(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    
+    boost::system::error_code ec;
+    boost::filesystem::directory_iterator itr(path, ec);
+
+    if (ec) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_newtable(L);
+    int tableindex = 1;
+    for (boost::filesystem::directory_iterator n; itr != n; itr.increment(ec)) {
+        if (ec) {
+            break; //just return what we got
+        }
+        std::string entry = itr->path().generic_string();
+        lua_pushstring(L, entry.c_str());
+        lua_rawseti(L, -2, tableindex++);
+    }
+
+    return 1; // return table 
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_readDirRecursive(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+
+    boost::system::error_code ec;
+    boost::filesystem::recursive_directory_iterator itr(path, ec);
+
+    if (ec) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_newtable(L);
+    int tableindex = 1;
+    for (boost::filesystem::recursive_directory_iterator n; itr != n; itr.increment(ec)) {
+        if (ec) {
+            break; //just return what we got
+        }
+        std::string entry = itr->path().generic_string();
+        lua_pushstring(L, entry.c_str());
+        lua_rawseti(L, -2, tableindex++);
+    }
+
+    return 1; // return table 
+}
+
 extern "C" {
 //Lua entry point calls
 luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
@@ -132,8 +287,18 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"isfile",fs_isFile},
         {"isdirectory",fs_isDirectory},
         {"makedirectories",fs_makeDirectories},
+        {"getcurrentpath",fs_getCurrentPath},
+        {"absolute",fs_absolute},
+        {"canonical",fs_canonical},
+        {"genericpath",fs_genericPath},
+        {"nativepath",fs_nativePath},
+        {"filewithext", fs_fileWithExt},
+        {"parentpath", fs_pathRoot},
+        {"readdir", fs_readDir},
+        {"readdirrecursive", fs_readDirRecursive},
         {NULL, NULL}
     };
+
     luaL_newlib(L, filesystemlib);
     //lua_setglobal(L, "filesystem");
     return 1;

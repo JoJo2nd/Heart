@@ -482,10 +482,8 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_FontVertex));
-        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_FontPixel));
-
-        ddrawmat->bind();
+        pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_FontVertex);
+        pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_FontPixel);
 
         hSamplerStateDesc sampDesc;
         sampDesc.filter_        = SSV_POINT;
@@ -498,11 +496,15 @@ namespace hRenderUtility
         sampDesc.minLOD_        = -FLT_MAX;
         sampDesc.maxLOD_        = FLT_MAX;
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
-        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
-        ss->DecRef();
+        //ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
+        hSamplerParameter ssparam;
+        ssparam.init("g_sampler", ss);
+        ddrawmat->addSamplerParameter(ssparam);
+        //ss->DecRef();
 
-        ddrawmat->postLoad();
-        resmana->insertResource("?builtin.debug_font_material", ddrawmat);
+        ddrawmat->addDefaultParameterValue("g_sampler", hResourceID::buildResourceID("?builtin.debug_font_surface"));
+        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_font_material"));
+        ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
     }
@@ -572,16 +574,18 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_TexVertex));
-        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_TexPixel));
+        pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_TexVertex);
+        pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_TexPixel);
 
-        ddrawmat->bind();
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
-        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
-        ss->DecRef();
+        hSamplerParameter ssparam;
+        ssparam.init("g_sampler", ss);
+        ddrawmat->addSamplerParameter(ssparam);
+        //ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
+        //ss->DecRef();
 
-        ddrawmat->postLoad();
-        resmana->insertResource("?builtin.debug_pos_col_uv_material", ddrawmat);
+        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_material"));
+        ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
     }
@@ -641,12 +645,11 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_VertexPosCol));
-        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_PixelPosCol));
+        pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_VertexPosCol);
+        pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
 
-        ddrawmat->bind();
-        ddrawmat->postLoad();
-        resmana->insertResource("?builtin.debug_pos_col_material", ddrawmat);
+        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_material"));
+        ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
     }
@@ -716,15 +719,19 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_TexVertex));
-        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_TexPixel));
+        pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_TexVertex);
+        pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_TexPixel);
 
-        ddrawmat->bind();
+        //ddrawmat->bind();
         hSamplerState* ss=rndr->createSamplerState(sampDesc);
-        ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
-        ss->DecRef();
-        ddrawmat->postLoad();
-        resmana->insertResource("?builtin.debug_pos_col_uv_alpha_material", ddrawmat);
+        hSamplerParameter ssparam;
+        ssparam.init("g_sampler", ss);
+        ddrawmat->addSamplerParameter(ssparam);
+        //ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
+        //ss->DecRef();
+
+        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_alpha_material"));
+        ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
     }
@@ -784,11 +791,11 @@ namespace hRenderUtility
         ds->DecRef();
         pass->bindRasterizerState(rs);
         rs->DecRef();
-        pass->SetVertexShader(hResourceHandle(hDebugShaderResourceID_VertexPosCol));
-        pass->SetFragmentShader(hResourceHandle(hDebugShaderResourceID_PixelPosCol));
-        ddrawmat->bind();
-        ddrawmat->postLoad();
-        resmana->insertResource("?builtin.debug_pos_col_alpha_material", ddrawmat);
+        pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_VertexPosCol);
+        pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
+        
+        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_alpha_material"));
+        ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
     }

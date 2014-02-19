@@ -82,7 +82,7 @@ by Lua can also return many results.
 
     int hLuaConsoleSize(lua_State* L)
     {
-        hSystemConsole::setFontSize(lua_tonumber(L,-1));
+        hSystemConsole::setFontSize((hFloat)lua_tonumber(L,-1));
         return 0;
     }
 

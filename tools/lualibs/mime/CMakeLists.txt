@@ -40,7 +40,7 @@ endif()
 
 include_directories(${LUASOCKET_INCLUDE_DIRS})
 add_library(lua_mime SHARED ${LUAMIME_SRC_FILES} ${LUAMIME_HDR_FILES} ${LUAMIME_LUA_FILES})
-target_link_libraries(lua_mime lua ${PLAT_SOCKET_LIB})
+target_link_libraries(lua_mime lua52 ${PLAT_SOCKET_LIB})
 set_target_properties(lua_mime PROPERTIES OUTPUT_NAME core)
 
 ADD_CUSTOM_COMMAND(

@@ -97,6 +97,7 @@ namespace Heart
     {
         stopListeningToResourceEvents();
         unbind();
+        cleanup();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -119,27 +120,6 @@ namespace Heart
             }
         }
         return NULL;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hMaterial::link(hResourceManager* resManager, hRenderer* renderer, hRenderMaterialManager* matManager)
-    {
-        /*
-         * This code ain't pretty, so do it here in the link where we are on the loader
-         * thread and have time to do it.
-         **/
-        renderer_ = renderer;
-        manager_ = matManager;
-
-        if(!linkDependeeResources(resManager)) {
-            return hFalse;
-        }
-
-        // All resources linked...
-        return bind();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -222,7 +202,7 @@ namespace Heart
                     hMaterialTechniquePass* passptr = &groups_[group].getTech(tech)->passes_[pass];
                     ++totalPassCount_;
                     for (hUint32 progidx = 0; progidx < passptr->GetProgramCount(); ++progidx) {
-                        hShaderProgram* prog = passptr->GetProgram(progidx);
+                        hShaderProgram* prog = passptr->getProgram(progidx);
                         //Create slots in the shaders
                         for (hUint si=0; prog && si<prog->getInputCount(); ++si) {
                             hShaderInput param;
@@ -514,13 +494,6 @@ namespace Heart
 
         releaseRenderCommands();
 
-        for (hUint32 group = 0; group < groups_.size(); ++group) {
-            for (hUint32 tech = 0; tech < groups_[group].techniques_.size(); ++tech) {
-                for (hUint32 pass = 0; pass < groups_[group].techniques_[tech].passes_.size(); ++pass) {
-                    hMaterialTechniquePass* passptr = &(groups_[group].techniques_[tech].passes_[pass]);
-                }
-            }
-        }
         for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
             if (constBlocks_[i].constBlock) {
                 constBlocks_[i].constBlock->DecRef();
@@ -542,16 +515,6 @@ namespace Heart
             }
         }
         boundSamplers_.Resize(0);
-        for (hUint32 i = 0, c = defaultSamplers_.GetSize(); i < c; ++i) {
-            if (defaultSamplers_[i].samplerState_) {
-                defaultSamplers_[i].samplerState_->DecRef();
-            }
-            defaultSamplers_[i].samplerState_=NULL;
-        }
-        defaultSamplers_.Resize(0);
-
-        defaultDataSize_=0;
-        hFreeSafe(defaultData_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -580,7 +543,7 @@ namespace Heart
                     hMaterialTechniquePass* passptr=getGroup(group)->getTech(tech)->GetPass(pass);
                     rcGen.setRenderStates(passptr->GetBlendState(), passptr->GetRasterizerState(), passptr->GetDepthStencilState());
                     rcGen.setShader(passptr->GetVertexShader(), ShaderType_VERTEXPROG);
-                    if (passptr->GetVertexShader()) {
+                    if (passptr->getProgram(ShaderType_VERTEXPROG)) {
                         rcGen.setVertexInputs(
                             passptr->getSamplers(ShaderType_VERTEXPROG),
                             passptr->getSamplerCount(ShaderType_VERTEXPROG),
@@ -589,8 +552,8 @@ namespace Heart
                             passptr->getConstantBuffers(ShaderType_VERTEXPROG),
                             passptr->getConstantBufferCount(ShaderType_VERTEXPROG));
                     }
-                    rcGen.setShader(passptr->GetFragmentShader(), ShaderType_FRAGMENTPROG);
-                    if (passptr->GetFragmentShader()) {
+                    rcGen.setShader(passptr->getProgram(ShaderType_FRAGMENTPROG), ShaderType_FRAGMENTPROG);
+                    if (passptr->getProgram(ShaderType_FRAGMENTPROG)) {
                         rcGen.setPixelInputs(
                             passptr->getSamplers(ShaderType_FRAGMENTPROG),
                             passptr->getSamplerCount(ShaderType_FRAGMENTPROG),
@@ -610,6 +573,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::releaseRenderCommands() {
+        renderCmds_.reset();
         selectorCount_=0;
         hDELETE_ARRAY_SAFE(groupCmds_);
         techCmds_=hNullptr;
@@ -676,14 +640,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hMaterial::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
-        // if a resource is missing, unbind and *THEN* remove ourselves from the resource database
+        // if a resource is missing, remove ourselves from the resource database then unbind
         if (event == hResourceEvent_DBRemove) {
-            unbind();
             resManager->removeResource(getResourceID());
+            unbind();
         } else if (event == hResourceEvent_DBInsert) {
-            if (linkDependeeResources(resManager)) {
+            if (linkDependeeResources()) {
                 bind();
-                resManager->insertResource(resourceid, this);
+                resManager->insertResource(getResourceID(), this);
             }
         }
         return true;
@@ -693,7 +657,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::linkDependeeResources(hResourceManager* resManager) {
+    hBool hMaterial::linkDependeeResources() {
         // Grab default resources
         for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
@@ -727,11 +691,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::listenToResourceEvents() {
+    void hMaterial::listenToResourceEvents(hResourceManager* resmanager) {
+
         // register for resource updates
         for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
-                defaultValues_[i].resourcePtr.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+                hResourceHandle(defaultValues_[i].resourceID).registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
             }
         }
         for (hUint32 group = 0; group < groups_.size(); ++group) {
@@ -747,6 +712,11 @@ namespace Heart
                 }
             }
         }
+
+        if (linkDependeeResources()) {
+            bind();
+            resmanager->insertResource(getResourceID(), this);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -756,7 +726,7 @@ namespace Heart
     void hMaterial::stopListeningToResourceEvents() {
         for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
-                defaultValues_[i].resourcePtr.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
+                hResourceHandle(defaultValues_[i].resourceID).unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
             }
         }
         for (hUint32 group = 0; group < groups_.size(); ++group) {
@@ -778,16 +748,17 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::postLoad() {
-        listenToResourceEvents();
-    }
+    void hMaterial::cleanup() {
+        for (hUint32 i = 0, c = defaultSamplers_.GetSize(); i < c; ++i) {
+            if (defaultSamplers_[i].samplerState_) {
+                defaultSamplers_[i].samplerState_->DecRef();
+            }
+            defaultSamplers_[i].samplerState_=NULL;
+        }
+        defaultSamplers_.Resize(0);
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hMaterial::preUnload() {
-        stopListeningToResourceEvents();
+        defaultDataSize_=0;
+        hFreeSafe(defaultData_);
     }
 
     //////////////////////////////////////////////////////////////////////////

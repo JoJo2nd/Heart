@@ -13,20 +13,16 @@ set(CRYPTO_SRC_DIR
 )
 
 set( CRYPTO_INCLUDE_DIRS
-    "${CRYPTO_SRC_DIR}/include"
+    "${CRYPTO_SRC_DIR}/src"
 )
 
-set( CRYPTO_HDR_FILES
-    "${CRYPTO_SRC_DIR}/include/cryptoCommon.h"
-    "${CRYPTO_SRC_DIR}/include/cryptoCRC32.h"
-    "${CRYPTO_SRC_DIR}/include/cryptoMD5.h"
-	"${CRYPTO_SRC_DIR}/include/cryptoBase64.h"
+file(GLOB CRYPTO_HDR_FILES
+    "${CRYPTO_SRC_DIR}/src/*.h"
 )
 
-set( CRYPTO_SRC_FILES
-    "${CRYPTO_SRC_DIR}/src/cryptoCRC32.c"
-    "${CRYPTO_SRC_DIR}/src/cryptoMD5.c"
-	"${CRYPTO_SRC_DIR}/src/cryptoBase64.c"
+file(GLOB CRYPTO_SRC_FILES
+    "${CRYPTO_SRC_DIR}/src/*.c"
+	"${CRYPTO_SRC_DIR}/src/*.cpp"
 )
 
 source_group(include FILES ${CRYPTO_HDR_FILES})

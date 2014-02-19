@@ -102,15 +102,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(const hResourceSection*,   hUint), hResourceLoadProc);
-    hFUNCTOR_TYPEDEF(hBool               (*)(hResourceClassBase*), hResourceLinkProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*), hResourceUnlinkProc);
+    hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePostLoadProc);
+    hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePreUnloadProc);
     hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*), hResourceUnloadProc);
 
     struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
     {
         hResourceLoadProc       loadProc_;
-        hResourceLinkProc       linkProc_;
-        hResourceUnlinkProc     unlinkProc_;
+        hResourcePostLoadProc   postLoadProc_; 
+        hResourcePreUnloadProc  preUnloadProc_;
         hResourceUnloadProc     unloadProc_;
     };
 
@@ -131,7 +131,7 @@ namespace Heart
         hUint32                 getPackageCRC() const { return packageCRC_; }
         hResourceClassBase*     getResource(hUint32 crc) const;
         void                    beginLoad() { packageState_=State_Load_PkgDesc; }
-        hBool                   mainUpdate(hResourceManager* manager);
+        hBool                   update(hResourceManager* manager);
         void                    beginUnload();
         hBool                   isInReadyState() const { return packageState_ == State_Ready; }
         hBool                   isUnloading() const { return packageState_ > State_Ready; }
@@ -155,6 +155,7 @@ namespace Heart
         typedef hVector< const hChar* > PkgLinkArray;
         typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
         typedef hMap< hUint32, hResourceClassBase > ResourceMap;
+        typedef std::deque<hUint32> hHotSwapQueue;
 
         // Jobs
         void                        loadPackageDescription(void*, void*);
@@ -162,6 +163,7 @@ namespace Heart
         void                        unloadResource(void* in, void* out);
         hBool                       doPostLoadLink(hResourceManager* manager);
         void                        doPreUnloadUnlink(hResourceManager* manager);
+        void                        resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent);
 
         enum State
         {
@@ -181,6 +183,7 @@ namespace Heart
         };
 
         hChar                       packageName_[MAX_PACKAGE_NAME];
+        hChar                       packageRoot_[MAX_PACKAGE_NAME];
         hUint32                     packageCRC_;
         State                       packageState_;
         hHeartEngine*               engine_;
@@ -198,6 +201,9 @@ namespace Heart
         hTimer                      timer_;
         hJobQueue*                  fileQueue_;
         hJobQueue*                  workerQueue_;
+        hdFilewatchHandle           resourceFilewatch_;
+        hSemaphore                  hotSwapSignal_;
+        hBool                       hotSwapping_;
     };
 
 }

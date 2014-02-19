@@ -42,6 +42,7 @@ namespace Heart
         {
             if (filewatch_) {
                 hdEndFilewatch(filewatch_);
+                filewatch_=0;
             }
         }
 

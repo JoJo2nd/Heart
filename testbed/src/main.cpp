@@ -27,6 +27,7 @@
 
 #include "testbed_precompiled.h"
 #include "TestBedCore.h"
+#include "resource_texture.pb.h"
 
 TestBedCore g_TestCore;
 
@@ -72,6 +73,12 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.onShutdown_ = HeartAppOnShutdown;
 
     while (strstr(lpCmdLine, "-debug")) {}
+
+    Heart::proto::TextureResource texturemsg;
+    //auto meta = texturemsg.GetMetadata();
+    //hcPrintf("%s", meta.descriptor->full_name());
+    hcPrintf("%s", texturemsg.GetTypeName().c_str());
+
 // 
 //     char* leak = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
 //     char* dontleak1 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);

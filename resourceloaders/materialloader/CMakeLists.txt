@@ -33,12 +33,13 @@ endif()
 include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${MATERIAL_BUILDER_LIB_DIRS})
 add_library(material_builder SHARED ${MATERIAL_BUILDER_SRC_FILES})
-target_link_libraries(material_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(material_builder lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)
+set_property(TARGET material_builder PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(
 	TARGET material_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" material "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/material"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" material "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )

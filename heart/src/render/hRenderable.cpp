@@ -34,14 +34,8 @@ namespace Heart
 
 void hRenderable::setMaterial(const hResourceHandle& material)
 {
-    if (materialHandle_.getIsValid()) {
-        materialHandle_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
-    }
     materialKey_=0;
     materialHandle_ = material;
-    if (materialHandle_.getIsValid()) {
-        materialHandle_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
-    }
 }
 
 //////////////////////////////////////////////////////////////////////////

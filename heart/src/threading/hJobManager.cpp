@@ -122,7 +122,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hJob* hJobManager::allocateJob() {
-        return (hJob*)s_jobPool.alloc(sizeof(hJob), hAlignOf(hJob));
+        return (hJob*)hMalloc(sizeof(hJob));
+        //return (hJob*)s_jobPool.alloc(sizeof(hJob), hAlignOf(hJob));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -130,7 +131,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hJobManager::freeJob(hJob* ptr) {
-        s_jobPool.release(ptr);
+        //s_jobPool.release(ptr);
+        hFree(ptr);
     }
 
     //////////////////////////////////////////////////////////////////////////

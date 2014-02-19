@@ -41,8 +41,7 @@ namespace Heart
     public:
 
         hRenderable() 
-            : materialID_(0)
-            , materialKey_(0)
+            : materialKey_(0)
             , primType_(PRIMITIVETYPE_TRILIST)
             , indexBuffer_(NULL)
         {
@@ -62,9 +61,6 @@ namespace Heart
                     inputLayouts_[i]->Release();
                     inputLayouts_[i]=NULL;
                 }
-            }
-            if (materialHandle_.getIsValid()) {
-                materialHandle_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderable, resourceUpdate, this));
             }
         }
 
@@ -90,9 +86,8 @@ namespace Heart
         void                                    SetStartIndex(hUint startIdx) { startVertex_ = startIdx; }
         hUint                                   GetPrimativeCount() const { return primCount_; }
         void                                    SetPrimativeCount(hUint primCount) { primCount_ = primCount; }
-        void                                    SetMaterialResourceID(hResourceID val) {materialID_ = val;}
-        hResourceID                             GetMaterialResourceID() const { return materialID_; }
-        void                                    setMaterial(const hResourceHandle& material);
+        void                                    setMaterialResourceID(hResourceID val) {setMaterial(hResourceHandle(val));}
+        hResourceID                             getMaterialResourceID() const { return materialHandle_.getResourceID(); }
         hMaterial*                              GetMaterial() const { return materialHandle_.weakPtr<hMaterial>(); }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB   GetAABB() const { return aabb_; }
@@ -107,7 +102,6 @@ namespace Heart
         hRenderable(const hRenderable&);
         hRenderable operator = (const hRenderable&);
         void swap(hRenderable* lhs, hRenderable* rhs) {
-            std::swap(lhs->materialID_, rhs->materialID_);
             std::swap(lhs->materialKey_, rhs->materialKey_);
             std::swap(lhs->primCount_, rhs->primCount_);
             std::swap(lhs->startVertex_, rhs->startVertex_);
@@ -120,9 +114,9 @@ namespace Heart
             lhs->inputLayouts_.swap(&rhs->inputLayouts_);
         }
 
+        void  setMaterial(const hResourceHandle& material);
         hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource);
 
-        hResourceID                 materialID_;
         hUint32                     materialKey_;
         hUint                       primCount_;
         hUint                       startVertex_;

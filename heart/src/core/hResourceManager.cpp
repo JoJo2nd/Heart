@@ -88,7 +88,7 @@ namespace Heart
     void hResourceManager::update() {
         HEART_PROFILE_FUNC();
         for (hResourcePackage* i=activePackages_.GetHead(); i!=hNullptr; ) {
-            i->mainUpdate(this);
+            i->update(this);
             if (i->unloaded()) {
                 if (i->GetRefCount()==0) {
                     hResourcePackage* next;
@@ -208,7 +208,7 @@ namespace Heart
     void hResourceManager::insertResource(hResourceID id, hResourceClassBase* res) {
         resourceHandleMap_.insert(hResourceHandleMap::value_type(id, res));
         auto range = resourceEventMap_.equal_range(id);
-        for (auto i=range.first, n=range.second; i!=n;) {
+        for (auto i=range.first, n=range.second; i!=n; ++i) {
             i->second(id, hResourceEvent_DBInsert, this, res);
         }
     }
@@ -219,17 +219,12 @@ namespace Heart
 
     hUint hResourceManager::removeResource(hResourceID id) {
         auto entry=resourceHandleMap_.find(id);
-        if (entry != resourceHandleMap_.end() && entry->second->getLockCount()) {
-            hUint locks=entry->second->getLockCount();
-            if (locks == 0) {
-                auto range = resourceEventMap_.equal_range(id);
-                for (auto i=range.first, n=range.second; i!=n;) {
-                    i->second(id, hResourceEvent_DBRemove, this, entry->second);
-                }
-                resourceHandleMap_.erase(entry);
-            } else {
-                return locks;
+        if (entry != resourceHandleMap_.end()) {
+            auto range = resourceEventMap_.equal_range(id);
+            for (auto i=range.first, n=range.second; i!=n; ++i) {
+                i->second(id, hResourceEvent_DBRemove, this, entry->second);
             }
+            resourceHandleMap_.erase(entry);
         }
         return 0;
     }

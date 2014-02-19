@@ -17,26 +17,36 @@ set( LUA_SA_INCLUDE_DIRS
 
 set( LUA_SA_HDR_FILES )
 
-set( LUA_SA_SRC_FILES
-    "${LUA_SA_SRC_DIR}/src/lua.c"
+file(GLOB LUA_SA_SRC_FILES 
+	"${LUA_SA_SRC_DIR}/src/*.h"
+    "${LUA_SA_SRC_DIR}/src/*.c"
+	"${LUA_SA_SRC_DIR}/src/*.cpp"
+	"${LUA_SA_SRC_DIR}/src/*.cxx"
 )
+file(GLOB LUA_SA_SRC_LUA_FILES "${LUA_SA_SRC_DIR}/src/lua/*.lua")
 
-source_group(include FILES ${LUA_SA_HDR_FILES})
 source_group(source  FILES ${LUA_SA_SRC_FILES})
+source_group(lua FILES ${LUA_SA_SRC_LUA_FILES})
+
+message( ${LUA_SA_SRC_LUA_FILES} )
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()
 
-include_directories(${LUA_SA_INCLUDE_DIRS})
-add_executable(lua_standalone ${LUA_SA_SRC_FILES} ${LUA_SA_HDR_FILES})
-target_link_libraries(lua_standalone lua)
-set_property(TARGET lua_standalone PROPERTY DEBUG_POSTFIX _d)
+# stop cmake failing when trying to find compiler for lua files
+set_source_files_properties(${LUA_SA_SRC_LUA_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 
-set_target_properties(lua_standalone PROPERTIES OUTPUT_NAME luai)
+include_directories(${LUA_SA_INCLUDE_DIRS})
+add_executable(lua_standalone ${LUA_SA_SRC_FILES} ${LUA_SA_SRC_LUA_FILES})
+target_link_libraries(lua_standalone lua52)
+#set_property(TARGET lua_standalone PROPERTY DEBUG_POSTFIX _d)
+
+set_target_properties(lua_standalone PROPERTIES OUTPUT_NAME lua)
 
 ADD_CUSTOM_COMMAND(
 	TARGET lua_standalone
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" luai "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder"
+	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" lua "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lua_libs.bat" "${LUA_SA_SRC_DIR}/src/lua" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
