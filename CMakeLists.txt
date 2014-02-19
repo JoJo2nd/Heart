@@ -39,6 +39,56 @@ MACRO(SET_USE_PRCOMPILED_HEADER files headername)
 	endif(MSVC)
 ENDMACRO(SET_USE_PRCOMPILED_HEADER)
 
+function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: PROTOBUF_GENERATE_LUA_CPP_BINDINGS() called without any proto files")
+    return()
+  endif(NOT ARGN)
+  
+  get_filename_component(PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY ${PROTOBUF_PROTOC_EXECUTABLE} DIRECTORY)
+
+  message("${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}")
+    
+  set(${SRCS})
+  set(${HDRS})
+  set(${luaSRCS})
+  set(${luaHDRS})
+  list(APPEND ${luaSRCS} "${CMAKE_CURRENT_BINARY_DIR}/lua-protobuf.h")
+  list(APPEND ${luaHDRS} "${CMAKE_CURRENT_BINARY_DIR}/lua-protobuf.cc")
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    
+    list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
+    list(APPEND ${HDRS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
+    list(APPEND ${luaSRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc")
+    list(APPEND ${luaHDRS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h")
+
+	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
+	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
+    message("${ABS_FIL}")
+    message("${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc")
+
+    add_custom_command(
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc"
+             "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h"
+			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc"
+			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h"
+	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}/../plugin/protoc-gen-lua.exe
+      DEPENDS ${ABS_FIL}
+      COMMENT "Running C++ & Lua protocol buffer compiler on ${FIL}"
+      VERBATIM )
+  endforeach()
+
+  set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
+  set_source_files_properties(${${luaSRCS}} ${${luaHDRS}} PROPERTIES GENERATED TRUE)
+  set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+  set(${HDRS} ${${HDRS}} PARENT_SCOPE)
+  set(${luaSRCS} ${${luaSRCS}} PARENT_SCOPE)
+  set(${luaHDRS} ${${luaHDRS}} PARENT_SCOPE)
+endfunction()
+
 #end macros
 
 if( ${CMAKE_SIZEOF_VOID_P} MATCHES 4 )
@@ -83,7 +133,7 @@ if (FORCE_DISABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
 elseif (FORCE_ENABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
-endif(FORCE_ENABLE_MEMORY_TRACKING)
+endif(FORCE_DISABLE_MEMORY_TRACKING)
 
 #cache vars
 set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
@@ -94,6 +144,7 @@ set(nvtt_INCLUDE_DIR "C:/nvtt_sdk_folder/include" CACHE PATH "Directory for nVid
 set(nvtt_LIB_DIR "C:/nvtt_sdk_folder/project/xxx/lib" CACHE PATH "Directory for nVidia Texture Tools libraries")
 set(nvtt_BIN_DIR "C:/nvtt_sdk_folder/project/xxx/bin" CACHE PATH "Directory for nVidia Texture Tools binaries")
 set(nvtt_DEPENDENT_BIN_DIR "C:/nvtt_sdk_folder/gnumake32/bin" CACHE PATH "Directory for nVidia Texture Tools external binaries")
+set(wxLua_BIN_DIR_ROOT "C:/wxLua/bin" CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
 
 #Set wxWidgets search path
 set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
@@ -116,6 +167,9 @@ set(GENERATED_PROTO_INC_DIRS
 )
 set(ENET_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/enet/include"
+)
+set(LUA_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/lua/src"
 )
 
 if (WIN32)
@@ -165,6 +219,12 @@ set(PROTOBUF_LIBRARY
 set(PROTOBUF_LIBRARY_DEBUG
     "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf-lite.lib"
 )
+set(PROTOBUF_LIBRARY_FULL
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf.lib"
+)
+set(PROTOBUF_LIBRARY_FULL_DEBUG
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf.lib"
+)
 set(PROTOBUF_PROTOC_EXECUTABLE
     "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/bin/protoc.exe"
 )
@@ -191,6 +251,7 @@ add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
 add_subdirectory ("external/libprof")
+add_subdirectory ("external/luadb")
 add_subdirectory ("heart")
 if (BUILD_HEART_TESTBED)
 	add_subdirectory ("testbed")
@@ -204,9 +265,8 @@ add_subdirectory("resourceloaders/fontloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")
-add_subdirectory("tools/lualibs/luasocket")
-add_subdirectory("tools/lualibs/mime")
 add_subdirectory("tools/lualibs/luaxml")
+add_subdirectory("tools/lualibs/enet_lua")
 
 add_subdirectory("tools/proto")
 add_subdirectory("tools/memtrack")
