@@ -30,9 +30,10 @@ source_group(source  FILES ${SHADER_BUILDER_FILES})
 include_directories(${SHADER_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
 add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
-target_link_libraries(shader_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
+set_property(TARGET shader_builder PROPERTY DEBUG_POSTFIX)
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
@@ -51,6 +52,6 @@ endif()
 ADD_CUSTOM_COMMAND(
 	TARGET shader_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" gpuprogram "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder"
-	COMMAND ROBOCOPY "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" "${CMAKE_SOURCE_DIR}/deploy/builder" D3DCompiler*.DLL ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" gpuprogram "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND ROBOCOPY "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}" D3DCompiler*.DLL ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
 )

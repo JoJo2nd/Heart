@@ -33,12 +33,13 @@ endif()
 include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${TEXTURE_BUILDER_LIB_DIRS})
 add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(texture_builder lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)
+set_property(TARGET texture_builder PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(
 	TARGET texture_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" texture "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/texture"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" texture "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )

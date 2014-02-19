@@ -48,12 +48,13 @@ source_group(source  FILES ${MESH_BUILDER_SRC_FILES})
 include_directories(${MESH_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${MESH_BUILDER_LIB_DIRS})
 add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES})
-target_link_libraries(mesh_builder lua crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(mesh_builder lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
+set_property(TARGET mesh_builder PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(
 	TARGET mesh_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" mesh "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/mesh"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" mesh "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
