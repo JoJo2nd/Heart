@@ -123,7 +123,7 @@ int fontCompile(lua_State* L) {
     const hChar* cheaderoutput=NULL;
     lua_getfield(L, 3, "scale");
     if (lua_isnumber(L, -1)) {
-        fontScale=lua_tonumber(L, -1);
+        fontScale=(hFloat)lua_tonumber(L, -1);
     }
     lua_pop(L, 1);
     lua_getfield(L, 3, "headeroutput");
