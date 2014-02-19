@@ -1,0 +1,82 @@
+
+package luadb.proto;
+
+option optimize_for = LITE_RUNTIME;
+
+enum DebuggerCmd {
+    eDebuggerCmd_Noop             = 0;
+    eDebuggerCmd_Run              = 1;
+    eDebuggerCmd_Step             = 2;
+    eDebuggerCmd_StepIn           = 3;
+    eDebuggerCmd_StepOut          = 4;
+    eDebuggerCmd_Backtrace        = 5;
+    eDebuggerCmd_SetBreakpoint    = 6;
+    eDebuggerCmd_DebugConsole     = 7;
+    eDebuggerCmd_LineInfo         = 8;
+    eDebuggerCmd_RunningState     = 9;
+    eDebuggerCmd_DebuggerExit     = 10;
+    eDebuggerCmd_Trap             = 11;
+    eDebuggerCmd_RemoveBreakpoint = 12;
+    eDebuggerCmd_AddSearchPath    = 13;
+    eDebuggerCmd_GetLocals        = 14;
+    eDebuggerCmd_GetVarMoreInfo   = 15;
+    eDebuggerCmd_GetWatch         = 16;
+}
+
+message RPCSetBreakpoint {
+    required uint32 lineNumber = 1;
+    required string absoluteFilepath = 2;
+    optional bool   breakpointSet = 3;
+}
+
+message RPCLineMessage {
+    required uint32 lineNumber = 1;
+    required string absoluteFilepath = 2;
+}
+
+message RPCStackLevel {
+    optional string name            = 1;
+    optional string filename        = 2;
+    optional sint32 lineNumber      = 3;
+    optional bool   isCfunction     = 4;
+    optional bool   isMain          = 5;
+    optional string namewhat        = 6;
+    optional string printfilename   = 7;
+}
+
+message RPCBacktrace {
+    repeated RPCStackLevel stackBacktrace = 1;
+}
+
+message RPCField {
+    required string printableKey = 1;
+    required uint32 type         = 2;
+    required sint32 fieldIndex   = 3;
+    optional string printableVal = 4;
+}
+
+message RPCVar {
+    required string name         = 1;
+    required uint32 type         = 2;
+    optional string printableVal = 3;
+    repeated RPCField fields     = 4;
+}
+
+message RPCCall {
+    required DebuggerCmd cmd = 1 [default = eDebuggerCmd_Noop];
+    optional bool isReply = 2 [default = false];
+    optional int32 opNumber = 3 [default = 0];
+
+    optional RPCSetBreakpoint breakpointData = 4;
+    optional RPCLineMessage lineMessageData  = 5;
+    optional bool runningStateData           = 6;
+    optional string debugConsoleMessage      = 7;
+    optional RPCBacktrace backtraceData      = 8;
+    optional string searchPath               = 9;
+    optional uint32 localsStackLevel         = 10;
+    repeated RPCVar locals                   = 11;
+    optional sint32 varMoreInfoID            = 12;
+    optional RPCVar moreInfoVar              = 13;
+    optional string watchVarString           = 14;
+    optional RPCVar watchVar                 = 15;
+}
