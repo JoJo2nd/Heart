@@ -1,2 +1,4 @@
 /Debug/
 /Release/
+/*.tmp.lua
+/ramuh_config
