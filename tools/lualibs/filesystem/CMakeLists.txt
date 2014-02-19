@@ -43,11 +43,12 @@ endif()
 
 include_directories(${LUA_FILESYSTEM_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_library(lua_filesystem SHARED ${LUA_FILESYSTEM_SRC_FILES} ${LUA_FILESYSTEM_HDR_FILES} ${LUA_BUIDLER_FILES})
-target_link_libraries(lua_filesystem lua ${Boost_LIBRARIES})
+target_link_libraries(lua_filesystem lua52 ${Boost_LIBRARIES})
 set_target_properties(lua_filesystem PROPERTIES OUTPUT_NAME filesystem)
+set_property(TARGET lua_filesystem PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(
 	TARGET lua_filesystem
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" filesystem "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/builder/filesystem"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" filesystem "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
