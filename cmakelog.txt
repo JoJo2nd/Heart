@@ -1,2 +1,0 @@
-Running with trace output on.
--- Configuring incomplete, errors occurred!
