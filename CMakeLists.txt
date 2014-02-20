@@ -112,6 +112,7 @@ option(USE_ASSIMP_DEBUG "Use debug assimp libraries" OFF)
 option(DO_PROFILE "Enable profiling in exe" OFF)
 option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including debug builds" OFF)
 option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
+option(USE_SDL2 "Enable use of SDL2" ON)
 
 MACRO(ENABLE_PROFILE_IF_SET)
 	if (DO_PROFILE)
@@ -145,6 +146,8 @@ set(nvtt_LIB_DIR "C:/nvtt_sdk_folder/project/xxx/lib" CACHE PATH "Directory for 
 set(nvtt_BIN_DIR "C:/nvtt_sdk_folder/project/xxx/bin" CACHE PATH "Directory for nVidia Texture Tools binaries")
 set(nvtt_DEPENDENT_BIN_DIR "C:/nvtt_sdk_folder/gnumake32/bin" CACHE PATH "Directory for nVidia Texture Tools external binaries")
 set(wxLua_BIN_DIR_ROOT "C:/wxLua/bin" CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
+set(SDL2_LIBPATH "C:/SDL2/VisualC/SDL" CACHE PATH "Root of directory containing SDL libs")
+set(SDL2_INCLUDE_DIR "C:/SDL2/include" CACHE PATH "Directory containing SDL Headers")
 
 #Set wxWidgets search path
 set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
@@ -194,6 +197,17 @@ endif()
 set(assimp_BIN_DIR_FULL "${assimp_BIN_DIR}/${assimp_BUILD_EXT}")
 set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
+#SDL2
+if (USE_SDL2)
+	add_definitions(-DHEART_USE_SDL2)
+	if (BUILD_64_BIT)
+		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/x64/Release")
+	else()
+		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/Win32/Release")
+	endif()
+	set(SDL2_LIBRARIES SDL2)
+endif(USE_SDL2)
+
 #Add boost
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON) 
@@ -241,7 +255,8 @@ endif()
 if (USE_OLD_DXSDK)
     add_definitions(-DHEART_USE_DXSDK)
 endif()
-add_definitions(-DHEART_LUA_LIBS -DLUA_COMPAT_MODULE -DLUA_BUILD_AS_DLL)
+#add_definitions(-DHEART_LUA_LIBS -DLUA_COMPAT_MODULE -DLUA_BUILD_AS_DLL)
+add_definitions(-DHEART_LUA_LIBS -DLUA_BUILD_AS_DLL)
 
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")

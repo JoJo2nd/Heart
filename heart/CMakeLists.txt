@@ -27,6 +27,11 @@ set( HEART_INCLUDE_DIRS
     "${PROTOBUF_INCLUDE_DIR}"
     "${GENERATED_PROTO_INC_DIRS}"
 )
+if (USE_SDL2)
+	set(HEART_INCLUDE_DIRS
+		${HEART_INCLUDE_DIRS}
+		${SDL2_INCLUDE_DIR})
+endif (USE_SDL2)
 set(HEART_LIB_DIRS)
 if (WIN32)
 	if (BUILD_64_BIT)
@@ -40,6 +45,12 @@ if (WIN32)
 			"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
 		)
 	endif()
+endif()
+
+if (USE_SDL2)
+	set(HEART_LIB_DIRS
+		${HEART_LIB_DIRS}
+		${SDL2_LIB_PATH})
 endif()
 
 # heart include directorys
@@ -233,7 +244,21 @@ source_group(network FILES ${HEART_NETWORK_FILES})
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)
 
+set(HEART_LIBRARIES
+	zlib crypto lua52 minizip libogg libvorbis proto enet)
+if (USE_SDL2)
+	set(HEART_LIBRARIES
+		${HEART_LIBRARIES} 
+		${SDL2_LIBRARIES})
+endif (USE_SDL2)
+
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
-target_link_libraries(heart zlib crypto lua52 minizip libogg libvorbis proto enet ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
+
+ADD_CUSTOM_COMMAND(
+	TARGET heart
+    POST_BUILD
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
+)

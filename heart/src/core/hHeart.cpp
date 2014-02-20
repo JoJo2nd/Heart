@@ -60,6 +60,15 @@ namespace Heart
     {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+#ifdef HEART_USE_SDL2
+        hUint32 sdlFlags = 0;
+        sdlFlags |= SDL_INIT_VIDEO;
+        sdlFlags |= SDL_INIT_GAMECONTROLLER;
+        sdlFlags |= SDL_INIT_HAPTIC;
+        sdlFlags |= SDL_INIT_EVENTS;
+        SDL_Init(sdlFlags);
+#endif
+
         hdGetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
         hdGetProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
 

@@ -55,7 +55,8 @@ namespace Heart
     {
     public:
         hdSystemWindow()
-            : hInstance_( NULL )
+            : sdlWindow_(nullptr)
+            , hInstance_( NULL )
             , hWnd_( NULL )
             , ownWindow_(hFalse)
             , procChain_(NULL)
@@ -86,6 +87,9 @@ namespace Heart
         
         static hdSystemWindow*      s_instance;
 
+#ifdef HEART_USE_SDL2
+        SDL_Window*                 sdlWindow_;
+#endif
         HINSTANCE					hInstance_;
         HWND						hWnd_;
         WNDCLASSEX					wndClassEx_;

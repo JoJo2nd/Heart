@@ -36,6 +36,34 @@ namespace Heart
 
     hBool hdSystemWindow::Create( const hdDeviceConfig& deviceconfig )
     {
+#ifdef HEART_USE_SDL2
+        sdlWindow_ = SDL_CreateWindow(
+            "HeartEngine", 
+            SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED,
+            deviceconfig.width_,
+            deviceconfig.height_,
+            SDL_WINDOW_SHOWN);
+        if (!sdlWindow_) {
+            hcPrintf("SDL_CreateWindow() Error: %s", SDL_GetError());
+            return hFalse;
+        }
+
+        SDL_SysWMinfo info;
+        SDL_VERSION(&info.version);
+        if (!SDL_GetWindowWMInfo(sdlWindow_, &info)) {
+            hcPrintf("SDL_GetWindowWMInfo() Error: %s", SDL_GetError());
+            return hFalse;
+        }
+
+        hInstance_ = deviceconfig.instance_;
+        hWnd_ = info.info.win.window;
+
+        SDL_GetWindowSize(sdlWindow_, (int*)&wndWidth_, (int*)&wndHeight_);
+
+        systemHandle_.hWnd_ = hWnd_;
+        return hTrue;
+#else
         hInstance_ = deviceconfig.instance_;
         hWnd_ = deviceconfig.hWnd_;
         wndWidth_ = deviceconfig.width_;
@@ -99,8 +127,8 @@ namespace Heart
         }
 
         systemHandle_.hWnd_ = hWnd_;
-
         return hFalse;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -109,10 +137,15 @@ namespace Heart
 
     void hdSystemWindow::Destroy()
     {
+#ifdef HEART_USE_SDL2
+        SDL_DestroyWindow(sdlWindow_);
+        sdlWindow_=nullptr;
+#else
         if (ownWindow_) {
             DestroyWindow( hWnd_ );
             UnregisterClass( &wndClassName_[ 0 ], hInstance_ );
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
