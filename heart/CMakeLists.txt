@@ -59,8 +59,8 @@ set( HEART_INCLUDE_DIRS
     "${PROJECT_SOURCE_DIR}/src"
 )
 set( HEART_SRC_FILES
-	"${HEART_SOURCE_DIR}/include/Heart.h"
-	"${HEART_SOURCE_DIR}/include/HeartBase.h"
+	"${HEART_SOURCE_DIR}/src/Heart.h"
+	"${HEART_SOURCE_DIR}/src/HeartBase.h"
 )
 set( HEART_SRC_FILES
     ${HEART_SRC_FILES}
@@ -69,121 +69,91 @@ set( HEART_SRC_FILES
 )
 
 file(GLOB HEART_BASE_FILES 
-    "${HEART_SOURCE_DIR}/include/base/*.h"
+    "${HEART_SOURCE_DIR}/src/base/*.h"
     "${HEART_SOURCE_DIR}/src/base/*.cpp"
 )
 file(GLOB HEART_COMPONENTS_FILES 
-    "${HEART_SOURCE_DIR}/include/components/*.h"
+    "${HEART_SOURCE_DIR}/src/components/*.h"
     "${HEART_SOURCE_DIR}/src/components/*.cpp"
 )
 file(GLOB HEART_CORE_FILES 
-    "${HEART_SOURCE_DIR}/include/core/*.h"
+    "${HEART_SOURCE_DIR}/src/core/*.h"
     "${HEART_SOURCE_DIR}/src/core/*.cpp"
 )
-
 file(GLOB HEART_COMPUTE_FILES 
-    "${HEART_SOURCE_DIR}/include/compute/*.h"
+    "${HEART_SOURCE_DIR}/src/compute/*.h"
     "${HEART_SOURCE_DIR}/src/compute/*.cpp"
 )
 file(GLOB HEART_NETWORK_FILES 
     "${HEART_SOURCE_DIR}/src/network/*.h"
     "${HEART_SOURCE_DIR}/src/network/*.cpp"
 )
-set(HEART_DEBUG_FILES
-    "${HEART_SOURCE_DIR}/include/debug/hDebugMenuManager.h"
-    "${HEART_SOURCE_DIR}/include/debug/hDebugInfo.h"
-    "${HEART_SOURCE_DIR}/src/debug/hDebugMenuManager.cpp"
-	"${HEART_SOURCE_DIR}/src/debug/hDebugInfo.cpp"
+file(GLOB HEART_DEBUG_FILES
+    "${HEART_SOURCE_DIR}/src/debug/*.h"
+    "${HEART_SOURCE_DIR}/src/debug/*.cpp"
 )
-set(HEART_EVENTS_FILES
-    "${HEART_SOURCE_DIR}/include/events/hEventManager.h"
-    
-    "${HEART_SOURCE_DIR}/src/events/hEventManager.cpp"
+file(GLOB HEART_EVENTS_FILES
+    "${HEART_SOURCE_DIR}/src/events/*.h"
+    "${HEART_SOURCE_DIR}/src/events/*.cpp"
 )
-set(HEART_INPUT_FILES
-    "${HEART_SOURCE_DIR}/include/input/hController.h"
-    "${HEART_SOURCE_DIR}/include/input/hControllerManager.h"
-    
-    "${HEART_SOURCE_DIR}/src/input/hController.cpp"
-    "${HEART_SOURCE_DIR}/src/input/hControllerManager.cpp"
+file(GLOB HEART_INPUT_FILES
+    "${HEART_SOURCE_DIR}/src/input/*.h"
+    "${HEART_SOURCE_DIR}/src/input/*.cpp"
 )
-set(HEART_LUA_FILES
-    "${HEART_SOURCE_DIR}/include/lua/hLuaHeartLib.h"
-    "${HEART_SOURCE_DIR}/include/lua/hLuaStateManager.h"
-    
-    "${HEART_SOURCE_DIR}/src/lua/hLuaHeartLib.cpp"
-    "${HEART_SOURCE_DIR}/src/lua/hLuaStateManager.cpp"
+file(GLOB HEART_LUA_FILES
+    "${HEART_SOURCE_DIR}/src/lua/*.h"
+    "${HEART_SOURCE_DIR}/src/lua/*.cpp"
 )
-set(HEART_MATH_FILES
-    "${HEART_SOURCE_DIR}/include/math/hAABB.h"
-    "${HEART_SOURCE_DIR}/include/math/hMathUtil.h"
-    "${HEART_SOURCE_DIR}/include/math/hPlane.h"
-    "${HEART_SOURCE_DIR}/include/math/hPoly2.h"
-    "${HEART_SOURCE_DIR}/include/math/hViewFrustum.h"
-    
-    "${HEART_SOURCE_DIR}/src/math/hCollision.cpp"
-    "${HEART_SOURCE_DIR}/src/math/hViewFrustum.cpp"
+file(GLOB HEART_MATH_FILES
+    "${HEART_SOURCE_DIR}/src/math/*.h"
+    "${HEART_SOURCE_DIR}/src/math/*.cpp"
 )
 file(GLOB HEART_RENDER_FILES
-    "${HEART_SOURCE_DIR}/include/render/*.h"
+    "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
-set(HEART_SCENE_FILES
-    "${HEART_SOURCE_DIR}/include/scene/hSceneBundle.h"
-    "${HEART_SOURCE_DIR}/include/scene/hSceneDefinition.h"
+file(GLOB HEART_SCENE_FILES
+    "${HEART_SOURCE_DIR}/src/scene/*.h"
+    "${HEART_SOURCE_DIR}/src/scene/*.cpp"
 )
-set(HEART_THREAD_FILES
-    "${HEART_SOURCE_DIR}/include/threading/hJobManager.h"
-    "${HEART_SOURCE_DIR}/include/threading/hLocklessComPipe.h"
-    "${HEART_SOURCE_DIR}/include/threading/hMutexAutoScope.h"
-    
-    "${HEART_SOURCE_DIR}/src/threading/hJobManager.cpp"
+file(GLOB HEART_THREAD_FILES
+    "${HEART_SOURCE_DIR}/src/threading/*.h"
+    "${HEART_SOURCE_DIR}/src/threading/*.cpp"
 )
-set(HEART_UTILS_FILES
-    "${HEART_SOURCE_DIR}/include/utils/hBase64.h"
-    "${HEART_SOURCE_DIR}/include/utils/hMemoryViewMenu.h"
-    "${HEART_SOURCE_DIR}/include/utils/hRapidXML.h"
-    "${HEART_SOURCE_DIR}/include/utils/hRealTimeProfilerMenu.h"
-    "${HEART_SOURCE_DIR}/include/utils/hTextFormatting.h"
-    
-    "${HEART_SOURCE_DIR}/src/utils/hBase64.cpp"
-    "${HEART_SOURCE_DIR}/src/utils/hMemoryViewMenu.cpp"
-    "${HEART_SOURCE_DIR}/src/utils/hRapidXML.cpp"
-    "${HEART_SOURCE_DIR}/src/utils/hRealTimeProfilerMenu.cpp"
-    "${HEART_SOURCE_DIR}/src/utils/hTextFormatting.cpp"
+file(GLOB HEART_UTILS_FILES
+    "${HEART_SOURCE_DIR}/src/utils/*.h"
+    "${HEART_SOURCE_DIR}/src/utils/*.cpp"
 )
-set( HEART_GEN_FILES
-    "${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h"
+file(GLOB HEART_GEN_FILES
+    "${HEART_SOURCE_DIR}/src/events/generated/*.h"
 )
-set(HEART_RESOURCE_FILES
-    "${HEART_SOURCE_DIR}/include/resourcedata/hTextureResourceData.h"
-	"${HEART_SOURCE_DIR}/include/resourcedata/hShaderResourceData.h"
-	"${HEART_SOURCE_DIR}/include/resourcedata/hMaterialResourceData.h"
-	"${HEART_SOURCE_DIR}/include/resourcedata/hMeshResourceData.h"
+file(GLOB HEART_RESOURCE_FILES
+    "${HEART_SOURCE_DIR}/src/resourcedata/*.h"
+	"${HEART_SOURCE_DIR}/src/resourcedata/*.cpp"
 )
 
 #platform headers
 if (WIN32)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
-		"${HEART_SOURCE_DIR}/include/pal/win32"
+		"${HEART_SOURCE_DIR}/src/pal/win32"
         "${HEART_SOURCE_DIR}/src/pal/win32"
     )
 	set( HEART_SRC_FILES
 		${HEART_SRC_FILES}
-		"${HEART_SOURCE_DIR}/include/pal/win32/device/hWin32.h"
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/dx11/hWin32DX11.h"
+		"${HEART_SOURCE_DIR}/src/pal/win32/device/hWin32.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hWin32DX11.h"
 	)
     # Add platform math files.
     file(GLOB HEART_DEVICE_MATH_FILES
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/math/*.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/math/*.h"
 	)
     set( HEART_SRC_FILES 
         ${HEART_SRC_FILES}
         "${HEART_SOURCE_DIR}/src/pal/win32/heartWin32Unity.cpp"
     )
     file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
-        "${HEART_SOURCE_DIR}/include/pal/win32/device/*.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
         "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
         "${HEART_SOURCE_DIR}/src/pal/win32/device/*.cpp"
     )
@@ -242,7 +212,7 @@ source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 source_group(network FILES ${HEART_NETWORK_FILES})
 
 set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
-set_source_files_properties("${HEART_SOURCE_DIR}/include/events/generated/hPuslisher_gen.h" PROPERTIES GENERATED 1)
+set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
 	zlib crypto lua52 minizip libogg libvorbis proto enet)
