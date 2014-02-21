@@ -176,7 +176,7 @@ namespace Heart
             if (startupscript->getIsMemMapped()) {
                 script=(hChar*)startupscript->getMemoryMappedBase();
             } else {
-                script = (hChar*)hAlloca((hSizeT)startupscript->Length()+1);
+                script = (hChar*)hAlloca((hSize_t)startupscript->Length()+1);
                 startupscript->Read(script, (hUint)startupscript->Length());
             }
             luaL_loadbuffer(luaVM_->GetMainState(), script, startupscript->Length(), "script:/startup.lua");

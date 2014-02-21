@@ -390,7 +390,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSizeT aliasCount, hBool takeTexture/*=hFalse*/) {
+    void hRenderMaterialManager::registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSize_t aliasCount, hBool takeTexture/*=hFalse*/) {
         hcAssert(name && tex && aliases && aliasCount > 0);
         hGlobalTexture* gtex=hNEW(hGlobalTexture);
         hUint strsize;

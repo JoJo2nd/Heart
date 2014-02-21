@@ -160,7 +160,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hJob::operator new(size_t, const hChar*, hSizeT) {
+    void* hJob::operator new(size_t, const hChar*, hSize_t) {
         return hJobManager::allocateJob();
     }
 
@@ -176,7 +176,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hJob::operator delete(void* ptr, const hChar*, hSizeT) {
+    void hJob::operator delete(void* ptr, const hChar*, hSize_t) {
         hJobManager::freeJob((hJob*)ptr);
     }
 

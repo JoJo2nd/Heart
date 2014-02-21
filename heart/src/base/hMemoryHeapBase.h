@@ -111,15 +111,15 @@ public:
     }
     virtual ~hMemoryHeapBase() {};
 
-    virtual void        create(hSizeT sizeInBytes, hBool threadLocal) = 0;
+    virtual void        create(hSize_t sizeInBytes, hBool threadLocal) = 0;
     virtual void		destroy() = 0;
-    virtual void*		alloc( hSizeT size, hSizeT alignment ) = 0;
-    virtual void*		alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line ) = 0;
-    virtual void*		realloc( void* ptr, hSizeT alignment, hSizeT size ) = 0;
-    virtual void*		realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line ) = 0;
+    virtual void*		alloc( hSize_t size, hSize_t alignment ) = 0;
+    virtual void*		alloc( hSize_t size, hSize_t alignment, const hChar* file, hSize_t line ) = 0;
+    virtual void*		realloc( void* ptr, hSize_t alignment, hSize_t size ) = 0;
+    virtual void*		realloc( void* ptr, hSize_t alignment, hSize_t size, const hChar* file, hSize_t line ) = 0;
     virtual void		release( void* ptr ) = 0;
     virtual HeapInfo	usage() = 0;
-    virtual hSizeT      totalAllocationCount() const = 0;
+    virtual hSize_t      totalAllocationCount() const = 0;
     virtual hBool		pointerBelongsToMe( void* ptr ) = 0;
     const hChar*        getHeapName() const { return name_; }
 
@@ -138,8 +138,8 @@ protected:
     hChar               name_[32];
     hBool				useLocks_;
     void*				lastThreadID_;
-    hSizeT				allocNum_;
-    hSizeT				debugAlloc_;
+    hSize_t				allocNum_;
+    hSize_t				debugAlloc_;
 
 };
 

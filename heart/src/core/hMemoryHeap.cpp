@@ -32,7 +32,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hMemoryHeap::create( hSizeT sizeInBytes, hBool threadLocal )
+void hMemoryHeap::create( hSize_t sizeInBytes, hBool threadLocal )
 {
     lock_.Lock();
     if (!localMspace_)
@@ -75,8 +75,8 @@ void hMemoryHeap::destroy()
         hMH_PRE_ACTION();
         mallinfo mi = mspace_mallinfo(localMspace_);
         hcAssertMsg(alloced_ == 0, "%u allocation(s) have not been released from heap %s", alloced_, getHeapName());
-        hSizeT r = usage().currBytesReserved_;
-        hSizeT f = destroy_mspace( localMspace_ );
+        hSize_t r = usage().currBytesReserved_;
+        hSize_t f = destroy_mspace( localMspace_ );
         size_ = 0;
         localMspace_ = 0;
         hMH_POST_ACTION();
@@ -88,11 +88,11 @@ void hMemoryHeap::destroy()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment )
+void* hMemoryHeap::alloc( hSize_t size, hSize_t alignment )
 {
     hMH_PRE_ACTION();
     void* r = mspace_memalign( localMspace_, alignment, size );
-    hSizeT s = mspace_allocate_size( r );
+    hSize_t s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC_UNKNOWN( r, s, allocNum_++ );
     hMH_POST_ACTION();
@@ -103,11 +103,11 @@ void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
+void* hMemoryHeap::alloc( hSize_t size, hSize_t alignment, const hChar* file, hSize_t line )
 {
     hMH_PRE_ACTION();
     void* r = mspace_memalign( localMspace_, alignment, size );
-    hSizeT s = mspace_allocate_size( r );
+    hSize_t s = mspace_allocate_size( r );
     ++alloced_;
     hMH_TRACK_ALLOC( r, file, line, s, allocNum_++ );
     hMH_POST_ACTION();
@@ -118,7 +118,7 @@ void* hMemoryHeap::alloc( hSizeT size, hSizeT alignment, const hChar* file, hSiz
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size )
+void* hMemoryHeap::realloc( void* ptr, hSize_t alignment, hSize_t size )
 {
     hMH_PRE_ACTION();
     size_t s = 0;
@@ -144,7 +144,7 @@ void* hMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void* hMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line )
+void* hMemoryHeap::realloc( void* ptr, hSize_t alignment, hSize_t size, const hChar* file, hSize_t line )
 {
     hMH_PRE_ACTION();
     size_t s = 0;
@@ -189,7 +189,7 @@ void hMemoryHeap::release( void* ptr )
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-hSizeT hMemoryHeap::totalAllocationCount() const
+hSize_t hMemoryHeap::totalAllocationCount() const
 {
     hAtomic::LWMemoryBarrier();
     return alloced_;

@@ -54,8 +54,8 @@ namespace Heart
         hcAssertMsg(threadID_ != NULL, "hPublisherContext not initialised");
         hcAssertMsg(threadID_ == Heart::Device::GetCurrentThreadID(), "hPublisherContext must only be accessed from one thread");
 
-        hcAssertMsg(signalBufferSize_-((hSizeT)sbPos_ - (hSizeT)signalBuffer_[activeBuffer_]) >= sizeneeded, "Run out of space in deferred dispatch buffer");
-        if (signalBufferSize_-((hSizeT)sbPos_ - (hSizeT)signalBuffer_[activeBuffer_]) < sizeneeded) {
+        hcAssertMsg(signalBufferSize_-((hSize_t)sbPos_ - (hSize_t)signalBuffer_[activeBuffer_]) >= sizeneeded, "Run out of space in deferred dispatch buffer");
+        if (signalBufferSize_-((hSize_t)sbPos_ - (hSize_t)signalBuffer_[activeBuffer_]) < sizeneeded) {
             return NULL;
         }
         

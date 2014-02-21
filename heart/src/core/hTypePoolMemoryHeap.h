@@ -48,7 +48,7 @@ namespace Heart
         {
             destroy();
         }
-        void                        create(hSizeT /*sizeInBytes*/, hBool /*threadLocal*/) 
+        void                        create(hSize_t /*sizeInBytes*/, hBool /*threadLocal*/) 
         {
         }
         void		                destroy() {
@@ -58,25 +58,25 @@ namespace Heart
                 releasePoolBlock(&poolBlocks_[i]);
             }
         }
-        void*		                alloc(hSizeT size, hSizeT alignment) {
+        void*		                alloc(hSize_t size, hSize_t alignment) {
             hcAssert(size==sizeof(t_ty));
             void* ptr=allocInternal();
             hMH_TRACK_ALLOC_UNKNOWN(ptr, s_typeSize, 0);
             return ptr;
         }
-        void*		                alloc(hSizeT size, hSizeT alignment, const hChar* file, hSizeT line) {
+        void*		                alloc(hSize_t size, hSize_t alignment, const hChar* file, hSize_t line) {
             hcAssert(size==sizeof(t_ty));
             void* ptr=allocInternal();
             hMH_TRACK_ALLOC(ptr, file, line, s_typeSize, 0);
             return ptr;
         }
-        void*		                realloc(void* ptr, hSizeT alignment, hSizeT size) {
+        void*		                realloc(void* ptr, hSize_t alignment, hSize_t size) {
             hcAssert(ptr==NULL && size==sizeof(t_ty));
             void* block=allocInternal();
             hMH_TRACK_ALLOC_UNKNOWN(ptr, s_typeSize, 0);
             return block;
         }
-        void*		                realloc(void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line) {
+        void*		                realloc(void* ptr, hSize_t alignment, hSize_t size, const hChar* file, hSize_t line) {
             hcAssert(ptr==NULL && size==sizeof(t_ty));
             void* block=allocInternal();
             hMH_TRACK_ALLOC(ptr, file, line, s_typeSize, 0);
@@ -102,7 +102,7 @@ namespace Heart
         hMemoryHeapBase::HeapInfo	usage() {
             return hMemoryHeapBase::HeapInfo();
         }
-        hSizeT totalAllocationCount() const { 
+        hSize_t totalAllocationCount() const { 
             return alloced_;
         }
         hBool pointerBelongsToMe(void* ptr) {

@@ -41,7 +41,7 @@ typedef unsigned long long  hUint64;
 typedef long long			hInt64;
 typedef int					hInt;
 typedef unsigned int        hUint;
-typedef size_t              hSizeT;
+typedef size_t              hSize_t;
 typedef float				hFloat;
 typedef double				hDouble;
 typedef bool				hBool;
@@ -116,11 +116,11 @@ namespace Heart
 //#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 //Improved SizeofArray
 #   ifdef HEART_Cx11
-    template <typename t_ty, hSizeT n> 
-    constexpr hSizeT hArraySize(const t_ty (&)[n]) { return n; }
+    template <typename t_ty, hSize_t n> 
+    constexpr hSize_t hArraySize(const t_ty (&)[n]) { return n; }
 #else
-    template < typename t_ty, hSizeT n >
-    hSizeT hArraySize(const t_ty (&)[n]) { return n; }
+    template < typename t_ty, hSize_t n >
+    hSize_t hArraySize(const t_ty (&)[n]) { return n; }
 #   endif
 #define hStaticArraySize(x) hArraySize(x)
 

@@ -70,10 +70,10 @@ namespace Heart
 #       define hHeapFreeSafe( h, p ) Heart::hGlobalMemoryFree( p ); p = NULL
 #   endif
 
-void* operator new (size_t size, const hChar* file, hSizeT line);
-void* operator new[] (size_t size, const hChar* file, hSizeT line);
-void operator delete (void* mem, const hChar*, hSizeT);
-void operator delete[] (void* mem, const hChar*, hSizeT);
+void* operator new (size_t size, const hChar* file, hSize_t line);
+void* operator new[] (size_t size, const hChar* file, hSize_t line);
+void operator delete (void* mem, const hChar*, hSize_t);
+void operator delete[] (void* mem, const hChar*, hSize_t);
 
     #define hNEW(type)                    new(__FILE__, __LINE__) type
     #define hNEW_ARRAY(type, ele)         new(__FILE__, __LINE__) type [ele]

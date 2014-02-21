@@ -32,7 +32,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hStackMemoryHeap::create( hSizeT sizeInBytes, hBool threadLocal )
+    void hStackMemoryHeap::create( hSize_t sizeInBytes, hBool threadLocal )
     {
         hMH_PRE_ACTION();
 
@@ -70,7 +70,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alloc( hSizeT size, hSizeT alignment )
+    void* hStackMemoryHeap::alloc( hSize_t size, hSize_t alignment )
     {
         hMH_PRE_ACTION();
         hByte* ret = ptr_;
@@ -90,7 +90,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::alloc( hSizeT size, hSizeT alignment, const hChar* file, hSizeT line )
+    void* hStackMemoryHeap::alloc( hSize_t size, hSize_t alignment, const hChar* file, hSize_t line )
     {
         // Don't support tracking on stack heap.
         return alloc(size, alignment);
@@ -100,7 +100,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size )
+    void* hStackMemoryHeap::realloc( void* ptr, hSize_t alignment, hSize_t size )
     {
         // Don't support realloc but allow to be used as alloc in case where ptr == NULL or release 
         // via size => zero
@@ -120,7 +120,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hStackMemoryHeap::realloc( void* ptr, hSizeT alignment, hSizeT size, const hChar* file, hSizeT line )
+    void* hStackMemoryHeap::realloc( void* ptr, hSize_t alignment, hSize_t size, const hChar* file, hSize_t line )
     {
         // Don't support tracking or realloc on stack heap.
         return realloc(ptr, alignment, size);

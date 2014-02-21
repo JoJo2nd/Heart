@@ -475,7 +475,7 @@ private:
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSizeT offset, hSizeT size, hdMMapMode mode) {
+    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSize_t offset, hSize_t size, hdMMapMode mode) {
         g_mmapAccessMutex.Lock();
         if (!g_mmapInit) {
             for (hUint i=0; i<(hUint)hArraySize(g_mmapFiles); ++i) {
@@ -502,7 +502,7 @@ private:
         DWORD sizelow=0;
         DWORD offsethi=0;
         DWORD offsetlow=0;
-        if (sizeof(hSizeT)==8) {
+        if (sizeof(hSize_t)==8) {
             sizehi  = (DWORD)(size >> 32);
             sizelow = (DWORD)size & 0xFFFFFFFF;
             offsethi  = (DWORD)(offset >> 32);

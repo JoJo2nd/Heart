@@ -163,7 +163,7 @@ namespace Heart
     HEART_DLLEXPORT
     hdFileStat   HEART_API hdFstat(hdFileHandle* handle);
 
-    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSizeT offset, hSizeT size, hdMMapMode mode);
+    hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSize_t offset, hSize_t size, hdMMapMode mode);
     void                hdUnmap(hdMemoryMappedFile* mmapview);
 
     HEART_DLLEXPORT

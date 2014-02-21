@@ -264,7 +264,7 @@ namespace Heart
 
     struct HEART_DLLEXPORT hRCmd 
     {
-        hRCmd(hRenderCmdOpCode oc, hSizeT size) 
+        hRCmd(hRenderCmdOpCode oc, hSize_t size) 
             : opCode_(oc), size_((hByte)size) {}
         hRenderCmdOpCode    opCode_;
         hByte               size_;

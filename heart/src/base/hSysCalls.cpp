@@ -187,7 +187,7 @@ namespace hMemTracking
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API TrackAlloc( const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag )
+    void HEART_API TrackAlloc( const hChar* tag, hSize_t line, void* heap, void* ptr, hSize_t size, const hChar* heaptag )
     {
 #ifdef HEART_TRACK_MEMORY_ALLOCS
         if (g_open)
@@ -206,7 +206,7 @@ namespace hMemTracking
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API TrackRealloc( const hChar* tag, hSizeT line, void* heap, void* ptr, hSizeT size, const hChar* heaptag )
+    void HEART_API TrackRealloc( const hChar* tag, hSize_t line, void* heap, void* ptr, hSize_t size, const hChar* heaptag )
     {
 #ifdef HEART_TRACK_MEMORY_ALLOCS
         if (g_open)

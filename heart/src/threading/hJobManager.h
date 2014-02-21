@@ -58,9 +58,9 @@ namespace Heart
         hUint16 getWorkerMask() const { return workerMask_; }
 
         void* operator new(size_t);
-        void* operator new(size_t, const hChar*, hSizeT);
+        void* operator new(size_t, const hChar*, hSize_t);
         void operator delete(void*);
-        void operator delete(void*, const hChar*, hSizeT);
+        void operator delete(void*, const hChar*, hSize_t);
 
     private:
 

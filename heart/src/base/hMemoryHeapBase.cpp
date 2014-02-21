@@ -162,12 +162,12 @@ void* operator new[] (size_t size) {
     return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT);
 }
 
-void* operator new (size_t size, const hChar* file, hSizeT line) {
+void* operator new (size_t size, const hChar* file, hSize_t line) {
     Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
     return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT, file, line);
 }
 
-void* operator new[] (size_t size, const hChar* file, hSizeT line) {
+void* operator new[] (size_t size, const hChar* file, hSize_t line) {
     Heart::hMemoryHeapBase* heap=Heart::HeapPrivate::findHeapByName("general");
     return heap->alloc(size, HEART_MIN_ALLOC_ALIGNMENT, file, line);
 }
@@ -180,11 +180,11 @@ void operator delete[] (void* mem) {
     Heart::hGlobalMemoryFree(mem);
 }
 
-void operator delete (void* mem, const hChar*, hSizeT) {
+void operator delete (void* mem, const hChar*, hSize_t) {
     Heart::hGlobalMemoryFree(mem);
 }
 
-void operator delete[] (void* mem, const hChar*, hSizeT) {
+void operator delete[] (void* mem, const hChar*, hSize_t) {
     Heart::hGlobalMemoryFree(mem);
 }
 

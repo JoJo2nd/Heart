@@ -89,7 +89,7 @@ namespace Heart
         _Ty values_[ ArraySize ];
     };
 
-    template< class _Ty, hSizeT _Granularity = 8 > 
+    template< class _Ty, hSize_t _Granularity = 8 > 
     class HEART_FORCEDLLEXPORT hVector
     {
     public: 
@@ -135,13 +135,13 @@ namespace Heart
             std::swap(reserve_, rhs->reserve_);
         }
 
-        hFORCEINLINE _Ty& operator [] ( hSizeT i )
+        hFORCEINLINE _Ty& operator [] ( hSize_t i )
         {
             hcAssert( i >= 0 && i < size_ );
             return values_[ i ];
         }
 
-        hFORCEINLINE const _Ty& operator [] ( hSizeT i ) const
+        hFORCEINLINE const _Ty& operator [] ( hSize_t i ) const
         {
             hcAssert( i>= 0 && i < size_ );
             return values_[ i ];

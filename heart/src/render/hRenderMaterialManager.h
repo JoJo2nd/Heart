@@ -86,7 +86,7 @@ namespace Heart
         hRenderBuffer*   GetGlobalConstantBlock(hUint32 id);
         hRenderBuffer*   GetGlobalConstantBlockByAlias(const hChar* name);
         hRenderBuffer*   GetGlobalConstantBlockParameterID(hShaderParameterID id);
-        void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSizeT aliasCount, hBool takeTexture=hFalse);
+        void                        registerGlobalTexture(const hChar* name, hTexture* tex, const hChar** aliases, hSize_t aliasCount, hBool takeTexture=hFalse);
         void                        resizeGlobalTexture(const hChar* name, hUint width, hUint height);
         void                        updateGlobalTexture(const hChar* name, hTexture* tex);
         hTexture*                   getGlobalTexture(const hChar* name);
