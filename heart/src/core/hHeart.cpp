@@ -241,7 +241,7 @@ namespace Heart
             GetResourceManager()->update();
             GetControllerManager()->Update();
             GetConsole()->update();
-            if (GetSystem()->ExitSignaled()) {
+            if (GetSystem()->exitSignaled()) {
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
                     //wait on game to say ok to shutdown
                     //GetJobManager()->Destory(); // Should this be here?

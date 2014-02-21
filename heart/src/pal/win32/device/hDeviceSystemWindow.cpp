@@ -208,7 +208,7 @@ namespace Heart
         { 
         case WM_CLOSE:
             PostQuitMessage( 0 );
-            SignalExit();
+            signalExit();
             return 0;
         case WM_ACTIVATE: {
                 hasFocus_ = LOWORD(wParam) != WA_INACTIVE;
@@ -374,7 +374,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::sysEventQuit(hUint syseventid, const hSysEvent* sysevent) {
-        SignalExit();
+        signalExit();
     }
 
     //////////////////////////////////////////////////////////////////////////

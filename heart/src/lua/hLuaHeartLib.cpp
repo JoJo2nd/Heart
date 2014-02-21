@@ -69,7 +69,7 @@ by Lua can also return many results.
     int hLuaExit(lua_State* L)
     {
         HEART_LUA_GET_ENGINE(L);
-        engine->GetSystem()->SignalExit();
+        engine->GetSystem()->signalExit();
         return 0;
     }
 

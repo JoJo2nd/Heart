@@ -81,8 +81,8 @@ namespace Heart
         void                    Destroy();
         hdKeyboard*             GetSystemKeyboard() { return &keyboard_; }
         hdMouse*                GetSystemMouse()    { return &mouse_; }
-        void                    SignalExit() { exitSignal_.Signal(); }
-        hBool                   ExitSignaled() { return exitSignal_.TryWait();}
+        void                    signalExit() { exitSignal_.Signal(); }
+        hBool                   exitSignaled() { return exitSignal_.TryWait();}
         hUint32                 getWindowWidth() const { return wndWidth_; }
         hUint32                 getWindowHeight() const { return wndHeight_; }
         hBool                   getOwnWindow() const { return ownWindow_; }
