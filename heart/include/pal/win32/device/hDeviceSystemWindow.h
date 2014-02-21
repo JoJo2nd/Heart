@@ -30,11 +30,19 @@
 
 namespace Heart
 {
+
+
     class HeartConfig;
     class EventManager;
 
     #define                             HEART_SHAREDLIB_INVALIDADDRESS (NULL)
     typedef HMODULE                     hSharedLibAddress; 
+
+#ifdef HEART_USE_SDL2
+    typedef SDL_Event                   hSysEvent; // just in-case it is replaced at a later date
+#   define hGetSystemEventID(x) (SDL_##x)
+    hFUNCTOR_TYPEDEF(void(*)(hUint, const hSysEvent*), hSysEventHandler);
+#endif
 
     class SystemHandle
     {
@@ -78,17 +86,31 @@ namespace Heart
         hUint32                 getWindowWidth() const { return wndWidth_; }
         hUint32                 getWindowHeight() const { return wndHeight_; }
         hBool                   getOwnWindow() const { return ownWindow_; }
+#ifdef HEART_USE_SDL2
+        void                    setSysEventHandler(hUint sysEventID, hSysEventHandler handler);
+        void                    removeSysEventHandler(hUint sysEventID, hSysEventHandler handler);
+#endif
         
     private:
 
+#ifdef HEART_USE_SDL2
+        void bindSysEventHandlers();
+        void sysEventQuit(hUint syseventid, const hSysEvent* sysevent);
+        void sysEventFocus(hUint syseventid, const hSysEvent* sysevent);
+        void sysEventSize(hUint syseventid, const hSysEvent* sysevent);
+#else
         hBool                   CreateWndClassEx( HINSTANCE hinstance, const hChar* classname );
         static LRESULT CALLBACK WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
         LRESULT                 WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-        
+#endif
+
         static hdSystemWindow*      s_instance;
 
 #ifdef HEART_USE_SDL2
+        typedef std::unordered_map<hUint, hSysEventHandler> hSysEventHandlerMap;
+
         SDL_Window*                 sdlWindow_;
+        hSysEventHandlerMap         sysEventHandlers_;
 #endif
         HINSTANCE					hInstance_;
         HWND						hWnd_;

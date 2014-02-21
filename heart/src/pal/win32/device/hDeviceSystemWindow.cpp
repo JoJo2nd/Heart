@@ -62,6 +62,9 @@ namespace Heart
         SDL_GetWindowSize(sdlWindow_, (int*)&wndWidth_, (int*)&wndHeight_);
 
         systemHandle_.hWnd_ = hWnd_;
+
+        bindSysEventHandlers();
+
         return hTrue;
 #else
         hInstance_ = deviceconfig.instance_;
@@ -148,6 +151,7 @@ namespace Heart
 #endif
     }
 
+#ifndef HEART_USE_SDL2
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -283,7 +287,7 @@ namespace Heart
         }
         return 0;
     }
-
+#endif // HEART_USE_SDL2
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -299,22 +303,98 @@ namespace Heart
 
     void hdSystemWindow::SetWindowTitle( const hChar* titleStr )
     {
+#ifdef HEART_USE_SDL2
+        SDL_SetWindowTitle(sdlWindow_, titleStr);
+#else
         SetWindowText( hWnd_, titleStr );
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdSystemWindow::PumpMessages()
-    {
+    void hdSystemWindow::PumpMessages() {
+#ifdef HEART_USE_SDL2
+        SDL_Event sdl_event;
+        auto invalidhandler = sysEventHandlers_.end();
+        while(SDL_PollEvent(&sdl_event)) {
+            auto handler = sysEventHandlers_.find(sdl_event.type);
+            if (handler != invalidhandler) {
+                handler->second(sdl_event.type, &sdl_event);
+            } else if (sdl_event.type == hGetSystemEventID(WINDOWEVENT)) {
+                handler = sysEventHandlers_.find(sdl_event.window.type);
+                if (handler != invalidhandler) {
+                    handler->second(sdl_event.window.type, &sdl_event);
+                }
+            }
+        }
+#else
         MSG msg;
         while ( PeekMessage( &msg, hWnd_, 0, 0, PM_REMOVE ) != 0 )
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+#endif
     }
+
+#ifdef HEART_USE_SDL2
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::setSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
+        hcAssert(sysEventHandlers_.find(sysEventID) == sysEventHandlers_.end());
+        sysEventHandlers_.insert(hSysEventHandlerMap::value_type(sysEventID, handler));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::removeSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
+        hcAssert((sysEventHandlers_.find(sysEventID) != sysEventHandlers_.end())
+                && (sysEventHandlers_.find(sysEventID)->second == handler));
+        sysEventHandlers_.erase(sysEventID);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::bindSysEventHandlers() {
+        setSysEventHandler(hGetSystemEventID(QUIT), hFUNCTOR_BINDMEMBER(hSysEventHandler, hdSystemWindow, sysEventQuit, this));
+        setSysEventHandler(hGetSystemEventID(WINDOWEVENT_FOCUS_GAINED), hFUNCTOR_BINDMEMBER(hSysEventHandler, hdSystemWindow, sysEventFocus, this));
+        setSysEventHandler(hGetSystemEventID(WINDOWEVENT_RESIZED), hFUNCTOR_BINDMEMBER(hSysEventHandler, hdSystemWindow, sysEventSize, this));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::sysEventQuit(hUint syseventid, const hSysEvent* sysevent) {
+        SignalExit();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::sysEventFocus(hUint syseventid, const hSysEvent* sysevent) {
+        hasFocus_ = (syseventid == hGetSystemEventID(WINDOWEVENT_FOCUS_GAINED));
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdSystemWindow::sysEventSize(hUint syseventid, const hSysEvent* sysevent) {
+        wndWidth_ = sysevent->window.data1;
+        wndHeight_ = sysevent->window.data2;
+    }
+
+#endif
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
