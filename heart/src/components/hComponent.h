@@ -128,7 +128,7 @@ namespace Heart
     public: \
         static const hChar*                         GetComponentName() { return componentName_; }\
         static hUint32                              GetComponentHash() { return componentHash_; }\
-        static hSizeT                               GetPropertyCount();\
+        static hSize_t                               GetPropertyCount();\
         static const Heart::hComponentProperty*     GetPropertyArray() { return propertyArray_; }\
     private: \
         static const hChar                         componentName_[];\
@@ -150,7 +150,7 @@ namespace Heart
 #define HEART_COMPONENT_PROPERTIES_END( klass ) \
     { NULL, NULL, 0, 0, 0 }, /*Terminator*/ \
     }; \
-    hSizeT         klass::GetPropertyCount() { return hStaticArraySize(propertyArray_)-1; }
+    hSize_t         klass::GetPropertyCount() { return hStaticArraySize(propertyArray_)-1; }
 
 }
 

@@ -784,7 +784,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(
-        const hChar* shaderProg, hSizeT len, const hChar* entry, 
+        const hChar* shaderProg, hSize_t len, const hChar* entry, 
         hShaderProfile profile, hIIncludeHandler* includesimpl, 
         hShaderDefine* defines, hUint ndefines, hdDX11ShaderProgram* out) {
         HRESULT hr;
@@ -844,7 +844,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderDevice(const hChar* shaderProg, 
-    hSizeT len, hShaderType type, hdDX11ShaderProgram* out) {
+    hSize_t len, hShaderType type, hdDX11ShaderProgram* out) {
         HRESULT hr;
         hdDX11ShaderProgram* shader = out;
         shader->type_ = type;

@@ -63,11 +63,11 @@ namespace Heart
     {
     public:
         hdSystemWindow()
-            : sdlWindow_(nullptr)
-            , hInstance_( NULL )
-            , hWnd_( NULL )
+            : sdlWindow_(hNullptr)
+            , hInstance_(hNullptr)
+            , hWnd_(hNullptr)
             , ownWindow_(hFalse)
-            , procChain_(NULL)
+            , procChain_(hNullptr)
             , exitSignal_(hFalse)
         {
             wndTitle_[0] = 0;

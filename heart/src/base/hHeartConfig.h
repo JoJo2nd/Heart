@@ -172,6 +172,8 @@
 #   pragma warning (disable:4251)
 #endif
 
+#define hGetMurmurHashSeed() (12345)
+
 #ifdef HEART_PLAT_WINDOWS
 #   define hputenv _putenv
 #   define hgetenv getenv

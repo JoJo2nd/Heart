@@ -71,10 +71,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hSizeT hStaticSoundSource::OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource)
+    hSize_t hStaticSoundSource::OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource)
     {
         hPlaybackInfo* ctx = (hPlaybackInfo*)datasource;
-        hSizeT s = hMin( size, ctx->tell_ - ctx->source_->oggDataSize_ );
+        hSize_t s = hMin( size, ctx->tell_ - ctx->source_->oggDataSize_ );
         hMemCpy( ptr, ctx->source_->oggData_+ctx->tell_, s );
         ctx->tell_ += s;
         return s;

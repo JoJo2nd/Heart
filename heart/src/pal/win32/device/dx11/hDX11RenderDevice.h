@@ -219,8 +219,8 @@ namespace Heart
     protected:
 
         const hChar*    getDebugShaderSource(hDebugShaderID shaderid);
-        hdDX11ShaderProgram* compileShaderFromSourceDevice(const hChar* shaderProg, hSizeT len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hdDX11ShaderProgram* out);
-        hdDX11ShaderProgram* compileShaderDevice(const hChar* shaderProg, hSizeT len, hShaderType type, hdDX11ShaderProgram* out);
+        hdDX11ShaderProgram* compileShaderFromSourceDevice(const hChar* shaderProg, hSize_t len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hdDX11ShaderProgram* out);
+        hdDX11ShaderProgram* compileShaderDevice(const hChar* shaderProg, hSize_t len, hShaderType type, hdDX11ShaderProgram* out);
         void                 destroyShaderDevice(hdDX11ShaderProgram* shaderProg);
         hdDX11Texture*  createTextureDevice(hUint32 levels, hTextureFormat format, hMipDesc* initialData, hUint32 flags, hdDX11Texture* texture);
         void            destroyTextureDevice( hdDX11Texture* texture );

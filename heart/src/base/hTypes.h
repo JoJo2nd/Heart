@@ -136,7 +136,7 @@ namespace Heart
 #       define hNullptr     (NULL)
 #   else
 #       define hAlignOf(x)  hAlignment_of<##x>::value
-#       define hNullptr     (std::nullptr_t())
+#       define hNullptr     (nullptr)
 #   endif
 #else
 #   error ("Unknown platform ")

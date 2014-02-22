@@ -35,9 +35,9 @@ namespace Heart
 	hControllerManager::hControllerManager()
 	{
         for (hUint sc=SDL_SCANCODE_UNKNOWN; sc<SDL_NUM_SCANCODES; ++sc) {
-            const char* name=SDL_GetScancodeName((SDL_Scancode)sc);
+            const hChar* name=SDL_GetScancodeName((SDL_Scancode)sc);
             if (hStrLen(name) > 0) {
-                hcPrintf("Scancode %u=%s", sc, name);
+                hStringID initScancodeName(name);
             }
         }
 /*        SetImpl( hNEW(GetGlobalHeap(), hdInputDeviceManager) );*/

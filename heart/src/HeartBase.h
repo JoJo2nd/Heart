@@ -74,6 +74,7 @@
 #include "base/hTypes.h"
 
 #include "base/hStringUtil.h"
+#include "base/hStringID.h"
 
 #include "base/hMemoryHeapBase.h"
 #include "base/hMemoryDefines.h"

@@ -31,27 +31,43 @@
 
 namespace Heart 
 {
+    /*
+    *   hStringID is a unique id for a string across a single run of the program. They are 
+    *   not valid across multiple runs.
+    */
     class hStringID
     {
     public:
-        hStringID(const hChar* str_id);
+        hStringID(const hChar* str_id) 
+            : strEntry_(getStringID(str_id))
+        {}
 
-        hSize_t
-        const char* c_str() { return strValue_; }
-        hBool operator == (const hStringID& rhs) { return strValue_ == rhs.strValue_; }
-        hBool operator != (const hStringID& rhs) { return strValue_ != rhs.strValue_; }
+        hSize_t size() const { return strEntry_->byteLen_; }
+        hSize_t lenght() const { return strEntry_->byteLen_; }
+        const char* c_str() const { return strEntry_->strValue_; }
+        hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
+        hBool operator == (const hStringID& rhs) const { return strEntry_ == rhs.strEntry_; }
+        hBool operator != (const hStringID& rhs) const { return strEntry_ != rhs.strEntry_; }
+        hUint operator [] (const hSize_t pos) const { strEntry_->strValue_[pos]; }
+        hUint32 hash() const { return strEntry_->strHash_; }
+        hUintptr_t id() const { return (hUintptr_t)strEntry_; }
 
     private:
 
         struct hStringIDEntry {
-            hUint32         strHash_;
-            const char*     strValue_;
+            hChar*          strValue_;
             hStringIDEntry* next_;
+            hSize_t         byteLen_;
+            hSize_t         charLen_;
+            hUint32         strHash_;
         };
 
-        hUint32     strHash_;
-        hUint32     strLen_;
-        const char* strValue_;
+        static const hUint      s_hashTableBucketSize = 16*1024;
+        static hUint            s_hashTableCount;
+        static hStringIDEntry   s_hashTable[s_hashTableBucketSize];
+        static hStringIDEntry*  getStringID(const hChar* str);
+
+        hStringIDEntry* strEntry_;
     };
 }
 

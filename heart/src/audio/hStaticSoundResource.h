@@ -40,7 +40,7 @@ namespace Heart
         void                 Rewind( hSoundPlaybackHandle handle );
         hOGGDecodeState      DecodeAudioBlock( hSoundPlaybackHandle handle, void** dstPtr, hUint32* outSize );
         void                 ReleasePlaybackHandle( hSoundPlaybackHandle handle );
-        static hSizeT        OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource);
+        static hSize_t       OGGReadFunc(void *ptr, size_t size, size_t nmemb, void *datasource);
         static int           OGGSeekFunc(void *datasource, ogg_int64_t offset, int whence);
         static long          OGGTellFunc(void *datasource);
 
@@ -62,9 +62,9 @@ namespace Heart
             OggVorbis_File       oggctx_;
             hStaticSoundSource*  source_;
             int                  currentSelection_;
-            hSizeT               tell_;
+            hSize_t              tell_;
             hBool                inUse_;
-            hSizeT               buf_;
+            hSize_t              buf_;
             hBool                eof_;
             ogg_int16_t          outBuffers_[NUM_BUFFERS][PCM_BUFFER_SIZE*MAX_CHANNELS];
         };
@@ -72,7 +72,7 @@ namespace Heart
         hVector< hPlaybackInfo > playbackInfos_; 
         hUint32       nameLen_;
         const hChar*  name_;
-        hSizeT        oggDataSize_;
+        hSize_t       oggDataSize_;
         hByte*        oggData_;  
         hdSoundFormat format_;
         hUint32       channels_;
