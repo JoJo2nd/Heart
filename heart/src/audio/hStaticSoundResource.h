@@ -102,7 +102,7 @@ namespace Heart
         hUint32                      GetSourceIndex( const hChar* sourceName );
         const hChar*                 GetSourceName( hUint32 idx ) { return sources_[idx].name_; }
         hStaticSoundSource*          GetSoundSource( hUint32 idx ) { return sources_+idx; }
-        static hResourceClassBase*   OnSoundBankLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
+        static hResourceClassBase*   OnSoundBankLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager );
         static hUint32               OnSoundBankUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
 
     private:

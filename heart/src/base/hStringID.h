@@ -41,7 +41,7 @@ namespace Heart
         hStringID() 
             : strEntry_(&s_default)
         {}
-        hStringID(const hChar* str_id) 
+        explicit hStringID(const hChar* str_id) 
             : strEntry_(get_string_id(str_id))
         {}
 

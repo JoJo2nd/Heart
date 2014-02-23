@@ -218,7 +218,11 @@ DEFINE_HEART_UNIT_TEST(Base64);
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
         if (!currentTest_ && !exiting_) {
+#if HEART_USE_SDL2
+            hcPrintf("Stub.");
+#else
             currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
+#endif
         }
         if (currentTest_) {
 #if HEART_USE_SDL2

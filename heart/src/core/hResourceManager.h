@@ -71,16 +71,6 @@ namespace Heart
     class HEART_DLLEXPORT hResourceManager
     {
     public:
-
-        enum Mode
-        {
-            READ,
-            WRITE,
-        };
-
-        hFUNCTOR_TYPEDEF(hResourceClassBase*(*)(const hChar*, hUint32 resId, hSerialiserFileStream*, hResourceManager*), ResourceLoadCallback);
-        hFUNCTOR_TYPEDEF(hUint32(*)(const hChar*, hResourceClassBase*, hResourceManager* ),  ResourceUnloadCallback);
-
         hResourceManager();
         ~hResourceManager();
 
@@ -114,12 +104,6 @@ namespace Heart
 
         friend hResourceClassBase* hResourceHandle::weakPtr() const;
 
-        struct StreamingResouce : public hMapElement< hUint32, StreamingResouce >
-        {
-            hStreamingResourceBase*     stream_;
-        };
-
-        typedef hMap< hUint32, StreamingResouce >                       StreamingResourceMap;
         typedef hMap< hUint32, hResourcePackage >                       ResourcePackageMap;
 
         hResourceClassBase* getResourceForHandle(hResourceID crc);

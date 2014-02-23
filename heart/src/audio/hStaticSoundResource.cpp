@@ -48,7 +48,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hSoundBankResource::OnSoundBankLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+    hResourceClassBase* hSoundBankResource::OnSoundBankLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager )
     {
         hSoundBankResource* resource = hNEW(hSoundBankResource);
         hSerialiser ser;

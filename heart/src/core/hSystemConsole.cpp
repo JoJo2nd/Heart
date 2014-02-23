@@ -228,7 +228,6 @@ namespace Heart
             if (visible_) {
 #if 1
                 hcPrintf("Stub");
-            }
 #else
                 hUint afterC = cursorPos_;
                 hUint32 inputbytes = keyboard_->CharBufferSizeBytes();
@@ -266,9 +265,12 @@ namespace Heart
                     inputBuffer_[0] = ' ';
                     cursorPos_ = 0;
                 }
+#endif
             }
 
-            if (keyboard_->GetButton(VK_F4).raisingEdge_)
+            static hStringID ConsoleAction("Show/Hide Console");
+            hInputAction action;
+            if (actionManager_->queryAction(0, ConsoleAction, &action) && action.falling_)
             {
                 visible_ = !visible_;
                 hDebugMenuManager::GetInstance()->SetMenuVisiablity("console", visible_);
@@ -289,7 +291,6 @@ namespace Heart
             frameMessages_.clear();
 
             inputBuffer_[cursorPos_] = prevChar;
-#endif
         }
     }
 

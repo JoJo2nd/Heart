@@ -30,8 +30,7 @@
 namespace Heart
 {
 
-    class hSoundResource : public hStreamingResourceBase,
-                           public hISoundSourceBuffer
+    class hSoundResource : public hISoundSourceBuffer
     {
     public:
         hSoundResource()
@@ -54,7 +53,7 @@ namespace Heart
         void                           Rewind( hSoundPlaybackHandle handle );
         hOGGDecodeState                DecodeAudioBlock( hSoundPlaybackHandle handle, void** dstPtr, hUint32* outSize );
         void                           ReleasePlaybackHandle( hSoundPlaybackHandle /*handle*/ ) {}
-        static hResourceClassBase*     OnSoundLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager );
+        static hResourceClassBase*     OnSoundLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager );
         static hUint32                 OnSoundUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
 
     private:
@@ -88,7 +87,7 @@ namespace Heart
 
         };
 
-        hBool                   DecodeVorbisHeader( hSerialiserFileStream* dataStream );
+        hBool                   DecodeVorbisHeader( void* dataStream );
         hBool                   RequestNextAudioBlock( hSoundPlaybackHandle handle );
         hBool                   NextAudioBlockReady( hSoundPlaybackHandle handle );
 

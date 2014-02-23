@@ -190,7 +190,6 @@ namespace Heart
         const hResourceHandlerMap*  handlerMap_;
         hMemoryHeapBase*            packageHeap_;
         hMemoryHeap                 tempHeap_;
-        hZipFileSystem*             zipPackage_;
         hIFileSystem*               fileSystem_;
         hUint32                     totalResources_;
         hIFile*                     pkgDescFile_;

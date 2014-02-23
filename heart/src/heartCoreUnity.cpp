@@ -42,8 +42,6 @@
 #include "core/hResourceManager.cpp"
 #include "core/hResourcePackage.cpp"
 #include "core/hSystemConsole.cpp"
-#include "core/hZipFile.cpp"
-#include "core/hZipFileSystem.cpp"
 
 #include "math/hCollision.cpp"
 
@@ -67,7 +65,6 @@
 #include "components/hComponent.cpp"
 #include "components/hEntity.cpp"
 #include "components/hEntityFactory.cpp"
-#include "core/hStateBase.cpp"
 #include "lua/hLuaHeartLib.cpp"
 #include "lua/hLuaStateManager.cpp"
 
@@ -146,8 +143,6 @@
 
 #include "debug/hDebugMenuManager.cpp"
 #include "debug/hDebugInfo.cpp"
-#include "utils/hRealTimeProfilerMenu.cpp"
-#include "utils/hMemoryViewMenu.cpp"
 
 //////////////////////////////////////////////////////////////////////////
 // Blob Data /////////////////////////////////////////////////////////////

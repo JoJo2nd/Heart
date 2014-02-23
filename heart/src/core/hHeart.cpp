@@ -99,13 +99,7 @@ namespace Heart
         jobManager_ = hNEW(hJobManager);
         actionManager_ = hNEW(hActionManager);
         system_ = hNEW(hSystem);
-        hZipFileSystem* zipPak=hNEW(hZipFileSystem)("cd:/data.jaaf");
-        if (zipPak->IsOpen()) {
-            fileMananger_=zipPak;
-        } else {
-            fileMananger_ = hNEW(hDriveFileSystem)();
-            hDELETE(zipPak);
-        }
+        fileMananger_ = hNEW(hDriveFileSystem)();
         resourceMananger_ = hNEW(hResourceManager);
         renderer_ = hNEW(hRenderer);
         soundManager_ = hNEW(hSoundManager);
@@ -167,6 +161,7 @@ namespace Heart
 
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
         renderer_->GetMaterialManager()->openLuaMaterialLib(luaVM_->GetMainState());
+        actionManager_->registerLuaLib(luaVM_);
 
         //Run the start up script
         hIFile* startupscript = fileMananger_->OpenFile("script:/startup.lua", FILEMODE_READ);

@@ -145,43 +145,6 @@ namespace Heart
 
     hFUNCTOR_TYPEDEF(hBool (*)(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*), hResourceEventProc);
 
-    class hStreamingResourceBase : public hResourceClassBase 
-    {
-    public:
-        hStreamingResourceBase()
-            : hResourceClassBase()
-        {
-            hZeroMem( &readOps_, sizeof(readOps_) );
-            //flags_ |= ResourceFlags_STREAMING;
-        }
-        virtual ~hStreamingResourceBase();
-        hUint QueueStreamRead( void* dstBuf, hUint32 size, hUint32 offset, hUint32* opID );
-        hUint PollSteamRead( hUint32 opID, hUint32* read );
-
-    private:
-
-        friend class hResourceManager;
-
-        struct ReadOp
-        {
-            hBool   active_;
-            hBool   done_;
-            hUint32 read_;
-            void*   dstBuf_;
-            hUint32 size_;
-            hUint32 offset_;
-        };
-
-        static const hUint32 MAX_READ_OPS = 8;
-
-        void                            SetFileStream( const hSerialiserFileStream& stream ) { fileStream_ = stream; }
-        void                            UpdateFileOps();
-
-        hArray< ReadOp, MAX_READ_OPS >  readOps_;
-        hSerialiserFileStream           fileStream_;
-        //hMutex                          lock_;
-    };
-
     class hResourceHandle
     {
     public:

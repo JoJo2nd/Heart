@@ -32,8 +32,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hSoundResource::OnSoundLoad( const hChar* ext, hUint32 resID, hSerialiserFileStream* dataStream, hResourceManager* resManager )
+    hResourceClassBase* hSoundResource::OnSoundLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager )
     {
+#if 1
+        hcPrintf("Stub :"__FUNCTION__);
+        return hNullptr;
+#else
         hSoundResource* sound = hNEW(hSoundResource);
         if ( !sound->DecodeVorbisHeader( dataStream ) )
         {
@@ -41,6 +45,7 @@ namespace Heart
             sound = NULL;
         }
         return sound;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -49,9 +54,13 @@ namespace Heart
 
     hUint32 hSoundResource::OnSoundUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
+#if 1
+        hcPrintf("Stub :"__FUNCTION__);
+#else
         hSoundResource* sound = static_cast<hSoundResource*>(resource);
 
         hDELETE(sound);
+#endif
         return 0;
     }
 
@@ -59,8 +68,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hSoundResource::DecodeVorbisHeader( hSerialiserFileStream* dataStream )
+    hBool hSoundResource::DecodeVorbisHeader( void* dataStream )
     {
+#if 1
+        hcPrintf("Stub :"__FUNCTION__);
+        return hTrue;
+#else
         static const hUint32 bufSize = 4096;
         hChar* buffer;
         hUint32 bytes;
@@ -189,6 +202,7 @@ namespace Heart
         initTell_ = (hUint32)dataStream->Tell() - 4096;
 
         return hTrue;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -225,9 +239,14 @@ namespace Heart
 
     hBool hSoundResource::RequestNextAudioBlock( hSoundPlaybackHandle handle )
     {
+#if 1 
+        hcPrintf("Stub :"__FUNCTION__);
+        return hFalse;
+#else
         hPlaybackInfo* info = &playbackInfos_[handle];
         hUint ret = QueueStreamRead( info->inBuffer_, hPlaybackInfo::OGG_BUFFER_SIZE, info->tell_, &info->readOpID_ );
         return ret == 0;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -236,6 +255,10 @@ namespace Heart
 
     hBool hSoundResource::NextAudioBlockReady( hSoundPlaybackHandle handle )
     {
+#if 1
+        hcPrintf("Stub :"__FUNCTION__);
+        return hFalse;
+#else
         hUint32 read;
         hPlaybackInfo* info = &playbackInfos_[handle];
 
@@ -262,6 +285,7 @@ namespace Heart
         }
 
         return hFalse;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

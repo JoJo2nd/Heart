@@ -32,11 +32,15 @@
 
 namespace Heart
 {
+    class hLuaStateManager;
+
     struct hInputAction
     {
         hStringID   actionName_;
         hUint       deviceID_;
         hInt16      value_;
+        hUint       rising_ : 1; // aka button down
+        hUint       falling_ : 1; // aka button up
         hUint       isRepeat_ : 1;
         hUint       isAxis_ : 1;
     };
@@ -57,21 +61,34 @@ namespace Heart
         void        endOfFrameUpdate();
         void        setDefaultActionMapping(hStringID keyname, hStringID actionname);
         void        clearDefaultActionMapping(hStringID keyname);
+        void        registerLuaLib(hLuaStateManager* luaStateManager);
+        hBool       queryAction(hUint id, hStringID action, hInputAction* value);
 
     private:
+
+        enum hDeviceID 
+        {
+            hDeviceID_Keyboard = 0,
+            hDeviceID_Mouse = 1,
+            hDeviceID_ControllerFirst = 2
+        };
+
+        static const hUint hInvalidBinding = ~0;
 
         struct hInputID {
             enum hType {
                 hType_Keyboard = 0,
                 hType_Mouse = 1,
                 hType_Controller = 2,
+                hType_MouseAxis = 3,
+                hType_ControllerAxis = 4,
             };
             // bits 0-1: device type
             // bits 2-11: scan code empty on non-keyboard devices
             union {
                 hUint32 id_; 
                 struct {
-                    hUint type_ : 2; // 0 = keyboard, 1 = mouse, 2 = controller
+                    hUint type_ : 4; //
                     hUint scancode_ : 9; // only valid on keyboard
                     hUint buttonId_ : 8; // only on mouse/controller, axisId is zero
                     hUint axisId_ : 8; // only on mouse/controller, buttonId is zero
@@ -94,15 +111,32 @@ namespace Heart
         };
 
         void handleSysEvent(hUint syseventid, const hSysEvent* sysevent);
+        void addDeviceRange(hUint first, hUint last);
+        void flushBoundMappings();
+        void addToBoundMappings(hStringID keybinding, hStringID actionname);
+        void removeFromBoundMappings(hStringID keybinding);
+        void bindDeviceToID(hUint deviceid, hUint id);
+        hFORCEINLINE hUint getBoundID(hUint deviceid) {
+            return deviceIDToBoundID_[deviceid];
+        }
+        static hInt luaSetDefaultActionMapping(lua_State* L);
+        static hInt luaClearDefaultActionMapping(lua_State* L);
 
         typedef std::unordered_map<hInputID, hStringID, hInputIDHash> hActionMapping;
         typedef std::unordered_map<hStringID, hInputID, hStringIDHash> hKeyNameIDMapping;
+        typedef std::unordered_map<hStringID, hInputAction, hStringIDHash> hActionInputMapping;
         typedef std::vector<hInputAction> hActionArray;
+        typedef std::vector<DeviceInput::hGameController*> hControllerArray;
+        typedef std::vector<hActionInputMapping> hBoundMappingsArray;
+        typedef std::vector<hUint> hIntArray;
 
-        hdSystemWindow*     systemWindow_;
-        hKeyNameIDMapping   keyNameToIDMappings_;
-        hActionMapping      defaultMappings_;
-        hActionArray        bufferedActions_;
+        hdSystemWindow*         systemWindow_;
+        hKeyNameIDMapping       keyNameToIDMappings_;
+        hActionMapping          defaultMappings_;
+        hActionArray            bufferedActions_;
+        hControllerArray        openControllers_;
+        hBoundMappingsArray    boundMappings_;
+        hIntArray               deviceIDToBoundID_;
     };
 }
 #endif // HACTIONMANAGER_H__

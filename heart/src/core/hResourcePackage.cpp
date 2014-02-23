@@ -46,11 +46,10 @@ namespace Heart
         : packageState_(State_Unloaded)
         , engine_(engine)
         , handlerMap_(handlerMap)
-        , zipPackage_(NULL)
         , fileSystem_(fileSystem)
         , tempHeap_("ResPackageTempHeap")
         , totalResources_(0)
-        , packageHeap_(NULL)
+        , packageHeap_(hNullptr)
         , fileQueue_(fileQueue)
         , workerQueue_(workerQueue)
         , hotSwapping_(hFalse)
@@ -65,7 +64,6 @@ namespace Heart
 
     hResourcePackage::~hResourcePackage()
     {
-        hDELETE_SAFE(zipPackage_);
         resourceMap_.Clear(hTrue);
         //hDELETE_SAFE(packageHeap_);
         hotSwapSignal_.Destroy();
@@ -86,18 +84,6 @@ namespace Heart
         hStrCat(zipname,MAX_PACKAGE_NAME,".PKG");
 
         packageCRC_ = hCRC32::StringCRC(packageName_);
-
-        zipPackage_ = hNEW(hZipFileSystem)(zipname);
-
-        if (zipPackage_->IsOpen())
-        {
-            fileSystem_ = zipPackage_;
-        }
-        else
-        {
-            hDELETE_SAFE(zipPackage_);
-        }
-
         hcAssert(fileSystem_);
 
         hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
