@@ -105,7 +105,6 @@ namespace Heart
         soundManager_ = hNEW(hSoundManager);
         console_ = hNEW(hSystemConsole)(consoleCb, consoleUser);
         luaVM_ = hNEW(hLuaStateManager);
-        entityFactory_ = hNEW(hEntityFactory);
         debugMenuManager_ = hNEW(hDebugMenuManager);
         debugServer_=hNEW(hNetHost);
 
@@ -149,15 +148,12 @@ namespace Heart
         resourceMananger_->initialise( this, renderer_, fileMananger_, jobManager_, NULL );
         soundManager_->Initialise();
         luaVM_->Initialise();
-        entityFactory_->initialise( fileMananger_, resourceMananger_, this );
 
         g_ProfilerManager_ = hNEW(hProfilerManager)();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-        RegisterDefaultComponents();
 
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
         renderer_->GetMaterialManager()->openLuaMaterialLib(luaVM_->GetMainState());
@@ -201,17 +197,6 @@ namespace Heart
         engineState_ = hHeartState_LoadingCore;
 
         hMemTracking::TrackPushMarker("After_Engine_Init");
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hHeartEngine::RegisterDefaultComponents()
-    {
-        HEART_REGISTER_COMPONENT_FACTORY( entityFactory_, hLuaScriptComponent, 
-            ComponentCreateCallback::bind< hLuaScriptComponent::hLuaComponentCreate >(),
-            ComponentDestroyCallback::bind< hLuaScriptComponent::hLuaComponentDestroy >() );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -300,7 +285,6 @@ namespace Heart
         //hDELETE_SAFE(GetGlobalHeap(), debugInfo_);
         hDELETE_SAFE(g_ProfilerManager_);
         hDELETE_SAFE(debugMenuManager_);
-        hDELETE_SAFE(entityFactory_);
         hDELETE_SAFE(luaVM_);
         hDELETE_SAFE(console_);
         hDELETE_SAFE(resourceMananger_);

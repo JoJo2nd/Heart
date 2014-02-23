@@ -49,12 +49,13 @@ namespace Heart
 
     void hEntity::AddComponent(hComponent* component)
     {
-        hcAssert(FindComponentByID(component->GetID()) == NULL);
-
-        hComponentContainer c;
-        c.component_ = component;
-        c.componentHash_ = component->GetID();
-        components_.PushBack(c);
+        hcPrintf("Stub :"__FUNCTION__);
+//         hcAssert(FindComponentByID(component->GetID()) == NULL);
+// 
+//         hComponentContainer c;
+//         c.component_ = component;
+//         c.componentHash_ = component->GetID();
+//         components_.PushBack(c);
     }
 
     //////////////////////////////////////////////////////////////////////////

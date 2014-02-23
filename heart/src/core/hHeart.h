@@ -151,7 +151,6 @@ namespace Heart
         hSystemConsole*     GetConsole()            { return console_; }
         hLuaStateManager*   GetVM()                 { return luaVM_; }
         hJobManager*        GetJobManager()         { return jobManager_; }
-        hEntityFactory*     GetEntityFactory()      { return entityFactory_; }
         hSoundManager*      GetSoundManager()       { return soundManager_; }
 
         static const hChar* VersionString();
@@ -172,7 +171,6 @@ namespace Heart
 
         static void                     ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message);
 
-        void                            RegisterDefaultComponents();
         void                            PostCoreResourceLoad();
         void                            DoUpdate();
 
@@ -192,7 +190,6 @@ namespace Heart
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;
         hJobManager*                    jobManager_;
-        hEntityFactory*                 entityFactory_;
         hConfigOptions                  configFile_;
 
         //Debug 
