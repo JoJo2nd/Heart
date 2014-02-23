@@ -189,7 +189,6 @@ namespace Heart
 
         hRenderer*          renderer_;
         hResourceManager*   resourceManager_;
-        const hdKeyboard*   keyboard_;
         hBool               visible_;
         hPublisherContext*  evtCtx_;
         hNetHost*           debugHost_;

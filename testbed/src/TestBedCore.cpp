@@ -217,16 +217,17 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        Heart::hdGamepad* pad = pEngine->getActionManager()->GetGamepad(0);
-        Heart::hdKeyboard* kb = pEngine->getActionManager()->GetSystemKeyboard();
-
         if (!currentTest_ && !exiting_) {
             currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
         }
-        if ( currentTest_ && kb) {
+        if (currentTest_) {
+#if HEART_USE_SDL2
+            hcPrintf("Stub.");
+#else
             if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ || kb->GetButton(VK_F6).raisingEdge_) {
                 currentTest_->forceExitTest();
             }
+#endif
             currentTest_->RunUnitTest();
             if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
                 hDELETE_SAFE(currentTest_);

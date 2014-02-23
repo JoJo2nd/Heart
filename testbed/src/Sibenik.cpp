@@ -48,15 +48,13 @@ namespace {
 
 hUint32 Sibenik::RunUnitTest()
 {
-    Heart::hdGamepad* pad = engine_->getActionManager()->GetGamepad(0);
-    Heart::hdKeyboard* kb = engine_->getActionManager()->GetSystemKeyboard();
     switch(state_)
     {
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
             engine_->GetResourceManager()->loadPackage(PACKAGE_NAME);
-            fpCamera_.setInput(pad);
+            hcPrintf("Stub");//fpCamera_.setInput(pad);
             state_ = eLoading;
         }
         break;

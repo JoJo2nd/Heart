@@ -156,7 +156,6 @@ namespace Heart
         resourceManager_ = pResourceManager;
         renderer_ = renderer;
         vm_ = lua;
-        keyboard_ = hNullptr; //controllerManager_->GetSystemKeyboard();
         evtCtx_ = evtCtx;
         debugHost_ = debugHost;
     }
@@ -224,10 +223,13 @@ namespace Heart
 
     void hSystemConsole::updateConsole()
     {
-        if (consoleWindow_ && keyboard_)
+        if (consoleWindow_)
         {
-
             if (visible_) {
+#if 1
+                hcPrintf("Stub");
+            }
+#else
                 hUint afterC = cursorPos_;
                 hUint32 inputbytes = keyboard_->CharBufferSizeBytes();
                 const hChar* inputchars = keyboard_->GetCharBufferData();
@@ -287,6 +289,7 @@ namespace Heart
             frameMessages_.clear();
 
             inputBuffer_[cursorPos_] = prevChar;
+#endif
         }
     }
 

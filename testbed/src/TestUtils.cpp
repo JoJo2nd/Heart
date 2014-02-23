@@ -35,7 +35,9 @@
 void SimpleFirstPersonFlyCamera::update(hFloat delta) {
     using namespace Heart;
     using namespace Heart::hVec3Func;
-
+#if 1
+    hcPrintf("Stub");
+#else
     if (!pad_) {
         return;
     }
@@ -68,4 +70,5 @@ void SimpleFirstPersonFlyCamera::update(hFloat delta) {
     position_ += movement;
 
     viewMatrix_ = hMatrixFunc::LookAt(position_, position_+look_, up_);
+#endif
 }

@@ -34,8 +34,7 @@ class SimpleFirstPersonFlyCamera
 {
 public:
     SimpleFirstPersonFlyCamera() 
-        : pad_(hNullptr)
-        , moveSpeed_(0.5f)
+        : moveSpeed_(0.5f)
         , turnSpeed_(2.5f)
         , up_(0.f, 1.f, 0.f)
         , forward_(0.f, 0.f, 1.f)
@@ -56,14 +55,13 @@ public:
     }
     void setMoveSpeed(hFloat speed) { moveSpeed_ = speed; }
     void setTurnSpeed(hFloat speed) { turnSpeed_ = speed; }
-    void setInput(const Heart::hdGamepad* pad) { pad_ = pad; }
+    //void setInput(const Heart::hdGamepad* pad) { pad_ = pad; }
     void update(hFloat delta);
     const Heart::hMatrix& getViewmatrix() const { return viewMatrix_; }
     const Heart::hVec3& getCameraPosition() const { return position_; }
 
 private:
 
-    const Heart::hdGamepad* pad_;
     hFloat moveSpeed_;
     hFloat turnSpeed_;
     Heart::hVec3 up_;
