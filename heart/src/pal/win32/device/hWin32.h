@@ -124,7 +124,6 @@
 #include "device/hDeviceKeyboard.h"
 #include "device/hDeviceMouse.h"
 #include "device/hDeviceGamepad.h"
-#include "device/hDeviceInputDeviceManager.h"
 
 #ifndef HEART_USE_SDL2
 //////////////////////////////////////////////////////////////////////////

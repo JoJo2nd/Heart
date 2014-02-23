@@ -32,7 +32,6 @@ typedef void (*hConsoleOutputProc)(const hChar*, void*);
 
 namespace Heart
 {
-    class hControllerManager;
     class hKeyboard;
     class hLuaStateManager;
     class hRenderer;
@@ -60,7 +59,7 @@ namespace Heart
         {
         }
 
-        void            initialise( hControllerManager* pControllerManager,
+        void            initialise( hActionManager* actionManager,
                                     hLuaStateManager* lua,
                                     hResourceManager* pResourceManager,
                                     hRenderer* renderer,
@@ -202,7 +201,7 @@ namespace Heart
         hChar           prevInputs_[MAX_PREV_COMMAND_LOGS][INPUT_BUFFER_LEN];
 
         //Display UI
-        hControllerManager*     controllerManager_;
+        hActionManager*         actionManager_;
         hConsoleUI*             consoleWindow_;
 
         //command processing

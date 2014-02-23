@@ -145,18 +145,18 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hSystemConsole::initialise( hControllerManager* pControllerManager,
+    void hSystemConsole::initialise( hActionManager* actionManager,
                                      hLuaStateManager* lua,
                                      hResourceManager* pResourceManager,
                                      hRenderer* renderer,
                                      hPublisherContext* evtCtx,
                                      hNetHost* debugHost)
     {
-        controllerManager_ = pControllerManager;
+        actionManager_ = actionManager;
         resourceManager_ = pResourceManager;
         renderer_ = renderer;
         vm_ = lua;
-        keyboard_ = controllerManager_->GetSystemKeyboard();
+        keyboard_ = hNullptr; //controllerManager_->GetSystemKeyboard();
         evtCtx_ = evtCtx;
         debugHost_ = debugHost;
     }

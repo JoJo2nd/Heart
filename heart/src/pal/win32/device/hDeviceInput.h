@@ -126,6 +126,25 @@ namespace Heart
         const hChar*    stringName_;
         hdInputID       inputID_;
     };
+
+namespace DeviceInput
+{
+    hUint hGetKeyboardFirstScancode();
+    hUint hGetKeyboardLastScancode();
+    hStringID hGetScancodeName(hUint scancode);
+    hUint hGetMouseFirstButtonID();
+    hUint hGetMouseLastButtonID();
+    hStringID hGetMouseButtonName(hUint buttonid);
+    hUint hGetMouseFirstAxisID();
+    hUint hGetMouseLastAxisID();
+    hStringID hGetMouseAxisName(hUint axisid);
+    hUint hGetControllerFirstButtonID();
+    hUint hGetControllerLastButtonID();
+    hStringID hGetControllerButtonName(hUint buttonid);
+    hUint hGetControllerFirstAxisID();
+    hUint hGetControllerLastAxisID();
+    hStringID hGetControllerAxisName(hUint axisid);
+}
 }
 
 #endif // DEVICEIINPUT_H__

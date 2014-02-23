@@ -48,8 +48,8 @@ namespace {
 
 hUint32 Sibenik::RunUnitTest()
 {
-    Heart::hdGamepad* pad = engine_->GetControllerManager()->GetGamepad(0);
-    Heart::hdKeyboard* kb = engine_->GetControllerManager()->GetSystemKeyboard();
+    Heart::hdGamepad* pad = engine_->getActionManager()->GetGamepad(0);
+    Heart::hdKeyboard* kb = engine_->getActionManager()->GetSystemKeyboard();
     switch(state_)
     {
     case eBeginLoad:

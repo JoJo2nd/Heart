@@ -64,7 +64,7 @@ extern "C"
 #include "device/hDeviceKeyboard.cpp"
 #include "device/hDeviceMouse.cpp"
 #include "device/hDeviceGamepad.cpp"
-#include "device/hDeviceInputDeviceManager.cpp"
+#include "device/hDeviceInput.cpp"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

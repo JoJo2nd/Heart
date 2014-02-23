@@ -55,11 +55,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::Initialise(hRenderer* renderer, hResourceManager* resManager, hControllerManager* controllerManager)
+    void hDebugMenuManager::Initialise(hRenderer* renderer, hResourceManager* resManager, hActionManager* actionManager)
     {
         renderer_ = renderer;
         resourceManager_ = resManager;
-        controllerManager_ = controllerManager;
+        actionManager_ = actionManager;
 
         menuMap_.SetAutoDelete(hTrue);
 

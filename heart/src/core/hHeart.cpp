@@ -97,7 +97,7 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         mainPublisherCtx_ = hNEW(hPublisherContext);
         jobManager_ = hNEW(hJobManager);
-        controllerManager_ = hNEW(hControllerManager);
+        actionManager_ = hNEW(hActionManager);
         system_ = hNEW(hSystem);
         hZipFileSystem* zipPak=hNEW(hZipFileSystem)("cd:/data.jaaf");
         if (zipPak->IsOpen()) {
@@ -138,7 +138,7 @@ namespace Heart
         mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
         jobManager_->initialise();
-        controllerManager_->Initialise(system_);
+        actionManager_->initialise(system_);
         hClock::initialise();
         config_.Width_ = system_->getWindowWidth();
         config_.Height_ = system_->getWindowHeight();
@@ -193,8 +193,8 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         renderer_->GetMaterialManager()->createDebugMaterials();
         renderer_->initialiseCameras();
-        console_->initialise(controllerManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_, debugServer_);
-        debugMenuManager_->Initialise(renderer_, resourceMananger_, controllerManager_);
+        console_->initialise(actionManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_, debugServer_);
+        debugMenuManager_->Initialise(renderer_, resourceMananger_, actionManager_);
 
         debugInfo_ = hNEW(hDebugInfo)(this);
         debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
@@ -239,7 +239,7 @@ namespace Heart
             GetSystem()->Update();
             debugServer_->service();
             GetResourceManager()->update();
-            GetControllerManager()->Update();
+            getActionManager()->update();
             GetConsole()->update();
             if (GetSystem()->exitSignaled()) {
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
@@ -280,7 +280,7 @@ namespace Heart
              **/
             GetRenderer()->EndRenderFrame();
             
-            GetControllerManager()->endOfFrameUpdate();
+            getActionManager()->endOfFrameUpdate();
         }
 
 #ifdef HEART_DO_PROFILE
@@ -311,7 +311,7 @@ namespace Heart
         hDELETE_SAFE(resourceMananger_);
         hDELETE_SAFE(soundManager_);
         hDELETE_SAFE(renderer_);
-        hDELETE_SAFE(controllerManager_);
+        hDELETE_SAFE(actionManager_);
         hDELETE_SAFE(fileMananger_);
         hDELETE_SAFE(jobManager_);
         hDELETE_SAFE(mainPublisherCtx_);

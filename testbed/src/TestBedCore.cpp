@@ -217,8 +217,8 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        Heart::hdGamepad* pad = pEngine->GetControllerManager()->GetGamepad(0);
-        Heart::hdKeyboard* kb = pEngine->GetControllerManager()->GetSystemKeyboard();
+        Heart::hdGamepad* pad = pEngine->getActionManager()->GetGamepad(0);
+        Heart::hdKeyboard* kb = pEngine->getActionManager()->GetSystemKeyboard();
 
         if (!currentTest_ && !exiting_) {
             currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
