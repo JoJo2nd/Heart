@@ -224,7 +224,7 @@ namespace Heart
 
     void hSystemConsole::updateConsole()
     {
-        if (consoleWindow_)
+        if (consoleWindow_ && keyboard_)
         {
 
             if (visible_) {

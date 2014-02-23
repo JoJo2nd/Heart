@@ -348,13 +348,65 @@ namespace Heart
 	hBool hdInputDeviceManager::Initialise(hdSystemWindow* window)
 	{
         systemWindow_ = window;
+#ifndef HEART_USE_SDL2
         keyboard_ = systemWindow_->GetSystemKeyboard();
         mouse_    = systemWindow_->GetSystemMouse();
+#endif
 
         for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
         {
             pads_[i].ConnectPad(i);
         }
+
+        for (hUint sc=DeviceInput::hGetKeyboardFirstScancode(),scn=DeviceInput::hGetKeyboardLastScancode(); sc<=scn; ++sc) {
+            hStringID name=DeviceInput::hGetScancodeName(sc);
+            if (!name.is_default()) {
+                keyNameToIDMappings_.insert(hKeyNameIDMapping::value_type(name, hInputID(hInputID::hType_Keyboard, sc, 0, 0)));
+            }
+        }
+
+        for (hUint i=DeviceInput::hGetMouseFirstButtonID(),n=DeviceInput::hGetMouseLastButtonID(); i<=n; ++i) {
+            hStringID name=DeviceInput::hGetMouseButtonName(i);
+            if (!name.is_default()) {
+                keyNameToIDMappings_.insert(hKeyNameIDMapping::value_type(name, hInputID(hInputID::hType_Mouse, 0, i, 0)));
+            }
+        }
+
+        for (hUint i=DeviceInput::hGetMouseFirstAxisID(),n=DeviceInput::hGetMouseLastAxisID(); i<=n; ++i) {
+            hStringID name=DeviceInput::hGetMouseAxisName(i);
+            if (!name.is_default()) {
+                keyNameToIDMappings_.insert(hKeyNameIDMapping::value_type(name, hInputID(hInputID::hType_Mouse, 0, 0, i)));
+            }
+        }
+
+        for (hUint i=DeviceInput::hGetControllerFirstButtonID(),n=DeviceInput::hGetControllerLastButtonID(); i<=n; ++i) {
+            hStringID name=DeviceInput::hGetControllerButtonName(i);
+            if (!name.is_default()) {
+                keyNameToIDMappings_.insert(hKeyNameIDMapping::value_type(name, hInputID(hInputID::hType_Controller, 0, i, 0)));
+            }
+        }
+
+        for (hUint i=DeviceInput::hGetControllerFirstAxisID(),n=DeviceInput::hGetControllerLastAxisID(); i<=n; ++i) {
+            hStringID name=DeviceInput::hGetControllerAxisName(i);
+            if (!name.is_default()) {
+                keyNameToIDMappings_.insert(hKeyNameIDMapping::value_type(name, hInputID(hInputID::hType_Controller, 0, 0, i)));
+            }
+        }
+
+        hSysEventHandler sysEvent = hFUNCTOR_BINDMEMBER(hSysEventHandler, hdInputDeviceManager, handleSysEvent, this);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(KEYDOWN), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(KEYUP), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(TEXTINPUT), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(MOUSEBUTTONDOWN), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(MOUSEBUTTONUP), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(MOUSEWHEEL), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(MOUSEMOTION), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(CONTROLLERDEVICEADDED), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(CONTROLLERDEVICEREMOVED), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(CONTROLLERAXISMOTION), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(CONTROLLERBUTTONDOWN), sysEvent);
+        systemWindow_->setSysEventHandler(hGetSystemEventID(CONTROLLERBUTTONUP), sysEvent);
+
 		return hTrue;
 	}
 
@@ -364,6 +416,19 @@ namespace Heart
 
 	void hdInputDeviceManager::Destory()
 	{
+        hSysEventHandler sysEvent = hFUNCTOR_BINDMEMBER(hSysEventHandler, hdInputDeviceManager, handleSysEvent, this);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(KEYDOWN), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(KEYUP), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(TEXTINPUT), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(MOUSEBUTTONDOWN), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(MOUSEBUTTONUP), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(MOUSEWHEEL), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(MOUSEMOTION), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(CONTROLLERDEVICEADDED), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(CONTROLLERDEVICEREMOVED), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(CONTROLLERAXISMOTION), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(CONTROLLERBUTTONDOWN), sysEvent);
+        systemWindow_->removeSysEventHandler(hGetSystemEventID(CONTROLLERBUTTONUP), sysEvent);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -372,11 +437,13 @@ namespace Heart
 
 	void hdInputDeviceManager::Update()
 	{
+#ifndef HEART_USE_SDL2
 		keyboard_->Update();
         for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
         {
             pads_[i].Update();
         }
+#endif
 	}
 
     //////////////////////////////////////////////////////////////////////////
@@ -385,7 +452,11 @@ namespace Heart
 
     hUint32 hdInputDeviceManager::GetInputIDPairCount()
     {
+#ifdef HEART_USE_SDL2
+        return 0;
+#else
         return sizeof(s_deviceInputPairs)/sizeof(hdInputIDPair);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -394,21 +465,299 @@ namespace Heart
 
     const hdInputIDPair* hdInputDeviceManager::GetInputIDPairArray()
     {
+#ifdef HEART_USE_SDL2
+        return 0;
+#else
         return s_deviceInputPairs;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdInputDeviceManager::EndOfFrameUpdate()
+    void hdInputDeviceManager::endOfFrameUpdate()
     {
+#ifndef HEART_USE_SDL2
         keyboard_->EndOfFrameUpdate();
         mouse_->EndOfFrameUpdate();
         for (hUint32 i = 0; i < HEART_MAX_GAMEPADS; ++i)
         {
             pads_[i].EndOfFrameUpdate();
         }
+#else
+        bufferedActions_.clear();
+#endif
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdInputDeviceManager::handleSysEvent(hUint syseventid, const hSysEvent* sysevent) {
+        if (syseventid == hGetSystemEventID(CONTROLLERDEVICEADDED)) {
+            hcPrintf("Controller added");
+        } else if (syseventid == hGetSystemEventID(CONTROLLERDEVICEREMOVED)) {
+            hcPrintf("Controller removed");
+        } else if (syseventid == hGetSystemEventID(KEYDOWN)) {
+            hInputID keyid(hInputID::hType_Keyboard, sysevent->key.keysym.scancode, 0, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    0, //device ID
+                    1, // one for down
+                    (sysevent->key.repeat > 0),
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(KEYUP)) {
+            hInputID keyid(hInputID::hType_Keyboard, sysevent->key.keysym.scancode, 0, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    0, //device ID
+                    0, // zero for up
+                    (sysevent->key.repeat > 0),
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(TEXTINPUT)) {
+
+        } else if (syseventid == hGetSystemEventID(MOUSEMOTION)) {
+            if (sysevent->motion.xrel != 0) {
+                hInputID keyid(hInputID::hType_Mouse, 0, 0, 0);
+                auto invalid = defaultMappings_.end();
+                auto mapping = defaultMappings_.find(keyid);
+                if (mapping != invalid) {
+                    hInputAction action = {
+                        mapping->second,
+                        sysevent->motion.which, //device ID
+                        sysevent->motion.xrel, // val
+                        0,
+                        1,
+                    };
+                    bufferedActions_.emplace_back(action);
+                }
+            }
+            if (sysevent->motion.yrel != 0) {
+                hInputID keyid(hInputID::hType_Mouse, 0, 0, 1);
+                auto invalid = defaultMappings_.end();
+                auto mapping = defaultMappings_.find(keyid);
+                if (mapping != invalid) {
+                    hInputAction action = {
+                        mapping->second,
+                        sysevent->motion.which, //device ID
+                        sysevent->motion.yrel, // val
+                        0,
+                        1,
+                    };
+                    bufferedActions_.emplace_back(action);
+                }
+            }
+        } else if (syseventid == hGetSystemEventID(MOUSEWHEEL)) {
+            if (sysevent->wheel.x != 0) {
+                hInputID keyid(hInputID::hType_Mouse, 0, 0, 2);
+                auto invalid = defaultMappings_.end();
+                auto mapping = defaultMappings_.find(keyid);
+                if (mapping != invalid) {
+                    hInputAction action = {
+                        mapping->second,
+                        sysevent->wheel.which, //device ID
+                        sysevent->wheel.x, // val
+                        0,
+                        1,
+                    };
+                    bufferedActions_.emplace_back(action);
+                }
+            }
+            if (sysevent->wheel.y != 0) {
+                hInputID keyid(hInputID::hType_Mouse, 0, 0, 3);
+                auto invalid = defaultMappings_.end();
+                auto mapping = defaultMappings_.find(keyid);
+                if (mapping != invalid) {
+                    hInputAction action = {
+                        mapping->second,
+                        sysevent->wheel.which, //device ID
+                        sysevent->wheel.y, // val
+                        0,
+                        1,
+                    };
+                    bufferedActions_.emplace_back(action);
+                }
+            }
+        } else if (syseventid == hGetSystemEventID(MOUSEBUTTONDOWN)) {
+            hInputID keyid(hInputID::hType_Mouse, 0, sysevent->button.button, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    sysevent->button.which, //device ID
+                    1, // zero for up
+                    0,
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(MOUSEBUTTONUP)) {
+            hInputID keyid(hInputID::hType_Mouse, 0, sysevent->cbutton.button, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    sysevent->button.which, //device ID
+                    0, // zero for up
+                    0,
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(CONTROLLERAXISMOTION)) {
+            hInputID keyid(hInputID::hType_Controller, 0, 0, sysevent->caxis.axis);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    sysevent->caxis.which, //device ID
+                    sysevent->caxis.value, // axis val
+                    0,
+                    1, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(CONTROLLERBUTTONDOWN)) {
+            hInputID keyid(hInputID::hType_Controller, 0, sysevent->cbutton.button, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    sysevent->cbutton.which, //device ID
+                    1, // zero for up
+                    0,
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        } else if (syseventid == hGetSystemEventID(CONTROLLERBUTTONUP)) {
+            hInputID keyid(hInputID::hType_Controller, 0, sysevent->cbutton.button, 0);
+            auto invalid = defaultMappings_.end();
+            auto mapping = defaultMappings_.find(keyid);
+            if (mapping != invalid) {
+                hInputAction action = {
+                    mapping->second,
+                    sysevent->cbutton.which, //device ID
+                    0, // zero for up
+                    0,
+                    0, // no axis on keyboard
+                };
+                bufferedActions_.emplace_back(action);
+            }
+        }
+        
+    }
+#ifdef HEART_USE_SDL2
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hdInputDeviceManager::setDefaultActionMapping(hStringID keybinding, hStringID actionname) {
+        auto id = keyNameToIDMappings_.find(keybinding);
+        if (id != keyNameToIDMappings_.end()) {
+            defaultMappings_[id->second] = actionname;
+        }
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    void hdInputDeviceManager::clearDefaultActionMapping(hStringID keybinding) {
+        auto id = keyNameToIDMappings_.find(keybinding);
+        if (id != keyNameToIDMappings_.end()) {
+            defaultMappings_.erase(id->second);
+        }
+    }
+
+namespace DeviceInput
+{
+    hUint hGetKeyboardFirstScancode() {
+        return SDL_SCANCODE_UNKNOWN;
+    }
+    hUint hGetKeyboardLastScancode() {
+        return SDL_NUM_SCANCODES;
+    }
+    hStringID hGetScancodeName(hUint scancode) {
+        return hStringID(SDL_GetScancodeName((SDL_Scancode)scancode));
+    }
+    hUint hGetMouseFirstButtonID() {
+        return SDL_BUTTON_LEFT;
+    }
+    hUint hGetMouseLastButtonID() {
+        return SDL_BUTTON_X2;
+    }
+    hStringID hGetMouseButtonName(hUint buttonid) {
+        static hStringID mouseleft("Mouse Left");
+        static hStringID mousemiddle("Mouse Middle");
+        static hStringID mouseright("Mouse Right");
+        static hStringID mousex1("Mouse X1");
+        static hStringID mousex2("Mouse X2");
+        switch(buttonid) {
+        case SDL_BUTTON_LEFT: return mouseleft;
+        case SDL_BUTTON_MIDDLE: return mousemiddle;
+        case SDL_BUTTON_RIGHT: return mouseright;
+        case SDL_BUTTON_X1: return mousex1;
+        case SDL_BUTTON_X2: return mousex2;
+        }
+        return hStringID();
+    }
+    hUint hGetMouseFirstAxisID() {
+        return 0;
+    }
+    hUint hGetMouseLastAxisID() {
+        return 3;
+    }
+    hStringID hGetMouseAxisName(hUint axisid) {
+        static hStringID xaxis("Mouse X");
+        static hStringID yaxis("Mouse Y");
+        static hStringID wheelxaxis("Mouse Wheel X");
+        static hStringID wheelyaxis("Mouse Wheel Y");
+        switch(axisid) {
+        case 0: return xaxis;
+        case 1: return yaxis;
+        case 2: return wheelxaxis;
+        case 3: return wheelyaxis;
+        }
+        return hStringID();
+    }
+    hUint hGetControllerFirstButtonID() {
+        return SDL_CONTROLLER_BUTTON_A;
+    }
+    hUint hGetControllerLastButtonID() {
+        return SDL_CONTROLLER_BUTTON_MAX;
+    }
+    hStringID hGetControllerButtonName(hUint buttonid) {
+        const hChar* name = SDL_GameControllerGetStringForButton((SDL_GameControllerButton)buttonid);
+        return name ? hStringID(name) : hStringID();
+    }
+    hUint hGetControllerFirstAxisID() {
+        return SDL_CONTROLLER_AXIS_LEFTX;
+    }
+    hUint hGetControllerLastAxisID() {
+        return SDL_CONTROLLER_AXIS_MAX;
+    }
+    hStringID hGetControllerAxisName(hUint axisid) {
+        const hChar* name = SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)axisid);
+        return name ? hStringID(name) : hStringID();
+    }
+}
+#endif
 }

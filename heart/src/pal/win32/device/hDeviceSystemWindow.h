@@ -79,8 +79,10 @@ namespace Heart
         void                    Update();
         void                    PumpMessages();
         void                    Destroy();
+#ifndef HEART_USE_SDL2
         hdKeyboard*             GetSystemKeyboard() { return &keyboard_; }
         hdMouse*                GetSystemMouse()    { return &mouse_; }
+#endif
         void                    signalExit() { exitSignal_.Signal(); }
         hBool                   exitSignaled() { return exitSignal_.TryWait();}
         hUint32                 getWindowWidth() const { return wndWidth_; }
@@ -128,9 +130,10 @@ namespace Heart
         WNDPROC                     procChain_;
         hBool                       hasFocus_;
         hBool                       ownWindow_;
+#ifndef HEART_USE_SDL2
         hdKeyboard		            keyboard_;
         hdMouse                     mouse_;
-
+#endif
     };
 }
 

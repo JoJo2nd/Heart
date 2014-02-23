@@ -139,11 +139,6 @@ if (WIN32)
 		"${HEART_SOURCE_DIR}/src/pal/win32"
         "${HEART_SOURCE_DIR}/src/pal/win32"
     )
-	set( HEART_SRC_FILES
-		${HEART_SRC_FILES}
-		"${HEART_SOURCE_DIR}/src/pal/win32/device/hWin32.h"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/hWin32DX11.h"
-	)
     # Add platform math files.
     file(GLOB HEART_DEVICE_MATH_FILES
         "${HEART_SOURCE_DIR}/src/pal/win32/device/math/*.h"
@@ -154,8 +149,9 @@ if (WIN32)
     )
     file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
         "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
         "${HEART_SOURCE_DIR}/src/pal/win32/device/*.cpp"
+		"${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/*.h"
+        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/*.cpp"
     )
 endif (WIN32)
 

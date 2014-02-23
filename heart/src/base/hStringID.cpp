@@ -30,15 +30,21 @@ namespace Heart
 
     hStringID::hStringIDEntry hStringID::s_hashTable[hStringID::s_hashTableBucketSize];
     hUint hStringID::s_hashTableCount;
+    hStringID::hStringIDEntry hStringID::s_default;
+
     static hdMutex s_writeMutex;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hStringID::hStringIDEntry* hStringID::getStringID(const hChar* str) {
+    hStringID::hStringIDEntry* hStringID::get_string_id(const hChar* str) {
+        hUint len = hStrLen(str);
+        if (len == 0) {
+            return &s_default;
+        }
         hUint32 fullhash;
-        cyMurmurHash3_x86_32(str, hStrLen(str), hGetMurmurHashSeed(), &fullhash);
+        cyMurmurHash3_x86_32(str, len, hGetMurmurHashSeed(), &fullhash);
         hUint32 key = fullhash&(s_hashTableBucketSize-1);
         hcAssert(key < s_hashTableBucketSize);
         hStringIDEntry* entry = s_hashTable+key;
@@ -68,8 +74,8 @@ namespace Heart
         } while (entry);
 
         hStringIDEntry* newentry = entry ? entry : hNEW(hStringIDEntry);
-        newentry->byteLen_ = hStrLen(str);
-        newentry->charLen_ = hStrLen(str);
+        newentry->byteLen_ = len;
+        newentry->charLen_ = len;
         newentry->next_ = hNullptr;
         newentry->strHash_ = fullhash;
         newentry->strValue_ = hNEW_ARRAY(hChar, newentry->byteLen_+1);

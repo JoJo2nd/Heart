@@ -38,8 +38,11 @@ namespace Heart
     class hStringID
     {
     public:
+        hStringID() 
+            : strEntry_(&s_default)
+        {}
         hStringID(const hChar* str_id) 
-            : strEntry_(getStringID(str_id))
+            : strEntry_(get_string_id(str_id))
         {}
 
         hSize_t size() const { return strEntry_->byteLen_; }
@@ -51,10 +54,18 @@ namespace Heart
         hUint operator [] (const hSize_t pos) const { strEntry_->strValue_[pos]; }
         hUint32 hash() const { return strEntry_->strHash_; }
         hUintptr_t id() const { return (hUintptr_t)strEntry_; }
+        hBool is_default() const { return strEntry_ == &s_default; }
 
     private:
 
         struct hStringIDEntry {
+            hStringIDEntry() 
+                : strValue_("")
+                , next_(hNullptr)
+                , byteLen_(0)
+                , charLen_(0)
+                , strHash_(0)
+            {}
             hChar*          strValue_;
             hStringIDEntry* next_;
             hSize_t         byteLen_;
@@ -62,12 +73,18 @@ namespace Heart
             hUint32         strHash_;
         };
 
+        static hStringIDEntry   s_default;
         static const hUint      s_hashTableBucketSize = 16*1024;
         static hUint            s_hashTableCount;
         static hStringIDEntry   s_hashTable[s_hashTableBucketSize];
-        static hStringIDEntry*  getStringID(const hChar* str);
+        static hStringIDEntry*  get_string_id(const hChar* str);
 
         hStringIDEntry* strEntry_;
+    };
+
+    struct hStringIDHash
+    {
+        hSize_t operator () (const hStringID& rhs) { return rhs.hash(); }
     };
 }
 

@@ -280,7 +280,7 @@ namespace Heart
              **/
             GetRenderer()->EndRenderFrame();
             
-            GetControllerManager()->EndOfFrameUpdate();
+            GetControllerManager()->endOfFrameUpdate();
         }
 
 #ifdef HEART_DO_PROFILE

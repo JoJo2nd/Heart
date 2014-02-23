@@ -223,7 +223,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         if (!currentTest_ && !exiting_) {
             currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
         }
-        if ( currentTest_ ) {
+        if ( currentTest_ && kb) {
             if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ || kb->GetButton(VK_F6).raisingEdge_) {
                 currentTest_->forceExitTest();
             }
