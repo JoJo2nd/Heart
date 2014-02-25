@@ -106,7 +106,7 @@ namespace Heart
 
     void hMaterial::addSamplerParameter(const hSamplerParameter& samp)
     {
-        defaultSamplers_.PushBack(samp);
+        defaultSamplers_.push_back(samp);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -140,7 +140,7 @@ namespace Heart
 
         if (succ) {
             hBool added = hFalse;
-            for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+            for (hUint32 i = 0, c = constBlocks_.size(); i < c; ++i) {
                 if (constBlocks_[i].paramid == id) {
                     if (cb) {
                         cb->AddRef();
@@ -157,7 +157,7 @@ namespace Heart
                 bcb.paramid = id;
                 bcb.constBlock = cb;
                 cb->AddRef();
-                constBlocks_.PushBack(bcb);
+                constBlocks_.push_back(bcb);
             }
 
             updateRenderCommands();
@@ -172,7 +172,7 @@ namespace Heart
 
     hRenderBuffer* hMaterial::GetParameterConstBlock( hShaderParameterID cbid )
     {
-        for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+        for (hUint32 i = 0, c = constBlocks_.size(); i < c; ++i) {
             if (constBlocks_[i].paramid == cbid) {
                 return constBlocks_[i].constBlock;
             }
@@ -249,7 +249,7 @@ namespace Heart
                             hRenderBuffer* tmp=NULL;
                             hBool alreadyAdded = hFalse;
                             if (!globalCB) {
-                                for (hUint mcb=0, mcbc=constBlocks_.GetSize(); mcb < mcbc; ++mcb) {
+                                for (hUint mcb=0, mcbc=constBlocks_.size(); mcb < mcbc; ++mcb) {
                                     if (constBlocks_[mcb].paramid == cbID && constBlocks_[mcb].constBlock != hNullptr) {
                                         alreadyAdded = hTrue;
                                     }
@@ -274,7 +274,7 @@ namespace Heart
         }
 
         // Bind the default textures to the programs
-        for (hUint dv=0, ndv=defaultValues_.GetSize(); dv<ndv; ++dv) {
+        for (hUint dv=0, ndv=defaultValues_.size(); dv<ndv; ++dv) {
             if (defaultValues_[dv].type==ePTTexture) {
                 hShaderResourceView* srv;
                 hShaderResourceViewDesc srvdesc;
@@ -305,7 +305,7 @@ namespace Heart
             }
         }
         // Bind the default samplers to the programs
-        for (hUint32 si = 0; si < defaultSamplers_.GetSize(); ++si) {
+        for (hUint32 si = 0; si < defaultSamplers_.size(); ++si) {
             hUint32 paramid=hCRC32::StringCRC(defaultSamplers_[si].name_);
             bindSampler(paramid, defaultSamplers_[si].samplerState_);
         }
@@ -333,7 +333,7 @@ namespace Heart
 
         if (succ) {
             hBool added = hFalse;
-            for (hUint32 i = 0, c = boundResources_.GetSize(); i < c; ++i) {
+            for (hUint32 i = 0, c = boundResources_.size(); i < c; ++i) {
                 if (boundResources_[i].paramid == id) {
                     if (srv) {
                         srv->AddRef();
@@ -350,7 +350,7 @@ namespace Heart
                 bt.paramid = id;
                 bt.srv = srv;
                 srv->AddRef();
-                boundResources_.PushBack(bt);
+                boundResources_.push_back(bt);
             }
 
             updateRenderCommands();
@@ -377,7 +377,7 @@ namespace Heart
 
         if (succ) {
             hBool added = hFalse;
-            for (hUint32 i = 0, c = boundSamplers_.GetSize(); i < c; ++i) {
+            for (hUint32 i = 0, c = boundSamplers_.size(); i < c; ++i) {
                 if (boundSamplers_[i].paramid == id) {
                     if (samplerState) {
                         samplerState->AddRef();
@@ -394,7 +394,7 @@ namespace Heart
                 bt.paramid = id;
                 bt.state = samplerState;
                 samplerState->AddRef();
-                boundSamplers_.PushBack(bt);
+                boundSamplers_.push_back(bt);
             }
 
             updateRenderCommands();
@@ -413,7 +413,7 @@ namespace Heart
         defVal.paramid=hCRC32::StringCRC(name);
         defVal.resourceID=resid;
         defVal.count=0;
-        defaultValues_.PushBack(defVal);
+        defaultValues_.push_back(defVal);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -429,7 +429,7 @@ namespace Heart
         defVal.dataOffset=defaultDataSize_;
         defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
-        defaultValues_.PushBack(defVal);
+        defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
     }
 
@@ -446,7 +446,7 @@ namespace Heart
         defVal.dataOffset=defaultDataSize_;
         defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
-        defaultValues_.PushBack(defVal);
+        defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
     }
 
@@ -463,7 +463,7 @@ namespace Heart
         defVal.dataOffset=defaultDataSize_;
         defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, &colour, bytecount);
-        defaultValues_.PushBack(defVal);
+        defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
     }
 
@@ -476,7 +476,7 @@ namespace Heart
         for (hUint i=0, n=desc.parameterCount_; i<n; ++i) {
             prog->getConstantBlockParameter(desc, i, &param);
             hShaderParameterID paramid=hCRC32::StringCRC(param.name_);
-            for (hUint dv=0, ndv=defaultValues_.GetSize(); dv<ndv; ++dv) {
+            for (hUint dv=0, ndv=defaultValues_.size(); dv<ndv; ++dv) {
                 if (defaultValues_[dv].paramid==paramid) {
                     hMemCpy(((hByte*)outdata)+param.cReg_, defaultData_+defaultValues_[dv].dataOffset, hMin(param.size_, defaultValues_[dv].count));
                     break;
@@ -494,27 +494,27 @@ namespace Heart
 
         releaseRenderCommands();
 
-        for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+        for (hUint32 i = 0, c = constBlocks_.size(); i < c; ++i) {
             if (constBlocks_[i].constBlock) {
                 constBlocks_[i].constBlock->DecRef();
                 constBlocks_[i].constBlock=NULL;
             }
         }
-        constBlocks_.Resize(0);
-        for (hUint i=0,n=boundResources_.GetSize(); i<n; ++i) {
+        constBlocks_.resize(0);
+        for (hUint i=0,n=boundResources_.size(); i<n; ++i) {
             if (boundResources_[i].srv) {
                 boundResources_[i].srv->DecRef();
                 boundResources_[i].srv=NULL;
             }
         }
-        boundResources_.Resize(0);
-        for (hUint i=0,n=boundSamplers_.GetSize(); i<n; ++i) {
+        boundResources_.resize(0);
+        for (hUint i=0,n=boundSamplers_.size(); i<n; ++i) {
             if (boundSamplers_[i].state) {
                 boundSamplers_[i].state->DecRef();
                 boundSamplers_[i].state=NULL;
             }
         }
-        boundSamplers_.Resize(0);
+        boundSamplers_.resize(0);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -659,7 +659,7 @@ namespace Heart
 
     hBool hMaterial::linkDependeeResources() {
         // Grab default resources
-        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+        for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
                 defaultValues_[i].resourcePtr=hResourceHandle(defaultValues_[i].resourceID);
                 if (!defaultValues_[i].resourcePtr.weakPtr()) {
@@ -694,7 +694,7 @@ namespace Heart
     void hMaterial::listenToResourceEvents(hResourceManager* resmanager) {
 
         // register for resource updates
-        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+        for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
                 hResourceHandle(defaultValues_[i].resourceID).registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
             }
@@ -724,7 +724,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::stopListeningToResourceEvents() {
-        for (hUint i=0, n=defaultValues_.GetSize(); i<n; ++i) {
+        for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
                 hResourceHandle(defaultValues_[i].resourceID).unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
             }
@@ -749,13 +749,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::cleanup() {
-        for (hUint32 i = 0, c = defaultSamplers_.GetSize(); i < c; ++i) {
+        for (hUint32 i = 0, c = defaultSamplers_.size(); i < c; ++i) {
             if (defaultSamplers_[i].samplerState_) {
                 defaultSamplers_[i].samplerState_->DecRef();
             }
             defaultSamplers_[i].samplerState_=NULL;
         }
-        defaultSamplers_.Resize(0);
+        defaultSamplers_.resize(0);
 
         defaultDataSize_=0;
         hFreeSafe(defaultData_);

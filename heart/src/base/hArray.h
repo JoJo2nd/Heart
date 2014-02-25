@@ -103,27 +103,28 @@ namespace Heart
         {}
         hVector( const hVector& rhs )
         {
-            rhs.CopyTo( this );
+            rhs.copy_to( this );
         }
         hVector& operator = ( const hVector& rhs )
         {
-            rhs.CopyTo( this );
+            rhs.copy_to( this );
             return *this;
         }
         ~hVector()
         {
-            Clear();
+            clear();
+            hFreeSafe(values_);
+            reserve_ = 0;
         }
 
         template< typename _Uy, hUint32 _OtherGranularity >
-        void CopyTo( hVector< _Uy, _OtherGranularity >* rhs ) const
+        void copy_to( hVector< _Uy, _OtherGranularity >* rhs ) const
         {
-            rhs->Shrink(0);
-            rhs->Clear();
-            rhs->Reserve( size_ );
+            rhs->clear();
+            rhs->reserve(size_);
             for ( hUint32 i = 0; i < size_; ++i )
             {
-                rhs->PushBack( values_[i] );
+                rhs->push_back(values_[i]);
             }
         }
 
@@ -147,7 +148,7 @@ namespace Heart
             return values_[ i ];
         }
 
-        void Reserve( hUint32 size )
+        void reserve( hUint32 size )
         {
             if ( size > reserve_ )
             {
@@ -156,32 +157,29 @@ namespace Heart
             }
         }
 
-        void reserveGrow(hUint32 size) {
-            Reserve(size_+size);
+        void reserve_grow(hUint32 size) {
+            reserve(size_+size);
         }
 
-        void Resize( hUint32 size )
+        void resize( hUint32 size )
         {
             if ( size > size_ )
-                Grow( size );
+                grow( size );
             else
-                Shrink( size );
+                shrink( size );
         }
 
-        void PushBack( const _Ty& val )
+        void push_back( const _Ty& val )
         {
-            Grow(size_ + 1);
+            grow(size_ + 1);
             values_[size_-1] = val;
         }
 
-        void Clear() {
-            Shrink( 0 );
-            hFreeSafe(values_);
-            reserve_ = 0;
+        void clear() {
+            shrink( 0 );
         }
 
-        hUint32      GetSize() const { return size_; }
-        hUint32      GetReserve() const { return reserve_; }
+        hUint32      size() const { return size_; }
 
         operator TypePtr () 
         {
@@ -193,12 +191,12 @@ namespace Heart
             return values_;
         }
 
-        TypePtr       GetBuffer() { return values_; }
-        const TypePtr GetBuffer() const { return values_; }
+        TypePtr       data() { return values_; }
+        const TypePtr data() const { return values_; }
 
     private:
         
-        void ReserveGran( hUint32 size )
+        void reserve_gran( hUint32 size )
         {
             if ( size > reserve_ ) {
                 reserve_ = hAlign( size, _Granularity );
@@ -207,16 +205,16 @@ namespace Heart
             }
         }
 
-        void Grow( hUint32 size ) 
+        void grow( hUint32 size ) 
         {
-            ReserveGran( size );
+            reserve_gran( size );
             //Construct
             for ( hUint32 i = size_; i < size; ++i )
                 new ( values_+i ) _Ty;
             size_ = size;
         }
 
-        void Shrink( hUint32 size )
+        void shrink( hUint32 size )
         {
             //Destruct
             for ( hUint32 i = size; i < size_; ++i )

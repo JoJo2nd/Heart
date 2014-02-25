@@ -38,8 +38,8 @@ namespace Heart
     void hJobManager::initialise()
     {
         killSignal_.Create(0, 128);
-        workerThreads_.Resize(HEART_JOB_THREADS); // need a hGetCPUCoreCount() here?
-        for (hUint32 i = 0; i < workerThreads_.GetSize(); ++i)
+        workerThreads_.resize(HEART_JOB_THREADS); // need a hGetCPUCoreCount() here?
+        for (hUint32 i = 0; i < workerThreads_.size(); ++i)
         {
             hChar threadname[128];
             hStrPrintf(threadname, (hUint)hArraySize(threadname), "Worker %u", i);
@@ -59,8 +59,8 @@ namespace Heart
 
     void hJobManager::shutdown()
     {
-        for ( hUint32 i = 0; i < workerThreads_.GetSize(); ++i ) {
-            for ( hUint32 i2 = 0; i2 < workerThreads_.GetSize(); ++i2 ) {
+        for ( hUint32 i = 0; i < workerThreads_.size(); ++i ) {
+            for ( hUint32 i2 = 0; i2 < workerThreads_.size(); ++i2 ) {
                 killSignal_.Post();
             }
             workerThreads_[ i ].pendingJobsSemaphore_.Post();
@@ -140,7 +140,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hJobManager::kickWorkers(hUint16 workermask) {
-        for (hUint32 i = 0; i < workerThreads_.GetSize(); ++i)
+        for (hUint32 i = 0; i < workerThreads_.size(); ++i)
         {
             if (1<<i & workermask) {
                 workerThreads_[ i ].pendingJobsSemaphore_.Post();

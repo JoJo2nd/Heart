@@ -214,7 +214,7 @@ namespace Heart
         hRenderCommandGenerator rcGen(&posColRdrLineCmds_);
 
         inputlayout=debugPosColMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_LINELIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
@@ -228,7 +228,7 @@ namespace Heart
 
         rcGen.setRenderCommands(&posColUVRdrCmds_);
         inputlayout=debugPosColUVMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColUVMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);
@@ -236,7 +236,7 @@ namespace Heart
 
         rcGen.setRenderCommands(&posColAlphaRdrCmds_);
         inputlayout=debugPosColAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColAlphaMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
@@ -244,7 +244,7 @@ namespace Heart
 
         rcGen.setRenderCommands(&posColAlphaRdrLineCmds_);
         inputlayout=debugPosColAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoldesc, (hUint)hArraySize(poscoldesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColAlphaMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_LINELIST, NULL, hIndexBufferType_Index16, inputlayout, &posColBuffer_, 0, 1);
@@ -252,7 +252,7 @@ namespace Heart
 
         rcGen.setRenderCommands(&posColUVAlphaRdrCmds_);
         inputlayout=debugPosColUVAlphaMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugPosColUVAlphaMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);
@@ -260,7 +260,7 @@ namespace Heart
 
         rcGen.setRenderCommands(&textRdrCmds_);
         inputlayout=debugFontMat_->getGroup(0)->getTech(0)->GetPass(0)->GetVertexShader()->createVertexLayout(poscoluvdesc, (hUint)hArraySize(poscoluvdesc));
-        inputlayout_.PushBack(inputlayout);
+        inputlayout_.push_back(inputlayout);
         rcGen.resetCommands();
         rcGen.setJump(debugFontMat_->getRenderCommandsBegin(0, 0, 0));
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, NULL, hIndexBufferType_Index16, inputlayout, &posColUVBuffer_, 0, 1);

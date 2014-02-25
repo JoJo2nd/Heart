@@ -95,6 +95,7 @@ file(GLOB HEART_DEBUG_FILES
 file(GLOB HEART_EVENTS_FILES
     "${HEART_SOURCE_DIR}/src/events/*.h"
     "${HEART_SOURCE_DIR}/src/events/*.cpp"
+	"${HEART_SOURCE_DIR}/src/events/*.py"
 )
 file(GLOB HEART_INPUT_FILES
     "${HEART_SOURCE_DIR}/src/input/*.h"

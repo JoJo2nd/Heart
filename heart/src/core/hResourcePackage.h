@@ -138,7 +138,7 @@ namespace Heart
         hBool                   unloaded() const { return packageState_ == State_Unloaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
-        hUint                   getLinkCount() const { return links_.GetSize(); }
+        hUint                   getLinkCount() const { return links_.size(); }
         const hChar*            getLink(hUint i) const { return links_[i]; }
 
     private:

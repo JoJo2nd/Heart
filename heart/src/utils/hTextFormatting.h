@@ -69,13 +69,13 @@ public:
 
     void setInputStringBuffer(const hChar* utf8, hUint32 byteLen)
     {
-        inputUTF8Str_.Resize(1);
+        inputUTF8Str_.resize(1);
         inputUTF8Str_[0].bytes_ = byteLen;
         inputUTF8Str_[0].str_ = utf8;
     }
     void setInputStringBuffers(const hChar** utf8, hUint32* byteLen, hUint32 bufferCount)
     {
-        inputUTF8Str_.Resize(bufferCount);
+        inputUTF8Str_.resize(bufferCount);
         for (hUint32 i = 0; i < bufferCount; ++i)
         {
             inputUTF8Str_[i].bytes_ = byteLen[i];
@@ -97,13 +97,13 @@ public:
     void setFont(hFont* font) { font_ = font; }
     void setScale(hFloat scale) { scale_ = scale; }
     void setColour(hColour col) { colour_ = col; }
-    void setReserve(hUint32 lines) { formattedLines_.Reserve(lines); }
+    void setReserve(hUint32 lines) { formattedLines_.reserve(lines); }
     void formatText();
     void writeTextToBuffer(const hCPUVec2& topleft);
     hTextExtents getTextExtents() const { return textExtents_; }
     hTextExtents getFormatExtents() const { return extents_; }
     hBool getTextFitsExtents() const { return textExtents_.height < extents_.height; }
-    hUint32 getLineCount() const { return formattedLines_.GetSize(); }
+    hUint32 getLineCount() const { return formattedLines_.size(); }
     hUint32 getPrimitiveCount() const { return primCount_; }
 
 private:
@@ -132,7 +132,7 @@ private:
         {
             hChar tmputf[4];
             hUTF8::Unicode cc;
-            if (strBufIdx_ >= formatter_->inputUTF8Str_.GetSize()) {
+            if (strBufIdx_ >= formatter_->inputUTF8Str_.size()) {
                 return;
             }
             hStringInputBuffer ib = formatter_->inputUTF8Str_[strBufIdx_];
@@ -179,7 +179,7 @@ private:
             hStringInputBuffer ib = formatter_->inputUTF8Str_[strBufIdx_];
             hUint32 adv = hUTF8::BytesInUTF8Character(ib.str_+strOs_);
             if (adv > (ib.bytes_-(strOs_+adv))) {
-                if ((strBufIdx_+1) >= formatter_->inputUTF8Str_.GetSize()) {
+                if ((strBufIdx_+1) >= formatter_->inputUTF8Str_.size()) {
                     value_ = 0;
                     return;
                 }

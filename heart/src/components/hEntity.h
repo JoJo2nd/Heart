@@ -68,7 +68,7 @@ namespace Heart
             _Ty* r = FindComponentByID(_Ty::GetComponentHash());
             return r;
         }
-        hUint32          GetComponentCount() const { return components_.GetSize(); }
+        hUint32          GetComponentCount() const { return components_.size(); }
         hComponent*      GetComponent(hUint32 idx) { return components_[idx].component_; }
         hComponent*      FindComponentByID(hUint32 id);
         void             AddComponent(hComponent* component);

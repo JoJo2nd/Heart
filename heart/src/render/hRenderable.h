@@ -56,7 +56,7 @@ namespace Heart
             return *this;
         }
         virtual ~hRenderable() {
-            for (hUint i=0, n=inputLayouts_.GetSize(); i<n; ++i) {
+            for (hUint i=0, n=inputLayouts_.size(); i<n; ++i) {
                 if (inputLayouts_[i]) {
                     inputLayouts_[i]->Release();
                     inputLayouts_[i]=NULL;

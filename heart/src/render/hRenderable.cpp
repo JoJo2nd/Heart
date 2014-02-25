@@ -79,7 +79,7 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
             for (hUint p=0, np=tech->GetPassCount(); p<np; ++p) {
                 hMaterialTechniquePass* pass=tech->GetPass(p);
                 hdInputLayout* inputlayout=pass->GetVertexShader()->createVertexLayout(layoutdesc, layoutdesccount);
-                inputLayouts_.PushBack(inputlayout);
+                inputLayouts_.push_back(inputlayout);
                 cmdLookUp_.setCommand(g, t, p, rcGen->getRenderCommandsSize());
                 rcGen->setJump(material->getRenderCommandsBegin(g, t, p));
                 rcGen->setStreamInputs(primType_, 

@@ -53,7 +53,7 @@ namespace Heart
         }
         void		                destroy() {
             hUint leftAllocs=0;
-            for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
+            for (hUint i=0,c=poolBlocks_.size(); i<c; ++i) {
                 leftAllocs+=poolBlocks_[i].alloced_;
                 releasePoolBlock(&poolBlocks_[i]);
             }
@@ -88,7 +88,7 @@ namespace Heart
 
             freeList_.pushBack((hFreeLink*)ptr);
 
-            for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
+            for (hUint i=0,c=poolBlocks_.size(); i<c; ++i) {
                 if (ptr >= poolBlocks_[i].mem_ && ptr < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
                     --poolBlocks_[i].alloced_;
                     if (poolBlocks_[i].alloced_==0) {
@@ -106,7 +106,7 @@ namespace Heart
             return alloced_;
         }
         hBool pointerBelongsToMe(void* ptr) {
-            for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
+            for (hUint i=0,c=poolBlocks_.size(); i<c; ++i) {
                 if (ptr >= poolBlocks_[i].mem_ && ptr < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
                     return true;
                 }
@@ -143,7 +143,7 @@ namespace Heart
             }
             hFreeLink* block=freeList_.begin();
             freeList_.remove(block);
-            for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
+            for (hUint i=0,c=poolBlocks_.size(); i<c; ++i) {
                 if ((hUint8*)block >= poolBlocks_[i].mem_ && (hUint8*)block < ((hUint8*)poolBlocks_[i].mem_+s_poolBlockSize)) {
                     ++poolBlocks_[i].alloced_;
                 }
@@ -153,7 +153,7 @@ namespace Heart
         }
         void createPoolBlock() {
             hTypePoolBlock* poolblock=NULL;
-            for (hUint i=0,c=poolBlocks_.GetSize(); i<c; ++i) {
+            for (hUint i=0,c=poolBlocks_.size(); i<c; ++i) {
                 if (!poolBlocks_[i].mem_) {
                     // got a previous that has been released
                     poolblock=&poolBlocks_[i];
@@ -162,8 +162,8 @@ namespace Heart
             }
 
             if (!poolblock) {
-                poolBlocks_.Resize(poolBlocks_.GetSize()+1);
-                poolblock=&poolBlocks_[poolBlocks_.GetSize()-1];
+                poolBlocks_.resize(poolBlocks_.size()+1);
+                poolblock=&poolBlocks_[poolBlocks_.size()-1];
             }
 
             hUint8* ptr=hNEW_ARRAY(hUint8, s_poolBlockSize);

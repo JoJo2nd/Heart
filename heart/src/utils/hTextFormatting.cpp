@@ -39,12 +39,12 @@ namespace Heart
         hTextIterator str(this);
         hTextIterator nextstr(this);
         hFloat fonth = scale_*font_->GetFontHeight();
-        formattedLines_.Resize(0);//Prevents releasing memory allocation
+        formattedLines_.resize(0);//Prevents releasing memory allocation
         textExtents_.width = 0;
         textExtents_.height = 0;
         while(*str) {
             newline = ProcessLine(str, &nextstr, extents_.width, flags_, scale_, font_);
-            formattedLines_.PushBack(newline);
+            formattedLines_.push_back(newline);
             str = nextstr;
             textExtents_.height += fonth;
         }
@@ -62,7 +62,7 @@ namespace Heart
             liney = (extents_.height - textExtents_.height)/2.f;
             yinc = -fonth;
         }
-        for (hUint32 i = 0, c = formattedLines_.GetSize(); i < c; ++i) {
+        for (hUint32 i = 0, c = formattedLines_.size(); i < c; ++i) {
             if (flags_ & hFONT_ALIGN_LEFT) {
                 formattedLines_[i].startX_ = 0.f;
             }
@@ -87,7 +87,7 @@ namespace Heart
         hFontVex* vtx = (hFontVex*)outputPtr_;
         primCount_ = 0;
 
-        for (hUint32 line = 0, lines = formattedLines_.GetSize(); line < lines; ++line) {
+        for (hUint32 line = 0, lines = formattedLines_.size(); line < lines; ++line) {
             hTextLine* lineptr = &formattedLines_[line];
             hFloat starty = lineptr->startY_+topleft.y;
             hFloat startx = lineptr->startX_+topleft.x;

@@ -34,7 +34,7 @@ namespace Heart
 
     hComponent* hEntity::FindComponentByID(hUint32 id)
     {
-        for (hUint32 i = 0; i < components_.GetSize(); ++i)
+        for (hUint32 i = 0; i < components_.size(); ++i)
         {
             if(components_[i].componentHash_ == id)
                 return components_[i].component_;
@@ -64,7 +64,7 @@ namespace Heart
 
     void hEntity::RemoveComponent( hComponent* component )
     {
-        for (hUint32 i = 0; i < components_.GetSize(); ++i)
+        for (hUint32 i = 0; i < components_.size(); ++i)
         {
             if(components_[i].component_ == component)
                 components_[i].component_ = NULL;

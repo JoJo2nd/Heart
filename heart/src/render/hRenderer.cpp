@@ -2007,14 +2007,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::destroy() {
-        for (hUint i=0, n=srv_.GetSize(); i<n; ++i) {
+        for (hUint i=0, n=srv_.size(); i<n; ++i) {
             if (srv_[i]) {
                 srv_[i]->DecRef();
                 srv_[i]=hNullptr;
             }
         }
-        srv_.Resize(0);
-        buffers_.Resize(0);
+        srv_.resize(0);
+        buffers_.resize(0);
         if (blendState_) {
             blendState_->DecRef();
             blendState_=hNullptr;
@@ -2313,8 +2313,8 @@ namespace Heart
                 srvdesc.tex2D_.mipLevels_=~0;
                 srvdesc.tex2D_.topMip_=0;
                 renderer->createShaderResourceView(targetInfo_.albedo_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "gbuffer_normal")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2326,8 +2326,8 @@ namespace Heart
                 srvdesc.tex2D_.mipLevels_=~0;
                 srvdesc.tex2D_.topMip_=0;
                 renderer->createShaderResourceView(targetInfo_.normal_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "gbuffer_spec")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2339,8 +2339,8 @@ namespace Heart
                 srvdesc.tex2D_.mipLevels_=~0;
                 srvdesc.tex2D_.topMip_=0;
                 renderer->createShaderResourceView(targetInfo_.spec_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "gbuffer_depth")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2352,15 +2352,15 @@ namespace Heart
                 srvdesc.tex2D_.mipLevels_=~0;
                 srvdesc.tex2D_.topMip_=0;
                 renderer->createShaderResourceView(targetInfo_.depth_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "tex_sampler")==0 && shaderInput.type_==eShaderInputType_Sampler) {
                 samplerBindPoint_=shaderInput.bindPoint_;
             } else if (hStrCmp(shaderInput.name_, "lighting_setup")==0 && shaderInput.type_==eShaderInputType_Buffer) {
-                if (buffers_.GetSize() < shaderInput.bindPoint_+1) {
-                    buffers_.Resize(shaderInput.bindPoint_+1);
+                if (buffers_.size() < shaderInput.bindPoint_+1) {
+                    buffers_.resize(shaderInput.bindPoint_+1);
                 }
                 buffers_[shaderInput.bindPoint_]=inputLightData_;
             } else if (hStrCmp(shaderInput.name_, "direction_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2374,8 +2374,8 @@ namespace Heart
                 srvdesc.buffer_.elementWidth_=sizeof(hDirectionalLight);
                 srvdesc.buffer_.numElements_=s_maxDirectionalLights;
                 renderer->createShaderResourceView(directionLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "quad_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2389,8 +2389,8 @@ namespace Heart
                 srvdesc.buffer_.elementWidth_=sizeof(hQuadLight);
                 srvdesc.buffer_.numElements_=s_maxQuadLights;
                 renderer->createShaderResourceView(quadLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             } else if (hStrCmp(shaderInput.name_, "sphere_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
@@ -2404,8 +2404,8 @@ namespace Heart
                 srvdesc.buffer_.elementWidth_=sizeof(hSphereLightRenderData);
                 srvdesc.buffer_.numElements_=s_maxSphereLights;
                 renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
-                if (srv_.GetSize() < shaderInput.bindPoint_+1) {
-                    srv_.Resize(shaderInput.bindPoint_+1);
+                if (srv_.size() < shaderInput.bindPoint_+1) {
+                    srv_.resize(shaderInput.bindPoint_+1);
                 }
                 srv_[shaderInput.bindPoint_]=srv;
             }
@@ -2413,7 +2413,7 @@ namespace Heart
         rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
         rcGen.setShader(targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>(), ShaderType_VERTEXPROG);
         rcGen.setShader(targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>(), ShaderType_FRAGMENTPROG);
-        rcGen.setPixelInputs(&samplerState_, 1, srv_.GetBuffer(), srv_.GetSize(), buffers_.GetBuffer(), buffers_.GetSize());
+        rcGen.setPixelInputs(&samplerState_, 1, srv_.data(), srv_.size(), buffers_.data(), buffers_.size());
         rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
         rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
         rcGen.setReturn();

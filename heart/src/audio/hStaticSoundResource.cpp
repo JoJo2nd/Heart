@@ -122,7 +122,7 @@ namespace Heart
     {
         hSoundPlaybackHandle ret = ~0U;
 
-        for ( hUint32 i = 0; i < playbackInfos_.GetSize(); ++i )
+        for ( hUint32 i = 0; i < playbackInfos_.size(); ++i )
         {
             if ( !playbackInfos_[i].inUse_ )
             {
@@ -133,8 +133,8 @@ namespace Heart
 
         if ( ret == ~0U )
         {
-            ret = playbackInfos_.GetSize();
-            playbackInfos_.Resize( ret+1 );
+            ret = playbackInfos_.size();
+            playbackInfos_.resize( ret+1 );
         }
 
         static ov_callbacks ovcb;

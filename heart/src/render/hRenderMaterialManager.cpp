@@ -63,7 +63,7 @@ namespace Heart
     {
         hMutexAutoScope autoMtx( &accessMutex_ );
 
-        hUint32 count = techniques_.GetSize();
+        hUint32 count = techniques_.size();
         for ( hUint32 i = 0; i < count; ++i )
         {
             if ( hStrCmp( name, techniques_[i].name_ ) == 0 )
@@ -72,14 +72,14 @@ namespace Heart
             }
         }
 
-        hcAssert( techniques_.GetSize() < 30 );
-        hUint32 maskC = techniques_.GetSize();
+        hcAssert( techniques_.size() < 30 );
+        hUint32 maskC = techniques_.size();
         hRenderTechniqueInfo newInfo;
         newInfo.mask_ = 1 << maskC;
         hStrCopy( newInfo.name_, newInfo.name_.GetMaxSize(), name );
 
-        techniques_.PushBack( newInfo );
-        return &techniques_[techniques_.GetSize()-1];
+        techniques_.push_back( newInfo );
+        return &techniques_[techniques_.size()-1];
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ namespace Heart
     {
         hMutexAutoScope autoMtx( &accessMutex_ );
 
-        hUint32 count = techniques_.GetSize();
+        hUint32 count = techniques_.size();
         for ( hUint32 i = 0; i < count; ++i )
         {
             if ( hStrCmp( name, techniques_[i].name_ ) == 0 )
@@ -292,8 +292,8 @@ namespace Heart
         }
         hcAssert(strPtr <= block.strPool_+block.strPoolSize_);
 
-        m->constBlocks_.PushBack(block);
-        m->constBlockLookUp_.Insert(block.nameHash_, &m->constBlocks_[m->constBlocks_.GetSize()-1]);
+        m->constBlocks_.push_back(block);
+        m->constBlockLookUp_.Insert(block.nameHash_, &m->constBlocks_[m->constBlocks_.size()-1]);
 
         return 0;
     }
@@ -326,7 +326,7 @@ namespace Heart
 
     hRenderBuffer* hRenderMaterialManager::GetGlobalConstantBlockParameterID(hShaderParameterID id)
     {
-        for (hUint32 i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+        for (hUint32 i = 0, c = constBlocks_.size(); i < c; ++i) {
             for (hUint32 a = 0, ac = constBlocks_[i].aliasCount_; a < ac; ++a) {
                 if (constBlocks_[i].aliasHashes_[a] == id) {
                     return constBlocks_[i].constBlock_;
@@ -367,7 +367,7 @@ namespace Heart
         hDELETE_SAFE(debugPosColUVAlphaMat_);
         hDELETE_SAFE(debugPosColAlphaMat_);
 
-        for (hUint i = 0, c = constBlocks_.GetSize(); i < c; ++i) {
+        for (hUint i = 0, c = constBlocks_.size(); i < c; ++i) {
             constBlocks_[i].constBlock_->DecRef();
             hFreeSafe(constBlocks_[i].aliasHashes_);
             hFreeSafe(constBlocks_[i].aliases_);
@@ -376,7 +376,7 @@ namespace Heart
             hFreeSafe(constBlocks_[i].params_);
         }
         constBlockLookUp_.Clear(hFalse);
-        constBlocks_.Clear();
+        constBlocks_.clear();
 
         for (hGlobalTexture* i=globalTextures_.GetHead(); i; i=i->GetNext()) {
             hDELETE_ARRAY_SAFE(i->strPool_);

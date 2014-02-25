@@ -123,11 +123,11 @@ namespace Heart
             packageHeap_=Heart::hFindMemoryHeapByName("general");// maybe resources?
         }
 
-        links_.Resize(0);
-        links_.Reserve(16);
+        links_.resize(0);
+        links_.reserve(16);
         for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling()) {
             if (hStrCmp(i.GetAttributeString("name"), packageName_)) {
-                links_.PushBack(i.GetAttributeString("name"));
+                links_.push_back(i.GetAttributeString("name"));
             }
         }
 
@@ -163,14 +163,14 @@ namespace Heart
                 }
             } break;
         case State_Load_DepPkgs: {
-                for (hUint i=0, n=links_.GetSize(); i<n && !hotSwapping_; ++i) {
+                for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
                     manager->loadPackage(links_[i]);
                 }
                 packageState_ = State_Kick_ResourceLoads; 
             } break;
         case State_Load_WaitDeps: {
                 hBool loaded=hTrue;
-                for (hUint i=0, n=links_.GetSize(); i<n; ++i) {
+                for (hUint i=0, n=links_.size(); i<n; ++i) {
                     loaded &= manager->getIsPackageLoaded(links_[i]);
                 }
                 if (loaded) {
@@ -234,7 +234,7 @@ namespace Heart
                 }
             } break;
         case State_Unload_DepPkg: {
-                for (hUint i=0, n=links_.GetSize(); i<n && !hotSwapping_; ++i) {
+                for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
                     manager->unloadPackage(links_[i]);
                 }
                 hdEndFilewatch(resourceFilewatch_);
