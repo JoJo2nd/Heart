@@ -1,0 +1,4 @@
+
+buildsystem.set_current_package("font_package")
+buildsystem.set_type_parameter("font", "size", "10pt")
+buildsystem.add_build_folder("fonts")

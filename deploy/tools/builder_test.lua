@@ -1,0 +1,110 @@
+local filesystem = require "filesystem"
+
+local G = _G
+local buildables = {}
+local function deepcopy(t)
+    if type(t) ~= 'table' then return t end
+    local mt = getmetatable(t)
+    local res = {}
+    for k,v in pairs(t) do
+        if type(v) == 'table' then
+            v = deepcopy(v)
+        end
+        res[k] = v
+    end
+    setmetatable(res,mt)
+    return res
+end
+
+local function add_build_folder(folder_path, type_parameters, package)
+    local env = {
+        filesystem          = filesystem,
+        assert              = assert,
+        collectgarbage      = collectgarbage,
+        --dofile,            = --dofile,
+        error               = error,
+        getmetatable        = getmetatable,
+        ipairs              = ipairs,
+        --load               = --load
+        --loadfile           = --loadfile
+        next                = next,
+        pairs               = pairs,
+        --pcall              = --pcall
+        print               = print,
+        rawequal            = rawequal,
+        rawget              = rawget,
+        rawlen              = rawlen,
+        rawset              = rawset,
+        --require            = --require
+        select              = select,
+        setmetatable        = setmetatable,
+        tonumber            = tonumber,
+        tostring            = tostring,
+        type                = type,
+        --xpcall             = --xpcall
+    }
+    if folder_path[#folder_path] ~= '/' then
+        folder_path = folder_path..'/'
+    end
+   
+    local local_type_parameters = type_parameters or {}
+    local local_package = package or ""
+    local local_add_build_folder = function (local_folder_path)
+        local ltp = deepcopy(local_type_parameters)
+        add_build_folder(folder_path..local_folder_path, ltp, local_package)
+    end
+    env.buildsystem = {
+        add_build_folder = local_add_build_folder,
+        set_current_package = function (new_package)
+            assert(type(new_package) == "string")
+            local_package = new_package
+        end,
+        set_type_parameter = function(res_type, parameter, value)
+            if local_type_parameters[res_type] == nil then local_type_parameters[res_type] = {} end
+            local_type_parameters[res_type][parameter] = value
+        end,
+        add_files = function(wildcard, res_type, type_param_or)
+            local full_wildcard = folder_path..wildcard
+            local dir_files = filesystem.readdir(folder_path)
+            local new_parameters = deepcopy(local_type_parameters[res_type]) or {}
+            if type(type_param_or) == "table" then
+                for k, v in pairs(type_param_or) do
+                    new_parameters[k] = v
+                end
+            end
+            for _, v in pairs(dir_files) do
+                if filesystem.isfile(v) then
+                    local res_path = v
+                    if filesystem.wildcardpathmatch(full_wildcard, res_path) == true then
+                        if buildables[res_path] == nil then buildables[res_path] = {} end
+                        buildables[res_path].package = local_package
+                        buildables[res_path].res_type = res_type
+                        buildables[res_path].parameters = new_parameters
+                    end
+                end
+            end
+        end,
+    }
+    local build_script = folder_path..".build_script"
+    if filesystem.isfile(build_script) then
+        local build, errmsg = loadfile(build_script, "t", env)
+        if build == nil then
+            error("unable to run build script '"..build_script.."'. Error: "..errmsg)
+        else
+            build()
+        end
+    else
+        error("folder "..build_script.." is missing a .build_script file")
+    end
+end
+
+local data_path = "C:/dev/heart_lua/data"
+add_build_folder(data_path)
+
+for k, v in pairs(buildables) do
+    local paramstr = ""
+    for pk, pv in pairs(v.parameters) do
+        paramstr = paramstr..pk.."="..pv..","
+    end
+    print ("build="..k.." package="..v.package.." type="..v.res_type.." params=["..paramstr.."]")
+end

@@ -41,9 +41,7 @@ namespace Heart
         explicit hResourceType(hUint32 cc)
             : typeCRC(cc)
         {}
-        union{
-            hUint32 typeCRC;
-        };
+        hUint32 typeCRC;
 
         hBool operator == ( const hResourceType& b ) const {
             return typeCRC == b.typeCRC;
@@ -76,18 +74,18 @@ namespace Heart
             }
         };
 
-        static hResourceID buildResourceID(const hChar* fullPath){
-            if (!fullPath)
+        static hResourceID buildResourceID(const hStringID& fullPath){
+            if (fullPath.is_default())
                 return hResourceID();
 
-            const hChar* resName = hStrChr(fullPath, '.');
-            if (!resName)
-                return hResourceID();
-
-            hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
-            hUint32 resCRC = hCRC32::StringCRC(resName+1);
-
-            return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
+            return hResourceID((hUint64)fullPath.hash());
+//             const hChar* resName = hStrChr(fullPath, '.');
+//             if (!resName)
+//                 return hResourceID();
+//             hUint32 pakCRC = hCRC32::FullCRC(fullPath, (hUint32)resName-(hUint32)fullPath);
+//             hUint32 resCRC = hCRC32::StringCRC(resName+1);
+// 
+//             return hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
         }
         static hResourceID buildResourceID(const hChar* package, const hChar* resourceName){
             if (!package || !resourceName)
@@ -98,6 +96,7 @@ namespace Heart
 
             return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
         }
+#endif
     };
 
     enum hResurceEvent 
