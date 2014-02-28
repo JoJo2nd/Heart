@@ -66,7 +66,8 @@ local function add_build_folder(folder_path, type_parameters, package)
         end,
         add_files = function(wildcard, res_type, type_param_or)
             local full_wildcard = folder_path..wildcard
-            local dir_files = filesystem.readdir(folder_path)
+            local full_folder_path = filesystem.parentpath(full_wildcard)
+            local dir_files = filesystem.readdir(full_folder_path)
             local new_parameters = deepcopy(local_type_parameters[res_type]) or {}
             if type(type_param_or) == "table" then
                 for k, v in pairs(type_param_or) do
@@ -103,16 +104,43 @@ for k, v in ipairs(arg) do
     print(k, "=", v)
 end
 
-local data_path = "C:/dev/heart_lua/data"
-local temp_data_path = data_path.."/.tmp"
-local job_count = cores or 8
+local data_path = "C:/dev/heart_lua/data" --TODO: parse these from command line
+local temp_data_path = data_path.."/.tmp" --TODO: parse these from command line
+local job_count = cores or 8              --TODO: parse these from command line
+
+
 local current_jobs = 0
 if filesystem.isdirectory(temp_data_path) == false then
     os.execute("mkdir \""..temp_data_path.."\"")
 end
+
 add_build_folder(data_path)
 
 local processes = {}
+local success = 0
+local failure = 0
+
+-- Wait for pending processes to be less or equal job_limit
+local wait_for_free_job_slot = function(job_limit)
+    while current_jobs > job_limit do
+        for proc, pid in pairs(processes) do
+            exit_code = pid:wait(0)
+            if exit_code ~= nil then
+                if exit_code ~= 0 then
+                    failure = failure+1
+                else
+                    success = success+1
+                end
+                processes[proc] = nil
+                current_jobs = current_jobs - 1
+                break
+            else
+                process.sleep(1)
+            end
+        end
+    end
+end
+
 for k, v in pairs(buildables) do
     local temp_file_name = string.format("%s_%s", v.package, k)
     temp_file_name = string.gsub(temp_file_name, data_path, "")
@@ -125,49 +153,29 @@ for k, v in pairs(buildables) do
         if type(pv) == "string" then
             paramstr = paramstr.."\t[\""..pk.."\"]= \""..pv.."\",\n"
         else
-            paramstr = paramstr.."\t[\""..pk.."\"]= "..pv..",\n"
+            paramstr = paramstr.."\t[\""..pk.."\"]= "..tostring(pv)..",\n"
         end
     end
     paramstr = paramstr.."}\n"
     local build_script = string.gsub([[
-print("Build - ${inputfile}")
---
+--print("Build - ${inputfile}")
+
 --local builder = require "${buildername}"
 --local parameters =  ${params_x}
 --builder.build("${inputfile}", {}, parameters, "${tempoutputfile}")
     ]], "${(%w+)}", {params = paramstr, buildername=v.res_type, inputfile=k, tempoutputfile=output_file})
-    --print ("build="..k.." package="..v.package.." type="..v.res_type.." params=["..paramstr.."]")
+    
     tmp_file:write(build_script)
     tmp_file:close()
-    local exe = "lua.exe" --"C:/dev/heart_lua/deploy/tools/Debug/lua.exe"
-    while current_jobs > job_count do
-        for proc, pid in pairs(processes) do
-            if pid:wait(0) ~= nil then
-                processes[proc] = nil
-                spawn = true
-                current_jobs = current_jobs - 1
-                break
-            else
-                process.sleep(1)
-            end
-        end
-    end
+    local exe = "lua"
+    wait_for_free_job_slot(job_count)
     current_jobs = current_jobs + 1
     processes[k] = process.exec(string.format("%s \"%s\"", exe, temp_file_name))
 end
 
--- Wait for is all to finish
-while current_jobs > job_count do
-    for proc, pid in pairs(processes) do
-        if pid:wait(0) ~= nil then
-            processes[proc] = nil
-            spawn = true
-            current_jobs = current_jobs - 1
-            break
-        else
-            process.sleep(1)
-        end
-    end
-end
+--Wait for it all to be done
+wait_for_free_job_slot(0)
 
 process.sleep(500)
+
+print(string.format("Build complete: %d Successfully Completed, %d Failures", success, failure))

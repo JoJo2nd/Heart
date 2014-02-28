@@ -111,7 +111,7 @@ int lua_process_api lua_process_wait(lua_State* L) {
     DWORD exit_code = -1;
 
     // Wait until child process exits.
-    if (WaitForSingleObject( udata->procInfo_.hProcess, wait != 0 ? INFINITE : 0) != WAIT_TIMEOUT) {
+    if (WaitForSingleObject( udata->procInfo_.hProcess, wait != 0 ? INFINITE : 0) == WAIT_OBJECT_0) {
         // Get exit code
         GetExitCodeProcess( udata->procInfo_.hProcess, &exit_code );
         lua_pushinteger(L, exit_code);
