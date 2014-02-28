@@ -282,6 +282,7 @@ add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")
 add_subdirectory("tools/lualibs/luaxml")
 add_subdirectory("tools/lualibs/enet_lua")
+add_subdirectory("tools/lualibs/lua_process")
 
 add_subdirectory("tools/proto")
 add_subdirectory("tools/memtrack")

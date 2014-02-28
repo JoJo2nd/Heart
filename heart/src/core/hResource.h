@@ -74,6 +74,10 @@ namespace Heart
             }
         };
 
+        //TODO: Remove this!!
+        static hResourceID buildResourceID(const hChar* resourceName){
+            return buildResourceID(hStringID(resourceName));
+        }
         static hResourceID buildResourceID(const hStringID& fullPath){
             if (fullPath.is_default())
                 return hResourceID();
@@ -96,7 +100,6 @@ namespace Heart
 
             return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
         }
-#endif
     };
 
     enum hResurceEvent 
@@ -161,7 +164,7 @@ namespace Heart
 
         }
         explicit hResourceHandle(const hChar* path)
-            : resourceID_(hResourceID::buildResourceID(path))
+            : resourceID_(hResourceID::buildResourceID(hStringID(path)))
             , flags_(0)
         {
 

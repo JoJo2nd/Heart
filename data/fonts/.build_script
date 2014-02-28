@@ -1,3 +1,5 @@
 
 buildsystem.add_build_folder("debug")
 buildsystem.add_files("*.fnt", "font", {alpha="yes"})
+buildsystem.add_files("*.tga", "texture", {sRGB="false"})
+buildsystem.add_files("*.dds", "text", {})

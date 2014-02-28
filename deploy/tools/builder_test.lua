@@ -1,4 +1,5 @@
 local filesystem = require "filesystem"
+local process = require "lua_process"
 
 local G = _G
 local buildables = {}
@@ -98,13 +99,75 @@ local function add_build_folder(folder_path, type_parameters, package)
     end
 end
 
+for k, v in ipairs(arg) do
+    print(k, "=", v)
+end
+
 local data_path = "C:/dev/heart_lua/data"
+local temp_data_path = data_path.."/.tmp"
+local job_count = cores or 8
+local current_jobs = 0
+if filesystem.isdirectory(temp_data_path) == false then
+    os.execute("mkdir \""..temp_data_path.."\"")
+end
 add_build_folder(data_path)
 
+local processes = {}
 for k, v in pairs(buildables) do
-    local paramstr = ""
+    local temp_file_name = string.format("%s_%s", v.package, k)
+    temp_file_name = string.gsub(temp_file_name, data_path, "")
+    temp_file_name = string.gsub(temp_file_name, "[\\/:.]", "_")
+    local output_file = string.format("%s/%s.bin", temp_data_path, temp_file_name)
+    temp_file_name = string.format("%s/%s.lua", temp_data_path, temp_file_name)
+    tmp_file = io.open(temp_file_name, "w")
+    local paramstr = "{\n"
     for pk, pv in pairs(v.parameters) do
-        paramstr = paramstr..pk.."="..pv..","
+        if type(pv) == "string" then
+            paramstr = paramstr.."\t[\""..pk.."\"]= \""..pv.."\",\n"
+        else
+            paramstr = paramstr.."\t[\""..pk.."\"]= "..pv..",\n"
+        end
     end
-    print ("build="..k.." package="..v.package.." type="..v.res_type.." params=["..paramstr.."]")
+    paramstr = paramstr.."}\n"
+    local build_script = string.gsub([[
+print("Build - ${inputfile}")
+--
+--local builder = require "${buildername}"
+--local parameters =  ${params_x}
+--builder.build("${inputfile}", {}, parameters, "${tempoutputfile}")
+    ]], "${(%w+)}", {params = paramstr, buildername=v.res_type, inputfile=k, tempoutputfile=output_file})
+    --print ("build="..k.." package="..v.package.." type="..v.res_type.." params=["..paramstr.."]")
+    tmp_file:write(build_script)
+    tmp_file:close()
+    local exe = "lua.exe" --"C:/dev/heart_lua/deploy/tools/Debug/lua.exe"
+    while current_jobs > job_count do
+        for proc, pid in pairs(processes) do
+            if pid:wait(0) ~= nil then
+                processes[proc] = nil
+                spawn = true
+                current_jobs = current_jobs - 1
+                break
+            else
+                process.sleep(1)
+            end
+        end
+    end
+    current_jobs = current_jobs + 1
+    processes[k] = process.exec(string.format("%s \"%s\"", exe, temp_file_name))
 end
+
+-- Wait for is all to finish
+while current_jobs > job_count do
+    for proc, pid in pairs(processes) do
+        if pid:wait(0) ~= nil then
+            processes[proc] = nil
+            spawn = true
+            current_jobs = current_jobs - 1
+            break
+        else
+            process.sleep(1)
+        end
+    end
+end
+
+process.sleep(500)

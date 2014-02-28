@@ -2,3 +2,4 @@
 buildsystem.set_type_parameter("font", "size", "20pt")
 buildsystem.add_files("*.tga", "texture", {sRGB="false"})
 buildsystem.add_files("*.fnt", "font")
+buildsystem.add_files("*.dds", "text", {})
