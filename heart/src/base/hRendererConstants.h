@@ -474,7 +474,7 @@ namespace Heart
         eTextureFormat_BC2_unorm, //DXT3
         eTextureFormat_BC1_unorm, //DXT1
 
-        eTextureFormat_sRGB_mask      = 0x80000000,
+        eTextureFormat_sRGB_mask            = 0x80000000,
         eTextureFormat_RGBA8_sRGB_unorm     = eTextureFormat_RGBA8_unorm    | eTextureFormat_sRGB_mask,
         eTextureFormat_BC3_sRGB_unorm       = eTextureFormat_BC3_unorm      | eTextureFormat_sRGB_mask,
         eTextureFormat_BC2_sRGB_unorm       = eTextureFormat_BC2_unorm      | eTextureFormat_sRGB_mask,

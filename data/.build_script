@@ -1,7 +1,12 @@
 
+-- default texture parameters
+buildsystem.set_type_parameter("texture", "sRGB", true)
+buildsystem.set_type_parameter("texture", "format", "bc1")
+buildsystem.set_type_parameter("texture", "quality", "normal")
+
 buildsystem.set_current_package("font_package")
 buildsystem.set_type_parameter("font", "size", 10)
 buildsystem.add_build_folder("fonts")
 buildsystem.set_current_package("textures")
-buildsystem.set_type_parameter("texture", "sRGB", false)
+--buildsystem.set_type_parameter("texture", "sRGB", false)
 buildsystem.add_files("textures/*.png", "texture")

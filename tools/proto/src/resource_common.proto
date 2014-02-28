@@ -8,6 +8,11 @@ enum ResourceSectionMemoryType {
 	eResourceSection_Prealloc = 2;
 }
 
+message MessageContainer {
+	required string type_name = 1;
+	required bytes  messageData = 2;
+}
+
 message Colour {
 	required uint32 red = 1 [default = 1];
 	required uint32 green = 2 [default = 1];

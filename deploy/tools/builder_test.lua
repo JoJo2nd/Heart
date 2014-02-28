@@ -146,6 +146,7 @@ for k, v in pairs(buildables) do
     temp_file_name = string.gsub(temp_file_name, data_path, "")
     temp_file_name = string.gsub(temp_file_name, "[\\/:.]", "_")
     local output_file = string.format("%s/%s.bin", temp_data_path, temp_file_name)
+    local dep_output_file = string.format("%s/%s.dep", temp_data_path, temp_file_name)
     temp_file_name = string.format("%s/%s.lua", temp_data_path, temp_file_name)
     tmp_file = io.open(temp_file_name, "w")
     local paramstr = "{\n"
@@ -158,18 +159,24 @@ for k, v in pairs(buildables) do
     end
     paramstr = paramstr.."}\n"
     local build_script = string.gsub([[
---print("Build - ${inputfile}")
+--print("Build - $inputfile")
 
---local builder = require "${buildername}"
---local parameters =  ${params_x}
---builder.build("${inputfile}", {}, parameters, "${tempoutputfile}")
-    ]], "${(%w+)}", {params = paramstr, buildername=v.res_type, inputfile=k, tempoutputfile=output_file})
+local builder = require "$buildername"
+local parameters =  $params
+local inputfiles = builder.build("$inputfile", {}, parameters, "$tempoutputfile")
+local depfile = io.open("$depoutputfile", "w")
+for i, v in ipairs(inputfiles) do
+    depfile:write(v)
+end
+depfile:close()
+    ]], "$(%w+)", {params = paramstr, buildername=v.res_type, inputfile=k, tempoutputfile=output_file, depoutputfile=dep_output_file})
     
     tmp_file:write(build_script)
     tmp_file:close()
     local exe = "lua"
     wait_for_free_job_slot(job_count)
     current_jobs = current_jobs + 1
+    print("Building - "..k)
     processes[k] = process.exec(string.format("%s \"%s\"", exe, temp_file_name))
 end
 

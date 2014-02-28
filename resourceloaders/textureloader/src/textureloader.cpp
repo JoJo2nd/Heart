@@ -25,121 +25,279 @@
 
 *********************************************************************/
 
-#include "textureloader.h"
-//#include "nvtt/nvtt.h"
+#include "nvtt/nvtt.h"
+#include "freeimage.h"
 #include <boost/filesystem.hpp>
 #include <boost/smart_ptr.hpp>
 #include <fstream>
 #include <string>
+#include <stdio.h>
+#include <vector>
 
-using namespace Heart;
-
-#ifndef MAKEFOURCC
-#   define MAKEFOURCC(ch0, ch1, ch2, ch3)                           \
-        ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) |           \
-        ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24 ))
-#endif /* defined(MAKEFOURCC) */
-
-struct RawTextureData
-{
-    boost::shared_ptr<void> data_;      //Assumes RGBA or L8 format based on bytesPerPixel
-    hUint32                 width_;
-    hUint32                 pitch_;
-    hUint32                 height_;
-    hUint32                 mips_;
-    hUint32                 bytesPerPixel_;
-    hBool                   compressed_;
-    Heart::hTextureFormat   format_;
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
 };
 
-#define DDSD_CAPS	        (0x1)       //Required in every .dds file.	0x1
-#define DDSD_HEIGHT	        (0x2)       //Required in every .dds file.	0x2
-#define DDSD_WIDTH	        (0x4)       //Required in every .dds file.	0x4
-#define DDSD_PITCH	        (0x8)       //Required when pitch is provided for an uncompressed texture.	0x8
-#define DDSD_PIXELFORMAT	(0x1000)    //Required in every .dds file.	0x1000
-#define DDSD_MIPMAPCOUNT	(0x20000)   //Required in a mipmapped texture.	0x20000
-#define DDSD_LINEARSIZE	    (0x80000)   //Required when pitch is provided for a compressed texture.	0x80000
-#define DDSD_DEPTH	        (0x800000)  //Required in a depth texture.	0x800000
-
-#define DDPF_ALPHAPIXELS	(0x1)       //Texture contains alpha data; dwRGBAlphaBitMask contains valid data.	0x1
-#define DDPF_ALPHA	        (0x2)       //Used in some older DDS files for alpha channel only uncompressed data (dwRGBBitCount contains the alpha channel bitcount; dwABitMask contains valid data)	0x2
-#define DDPF_FOURCC	        (0x4)       //Texture contains compressed RGB data; dwFourCC contains valid data.	0x4
-#define DDPF_RGB	        (0x40)      //Texture contains uncompressed RGB data; dwRGBBitCount and the RGB masks (dwRBitMask, dwRBitMask, dwRBitMask) contain valid data.	0x40
-#define DDPF_YUV	        (0x200)     //Used in some older DDS files for YUV uncompressed data (dwRGBBitCount contains the YUV bit count; dwRBitMask contains the Y mask, dwGBitMask contains the U mask, dwBBitMask contains the V mask)	0x200
-#define DDPF_LUMINANCE	    (0x20000)   //Used in some older DDS files for single channel color uncompressed data (dwRGBBitCount contains the luminance channel bit count; dwRBitMask contains the channel mask). Can be combined with DDPF_ALPHAPIXELS for a two channel DDS file.	0x20000
-#if 0
-struct TexFormatEnumName
-{
-    const hChar*            name_;
-    nvtt::Format            fmt_;
-    Heart::hTextureFormat   hFmt_;
-};
-
-TexFormatEnumName g_formatNames[] =
-{
-    // No compression.
-    {"RGBA", nvtt::Format_RGBA, Heart::TFORMAT_ARGB8},// = Format_RGB,
-
-    // DX9 formats.
-    {"DXT1" , nvtt::Format_DXT1 , Heart::TFORMAT_DXT1},
-    {"DXT1a", nvtt::Format_DXT1a, Heart::TFORMAT_DXT1},   // DXT1 with binary alpha.
-    {"DXT3" , nvtt::Format_DXT3 , Heart::TFORMAT_DXT3},
-    {"DXT5" , nvtt::Format_DXT5 , Heart::TFORMAT_DXT5},
-    {"DXT5n", nvtt::Format_DXT5n, Heart::TFORMAT_DXT5},   // Compressed HILO: R=1, G=y, B=0, A=x
-
-    // DX10 formats.
-    {"BC1" , nvtt::Format_BC1 , Heart::TFORMAT_DXT1},
-    {"BC1a", nvtt::Format_BC1a, Heart::TFORMAT_DXT1},
-    {"BC2" , nvtt::Format_BC2 , Heart::TFORMAT_DXT3},
-    {"BC3" , nvtt::Format_BC3 , Heart::TFORMAT_DXT5},
-    {"BC3n", nvtt::Format_BC3n, Heart::TFORMAT_DXT5},
-    {"BC4" , nvtt::Format_BC4 , Heart::TFORMAT_DXT5},     // ATI1       - NOTE: WRONG!
-    {"BC5" , nvtt::Format_BC5 , Heart::TFORMAT_DXT5},     // 3DC, ATI2  - NOTE: WRONG!
-};
+#if defined (_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#else
+#   pragma error ("Unknown platform")
+#endif
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/io/coded_stream.h"
+#if defined (_MSC_VER)
+#   pragma warning(pop)
 #endif
 
-#pragma pack ( push, 1 )
+#include "resource_texture.pb.h"
 
-struct DDSPixelFormat 
+
+//using namespace Heart;
+
+#if defined (texture_builder_EXPORTS)
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+
+#define TB_API __cdecl
+
+namespace FreeImageFileIO
 {
-    DWORD dwSize;
-    DWORD dwFlags;
-    DWORD dwFourCC;
-    DWORD dwRGBBitCount;
-    DWORD dwRBitMask;
-    DWORD dwGBitMask;
-    DWORD dwBBitMask;
-    DWORD dwABitMask;
+    unsigned int DLL_CALLCONV
+        read_proc(void *buffer, unsigned size, unsigned count, fi_handle handle) {
+            return (unsigned int)fread(buffer, size, count, (FILE *)handle);
+    }
+
+    unsigned int DLL_CALLCONV
+        write_proc(void *buffer, unsigned size, unsigned count, fi_handle handle) {
+            return (unsigned int)fwrite(buffer, size, count, (FILE *)handle);
+    }
+
+    int DLL_CALLCONV
+        seek_proc(fi_handle handle, long offset, int origin) {
+            return fseek((FILE *)handle, offset, origin);
+    }
+
+    long DLL_CALLCONV
+        tell_proc(fi_handle handle) {
+            return ftell((FILE *)handle);
+    }
+}
+
+const char* textureFormats[] = {
+    // No compression.
+    "rgba",// Format_RGBA = Format_RGB,
+    // // DX10 formats.
+    "bc1",// Format_BC1 = Format_DXT1,
+    "bc1a",// Format_BC1a = Format_DXT1a,
+    "bc2",// Format_BC2 = Format_DXT3,
+    "bc3",// Format_BC3 = Format_DXT5,
+    "bc3n",// Format_BC3n = Format_DXT5n,
+    "bc4",// Format_BC4,     // ATI1
+    "bc5",// Format_BC5,     // 3DC, ATI2
 };
 
-struct DDSHeader
-{
-    DWORD           dwMagic;
-    DWORD           dwSize;
-    DWORD           dwFlags;
-    DWORD           dwHeight;
-    DWORD           dwWidth;
-    DWORD           dwPitchOrLinearSize;
-    DWORD           dwDepth;
-    DWORD           dwMipMapCount;
-    DWORD           dwReserved1[11];
-    DDSPixelFormat  ddspf;
-    DWORD           dwCaps;
-    DWORD           dwCaps2;
-    DWORD           dwCaps3;
-    DWORD           dwCaps4;
-    DWORD           dwReserved2;
+const char* qualityFormats[] = {
+    "fastest",      // Quality_Fastest,
+    "normal",       // Quality_Normal,
+    "production",   // Quality_Production,
+    "highest",      // Quality_Highest,
 };
 
-#pragma pack ( pop )
-
-hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData);
 #define getPitchFromWidth(w,bitsPerPixel) (( w * bitsPerPixel + 7 ) / 8)
-hUint32 getDXTTextureSize(hBool dxt1, hUint32 width, hUint32 height) {
+size_t getDXTTextureSize(bool dxt1, size_t width, size_t height) {
     // compute the storage requirements
-    int blockcount = ( ( width + 3 )/4 ) * ( ( height + 3 )/4 );
-    int blocksize = (dxt1) ? 8 : 16;
+    size_t blockcount = ( ( width + 3 )/4 ) * ( ( height + 3 )/4 );
+    size_t blocksize = (dxt1) ? 8 : 16;
     return blockcount*blocksize;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static bool writeOutTexture(const char* input_path, const char* output_path, bool gammacorrect, nvtt::Format format, nvtt::Quality quality) {
+    FreeImageIO fiIO;
+    fiIO.read_proc=&FreeImageFileIO::read_proc;
+    fiIO.seek_proc=&FreeImageFileIO::seek_proc;
+    fiIO.tell_proc=&FreeImageFileIO::tell_proc;
+    fiIO.write_proc=&FreeImageFileIO::write_proc;
+
+    struct TextureWriter : public nvtt::OutputHandler
+    {
+        TextureWriter(Heart::proto::TextureResource* resource) 
+            : resource_(resource)
+            , activeMip_(nullptr)
+            , size_(0)
+            , reserve_(0)
+        {}
+        /// Indicate the start of a new compressed image that's part of the final texture.
+        virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) {
+            activeMip_=resource_->add_mips();
+            activeMip_->set_width(width);
+            activeMip_->set_height(height);
+            size_ = 0;
+            if (size > reserve_) {
+                data_.reset(new unsigned char[size]);
+                reserve_ = size;
+            }
+        }
+
+        /// Output data. Compressed data is output as soon as it's generated to minimize memory allocations.
+        virtual bool writeData(const void * data, int size) {
+            if (activeMip_) {
+                if (size_ + size > reserve_) {
+                    unsigned char* newdata = new unsigned char[(size_+size)*2];
+                    memcpy(newdata, data, size_);
+                    reserve_ = (size_+size)*2;
+                    data_.reset(newdata);
+                }
+                memcpy(data_.get()+size_, data, size);
+                size_+=size;
+                activeMip_->set_data(data_.get(), size_);
+            }
+
+            return true;
+        }
+
+        Heart::proto::TextureResource*      resource_;
+        Heart::proto::TextureMip*           activeMip_;
+        std::unique_ptr<unsigned char>      data_;
+        size_t                              size_;
+        size_t                              reserve_;
+    };
+
+    FILE* file=fopen(input_path, "rb");
+    if (file) {
+        Heart::proto::TextureResource textureRes;
+        FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromHandle(&fiIO, (fi_handle)file, 0);
+        if(fif != FIF_UNKNOWN) {
+            // load from the file handle
+            FIBITMAP* dib = FreeImage_LoadFromHandle(fif, &fiIO, (fi_handle)file, 0);
+            unsigned int width=FreeImage_GetWidth(dib);
+            unsigned int height=FreeImage_GetHeight(dib);
+            unsigned int bpp=FreeImage_GetBPP(dib);
+            size_t bytes=width*height*4;
+            unsigned char* data=new unsigned char[bytes];
+
+            //Free image stores upside down so re-arrange
+            switch(bpp) {
+            case 32: {
+                for(size_t y=height-1, d=0; y<height; --y) {
+                    unsigned char* scanline=FreeImage_GetScanLine(dib, (int)y);
+                    for(size_t x=0, slw=(width*4); x<slw; x+=4) {
+                        data[d++]=scanline[x+0];
+                        data[d++]=scanline[x+1];
+                        data[d++]=scanline[x+2];
+                        data[d++]=scanline[x+3];
+                    }
+                }
+                break;
+                        }
+            case 24: {
+                for(size_t y=height-1, d=0; y<height; --y) {
+                    unsigned char* scanline=FreeImage_GetScanLine(dib, (int)y);
+                    for(size_t x=0, slw=(width*3); x<slw; x+=3) {
+                        data[d++]=scanline[x+0];
+                        data[d++]=scanline[x+1];
+                        data[d++]=scanline[x+2];
+                        data[d++]=0xFF;
+                    }
+                }
+                break;
+                        }
+            case 8: {
+                for(size_t y=height-1, d=0; y<height; --y) {
+                    unsigned char* scanline=FreeImage_GetScanLine(dib, (int)y);
+                    for(size_t x=0; x<width; ++x) {
+                        for (size_t i=0; i<4; ++i) {
+                            data[d++]=scanline[x];
+                        }
+                    }
+                }
+                break;
+                    }
+            default:
+                printf("Couldn't read pixel format with bpp of %d", bpp);
+                return false;
+            }
+
+            textureRes.set_width(width);
+            textureRes.set_height(height);
+            textureRes.set_srgb(gammacorrect);
+            textureRes.set_depth(1);
+            switch(format) {
+            case nvtt::Format_RGB: textureRes.set_format(Heart::proto::RGBA8_unorm); break;
+            case nvtt::Format_BC1: textureRes.set_format(Heart::proto::BC1_unorm); break;
+            case nvtt::Format_BC1a: textureRes.set_format(Heart::proto::BC1a_unorm); break;
+            case nvtt::Format_BC2: textureRes.set_format(Heart::proto::BC2_unorm); break;
+            case nvtt::Format_BC3: textureRes.set_format(Heart::proto::BC3_unorm); break;
+            case nvtt::Format_BC3n: textureRes.set_format(Heart::proto::BC3_unorm); break;
+            case nvtt::Format_BC4: textureRes.set_format(Heart::proto::BC4_unorm); break;
+            case nvtt::Format_BC5: textureRes.set_format(Heart::proto::BC5_unorm); break;
+            }
+
+            nvtt::InputOptions inputOptions;
+            inputOptions.setTextureLayout(nvtt::TextureType_2D, width, height);
+            inputOptions.setMipmapFilter(nvtt::MipmapFilter_Kaiser);
+            inputOptions.setKaiserParameters(3.0f, 4.0f, 1.0f);
+            inputOptions.setMipmapGeneration(true);
+            if (gammacorrect) {
+                inputOptions.setGamma(2.2f, 2.2f);
+            } else {
+                inputOptions.setGamma(1.f, 1.f);
+            }
+            if (format == nvtt::Format_BC1a || format == nvtt::Format_BC5 || format == nvtt::Format_DXT1a ||
+                format == nvtt::Format_DXT5 || format == nvtt::Format_RGBA) {
+                inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
+            } else {
+                inputOptions.setAlphaMode(nvtt::AlphaMode_None);
+            }
+            inputOptions.setMipmapData(data, width, height);
+
+            TextureWriter texWriter(&textureRes);
+            nvtt::OutputOptions outputOptions;
+            outputOptions.setOutputHandler(&texWriter);
+
+            nvtt::CompressionOptions compresserOptions;
+            compresserOptions.setFormat(format);
+            compresserOptions.setQuality(quality);
+
+            nvtt::Compressor compressor;
+            compressor.process(inputOptions, compresserOptions, outputOptions);
+
+            FreeImage_Unload(dib);
+            delete[] data; 
+            data=nullptr;
+
+            std::ofstream output;
+            output.open(output_path, std::ios_base::out|std::ios_base::binary);
+            if (!output.is_open()) {
+                printf("Couldn't open %s for writing", output_path);
+                return false;
+            }
+
+            {
+                google::protobuf::io::OstreamOutputStream filestream(&output);
+                google::protobuf::io::CodedOutputStream outputstream(&filestream);
+                Heart::proto::MessageContainer msgContainer;
+                msgContainer.set_type_name(textureRes.GetTypeName());
+                msgContainer.set_messagedata(textureRes.SerializeAsString());
+                msgContainer.SerializePartialToCodedStream(&outputstream);
+            }
+            output.close();
+        }
+        fclose(file);
+    }
+    else {
+        //error
+    }
+
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -147,219 +305,43 @@ hUint32 getDXTTextureSize(hBool dxt1, hUint32 width, hUint32 height) {
 //////////////////////////////////////////////////////////////////////////
 
 int TB_API textureCompile(lua_State* L) {
-    using namespace Heart;
-    using namespace boost;
-    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TTABLE);
+    /* Args from Lua 1: input file, 2: dep files table, 3: parameter table, 4: outputpath)*/
+    const char* input_path = luaL_checkstring(L, 1);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
-    luaL_checktype(L, 4, LUA_TSTRING);
-
-    Heart::proto::TextureResource textureresource;
-    std::vector<std::string> openedfiles;
-    RawTextureData textureData;
-    std::string filepath;
-    hBool gammaCorrect = hFalse;
-    hBool buildMips = hFalse;
-    hBool keepcpu = hFalse;
-    hBool ddsInput = hFalse;
-
-    lua_getglobal(L, "buildpathresolve");
-    lua_rawgeti(L, 1, 1);
-    if(!lua_isstring(L, -1)) {
-        luaL_error(L, "input path is not a string");
-        return 0;
-    }
-    lua_call(L, 1, 1);
-    filepath=lua_tostring(L, -1);
-    lua_pop(L, 1);
-
-    if (!ReadDDSFileData(filepath.c_str(), &textureData)) {
-        luaL_error(L, "Unable to read DDS file");
-        return 0;
-    }
-    ddsInput = hTrue;
-    openedfiles.push_back(filepath);
+    const char* output_path = luaL_checkstring(L, 4);
+    bool gammaCorrect = false;
+    nvtt::Format texFmt;
+    nvtt::Quality quality;
 
     lua_getfield(L, 3, "sRGB");
-    if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
-        gammaCorrect = hTrue;
+    if (lua_isboolean(L, -1)) {
+        gammaCorrect = lua_toboolean(L, -1) != 0;
     }
     lua_pop(L, 1);
 
-    lua_getfield(L, 3, "keepcpu");
-    if (!lua_isnil(L, -1) && lua_toboolean(L, -1)) {
-        keepcpu=hTrue;
-    }
+    lua_getfield(L, 3, "format");
+    texFmt = (nvtt::Format)luaL_checkoption(L, -1, "bc1", textureFormats);
     lua_pop(L, 1);
 
-    Heart::hMipDesc* mips;
-    hUint32 mipCount;
-    {
-        //DDS input file
-        mipCount = textureData.mips_;
-        hUint32 bitsPerPixel = textureData.bytesPerPixel_*8;
-        hUint32 w = textureData.width_;
-        hUint32 h = textureData.height_;
-        hUint32 size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::eTextureFormat_BC1_unorm, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
-        hByte* ptr = (hByte*)textureData.data_.get();
+    lua_getfield(L, 3, "quality");
+    quality = (nvtt::Quality)luaL_checkoption(L, -1, "normal", qualityFormats);
+    lua_pop(L, 1);
 
-        mips = (Heart::hMipDesc*)hAlloca(sizeof(Heart::hMipDesc)*textureData.mips_);
-        for (hUint32 i = 0; i < textureData.mips_; ++i)
-        {
-            mips[i].width = w;
-            mips[i].height = h;
-            mips[i].data = new hByte[size];
-            mips[i].size = size;
-
-            Heart::hMemCpy(mips[i].data, ptr, size);
-
-            if (gammaCorrect && textureData.bytesPerPixel_ >=3 )
-            {
-                //If this texture is going ot be read as a sRGB, Red and Blue need to be swapped
-                hByte* srgb = mips[i].data;
-                for(hUint32 i = 0; i < size; i += textureData.bytesPerPixel_, srgb += textureData.bytesPerPixel_)
-                {
-                    hByte r = srgb[0];
-                    srgb[0] = srgb[2];
-                    srgb[2] = r;
-                }
-            }
-
-            ptr += mips[i].size;
-            w = hMax(w >> 1, 1);
-            h = hMax(h >> 1, 1);
-            size = textureData.compressed_ ? getDXTTextureSize(textureData.format_ == Heart::eTextureFormat_BC1_unorm, w,h) : getPitchFromWidth(w,bitsPerPixel)*h;
-        }
+    if (!writeOutTexture(input_path, output_path, gammaCorrect, texFmt, quality)) {
+        return luaL_error(L, "Texture build failed");
     }
 
-    if (gammaCorrect)
-    {
-        textureData.format_ = (Heart::hTextureFormat)(textureData.format_ | Heart::eTextureFormat_sRGB_mask);
-    }
-
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, 4);
-    lua_call(L, 1, 1);
-    const hChar* outputpath=lua_tostring(L, -1);
-    std::ofstream output;
-    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
-    lua_pop(L, 1);//pop the return of the stack
-    if (!output.is_open()) {
-        luaL_error(L, "Unable to open output file %s for writing", outputpath);
-        return 0;
-    }
-
-    std::string streambuffer;
-    google::protobuf::io::StringOutputStream filestream(&streambuffer);
-    google::protobuf::io::CodedOutputStream outputstream(&filestream);
-
-    textureresource.set_width(textureData.width_);
-    textureresource.set_height(textureData.height_);
-    textureresource.set_format(textureData.format_);
-    for (hUint32 i = 0; i < textureData.mips_; ++i) {
-        proto::TextureMip* mip=textureresource.add_mips();
-        mip->set_width(mips[i].width);
-        mip->set_height(mips[i].height);
-        mip->set_data(mips[i].data, mips[i].size);
-        delete [] mips[i].data;
-        mips[i].data=hNullptr;
-        mips[i].size=0;
-    }
-
-    //write the resource header
-    Heart::proto::ResourceHeader resHeader;
-    resHeader.set_type("texture");
-    resHeader.set_sourcefile(lua_tostring(L, 4));
-    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
-    blobsection->set_type(Heart::proto::eResourceSection_Temp);
-    blobsection->set_sectionname("texture");
-    blobsection->set_size(textureresource.ByteSize());
-
-    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
-    textureresource.SerializeToCodedStream(&outputstream);
-
-    output.write(streambuffer.c_str(), streambuffer.length());
-
-    output.close();
-
-    lua_newtable(L); // push empty table, this resource won't have any dependencies
-    lua_newtable(L); // push table of input files we depend on (absolute paths)
-    hUint idx=1;
-    for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
-        lua_pushstring(L, i->c_str());
-        lua_rawseti(L, -2, idx);
-        ++idx;
-    }
-    return 2;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-hBool ReadDDSFileData(const hChar* filepath, RawTextureData* outData) {
-    DDSHeader header;
-    boost::system::error_code ec;
-    hUint filesize=(hUint)boost::filesystem::file_size(filepath, ec);
-    if (ec) {
-        return hFalse;
-    }
-    hUint32 textureSize = filesize - sizeof(header);
-    std::ifstream file;
-    file.open(filepath, std::ios_base::in|std::ios_base::binary);
-    if (!file.is_open()) {
-        return hFalse;
-    }
-    file.read((hChar*)&header, sizeof(header));
-
-    if (header.dwMagic != 0x20534444) {
-        return hFalse;
-    }
-
-    outData->height_        = header.dwHeight;
-    outData->width_         = header.dwWidth;
-    outData->pitch_         = (header.dwFlags & DDSD_PITCH) ? header.dwPitchOrLinearSize : header.dwWidth;
-    outData->mips_          = (header.dwFlags & DDSD_MIPMAPCOUNT) ? header.dwMipMapCount : 1;
-    outData->compressed_    = hFalse;
-    if ((header.ddspf.dwFlags & DDPF_FOURCC) == 0) {
-        outData->bytesPerPixel_ = header.ddspf.dwRGBBitCount / 8;
-        if (outData->bytesPerPixel_ == 1) {
-            outData->format_        = Heart::eTextureFormat_R8_unorm;
-        } else if (outData->bytesPerPixel_ = 4) {
-            outData->format_ = Heart::eTextureFormat_RGBA8_unorm;
-        } else {
-            return hFalse;
-        }
-    } else {
-        outData->bytesPerPixel_ = 0;
-        outData->compressed_    = hTrue;
-        if ((MAKEFOURCC('D','X','T','1') == header.ddspf.dwFourCC) ||
-            (MAKEFOURCC('D','X','T','2') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::eTextureFormat_BC1_unorm;
-        } else if ((MAKEFOURCC('D','X','T','3') == header.ddspf.dwFourCC) ||
-                 (MAKEFOURCC('D','X','T','4') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::eTextureFormat_BC2_unorm;
-        } else if ((MAKEFOURCC('D','X','T','5') == header.ddspf.dwFourCC)) {
-            outData->format_ = Heart::eTextureFormat_BC3_unorm;
-        } else {
-            return hFalse;
-        }
-    }
-
-
-    outData->data_ = boost::shared_ptr<void>(new hByte[textureSize]);
-    file.read((hChar*)outData->data_.get(), textureSize);
-
-    file.close();
-    return hTrue;
+    //return an empty table
+    lua_newtable(L);
+    return 1;
 }
 
 extern "C" {
 //Lua entry point calls
 DLL_EXPORT int TB_API luaopen_texture(lua_State *L) {
     static const luaL_Reg texturelib[] = {
-        {"compile",textureCompile},
+        {"build",textureCompile},
         {NULL, NULL}
     };
     luaL_newlib(L, texturelib);

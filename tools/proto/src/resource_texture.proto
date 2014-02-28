@@ -4,6 +4,18 @@ option optimize_for = LITE_RUNTIME;
 
 package Heart.proto;
 
+enum TextureFormat {
+	 RGBA8_unorm = 0;
+	 BC3_unorm = 1; //DXT5
+	 BC2_unorm = 2; //DXT3
+	 BC1_unorm = 3; //DXT1
+	 
+	 BC3a_unorm = 4; 
+	 BC1a_unorm = 5; 
+	 BC4_unorm = 6;
+	 BC5_unorm = 7;
+}
+
 message TextureMip {
 	optional uint32 width = 1;
 	optional uint32 height = 2;
@@ -14,6 +26,7 @@ message TextureResource {
 	optional uint32 width = 1;
 	optional uint32 height = 2;
 	optional uint32 depth = 3;
-	optional uint32 format = 4;
+	optional TextureFormat format = 4;
 	repeated TextureMip mips = 5;
+	optional bool sRGB = 6;
 }
