@@ -32,7 +32,20 @@
 #include <string>
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
-#include "Heart.h"
+#include "Heart.h" // TODO: remove this somehow
+
+#if defined (_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#else
+#   pragma error ("Unknown platform")
+#endif
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/io/coded_stream.h"
+#if defined (_MSC_VER)
+#   pragma warning(pop)
+#endif
 
 #if defined (material_builder_EXPORTS)
 #define DLL_EXPORT __declspec(dllexport)
@@ -42,92 +55,7 @@
 
 #define MB_API __cdecl
 
-
 typedef std::vector< std::string > StrVectorType;
-
-class TechniqueData
-{
-public:
-    TechniqueData()
-    {
-    }
-public:
-    typedef std::vector< PassDefintion > PassArrayType;
-
-    TechniqueDefinition     techDef_;
-    PassArrayType           passes_;
-};
-
-class GroupData
-{
-public:
-    GroupData()
-    {}
-public:
-    typedef std::vector< TechniqueData > TechniqueListType;
-
-    TechniqueData* addTechnique(){
-        techniques_.push_back(TechniqueData());
-        return &techniques_[techniques_.size()-1];
-    }
-    TechniqueData* getTechnique(const hChar* name) {
-        for (hUint i=0, n=(hUint)techniques_.size(); i<n; ++i) {
-            if (Heart::hStrCmp(name, techniques_[i].techDef_.technqiueName)==0) {
-                return &techniques_[i];
-            }
-        }
-        return hNullptr;
-    }
-
-    GroupDefinition         groupDef_;
-    TechniqueListType       techniques_;
-};
-
-class MaterialData
-{
-public:
-    MaterialData()
-    {}
-public:
-    typedef std::vector< SamplerDefinition >    SamplerArrayType;
-    typedef std::vector< ParameterDefinition >  ParamArrayType;
-    typedef std::vector< GroupData >            GroupListType;
-
-    GroupData* addGroup() {
-        groups_.push_back(GroupData());
-        return &groups_[groups_.size()-1];
-    }
-    GroupData* getGroup(const hChar* name) {
-        for (hUint i=0, n=(hUint)groups_.size(); i<n; ++i) {
-            if (Heart::hStrCmp(name, groups_[i].groupDef_.groupName)==0) {
-                return &groups_[i];
-            }
-        }
-        return NULL;
-    }
-    SamplerDefinition* getSamplerByName(const hChar* name) {
-        for (hUint i=0,n=(hUint)samplers_.size(); i<n; ++i) {
-            if (Heart::hStrCmp(name, samplers_[i].samplerName)==0) {
-                return &samplers_[i];
-            }
-        }
-        return NULL;
-    }
-    ParameterDefinition* getParameterByName(const hChar* name) {
-        for (hUint i=0,n=(hUint)parameters_.size(); i<n; ++i) {
-            if (Heart::hStrCmp(name, parameters_[i].parameterName)==0) {
-                return &parameters_[i];
-            }
-        }
-        return NULL;
-    }
-
-    MaterialHeader          header_;
-    SamplerArrayType        samplers_;
-    ParamArrayType          parameters_;
-    GroupListType           groups_;
-};
-
 
 //////////////////////////////////////////////////////////////////////////
 // Enum Tables ///////////////////////////////////////////////////////////
@@ -244,6 +172,12 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
     {NULL, 0}
 };
 
+#define luaL_errorthrow(L, fmt, ...) \
+    luaL_where(L, 1); \
+    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_concat(L, 2); \
+    throw std::exception();
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -309,11 +243,11 @@ int MB_API materialCompile(lua_State* L) {
     using namespace Heart;
 
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
-
+try {
     Heart::proto::MaterialResource materialresource;
     std::vector<std::string> openedfiles;
     MaterialHeader matHeader = {0};
@@ -324,28 +258,17 @@ int MB_API materialCompile(lua_State* L) {
     StrVectorType depresnames;
     StrVectorType includes;
 
-    lua_getglobal(L, "buildpathresolve");
-    lua_rawgeti(L, 1, 1);
-    if(!lua_isstring(L, -1)) {
-        luaL_error(L, "input path is not a string");
-        return 0;
-    }
-    lua_call(L, 1, 1);
-    filepath=lua_tostring(L, -1);
-    lua_pop(L, 1);
-
+    filepath=lua_tostring(L, 1);
     filesize=(hUint)boost::filesystem::file_size(filepath.c_str(), ec);
     if (ec) {
-        luaL_error(L, "Unable to get file size for file %s", filepath.c_str());
-        return 0;
+        luaL_errorthrow(L, "Unable to get file size for file %s", filepath.c_str());
     }
 
     boost::shared_array<hChar> xmlmem = boost::shared_array<hChar>(new hChar[filesize+1]);
     std::ifstream infile;
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_error(L, "Unable to open file %s", filepath.c_str());
-        return 0;
+        luaL_errorthrow(L, "Unable to open file %s", filepath.c_str());
     }
     memset(xmlmem.get(), 0, filesize+1);
     infile.read(xmlmem.get(), filesize);
@@ -354,8 +277,7 @@ int MB_API materialCompile(lua_State* L) {
     try {
         xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
     } catch (...) {
-        luaL_error(L, "Failed to parse material file");
-        return 0;
+        luaL_errorthrow(L, "Failed to parse material file");
     }
 
     readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
@@ -364,54 +286,42 @@ int MB_API materialCompile(lua_State* L) {
         openedfiles.push_back(*i);
     }
 
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, 4);
-    lua_call(L, 1, 1);
-    const hChar* outputpath=lua_tostring(L, -1);
+    const hChar* outputpath=lua_tostring(L, 4);
     std::ofstream output;
     output.open(outputpath, std::ios_base::out|std::ios_base::binary);
 
     if (!output.is_open()) {
-        luaL_error(L, "Unable to open output file %s for writing", outputpath);
-        return 0;
+        luaL_errorthrow(L, "Unable to open output file %s for writing", outputpath);
     }
 
-    std::string streambuffer;
-    google::protobuf::io::StringOutputStream filestream(&streambuffer);
-    google::protobuf::io::CodedOutputStream outputstream(&filestream);
-
     //write the resource header
-    Heart::proto::ResourceHeader resHeader;
-    resHeader.set_type("mfx");
-    resHeader.set_sourcefile(lua_tostring(L, 4));
-    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
-    blobsection->set_type(Heart::proto::eResourceSection_Temp);
-    blobsection->set_sectionname("material");
-    blobsection->set_size(materialresource.ByteSize());
-
-    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
-    materialresource.SerializeToCodedStream(&outputstream);
-
-    output << streambuffer;
+    {
+        google::protobuf::io::OstreamOutputStream filestream(&output);
+        google::protobuf::io::CodedOutputStream outputstream(&filestream);
+        Heart::proto::MessageContainer msgContainer;
+        msgContainer.set_type_name(materialresource.GetTypeName());
+        msgContainer.set_messagedata(materialresource.SerializeAsString());
+        msgContainer.SerializePartialToCodedStream(&outputstream);
+    }
     output.close();
 
     //Return a list of resources this material is dependent on
-    lua_newtable(L);
-    hUint idx=1;
+    lua_newtable(L); // push table of input files we depend on (absolute paths or relative to game data folder)
+    int idx=1;
     for (auto i=depresnames.begin(),n=depresnames.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-
-    lua_newtable(L); // push table of input files we depend on (absolute paths)
-    idx=1;
     for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-    return 2;
+    return 1;
+} catch (std::exception e) {
+    return lua_error(L);
+}
 }
 
 int MB_API materialScanIncludes(lua_State* L) {
@@ -595,7 +505,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
                 colour->set_blue((hUint)(fd[2]*255.f+.5f));
                 colour->set_alpha((hUint)(fd[3]*255.f+.5f));
             } else if (ptype == ePTTexture) {
-                param->set_resourceid((hUint64)hResourceManager::BuildResourceID(valstr));
+                param->set_resourceid(valstr);
             }
         }
     }
@@ -712,32 +622,32 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
                 //passDef.rasterizerState.frontCounterClockwise_ = RSV_ENABLE;
                 
                 if (xPass.FirstChild("vertex").ToNode()) {
-                    pass->set_vertex(hResourceManager::BuildResourceID(xPass.FirstChild("vertex").GetValueString()));
-                    if (pass->vertex()) {
+                    pass->set_vertex(xPass.FirstChild("vertex").GetValueString(""));
+                    if (!pass->vertex().empty()) {
                         deps->push_back(xPass.FirstChild("vertex").GetValueString());
                     }
                 }
                 if (xPass.FirstChild("fragment").ToNode()) {
-                    pass->set_pixel(hResourceManager::BuildResourceID(xPass.FirstChild("fragment").GetValueString()));
-                    if (pass->pixel()) {
+                    pass->set_pixel(xPass.FirstChild("fragment").GetValueString(""));
+                    if (!pass->pixel().empty()) {
                         deps->push_back(xPass.FirstChild("fragment").GetValueString());
                     }
                 }
                 if (xPass.FirstChild("geometry").ToNode()) {
-                    pass->set_geometry(hResourceManager::BuildResourceID(xPass.FirstChild("geometry").GetValueString()));
-                    if (pass->geometry()) {
+                    pass->set_geometry(xPass.FirstChild("geometry").GetValueString(""));
+                    if (!pass->geometry().empty()) {
                         deps->push_back(xPass.FirstChild("geometry").GetValueString());
                     }
                 }
                 if (xPass.FirstChild("hull").ToNode()) {
-                    pass->set_hull(hResourceManager::BuildResourceID(xPass.FirstChild("hull").GetValueString()));
-                    if (pass->hull()) {
+                    pass->set_hull(xPass.FirstChild("hull").GetValueString(""));
+                    if (!pass->hull().empty()) {
                         deps->push_back(xPass.FirstChild("hull").GetValueString());
                     }
                 }
                 if (xPass.FirstChild("domain").ToNode()) {
-                    pass->set_domain(hResourceManager::BuildResourceID(xPass.FirstChild("domain").GetValueString()));
-                    if (pass->domain()) {
+                    pass->set_domain(xPass.FirstChild("domain").GetValueString(""));
+                    if (!pass->domain().empty()) {
                         deps->push_back(xPass.FirstChild("domain").GetValueString());
                     }
                 }
@@ -751,7 +661,6 @@ extern "C" {
 DLL_EXPORT int MB_API luaopen_material(lua_State *L) {
     static const luaL_Reg materiallib[] = {
         {"compile"      , materialCompile},
-        {"scanincludes" , materialScanIncludes},
         {NULL, NULL}
     };
     luaL_newlib(L, materiallib);

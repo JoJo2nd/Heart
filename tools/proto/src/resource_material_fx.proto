@@ -56,12 +56,12 @@ message MaterialPass {
 	optional BlendState blend = 1;
 	optional DepthStencilState depthStencil = 2;
 	optional RasterizerState rasterizer = 3;
-	optional uint64 vertex = 4;
-	optional uint64 pixel = 5;
-	optional uint64 geometry = 6;
-	optional uint64 hull = 7;
-	optional uint64 domain = 8;
-	optional uint64 compute = 9;
+	optional string vertex = 4;
+	optional string pixel = 5;
+	optional string geometry = 6;
+	optional string hull = 7;
+	optional string domain = 8;
+	optional string compute = 9;
 }
 
 message MaterialTechnique {
@@ -83,7 +83,7 @@ message MaterialSampler {
 
 message MaterialParameter {
 	required string paramName = 1;
-	optional uint64 resourceId = 2;
+	optional string resourceId = 2;
 	repeated float  floatValues = 3;
 	repeated sint32 intValues = 4;
 	repeated Colour colourValues = 5;

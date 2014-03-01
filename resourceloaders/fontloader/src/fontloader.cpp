@@ -42,21 +42,6 @@
 
 //#define FONT_CPP_OUTPUT
 
-#pragma pack(push, 1)
-
-struct FontHeader
-{
-    Heart::hResourceBinHeader   resHeader;
-    hUint32                     version;
-    hFloat                      fontHeight;
-    hUint32                     pageCount;
-    Heart::hResourceID          pageResID;
-    Heart::hResourceID          materialResID;
-    hUint32                     glyphCount;
-};
-
-#pragma pack(pop)
-
 #if 0
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -118,7 +103,6 @@ int fontCompile(lua_State* L) {
     luaL_checktype(L, 4, LUA_TSTRING);
 
     system::error_code ec;
-    FontHeader header = {0};
     hFloat fontScale=1.f;// = hAtoF(params->GetBuildParameter("SCALE", "1"));
     const hChar* cheaderoutput=NULL;
     lua_getfield(L, 3, "scale");
@@ -170,7 +154,7 @@ int fontCompile(lua_State* L) {
         luaL_error(L, "Error parsing XML file: Unknown error");
         return 0;
     }
-
+#if 0
     header.resHeader.resourceType = FONT_MAGIC_NUM;
     header.version = FONT_VERSION;
 
@@ -268,6 +252,8 @@ int fontCompile(lua_State* L) {
     lua_pushstring(L, pageResName);
     lua_rawseti(L, -2, 1);
     return 1;
+#endif
+    return 0;
 }
 
 #if 0

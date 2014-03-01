@@ -12,7 +12,7 @@ message VertexStream {
 }
 
 message Renderable {
-	optional uint64 materialResource = 1;
+	optional string materialResource = 1;
 	optional uint32 vertexCount = 2;
 	repeated VertexStream vertexStreams = 3;
 	optional uint32 indexCount = 4;

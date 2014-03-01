@@ -1244,22 +1244,22 @@ namespace Heart
                             hDepthStencilStateDesc depthdesc;
                             hRasterizerStateDesc rasterdesc;
                             if (passdef.has_pixel()) {
-                                pass->setProgramID(ShaderType_FRAGMENTPROG, hResourceID(passdef.pixel()));
+                                pass->setProgramID(ShaderType_FRAGMENTPROG, hResourceID::buildResourceID(passdef.pixel().c_str()));
                             }
                             if (passdef.has_vertex()) {
-                                pass->setProgramID(ShaderType_VERTEXPROG, hResourceID(passdef.vertex()));
+                                pass->setProgramID(ShaderType_VERTEXPROG, hResourceID::buildResourceID(passdef.vertex().c_str()));
                             }
                             if (passdef.has_geometry()) {
-                                pass->setProgramID(ShaderType_GEOMETRYPROG, hResourceID(passdef.geometry()));
+                                pass->setProgramID(ShaderType_GEOMETRYPROG, hResourceID::buildResourceID(passdef.geometry().c_str()));
                             }
                             if (passdef.has_domain()) {
-                                pass->setProgramID(ShaderType_DOMAINPROG, hResourceID(passdef.domain()));
+                                pass->setProgramID(ShaderType_DOMAINPROG, hResourceID::buildResourceID(passdef.domain().c_str()));
                             }
                             if (passdef.has_hull()) {
-                                pass->setProgramID(ShaderType_HULLPROG, hResourceID(passdef.hull()));
+                                pass->setProgramID(ShaderType_HULLPROG, hResourceID::buildResourceID(passdef.hull().c_str()));
                             }
                             if (passdef.has_compute()) {
-                                pass->setProgramID(ShaderType_COMPUTEPROG, hResourceID(passdef.compute()));
+                                pass->setProgramID(ShaderType_COMPUTEPROG, hResourceID::buildResourceID(passdef.compute().c_str()));
                             }
                             if (passdef.has_blend()) {
                                 const proto::BlendState& blenddef=passdef.blend();
@@ -1415,7 +1415,7 @@ namespace Heart
                 for (hUint pi=0, pn=materialres.parameters_size(); pi<pn; ++pi) {
                     const proto::MaterialParameter& paramdef=materialres.parameters(pi);
                     if (paramdef.has_resourceid()) {
-                        material->addDefaultParameterValue(paramdef.paramname().c_str(), hResourceID(paramdef.resourceid()));
+                        material->addDefaultParameterValue(paramdef.paramname().c_str(), hResourceID::buildResourceID(paramdef.resourceid().c_str()));
                     } else if (paramdef.floatvalues_size()) {
                         material->addDefaultParameterValue(paramdef.paramname().c_str(), paramdef.floatvalues().data(), paramdef.floatvalues_size());
                     } else if (paramdef.intvalues_size()) {
@@ -1502,7 +1502,7 @@ namespace Heart
                     renderable->SetPrimativeType(primtype);
                     renderable->SetPrimativeCount(renderableres.primcount());
                     renderable->SetAABB(aabb);
-                    renderable->setMaterialResourceID(hResourceID(renderableres.materialresource()));
+                    renderable->setMaterialResourceID(hResourceID::buildResourceID(renderableres.materialresource().c_str()));
 
                     if (renderableres.has_indexbuffer()) {
                         hIndexBuffer* ib;

@@ -33,7 +33,23 @@
 #include <algorithm>
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
-#include "Heart.h"
+
+#if defined (_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#else
+#   pragma error ("Unknown platform")
+#endif
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/io/coded_stream.h"
+#if defined (_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+#include "resource_mesh.pb.h"
+
+#include "Heart.h" //TODO: remove this include?
 
 #if defined (mesh_builder_EXPORTS)
 #define DLL_EXPORT __declspec(dllexport)
@@ -42,32 +58,6 @@
 #endif
 
 #define MB_API   __cdecl
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-struct LODInfo
-{
-    hFloat maxRange;
-};
-
-struct MaterialMap
-{
-    const hChar*        first;
-    const hChar*        second;
-    Heart::hResourceID  resID;
-};
-
-struct StreamInfo
-{
-    Heart::hInputLayoutDesc   desc;
-    hUint                     count;
-    const char*               encodedData;
-    hUint                     encodedDataSize;
-    boost::shared_array<char> decodedData;
-    hUint                     decodedDataSize;
-};
 
 //////////////////////////////////////////////////////////////////////////
 // Enum Tables ///////////////////////////////////////////////////////////
@@ -109,53 +99,42 @@ int MB_API meshCompile(lua_State* L)
     using namespace Heart;
     using namespace boost;
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
+#define luaL_errorthrow(L, fmt, ...) \
+    luaL_where(L, 1); \
+    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_concat(L, 2); \
+    throw std::exception();
+
+try {
     std::vector<std::string> openedfiles;
 
-    lua_rawgeti(L, 1, 1);
-    if (!lua_isstring(L, -1)) {
-        luaL_error(L, "input file is not a string");
-        return 0;
-    }
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, -2);
-    lua_call(L, 1, 1);
-
-    std::string filepath=lua_tostring(L, -1);
-    hUint filesize;
+    std::string filepath=lua_tostring(L, 1);
+    size_t filesize;
     MeshHeader header = {0};
     system::error_code ec;
     rapidxml::xml_document<> xmldoc;
-    shared_array<hChar> xmlmem;
-    shared_array<LODInfo> lodInfo;
+    shared_array<char> xmlmem;
     std::list< std::string > dependentres;
-    hChar* pathroot = (hChar*)hAlloca(strlen(filepath.c_str()));
 
-    hChar* end = strrchr(pathroot, '/');
-    if (end == NULL) 
-        pathroot[0] = 0;
-    else 
-        end = NULL;
-    filesize=(hUint)filesystem::file_size(filepath.c_str(), ec);
+    filesize=filesystem::file_size(filepath.c_str(), ec);
     if (ec) {
-        luaL_error(L, "Failed to read % file size", filepath.c_str());
-        return 0;
+        luaL_errorthrow(L, "Failed to read % file size", filepath.c_str());
     }
     std::ifstream infile;
 
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_error(L, "Couldn't open file %s", filepath);
-        return 0;
+        luaL_errorthrow(L, "Couldn't open file %s", filepath);
     }
 
     openedfiles.push_back(filepath);
 
-    xmlmem = shared_array<hChar>(new hChar[filesize+1]);
+    xmlmem = shared_array<char>(new char[filesize+1]);
     infile.read(xmlmem.get(), filesize);
     xmlmem[filesize] = 0;
     infile.close();
@@ -163,19 +142,7 @@ int MB_API meshCompile(lua_State* L)
     try {
         xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
     } catch (...) {
-        luaL_error(L, "XML parse failed");
-        return 0;
-    }
-
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, 4);
-    lua_call(L, 1, 1);
-    const hChar* outputpath=lua_tostring(L, -1);
-    std::ofstream outfile;
-    outfile.open(outputpath, std::ios_base::out|std::ios_base::binary);
-    if (!outfile.is_open()) {
-        luaL_error(L, "Failed to open output file %s", outputpath);
-        return 0;
+        luaL_errorthrow(L, "XML parse failed");
     }
 
     Heart::proto::Mesh meshresource;
@@ -185,108 +152,44 @@ int MB_API meshCompile(lua_State* L)
     if (xLODData.ToNode()) {
         WriteLODRenderables(xLODData, &meshresource, &dependentres);
     } else {
-        luaL_error(L, "Mesh description is missing any mesh data");
+        luaL_errorthrow(L, "Mesh description is missing any mesh data");
     }
 
-    std::string streambuffer;
-    google::protobuf::io::StringOutputStream filestream(&streambuffer);
-    google::protobuf::io::CodedOutputStream outputstream(&filestream);
+    const char* outputpath=lua_tostring(L, 4);
+    std::ofstream output;
+    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
+    if (!output.is_open()) {
+        luaL_errorthrow(L, "Failed to open output file %s", outputpath);
+    }
 
-    Heart::proto::ResourceHeader resHeader;
-    resHeader.set_type("mesh");
-    resHeader.set_sourcefile(lua_tostring(L, 4));
-    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
-    blobsection->set_type(Heart::proto::eResourceSection_Temp);
-    blobsection->set_sectionname("mesh");
-    blobsection->set_size(meshresource.ByteSize());
-
-    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
-    meshresource.SerializeToCodedStream(&outputstream);
-    outfile.write(streambuffer.c_str(), streambuffer.length());
-
-#if 0
     //write the resource header
-    hUint totalmeshsize=0;
-    totalmeshsize+=sizeof(header);
-    Heart::proto::ResourceHeader resHeader;
-    resHeader.set_type("mesh");
-    resHeader.set_sourcefile(lua_tostring(L, 4));
-    Heart::proto::ResourceSection* blobsection = resHeader.add_sections();
-    blobsection->set_type(Heart::proto::eResourceSection_Temp);
-    blobsection->set_sectionname("mesh_blob");
-    blobsection->set_size(totalmeshsize);
-
-    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
-    outfile.write(streambuffer.c_str(), streambuffer.length());
-
-    header.resHeader.resourceType = MESH_MAGIC_NUM;
-    header.version = MESH_VERSION;
-    header.lodCount=0;
-
-    hXMLGetter xLODGetter = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
-    for (hUint32 i = 0;xLODGetter.ToNode(); xLODGetter = xLODGetter.NextSibling(), ++i) ++header.lodCount;
-    lodInfo = shared_array<LODInfo>(new LODInfo[header.lodCount]);
-    xLODGetter = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
-    for (hUint32 i = 0;xLODGetter.ToNode(); xLODGetter = xLODGetter.NextSibling(), ++i)
     {
-        lodInfo[i].maxRange = xLODGetter.GetAttributeFloat("range",1000.f);
+        google::protobuf::io::OstreamOutputStream filestream(&output);
+        google::protobuf::io::CodedOutputStream outputstream(&filestream);
+        Heart::proto::MessageContainer msgContainer;
+        msgContainer.set_type_name(meshresource.GetTypeName());
+        msgContainer.set_messagedata(meshresource.SerializeAsString());
+        msgContainer.SerializePartialToCodedStream(&outputstream);
     }
-
-    outfile.write((char*)&header, sizeof(header));
-
-    lodIdx = 0;
-    hXMLGetter xLODData = hXMLGetter(&xmldoc).FirstChild("modeldescription").FirstChild("lod");
-    for (; xLODData.ToNode(); xLODData = xLODData.NextSibling(), ++lodIdx )
-    {
-        hUint64 writeOffset = outfile.tellp();
-        LODHeader lodHeader = {0};
-        lodHeader.minRange = lodIdx == 0 ? 0.0f : lodInfo[lodIdx-1].maxRange;
-        lodHeader.maxRange = lodInfo[lodIdx].maxRange;
-
-        // Write a dummy header, WriteLODRenderables will fill the correct data
-        // for the header and we'll write it again
-        outfile.write((char*)&lodHeader, sizeof(lodHeader));
-        
-        for (hUint32 i = 0; i < 3; ++i)
-        {
-            lodHeader.boundsMax[i] =  FLT_MAX;
-            lodHeader.boundsMin[i] = -FLT_MAX;
-        }
-
-        WriteLODRenderables(xLODData, &lodHeader, &outfile, &dependentres);
-
-        // Write out with the correct data
-        outfile.seekp(writeOffset);
-        outfile.write((char*)&lodHeader, sizeof(lodHeader));
-
-        outfile.seekp(0, std::ios_base::end);
-    }
-
-    //re write the header
-    auto writtensize=outfile.tellp();
-    totalmeshsize=(hUint)((size_t)writtensize-(size_t)resHeader.ByteSize());
-    blobsection->set_size(totalmeshsize);
-    outfile.seekp(0, std::ios_base::beg);
-    Heart::serialiseToStreamWithSizeHeader(resHeader, &outputstream);
-#endif
+    output.close();
 
     //Return a list of resources this material is dependent on
-    dependentres.unique();
-    lua_newtable(L);
-    hUint idx=1;
+    lua_newtable(L); // push table of input files we depend on (absolute paths)
+    int idx=1;
     for (auto i=dependentres.begin(),n=dependentres.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-    lua_newtable(L); // push table of input files we depend on (absolute paths)
-    idx=1;
     for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
         lua_pushstring(L, i->c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-    return 2;
+    return 1;
+} catch (...) {
+    return lua_error(L);
+}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -328,7 +231,7 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* 
         depres->push_back(renderablenode.GetAttributeString("material"));
         renderablebuf->set_vertexcount(vtxcount);
         renderablebuf->set_primtype(Heart::PRIMITIVETYPE_TRILIST);
-        renderablebuf->set_materialresource(Heart::hResourceManager::BuildResourceID(renderablenode.GetAttributeString("material")));
+        renderablebuf->set_materialresource(renderablenode.GetAttributeString("material"));
         if (indexnode.ToNode()) {
             hUint indexcount=indexnode.GetAttributeInt("count",0);
             hUint ibsize=cyBase64DecodeCalcRequiredSize(indexnode.GetValueString(), indexnode.GetValueStringLen());
@@ -377,7 +280,7 @@ extern "C" {
 //Lua entry point calls
 DLL_EXPORT int MB_API luaopen_mesh(lua_State *L) {
     static const luaL_Reg meshlib[] = {
-        {"compile"      , meshCompile},
+        {"build"      , meshCompile},
         {NULL, NULL}
     };
     luaL_newlib(L, meshlib);
