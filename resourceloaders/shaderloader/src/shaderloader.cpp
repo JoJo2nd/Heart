@@ -25,13 +25,22 @@
 
 *********************************************************************/
 
-#include "shaderloader.h"
 #include "heart.h"
 #include <d3d11.h>
 #include <boost/filesystem.hpp>
 #include <boost/smart_ptr.hpp>
 #include <string>
 #include <map>
+
+#include <stdio.h>
+#include <vector>
+
+#define SB_API __cdecl
+#if defined (shader_builder_EXPORTS)
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

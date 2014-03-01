@@ -25,12 +25,23 @@
 
 *********************************************************************/
 
-#include "materialloader.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <vector>
 #include <string>
+#include <stdio.h>
+#include "rapidxml/rapidxml.hpp"
+#include "Heart.h"
+
+#if defined (material_builder_EXPORTS)
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+
+#define MB_API __cdecl
+
 
 typedef std::vector< std::string > StrVectorType;
 

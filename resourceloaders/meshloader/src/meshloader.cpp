@@ -25,13 +25,23 @@
 
 *********************************************************************/
 
-#include "meshloader.h"
 #include "cryptoBase64.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <stdio.h>
+#include "rapidxml/rapidxml.hpp"
+#include "Heart.h"
+
+#if defined (mesh_builder_EXPORTS)
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT __declspec(dllimport)
+#endif
+
+#define MB_API   __cdecl
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
