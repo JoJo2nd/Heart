@@ -1,0 +1,14 @@
+
+buildsystem.set_current_package("core")
+
+buildsystem.add_files("materials/*.mfx", "material")
+-- for the texture files order is important, files found in previous calls to 
+-- add_files will not be re-added
+buildsystem.add_files("textures/*_srgb_bc3.tga", "texture", {sRGB=true, format="bc3"})
+buildsystem.add_files("textures/*_srgb_bc1.tga", "texture", {sRGB=true, format="bc1"})
+buildsystem.add_files("textures/*_bc3.tga", "texture", {sRGB=false, format="bc3"})
+buildsystem.add_files("textures/*_bc1.tga", "texture", {sRGB=false, format="bc1"})
+
+buildsystem.set_type_parameter("gpuprogram", "include_dirs", {"../../shader_common/include"})
+buildsystem.add_files("shaders/*_vs4.hlsl", "gpuprogram", {profile="vs4_0", entry="mainVP"})
+buildsystem.add_files("shaders/*_ps4.hlsl", "gpuprogram", {profile="ps4_0", entry="mainFP"})
