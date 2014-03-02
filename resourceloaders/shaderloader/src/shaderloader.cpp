@@ -86,7 +86,7 @@ struct FXIncludeHandler : public ID3DInclude
         std::shared_ptr<uchar>      data_;
         UINT                        datasize_;
     };
-    typedef std::map<void*, Include> IncludeMap;
+    typedef std::map<const void*, Include> IncludeMap;
 
     FXIncludeHandler() {}
     ~FXIncludeHandler() {}
@@ -94,9 +94,17 @@ struct FXIncludeHandler : public ID3DInclude
     void addDefaultPath(const char* path) {
         Include inc;
         inc.fullpath_=path;
-        inc.basepath_=inc.fullpath_.parent_path();
+        inc.basepath_=boost::filesystem::canonical(inc.fullpath_.parent_path());
         inc.datasize_=0;
-        includedFiles_.insert(IncludeMap::value_type(nullptr, inc));
+        includedFiles_.insert(IncludeMap::value_type((void*)(includedFiles_.size()), inc));
+    }
+
+    void addIncludePath(const char* path) {
+        Include inc;
+        inc.fullpath_=path;
+        inc.basepath_=boost::filesystem::canonical(inc.fullpath_);
+        inc.datasize_=0;
+        includedFiles_.insert(IncludeMap::value_type((void*)(includedFiles_.size()), inc));
     }
 
     STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
@@ -244,12 +252,23 @@ try {
     progtype = (proto::eShaderType)luaL_checkoption(L, -1, "vs4_0", shaderProfiles);
     lua_pop(L, 1);
 
+    struct D3DBlobSentry {
+        D3DBlobSentry() : blob_(nullptr) {}
+        ~D3DBlobSentry() { 
+            if (blob_) {
+                blob_->Release();
+                blob_ = nullptr;
+            }
+        }
+        ID3DBlob* blob_;
+    };
+
     Heart::proto::ShaderResource shaderresource;
     FXIncludeHandler includeHandler;
     HRESULT hr;
     bool includesource=false;
-    ID3DBlob* errors;
-    ID3DBlob* result;
+    D3DBlobSentry errors;
+    D3DBlobSentry result;
     uint compileFlags = 0;
     lua_getfield(L, 3, "debug");
     if (lua_toboolean(L, -1)) {
@@ -339,6 +358,23 @@ try {
 
     const char* path=lua_tostring(L, 1);
     includeHandler.addDefaultPath(path);
+
+    lua_getfield(L, 3, "include_dirs");
+    if (lua_istable(L, -1)) {
+        auto source_root = filesystem::path(path).parent_path();
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            /* uses 'key' (at index -2) and 'value' (at index -1) */
+            if (lua_isstring(L, -1)) {
+                auto include_path = source_root / lua_tostring(L, -1);
+                auto include_path_str = include_path.generic_string();
+                includeHandler.addIncludePath(include_path_str.c_str());
+            }
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+        }
+    }
+
     size_t filesize=(size_t)filesystem::file_size(path, ec);
     if (ec) {
         luaL_errorthrow(L, "Unable to read filesize of shader input %s", path);
@@ -364,19 +400,17 @@ try {
         d3d_shaderProfiles[progtype], 
         compileFlags, 
         0, 
-        &result, 
-        &errors);
+        &result.blob_, 
+        &errors.blob_);
 
-    if (FAILED(hr) && errors) {
-        std::string err=(char*)errors->GetBufferPointer();
-        errors->Release();
-        errors = NULL;
-        luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", (char*)errors->GetBufferPointer());
+    if (FAILED(hr) && errors.blob_) {
+        std::string err=(char*)errors.blob_->GetBufferPointer();
+        luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", (char*)errors.blob_->GetBufferPointer());
     }
 
     shaderresource.set_entry(entry);
     shaderresource.set_profile(progtype);
-    shaderresource.set_compiledprogram(result->GetBufferPointer(), result->GetBufferSize());
+    shaderresource.set_compiledprogram(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
     shaderresource.set_type(progtype);
     for (size_t i=0, n=fullmacros.size()-1; i<n; ++i) {
         proto::ShaderResource_Defines* defres=shaderresource.add_defines();
@@ -385,7 +419,7 @@ try {
     }
 
     ID3D11ShaderReflection* reflect;
-    hr = D3DReflect(result->GetBufferPointer(), result->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
+    hr = D3DReflect(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
     if (FAILED( hr )) {
         luaL_errorthrow(L, "Couldn't create reflection information.");
     }
@@ -437,9 +471,6 @@ try {
         lua_rawseti(L, -2, idx);
         ++idx;
     }
-
-    result->Release();
-    result=nullptr;
 
     return 1;
 } catch (std::exception e) {

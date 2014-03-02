@@ -182,7 +182,7 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps);
+void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps);
 
 Heart::proto::MaterialSampler* findOrAddMaterialSampler(Heart::proto::MaterialResource* mat, const hChar* name) {
     for (hUint i=0, n=mat->samplers_size(); i<n; ++i) {
@@ -280,7 +280,7 @@ try {
         luaL_errorthrow(L, "Failed to parse material file");
     }
 
-    readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
+    readMaterialXMLToMaterialData(L, xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
 
     for (auto i=includes.begin(),n=includes.end(); i!=n; ++i) {
         openedfiles.push_back(*i);
@@ -324,69 +324,11 @@ try {
 }
 }
 
-int MB_API materialScanIncludes(lua_State* L) {
-    /* Args from Lua (1: input file)*/
-    luaL_checktype(L, 1, LUA_TSTRING);
-
-    MaterialHeader matHeader = {0};
-    Heart::proto::MaterialResource materialresource;
-    boost::system::error_code ec;
-    const hChar* filepath=hNullptr;
-    rapidxml::xml_document<> xmldoc;
-    hUint filesize=0;
-    StrVectorType depresnames;
-    StrVectorType includes;
-
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, 1);
-    lua_call(L, 1, 1);
-    filepath=lua_tostring(L, -1);
-    lua_pop(L, 1);
-
-    filesize=(hUint)boost::filesystem::file_size(filepath, ec);
-    if (ec) {
-        luaL_error(L, "Unable to get file size for file %s", filepath);
-        return 0;
-    }
-
-    boost::shared_array<hChar> xmlmem = boost::shared_array<hChar>(new hChar[filesize+1]);
-    std::ifstream infile;
-    infile.open(filepath);
-    if (!infile.is_open()) {
-        luaL_error(L, "Unable to open file %s", filepath);
-        return 0;
-    }
-    memset(xmlmem.get(), 0, filesize+1);
-    infile.read(xmlmem.get(), filesize);
-    infile.close();
-
-    try {
-        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
-    } catch (...) {
-        luaL_error(L, "Failed to parse material file");
-        return 0;
-    }
-
-    readMaterialXMLToMaterialData(xmldoc, filepath, &materialresource, &includes, &depresnames);
-
-    //Return a list of resources this material is dependent on
-    lua_newtable(L);
-    hUint idx=1;
-    for (StrVectorType::iterator i=includes.begin(),n=includes.end(); i!=n; ++i) {
-        lua_pushstring(L, i->c_str());
-        lua_rawseti(L, -2, idx);
-        ++idx;
-    }
-
-    // return 1 list
-    return 1;
-}
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
+void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
     using namespace Heart;
 
     if (hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit")) {
@@ -420,7 +362,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
             }
             incfile.close();
             includes->push_back(fullbasepath);
-            readMaterialXMLToMaterialData(xmldocbase, fullbasepath, mat, includes, deps);
+            readMaterialXMLToMaterialData(L, xmldocbase, fullbasepath, mat, includes, deps);
         }
     }
 
@@ -431,7 +373,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
         if (xSampler.GetAttribute("name")) {
             sampler = findOrAddMaterialSampler(mat, xSampler.GetAttribute("name")->value());
         } else { // Error? can't process this!
-            continue;
+            luaL_errorthrow(L, "Can't find name parameter for sampler in material");
         }
 
         if (xSampler.FirstChild("addressu").ToNode()) {
@@ -475,7 +417,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
         if (xParameter.GetAttribute("name")) {
             param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
         } else {
-            continue;// ERROR?
+            luaL_errorthrow(L, "Can't find name for parameter in material");
         }
         if (xParameter.GetAttribute("type")) {
             ptype = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
@@ -484,21 +426,24 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
             const hChar* valstr=xParameter.GetValueString();
             if (ptype == ePTFloat) {
                 hFloat fd[16];
-                hUint count=sscanf_s(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
+                int count=sscanf_s(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
                     fd, fd+1, fd+2, fd+3, fd+4, fd+5, fd+6, fd+7, fd+8, fd+9, fd+10, fd+11, fd+12, fd+13, fd+14, fd+15);
-                for (hUint i=0; i<count; ++i) {
+                for (int i=0; i<count; ++i) {
                     param->add_floatvalues(fd[i]);
                 }
             } else if (ptype == ePTInt) {
                 hInt id[16];
-                hUint count=sscanf_s(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
+                int count=sscanf_s(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
                     id, id+1, id+2, id+3, id+4, id+5, id+6, id+7, id+8, id+9, id+10, id+11, id+12, id+13, id+14, id+15);
-                for (hUint i=0; i<count; ++i) {
+                for (int i=0; i<count; ++i) {
                     param->add_intvalues(id[i]);
                 }
             } else if (ptype == ePTColour) {
                 hFloat fd[4] = {1.f, 1.f, 1.f, 1.f};
-                hUint count=sscanf_s(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
+                int count=sscanf_s(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
+                if (count != 4) {
+                    luaL_errorthrow(L, "Colour parsed have %d values, expected only 4", count);
+                }
                 auto colour=param->add_colourvalues();
                 colour->set_red((hUint)(fd[0]*255.f+.5f));
                 colour->set_green((hUint)(fd[1]*255.f+.5f));
@@ -517,7 +462,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
         if (xGroup.GetAttribute("name")) {
             group=findOrAddMaterialGroup(mat, xGroup.GetAttributeString("name","none"));
         } else {
-            continue;//ERROR?
+            luaL_errorthrow(L, "Material group is missing name");
         }
 
         hXMLGetter xTech = xGroup.FirstChild("technique");
@@ -527,7 +472,7 @@ void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const
             if (xTech.GetAttribute("name")) {
                 tech=findOrAddMaterialTechnique(group, xTech.GetAttributeString("name","none"));
             } else {
-                continue;// Error?
+                luaL_errorthrow(L, "Material technique is missing name");
             }
             if (xTech.FirstChild("sort").ToNode()) {
                 tech->set_transparent(hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0);
@@ -660,7 +605,7 @@ extern "C" {
 //Lua entry point calls
 DLL_EXPORT int MB_API luaopen_material(lua_State *L) {
     static const luaL_Reg materiallib[] = {
-        {"compile"      , materialCompile},
+        {"build"      , materialCompile},
         {NULL, NULL}
     };
     luaL_newlib(L, materiallib);

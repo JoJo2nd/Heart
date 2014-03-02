@@ -54,6 +54,21 @@ static int fs_modifiedDate(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+static int fs_fileSize(lua_State* L) {
+    luaL_checkstring(L, -1);
+    boost::system::error_code ec;
+    boost::filesystem::path filepath(lua_tostring(L, -1));
+    size_t t=boost::filesystem::file_size(filepath, ec);
+    if (!ec) {
+        lua_pushinteger(L, t);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 static int fs_currentDate(lua_State* L) {
     time_t t;
     time(&t);
@@ -571,6 +586,7 @@ extern "C" {
 luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
     static const luaL_Reg filesystemlib[] = {
         {"modifieddate",fs_modifiedDate},
+        {"filesize",fs_fileSize},
         {"currentfiledate", fs_currentDate},
         {"exists",fs_exists},
         {"isfile",fs_isFile},
