@@ -2,21 +2,46 @@
 -- default texture parameters
 buildsystem.set_type_parameter("texture", "sRGB", true)
 buildsystem.set_type_parameter("texture", "format", "bc1")
-buildsystem.set_type_parameter("texture", "quality", "normal")
+buildsystem.set_type_parameter("texture", "quality", "fastest") -- fastest, normal, production, highest
 
 buildsystem.set_type_parameter("gpuprogram", "debug", true)
 buildsystem.set_type_parameter("gpuprogram", "skipoptimization", true)
 buildsystem.set_type_parameter("gpuprogram", "warningsaserrors", true)
 buildsystem.set_type_parameter("gpuprogram", "includesource", true)
-buildsystem.set_type_parameter("gpuprogram", "defines", {A=1, B=2})
+---
+buildsystem.add_build_folder("core")
 
+--[[
 buildsystem.set_current_package("font_package")
 buildsystem.set_type_parameter("font", "size", 10)
 buildsystem.add_build_folder("fonts")
+--]]
+
+--[[
 buildsystem.set_current_package("textures")
 buildsystem.set_type_parameter("texture", "sRGB", false)
 buildsystem.add_files("textures/*.png", "texture")
+--]]
 
+--[[
 buildsystem.set_current_package("shaders")
 buildsystem.add_files("shaders/*_vs4.hlsl", "gpuprogram", {profile="vs4_0", entry="mainVP"})
 buildsystem.add_files("shaders/*_ps4.hlsl", "gpuprogram", {profile="ps4_0", entry="mainFP"})
+--]]
+
+--[[
+buildsystem.set_current_package("sponza_materials")
+buildsystem.add_files("materials/sponza/*.mfx", "material")
+
+buildsystem.set_current_package("sponza_textures")
+buildsystem.set_type_parameter("texture", "sRGB", false)
+buildsystem.add_files("mesh/sponza_v2/textures/*_NRM.tga", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*_NRM.png", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*_bump.tga", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*_bump.png", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*_spec.tga", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*_spec.png", "texture")
+buildsystem.set_type_parameter("texture", "sRGB", true)
+buildsystem.add_files("mesh/sponza_v2/textures/*.tga", "texture")
+buildsystem.add_files("mesh/sponza_v2/textures/*.png", "texture")
+--]]
