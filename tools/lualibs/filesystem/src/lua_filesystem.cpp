@@ -214,6 +214,16 @@ static int fs_fileWithExt(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+static int fs_pathWithoutExt(lua_State* L) {
+    boost::filesystem::path path = luaL_checkstring(L, 1);
+    std::string ret = path.replace_extension().generic_string();
+    lua_pushstring(L, ret.c_str());
+    return 1;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 static int fs_pathRoot(lua_State* L) {
     boost::filesystem::path path = luaL_checkstring(L, 1);
     std::string ret = path.parent_path().generic_string();
@@ -572,6 +582,7 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"genericpath",fs_genericPath},
         {"nativepath",fs_nativePath},
         {"filewithext", fs_fileWithExt},
+        {"pathwithoutext", fs_pathWithoutExt},
         {"parentpath", fs_pathRoot},
         {"readdir", fs_readDir},
         {"readdirrecursive", fs_readDirRecursive},

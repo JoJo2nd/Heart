@@ -1,0 +1,14 @@
+package Heart.proto;
+
+option optimize_for = LITE_RUNTIME;
+
+message PackageEntry {
+	optional string entryName = 1;
+	optional uint64 entryOffset = 2;
+	optional uint64 entrySize = 3;
+}
+
+message PackageHeader {
+	repeated string			packageDependencies = 1;
+	repeated PackageEntry	entries = 2;
+}

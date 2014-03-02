@@ -17,6 +17,22 @@ local function deepcopy(t)
     return res
 end
 
+local function totablestring(t)
+    local s = "{\n"
+    for k, v in pairs(t) do
+        if type(v) == "string" then
+            s = s.."\t[\""..k.."\"]= \""..v.."\",\n"
+        elseif type(v) == "table" then
+            local ts = totablestring(v)
+            s = s.."\t[\""..k.."\"]= "..ts..",\n"
+        else
+            s = s.."\t[\""..k.."\"]= "..tostring(v)..",\n"
+        end
+    end
+    s = s.."}\n"
+    return s
+end
+
 local function add_build_folder(folder_path, type_parameters, package)
     local env = {
         filesystem          = filesystem,
@@ -44,15 +60,13 @@ local function add_build_folder(folder_path, type_parameters, package)
         type                = type,
         --xpcall             = --xpcall
     }
-    if folder_path[#folder_path] ~= '/' then
-        folder_path = folder_path..'/'
-    end
+    folder_path = filesystem.canonical(folder_path)
    
     local local_type_parameters = type_parameters or {}
     local local_package = package or ""
     local local_add_build_folder = function (local_folder_path)
         local ltp = deepcopy(local_type_parameters)
-        add_build_folder(folder_path..local_folder_path, ltp, local_package)
+        add_build_folder(folder_path.."/"..local_folder_path, ltp, local_package)
     end
     env.buildsystem = {
         add_build_folder = local_add_build_folder,
@@ -65,9 +79,10 @@ local function add_build_folder(folder_path, type_parameters, package)
             local_type_parameters[res_type][parameter] = value
         end,
         add_files = function(wildcard, res_type, type_param_or)
-            local full_wildcard = folder_path..wildcard
+            local full_wildcard = folder_path.."/"..wildcard
             local full_folder_path = filesystem.parentpath(full_wildcard)
             local dir_files = filesystem.readdir(full_folder_path)
+            if dir_files == nil then return end
             local new_parameters = deepcopy(local_type_parameters[res_type]) or {}
             if type(type_param_or) == "table" then
                 for k, v in pairs(type_param_or) do
@@ -76,7 +91,7 @@ local function add_build_folder(folder_path, type_parameters, package)
             end
             for _, v in pairs(dir_files) do
                 if filesystem.isfile(v) then
-                    local res_path = v
+                    local res_path = filesystem.canonical(v)
                     if filesystem.wildcardpathmatch(full_wildcard, res_path) == true then
                         if buildables[res_path] == nil then buildables[res_path] = {} end
                         buildables[res_path].package = local_package
@@ -87,7 +102,7 @@ local function add_build_folder(folder_path, type_parameters, package)
             end
         end,
     }
-    local build_script = folder_path..".build_script"
+    local build_script = folder_path.."/.build_script"
     if filesystem.isfile(build_script) then
         local build, errmsg = loadfile(build_script, "t", env)
         if build == nil then
@@ -104,10 +119,9 @@ for k, v in ipairs(arg) do
     print(k, "=", v)
 end
 
-local data_path = "C:/dev/heart_lua/data" --TODO: parse these from command line
-local temp_data_path = data_path.."/.tmp" --TODO: parse these from command line
+local data_path = filesystem.canonical("C:/dev/heart_lua/data/") --TODO: parse these from command line
+local temp_data_path = filesystem.canonical(data_path.."/.tmp") --TODO: parse these from command line
 local job_count = cores or 8              --TODO: parse these from command line
-
 
 local current_jobs = 0
 if filesystem.isdirectory(temp_data_path) == false then
@@ -142,22 +156,14 @@ local wait_for_free_job_slot = function(job_limit)
 end
 
 for k, v in pairs(buildables) do
-    local temp_file_name = string.format("%s_%s", v.package, k)
+    local temp_file_name = string.format("%s_%s", v.package, filesystem.pathwithoutext(k))
     temp_file_name = string.gsub(temp_file_name, data_path, "")
     temp_file_name = string.gsub(temp_file_name, "[\\/:.]", "_")
     local output_file = string.format("%s/%s.bin", temp_data_path, temp_file_name)
     local dep_output_file = string.format("%s/%s.dep", temp_data_path, temp_file_name)
     temp_file_name = string.format("%s/%s.lua", temp_data_path, temp_file_name)
     tmp_file = io.open(temp_file_name, "w")
-    local paramstr = "{\n"
-    for pk, pv in pairs(v.parameters) do
-        if type(pv) == "string" then
-            paramstr = paramstr.."\t[\""..pk.."\"]= \""..pv.."\",\n"
-        else
-            paramstr = paramstr.."\t[\""..pk.."\"]= "..tostring(pv)..",\n"
-        end
-    end
-    paramstr = paramstr.."}\n"
+    local paramstr = totablestring(v.parameters)
     local build_script = string.gsub([[
 --print("Build - $inputfile")
 
@@ -166,7 +172,7 @@ local parameters =  $params
 local inputfiles = builder.build("$inputfile", {}, parameters, "$tempoutputfile")
 local depfile = io.open("$depoutputfile", "w")
 for i, v in ipairs(inputfiles) do
-    depfile:write(v)
+    depfile:write(v.."\n")
 end
 depfile:close()
     ]], "$(%w+)", {params = paramstr, buildername=v.res_type, inputfile=k, tempoutputfile=output_file, depoutputfile=dep_output_file})
@@ -176,7 +182,7 @@ depfile:close()
     local exe = "lua"
     wait_for_free_job_slot(job_count)
     current_jobs = current_jobs + 1
-    print("Building - "..k)
+    print(string.format("Building Resource - [%s]%s", v.package, string.gsub(k, data_path, "")))
     processes[k] = process.exec(string.format("%s \"%s\"", exe, temp_file_name))
 end
 

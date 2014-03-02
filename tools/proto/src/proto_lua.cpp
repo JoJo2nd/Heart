@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 #include "debug_server_common.pb.lua.h"
+#include "package.pb.lua.h"
 #include "resource_common.pb.lua.h"
 #include "resource_material_fx.pb.lua.h"
 #include "resource_mesh.pb.lua.h"
@@ -52,6 +53,7 @@ __declspec(dllexport) int __cdecl luaopen_proto_lua(lua_State *L) {
     lua_protobuf_coded_streams_open(L);
 
     lua_protobuf_debug_server_common_open(L);
+    lua_protobuf_package_open(L);
     lua_protobuf_resource_common_open(L);
     lua_protobuf_resource_material_fx_open(L);
     lua_protobuf_resource_mesh_open(L);

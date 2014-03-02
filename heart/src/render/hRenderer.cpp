@@ -1151,7 +1151,7 @@ namespace Heart
                 switch(shaderres.type()) {
                 case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
                 case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
-                case proto::eShaderType_Geometery:  type=ShaderType_GEOMETRYPROG;  break;
+                case proto::eShaderType_Geometry:   type=ShaderType_GEOMETRYPROG;  break;
                 case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
                 case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
                 case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
@@ -1163,7 +1163,7 @@ namespace Heart
                 switch(shaderres.type()) {
                 case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
                 case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
-                case proto::eShaderType_Geometery:  type=ShaderType_GEOMETRYPROG;  break;
+                case proto::eShaderType_Geometry:   type=ShaderType_GEOMETRYPROG;  break;
                 case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
                 case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
                 case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;

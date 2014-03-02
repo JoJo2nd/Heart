@@ -7,7 +7,7 @@ package Heart.proto;
 enum eShaderType {
 	eShaderType_Vertex		= 0;
 	eShaderType_Pixel		= 1;
-	eShaderType_Geometery	= 2;
+	eShaderType_Geometry	= 2;
 	eShaderType_Hull		= 3;
 	eShaderType_Domain		= 4;
 	eShaderType_Compute		= 5;

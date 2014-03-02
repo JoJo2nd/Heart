@@ -148,26 +148,49 @@ struct FXIncludeHandler : public ID3DInclude
 //////////////////////////////////////////////////////////////////////////
 
 const char* shaderProfiles[] = {
-    "vertex"      //eShaderType_Vertex		= 0;
-    "pixel"      //eShaderType_Pixel		= 1;
-    "geometery"      //eShaderType_Geometery	= 2;
-    "hull"      //eShaderType_Hull		= 3;
-    "domain"      //eShaderType_Domain		= 4;
-    "compute"      //eShaderType_Compute		= 5;
-    "vs4_0"      //eShaderType_vs4_0 = 6;
-    "vs4_1"      //eShaderType_vs4_1 = 7;
-    "vs5_0"      //eShaderType_vs5_0 = 8;
-    "ps4_0"      //eShaderType_ps4_0 = 9;
-    "ps4_1"      //eShaderType_ps4_1 = 10;
-    "ps5_0"      //eShaderType_ps5_0 = 11;
-    "gs4_0"      //eShaderType_gs4_0 = 12;
-    "gs4_1"      //eShaderType_gs4_1 = 13;
-    "gs5_0"      //eShaderType_gs5_0 = 14;
-    "cs4_0"      //eShaderType_cs4_0 = 15;
-    "cs4_1"      //eShaderType_cs4_1 = 16;
-    "cs5_0"      //eShaderType_cs5_0 = 17;
-    "hs5_0"      //eShaderType_hs5_0 = 18;
-    "ds5_0"      //eShaderType_ds5_0 = 19;
+    "vertex"   ,  //eShaderType_Vertex		= 0;
+    "pixel"    , //eShaderType_Pixel		= 1;
+    "geometry" ,     //eShaderType_Geometery	= 2;
+    "hull"     ,//eShaderType_Hull		= 3;
+    "domain"   ,  //eShaderType_Domain		= 4;
+    "compute"  ,   //eShaderType_Compute		= 5;
+    "vs4_0"    , //eShaderType_vs4_0 = 6;
+    "vs4_1"    , //eShaderType_vs4_1 = 7;
+    "vs5_0"    , //eShaderType_vs5_0 = 8;
+    "ps4_0"    , //eShaderType_ps4_0 = 9;
+    "ps4_1"    , //eShaderType_ps4_1 = 10;
+    "ps5_0"    , //eShaderType_ps5_0 = 11;
+    "gs4_0"    , //eShaderType_gs4_0 = 12;
+    "gs4_1"    , //eShaderType_gs4_1 = 13;
+    "gs5_0"    , //eShaderType_gs5_0 = 14;
+    "cs4_0"    , //eShaderType_cs4_0 = 15;
+    "cs4_1"    , //eShaderType_cs4_1 = 16;
+    "cs5_0"    , //eShaderType_cs5_0 = 17;
+    "hs5_0"    , //eShaderType_hs5_0 = 18;
+    "ds5_0"    , //eShaderType_ds5_0 = 19;
+};
+
+const char* d3d_shaderProfiles[] = {
+    "vs_4_0"   ,  //eShaderType_Vertex		= 0;
+    "ps_4_0"    , //eShaderType_Pixel		= 1;
+    "gs_4_0" ,     //eShaderType_Geometery	= 2;
+    "hs_5_0"     ,//eShaderType_Hull		= 3;
+    "ss_5_0"   ,  //eShaderType_Domain		= 4;
+    "cs_4_0"  ,   //eShaderType_Compute		= 5;
+    "vs_4_0"    , //eShaderType_vs4_0 = 6;
+    "vs_4_1"    , //eShaderType_vs4_1 = 7;
+    "vs_5_0"    , //eShaderType_vs5_0 = 8;
+    "ps_4_0"    , //eShaderType_ps4_0 = 9;
+    "ps_4_1"    , //eShaderType_ps4_1 = 10;
+    "ps_5_0"    , //eShaderType_ps5_0 = 11;
+    "gs_4_0"    , //eShaderType_gs4_0 = 12;
+    "gs_4_1"    , //eShaderType_gs4_1 = 13;
+    "gs_5_0"    , //eShaderType_gs5_0 = 14;
+    "cs_4_0"    , //eShaderType_cs4_0 = 15;
+    "cs_4_1"    , //eShaderType_cs4_1 = 16;
+    "cs_5_0"    , //eShaderType_cs5_0 = 17;
+    "hs_5_0"    , //eShaderType_hs5_0 = 18;
+    "ds_5_0"    , //eShaderType_ds5_0 = 19;
 };
 
 struct ShaderDefine 
@@ -201,7 +224,7 @@ int SB_API shaderCompiler(lua_State* L) {
     using namespace Heart;
     using namespace boost;
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
@@ -288,7 +311,7 @@ try {
     fullmacros.push_back(macro);
     macro.Name = "HEART_ENGINE"; macro.Definition = "1";
     fullmacros.push_back(macro);
-    macro.Name = "progTypeMacros[progtype]"; macro.Definition = "1";
+    macro.Name = progTypeMacros[progtype]; macro.Definition = "1";
     fullmacros.push_back(macro);
 
     if (hasdefines) {
@@ -310,6 +333,9 @@ try {
         }
     }
     lua_pop(L, 1);
+    macro.Name = nullptr;
+    macro.Definition = nullptr;
+    fullmacros.push_back(macro);
 
     const char* path=lua_tostring(L, 1);
     includeHandler.addDefaultPath(path);
@@ -335,12 +361,11 @@ try {
         fullmacros.data(), 
         &includeHandler, //Includes
         entry,
-        profile, 
+        d3d_shaderProfiles[progtype], 
         compileFlags, 
         0, 
         &result, 
         &errors);
-    lua_pop(L, 1);
 
     if (FAILED(hr) && errors) {
         std::string err=(char*)errors->GetBufferPointer();
@@ -353,7 +378,7 @@ try {
     shaderresource.set_profile(progtype);
     shaderresource.set_compiledprogram(result->GetBufferPointer(), result->GetBufferSize());
     shaderresource.set_type(progtype);
-    for (size_t i=0, n=fullmacros.size(); i<n; ++i) {
+    for (size_t i=0, n=fullmacros.size()-1; i<n; ++i) {
         proto::ShaderResource_Defines* defres=shaderresource.add_defines();
         defres->set_define(fullmacros[i].Name);
         defres->set_value(fullmacros[i].Definition);
