@@ -40,7 +40,16 @@ namespace Heart
                                      public hIReferenceCounted
     {
     public:
+        hObjectType(Heart::hTexture, Heart::proto::TextureResource);
+
         hFUNCTOR_TYPEDEF(void(*)(hTexture*), hZeroRefProc);
+
+        hTexture() 
+            : keepcpu_(hFalse)
+            , singleAlloc_(hTrue)
+            , levelDescs_(NULL)
+            , type_(eRenderResourceType_Tex2D)
+        {}
         hTexture(hZeroRefProc zeroproc, hRenderResourceType type) 
             : zeroProc_(zeroproc)
             , keepcpu_(hFalse)

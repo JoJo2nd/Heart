@@ -37,38 +37,60 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    typedef void (*hEntityConstructProc)(void*);
-    typedef void (*hEntityDestructProc)(void*);
-    typedef hObjectMarshall* (*hEntityConstructMarshallProc)();
+    typedef void* (*hObjectConstructProc)();
+    typedef hObjectMarshall* (*hObjectCreateSerialiserProc)();
+    typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*);
+    typedef hBool (*hObjectDeserialiseProc)(void*, hObjectMarshall*);
 
     struct hObjectDefinition 
     {
         hStringID                       entityName_;
-        hSize_t                         typeSize_;
-        hEntityConstructProc            construct_;
-        hEntityConstructMarshallProc    constructMarshall_;
+        hObjectConstructProc            construct_;
+        hObjectCreateSerialiserProc     constructMarshall_;
+        hObjectSerialiseProc            serialise_;
+        hObjectDeserialiseProc          deserialise_;
+        hStringID                       serialiserName_;
+        std::vector<hStringID>          baseTypes_;
     };
 
-#define hObjectType(name) \
+#define hObjectType(name, serialiser_type) \
     static hStringID getTypeNameStatic() { \
         static hStringID typeName(#name); \
         return typeName; \
     } \
-    virtual hStringID getTypeName() { \
+    virtual hStringID getTypeName() const { \
         return getTypeNameStatic(); \
-    }
+    } \
+    hBool serialiseObject(serialiser_type*) const; \
+    hBool deserialiseObject(serialiser_type*) 
 
-#define hRegisterObjectType(type, marshall) \
-    extern hBool Heart::hEntityFactory::objectFactoryRegistar(hEntityDefinition*); \
-    static void autogen_construct_##name (void* ptr) { return hPLACEMENT_NEW(ptr) type(); } \
-    static void autogen_construct_marshall_##name (void* ptr) { return hNEW(marshall); } \
-    static hEntityDefinition autogen_entity_definition = { \
+#define hObjectBaseType(x) hObjectBaseTypeInner(#x)
+
+#define hObjectBaseTypeInner(x) (##x)
+
+#define hRegisterObjectType(name, type, serialiser_type, ...) \
+    struct Heart::hObjectDefinition; \
+    extern hBool Heart::hObjectFactory::objectFactoryRegistar(Heart::hObjectDefinition*, const char*, ...); \
+    static void* autogen_construct_##name () { return hNEW(type); } \
+    static hObjectMarshall* autogen_create_serialiser_##name () { return hNEW(serialiser_type); } \
+    static hBool autogen_serialise_##name(void* type_ptr_raw, hObjectMarshall* msg_raw) { \
+        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
+        serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
+        return type_ptr->serialiseObject(msg); \
+    } \
+    static hBool autogen_deserialise_##name(void* type_ptr_raw, hObjectMarshall* msg_raw) { \
+        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
+        serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
+        return type_ptr->deserialiseObject(msg); \
+    } \
+    static hObjectDefinition autogen_entity_definition_##name = { \
         type::getTypeNameStatic(), \
-        sizeof(type), \
         autogen_construct_##name, \
-        autogen_construct_marshall_##name, \
+        autogen_create_serialiser_##name, \
+        autogen_serialise_##name, \
+        autogen_deserialise_##name, \
     };\
-    static hBool auto_entity_registered_##name = Heart::hEntityFactoryRegistar(&autogen_entity_definition);
+    static hBool auto_object_registered_##name = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -78,11 +100,17 @@ namespace hObjectFactory
 {
     const hObjectDefinition*        getObjectDefinition(hStringID name);
     void*                           createObject(hStringID name);
-    hObjectMarshall*                createObjectMarshall(hStringID name);
-    hBool                           objectFactoryRegistar(hObjectDefinition*);
+    hObjectMarshall*                createObjectMarshallFromTypeName(hStringID name);
+    void*                           deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID* out_type_name);
+    hBool                           objectFactoryRegistar(hObjectDefinition*, const char*, ...);
     template< typename t_ty >
-    hFORCEINLINE hObjectMarshall*   createObjectMarshall(t_ty* ptr) {
-        return createObjectMarshall(ptr->getTypeName());
+    hFORCEINLINE hObjectMarshall*   createObjectMarshallFromType(t_ty* ptr) {
+        return createObjectMarshallFromType(ptr->getTypeName());
+    }
+    hBool                           canUpcastTo(hStringID type1, hStringID type2);
+    template< typename t_type1, typename t_type2 >
+    hBool                           isA(const t_type1* t1, const t_type2* t2) {
+        return t1->getTypeName() == t2->getTypeName();
     }
 }
 

@@ -123,8 +123,8 @@ namespace Heart
         static hInt luaClearDefaultActionMapping(lua_State* L);
 
         typedef std::unordered_map<hInputID, hStringID, hInputIDHash> hActionMapping;
-        typedef std::unordered_map<hStringID, hInputID, hStringIDHash> hKeyNameIDMapping;
-        typedef std::unordered_map<hStringID, hInputAction, hStringIDHash> hActionInputMapping;
+        typedef std::unordered_map<hStringID, hInputID> hKeyNameIDMapping;
+        typedef std::unordered_map<hStringID, hInputAction> hActionInputMapping;
         typedef std::vector<hInputAction> hActionArray;
         typedef std::vector<DeviceInput::hGameController*> hControllerArray;
         typedef std::vector<hActionInputMapping> hBoundMappingsArray;

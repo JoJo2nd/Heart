@@ -95,6 +95,15 @@ namespace Heart
         }
         hUint                           removeResource(hResourceID id);
 
+        void insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id) {
+            //TODO: thread check this....
+            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+            hResourceContainer res_cont;
+            res_cont.resourceData_ = res_data;
+            res_cont.typeID_ = type_id;
+            resourceDB_.insert(hResourceTable::value_type(res_id, res_cont));
+        }
+
         // New interface
         void                            loadPackage(const hChar* name);
         void                            unloadPackage(const hChar* name);
@@ -104,7 +113,8 @@ namespace Heart
 
         friend hResourceClassBase* hResourceHandle::weakPtr() const;
 
-        typedef hMap< hUint32, hResourcePackage >                       ResourcePackageMap;
+        typedef hMap< hUint32, hResourcePackage > hResourcePackageMap;
+        typedef std::unordered_map< hStringID, hResourceContainer >  hResourceTable;
 
         hResourceClassBase* getResourceForHandle(hResourceID crc);
 
@@ -124,10 +134,14 @@ namespace Heart
         hJobQueue fileReadJobQueue_;
         hJobQueue workerQueue_;
 
-        ResourcePackageMap  activePackages_;
+        hResourcePackageMap  activePackages_;
 
         hResourceHandleMap  resourceHandleMap_;
         hResourceEventMap   resourceEventMap_;
+
+        //
+        hdMutex             resourceDBMtx_;
+        hResourceTable      resourceDB_;
     };
 
 }

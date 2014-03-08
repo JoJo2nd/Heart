@@ -439,7 +439,8 @@ try {
             if (i->second.datasize_ > 0) {
                 Heart::proto::ShaderIncludeSource* include = shaderresource.add_includedfiles();
                 include->set_filepath(i->second.fullpath_.generic_string());
-                include->set_source(i->second.includestring_);
+                include->set_source((char*)i->second.data_.get(), i->second.datasize_);
+                include->set_filepath_short(i->second.includestring_);
             }
         }
     }

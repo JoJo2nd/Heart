@@ -92,8 +92,8 @@ namespace Heart
     struct hResourceSection
     {
         const hChar*                     sectionName_;
-        hUint32                          sectionSize_;
-        void*                            sectionData_;
+        hInt                             sectionSize_;
+        const void*                      sectionData_;
         proto::ResourceSectionMemoryType memType_;
     };
 
@@ -139,7 +139,7 @@ namespace Heart
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
         hUint                   getLinkCount() const { return links_.size(); }
-        const hChar*            getLink(hUint i) const { return links_[i]; }
+        const hChar*            getLink(hUint i) const { return links_[i].c_str(); }
 
     private:
 
@@ -147,12 +147,14 @@ namespace Heart
 
         struct hResourceLoadJobInputOutput
         {
-            hXMLGetter  resourceDesc_;
-            hResourceClassBase* createdResource_;
-            hUint32 crc;
+            hByte*              resMemStart_;
+            hByte*              resMemEnd_;
+            void*               createdResource_;
+            hStringID           resourceID_;
+            hStringID           resourceType_;
         };
 
-        typedef hVector< const hChar* > PkgLinkArray;
+        typedef hVector< hStringID > PkgLinkArray;
         typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
         typedef hMap< hUint32, hResourceClassBase > ResourceMap;
         typedef std::deque<hUint32> hHotSwapQueue;
@@ -183,18 +185,16 @@ namespace Heart
         };
 
         hChar                       packageName_[MAX_PACKAGE_NAME];
-        hChar                       packageRoot_[MAX_PACKAGE_NAME];
+        hChar                       packagePath_[MAX_PACKAGE_NAME];
         hUint32                     packageCRC_;
         State                       packageState_;
-        hHeartEngine*               engine_;
         const hResourceHandlerMap*  handlerMap_;
-        hMemoryHeapBase*            packageHeap_;
-        hMemoryHeap                 tempHeap_;
         hIFileSystem*               fileSystem_;
         hUint32                     totalResources_;
-        hIFile*                     pkgDescFile_;
-        hXMLDocument                descXML_;
+        hIFile*                     pkgFileHandle_;
         PkgLinkArray                links_;
+
+        proto::PackageHeader        packageHeader_;
         ResourceMap                 resourceMap_;
         ResourceJobArray            resourceJobArray_;
         hTimer                      timer_;

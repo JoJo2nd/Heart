@@ -190,7 +190,7 @@ namespace Heart
         }
 
         const hChar*            getName() const { return name_.c_str(); }
-        void                    SetName(const hChar* name) { name_=name; }
+        void                    SetName(const hChar* name) { name_=hStringID(name); }
         hUint32                 GetMask() const { return mask_; }
         void                    SetMask(hUint32 v) { mask_=v; }
         void                    SetPasses(hUint32 count);
@@ -217,10 +217,9 @@ namespace Heart
         friend class hRenderer;
         friend class hMaterial;
 
-        static const hUint32 MAX_NAME_LEN = 32;
         typedef std::vector< hMaterialTechniquePass > PassArrayType;
 
-        std::string   name_;
+        hStringID     name_;
         PassArrayType passes_;
         hUint32       mask_;            //Set on load/create
         hBool         transparent_;
@@ -229,7 +228,6 @@ namespace Heart
 
     struct HEART_DLLEXPORT hMaterialGroup
     {
-        static const hUint32 MAX_NAME_LEN = 32;
         typedef std::vector< hMaterialTechnique > TechniqueArrayType;
 
         hMaterialGroup()
@@ -249,8 +247,8 @@ namespace Heart
         ~hMaterialGroup() {
         }
 
-        void setName(const hChar* name) { name_=name; }
-        const hChar* getName() const { return name_.data(); }
+        void setName(const hChar* name) { name_=hStringID(name); }
+        const hChar* getName() const { return name_.c_str(); }
         void  techCountHint(hUint count) { techniques_.reserve(count); }
         hUint getTechCount() const { return (hUint)techniques_.size(); }
         hMaterialTechnique* addTechnique(const hChar* name);
@@ -268,8 +266,8 @@ namespace Heart
             std::swap(lhs->techniques_, rhs->techniques_);
         }
     
-        std::string        name_;
-        TechniqueArrayType techniques_;
+        hStringID           name_;
+        TechniqueArrayType  techniques_;
     };
 }
 

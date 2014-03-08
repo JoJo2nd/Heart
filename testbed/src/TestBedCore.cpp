@@ -85,7 +85,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     TestBedCore::TestBedCore() 
-        : pEngine_(NULL)
+        : engine_(NULL)
         , currentTest_(NULL)
         , factory_(NULL)
         , exiting_(hFalse)
@@ -112,14 +112,14 @@ DEFINE_HEART_UNIT_TEST(Base64);
         hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
         factory_ = hNEW(UnitTestFactory)(pEngine, unitTests_, (hUint)hStaticArraySize(unitTests_));
-        pEngine_ = pEngine;
+        engine_ = pEngine;
 
         static const luaL_Reg funcs[] = {
             {"printtests", luaPrintTests},
             {NULL, NULL}
         };
 
-        lua_State* L = pEngine_->GetVM()->GetMainState();
+        lua_State* L = engine_->GetVM()->GetMainState();
         lua_newtable(L);
         lua_pushvalue(L,-1);//add twice to avoid set _G[unittest] & get _G[unittest]
         lua_setglobal(L, "unittest");
@@ -128,7 +128,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         luaL_setfuncs(L,funcs,1);
         lua_pop(L, 1);// pop heart module table
 
-
+        engine_->GetResourceManager()->loadPackage("core");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,7 +138,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     void TestBedCore::createRenderResources()
     {
         using namespace Heart;
-        hRenderer* renderer = pEngine_->GetRenderer();
+        hRenderer* renderer = engine_->GetRenderer();
         hRendererCamera* camera = renderer->GetRenderCamera(0);
         hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
         hUint32 w = renderer->GetWidth();
@@ -204,7 +204,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     void TestBedCore::destroyRenderResources()
     {
         using namespace Heart;
-        hRenderer* renderer = pEngine_->GetRenderer();
+        hRenderer* renderer = engine_->GetRenderer();
         hRendererCamera* camera = renderer->GetRenderCamera(0);
 
         camera->releaseRenderTargetSetup();

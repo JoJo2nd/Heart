@@ -34,6 +34,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hRenderer* hRenderer::instance_ = nullptr;
     void* hRenderer::pRenderThreadID_ = NULL;
 
     //////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,8 @@ namespace Heart
         hBool vsync,
         hResourceManager* pResourceManager	)
     {
+        instance_ = this;
+
         frameTimer_.reset();
         materialManager_.setRenderer(this);
         materialManager_.setResourceManager(pResourceManager);
@@ -166,6 +169,7 @@ namespace Heart
 
     void hRenderer::Destroy()
     {
+        instance_ = nullptr;
         for (hUint32 i = 0; i < HEART_MAX_RENDER_CAMERAS; ++i)
         {
             GetRenderCamera(i)->releaseRenderTargetSetup();
@@ -970,22 +974,20 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::compileShaderFromSource(const hChar* shaderProg, hUint32 len, 
-        const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram** out) {
-        (*out) = hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
-        ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, includes, defines, ndefines, *out);
+        const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram* out) {
+        ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, includes, defines, ndefines, out);
         if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
-            (*out)->SetShaderType(ShaderType_VERTEXPROG);
+            out->SetShaderType(ShaderType_VERTEXPROG);
         } else if (profile >= eShaderProfile_ps4_0 && profile <= eShaderProfile_ps5_0) {
-            (*out)->SetShaderType(ShaderType_FRAGMENTPROG);
+            out->SetShaderType(ShaderType_FRAGMENTPROG);
         } else if (profile >= eShaderProfile_gs4_0 && profile <= eShaderProfile_gs5_0) {
-            (*out)->SetShaderType(ShaderType_GEOMETRYPROG);
+            out->SetShaderType(ShaderType_GEOMETRYPROG);
         } else if (profile >= eShaderProfile_cs4_0 && profile <= eShaderProfile_cs5_0) {
-            (*out)->SetShaderType(ShaderType_COMPUTEPROG);
+            out->SetShaderType(ShaderType_COMPUTEPROG);
         } else if (profile == eShaderProfile_hs5_0) {
-            (*out)->SetShaderType(ShaderType_HULLPROG);
+            out->SetShaderType(ShaderType_HULLPROG);
         } else if (profile == eShaderProfile_ds5_0) {
-            (*out)->SetShaderType(ShaderType_DOMAINPROG);
+            out->SetShaderType(ShaderType_DOMAINPROG);
         }
     }
 
@@ -993,11 +995,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out) {
-        (*out) = hNEW(hShaderProgram)(this,
-            hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
-        ParentClass::compileShaderDevice(shaderProg, len, type, *out);
-        (*out)->SetShaderType(type);
+    void hRenderer::createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out) {
+        ParentClass::compileShaderDevice(shaderProg, len, type, out);
+        out->SetShaderType(type);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1099,7 +1099,7 @@ namespace Heart
         hShaderProgram* shaderProg=hNullptr;
         hBool prefersource=hFalse;
         proto::ShaderResource shaderres;
-
+#if 0
 #if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
         class hIncluder : public hIIncludeHandler 
         {
@@ -1181,6 +1181,7 @@ namespace Heart
 #endif
             }
         }
+#endif
         return shaderProg;
     }
 

@@ -35,7 +35,13 @@ namespace Heart
                                            public hIReferenceCounted
     {
     public:
+        hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResource);
         hFUNCTOR_TYPEDEF(void(*)(hShaderProgram*), hZeroProc);
+        hShaderProgram()
+            : shaderType_(ShaderType_MAX)
+        {
+
+        }
         hShaderProgram(hdRenderDevice* device, hZeroProc zeroproc) 
             : hdShaderProgram(device)
             , shaderType_(ShaderType_MAX)

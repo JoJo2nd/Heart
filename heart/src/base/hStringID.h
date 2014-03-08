@@ -56,6 +56,11 @@ namespace Heart
         hUintptr_t id() const { return (hUintptr_t)strEntry_; }
         hBool is_default() const { return strEntry_ == &s_default; }
 
+        struct hasher
+        {
+            hSize_t operator () (const hStringID& rhs) { return rhs.hash(); }
+        };
+
     private:
 
         struct hStringIDEntry {
@@ -81,11 +86,16 @@ namespace Heart
 
         hStringIDEntry* strEntry_;
     };
+}
 
-    struct hStringIDHash
+namespace std
+{
+    template<>
+    struct hash<Heart::hStringID>
     {
-        hSize_t operator () (const hStringID& rhs) { return rhs.hash(); }
+        size_t operator () (const Heart::hStringID& rhs) { return rhs.hash(); }
     };
 }
+
 
 #endif // HSTRINGID_H__

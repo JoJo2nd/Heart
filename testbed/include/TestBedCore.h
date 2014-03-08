@@ -59,7 +59,7 @@ private:
 
     static UnitTestCreator                  unitTests_[];
 
-	Heart::hHeartEngine*                    pEngine_;
+	Heart::hHeartEngine*                    engine_;
     IUnitTest*                              currentTest_;
     UnitTestFactory*                        factory_;
     hUint32                                 currentTestIdx_;

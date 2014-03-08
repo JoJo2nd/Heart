@@ -43,6 +43,16 @@ namespace Heart
     class HEART_DLLEXPORT hdDX11ShaderProgram
     {
     public:
+        hdDX11ShaderProgram() 
+            : device_(nullptr)
+            , type_(ShaderType_MAX)
+            , pixelShader_(nullptr)
+            , shaderInfo_(nullptr)
+            , blobLen_(0)
+            , shaderBlob_(nullptr)
+        {
+
+        }
         hdDX11ShaderProgram(hdDX11RenderDevice* device) 
             : device_(device)
             , type_(ShaderType_MAX)

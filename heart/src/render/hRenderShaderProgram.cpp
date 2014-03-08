@@ -27,5 +27,83 @@
 
 namespace Heart
 {
- 
+    hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResource,
+        hObjectBaseType(Heart::hResourceClassBase));
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    hBool hShaderProgram::serialiseObject(Heart::proto::ShaderResource* obj) const {
+        return hTrue;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    hBool hShaderProgram::deserialiseObject(Heart::proto::ShaderResource* obj) {
+        hBool prefersource=hTrue;
+
+#if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
+        class hIncluder : public hIIncludeHandler 
+        {
+        public:
+            hIncluder(const Heart::proto::ShaderIncludeSource* const* sections, hUint sectioncount) 
+                : sections_(sections)
+                , sectioncount_(sectioncount)
+            {}
+            void findInclude(const hChar* includepath, const void** outdata, hUint* outlen) {
+                *outdata=nullptr;
+                *outlen=0;
+                for (hUint i=0, n=sectioncount_; i<n; ++i) {
+                    if (hStrCmp(includepath, sections_[i]->filepath().c_str()) == 0) {
+                        *outdata=sections_[i]->source().data();
+                        *outlen=(hUint)sections_[i]->source().size();
+                        return;
+                    }
+                }
+            }
+
+            const Heart::proto::ShaderIncludeSource* const* sections_;
+            hUint sectioncount_;
+        };
+        hIncluder includes(obj->includedfiles().data(), obj->includedfiles_size());
+#endif
+        if (!obj->has_source() || !prefersource) {
+            hShaderType type;
+            switch(obj->type()) {
+            case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
+            case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
+            case proto::eShaderType_Geometry:   type=ShaderType_GEOMETRYPROG;  break;
+            case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
+            case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
+            case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
+            }
+            hRenderer::get()->createShader((hChar*)obj->compiledprogram().c_str(), (hUint)obj->compiledprogram().length(), type, this);
+        } else if (obj->has_source()) {
+#if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
+            hShaderType type;
+            switch(obj->type()) {
+            case proto::eShaderType_Vertex:     type=ShaderType_VERTEXPROG;    break;
+            case proto::eShaderType_Pixel:      type=ShaderType_FRAGMENTPROG;  break;
+            case proto::eShaderType_Geometry:   type=ShaderType_GEOMETRYPROG;  break;
+            case proto::eShaderType_Hull:       type=ShaderType_HULLPROG;      break;
+            case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
+            case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
+            }
+            hShaderDefine* defines=hNullptr;
+            hUint definecount=obj->defines_size();
+            if (definecount) {
+                defines=(hShaderDefine*)hAlloca(sizeof(hShaderDefine)*definecount);
+                for (hUint di=0; di<definecount; ++di) {
+                    defines[di].define_=obj->defines(di).define().c_str();
+                    defines[di].value_=obj->defines(di).value().c_str();
+                }
+            }
+            hRenderer::get()->compileShaderFromSource((hChar*)obj->compiledprogram().data(), (hUint32)obj->compiledprogram().size(), obj->entry().c_str(), (hShaderProfile)obj->profile(), &includes, defines, definecount, this);
+#endif
+        } else {
+            return hFalse;
+        }
+        return hTrue;
+    }
 }

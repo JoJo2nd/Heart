@@ -78,7 +78,7 @@ namespace Heart
         hdMountPoint(workingDir_, "cd");
         hdMountPoint("cd:/CONFIG/", "cfg");
         hdMountPoint("cd:/SCRIPT/", "script");
-        hdMountPoint("cd:/GAMEDATA/", "data");
+        hdMountPoint("cd:/../gamedata/", "data");
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 

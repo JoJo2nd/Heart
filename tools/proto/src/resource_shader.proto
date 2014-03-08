@@ -37,6 +37,7 @@ enum eShaderStreamType {
 message ShaderIncludeSource {
 	optional string filepath = 1;
 	optional string source = 2;
+	optional string filepath_short = 3;
 }
 
 message ShaderInputStream {

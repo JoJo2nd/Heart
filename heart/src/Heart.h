@@ -123,7 +123,7 @@ extern "C"
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 
 #include "debug_server_common.pb.h"
-
+#include "package.pb.h"
 #include "resource_common.pb.h"
 #include "resource_shader.pb.h"
 #include "resource_texture.pb.h"

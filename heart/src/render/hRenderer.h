@@ -121,6 +121,10 @@ namespace Heart
         static const hUint32                                    s_resoruceUpdateLimit = 1024;
         static const hUint32                                    s_scratchBufferCount = 5;
 
+        static hRenderer* get() { // meh... do not want
+            return instance_;
+        }
+
         hRenderer();
         void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
         void													Destroy();
@@ -145,8 +149,8 @@ namespace Heart
         /*
             pimpl methods
         */
-        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram** out);
-        void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram** out);
+        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram* out);
+        void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
         void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
         void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
         void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
@@ -226,6 +230,8 @@ namespace Heart
         void                 meshResourceLink(hResourceManager* manager, hResourceClassBase* resource);
         void                 meshResourceUnlink(hResourceManager* manager, hResourceClassBase* resource);
         void                 meshResourceUnload(hResourceClassBase* resource);
+
+        static hRenderer*    instance_;
 
         // Init params
         hSystem*												system_;

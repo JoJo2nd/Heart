@@ -122,14 +122,15 @@ local function add_build_folder(folder_path, type_parameters, package)
             for _, v in pairs(dir_files) do
                 if filesystem.isfile(v) then
                     local res_path = filesystem.canonical(v)
+                    local res_id = string.gsub(filesystem.pathwithoutext(res_path), data_path, "")
                     if filesystem.wildcardpathmatch(full_wildcard, res_path) == true then
-                        if buildables[res_path] == nil then 
-                            buildables[res_path] = {}
-                            buildables[res_path].full_path = res_path
-                            buildables[res_path].res_id = string.gsub(filesystem.pathwithoutext(res_path), data_path, "")
-                            buildables[res_path].package = local_package
-                            buildables[res_path].res_type = res_type
-                            buildables[res_path].parameters = new_parameters
+                        if buildables[res_id] == nil then 
+                            buildables[res_id] = {}
+                            buildables[res_id].full_path = res_path
+                            buildables[res_id].res_id = res_id
+                            buildables[res_id].package = local_package
+                            buildables[res_id].res_type = res_type
+                            buildables[res_id].parameters = new_parameters
                         else
                             verbose_log(string.format("Skipped resource %s because it's already added", res_path))
                         end
@@ -189,19 +190,19 @@ function write_packages(buildable_resources)
     -- Build a list of reseources in packages 
     for k, v in pairs(buildable_resources) do
         if packages[v.package] == nil then packages[v.package] = {depends={}, resources={}} end
-        packages[v.package].resources[string.gsub(k, data_path, "")] = v
+        packages[v.package].resources[v.res_id] = v
         --add dependants = 
-        local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, k)
+        local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, v.full_path)
         dep_file = io.open(dep_output_file, "r")
         for line in dep_file:lines() do
-            local path = filesystem.canonical(data_path..line)
+            local path = filesystem.pathwithoutext(line)
             if buildable_resources[path] ~= nil then
                 packages[v.package].depends[buildable_resources[path].package] = buildable_resources[path].package
-                verbose_log(string.format("resource %s depends on %s", k, path))
+                verbose_log(string.format("resource %s depends on %s", v.full_path, path))
             end
         end
         dep_file:close()
-        verbose_log(string.format("adding resource %s to package %s", k, v.package))
+        verbose_log(string.format("adding resource %s to package %s", v.full_path, v.package))
     end
     
     -- Write out packages
@@ -219,11 +220,13 @@ function write_packages(buildable_resources)
             entry:set_entryname(res.res_id)
             entry:set_entryoffset(offset)
             entry:set_entrysize(filesize)
+            entry:set_entrytype(res.res_type)
             offset=offset+filesize
         end
         local codedoutputstream = protobuf.CodedOutputStream.new(output_data_path.."/"..k..".pkg")
-        codedoutputstream:WriteVarint32(offset)
-        codedoutputstream:WriteRaw(pkg_header:serialized())
+        local header_str, header_size = pkg_header:serialized()
+        codedoutputstream:WriteVarint32(header_size) -- or #header_str
+        codedoutputstream:WriteRaw(header_str)
         for i, res in pairs(v.resources) do
             local temp_file_name, output_file, dep_output_file = get_resource_filenames(res.package, res.full_path)
             local res = io.open(output_file, "rb")
@@ -239,7 +242,7 @@ end
 add_build_folder(data_path)
 
 for k, v in pairs(buildables) do
-    local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, k)
+    local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, v.full_path)
     tmp_file = io.open(temp_file_name, "w")
     local paramstr = totablestring(v.parameters)
     local build_script = string.gsub([[
@@ -256,7 +259,7 @@ depfile:close()
     ]], "$(%w+)", {
         params = paramstr, 
         buildername=v.res_type, 
-        inputfile=k, 
+        inputfile=v.full_path, 
         tempoutputfile=output_file, 
         depoutputfile=dep_output_file,
         buildpath=data_path,

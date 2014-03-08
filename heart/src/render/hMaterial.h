@@ -170,7 +170,9 @@ namespace Heart
     class HEART_DLLEXPORT hMaterial : public hResourceClassBase
     {
     public:
+        hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
 
+        hMaterial();
         hMaterial(hRenderer* renderer);
         ~hMaterial();
 

@@ -44,12 +44,9 @@ namespace Heart
 
     hResourcePackage::hResourcePackage(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName)
         : packageState_(State_Unloaded)
-        , engine_(engine)
         , handlerMap_(handlerMap)
         , fileSystem_(fileSystem)
-        , tempHeap_("ResPackageTempHeap")
         , totalResources_(0)
-        , packageHeap_(hNullptr)
         , fileQueue_(fileQueue)
         , workerQueue_(workerQueue)
         , hotSwapping_(hFalse)
@@ -65,7 +62,6 @@ namespace Heart
     hResourcePackage::~hResourcePackage()
     {
         resourceMap_.Clear(hTrue);
-        //hDELETE_SAFE(packageHeap_);
         hotSwapSignal_.Destroy();
     }
 
@@ -75,69 +71,31 @@ namespace Heart
 
     void hResourcePackage::loadPackageDescription(void*, void*)
     {
-        hChar zipname[MAX_PACKAGE_NAME+10];
-        
-        hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
-        hStrCat(zipname, MAX_PACKAGE_NAME, packageName_);
-        hStrCopy(packageRoot_, MAX_PACKAGE_NAME, zipname);
-        hStrCat(packageRoot_, MAX_PACKAGE_NAME, "/");
-        hStrCat(zipname,MAX_PACKAGE_NAME,".PKG");
+        hStrCopy(packagePath_, MAX_PACKAGE_NAME, "data:/");
+        hStrCat (packagePath_, MAX_PACKAGE_NAME, packageName_);
+        hStrCat (packagePath_, MAX_PACKAGE_NAME, ".pkg");
 
         packageCRC_ = hCRC32::StringCRC(packageName_);
         hcAssert(fileSystem_);
 
-        hStrCopy(zipname, MAX_PACKAGE_NAME, "data:/");
-        hStrCat(zipname, MAX_PACKAGE_NAME, packageName_);
-        hStrCat(zipname,MAX_PACKAGE_NAME,"/DAT");
+        pkgFileHandle_ = fileSystem_->OpenFile(packagePath_, FILEMODE_READ);
+        hResourceFileStream resourcefilestream(pkgFileHandle_);
+        google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
 
-        pkgDescFile_ = fileSystem_->OpenFile(zipname, FILEMODE_READ);
+        google::protobuf::uint32 headersize;
+        resourcestream.ReadVarint32(&headersize);
+        headersize += resourcestream.CurrentPosition();
+        auto limit=resourcestream.PushLimit(headersize);
+        packageHeader_.ParseFromCodedStream(&resourcestream);
+        resourcestream.PopLimit(limit);
 
-        tempHeap_.create(0, hTrue);
-
-        hChar* xmldata = (hChar*)hHeapMalloc("general", (hUint32)(pkgDescFile_->Length()+1));
-        pkgDescFile_->Read(xmldata, (hUint32)pkgDescFile_->Length());
-        xmldata[pkgDescFile_->Length()] = 0;
-
-        if (!descXML_.ParseSafe<rapidxml::parse_default>(xmldata)) {
-            return;
+        for (hInt i=0, n=packageHeader_.packagedependencies_size(); i<n; ++i) {
+            links_.push_back(hStringID(packageHeader_.packagedependencies(i).c_str()));
         }
-
-        const hChar* memuse = hXMLGetter(&descXML_).FirstChild("package").FirstChild("memory").GetAttributeString("alloc", NULL);
-        hUint32 sizeBytes = 0;
-        if (memuse) {
-            // Create stack allocator size
-            if (hStrWildcardMatch("*MB",memuse)) {
-                hFloat mbs;
-                hScanf("%fMB", &mbs);
-                sizeBytes = (hUint32)((mbs*(1024.f*1024.f*1024.f))+.5f);
-            } else if (hStrWildcardMatch("*KB",memuse)) {
-                hFloat kbs;
-                hScanf("%fMB", &kbs);
-                sizeBytes = (hUint32)((kbs*(1024.f*1024.f))+.5f);
-            } else {
-                sizeBytes = hAtoI(memuse);
-            }
+        for (hInt i=0, n=packageHeader_.entries_size(); i<n; ++i) {
+            packageHeader_.mutable_entries(i)->set_entryoffset(packageHeader_.entries(i).entryoffset()+headersize);
         }
-
-        if (!packageHeap_) {
-            packageHeap_=Heart::hFindMemoryHeapByName("general");// maybe resources?
-        }
-
-        links_.resize(0);
-        links_.reserve(16);
-        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("packagelinks").FirstChild("link"); i.ToNode(); i = i.NextSibling()) {
-            if (hStrCmp(i.GetAttributeString("name"), packageName_)) {
-                links_.push_back(i.GetAttributeString("name"));
-            }
-        }
-
-        totalResources_ = 0;
-        for (hXMLGetter i = hXMLGetter(&descXML_).FirstChild("package").FirstChild("resources").FirstChild("resource"); i.ToNode(); i = i.NextSibling()) {
-            ++totalResources_;
-        }
-
-        fileSystem_->CloseFile(pkgDescFile_);
-        pkgDescFile_=hNullptr;
+        totalResources_ = packageHeader_.entries_size();
 
         resourceJobArray_.resize(totalResources_);
     }
@@ -164,26 +122,29 @@ namespace Heart
             } break;
         case State_Load_DepPkgs: {
                 for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
-                    manager->loadPackage(links_[i]);
+                    //manager->loadPackage(links_[i].c_str());
                 }
                 packageState_ = State_Kick_ResourceLoads; 
             } break;
         case State_Load_WaitDeps: {
                 hBool loaded=hTrue;
                 for (hUint i=0, n=links_.size(); i<n; ++i) {
-                    loaded &= manager->getIsPackageLoaded(links_[i]);
+                    loaded &= manager->getIsPackageLoaded(links_[i].c_str());
                 }
                 if (loaded) {
                     packageState_ = State_Link_Resources;
                 }
             } break;
         case State_Kick_ResourceLoads: {
-                hXMLGetter currentResource_ = hXMLGetter(descXML_.first_node()).FirstChild("resources").FirstChild("resource");
-                for (hUint i=0; currentResource_.ToNode(); currentResource_=currentResource_.NextSibling(), ++i) {
+                hcPrintf("Stub "__FUNCTION__);
+                hcAssert(pkgFileHandle_->getIsMemMapped());
+                hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
+                for (hInt i=0, n=packageHeader_.entries_size(); i<n; ++i) {
                     hJob* loadjob=hNEW(hJob)();
-                    resourceJobArray_[i].resourceDesc_=currentResource_;
-                    resourceJobArray_[i].createdResource_=hNullptr;
-                    resourceJobArray_[i].crc=0;
+                    resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
+                    resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
+                    resourceJobArray_[i].createdResource_=nullptr;
+                    resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
                     loadjob->setInput(&resourceJobArray_[i]);
                     loadjob->setOutput(&resourceJobArray_[i]);
                     loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadResource, this));
@@ -195,7 +156,9 @@ namespace Heart
         case State_Wait_ReourcesLoads: {
                 if (workerQueue_->queueIdle()) {
                     for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
-                        resourceMap_.Insert(resourceJobArray_[i].crc, resourceJobArray_[i].createdResource_);
+                        hcPrintf("STUB "__FUNCTION__);
+                        //resourceMap_.Insert(resourceJobArray_[i].crc, resourceJobArray_[i].createdResource_);
+                        manager->insertResourceContainer(resourceJobArray_[i].resourceID_, resourceJobArray_[i].createdResource_, resourceJobArray_[i].resourceType_);
                     }
                     hcPrintf("Package %s: %u resources loaded in %f sec", packageName_, totalResources_, timer_.elapsedMilliSec()/1000.f);
                     packageState_=State_Link_Resources;
@@ -203,11 +166,10 @@ namespace Heart
             } break;
         case State_Link_Resources: {
                 if (doPostLoadLink(manager)) {
-                    tempHeap_.destroy();
                     hcPrintf("Package %s is Loaded & Linked", packageName_);
                     packageState_ = State_Ready;
                     hotSwapping_ = hFalse;
-                    resourceFilewatch_ = hdBeginFilewatch(packageRoot_, hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hResourcePackage, resourceDirChange, this));
+                    resourceFilewatch_ = hdBeginFilewatch(packagePath_, hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hResourcePackage, resourceDirChange, this));
                     ret = hTrue;
                 }
             } break;
@@ -235,7 +197,7 @@ namespace Heart
             } break;
         case State_Unload_DepPkg: {
                 for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
-                    manager->unloadPackage(links_[i]);
+                    manager->unloadPackage(links_[i].c_str());
                 }
                 hdEndFilewatch(resourceFilewatch_);
                 resourceFilewatch_=0;
@@ -281,77 +243,45 @@ namespace Heart
     void hResourcePackage::loadResource(void* in, void* out) {
         hcAssert(in==out);
         hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
-        const hXMLGetter& resxml=jobinfo->resourceDesc_;
-        if (resxml.GetAttributeString("name"))
+        hResourceType typehandler;
+        hResourceClassBase* res = NULL;
+
+        proto::ResourceHeader resheader;
+        google::protobuf::io::ArrayInputStream resourcefilestream(jobinfo->resMemStart_, (hInt)((hPtrdiff_t)jobinfo->resMemEnd_-(hPtrdiff_t)jobinfo->resMemStart_));
+        google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
+
+        proto::MessageContainer data_container;
+        data_container.ParseFromCodedStream(&resourcestream);
+        jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
+#if 0
+        hResourceType restypecrc(hCRC32::StringCRC(jobinfo->type_));
+        hResourceHandler* handler = handlerMap_->Find(restypecrc);
+        hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
+        typehandler=handler->GetKey();
+        // Load the binary file
+        hTimer timer;
+        hResourceSection sections;
+        sections.sectionName_ = "any";
+        sections.sectionSize_ = (hInt)data_container.messagedata().size();
+        sections.memType_ = proto::eResourceSection_Temp;
+        sections.sectionData_ = data_container.mutable_messagedata()->c_str();
+
+        timer.reset();
+        res = handler->loadProc_(&sections, 1);
+        timer.setPause(hTrue);
+        // hcPrintf("Loaded %s (crc:0x%08X.0x%08X) in %f Secs on thread %p", binFilepath, GetKey(), crc, timer.elapsedMilliSec()/1000.0f, Device::GetCurrentThreadID());
+        hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
+            "and so serialiser could not load the data correctly" 
+            "This is a Fatal Error.");
+        if (res)
         {
-            hResourceType typehandler;
-            hResourceClassBase* res = NULL;
-            hUint32 crc = hCRC32::StringCRC(resxml.GetAttributeString("name"));
-            jobinfo->crc=crc;
-
-            hChar* binFilepath;
-            hBuildResFilePath(binFilepath, packageName_, resxml.GetAttributeString("name"));
-            hIFile* file=hNullptr;
-            file=fileSystem_->OpenFile(binFilepath, FILEMODE_READ);
-
-            if (file) {
-                proto::ResourceHeader resheader;
-                hResourceFileStream resourcefilestream(file);
-                google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
-
-                google::protobuf::uint32 headersize;
-                resourcestream.ReadVarint32(&headersize);
-                auto limit=resourcestream.PushLimit(headersize);
-                resheader.ParseFromCodedStream(&resourcestream);
-                resourcestream.PopLimit(limit);
-                file->Seek(resourcestream.CurrentPosition(), SEEKOFFSET_BEGIN);
-                hResourceType restypecrc(hCRC32::StringCRC(resheader.type().c_str()));
-                hResourceHandler* handler = handlerMap_->Find(restypecrc);
-                hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
-                typehandler=handler->GetKey();
-                // Load the binary file
-                hTimer timer;
-                hUint64 offset=resourcestream.CurrentPosition();
-                hResourceSection* sections=(hResourceSection*)hAlloca(sizeof(hResourceSection)*resheader.sections_size());
-                for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
-                    sections[i].sectionName_ = resheader.sections(i).sectionname().c_str();
-                    sections[i].sectionSize_ = resheader.sections(i).size();
-                    sections[i].memType_ = resheader.sections(i).type();
-                    if (!file->getIsMemMapped() || sections[i].memType_!=proto::eResourceSection_Temp) {
-                        sections[i].sectionData_ = hHeapMalloc("general", resheader.sections(i).size());
-                        hUint read=file->Read(sections[i].sectionData_, (hUint32)sections[i].sectionSize_);
-                        hcAssertMsg(read == sections[i].sectionSize_, "Failed to read resource section %s (expected size %u, got %u)", sections[i].sectionName_, sections[i].sectionSize_, read);
-                    } else {
-                        sections[i].sectionData_ = (hByte*)file->getMemoryMappedBase()+offset;
-                        offset+=resheader.sections(i).size();
-                    }
-                }
-
-                timer.reset();
-                res = handler->loadProc_(sections, resheader.sections_size());
-                timer.setPause(hTrue);
-                for (hUint i=0, n=resheader.sections_size(); i<n; ++i) {
-                    if (sections[i].memType_==proto::eResourceSection_Temp && !file->getIsMemMapped()) {
-                        hFreeSafe(sections[i].sectionData_);
-                    }
-                }
-                hcPrintf("Loaded %s (crc:0x%08X.0x%08X) in %f Secs on thread %p", binFilepath, GetKey(), crc, timer.elapsedMilliSec()/1000.0f, Device::GetCurrentThreadID());
-            }
-
-            if (file) {
-                fileSystem_->CloseFile(file);
-            }
-            hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
-                "and so serialiser could not load the data correctly" 
-                "This is a Fatal Error.");
-            if (res)
-            {
-                res->setResourceID(hResourceID(GetKey(), crc));
-                res->SetName(resxml.GetAttributeString("name"));
-                res->SetType(typehandler);
-                jobinfo->createdResource_=res;
-            }
+            hcPrintf("Stub "__FUNCTION__);
+            res->setResourceID(hResourceID(GetKey(), crc));
+            res->SetName(resxml.GetAttributeString("name"));
+            res->SetType(typehandler);
+            jobinfo->createdResource_=res;
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -360,11 +290,12 @@ namespace Heart
 
     void hResourcePackage::unloadResource(void* in, void* out) {
         hcAssert(in==out);
-        hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
-        hResourceClassBase* res=jobinfo->createdResource_;
-        hResourceHandler* handler = handlerMap_->Find(res->GetType());
-        handler->unloadProc_(res);
-        jobinfo->createdResource_=hNullptr;
+        hcPrintf("Stub "__FUNCTION__);
+//         hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
+//         void* res=jobinfo->createdResource_;
+//         hResourceHandler* handler = handlerMap_->Find(res->GetType());
+//         handler->unloadProc_(res);
+//         jobinfo->createdResource_=hNullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////

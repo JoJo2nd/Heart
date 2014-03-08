@@ -102,6 +102,12 @@ namespace Heart
         }
     };
 
+    struct hResourceContainer
+    {
+        void*       resourceData_;
+        hStringID   typeID_;
+    };
+
     enum hResurceEvent 
     {
         hResourceEvent_None,
