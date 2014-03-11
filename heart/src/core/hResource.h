@@ -163,14 +163,14 @@ namespace Heart
         {
 
         }
-        explicit hResourceHandle(hResourceID resid)
+        explicit hResourceHandle(hStringID resid)
             : resourceID_(resid)
             , flags_(0)
         {
 
         }
         explicit hResourceHandle(const hChar* path)
-            : resourceID_(hResourceID::buildResourceID(hStringID(path)))
+            : resourceID_()
             , flags_(0)
         {
 
@@ -196,13 +196,14 @@ namespace Heart
             return *this;
         }
 
-        hResourceClassBase* weakPtr() const;
         template< typename t_ty >
-        t_ty*               weakPtr() const { return static_cast< t_ty* >(weakPtr()); }
-        void                registerForUpdates(hResourceEventProc proc);
-        void                unregisterForUpdates(hResourceEventProc proc);
-        hBool               getIsValid() const { return resourceID_ != hResourceID(); }
-        hResourceID         getResourceID() const { return resourceID_; }
+        t_ty*               weakPtr() const {
+            return manager_->getResourceForHandle<t_ty>(resourceID_);
+        }
+        void                registerForUpdates(hNewResourceEventProc proc);
+        void                unregisterForUpdates(hNewResourceEventProc proc);
+        hBool               getIsValid() const { return !resourceID_.is_default(); }
+        hStringID           getResourceID() const { return resourceID_; }
 
     private:
 
@@ -224,7 +225,7 @@ namespace Heart
         }
 
         static hResourceManager*    manager_;
-        hResourceID                 resourceID_;
+        hStringID                   resourceID_;
         union {
             hUint                   flags_;
             struct {

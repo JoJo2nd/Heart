@@ -27,23 +27,15 @@
 
 namespace Heart
 {
-    hResourceManager* hResourceHandle::manager_=hNullptr;
+    hResourceManager* hResourceHandle::manager_=nullptr;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourceClassBase* hResourceHandle::weakPtr() const {
-        return manager_->getResourceForHandle(resourceID_);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceHandle::registerForUpdates(hResourceEventProc proc) {
+    void hResourceHandle::registerForUpdates(hNewResourceEventProc proc) {
         if (resourceID_!=0) {
-            manager_->registerResourceEventHandler(resourceID_, proc);
+            manager_->registerForResourceEvents(resourceID_, proc);
         }
     }
 
@@ -51,9 +43,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourceHandle::unregisterForUpdates(hResourceEventProc proc) {
+    void hResourceHandle::unregisterForUpdates(hNewResourceEventProc proc) {
         if (resourceID_!=0) {
-            manager_->unregisterResourceEventHandler(resourceID_, proc);
+            manager_->unregisterForResourceEvents(resourceID_, proc);
         }
     }
 

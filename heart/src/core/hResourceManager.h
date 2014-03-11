@@ -154,7 +154,15 @@ namespace Heart
         typedef std::unordered_map< hStringID, hResourceContainer >  hResourceTable;
         typedef std::queue< hResourceDBEvent > hResourceDBEventQueue;
 
-        hResourceClassBase* getResourceForHandle(hResourceID crc);
+        template< typename t_ty>
+        t_ty* getResourceForHandle(hStringID res_id) {
+            auto i = resourceDB_.find(res_id);
+            if (i == resourceDB_.end()) {
+                return (t_ty*)nullptr;
+            }
+            hcAssert(i->second.typeID_ == t_ty::getTypeNameStatic());
+            return (t_ty*)i->second.resourceData_;
+        }
 
         //NEW
         hRenderer*                      renderer_;
