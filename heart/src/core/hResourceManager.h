@@ -44,7 +44,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void*/*data_ptr*/), hNewResourceEventProc);
+
     typedef std::unordered_multimap< hResourceID, hResourceEventProc, hResourceID::hash > hResourceEventMap;
+    typedef std::unordered_multimap< hStringID, hNewResourceEventProc > hResourceNotifyTable;
     typedef std::unordered_map< hResourceID, hResourceClassBase*, hResourceID::hash > hResourceHandleMap;
 
     //////////////////////////////////////////////////////////////////////////
@@ -75,33 +78,47 @@ namespace Heart
         ~hResourceManager();
 
         hBool                           initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, hJobManager* jobmanager, const char** requiredResources);
-        void                            registerResourceHandler(const hChar* resourcetypename, hResourceHandler handler);
-        void                            registerResourceEventHandler(hResourceID resid, hResourceEventProc proc);
-        void                            unregisterResourceEventHandler(hResourceID resid, hResourceEventProc proc);
-        void                            submitResourceEvent(hResourceEventUpdateProcess& updater);
         void                            update();
-        static hResourceID              BuildResourceID(const hChar* fullPath){ return hResourceID::buildResourceID(fullPath); }
-        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName) { return hResourceID::buildResourceID(package, resourceName); }
+        static hResourceID              BuildResourceID(const hChar* fullPath){ return hResourceID::buildResourceID(fullPath); } // TODO: remove, simple use hStringID now
+        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName) { return hResourceID::buildResourceID(package, resourceName); } // TODO: remove, simple use hStringID now
         void                            shutdown( hRenderer* prenderer );
         void                            printResourceInfo();
 
-        //Main Thread interface
-        void                            insertResource(const hChar* name, hResourceClassBase* res) {
-            insertResource(hResourceManager::BuildResourceID(name), res);
-        }
-        void                            insertResource(hResourceID id, hResourceClassBase* res);
-        hUint                           removeResource(const hChar* name) {
-            return removeResource(hResourceManager::BuildResourceID(name));
-        }
-        hUint                           removeResource(hResourceID id);
-
         void insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id) {
-            //TODO: thread check this....
-            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
-            hResourceContainer res_cont;
-            res_cont.resourceData_ = res_data;
-            res_cont.typeID_ = type_id;
-            resourceDB_.insert(hResourceTable::value_type(res_id, res_cont));
+            resourceDBMtx_.Lock();
+            hResourceDBEvent res_event;
+            res_event.type_ = hResourceDBEvent::Type_InsertResource;
+            res_event.resID_ = res_id;
+            res_event.typeID_ = type_id;
+            res_event.added_.dataPtr_ = res_data;
+            resourceEventQueue_.push(res_event);
+            resourceDBMtx_.Unlock();
+        }
+        void removeResourceContainer(hStringID res_id) {
+            resourceDBMtx_.Lock();
+            hResourceDBEvent res_event;
+            res_event.type_ = hResourceDBEvent::Type_RemoveResource;
+            res_event.resID_ = res_id;
+            resourceEventQueue_.push(res_event);
+            resourceDBMtx_.Unlock();
+        }
+        void registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
+            resourceDBMtx_.Lock();
+            hResourceDBEvent res_event;
+            res_event.type_ = hResourceDBEvent::Type_RegisterHandler;
+            res_event.resID_ = res_id;
+            res_event.proc_ = proc;
+            resourceEventQueue_.push(res_event);
+            resourceDBMtx_.Unlock();
+        }
+        void unregisterForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
+            resourceDBMtx_.Lock();
+            hResourceDBEvent res_event;
+            res_event.type_ = hResourceDBEvent::Type_UnregisterHandler;
+            res_event.resID_ = res_id;
+            res_event.proc_ = proc;
+            resourceEventQueue_.push(res_event);
+            resourceDBMtx_.Unlock();
         }
 
         // New interface
@@ -113,8 +130,29 @@ namespace Heart
 
         friend hResourceClassBase* hResourceHandle::weakPtr() const;
 
+        struct hResourceDBEvent
+        {
+            enum ResourceEventType 
+            {
+                Type_InsertResource,
+                Type_RemoveResource,
+                Type_RegisterHandler,
+                Type_UnregisterHandler,
+            };
+            ResourceEventType       type_;
+            hStringID               resID_;
+            hStringID               typeID_;
+            hNewResourceEventProc   proc_;
+            union {
+                struct {
+                    void*       dataPtr_;
+                } added_;
+            };
+        };
+
         typedef hMap< hUint32, hResourcePackage > hResourcePackageMap;
         typedef std::unordered_map< hStringID, hResourceContainer >  hResourceTable;
+        typedef std::queue< hResourceDBEvent > hResourceDBEventQueue;
 
         hResourceClassBase* getResourceForHandle(hResourceID crc);
 
@@ -123,10 +161,6 @@ namespace Heart
         hRenderMaterialManager*         materialManager_;
         hIFileSystem*                   filesystem_;
         hJobManager*                    jobManager_;
-
-        //New vars
-        hXMLDocument                    gamedataDescXML_;
-        hResourceHandlerMap             resourceHandlers_;
 
         //main thread loaded packages
         hHeartEngine*                    engine_;
@@ -140,8 +174,11 @@ namespace Heart
         hResourceEventMap   resourceEventMap_;
 
         //
-        hdMutex             resourceDBMtx_;
-        hResourceTable      resourceDB_;
+
+        hdMutex                 resourceDBMtx_;
+        hResourceNotifyTable    resourceNotify_;
+        hResourceDBEventQueue   resourceEventQueue_;
+        hResourceTable          resourceDB_;
     };
 
 }

@@ -50,6 +50,7 @@
 #include <new>
 #include <string>
 #include <deque>
+#include <queue>
 #include <vector>
 #include <algorithm>
 #include <map>

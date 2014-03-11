@@ -87,6 +87,49 @@ namespace Heart
 
     void hResourceManager::update() {
         HEART_PROFILE_FUNC();
+        resourceDBMtx_.Lock();
+        auto localEventQueue = resourceEventQueue_;
+        resourceDBMtx_.Unlock();
+        while (!localEventQueue.empty()) {
+            hResourceDBEvent res_event = localEventQueue.front();
+            switch (res_event.type_) {
+            case hResourceDBEvent::Type_InsertResource: {
+                //inject the resource
+                hResourceContainer new_res;
+                new_res.typeID_ = res_event.typeID_;
+                new_res.resourceData_ = res_event.added_.dataPtr_;
+                resourceDB_.insert(hResourceTable::value_type(res_event.resID_, new_res));
+                //notify listeners
+                auto container = resourceDB_.find(res_event.resID_);
+                auto found_range = resourceNotify_.equal_range(res_event.resID_);
+                for (auto i=found_range.first; i!=found_range.second; ++i) {
+                    i->second(res_event.resID_, hResourceEvent_DBInsert, container->second.typeID_, container->second.resourceData_);
+                }
+            } break;
+            case hResourceDBEvent::Type_RemoveResource: {
+                //notify listeners
+                auto container = resourceDB_.find(res_event.resID_);
+                auto found_range = resourceNotify_.equal_range(res_event.resID_);
+                for (auto i=found_range.first; i!=found_range.second; ++i) {
+                    i->second(res_event.resID_, hResourceEvent_DBRemove, container->second.typeID_, container->second.resourceData_);
+                }
+                //remove the resource
+                for (auto i=found_range.first; i!=found_range.second; ++i) {
+                    if (i->second == res_event.proc_) {
+                        resourceNotify_.erase(i);
+                        break;
+                    }
+                }
+            } break;
+            case hResourceDBEvent::Type_RegisterHandler: {
+            } break;
+            case hResourceDBEvent::Type_UnregisterHandler: {
+            } break;
+            }
+            localEventQueue.pop();
+        }
+        
+
         for (hResourcePackage* i=activePackages_.GetHead(); i!=hNullptr; ) {
             i->update(this);
             if (i->unloaded()) {
@@ -165,68 +208,6 @@ namespace Heart
             pack->printResourceInfo();
         }
         hcPrintf("=== Loaded Package Info End ===");
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::registerResourceHandler(const hChar* resourcetypename, hResourceHandler handler) {
-        hUint32 typecrc=hCRC32::StringCRC(resourcetypename);
-        hResourceHandler* newhandler=hNEW(hResourceHandler)();
-        *newhandler=handler;
-        resourceHandlers_.Insert(hResourceType(typecrc), newhandler);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::registerResourceEventHandler(hResourceID resid, hResourceEventProc proc) {
-        resourceEventMap_.insert(hResourceEventMap::value_type(resid, proc));
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::unregisterResourceEventHandler(hResourceID resid, hResourceEventProc proc) {
-        auto range = resourceEventMap_.equal_range(resid);
-        for (auto i=range.first, n=range.second; i!=n;) {
-            if (i->second==proc) {
-                i=resourceEventMap_.erase(i);
-            } else {
-                 ++i;
-            }
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourceManager::insertResource(hResourceID id, hResourceClassBase* res) {
-        resourceHandleMap_.insert(hResourceHandleMap::value_type(id, res));
-        auto range = resourceEventMap_.equal_range(id);
-        for (auto i=range.first, n=range.second; i!=n; ++i) {
-            i->second(id, hResourceEvent_DBInsert, this, res);
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint hResourceManager::removeResource(hResourceID id) {
-        auto entry=resourceHandleMap_.find(id);
-        if (entry != resourceHandleMap_.end()) {
-            auto range = resourceEventMap_.equal_range(id);
-            for (auto i=range.first, n=range.second; i!=n; ++i) {
-                i->second(id, hResourceEvent_DBRemove, this, entry->second);
-            }
-            resourceHandleMap_.erase(entry);
-        }
-        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
