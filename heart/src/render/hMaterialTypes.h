@@ -77,8 +77,8 @@ namespace Heart
         }
 
         hShaderProgram*         GetVertexShader() { return programs_[ShaderType_VERTEXPROG].weakPtr<hShaderProgram>(); }
-        void                    setProgramID(hUint shadertype, hResourceID resid) { programs_[shadertype]=hResourceHandle(resid); }
-        hResourceID             getProgramID(hUint shadertype) const { return programs_[shadertype].getResourceID(); }
+        void                    setProgramID(hUint shadertype, hStringID resid) { programs_[shadertype]=hResourceHandle(resid); }
+        hStringID               getProgramID(hUint shadertype) const { return programs_[shadertype].getResourceID(); }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
         hShaderProgram*         getProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i].weakPtr<hShaderProgram>();}
         hBlendState*            GetBlendState() { return blendState_; }

@@ -102,7 +102,7 @@ namespace Private
         hCPUVec2    uv_;
     };
 
-    class HEART_DLLEXPORT hFont : public hResourceClassBase
+    class HEART_DLLEXPORT hFont
     {
     public:
 
@@ -127,8 +127,8 @@ namespace Private
         void                    SetFontWidth(hUint32 val) { fontWidth_ = val; }
         hUint32				    GetFontWidth() const { return fontWidth_; }
         void                    SetPageCount(hUint32 val) { nTexturePages_ = val; }
-        void                    SetPageResourceID(hResourceID val) { texturePageResID_ = val; }
-        void                    SetMaterialResourceID(hResourceID val) { fontMaterialID_ = val; }
+        void                    SetPageResourceID(hStringID val) { texturePageResID_ = val; }
+        void                    SetMaterialResourceID(hStringID val) { fontMaterialID_ = val; }
         void                    SetFontCharacterLimit(hUint32 nChars);
         void                    AddFontCharacter(const hFontCharacter* fchar);
         void                    SortCharacters();
@@ -137,14 +137,14 @@ namespace Private
 
     private:
 
-        hUint32						nTexturePages_;
-        hResourceID                 texturePageResID_;
-        hTexture*				    texturePages_;
-        hResourceID                 fontMaterialID_;
+        hUint32                     nTexturePages_;
+        hStringID                   texturePageResID_;
+        hTexture*                   texturePages_;
+        hStringID                   fontMaterialID_;
         hMaterial*                  fontMaterial_;
         hMaterialInstance*          fontMaterialInstance_;
-        hUint32						fontWidth_;
-        hUint32						fontHeight_;
+        hUint32                     fontWidth_;
+        hUint32                     fontHeight_;
         hUint32                     nMaxFontCharacters_;
         hUint32						nFontCharacters_;
         hFontCharacter*	            fontCharacters_;

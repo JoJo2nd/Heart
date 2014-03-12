@@ -176,8 +176,8 @@ namespace Heart
     private:
 
         static const hUint32        MAX_PREV_COMMAND_LOGS = 32;
-        static const hResourceID    FONT_RESOURCE_NAME;
-        static const hResourceID    CONSOLE_MATERIAL_NAME;
+        static hStringID            FONT_RESOURCE_NAME;
+        static hStringID            CONSOLE_MATERIAL_NAME;
         static hFloat               s_fontSize;
         static hConsoleOutputProc   s_consoleOutputCallback;
         static void*                s_consoleOutputUser;

@@ -66,13 +66,17 @@ void hRenderModel::destroyRenderCommands() {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderModel::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+#if 0
     if (event == hResourceEvent_DBInsert) {
         attemptResourceInsert(resManager);
     } else if (event == hResourceEvent_DBRemove) {
         resManager->removeResource(getResourceID());
         destroyRenderCommands();
     }
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
     return hTrue;
 }
 

@@ -870,8 +870,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+    hBool hMaterial::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
         // if a resource is missing, remove ourselves from the resource database then unbind
+#if 0
         if (event == hResourceEvent_DBRemove) {
             resManager->removeResource(getResourceID());
             unbind();
@@ -881,6 +882,9 @@ namespace Heart
                 resManager->insertResource(getResourceID(), this);
             }
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
         return true;
     }
 
@@ -889,6 +893,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hMaterial::linkDependeeResources() {
+#if 0
         // Grab default resources
         for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
@@ -914,6 +919,9 @@ namespace Heart
                 }
             }
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
 
         return hTrue;
     }

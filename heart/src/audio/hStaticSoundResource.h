@@ -79,7 +79,7 @@ namespace Heart
         hFloat        pitch_;       
     };
 
-    class hSoundBankResource : public hResourceClassBase
+    class hSoundBankResource
     {
     public:
         hSoundBankResource()

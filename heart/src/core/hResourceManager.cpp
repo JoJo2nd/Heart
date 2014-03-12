@@ -35,7 +35,7 @@ namespace Heart
     hResourceManager::hResourceManager() 
     {
         // Do this as soon as possible, them resource handles can be created globally
-        hResourceHandle initResourceStatics(this, hResourceID(0, 0));
+        hResourceHandle initResourceStatics(this, hStringID());
         (void)initResourceStatics;
     }
 
@@ -160,7 +160,7 @@ namespace Heart
         hUint32 pkcrc = hCRC32::StringCRC(name);
         hResourcePackage* pkg=activePackages_.Find(pkcrc);
         if (!pkg) {
-            pkg = hNEW(hResourcePackage)(engine_, filesystem_, &resourceHandlers_, &fileReadJobQueue_, &workerQueue_, name);
+            pkg = hNEW(hResourcePackage)(filesystem_, &fileReadJobQueue_, &workerQueue_, name);
             activePackages_.Insert(pkcrc, pkg);
             pkg->beginLoad();
         } else {
@@ -208,18 +208,6 @@ namespace Heart
             pack->printResourceInfo();
         }
         hcPrintf("=== Loaded Package Info End ===");
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourceManager::getResourceForHandle(hResourceID resid) {
-        auto entry=resourceHandleMap_.find(resid);
-        if (entry != resourceHandleMap_.end()) {
-            return entry->second;
-        }
-        return hNullptr;
     }
 
 }

@@ -33,7 +33,7 @@ class ModelBuilder;
 namespace Heart
 {
 
-    class HEART_DLLEXPORT hRenderModel : public hResourceClassBase
+    class HEART_DLLEXPORT hRenderModel
     {
     public:
 
@@ -68,7 +68,7 @@ namespace Heart
 
     private:
 
-        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
 
         hBool attemptResourceInsert(hResourceManager* resManager);
 

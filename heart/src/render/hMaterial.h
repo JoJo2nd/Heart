@@ -162,12 +162,11 @@ namespace Heart
         hParameterType      type;
         hUint               count;
         hShaderParameterID  paramid;
-        hResourceID         resourceID;
         hResourceHandle     resourcePtr; // Needs to be merged with resourceID. Resource Handles can be loaded from disk safely now...
         hUint16             dataOffset;
     };
 
-    class HEART_DLLEXPORT hMaterial : public hResourceClassBase
+    class HEART_DLLEXPORT hMaterial
     {
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
@@ -186,7 +185,7 @@ namespace Heart
         hUint                   getTotalPassCount() const { return totalPassCount_; }
         hUint32                 GetMatKey() const { return uniqueKey_; }
         void                    addSamplerParameter(const hSamplerParameter& samp);
-        void                    addDefaultParameterValue(const hChar* name, const hResourceID& resid);
+        void                    addDefaultParameterValue(const hChar* name, hStringID resid);
         void                    addDefaultParameterValue(const hChar* name, const hInt32* data, hUint count);
         void                    addDefaultParameterValue(const hChar* name, const hFloat* data, hUint count);
         void                    addDefaultParameterValue(const hChar* name, const hColour& resid);
@@ -234,7 +233,7 @@ namespace Heart
         void cleanup();
 
         hBool linkDependeeResources();
-        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
 
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;

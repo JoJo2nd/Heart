@@ -502,8 +502,8 @@ namespace hRenderUtility
         ddrawmat->addSamplerParameter(ssparam);
         //ss->DecRef();
 
-        ddrawmat->addDefaultParameterValue("g_sampler", hResourceID::buildResourceID("?builtin.debug_font_surface"));
-        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_font_material"));
+        ddrawmat->addDefaultParameterValue("g_sampler", hStringID("?builtin/debug_font_surface"));
+        //ddrawmat->setResourceID(hStringID("?builtin/debug_font_material"));
         ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
@@ -584,7 +584,7 @@ namespace hRenderUtility
         //ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         //ss->DecRef();
 
-        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_material"));
+        //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_material"));
         ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
@@ -648,7 +648,7 @@ namespace hRenderUtility
         pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_VertexPosCol);
         pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
 
-        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_material"));
+        //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_material"));
         ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
@@ -730,7 +730,7 @@ namespace hRenderUtility
         //ddrawmat->bindSampler(hCRC32::StringCRC("g_sampler"), ss);
         //ss->DecRef();
 
-        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_alpha_material"));
+        //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_alpha_material"));
         ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
@@ -794,7 +794,7 @@ namespace hRenderUtility
         pass->setProgramID(ShaderType_VERTEXPROG, hDebugShaderResourceID_VertexPosCol);
         pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
         
-        ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_alpha_material"));
+        //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_alpha_material"));
         ddrawmat->listenToResourceEvents(resmana);
 
         return ddrawmat;
@@ -811,8 +811,8 @@ namespace hRenderUtility
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
         outfont->SetFontWidth(0);
         outfont->SetPageCount(g_debugpageCount);
-        outfont->SetPageResourceID(hResourceID());
-        outfont->SetMaterialResourceID(hResourceID());
+        outfont->SetPageResourceID(hStringID());
+        outfont->SetMaterialResourceID(hStringID());
         outfont->SetFontCharacterLimit(g_debugglyphCount);
 
         for (hUint32 i = 0; i < g_debugglyphCount; ++i) {
@@ -825,8 +825,12 @@ namespace hRenderUtility
         };
         rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, outtex);
 
-        resmana->insertResource("?builtin.debug_font_surface", *outtex);
-        resmana->insertResource("?builtin.debug_font", outfont);
+#if 0
+        resmana->insertResourceContainer(hStringID("?builtin/debug_font_surface"), *outtex, (*outtex)->getTypeName());
+        resmana->insertResourceContainer(hStringID("?builtin/debug_font"), outfont, outfont->getTypeName());
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
 
         return outfont;
     }

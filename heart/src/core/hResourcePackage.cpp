@@ -42,9 +42,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackage::hResourcePackage(hHeartEngine* engine, hIFileSystem* fileSystem, const hResourceHandlerMap* handlerMap, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName)
+    hResourcePackage::hResourcePackage(hIFileSystem* fileSystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName)
         : packageState_(State_Unloaded)
-        , handlerMap_(handlerMap)
         , fileSystem_(fileSystem)
         , totalResources_(0)
         , fileQueue_(fileQueue)
@@ -243,8 +242,6 @@ namespace Heart
     void hResourcePackage::loadResource(void* in, void* out) {
         hcAssert(in==out);
         hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
-        hResourceType typehandler;
-        hResourceClassBase* res = NULL;
 
         proto::ResourceHeader resheader;
         google::protobuf::io::ArrayInputStream resourcefilestream(jobinfo->resMemStart_, (hInt)((hPtrdiff_t)jobinfo->resMemEnd_-(hPtrdiff_t)jobinfo->resMemStart_));
@@ -304,13 +301,16 @@ namespace Heart
 
     hBool hResourcePackage::doPostLoadLink(hResourceManager* manager)
     {
+#if 0
         hUint32 totallinked = 0;
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             handler->postLoadProc_(manager, res);
             ++totallinked;
         }
-
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
         return hTrue;
     }
 
@@ -320,10 +320,14 @@ namespace Heart
 
     void hResourcePackage::doPreUnloadUnlink(hResourceManager* manager)
     {
+#if 0
         for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
             hResourceHandler* handler = handlerMap_->Find(res->GetType());
             handler->preUnloadProc_(manager, res);
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -340,11 +344,15 @@ namespace Heart
 
     void hResourcePackage::printResourceInfo()
     {
+#if 0
         for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
             hcPrintf("  Resource %s:"
                 " Type: 0x%08X | crc: 0x%08X", 
                 res->GetName(), res->GetType().typeCRC, res->GetKey());
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

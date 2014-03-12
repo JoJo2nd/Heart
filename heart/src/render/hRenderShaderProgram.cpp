@@ -28,7 +28,7 @@
 namespace Heart
 {
     hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResource,
-        hObjectBaseType(Heart::hResourceClassBase));
+        hObjectBaseType(Heart::hdShaderProgram));
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

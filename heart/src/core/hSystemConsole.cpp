@@ -133,8 +133,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    const hResourceID               hSystemConsole::FONT_RESOURCE_NAME = hResourceManager::BuildResourceID( "CORE.CONSOLE" );
-    const hResourceID               hSystemConsole::CONSOLE_MATERIAL_NAME = hResourceManager::BuildResourceID( "CORE.FONT_MAT" );
+    hStringID                       hSystemConsole::FONT_RESOURCE_NAME = hStringID("core/console");
+    hStringID                       hSystemConsole::CONSOLE_MATERIAL_NAME = hStringID("core/console");
     hdMutex				            hSystemConsole::messagesMutex_;
     hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
     hUint32				            hSystemConsole::msgBufferLen_ = 0;

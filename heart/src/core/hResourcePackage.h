@@ -101,6 +101,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+#if 0 // Removing, now handled by hObjectFactory methods
     hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(const hResourceSection*,   hUint), hResourceLoadProc);
     hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePostLoadProc);
     hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePreUnloadProc);
@@ -115,6 +116,7 @@ namespace Heart
     };
 
     typedef hMap< hResourceType, hResourceHandler > hResourceHandlerMap;
+#endif
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -124,7 +126,7 @@ namespace Heart
                            , public hIReferenceCounted
     {
     public:
-        hResourcePackage(hHeartEngine* engine, hIFileSystem* filesystem, const hResourceHandlerMap* handlerMap, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
+        hResourcePackage(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
         ~hResourcePackage();
 
         const hChar*            getPackageName() const { return packageName_; }
@@ -188,7 +190,6 @@ namespace Heart
         hChar                       packagePath_[MAX_PACKAGE_NAME];
         hUint32                     packageCRC_;
         State                       packageState_;
-        const hResourceHandlerMap*  handlerMap_;
         hIFileSystem*               fileSystem_;
         hUint32                     totalResources_;
         hIFile*                     pkgFileHandle_;

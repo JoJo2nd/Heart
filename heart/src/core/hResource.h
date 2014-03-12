@@ -32,6 +32,7 @@
 namespace Heart
 {
 
+#if 0 //hResourceType is replaced with Object Type ID
     struct hResourceType
     {
         hResourceType() {}
@@ -53,7 +54,9 @@ namespace Heart
             return typeCRC < b.typeCRC;
         }
     };
+#endif
 
+#if 0 // ResourceID is replaced with hStringID
     struct hResourceID
     {
         hUint64 hash_;
@@ -101,6 +104,7 @@ namespace Heart
             return  hResourceID((hUint64)(((hUint64)pakCRC << 32) | ((hUint64)resCRC)));
         }
     };
+#endif
 
     struct hResourceContainer
     {
@@ -121,6 +125,7 @@ namespace Heart
         hResourceEvent_HotSwap,
     };
 
+#if 0 // Removing, we don't want to constrain resources to fix our interface
     class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >
     {
     public:
@@ -148,10 +153,14 @@ namespace Heart
         hResourceID        resourceID_;
         hResourceType      type_;
     };
+#endif
 
     class hResourceManager;
 
+#if 0 // hResourceEventProc is replaced by hNewResoruceEventProc (awaiting rename)
     hFUNCTOR_TYPEDEF(hBool (*)(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*), hResourceEventProc);
+#endif
+    hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void*/*data_ptr*/), hNewResourceEventProc);
 
     class hResourceHandle
     {
@@ -209,8 +218,8 @@ namespace Heart
 
         friend class hResourceManager;
 
-        hResourceHandle(hResourceManager* manager, hResourceID resid)
-            : resourceID_(resid)
+        hResourceHandle(hResourceManager* manager, hStringID res_id)
+            : resourceID_(res_id)
             , flags_(0)
         {
             if (!manager_) {

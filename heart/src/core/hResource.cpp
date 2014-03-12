@@ -34,7 +34,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hResourceHandle::registerForUpdates(hNewResourceEventProc proc) {
-        if (resourceID_!=0) {
+        if (!resourceID_.is_default()) {
             manager_->registerForResourceEvents(resourceID_, proc);
         }
     }
@@ -44,7 +44,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hResourceHandle::unregisterForUpdates(hNewResourceEventProc proc) {
-        if (resourceID_!=0) {
+        if (!resourceID_.is_default()) {
             manager_->unregisterForResourceEvents(resourceID_, proc);
         }
     }

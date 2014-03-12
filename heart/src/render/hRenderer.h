@@ -208,6 +208,7 @@ namespace Heart
         void                                                    SubmitDrawCallsST();
         void                                                    createDebugShadersInternal();
 
+#if 0
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -230,6 +231,7 @@ namespace Heart
         void                 meshResourceLink(hResourceManager* manager, hResourceClassBase* resource);
         void                 meshResourceUnlink(hResourceManager* manager, hResourceClassBase* resource);
         void                 meshResourceUnload(hResourceClassBase* resource);
+#endif
 
         static hRenderer*    instance_;
 
@@ -315,7 +317,7 @@ namespace Heart
         void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
-        hBool resourceUpdate(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*);
+        hBool resourceUpdate(hStringID , hResurceEvent, hResourceManager*, hResourceClassBase*);
 
     private:
 

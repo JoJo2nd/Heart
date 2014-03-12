@@ -28,7 +28,7 @@
 namespace Heart
 {
     hRegisterObjectType(texture, Heart::hTexture, Heart::proto::TextureResource,
-        hObjectBaseType(Heart::hResourceClassBase), hObjectBaseType(Heart::hdTexture));
+        hObjectBaseType(Heart::hdTexture));
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

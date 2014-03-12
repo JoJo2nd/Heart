@@ -103,12 +103,16 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderable::resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource) {
+hBool hRenderable::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource) {
+#if 0
     if (event==hResourceEvent_DBInsert || event==hResourceEvent_HotSwap) {
 
     } else if (event==hResourceEvent_DBRemove) {
 
     }
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
     return hTrue;
 }
 

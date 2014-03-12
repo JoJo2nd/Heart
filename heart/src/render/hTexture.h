@@ -35,8 +35,7 @@ namespace Heart
     class hRenderer;
     class hTexture;
 
-    class HEART_DLLEXPORT hTexture : public hResourceClassBase,
-                                     public hdTexture,
+    class HEART_DLLEXPORT hTexture : public hdTexture,
                                      public hIReferenceCounted
     {
     public:

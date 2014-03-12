@@ -30,8 +30,7 @@
 
 namespace Heart
 {
-    class HEART_DLLEXPORT hShaderProgram : public hResourceClassBase,
-                                           public hdShaderProgram,
+    class HEART_DLLEXPORT hShaderProgram : public hdShaderProgram,
                                            public hIReferenceCounted
     {
     public:

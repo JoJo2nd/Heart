@@ -86,8 +86,8 @@ namespace Heart
         void                                    SetStartIndex(hUint startIdx) { startVertex_ = startIdx; }
         hUint                                   GetPrimativeCount() const { return primCount_; }
         void                                    SetPrimativeCount(hUint primCount) { primCount_ = primCount; }
-        void                                    setMaterialResourceID(hResourceID val) {setMaterial(hResourceHandle(val));}
-        hResourceID                             getMaterialResourceID() const { return materialHandle_.getResourceID(); }
+        void                                    setMaterialResourceID(hStringID val) {setMaterial(hResourceHandle(val));}
+        hStringID                               getMaterialResourceID() const { return materialHandle_.getResourceID(); }
         hMaterial*                              GetMaterial() const { return materialHandle_.weakPtr<hMaterial>(); }
         hUint32                                 GetMaterialKey() const { return materialKey_; }
         hAABB   GetAABB() const { return aabb_; }
@@ -115,7 +115,7 @@ namespace Heart
         }
 
         void  setMaterial(const hResourceHandle& material);
-        hBool resourceUpdate(hResourceID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource);
 
         hUint32                     materialKey_;
         hUint                       primCount_;

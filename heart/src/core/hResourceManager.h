@@ -44,11 +44,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void*/*data_ptr*/), hNewResourceEventProc);
-
+#if 0 // removing
     typedef std::unordered_multimap< hResourceID, hResourceEventProc, hResourceID::hash > hResourceEventMap;
+#endif
     typedef std::unordered_multimap< hStringID, hNewResourceEventProc > hResourceNotifyTable;
+#if 0 // removing
     typedef std::unordered_map< hResourceID, hResourceClassBase*, hResourceID::hash > hResourceHandleMap;
+#endif
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -79,8 +81,6 @@ namespace Heart
 
         hBool                           initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, hJobManager* jobmanager, const char** requiredResources);
         void                            update();
-        static hResourceID              BuildResourceID(const hChar* fullPath){ return hResourceID::buildResourceID(fullPath); } // TODO: remove, simple use hStringID now
-        static hResourceID              BuildResourceID(const hChar* package, const hChar* resourceName) { return hResourceID::buildResourceID(package, resourceName); } // TODO: remove, simple use hStringID now
         void                            shutdown( hRenderer* prenderer );
         void                            printResourceInfo();
 
@@ -178,8 +178,10 @@ namespace Heart
 
         hResourcePackageMap  activePackages_;
 
+#if 0 //TODO: remove
         hResourceHandleMap  resourceHandleMap_;
         hResourceEventMap   resourceEventMap_;
+#endif
 
         //
 

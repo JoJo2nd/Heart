@@ -133,6 +133,7 @@ namespace Heart
 
         createDebugShadersInternal();
         
+#if 0
         hResourceHandler texreshandler;
         texreshandler.loadProc_     =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      textureResourceLoader,     this);
         texreshandler.postLoadProc_ =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  textureResourcePostLoad,   this);
@@ -160,6 +161,7 @@ namespace Heart
         meshreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, meshResourceUnlink, this);
         meshreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
         resourceManager_->registerResourceHandler("mesh", meshreshandler);
+#endif
         
     }
 
@@ -176,6 +178,7 @@ namespace Heart
         }
         materialManager_.destroyRenderResources();
 
+#if 0
         hShaderProgram* prog=hNullptr;
         prog=hResourceHandle(hDebugShaderResourceID_PixelWhite).weakPtr<hShaderProgram>();
         resourceManager_->removeResource(hDebugShaderResourceID_PixelWhite);
@@ -213,6 +216,9 @@ namespace Heart
         prog=hResourceHandle(hDebugShaderResourceID_PixelPosCol).weakPtr<hShaderProgram>();
         resourceManager_->removeResource(hDebugShaderResourceID_PixelPosCol);
         prog->DecRef();
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
 
         //hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
         //depthBuffer_->DecRef();
@@ -636,6 +642,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createDebugShadersInternal() {
+#if 0
         hShaderProgram* prog=hNEW(hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this));
         ParentClass::compileShaderFromSourceDevice(
             ParentClass::getDebugShaderSource(eDebugPixelWhite),
@@ -719,6 +726,9 @@ namespace Heart
             hStrLen(ParentClass::getDebugShaderSource(eDebugPixelPosCol)),
             "mainFP", eShaderProfile_ps4_0, hNullptr, hNullptr, 0, prog);
         resourceManager_->insertResource(hDebugShaderResourceID_PixelPosCol, prog);
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
 
     }
 
@@ -1009,6 +1019,7 @@ namespace Heart
         hDELETE(prog);
     }
 
+#if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -1571,6 +1582,7 @@ namespace Heart
         }
         hDELETE_SAFE(rmodel);
     }
+#endif
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -1989,12 +2001,16 @@ namespace Heart
         destroy();
 
         targetInfo_=*rndrinfo;
+#if 0
         if (targetInfo_.vertexLightShader_.getIsValid()) {
             targetInfo_.vertexLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
         }
         if (targetInfo_.pixelLightShader_.getIsValid()) {
             targetInfo_.pixelLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
         renderer_=renderer;
         generateRenderCommands(renderer);
 
@@ -2239,7 +2255,7 @@ namespace Heart
 
     void hLightingManager::generateRenderCommands(hRenderer* renderer) {
         hRenderCommandGenerator rcGen(&renderCmds_);
-        if (!targetInfo_.pixelLightShader_.weakPtr() || !targetInfo_.vertexLightShader_.weakPtr()) {
+        if (!targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>() || !targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()) {
             return;
         }
 
@@ -2425,11 +2441,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hLightingManager::resourceUpdate(hResourceID , hResurceEvent event, hResourceManager*, hResourceClassBase*) {
+    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event, hResourceManager*, hResourceClassBase*) {
+#if 0
         destroy();
         if (event == hResourceEvent_DBInsert) {
             generateRenderCommands(renderer_);
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
         return hTrue;
     }
 
@@ -2438,6 +2458,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hLightingManager::stopResourceEventListening() {
+#if 0
         if (targetInfo_.vertexLightShader_.getIsValid()) {
             targetInfo_.vertexLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
             targetInfo_.vertexLightShader_=hResourceHandle();
@@ -2446,6 +2467,9 @@ namespace Heart
             targetInfo_.pixelLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
             targetInfo_.pixelLightShader_=hResourceHandle();
         }
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
     }
 
 }
