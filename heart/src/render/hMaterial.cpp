@@ -59,22 +59,22 @@ namespace Heart
                     hDepthStencilStateDesc depthdesc;
                     hRasterizerStateDesc rasterdesc;
                     if (passdef.has_pixel()) {
-                        pass->setProgramID(ShaderType_FRAGMENTPROG, hResourceID::buildResourceID(passdef.pixel().c_str()));
+                        pass->setProgramID(ShaderType_FRAGMENTPROG, hStringID(passdef.pixel().c_str()));
                     }
                     if (passdef.has_vertex()) {
-                        pass->setProgramID(ShaderType_VERTEXPROG, hResourceID::buildResourceID(passdef.vertex().c_str()));
+                        pass->setProgramID(ShaderType_VERTEXPROG, hStringID(passdef.vertex().c_str()));
                     }
                     if (passdef.has_geometry()) {
-                        pass->setProgramID(ShaderType_GEOMETRYPROG, hResourceID::buildResourceID(passdef.geometry().c_str()));
+                        pass->setProgramID(ShaderType_GEOMETRYPROG, hStringID(passdef.geometry().c_str()));
                     }
                     if (passdef.has_domain()) {
-                        pass->setProgramID(ShaderType_DOMAINPROG, hResourceID::buildResourceID(passdef.domain().c_str()));
+                        pass->setProgramID(ShaderType_DOMAINPROG, hStringID(passdef.domain().c_str()));
                     }
                     if (passdef.has_hull()) {
-                        pass->setProgramID(ShaderType_HULLPROG, hResourceID::buildResourceID(passdef.hull().c_str()));
+                        pass->setProgramID(ShaderType_HULLPROG, hStringID(passdef.hull().c_str()));
                     }
                     if (passdef.has_compute()) {
-                        pass->setProgramID(ShaderType_COMPUTEPROG, hResourceID::buildResourceID(passdef.compute().c_str()));
+                        pass->setProgramID(ShaderType_COMPUTEPROG, hStringID(passdef.compute().c_str()));
                     }
                     if (passdef.has_blend()) {
                         const proto::BlendState& blenddef=passdef.blend();
@@ -230,7 +230,7 @@ namespace Heart
         for (hUint pi=0, pn=obj->parameters_size(); pi<pn; ++pi) {
             const proto::MaterialParameter& paramdef=obj->parameters(pi);
             if (paramdef.has_resourceid()) {
-                addDefaultParameterValue(paramdef.paramname().c_str(), hResourceID::buildResourceID(paramdef.resourceid().c_str()));
+                addDefaultParameterValue(paramdef.paramname().c_str(), hStringID(paramdef.resourceid().c_str()));
             } else if (paramdef.floatvalues_size()) {
                 addDefaultParameterValue(paramdef.paramname().c_str(), paramdef.floatvalues().data(), paramdef.floatvalues_size());
             } else if (paramdef.intvalues_size()) {
@@ -638,11 +638,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::addDefaultParameterValue(const hChar* name, const hResourceID& resid) {
+    void hMaterial::addDefaultParameterValue(const hChar* name, hStringID res_id) {
         hDefaultParameterValue defVal;
         defVal.type=ePTTexture;
         defVal.paramid=hCRC32::StringCRC(name);
-        defVal.resourceID=resid;
+        defVal.resourcePtr=hResourceHandle(res_id);
         defVal.count=0;
         defaultValues_.push_back(defVal);
     }
@@ -870,7 +870,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+    hBool hMaterial::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager) {
         // if a resource is missing, remove ourselves from the resource database then unbind
 #if 0
         if (event == hResourceEvent_DBRemove) {
@@ -932,6 +932,7 @@ namespace Heart
 
     void hMaterial::listenToResourceEvents(hResourceManager* resmanager) {
 
+#if 0
         // register for resource updates
         for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
@@ -956,6 +957,7 @@ namespace Heart
             bind();
             resmanager->insertResource(getResourceID(), this);
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -963,6 +965,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hMaterial::stopListeningToResourceEvents() {
+#if 0
         for (hUint i=0, n=defaultValues_.size(); i<n; ++i) {
             if (defaultValues_[i].type==ePTTexture) {
                 hResourceHandle(defaultValues_[i].resourceID).unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hMaterial, resourceUpdate, this));
@@ -981,6 +984,7 @@ namespace Heart
                 }
             }
         }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

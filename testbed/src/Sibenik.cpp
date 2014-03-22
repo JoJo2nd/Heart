@@ -61,8 +61,8 @@ hUint32 Sibenik::RunUnitTest()
     case eLoading:
         {
             if (engine_->GetResourceManager()->getIsPackageLoaded(PACKAGE_NAME) &&
-                Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr() && // <- Not correct way to handle this!
-                Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr())
+                Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr<Heart::hShaderProgram>() && // <- Not correct way to handle this!
+                Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr<Heart::hShaderProgram>())
             {
                 hcPrintf("Loaded package \"%s\"", PACKAGE_NAME);
                 state_ = eRender;
@@ -114,6 +114,7 @@ void Sibenik::RenderUnitTest()
     Heart::hDrawCall drawcall;
     drawCtx_.Begin(renderer);
     Heart::hRenderModel* renderModel;
+#if 0
     Heart::hResourceHandleScope<Heart::hRenderModel> handleScope(renderModelHandle_, &renderModel);
 
     if (renderModel) {
@@ -167,6 +168,9 @@ void Sibenik::RenderUnitTest()
 //     dd->drawText(Heart::hVec3(11.f,  9.f, 0.f), "Hello World from debug text", Heart::hColour(0.f,0.f,0.f,1.f));
 //     dd->drawText(Heart::hVec3(10.f, 10.f, 0.f), "Hello World from debug text", Heart::hColour(1.f,1.f,1.f,1.f));
     dd->end();
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
 }
 
 

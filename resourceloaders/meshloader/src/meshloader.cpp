@@ -115,7 +115,6 @@ try {
 
     std::string filepath=lua_tostring(L, 1);
     size_t filesize;
-    MeshHeader header = {0};
     system::error_code ec;
     rapidxml::xml_document<> xmldoc;
     shared_array<char> xmlmem;

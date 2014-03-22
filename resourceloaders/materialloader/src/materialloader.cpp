@@ -250,7 +250,6 @@ int MB_API materialCompile(lua_State* L) {
 try {
     Heart::proto::MaterialResource materialresource;
     std::vector<std::string> openedfiles;
-    MaterialHeader matHeader = {0};
     boost::system::error_code ec;
     std::string filepath;
     rapidxml::xml_document<> xmldoc;

@@ -53,8 +53,10 @@ namespace Heart
         void                           Rewind( hSoundPlaybackHandle handle );
         hOGGDecodeState                DecodeAudioBlock( hSoundPlaybackHandle handle, void** dstPtr, hUint32* outSize );
         void                           ReleasePlaybackHandle( hSoundPlaybackHandle /*handle*/ ) {}
+#if 0
         static hResourceClassBase*     OnSoundLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager );
         static hUint32                 OnSoundUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager );
+#endif
 
     private:
 

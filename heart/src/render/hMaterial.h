@@ -233,7 +233,7 @@ namespace Heart
         void cleanup();
 
         hBool linkDependeeResources();
-        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager);
 
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;

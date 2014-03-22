@@ -30,7 +30,6 @@
 namespace Heart
 {
     class hResourceManager;
-    class hResourceClassBase;
     class hHeartEngine;
 
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
@@ -126,12 +125,14 @@ namespace Heart
                            , public hIReferenceCounted
     {
     public:
-        hResourcePackage(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
+        hObjectType(Heart::hResourcePackage, Heart::proto::PackageHeader);
+
+        hResourcePackage();
         ~hResourcePackage();
 
-        const hChar*            getPackageName() const { return packageName_; }
-        hUint32                 getPackageCRC() const { return packageCRC_; }
-        hResourceClassBase*     getResource(hUint32 crc) const;
+        void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
+        const hChar*            getPackageName() const { return packageName_.c_str(); }
+        hUint32                 getPackageCRC() const { return packageName_.hash(); }
         void                    beginLoad() { packageState_=State_Load_PkgDesc; }
         hBool                   update(hResourceManager* manager);
         void                    beginUnload();
@@ -140,8 +141,8 @@ namespace Heart
         hBool                   unloaded() const { return packageState_ == State_Unloaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
-        hUint                   getLinkCount() const { return links_.size(); }
-        const hChar*            getLink(hUint i) const { return links_[i].c_str(); }
+        hUint                   getLinkCount() const { return packageLinks_.size(); }
+        const hChar*            getLink(hUint i) const { return packageLinks_[i].c_str(); }
 
     private:
 
@@ -158,45 +159,38 @@ namespace Heart
 
         typedef hVector< hStringID > PkgLinkArray;
         typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
-        typedef hMap< hUint32, hResourceClassBase > ResourceMap;
         typedef std::deque<hUint32> hHotSwapQueue;
 
         // Jobs
-        void                        loadPackageDescription(void*, void*);
-        void                        loadResource(void* in, void* out);
-        void                        unloadResource(void* in, void* out);
-        hBool                       doPostLoadLink(hResourceManager* manager);
-        void                        doPreUnloadUnlink(hResourceManager* manager);
-        void                        resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent);
+        void  loadPackageDescription(void*, void*);
+        void  loadResource(void* in, void* out);
+        void  resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent);
+        hBool onLinkEvent(hStringID res_id, hResurceEvent event_type, hStringID type_id, void* data_ptr);
 
         enum State
         {
             State_Load_PkgDesc,
             State_Load_WaitPkgDesc,
             State_Load_DepPkgs,
-            State_Load_WaitDeps,
             State_Kick_ResourceLoads,
-            State_Wait_ReourcesLoads,
-            State_Link_Resources,
             State_Ready,
-            State_Unlink_Resoruces,
             State_Unload_Resources,
-            State_Wait_Unload_Resources,
             State_Unload_DepPkg,
             State_Unloaded,
         };
 
-        hChar                       packageName_[MAX_PACKAGE_NAME];
+        hStringID                   packageName_;
         hChar                       packagePath_[MAX_PACKAGE_NAME];
-        hUint32                     packageCRC_;
         State                       packageState_;
         hIFileSystem*               fileSystem_;
-        hUint32                     totalResources_;
+        hUint                       nextResourceToLoad_;
+        hUint                       nextResourceToUnload_;
+        hUint                       totalResources_;
+        hUint                       linkedResources_;
         hIFile*                     pkgFileHandle_;
-        PkgLinkArray                links_;
+        PkgLinkArray                packageLinks_;
 
         proto::PackageHeader        packageHeader_;
-        ResourceMap                 resourceMap_;
         ResourceJobArray            resourceJobArray_;
         hTimer                      timer_;
         hJobQueue*                  fileQueue_;

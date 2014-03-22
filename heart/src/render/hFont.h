@@ -105,6 +105,7 @@ namespace Private
     class HEART_DLLEXPORT hFont
     {
     public:
+        hObjectType(Heart::hFont, Heart::proto::MessageContainer); /*TODO*/
 
         hFont() 
             : nTexturePages_(0)

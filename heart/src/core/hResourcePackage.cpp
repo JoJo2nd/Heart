@@ -27,6 +27,7 @@
 
 namespace Heart
 {
+hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeader);
 
 #define hBuildResFilePath(outpath, packagePack, file) \
     { \
@@ -42,16 +43,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackage::hResourcePackage(hIFileSystem* fileSystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName)
+    hResourcePackage::hResourcePackage()
         : packageState_(State_Unloaded)
-        , fileSystem_(fileSystem)
         , totalResources_(0)
-        , fileQueue_(fileQueue)
-        , workerQueue_(workerQueue)
         , hotSwapping_(hFalse)
     {
         hotSwapSignal_.Create(0, 4096);
-        hStrCopy(packageName_, (hUint)hArraySize(packageName_), packageName);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -60,8 +57,36 @@ namespace Heart
 
     hResourcePackage::~hResourcePackage()
     {
-        resourceMap_.Clear(hTrue);
         hotSwapSignal_.Destroy();
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName) {
+        fileSystem_ = filesystem;
+        fileQueue_ = fileQueue;
+        workerQueue_ = workerQueue;
+        packageName_ = hStringID(packageName);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    
+    hBool hResourcePackage::serialiseObject(Heart::proto::PackageHeader* ) const {
+        hcAssertMsg(false, "Not expected to call this function");
+        return hFalse;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    hBool hResourcePackage::deserialiseObject(Heart::proto::PackageHeader* ) {
+        hcAssertMsg(false, "Not expected to call this function");
+        return hFalse;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -71,12 +96,10 @@ namespace Heart
     void hResourcePackage::loadPackageDescription(void*, void*)
     {
         hStrCopy(packagePath_, MAX_PACKAGE_NAME, "data:/");
-        hStrCat (packagePath_, MAX_PACKAGE_NAME, packageName_);
+        hStrCat (packagePath_, MAX_PACKAGE_NAME, packageName_.c_str());
         hStrCat (packagePath_, MAX_PACKAGE_NAME, ".pkg");
 
-        packageCRC_ = hCRC32::StringCRC(packageName_);
         hcAssert(fileSystem_);
-
         pkgFileHandle_ = fileSystem_->OpenFile(packagePath_, FILEMODE_READ);
         hResourceFileStream resourcefilestream(pkgFileHandle_);
         google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
@@ -89,7 +112,7 @@ namespace Heart
         resourcestream.PopLimit(limit);
 
         for (hInt i=0, n=packageHeader_.packagedependencies_size(); i<n; ++i) {
-            links_.push_back(hStringID(packageHeader_.packagedependencies(i).c_str()));
+            packageLinks_.push_back(hStringID(packageHeader_.packagedependencies(i).c_str()));
         }
         for (hInt i=0, n=packageHeader_.entries_size(); i<n; ++i) {
             packageHeader_.mutable_entries(i)->set_entryoffset(packageHeader_.entries(i).entryoffset()+headersize);
@@ -113,90 +136,62 @@ namespace Heart
                 fileQueue_->pushJob(descreadjob);
                 //the resource manager will kick the queue
                 packageState_=State_Load_WaitPkgDesc;
+                nextResourceToLoad_ = 0;
+                linkedResources_ = 0;
             } break;
         case State_Load_WaitPkgDesc: {
                 if (fileQueue_->queueIdle()) {
+                    //Now that we know about the package add ourselves to the resource manager
+                    manager->resourceAddRef(packageName_);
+                    manager->addResourceNode(packageName_);
+                    for (hUint i=0, n=packageHeader_.entries_size(); i<n; ++i) {
+                        hStringID link_id(packageHeader_.entries(i).entryname().c_str());
+                        manager->addResourceLink(packageName_, &link_id, 1, 
+                            hFUNCTOR_BINDMEMBER(hNewResourceEventProc, hResourcePackage, onLinkEvent, this));
+                    }
+                    //
                     packageState_=State_Load_DepPkgs;
                 }
             } break;
         case State_Load_DepPkgs: {
-                for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
-                    //manager->loadPackage(links_[i].c_str());
+                for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
+                    manager->loadPackage(packageLinks_[i].c_str());
                 }
                 packageState_ = State_Kick_ResourceLoads; 
-            } break;
-        case State_Load_WaitDeps: {
-                hBool loaded=hTrue;
-                for (hUint i=0, n=links_.size(); i<n; ++i) {
-                    loaded &= manager->getIsPackageLoaded(links_[i].c_str());
-                }
-                if (loaded) {
-                    packageState_ = State_Link_Resources;
-                }
             } break;
         case State_Kick_ResourceLoads: {
                 hcPrintf("Stub "__FUNCTION__);
                 hcAssert(pkgFileHandle_->getIsMemMapped());
                 hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
-                for (hInt i=0, n=packageHeader_.entries_size(); i<n; ++i) {
+                hFloat start_time = hClock::elapsed();
+                for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
                     hJob* loadjob=hNEW(hJob)();
                     resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
                     resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
                     resourceJobArray_[i].createdResource_=nullptr;
                     resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
-                    loadjob->setInput(&resourceJobArray_[i]);
-                    loadjob->setOutput(&resourceJobArray_[i]);
-                    loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadResource, this));
-                    workerQueue_->pushJob(loadjob);
+                    loadResource(resourceJobArray_.data()+i, resourceJobArray_.data()+i);
+//                     loadjob->setInput(&resourceJobArray_[i]);
+//                     loadjob->setOutput(&resourceJobArray_[i]);
+//                     loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadResource, this));
+//                     workerQueue_->pushJob(loadjob);
                 }
                 timer_.reset();
-                packageState_=State_Wait_ReourcesLoads;
-            } break;
-        case State_Wait_ReourcesLoads: {
-                if (workerQueue_->queueIdle()) {
-                    for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
-                        hcPrintf("STUB "__FUNCTION__);
-                        //resourceMap_.Insert(resourceJobArray_[i].crc, resourceJobArray_[i].createdResource_);
-                        manager->insertResourceContainer(resourceJobArray_[i].resourceID_, resourceJobArray_[i].createdResource_, resourceJobArray_[i].resourceType_);
-                    }
-                    hcPrintf("Package %s: %u resources loaded in %f sec", packageName_, totalResources_, timer_.elapsedMilliSec()/1000.f);
-                    packageState_=State_Link_Resources;
-                }
-            } break;
-        case State_Link_Resources: {
-                if (doPostLoadLink(manager)) {
-                    hcPrintf("Package %s is Loaded & Linked", packageName_);
-                    packageState_ = State_Ready;
+                if (nextResourceToLoad_ == packageHeader_.entries_size()) {
                     hotSwapping_ = hFalse;
                     resourceFilewatch_ = hdBeginFilewatch(packagePath_, hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hResourcePackage, resourceDirChange, this));
-                    ret = hTrue;
+                    packageState_=State_Ready;
                 }
-            } break;
-        case State_Unlink_Resoruces: {
-                doPreUnloadUnlink(manager);
-                hcPrintf("Package %s Unload started", packageName_);
-                packageState_ = State_Unload_Resources;
             } break;
         case State_Unload_Resources: {
-                resourceMap_.Clear(hFalse);
-                for (hUint i=0, n=(hUint)resourceJobArray_.size(); i<n; ++i) {
-                    hJob* loadjob=hNEW(hJob)();
-                    loadjob->setInput(&resourceJobArray_[i]);
-                    loadjob->setOutput(&resourceJobArray_[i]);
-                    loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, unloadResource, this));
-                    workerQueue_->pushJob(loadjob);
-                }
-                packageState_ = State_Wait_Unload_Resources;
-            } break;
-        case State_Wait_Unload_Resources: {
-                if (workerQueue_->queueIdle()) {
-                    hcPrintf("Package %s is Unloaded", packageName_);
-                    packageState_ = State_Unload_DepPkg;
-                }
+                // mark ourselves as a non-root resource any more. Will allow the GC to work its magic
+                manager->resourceDecRef(packageName_);
+                manager->collectGarbage(0.f);
+                packageState_ = State_Unload_DepPkg;
             } break;
         case State_Unload_DepPkg: {
-                for (hUint i=0, n=links_.size(); i<n && !hotSwapping_; ++i) {
-                    manager->unloadPackage(links_[i].c_str());
+                for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
+                    manager->unloadPackage(packageLinks_[i].c_str());
                 }
                 hdEndFilewatch(resourceFilewatch_);
                 resourceFilewatch_=0;
@@ -208,11 +203,9 @@ namespace Heart
                 }
             } break;
         case State_Ready: {
-                {
-                    if (hotSwapSignal_.poll()) {
-                        beginUnload();
-                        hotSwapping_=hTrue;
-                    }
+                if (hotSwapSignal_.poll()) {
+                    beginUnload();
+                    hotSwapping_=hTrue;
                 }
             } break;
         default:{
@@ -230,8 +223,8 @@ namespace Heart
     {
         if (isInReadyState()) {
             hotSwapping_=hFalse;
-            hcPrintf("Package %s Unlink started", packageName_);
-            packageState_ = State_Unlink_Resoruces;
+            hcPrintf("Package %s Unload started", packageName_);
+            packageState_ = State_Unload_Resources;
         }
     }
 
@@ -250,94 +243,24 @@ namespace Heart
         proto::MessageContainer data_container;
         data_container.ParseFromCodedStream(&resourcestream);
         jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
-#if 0
-        hResourceType restypecrc(hCRC32::StringCRC(jobinfo->type_));
-        hResourceHandler* handler = handlerMap_->Find(restypecrc);
-        hcAssertMsg(handler, "Couldn't file handler for data type 0x%X", handler->GetKey().typeCRC);
-        typehandler=handler->GetKey();
-        // Load the binary file
-        hTimer timer;
-        hResourceSection sections;
-        sections.sectionName_ = "any";
-        sections.sectionSize_ = (hInt)data_container.messagedata().size();
-        sections.memType_ = proto::eResourceSection_Temp;
-        sections.sectionData_ = data_container.mutable_messagedata()->c_str();
-
-        timer.reset();
-        res = handler->loadProc_(&sections, 1);
-        timer.setPause(hTrue);
-        // hcPrintf("Loaded %s (crc:0x%08X.0x%08X) in %f Secs on thread %p", binFilepath, GetKey(), crc, timer.elapsedMilliSec()/1000.0f, Device::GetCurrentThreadID());
-        hcAssertMsg(res, "Binary resource failed to load. Possibly out of date or broken file data"
-            "and so serialiser could not load the data correctly" 
-            "This is a Fatal Error.");
-        if (res)
-        {
-            hcPrintf("Stub "__FUNCTION__);
-            res->setResourceID(hResourceID(GetKey(), crc));
-            res->SetName(resxml.GetAttributeString("name"));
-            res->SetType(typehandler);
-            jobinfo->createdResource_=res;
-        }
-#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::unloadResource(void* in, void* out) {
-        hcAssert(in==out);
-        hcPrintf("Stub "__FUNCTION__);
-//         hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
-//         void* res=jobinfo->createdResource_;
-//         hResourceHandler* handler = handlerMap_->Find(res->GetType());
-//         handler->unloadProc_(res);
-//         jobinfo->createdResource_=hNullptr;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourcePackage::doPostLoadLink(hResourceManager* manager)
-    {
-#if 0
-        hUint32 totallinked = 0;
-        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
-            hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            handler->postLoadProc_(manager, res);
-            ++totallinked;
+    hBool hResourcePackage::onLinkEvent(hStringID res_id, hResurceEvent event_type, hStringID type_id, void* data_ptr) {
+        if (event_type == hResurceEvent::hResourceEvent_DBInsert) {
+            ++linkedResources_;
+        } else if (event_type == hResurceEvent::hResourceEvent_DBRemove) {
+            --linkedResources_;
         }
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
+        if (linkedResources_ == totalResources_) {
+            hResourceManager::get()->insertResourceContainer(packageName_, this, getTypeName());
+        }
         return hTrue;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::doPreUnloadUnlink(hResourceManager* manager)
-    {
-#if 0
-        for (hResourceClassBase* res = resourceMap_.GetHead(); res; res = res->GetNext()) {
-            hResourceHandler* handler = handlerMap_->Find(res->GetType());
-            handler->preUnloadProc_(manager, res);
-        }
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hResourceClassBase* hResourcePackage::getResource( hUint32 crc ) const
-    {
-        return resourceMap_.Find(crc);;
-    }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

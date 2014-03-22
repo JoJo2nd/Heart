@@ -843,11 +843,19 @@ namespace hRenderUtility
     void HEART_API destroyDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
         hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
+#if 0
         resmana->removeResource("?builtin.debug_font");
+#else
+        hcPrintf("Stub "__FUNCTION__);
+#endif
         hDELETE(fontres);
 
         hTexture* texres=hResourceHandle("?builtin.debug_font_surface").weakPtr<hTexture>();
+#if 0
         resmana->removeResource("?builtin.debug_font_surface");
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
         tex->DecRef();
     }
 

@@ -27,6 +27,7 @@
 
 namespace Heart
 {
+    hResourceManager* hResourceManager::instance_ = nullptr;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -37,6 +38,7 @@ namespace Heart
         // Do this as soon as possible, them resource handles can be created globally
         hResourceHandle initResourceStatics(this, hStringID());
         (void)initResourceStatics;
+        instance_ = this;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -51,18 +53,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourceManager::initialise( hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, hJobManager* jobmanager, const char** requiredResources ) {
-        hUint32 nRequiredResources = 0;
-        hChar pluginpath[2048];
+    hBool hResourceManager::initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
         filesystem_ = pFileSystem;
-        renderer_ = renderer;
-        materialManager_ = renderer->GetMaterialManager();
         jobManager_ = jobmanager;
-        engine_ = engine;
-
-        hd_AddSharedLibSearchDir(engine->GetWorkingDir());
-        hStrPrintf(pluginpath, 2048, "%sPLUGIN/", engine->GetWorkingDir());
-        hd_AddSharedLibSearchDir(pluginpath);
         return hTrue;
     }
 
@@ -87,49 +80,6 @@ namespace Heart
 
     void hResourceManager::update() {
         HEART_PROFILE_FUNC();
-        resourceDBMtx_.Lock();
-        auto localEventQueue = resourceEventQueue_;
-        resourceDBMtx_.Unlock();
-        while (!localEventQueue.empty()) {
-            hResourceDBEvent res_event = localEventQueue.front();
-            switch (res_event.type_) {
-            case hResourceDBEvent::Type_InsertResource: {
-                //inject the resource
-                hResourceContainer new_res;
-                new_res.typeID_ = res_event.typeID_;
-                new_res.resourceData_ = res_event.added_.dataPtr_;
-                resourceDB_.insert(hResourceTable::value_type(res_event.resID_, new_res));
-                //notify listeners
-                auto container = resourceDB_.find(res_event.resID_);
-                auto found_range = resourceNotify_.equal_range(res_event.resID_);
-                for (auto i=found_range.first; i!=found_range.second; ++i) {
-                    i->second(res_event.resID_, hResourceEvent_DBInsert, container->second.typeID_, container->second.resourceData_);
-                }
-            } break;
-            case hResourceDBEvent::Type_RemoveResource: {
-                //notify listeners
-                auto container = resourceDB_.find(res_event.resID_);
-                auto found_range = resourceNotify_.equal_range(res_event.resID_);
-                for (auto i=found_range.first; i!=found_range.second; ++i) {
-                    i->second(res_event.resID_, hResourceEvent_DBRemove, container->second.typeID_, container->second.resourceData_);
-                }
-                //remove the resource
-                for (auto i=found_range.first; i!=found_range.second; ++i) {
-                    if (i->second == res_event.proc_) {
-                        resourceNotify_.erase(i);
-                        break;
-                    }
-                }
-            } break;
-            case hResourceDBEvent::Type_RegisterHandler: {
-            } break;
-            case hResourceDBEvent::Type_UnregisterHandler: {
-            } break;
-            }
-            localEventQueue.pop();
-        }
-        
-
         for (hResourcePackage* i=activePackages_.GetHead(); i!=hNullptr; ) {
             i->update(this);
             if (i->unloaded()) {
@@ -160,7 +110,8 @@ namespace Heart
         hUint32 pkcrc = hCRC32::StringCRC(name);
         hResourcePackage* pkg=activePackages_.Find(pkcrc);
         if (!pkg) {
-            pkg = hNEW(hResourcePackage)(filesystem_, &fileReadJobQueue_, &workerQueue_, name);
+            pkg = hNEW(hResourcePackage)();
+            pkg->initialise(filesystem_, &fileReadJobQueue_, &workerQueue_, name);
             activePackages_.Insert(pkcrc, pkg);
             pkg->beginLoad();
         } else {

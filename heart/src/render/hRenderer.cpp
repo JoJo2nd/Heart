@@ -2441,7 +2441,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event, hResourceManager*, hResourceClassBase*) {
+    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event, hResourceManager*) {
 #if 0
         destroy();
         if (event == hResourceEvent_DBInsert) {

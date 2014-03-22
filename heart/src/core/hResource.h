@@ -106,10 +106,30 @@ namespace Heart
     };
 #endif
 
-    struct hResourceContainer
+    typedef std::vector< hStringID > hResourceNodeLinks;
+
+    namespace hResourceColour
     {
-        void*       resourceData_;
-        hStringID   typeID_;
+        enum Type {
+            White,
+            Grey,
+            Black,
+        };
+    }
+
+    struct hResourceGraphNode
+    {
+        hResourceGraphNode()
+            : resourceData_(nullptr)
+            , colour_(hResourceColour::White)
+        {
+
+        }
+
+        void*                   resourceData_;
+        hStringID               typeID_;
+        hResourceNodeLinks      links_;
+        hResourceColour::Type   colour_;
     };
 
     enum hResurceEvent 

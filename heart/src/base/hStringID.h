@@ -95,6 +95,12 @@ namespace std
     {
         size_t operator () (const Heart::hStringID& rhs) { return rhs.hash(); }
     };
+
+    template<>
+    struct less<Heart::hStringID>
+    {
+        bool operator () (const Heart::hStringID& lhs, const Heart::hStringID& rhs) { return lhs.hash() < rhs.hash(); }
+    };
 }
 
 

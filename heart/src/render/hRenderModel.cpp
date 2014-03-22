@@ -66,7 +66,7 @@ void hRenderModel::destroyRenderCommands() {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource) {
+hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager) {
 #if 0
     if (event == hResourceEvent_DBInsert) {
         attemptResourceInsert(resManager);
@@ -85,6 +85,7 @@ hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hR
 //////////////////////////////////////////////////////////////////////////
 
 void hRenderModel::listenForResourceEvents(hResourceManager* resmanager) {
+#if 0
     hUint32 renderablecount = getRenderableCount();
     for(hUint32 i = 0; i < renderablecount; ++i) {
         hRenderable* renderable=getRenderable(i);
@@ -95,6 +96,9 @@ void hRenderModel::listenForResourceEvents(hResourceManager* resmanager) {
     }
     //update
     attemptResourceInsert(resmanager);
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -102,6 +106,7 @@ void hRenderModel::listenForResourceEvents(hResourceManager* resmanager) {
 //////////////////////////////////////////////////////////////////////////
 
 void hRenderModel::stopListeningForResourceEvents() {
+#if 0
     hUint32 renderablecount = getRenderableCount();
     for(hUint32 i = 0; i < renderablecount; ++i) {
         hRenderable* renderable=getRenderable(i);
@@ -110,6 +115,9 @@ void hRenderModel::stopListeningForResourceEvents() {
             mat.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hRenderModel, resourceUpdate, this));
         }
     }
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -126,6 +134,7 @@ void hRenderModel::cleanUp() {
 //////////////////////////////////////////////////////////////////////////
 
 hBool hRenderModel::attemptResourceInsert(hResourceManager* resManager) {
+#if 0
     hUint32 renderablecount = getRenderableCount();
     for(hUint32 i = 0; i < renderablecount; ++i) {
         hRenderable* renderable=getRenderable(i);
@@ -139,6 +148,9 @@ hBool hRenderModel::attemptResourceInsert(hResourceManager* resManager) {
     // all in place
     initialiseRenderCommands();
     resManager->insertResource(getResourceID(), this);
+#else
+    hcPrintf("Stub "__FUNCTION__);
+#endif
     return hTrue;
 }
 

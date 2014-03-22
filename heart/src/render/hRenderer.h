@@ -317,7 +317,7 @@ namespace Heart
         void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
-        hBool resourceUpdate(hStringID , hResurceEvent, hResourceManager*, hResourceClassBase*);
+        hBool resourceUpdate(hStringID , hResurceEvent, hResourceManager*);
 
     private:
 

@@ -68,7 +68,7 @@ namespace Heart
 
     private:
 
-        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager, hResourceClassBase* resource);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager);
 
         hBool attemptResourceInsert(hResourceManager* resManager);
 

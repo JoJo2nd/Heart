@@ -145,7 +145,7 @@ namespace Heart
             config_.vsync_,
             resourceMananger_
             );
-        resourceMananger_->initialise( this, renderer_, fileMananger_, jobManager_, NULL );
+        resourceMananger_->initialise(fileMananger_, jobManager_);
         soundManager_->Initialise();
         luaVM_->Initialise();
 

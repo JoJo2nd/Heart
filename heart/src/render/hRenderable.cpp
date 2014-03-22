@@ -103,7 +103,7 @@ void hRenderable::initialiseRenderCommands(hRenderCommandGenerator* rcGen) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderable::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resmanager, hResourceClassBase* resource) {
+hBool hRenderable::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resmanager) {
 #if 0
     if (event==hResourceEvent_DBInsert || event==hResourceEvent_HotSwap) {
 

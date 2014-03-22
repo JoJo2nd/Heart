@@ -40,6 +40,23 @@ namespace Heart
     struct hLoadedResourceInfo;
     class hIReferenceCounted;
 
+    namespace hResourceEvent 
+    {
+        enum Type {
+            AddResource,    // Adds a resource to the resource graph, does not fill in any data
+            MarkAsRoot,     // Marks a node as a 
+
+            InsertResource, // Inserts resource data into a node in the graph, node must exist
+            RemoveResource, // Inserts resource data into a node in the graph, node must exist
+
+            RegisterHandler,
+            UnregisterHandler,
+
+            AddLinks,
+            BreakLinks,
+        };
+    };
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -56,69 +73,113 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hResourceEventUpdateProcess
-    {
-    public:
-        hResourceEventUpdateProcess();
-        ~hResourceEventUpdateProcess();
-
-        hBool update();
-        hBool isComplete() const;
-
-    private:
-        HEART_PRIVATE_COPY(hResourceEventUpdateProcess);
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     class HEART_DLLEXPORT hResourceManager
     {
     public:
         hResourceManager();
         ~hResourceManager();
 
-        hBool                           initialise(hHeartEngine* engine, hRenderer* renderer, hIFileSystem* pFileSystem, hJobManager* jobmanager, const char** requiredResources);
+        // urgh...make these free functions
+        static hResourceManager* get() { return instance_; }
+
+        hBool                           initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager);
         void                            update();
         void                            shutdown( hRenderer* prenderer );
         void                            printResourceInfo();
-
+        // Will start garbage cycle if one is not started, runs cycle for step seconds
+        void                            collectGarbage(hFloat step) {}
+        void addResourceNode(hStringID res_id) {
+            if (resourceDB_.find(res_id) == resourceDB_.end()) {
+                hResourceGraphNode new_node;
+                new_node.colour_ = hResourceColour::Black; // protect if from the GC until the next cycle.
+                new_node.resourceData_ = nullptr;
+                resourceDB_.insert(hResourceTable::value_type(res_id, new_node));
+            }
+        }
+        void resourceAddRef(hStringID res_id) {
+            auto found_item = rootResources_.find(res_id);
+            if (found_item == rootResources_.end()) {
+                rootResources_.insert(hRootResourceSet::value_type(res_id, 1));
+            } else if (found_item != rootResources_.end()) {
+                ++found_item->second;
+            }
+        }
+        void resourceDecRef(hStringID res_id) {
+            auto found_item = rootResources_.find(res_id);
+            hcAssert(found_item == rootResources_.end())
+            if (found_item != rootResources_.end()) {
+                --found_item->second;
+                if (found_item->second == 0) {
+                    rootResources_.erase(found_item);
+                }
+            }
+        }
         void insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id) {
-            resourceDBMtx_.Lock();
-            hResourceDBEvent res_event;
-            res_event.type_ = hResourceDBEvent::Type_InsertResource;
-            res_event.resID_ = res_id;
-            res_event.typeID_ = type_id;
-            res_event.added_.dataPtr_ = res_data;
-            resourceEventQueue_.push(res_event);
-            resourceDBMtx_.Unlock();
+            hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
+            auto found_item = resourceDB_.find(res_id);
+            found_item->second.typeID_ = type_id;
+            found_item->second.resourceData_ = res_data;
+            //notify listeners it's here!
+            auto found_range = resourceNotify_.equal_range(res_id);
+            for (auto i=found_range.first; i!=found_range.second; ++i) {
+                i->second(res_id, hResourceEvent_DBInsert, type_id, res_data);
+            }
         }
         void removeResourceContainer(hStringID res_id) {
-            resourceDBMtx_.Lock();
-            hResourceDBEvent res_event;
-            res_event.type_ = hResourceDBEvent::Type_RemoveResource;
-            res_event.resID_ = res_id;
-            resourceEventQueue_.push(res_event);
-            resourceDBMtx_.Unlock();
+            hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
+            auto found_item = resourceDB_.find(res_id);
+            //notify listeners it's about to go!
+            auto found_range = resourceNotify_.equal_range(res_id);
+            for (auto i=found_range.first; i!=found_range.second; ++i) {
+                i->second(res_id, hResourceEvent_DBRemove, found_item->second.typeID_, nullptr);
+            }
+            found_item->second.resourceData_ = nullptr;
+        }
+        void addResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc) {
+            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+            auto found_item = resourceDB_.find(res_id);
+#ifdef HEART_DEBUG
+            for (hUint i=0; i<num_links; ++i) {
+                for (const auto& link : found_item->second.links_) {
+                    hcAssert(link != links[i]);
+                }
+            }
+#endif
+            for (hUint i=0; i<num_links; ++i) {
+                found_item->second.links_.push_back(links[i]);
+                registerForResourceEvents(links[i], proc);
+            }
+        }
+        void breakResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc) {
+            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+            auto found_item = resourceDB_.find(res_id);
+            for (hUint i=0; i<num_links; ++i) {
+                for (auto link = found_item->second.links_.begin(), nlink=found_item->second.links_.end(); link!=nlink; ++link) {
+                    if (*link == links[i]) {
+                        unregisterForResourceEvents(*link, proc); 
+                        found_item->second.links_.erase(link);
+                        break;
+                    }
+                }
+            }
         }
         void registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-            resourceDBMtx_.Lock();
-            hResourceDBEvent res_event;
-            res_event.type_ = hResourceDBEvent::Type_RegisterHandler;
-            res_event.resID_ = res_id;
-            res_event.proc_ = proc;
-            resourceEventQueue_.push(res_event);
-            resourceDBMtx_.Unlock();
+            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+            auto found_item = resourceDB_.find(res_id);
+            resourceNotify_.insert(hResourceNotifyTable::value_type(res_id, proc));
+            if (found_item->second.resourceData_) {
+                proc(res_id, hResourceEvent_DBInsert, found_item->second.typeID_, found_item->second.resourceData_);
+            }
         }
         void unregisterForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-            resourceDBMtx_.Lock();
-            hResourceDBEvent res_event;
-            res_event.type_ = hResourceDBEvent::Type_UnregisterHandler;
-            res_event.resID_ = res_id;
-            res_event.proc_ = proc;
-            resourceEventQueue_.push(res_event);
-            resourceDBMtx_.Unlock();
+            hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+            auto found_range = resourceNotify_.equal_range(res_id);
+            for (auto i=found_range.first; i!=found_range.second; ++i) {
+                if (i->second == proc) {
+                    resourceNotify_.erase(i);
+                    return;
+                }
+            }
         }
 
         // New interface
@@ -128,21 +189,16 @@ namespace Heart
 
     private:
 
-        friend hResourceClassBase* hResourceHandle::weakPtr() const;
+        template< typename t_ty > 
+        friend t_ty* hResourceHandle::weakPtr() const;
 
         struct hResourceDBEvent
         {
-            enum ResourceEventType 
-            {
-                Type_InsertResource,
-                Type_RemoveResource,
-                Type_RegisterHandler,
-                Type_UnregisterHandler,
-            };
-            ResourceEventType       type_;
+            hResourceEvent::Type    type_;
             hStringID               resID_;
             hStringID               typeID_;
             hNewResourceEventProc   proc_;
+            hResourceNodeLinks      links_;
             union {
                 struct {
                     void*       dataPtr_;
@@ -151,7 +207,8 @@ namespace Heart
         };
 
         typedef hMap< hUint32, hResourcePackage > hResourcePackageMap;
-        typedef std::unordered_map< hStringID, hResourceContainer >  hResourceTable;
+        typedef std::unordered_map< hStringID, hResourceGraphNode >  hResourceTable;
+        typedef std::map< hStringID, hUint > hRootResourceSet;
         typedef std::queue< hResourceDBEvent > hResourceDBEventQueue;
 
         template< typename t_ty>
@@ -165,30 +222,20 @@ namespace Heart
         }
 
         //NEW
-        hRenderer*                      renderer_;
-        hRenderMaterialManager*         materialManager_;
+        static hResourceManager*        instance_;
         hIFileSystem*                   filesystem_;
         hJobManager*                    jobManager_;
-
-        //main thread loaded packages
-        hHeartEngine*                    engine_;
-
-        hJobQueue fileReadJobQueue_;
-        hJobQueue workerQueue_;
+        hJobQueue                       fileReadJobQueue_;
+        hJobQueue                       workerQueue_;
 
         hResourcePackageMap  activePackages_;
 
-#if 0 //TODO: remove
-        hResourceHandleMap  resourceHandleMap_;
-        hResourceEventMap   resourceEventMap_;
-#endif
-
         //
-
         hdMutex                 resourceDBMtx_;
         hResourceNotifyTable    resourceNotify_;
         hResourceDBEventQueue   resourceEventQueue_;
         hResourceTable          resourceDB_;
+        hRootResourceSet        rootResources_;
     };
 
 }

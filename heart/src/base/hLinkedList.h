@@ -152,6 +152,35 @@ namespace Heart
         NodeLink root_;
         hUint size_;
     };
+
+#if 0
+    template< typename t_ty >
+    class hIntrusiveCircularList
+    {
+    public:
+        hIntrusiveCircularList(t_ty* base_ptr)
+            : base_(base_ptr)
+            , next_(this)
+            , prev_(this)
+        {
+            
+        }
+        hIntrusiveCircularList(const hIntrusiveCircularList&& rhs)
+            : base_(nullptr)
+            , next_(this)
+            , prev_(this)
+        {
+            base_ = rhs.next
+        }
+
+    private:
+        hIntrusiveCircularList(const hIntrusiveCircularList& rhs);
+
+        t_ty*                   base_;
+        hIntrusiveCircularList* next_;
+        hIntrusiveCircularList* prev_;
+    };
+#endif
 }
 
 #endif // huLinkList_h__
