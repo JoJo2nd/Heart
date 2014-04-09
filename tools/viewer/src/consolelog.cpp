@@ -25,15 +25,26 @@
 
 *********************************************************************/
 
-#include "precompiled.h"
+#include "precompiled/precompiled.h"
 #include "consolelog.h"
+#include "common/ui_id.h"
+
+// how to define the custom event
+DEFINE_EVENT_TYPE(wxEVT_CONSOLE_STRING)
+
+namespace {
+    ui::ID ID_CONSOLESUBMIT = ui::marshallNameToID("CONSOLESUBMIT");
+    ui::ID ID_CONSOLELOG = ui::marshallNameToID("CONSOLELOG");
+    ui::ID ID_CONSOLEINPUT = ui::marshallNameToID("CONSOLEINPUT");
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(ConsoleLog, wxPanel)
-    EVT_BUTTON(cuiID_CONSOLESUMBIT, ConsoleLog::evtConsoleSubmit)
+    EVT_BUTTON(ID_CONSOLESUBMIT, ConsoleLog::evtConsoleSubmit)
+    EVT_COMMAND(wxID_ANY, wxEVT_CONSOLE_STRING, ConsoleLog::evtConsoleLog)
     EVT_SIZE(ConsoleLog::evtResize)
 END_EVENT_TABLE()
 
@@ -61,9 +72,9 @@ void ConsoleLog::initFrame()
     lowerSizer_->AddGrowableRow(0);
     lowerSizer_->AddGrowableCol(0);
 
-    logTextCtrl_ = new wxTextCtrl(this, cuiID_CONSOLELOG, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH2 | wxHSCROLL | wxTE_READONLY);
-    inputCtrl_ = new wxTextCtrl(this, cuiID_CONSOLEINPUT, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH2 | wxHSCROLL);
-    submitButton_ = new wxButton(this, cuiID_CONSOLESUMBIT, "Submit");
+    logTextCtrl_ = new wxTextCtrl(this, ID_CONSOLELOG, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH2 | wxHSCROLL | wxTE_READONLY);
+    inputCtrl_ = new wxTextCtrl(this, ID_CONSOLEINPUT, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH2 | wxHSCROLL);
+    submitButton_ = new wxButton(this, ID_CONSOLESUBMIT, "Submit");
 
     lowerSizer_->Add(inputCtrl_, 5, wxALL | wxEXPAND);
     lowerSizer_->Add(submitButton_, 0, wxALL | wxFIXED_MINSIZE | wxEXPAND);
@@ -76,19 +87,17 @@ void ConsoleLog::initFrame()
     SetSizerAndFit(mainSizer_);
     SetMinSize(goodSize_ = GetSize());
 
-    outputConn_ = evt_consoleOutputSignal.connect(boost::bind(&ConsoleLog::consoleOutputString, this, _1));
-
     wxAuiPaneInfo paneinfo;
     paneinfo.Name("Console Window");
     paneinfo.Caption("Console Window");
-    paneinfo.Float();
-    paneinfo.Hide();
+    paneinfo.Bottom();
+    paneinfo.Show();
+    paneinfo.Maximize();
+    paneinfo.MaximizeButton(true);
     paneinfo.Floatable(true);
-    paneinfo.CloseButton(true);
+    paneinfo.CloseButton(false);
     paneinfo.CaptionVisible(true);
     paneinfo.MinSize(300, 200);
-
-    evt_registerAuiPane(this, "Console Window", paneinfo);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -111,10 +120,15 @@ void ConsoleLog::evtConsoleSubmit(wxCommandEvent& event)
         inputStr += inputCtrl_->GetLineText(i);
         inputStr += "\n";
     }
-    if (inputStr.length() > 1) {
-        evt_consoleInputSignal(inputStr.c_str());
-    }
     inputCtrl_->Clear();
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ConsoleLog::evtConsoleLog(wxCommandEvent& event) {
+    logTextCtrl_->AppendText(event.GetString());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -124,21 +138,4 @@ void ConsoleLog::evtConsoleSubmit(wxCommandEvent& event)
 void ConsoleLog::evtResize(wxSizeEvent& evt)
 {
     evt.Skip();
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void ConsoleLog::logString(const char* channel, const char* msg, ...)
-{
-    char buffer1[2046],buffer2[4096];
-
-    va_list marker;
-    va_start(marker, msg );
-    vsnprintf_s(buffer1, 2046, msg, marker);
-
-    _snprintf(buffer2, 4096, "[%s] %s\n", channel, buffer1);
-    evt_consoleOutputSignal(buffer2);
-    va_end( marker );
 }

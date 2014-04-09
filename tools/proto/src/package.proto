@@ -1,7 +1,5 @@
 package Heart.proto;
 
-option optimize_for = LITE_RUNTIME;
-
 message PackageEntry {
 	optional string entryName = 1;
 	optional uint64 entryOffset = 2;

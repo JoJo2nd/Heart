@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   texture_data_store_export_window.cpp  
+    filename:   ui_id_names.h  
     
-    Copyright (c) 6:5:2013 James Moran
+    Copyright (c) 4:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,16 +24,11 @@
     distribution.
 
 *********************************************************************/
+#pragma once
 
-#include "precompiled.h"
-#include "texture/texture_data_store_export_window.h"
+namespace ui
+{
+    typedef uint ID;
 
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-// TextureDataStoreExport::TextureDataStoreExport(wxWindow* parent, wxWindowID id) 
-//     : wxDialog(parent, id, "Texture Data Store Export Settings...") {
-// 
-// }
+    ID marshallNameToID(const char* name);
+}

@@ -35,6 +35,7 @@ extern "C" {
 }
 #endif
 
+/* NOTE: These includes are generated files*/
 #include "debug_server_common.pb.lua.h"
 #include "package.pb.lua.h"
 #include "resource_common.pb.lua.h"
@@ -43,12 +44,14 @@ extern "C" {
 #include "resource_shader.pb.lua.h"
 #include "resource_texture.pb.lua.h"
 
+#include "proto_lua.h" 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 //Lua entry point calls
-__declspec(dllexport) int __cdecl luaopen_proto_lua(lua_State *L) {
+proto_lua_dll_export int proto_lua_api luaopen_proto_lua(lua_State *L) {
     lua_newtable(L);
     lua_protobuf_coded_streams_open(L);
 

@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename:   texture_data_store_export_window.h  
     
-    Copyright (c) 6:5:2013 James Moran
+    Copyright (c) 6:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,21 +22,32 @@
     distribution.
 
 *********************************************************************/
-
 #pragma once
 
-#ifndef TEXTURE_DATA_STORE_EXPORT_WINDOW_H__
-#define TEXTURE_DATA_STORE_EXPORT_WINDOW_H__
+class PkgViewer : public wxPanel
+{
+public:
+    PkgViewer(wxWindow* parent, wxAuiManager* auiManager, wxMenuBar* menuBar);
+private:
 
-// class TextureDataStoreExport : public wxDialog
-// {
-// public:
-//     TextureDataStoreExport(wxWindow* parent, wxWindowID id);
-//     ~TextureDataStoreExport() {}
-// 
-// private:
-// 
-//     void OnOk( wxCommandEvent & event );
-// }
+    struct Pkg
+    {
+        std::string                  filepath_;
+        std::shared_ptr<uint8>       data_;
+        size_t                       dataLen_;
+        Heart::proto::PackageHeader  header_;
+        size_t                       headerSize_;
 
-#endif // TEXTURE_DATA_STORE_EXPORT_WINDOW_H__
+        bool loadFromFile(const char* filepath);
+    };
+
+    void addPackage(const Pkg& in_pkg);
+    void onPackageOpen(wxCommandEvent& event);
+    void onSelectPackage(wxListEvent& event);
+
+    std::vector<std::shared_ptr<Pkg>>           loadedPackages_;
+    std::map<std::string, std::shared_ptr<Pkg>> packageMap_;
+    wxListView*         pkgList_;
+    wxPropertyGrid*     propGrid_;
+    wxAuiManager*       auiManager_;
+};

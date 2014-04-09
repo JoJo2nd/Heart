@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename:   menuidprovider.h  
     
-    Copyright (c) 4:1:2013 James Moran
+    Copyright (c) 4:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,39 +23,28 @@
 
 *********************************************************************/
 
-#pragma once
+#include "precompiled/precompiled.h"
+#include "common/ui_id.h"
+#include <unordered_map>
 
-#ifndef MENUIDPROVIDER_H__
-#define MENUIDPROVIDER_H__
-
-class MenuIDProvider : public vMenuIDProvider
+namespace ui
 {
-public:
-    unsigned int aquireMenuID(unsigned int id)
-    {
-        if (allocatedIDs_.size() <= id) {
-            allocatedIDs_.resize(id+1);
-        }
-        allocatedIDs_[id]=getUniqueMenuID();
-        return allocatedIDs_[id];
-    }
-    unsigned int getMenuID(unsigned int id)
-    {
-        return allocatedIDs_[id];
+    typedef std::unordered_map<std::string, ID> NameTable;
+
+ID marshallNameToID(const char* name) {
+    static size_t    nextNameID_ = 0;
+    static NameTable nameMap_;
+
+    std::string name_str(name);
+    auto found_itr = nameMap_.find(name);
+    if (found_itr != nameMap_.end()) {
+        return found_itr->second;
     }
 
-private:
+    ID ret_val = nextNameID_+wxID_HIGHEST+1;
+    nameMap_.emplace(name_str, ret_val);
+    ++nextNameID_;
+    return ret_val;
+}
 
-    static uint getUniqueMenuID()
-    {
-        static uint s_currentID=0;
-        ++s_currentID;
-        return cuiID_MAX+s_currentID;
-    }
-
-    typedef std::vector< uint > IDLookArrayType;
-
-    IDLookArrayType allocatedIDs_;
-};
-
-#endif // MENUIDPROVIDER_H__
+}

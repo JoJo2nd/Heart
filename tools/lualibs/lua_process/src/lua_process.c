@@ -28,14 +28,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-
-#if defined (lua_process_EXPORTS)
-#   define lua_process_dll_export __declspec(dllexport)
-#else
-#   define lua_process_dll_export
-#endif
-
-#define lua_process_api __cdecl
+#include "lua_process.h"
 
 typedef struct lua_process_def {
     STARTUPINFO         startupInfo_;
@@ -68,16 +61,18 @@ int lua_process_api lua_process_exec(lua_State* L) {
     // Start the child process. 
     if( !CreateProcess( NULL,   // No module name (use command line)
         udata->cmdline_,        // Command line
-        NULL,           // Process handle not inheritable
-        NULL,           // Thread handle not inheritable
-        FALSE,          // Set handle inheritance to FALSE
-        0,              // No creation flags
-        NULL,           // Use parent's environment block
-        NULL,           // Use parent's starting directory 
-        &si,            // Pointer to STARTUPINFO structure
-        &pi )           // Pointer to PROCESS_INFORMATION structure
+        NULL,               // Process handle not inheritable
+        NULL,               // Thread handle not inheritable
+        FALSE,              // Set handle inheritance to FALSE
+        CREATE_NO_WINDOW,   // No creation flags
+        NULL,               // Use parent's environment block
+        NULL,               // Use parent's starting directory 
+        &si,                // Pointer to STARTUPINFO structure
+        &pi )               // Pointer to PROCESS_INFORMATION structure
         )
     {
+        free(udata->cmdline_);
+        udata->cmdline_ = NULL;
         return luaL_error(L, "CreateProcess failed (%d)\n", GetLastError() );
     }
 
@@ -96,11 +91,13 @@ int lua_process_api lua_process_sleep(lua_State* L) {
 int lua_process_api lua_process_gc(lua_State* L) {
     lua_process_def_t* udata = luaL_checkudata(L, 1, "_lua_process_lib.proc");
 
-    // Close process and thread handles. 
-    CloseHandle( udata->procInfo_.hProcess );
-    CloseHandle( udata->procInfo_.hThread );
-    free(udata->cmdline_);
-    udata->cmdline_ = NULL;
+    if (udata->cmdline_) {
+        // Close process and thread handles. 
+        CloseHandle( udata->procInfo_.hProcess );
+        CloseHandle( udata->procInfo_.hThread );
+        free(udata->cmdline_);
+        udata->cmdline_ = NULL;
+    }
 
     return 0;
 }

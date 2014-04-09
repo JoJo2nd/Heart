@@ -26,11 +26,8 @@ set( LUA_FILESYSTEM_INCLUDE_DIRS
 	"${EXTERNAL_SRC_ROOT}/lua/src"
 )
 
-set( LUA_FILESYSTEM_HDR_FILES 
-    "${LUA_FILESYSTEM_SRC_DIR}/include/lua_filesystem.h"
-)
-
 set( LUA_FILESYSTEM_SRC_FILES
+	"${LUA_FILESYSTEM_SRC_DIR}/src/lua_filesystem.h"
     "${LUA_FILESYSTEM_SRC_DIR}/src/lua_filesystem.cpp"
 )
 

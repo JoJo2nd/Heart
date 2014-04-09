@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization regex)
-#find_package(wxWidgets REQUIRED COMPONENTS core adv aui html media xrc gl qa richtext propgrid)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext)
+find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
 
 #add_definitions(-DWXUSINGDLL)
 
@@ -19,19 +18,17 @@ set(VIEWER_SRC_DIR
 set( VIEWER_INCLUDE_DIRS
     "${VIEWER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/lua/src"
-	"${EXTERNAL_SRC_ROOT}/tinyxml2"
-	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
-	"${assimp_INCLUDE_DIR}"
-	${LIBHEART_INCLUDES}
-	${nvtt_INCLUDE_DIR}
+	"${EXTERNAL_SRC_ROOT}/crypto/src"
+	"${TOOLS_SRC_ROOT}/lualibs/filesystem/src"
+	"${TOOLS_SRC_ROOT}/lualibs/lua_process/src"
+	"${TOOLS_SRC_ROOT}/proto/src"
+	"${PROTOBUF_INCLUDE_DIR}"
+	"${GENERATED_PROTO_FULL_INC_DIRS}"
 )
 
 file(GLOB VIEWER_SRC_FILES
     "${VIEWER_SRC_DIR}/src/*.h"
     "${VIEWER_SRC_DIR}/src/*.cpp"
-    "${VIEWER_SRC_DIR}/src/modulesystem.cpp"
-    "${VIEWER_SRC_DIR}/src/signals.cpp"
-    "${VIEWER_SRC_DIR}/src/viewermain.cpp"
 )
 file(GLOB TEXTURE_SRC_FILES
     "${VIEWER_SRC_DIR}/src/texture/*.h"
@@ -44,13 +41,25 @@ file(GLOB MESH_SRC_FILES
 file(GLOB COMMON_SRC_FILES
     "${VIEWER_SRC_DIR}/src/common/*.h"
     "${VIEWER_SRC_DIR}/src/common/*.cpp"
-	"${EXTERNAL_SRC_ROOT}/tinyxml2/*.h"
-    "${EXTERNAL_SRC_ROOT}/tinyxml2/*.cpp"
 )
-set( VIEWER_PRECOMPILED_SRC_FILES
-	"${VIEWER_SRC_DIR}/src/precompiled.h" 
-	"${VIEWER_SRC_DIR}/src/precompiled.cpp" 
+file(GLOB VIEWER_PRECOMPILED_SRC_FILES
+    "${VIEWER_SRC_DIR}/src/precompiled/*.h"
+    "${VIEWER_SRC_DIR}/src/precompiled/*.cpp"
 )
+file(GLOB VIEWER_LUA_FILES "${VIEWER_SRC_DIR}/src/lua/*.lua")
+
+set(GENERATED_FILES "${VIEWER_SRC_DIR}/src/lua/builder_script.inl")
+
+add_custom_command(
+      OUTPUT "${VIEWER_SRC_DIR}/src/lua/builder_script.inl"
+	  COMMAND python
+      ARGS "${TOOLS_SRC_ROOT}/utils/file_to_cpp.py" -i "${VIEWER_SRC_DIR}/src/lua/builder.lua" -o "${VIEWER_SRC_DIR}/src/lua/builder_script.inl" -d builder_script
+      DEPENDS "${VIEWER_SRC_DIR}/src/lua/builder.lua"
+      COMMENT "Converting Lua script to C++ inline file"
+      VERBATIM )
+
+set_source_files_properties(${VIEWER_LUA_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties(${GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
 source_group(include FILES ${VIEWER_HDR_FILES})
 source_group(source  FILES ${VIEWER_SRC_FILES})
@@ -58,18 +67,21 @@ source_group(texture_module FILES ${TEXTURE_SRC_FILES})
 source_group(mesh FILES ${MESH_SRC_FILES})
 source_group(common FILES ${COMMON_SRC_FILES} ${COMMON_HDR_FILES})
 source_group(precompiled FILES ${VIEWER_PRECOMPILED_SRC_FILES})
+source_group(lua FILES ${VIEWER_LUA_FILES})
+source_group(generated FILES ${GENERATED_FILES})
 
 set(ALL_SRC_FILES
-	${VIEWER_SRC_FILES}
-	${TEXTURE_SRC_FILES}
-	${MESH_SRC_FILES}
+	${VIEWER_SRC_FILES} 
     ${COMMON_SRC_FILES}
+	${VIEWER_LUA_FILES}
+	${GENERATED_FILES}
 )
 
+message(${ALL_SRC_FILES})
 ADD_MSVC_PRECOMPILED_HEADER(
-	"${VIEWER_SRC_DIR}/src/precompiled.h" 
-	"${VIEWER_SRC_DIR}/src/precompiled.cpp" 
-	VIEWER_PRECOMPILED_SRC_FILES
+	"${VIEWER_SRC_DIR}/src/precompiled/precompiled.h" 
+	"${VIEWER_SRC_DIR}/src/precompiled/precompiled.cpp" 
+	"${ALL_SRC_FILES}"
 )
 
 if (MSVC)
@@ -92,26 +104,14 @@ else()
 	link_directories( "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86" )
 	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
 endif()
-add_executable(viewer WIN32 
-	${VIEWER_SRC_FILES} 
-	${VIEWER_HDR_FILES} 
-	${TEXTURE_SRC_FILES}
-	${TEXTURE_HDR_FILES}
-	${MESH_SRC_FILES}
-    ${COMMON_SRC_FILES}
-    ${COMMON_HDR_FILES}
-	${VIEWER_PRECOMPILED_SRC_FILES}
-)
-set_property(TARGET viewer PROPERTY DEBUG_POSTFIX _d)
-target_link_libraries(viewer crypto freeimage nvtt assimp ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(viewer WIN32 ${ALL_SRC_FILES} ${VIEWER_PRECOMPILED_SRC_FILES})
+set_property(TARGET viewer PROPERTY DEBUG_POSTFIX)
+target_link_libraries(viewer crypto lua52 lua_filesystem lua_process proto_lua proto_full ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_CUSTOM_COMMAND(
 	TARGET viewer
     POST_BUILD
-	COMMAND ROBOCOPY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.exe ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${freeimage_BIN_DIR}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${nvtt_BIN_DIR}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${nvtt_DEPENDENT_BIN_DIR}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${assimp_BIN_DIR_FULL}" "${CMAKE_SOURCE_DIR}/deploy/viewer" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" viewer "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	#COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+
 )

@@ -1,7 +1,5 @@
 import "resource_common.proto";
 
-option optimize_for = LITE_RUNTIME;
-
 package Heart.proto;
 
 enum TextureFormat {

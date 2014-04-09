@@ -24,9 +24,7 @@
     distribution.
 
 *********************************************************************/
-
 #pragma once
-#include "modulesystem.h"
 
 #ifndef VIEWERMAIN_H__
 #define VIEWERMAIN_H__
@@ -52,11 +50,13 @@ private:
     wxMutex              access_;
 };
 
+class ConsoleLog;
+
 class ViewerMainFrame : public wxFrame
 {
 public:
     ViewerMainFrame(const wxString& heartpath, const wxString& pluginPaths)
-        : wxFrame(NULL, wxID_ANY, "Heart Viewer", wxDefaultPosition, wxSize(1280, 720))
+        : wxFrame(NULL, wxID_ANY, "Viewer", wxDefaultPosition, wxSize(1280, 720))
         , fileConfig_("Viewer", "", "viewer.cfg", "viewer.cfg")
     {
         initFrame(heartpath, pluginPaths);
@@ -65,10 +65,10 @@ public:
 
 private:
 
-    typedef std::vector<boost::signals2::connection> ConnectionVectorType;
     typedef std::map<wxString, wxString> SavedPaneInfo;
 
-    static void consoleMsgCallback(const char* msg, void*);
+    static void luaThread(ViewerMainFrame* arg);
+    static void consoleMsgCallback(const char* msg, uint len, void* this_ptr);
     //static void renderCallback(Heart::hHeartEngine* engine);
     void consoleInput(const char* msg);
     void initFrame(const wxString& heartpath, const wxString& pluginPaths);
@@ -77,21 +77,21 @@ private:
     //Events
     DECLARE_EVENT_TABLE();
     void            evtShowConsole(wxCommandEvent& evt);
+    void            evtDoDataBuild(wxCommandEvent& evt);
     void            evtOnPaneClose(wxAuiManagerEvent& evt);
     void            evtClose(wxCloseEvent& evt);
 
     wxAuiManager*           auiManager_;
+    ConsoleLog*             consoleLog_;
     wxFileConfig            fileConfig_;
     wxFileHistory           fileHistory_;
     wxMenuBar*              menuBar_;
     RenderTimer             timer_;
-    //Heart::hHeartEngine*    heart_;
-    //Heart::hRendererCamera  camera_;
     boost::filesystem::path dataPath_;
     std::string             pathString_;
-    ConnectionVectorType    connnections_;
     SavedPaneInfo           paneSavedLayouts_;
-    ModuleSystem            moduleSystem_;
+    std::thread             luaThread_;
+    std::atomic_bool        exitSignal_;
 };
 
 //////////////////////////////////////////////////////////////////////////

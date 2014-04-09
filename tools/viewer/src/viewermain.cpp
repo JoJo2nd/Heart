@@ -26,13 +26,20 @@
 *********************************************************************/
 
 
-#include "precompiled.h"
+#include "precompiled/precompiled.h"
+#include "common/ui_id.h"
 #include "viewermain.h"
 #include "consolelog.h"
+#include "pkg_viewer.h"
+#include "build_system.h"
 
 IMPLEMENT_APP(ViewerApp);
 
-static ViewerMainFrame* g_mainFrame;
+namespace {
+    ui::ID ID_SHOWCONSOLE = ui::marshallNameToID("SHOWCONSOLE");
+    ui::ID ID_BUILDDATA = ui::marshallNameToID("BUILDDATA");
+    ViewerMainFrame* g_mainFrame = nullptr;
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -108,7 +115,8 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 //////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(ViewerMainFrame, wxFrame)
-    EVT_MENU(cuiID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
+    EVT_MENU(ID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
+    EVT_MENU(ID_BUILDDATA, ViewerMainFrame::evtDoDataBuild)
     EVT_AUI_PANE_CLOSE(ViewerMainFrame::evtOnPaneClose)
     EVT_CLOSE(ViewerMainFrame::evtClose)
 END_EVENT_TABLE()
@@ -120,10 +128,8 @@ END_EVENT_TABLE()
 ViewerMainFrame::~ViewerMainFrame()
 {
     auiManager_->UnInit();
-    delete auiManager_; auiManager_ = NULL;
-    boost_foreach(boost::signals2::connection c, connnections_) {
-        c.disconnect();
-    }
+    delete auiManager_; 
+    auiManager_ = nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -138,113 +144,33 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
     menuBar_ = new wxMenuBar();
 
     wxMenu* filemenu = new wxMenu();
-    filemenu->AppendSeparator();
-    filemenu->Append(cuiID_SHOWCONSOLE, "Show &Console");
+    filemenu->Append(ID_BUILDDATA, uiLoc("Build Game Data..."));
 
-    menuBar_->Append(filemenu, "&File");
+    menuBar_->Append(filemenu, uiLoc("&File"));
 
     SetMenuBar(menuBar_);
 
-    wxPanel* renderFrame = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(1280, 720));
+    auto* renderFrame = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxSize(1280, 720));
 
     {
         wxAuiPaneInfo paneinfo;
-        paneinfo.Caption("Render Window");
+        paneinfo.Caption(uiLoc("ViewerMain"));
         paneinfo.CaptionVisible(true);
         paneinfo.CenterPane();
         auiManager_->AddPane(renderFrame, paneinfo);
     }
 
+    consoleLog_ = new ConsoleLog(renderFrame, auiManager_);
+    PkgViewer* packageViewer = new PkgViewer(renderFrame, auiManager_, menuBar_);
+
+    renderFrame->AddPage(consoleLog_, uiLoc("Console"));
+    renderFrame->AddPage(packageViewer, uiLoc("Pkg Viewer"));
+
     auiManager_->Update();
 
-    connnections_.push_back(evt_consoleInputSignal.connect(boost::bind(&ViewerMainFrame::consoleInput, this, _1)));
-    connnections_.push_back(evt_registerAuiPane.connect(boost::bind(&ViewerMainFrame::dockPaneRegister, this, _1, _2, _3)));
-
-    ConsoleLog* consoleLog = new ConsoleLog(this);
-
-#if 0
-    hHeartEngineCallbacks callbacks = {0};
-    callbacks.overrideFileRoot_ = NULL; 
-    if (heartpath.length()>0) {
-        callbacks.overrideFileRoot_ = heartpath.c_str();
-        dataPath_ = heartpath.ToStdWstring();
-    }
-    else {
-        wxDirDialog dirselector(NULL, "Selete Game Running Directory");
-        if (dirselector.ShowModal() == wxID_OK) {
-            dataPath_ = dirselector.GetPath();
-        } else {
-            dataPath_ = boost::filesystem::current_path();
-        }
-    }
-    pathString_ = dataPath_.generic_string();
-    callbacks.overrideFileRoot_ = pathString_.c_str();
-    callbacks.consoleCallback_ = &ViewerMainFrame::consoleMsgCallback;
-    callbacks.consoleCallbackUser_ = this;
-    callbacks.mainRender_ = &ViewerMainFrame::renderCallback;
-    heart_ = hHeartInitEngine(&callbacks, wxGetInstance(), renderFrame->GetHWND());
-
-
-    Heart::hRenderer* renderer = heart_->GetRenderer();
-    Heart::hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
-    hUint32 w = renderer->GetWidth();
-    hUint32 h = renderer->GetHeight();
-    hFloat aspect = (hFloat)w/(hFloat)h;
-    Heart::hRenderViewportTargetSetup rtDesc={0};
-    Heart::hTexture* bb=matMgr->getGlobalTexture("back_buffer");
-    Heart::hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-    Heart::hTextureFormat dfmt=Heart::eTextureFormat_D32_float;
-    Heart::hRenderTargetView* rtv=NULL;
-    Heart::hDepthStencilView* dsv=NULL;
-    Heart::hRenderTargetViewDesc rtvd;
-    Heart::hDepthStencilViewDesc dsvd;
-    hZeroMem(&rtvd, sizeof(rtvd));
-    hZeroMem(&dsvd, sizeof(dsvd));
-    rtvd.format_=bb->getTextureFormat();
-    rtvd.resourceType_=bb->getRenderType();
-    //hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
-    rtvd.tex2D_.topMip_=0;
-    rtvd.tex2D_.mipLevels_=~0;
-    dsvd.format_=dfmt;
-    dsvd.resourceType_=db->getRenderType();
-    //hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
-    dsvd.tex2D_.topMip_=0;
-    dsvd.tex2D_.mipLevels_=~0;
-    renderer->createRenderTargetView(bb, rtvd, &rtv);
-    renderer->createDepthStencilView(db, dsvd, &dsv);
-    rtDesc.nTargets_=1;
-    rtDesc.targetTex_=bb;
-    rtDesc.targets_[0]=rtv;
-    rtDesc.depth_=dsv;
-
-    Heart::hRelativeViewport vp;
-    vp.x= 0.f;
-    vp.y= 0.f;
-    vp.w= 1.f;
-    vp.h= 1.f;
-    Heart::hMatrix vm = Heart::hMatrixFunc::identity();;
-    camera_.Initialise(renderer);
-    camera_.bindRenderTargetSetup(rtDesc);
-    camera_.SetFieldOfView(45.f);
-    camera_.SetOrthoParams(-1.f, 1.f, 1.f, -1.f, 0.f, 1000.f);
-    camera_.SetViewMatrix(vm);
-    camera_.setViewport(vp);
-    camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
-
-    // The camera hold refs to this
-    rtv->DecRef();
-    dsv->DecRef();
-#endif
+    exitSignal_.store(false);
 
     timer_.start();
-
-    moduleSystem_.initialiseAndLoadPlugins(
-        auiManager_, 
-        this, 
-        menuBar_, 
-        pluginPaths.ToStdString(),
-        boost::filesystem::current_path());
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -254,8 +180,6 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 void ViewerMainFrame::evtClose( wxCloseEvent& evt )
 {
     timer_.Stop();
-    moduleSystem_.shutdown();
-
     evt.Skip();
 }
 
@@ -276,11 +200,14 @@ void ViewerMainFrame::evtShowConsole(wxCommandEvent& evt)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void ViewerMainFrame::consoleMsgCallback(const char* msg, void* user)
+void ViewerMainFrame::consoleMsgCallback(const char* msg, uint len, void* in_this_ptr)
 {
     // Can't go to control here because this callback happens on any thread
     // so buffer the result
-    ((ViewerMainFrame*)user)->timer_.flushConsoleText(msg);
+    ViewerMainFrame* this_ptr = (ViewerMainFrame*)in_this_ptr;
+    wxCommandEvent evt(wxEVT_CONSOLE_STRING, wxID_ANY);
+    evt.SetString(msg);
+    this_ptr->consoleLog_->GetEventHandler()->AddPendingEvent(evt);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -315,6 +242,30 @@ void ViewerMainFrame::evtOnPaneClose(wxAuiManagerEvent& evt)
     auiManager_->Update();
 }
 
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::luaThread(ViewerMainFrame* arg) {
+    lua_State* L = luaL_newstate();
+
+    while (!arg->exitSignal_) {
+
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::evtDoDataBuild(wxCommandEvent& evt) {
+    if (build::isBuildingData()) {
+        wxMessageDialog msg(this, uiLoc("Build is already running.\nPlease wait for it to complete."));
+        msg.ShowModal();
+        return;
+    }
+    build::beginDataBuild("C:/some/path", &ViewerMainFrame::consoleMsgCallback, this);
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

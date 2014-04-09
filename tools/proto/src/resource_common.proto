@@ -1,7 +1,5 @@
 package Heart.proto;
 
-option optimize_for = LITE_RUNTIME;
-
 enum ResourceSectionMemoryType {
 	eResourceSection_Temp = 0;
 	eResourceSection_Persistent = 1;

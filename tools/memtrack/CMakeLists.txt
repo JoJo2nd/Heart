@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
-#find_package(wxWidgets REQUIRED COMPONENTS core adv aui html media xrc gl qa richtext propgrid)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext)
+find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
 
 #add_definitions(-DWXUSINGDLL)
 

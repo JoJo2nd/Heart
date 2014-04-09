@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename:   material_utils.h  
     
-    Copyright (c) 19:1:2013 James Moran
+    Copyright (c) 9:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -27,29 +25,31 @@
 
 #pragma once
 
-#ifndef MATERIAL_UTILS_H__
-#define MATERIAL_UTILS_H__
-
-#include "precompiled.h"
-#include "heart.h"
-#include "boost/filesystem.hpp"
-#include <vector>
-#include <string>
-#include <map>
-
-struct MeshExportResult
-{
-    bool        exportOK;
-    std::string errors;
+namespace build {
+namespace ErrorCode {
+enum Type {
+    LuaCompileError = -1,
+    BuildError = -2,
+    AlreadyBuilding = -3,
+    NoReportAvailable = -4, // available 
+    
+    OK = 0,
+    AlreadyInit = 1,
 };
-typedef std::map< std::string, std::string > MaterialRemap;
+}
 
-#if 0
-bool extractVertexInputLayoutFromShaderSource(
-    const char* source, uint len, const char* profile, 
-    const char* entry, const char* filepath, const char* packagepath,
-    std::vector< Heart::hInputLayoutDesc >* outLayout, std::string* outErrors);
-#endif
-void extractVertexProgramsFromMaterial(const boost::filesystem::path& xmlpath, const char* matxml, uint len, std::vector< std::string >* vertexProgNames);
+typedef ErrorCode::Type ErrorCodeEnum;
 
-#endif // MATERIAL_UTILS_H__
+struct Report
+{
+    std::string buildOutput;
+};
+
+typedef void (*BuildLogHandler)(const char* str, uint str_len, void* ptr);
+
+ErrorCodeEnum beginDataBuild(const std::string& build_path, BuildLogHandler msg_handler, void* user_ptr);
+bool      isBuildingData();
+bool      dataBuildComplete();
+ErrorCodeEnum getLastBuildReport(Report* out_report);
+
+}

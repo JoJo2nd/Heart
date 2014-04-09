@@ -35,10 +35,12 @@
 #include "wx/msw/winundef.h"
 //order of these 1st 3 is important
 
-#include "rapidxml/rapidxml.hpp"
-#include "rapidxml/rapidxml_print.hpp"
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+};
 
-//#include "heart.h"
 #include "cryptoBase64.h"
 
 #include "wx/wx.h"
@@ -89,35 +91,57 @@
 #include "boost/serialization/vector.hpp"
 #include "boost/serialization/shared_ptr.hpp"
 
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
-
-#include "nvtt/nvtt.h"
-
-#include "freeimage.h"
-
-#define boost_foreach    BOOST_FOREACH
 
 extern "C"
 {
     WXDLLIMPEXP_BASE HINSTANCE wxGetInstance();
 }
 
-#include "common/module.h"
+/*
+    Proto buffers spits out a lot of warnings about 64 bit to 32 bit conversions.
+    We disable these warnings just around these sections.
+*/
+#if defined (_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#else
+#   pragma error ("Unknown platform")
+#endif
+
+#include "google/protobuf/io/coded_stream.h"
+#include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+
+#include "debug_server_common.pb.h"
+#include "package.pb.h"
+#include "resource_common.pb.h"
+#include "resource_shader.pb.h"
+#include "resource_texture.pb.h"
+#include "resource_material_fx.pb.h"
+#include "resource_mesh.pb.h"
+
+
+#if defined (_MSC_VER)
+#   pragma warning(pop)
+#endif
+
 #include "common/action_stack.h"
+#include "common/type_database.h"
 
-#include "uieventsids.h"
+#include <thread>
+#include <atomic>
+#include <string>
+#include <vector>
+#include <map>
+#include <unordered_map>
 
+typedef unsigned char       uint8;
 typedef unsigned int        uint;
 typedef unsigned long long  uint64;
 
-extern boost::signals2::signal< void (const char*) > evt_consoleOutputSignal;
-extern boost::signals2::signal< void (const char*) > evt_consoleInputSignal;
-extern boost::signals2::signal< void () > evt_mainWindowCreate;
-extern boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
-
 bool wildcardMatch(const std::string &text, std::string wildcardPattern, bool caseSensitive = true);
 
+#define uiLoc(x) (x)
 
 #endif // PRECOMPILED_H__

@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename:   signals.cpp  
     
-    Copyright (c) 28:12:2012 James Moran
+    Copyright (c) 9:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,9 +23,23 @@
 
 *********************************************************************/
 
-#include "precompiled.h"
+#pragma once
 
-boost::signals2::signal< void (const char*) > evt_consoleOutputSignal;
-boost::signals2::signal< void (const char*) > evt_consoleInputSignal;
-boost::signals2::signal< void () > evt_mainWindowCreate;
-boost::signals2::signal< void (wxWindow*, const wxString&, const wxAuiPaneInfo&) > evt_registerAuiPane;
+#if defined (proto_lua_EXPORTS)
+#   define proto_lua_dll_export __declspec(dllexport)
+#else
+#   define proto_lua_dll_export __declspec(dllimport)
+#endif
+
+#define proto_lua_api __cdecl
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//Lua entry point calls
+proto_lua_dll_export int proto_lua_api luaopen_proto_lua(lua_State *L);
+
+#ifdef __cplusplus
+}
+#endif
