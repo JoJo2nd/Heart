@@ -62,7 +62,7 @@ namespace Heart
         hDebugMenuManager();
         ~hDebugMenuManager();
 
-        void                        Initialise(hRenderer* renderer, hResourceManager* resManager, hActionManager* controllerManager);
+        void                        Initialise(hRenderer* renderer, hActionManager* controllerManager);
         void                        Destroy();
         void                        RegisterMenu(const hChar* name, hDebugMenuBase* menu);
         void                        UnregisterMenu(hDebugMenuBase* menu);
@@ -80,7 +80,6 @@ namespace Heart
         static hDebugMenuManager*   instance_;
         hRenderer*                  renderer_;
         Heart::hRendererCamera      camera_;
-        hResourceManager*           resourceManager_;
         hActionManager*             actionManager_;
         hMenuMap                    menuMap_;
     };

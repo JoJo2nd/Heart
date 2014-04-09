@@ -126,7 +126,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hResourcePackage::update(hResourceManager* manager) {
+    hBool hResourcePackage::update() {
         hBool ret = hFalse;
         switch(packageState_) {
         case State_Load_PkgDesc: {
@@ -142,11 +142,11 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         case State_Load_WaitPkgDesc: {
                 if (fileQueue_->queueIdle()) {
                     //Now that we know about the package add ourselves to the resource manager
-                    manager->resourceAddRef(packageName_);
-                    manager->addResourceNode(packageName_);
+                    hResourceManager::resourceAddRef(packageName_);
+                    hResourceManager::addResourceNode(packageName_);
                     for (hUint i=0, n=packageHeader_.entries_size(); i<n; ++i) {
                         hStringID link_id(packageHeader_.entries(i).entryname().c_str());
-                        manager->addResourceLink(packageName_, &link_id, 1, 
+                        hResourceManager::addResourceLink(packageName_, &link_id, 1, 
                             hFUNCTOR_BINDMEMBER(hNewResourceEventProc, hResourcePackage, onLinkEvent, this));
                     }
                     //
@@ -155,7 +155,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             } break;
         case State_Load_DepPkgs: {
                 for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
-                    manager->loadPackage(packageLinks_[i].c_str());
+                    hResourceManager::loadPackage(packageLinks_[i].c_str());
                 }
                 packageState_ = State_Kick_ResourceLoads; 
             } break;
@@ -185,13 +185,13 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             } break;
         case State_Unload_Resources: {
                 // mark ourselves as a non-root resource any more. Will allow the GC to work its magic
-                manager->resourceDecRef(packageName_);
-                manager->collectGarbage(0.f);
+                hResourceManager::resourceDecRef(packageName_);
+                hResourceManager::collectGarbage(0.f);
                 packageState_ = State_Unload_DepPkg;
             } break;
         case State_Unload_DepPkg: {
                 for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
-                    manager->unloadPackage(packageLinks_[i].c_str());
+                    hResourceManager::unloadPackage(packageLinks_[i].c_str());
                 }
                 hdEndFilewatch(resourceFilewatch_);
                 resourceFilewatch_=0;
@@ -256,7 +256,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             --linkedResources_;
         }
         if (linkedResources_ == totalResources_) {
-            hResourceManager::get()->insertResourceContainer(packageName_, this, getTypeName());
+            hResourceManager::insertResourceContainer(packageName_, this, getTypeName());
         }
         return hTrue;
     }

@@ -62,15 +62,15 @@ namespace Heart
             return &renderables_[i];
         }
         void calculateBounds();
-        void listenForResourceEvents(hResourceManager* resmanager);
+        void listenForResourceEvents();
         void stopListeningForResourceEvents();
         void cleanUp();
 
     private:
 
-        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event);
 
-        hBool attemptResourceInsert(hResourceManager* resManager);
+        hBool attemptResourceInsert();
 
         void  initialiseRenderCommands();
         void  destroyRenderCommands();

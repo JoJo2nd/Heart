@@ -36,7 +36,6 @@ namespace Heart
 
     hDebugMenuManager::hDebugMenuManager()
         : renderer_(NULL)
-        , resourceManager_(NULL)
     {
         hcAssert(instance_ == NULL);
         instance_ = this;
@@ -55,10 +54,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugMenuManager::Initialise(hRenderer* renderer, hResourceManager* resManager, hActionManager* actionManager)
+    void hDebugMenuManager::Initialise(hRenderer* renderer, hActionManager* actionManager)
     {
         renderer_ = renderer;
-        resourceManager_ = resManager;
         actionManager_ = actionManager;
 
         menuMap_.SetAutoDelete(hTrue);

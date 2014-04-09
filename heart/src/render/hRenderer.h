@@ -126,7 +126,7 @@ namespace Heart
         }
 
         hRenderer();
-        void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync, hResourceManager* pResourceManager );
+        void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
         void													Destroy();
         void                                                    initialiseCameras();
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
@@ -253,7 +253,6 @@ namespace Heart
 
         hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
         hRenderState*           renderStateCache_;
-        hResourceManager*       resourceManager_;
         hRenderMaterialManager  materialManager_;
         hRenderSubmissionCtx    mainSubmissionCtx_;
 
@@ -317,7 +316,7 @@ namespace Heart
         void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
 
         void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
-        hBool resourceUpdate(hStringID , hResurceEvent, hResourceManager*);
+        hBool resourceUpdate(hStringID , hResurceEvent);
 
     private:
 

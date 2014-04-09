@@ -31,7 +31,6 @@ namespace Heart
 {
     class hMaterial;
     class hMaterialInstance;
-    class hResourceManager;
 
     struct HEART_DLLEXPORT hRenderTechniqueInfo
     {
@@ -71,7 +70,6 @@ namespace Heart
         };
 
         void                        setRenderer(hRenderer* renderer) { renderer_ = renderer; }
-        void                        setResourceManager(hResourceManager* resourcemanager) { resourceManager_=resourcemanager; }
         void                        createDebugMaterials();
         void                        destroyRenderResources();
         hMaterial*                  getDebugFontMat() const { return debugFontMat_; }
@@ -141,7 +139,6 @@ namespace Heart
         void onWindowResize(hUint width, hUint height);
 
         hRenderer*              renderer_;
-        hResourceManager*       resourceManager_;
         lua_State*              mainLuaState_;
         hdMutex                 accessMutex_;
         hUint32                 nMatKeys_;

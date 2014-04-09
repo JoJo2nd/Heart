@@ -431,7 +431,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         
@@ -504,7 +504,7 @@ namespace hRenderUtility
 
         ddrawmat->addDefaultParameterValue("g_sampler", hStringID("?builtin/debug_font_surface"));
         //ddrawmat->setResourceID(hStringID("?builtin/debug_font_material"));
-        ddrawmat->listenToResourceEvents(resmana);
+        ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
     }
@@ -514,7 +514,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -585,7 +585,7 @@ namespace hRenderUtility
         //ss->DecRef();
 
         //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_material"));
-        ddrawmat->listenToResourceEvents(resmana);
+        ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
     }
@@ -595,7 +595,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -649,7 +649,7 @@ namespace hRenderUtility
         pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
 
         //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_material"));
-        ddrawmat->listenToResourceEvents(resmana);
+        ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
     }
@@ -659,7 +659,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -731,7 +731,7 @@ namespace hRenderUtility
         //ss->DecRef();
 
         //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_uv_alpha_material"));
-        ddrawmat->listenToResourceEvents(resmana);
+        ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
     }
@@ -741,7 +741,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hResourceManager* resmana, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -795,7 +795,7 @@ namespace hRenderUtility
         pass->setProgramID(ShaderType_FRAGMENTPROG, hDebugShaderResourceID_PixelPosCol);
         
         //ddrawmat->setResourceID(hResourceID::buildResourceID("?builtin.debug_pos_col_alpha_material"));
-        ddrawmat->listenToResourceEvents(resmana);
+        ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
     }
@@ -805,7 +805,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* outfont, hTexture** outtex) {
+    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex) {
         hcAssert(rndr && outfont && outtex);
 
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
@@ -840,7 +840,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     HEART_DLLEXPORT
-    void HEART_API destroyDebugFont(hRenderer* rndr, hResourceManager* resmana, hFont* font, hTexture* tex) {
+    void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
         hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
 #if 0

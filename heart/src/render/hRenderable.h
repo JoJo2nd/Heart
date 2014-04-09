@@ -115,7 +115,7 @@ namespace Heart
         }
 
         void  setMaterial(const hResourceHandle& material);
-        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resmanager);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event);
 
         hUint32                     materialKey_;
         hUint                       primCount_;

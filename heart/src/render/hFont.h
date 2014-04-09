@@ -133,7 +133,7 @@ namespace Private
         void                    SetFontCharacterLimit(hUint32 nChars);
         void                    AddFontCharacter(const hFontCharacter* fchar);
         void                    SortCharacters();
-        hBool                   Link(hResourceManager* resManager);
+        hBool                   Link();
         const hFontCharacter*   GetFontCharacter( hUint32 charcode ) const;
 
     private:

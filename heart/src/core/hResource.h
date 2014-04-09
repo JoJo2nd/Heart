@@ -145,7 +145,7 @@ namespace Heart
         hResourceEvent_HotSwap,
     };
 
-#if 0 // Removing, we don't want to constrain resources to fix our interface
+#if 0 // Removing, we don't want to constrain resources to fit our interface
     class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >
     {
     public:
@@ -174,8 +174,6 @@ namespace Heart
         hResourceType      type_;
     };
 #endif
-
-    class hResourceManager;
 
 #if 0 // hResourceEventProc is replaced by hNewResoruceEventProc (awaiting rename)
     hFUNCTOR_TYPEDEF(hBool (*)(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*), hResourceEventProc);
@@ -227,7 +225,7 @@ namespace Heart
 
         template< typename t_ty >
         t_ty*               weakPtr() const {
-            return manager_->getResourceForHandle<t_ty>(resourceID_);
+            return hResourceManager::getResourceForHandle<t_ty>(resourceID_);
         }
         void                registerForUpdates(hNewResourceEventProc proc);
         void                unregisterForUpdates(hNewResourceEventProc proc);
@@ -236,24 +234,11 @@ namespace Heart
 
     private:
 
-        friend class hResourceManager;
-
-        hResourceHandle(hResourceManager* manager, hStringID res_id)
-            : resourceID_(res_id)
-            , flags_(0)
-        {
-            if (!manager_) {
-                manager_=manager;
-            }
-        }
-
         static void swap(hResourceHandle* lhs, hResourceHandle* rhs) {
-            std::swap(lhs->manager_, rhs->manager_);
             std::swap(lhs->resourceID_, rhs->resourceID_);
             std::swap(lhs->flags_, rhs->flags_);
         }
 
-        static hResourceManager*    manager_;
         hStringID                   resourceID_;
         union {
             hUint                   flags_;

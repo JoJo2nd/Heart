@@ -100,7 +100,6 @@ namespace Heart
         actionManager_ = hNEW(hActionManager);
         system_ = hNEW(hSystem);
         fileMananger_ = hNEW(hDriveFileSystem)();
-        resourceMananger_ = hNEW(hResourceManager);
         renderer_ = hNEW(hRenderer);
         soundManager_ = hNEW(hSoundManager);
         console_ = hNEW(hSystemConsole)(consoleCb, consoleUser);
@@ -142,10 +141,8 @@ namespace Heart
             config_.bpp_,
             config_.MinShaderVersion_,
             config_.Fullscreen_,
-            config_.vsync_,
-            resourceMananger_
-            );
-        resourceMananger_->initialise(fileMananger_, jobManager_);
+            config_.vsync_);
+        hResourceManager::initialise(fileMananger_, jobManager_);
         soundManager_->Initialise();
         luaVM_->Initialise();
 
@@ -184,8 +181,8 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         renderer_->GetMaterialManager()->createDebugMaterials();
         renderer_->initialiseCameras();
-        console_->initialise(actionManager_, luaVM_, resourceMananger_, renderer_, mainPublisherCtx_, debugServer_);
-        debugMenuManager_->Initialise(renderer_, resourceMananger_, actionManager_);
+        console_->initialise(actionManager_, luaVM_, renderer_, mainPublisherCtx_, debugServer_);
+        debugMenuManager_->Initialise(renderer_, actionManager_);
 
         debugInfo_ = hNEW(hDebugInfo)(this);
         debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
@@ -218,7 +215,7 @@ namespace Heart
             hClock::update();
             GetSystem()->Update();
             debugServer_->service();
-            GetResourceManager()->update();
+            hResourceManager::update();
             getActionManager()->update();
             GetConsole()->update();
             if (GetSystem()->exitSignaled()) {
@@ -276,7 +273,7 @@ namespace Heart
         debugMenuManager_->Destroy();
         console_->destroy();
         soundManager_->Destory(); 
-        resourceMananger_->shutdown( renderer_ );
+        hResourceManager::shutdown();
         luaVM_->Destroy();
         renderer_->Destroy();
         debugServer_->destroy();
@@ -287,7 +284,6 @@ namespace Heart
         hDELETE_SAFE(debugMenuManager_);
         hDELETE_SAFE(luaVM_);
         hDELETE_SAFE(console_);
-        hDELETE_SAFE(resourceMananger_);
         hDELETE_SAFE(soundManager_);
         hDELETE_SAFE(renderer_);
         hDELETE_SAFE(actionManager_);

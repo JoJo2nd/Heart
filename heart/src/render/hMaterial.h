@@ -208,7 +208,7 @@ namespace Heart
         /* Allow access to parameter blocks and updating of parameters */
         hRenderBuffer* GetParameterConstBlock(hShaderParameterID cbid);
 
-        void listenToResourceEvents(hResourceManager* resmanager);
+        void listenToResourceEvents();
         void stopListeningToResourceEvents();
 
     private:
@@ -233,7 +233,7 @@ namespace Heart
         void cleanup();
 
         hBool linkDependeeResources();
-        hBool resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager);
+        hBool resourceUpdate(hStringID resourceid, hResurceEvent event);
 
         hUint32                             uniqueKey_;
         hRenderer*                          renderer_;

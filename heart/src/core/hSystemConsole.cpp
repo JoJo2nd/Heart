@@ -147,13 +147,11 @@ namespace Heart
 
     void hSystemConsole::initialise( hActionManager* actionManager,
                                      hLuaStateManager* lua,
-                                     hResourceManager* pResourceManager,
                                      hRenderer* renderer,
                                      hPublisherContext* evtCtx,
                                      hNetHost* debugHost)
     {
         actionManager_ = actionManager;
-        resourceManager_ = pResourceManager;
         renderer_ = renderer;
         vm_ = lua;
         evtCtx_ = evtCtx;

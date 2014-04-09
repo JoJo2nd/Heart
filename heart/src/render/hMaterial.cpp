@@ -870,7 +870,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hMaterial::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager) {
+    hBool hMaterial::resourceUpdate(hStringID resourceid, hResurceEvent event) {
         // if a resource is missing, remove ourselves from the resource database then unbind
 #if 0
         if (event == hResourceEvent_DBRemove) {
@@ -930,7 +930,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hMaterial::listenToResourceEvents(hResourceManager* resmanager) {
+    void hMaterial::listenToResourceEvents() {
 
 #if 0
         // register for resource updates

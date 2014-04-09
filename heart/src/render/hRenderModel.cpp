@@ -66,7 +66,7 @@ void hRenderModel::destroyRenderCommands() {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hResourceManager* resManager) {
+hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event) {
 #if 0
     if (event == hResourceEvent_DBInsert) {
         attemptResourceInsert(resManager);
@@ -84,7 +84,7 @@ hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event, hR
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void hRenderModel::listenForResourceEvents(hResourceManager* resmanager) {
+void hRenderModel::listenForResourceEvents() {
 #if 0
     hUint32 renderablecount = getRenderableCount();
     for(hUint32 i = 0; i < renderablecount; ++i) {
@@ -133,7 +133,7 @@ void hRenderModel::cleanUp() {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hRenderModel::attemptResourceInsert(hResourceManager* resManager) {
+hBool hRenderModel::attemptResourceInsert() {
 #if 0
     hUint32 renderablecount = getRenderableCount();
     for(hUint32 i = 0; i < renderablecount; ++i) {

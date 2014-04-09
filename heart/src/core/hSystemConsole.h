@@ -61,7 +61,6 @@ namespace Heart
 
         void            initialise( hActionManager* actionManager,
                                     hLuaStateManager* lua,
-                                    hResourceManager* pResourceManager,
                                     hRenderer* renderer,
                                     hPublisherContext* evtCtx,
                                     hNetHost* debugHost);
@@ -188,7 +187,6 @@ namespace Heart
         void    clearConsoleBuffer();
 
         hRenderer*          renderer_;
-        hResourceManager*   resourceManager_;
         hBool               visible_;
         hPublisherContext*  evtCtx_;
         hNetHost*           debugHost_;

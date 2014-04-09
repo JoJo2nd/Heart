@@ -72,7 +72,6 @@ namespace Heart
     class hDriveFileSystem;
     class hZipFileSystem;
     class hJobManager;
-    class hResourceManager;
     class hSystemConsole;
     class hSoundManager;
     class hPublisherContext;
@@ -145,7 +144,6 @@ namespace Heart
         hIFileSystem*       GetFileManager()        { return fileMananger_; }
         hSystem*            GetSystem()             { return system_; }
         hRenderer*          GetRenderer()           { return renderer_; }
-        hResourceManager*   GetResourceManager()    { return resourceMananger_; }
         hPublisherContext*  GetMainEventPublisher() { return mainPublisherCtx_; }
         hActionManager*     getActionManager()      { return actionManager_; }
         hSystemConsole*     GetConsole()            { return console_; }
@@ -181,7 +179,6 @@ namespace Heart
         hArray< hChar, 1024 >           processDir_;
         
         hIFileSystem*                   fileMananger_;
-        hResourceManager*               resourceMananger_;
         hSystem*                        system_;
         hRenderer*                      renderer_;
         hSoundManager*                  soundManager_;

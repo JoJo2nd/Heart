@@ -113,7 +113,7 @@ namespace Heart
         hDebugDrawRenderer();
         ~hDebugDrawRenderer();
 
-        void initialiseResources(hRenderer* renderer, hResourceManager* resourceManager);
+        void initialiseResources(hRenderer* renderer);
         void destroyResources();
         void setMainViewCameraIndex(hUint camIndex);
 

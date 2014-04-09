@@ -27,15 +27,13 @@
 
 namespace Heart
 {
-    hResourceManager* hResourceHandle::manager_=nullptr;
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     void hResourceHandle::registerForUpdates(hNewResourceEventProc proc) {
         if (!resourceID_.is_default()) {
-            manager_->registerForResourceEvents(resourceID_, proc);
+            hResourceManager::registerForResourceEvents(resourceID_, proc);
         }
     }
 
@@ -45,7 +43,7 @@ namespace Heart
 
     void hResourceHandle::unregisterForUpdates(hNewResourceEventProc proc) {
         if (!resourceID_.is_default()) {
-            manager_->unregisterForResourceEvents(resourceID_, proc);
+            hResourceManager::unregisterForResourceEvents(resourceID_, proc);
         }
     }
 

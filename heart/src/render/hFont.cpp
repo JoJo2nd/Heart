@@ -160,7 +160,7 @@ void hFont::SortCharacters()
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hFont::Link( hResourceManager* resManager )
+hBool hFont::Link()
 {
     hcAssertFailMsg("This needs implementing");
     //texturePages_ = static_cast<hTexture*>(resManager->getResource(texturePageResID_));    

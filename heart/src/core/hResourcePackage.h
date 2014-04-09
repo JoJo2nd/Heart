@@ -29,7 +29,6 @@
 
 namespace Heart
 {
-    class hResourceManager;
     class hHeartEngine;
 
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
@@ -134,7 +133,7 @@ namespace Heart
         const hChar*            getPackageName() const { return packageName_.c_str(); }
         hUint32                 getPackageCRC() const { return packageName_.hash(); }
         void                    beginLoad() { packageState_=State_Load_PkgDesc; }
-        hBool                   update(hResourceManager* manager);
+        hBool                   update();
         void                    beginUnload();
         hBool                   isInReadyState() const { return packageState_ == State_Ready; }
         hBool                   isUnloading() const { return packageState_ > State_Ready; }

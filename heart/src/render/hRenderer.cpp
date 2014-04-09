@@ -75,14 +75,12 @@ namespace Heart
         hUint32 bpp, 
         hFloat shaderVersion, 
         hBool fullscreen, 
-        hBool vsync,
-        hResourceManager* pResourceManager	)
+        hBool vsync)
     {
         instance_ = this;
 
         frameTimer_.reset();
         materialManager_.setRenderer(this);
-        materialManager_.setResourceManager(pResourceManager);
 
         width_			= width;
         height_			= height;
@@ -90,7 +88,6 @@ namespace Heart
         shaderVersion_	= shaderVersion;
         fullscreen_		= fullscreen;
         vsync_			= vsync;
-        resourceManager_ = pResourceManager;
         system_			=  pSystem;
         backBuffer_     = hNullptr;
 
@@ -634,7 +631,7 @@ namespace Heart
         rtv->DecRef();
         dsv->DecRef();
 
-        hDebugDrawRenderer::it()->initialiseResources(this, resourceManager_);
+        hDebugDrawRenderer::it()->initialiseResources(this);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -2441,7 +2438,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event, hResourceManager*) {
+    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event) {
 #if 0
         destroy();
         if (event == hResourceEvent_DBInsert) {
