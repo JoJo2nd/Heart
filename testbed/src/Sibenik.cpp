@@ -53,14 +53,14 @@ hUint32 Sibenik::RunUnitTest()
     case eBeginLoad:
         {
             hcPrintf("Loading package \"%s\"", PACKAGE_NAME);
-            engine_->GetResourceManager()->loadPackage(PACKAGE_NAME);
+            Heart::hResourceManager::loadPackage(PACKAGE_NAME);
             hcPrintf("Stub");//fpCamera_.setInput(pad);
             state_ = eLoading;
         }
         break;
     case eLoading:
         {
-            if (engine_->GetResourceManager()->getIsPackageLoaded(PACKAGE_NAME) &&
+            if (Heart::hResourceManager::getIsPackageLoaded(PACKAGE_NAME) &&
                 Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr<Heart::hShaderProgram>() && // <- Not correct way to handle this!
                 Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr<Heart::hShaderProgram>())
             {
@@ -87,7 +87,7 @@ hUint32 Sibenik::RunUnitTest()
         {
             SetCanRender(hFalse);
             DestroyRenderResources();
-            engine_->GetResourceManager()->unloadPackage(PACKAGE_NAME);
+            Heart::hResourceManager::unloadPackage(PACKAGE_NAME);
             hcPrintf("Unloading package \"%s\"", PACKAGE_NAME);
             state_ = eExit;
         }

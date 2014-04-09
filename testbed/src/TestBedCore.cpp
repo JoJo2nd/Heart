@@ -128,7 +128,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         luaL_setfuncs(L,funcs,1);
         lua_pop(L, 1);// pop heart module table
 
-        engine_->GetResourceManager()->loadPackage("core");
+        Heart::hResourceManager::loadPackage("core");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

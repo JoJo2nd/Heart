@@ -9,3 +9,4 @@
 /cmake_build/
 /platform_win32/
 /platform_win64/
+/tools/viewer/src/lua/builder_script.inl

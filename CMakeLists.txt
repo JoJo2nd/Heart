@@ -5,16 +5,16 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
   IF(MSVC)
     GET_FILENAME_COMPONENT(PrecompiledBasename ${PrecompiledHeader} NAME_WE)
     SET(PrecompiledBinary "${CMAKE_CURRENT_BINARY_DIR}/${PrecompiledBasename}.pch")
-    SET(Sources ${SourcesVar})
+    SET(Sources SourcesVar)
 
     SET_SOURCE_FILES_PROPERTIES(${PrecompiledSource}
                                 PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledBasename}.h\" /Fp\"${PrecompiledBinary}\""
                                            OBJECT_OUTPUTS "${PrecompiledBinary}")
-    SET_SOURCE_FILES_PROPERTIES(${Sources}
+    SET_SOURCE_FILES_PROPERTIES(${SourcesVar}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledBinary}\" /FI\"${PrecompiledBinary}\" /Fp\"${PrecompiledBinary}\""
                                            OBJECT_DEPENDS "${PrecompiledBinary}")  
     # Add precompiled header to SourcesVar
-    LIST(APPEND ${SourcesVar} ${PrecompiledSource} ${PrecompiledHeader})
+    SET(SourcesVar ${SourcesVar} ${PrecompiledSource} ${PrecompiledHeader})
   ENDIF(MSVC)
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
@@ -87,6 +87,47 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
   set(${HDRS} ${${HDRS}} PARENT_SCOPE)
   set(${luaSRCS} ${${luaSRCS}} PARENT_SCOPE)
   set(${luaHDRS} ${${luaHDRS}} PARENT_SCOPE)
+endfunction()
+
+function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: PROTOBUF_GENERATE_LITE_CPP_BINDINGS() called without any proto files")
+    return()
+  endif(NOT ARGN)
+  
+  get_filename_component(PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY ${PROTOBUF_PROTOC_EXECUTABLE} DIRECTORY)
+
+  message("${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}")
+    
+  set(${SRCS})
+  set(${HDRS})
+  set(PROTO_IM_DIR "${CMAKE_CURRENT_BINARY_DIR}/pb_lite")
+
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    
+	set(PROTO_IM_FILE "${PROTO_IM_DIR}/${FIL_WE}.proto")
+
+    list(APPEND ${SRCS} "${PROTO_IM_DIR}/${FIL_WE}.pb.cc")
+    list(APPEND ${HDRS} "${PROTO_IM_DIR}/${FIL_WE}.pb.h")
+
+	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
+	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
+
+    add_custom_command(
+      OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
+             "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
+	  COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/create_pb_lite_file.bat" ARGS ${ABS_ROOT} ${ABS_FIL} ${PROTO_IM_FILE}
+	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --cpp_out  ${PROTO_IM_DIR} --proto_path ${PROTO_IM_DIR} ${PROTO_IM_FILE}
+      DEPENDS ${ABS_FIL}
+      COMMENT "Running C++ lite protocol buffer compiler on ${FIL}"
+      VERBATIM )
+  endforeach()
+
+  set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
+  set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+  set(${HDRS} ${${HDRS}} PARENT_SCOPE)
 endfunction()
 
 #end macros
@@ -165,7 +206,11 @@ set(HEART_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/heart"
 )
 set(GENERATED_PROTO_INC_DIRS
-    "${CMAKE_BINARY_DIR}/tools/proto"
+    "${CMAKE_BINARY_DIR}/tools/proto/pb_lite/"
+    #add more as needed
+)
+set(GENERATED_PROTO_FULL_INC_DIRS
+    "${CMAKE_BINARY_DIR}/tools/proto_full"
     #add more as needed
 )
 set(ENET_INCLUDE_DIR
@@ -285,6 +330,7 @@ add_subdirectory("tools/lualibs/enet_lua")
 add_subdirectory("tools/lualibs/lua_process")
 
 add_subdirectory("tools/proto")
+add_subdirectory("tools/proto_full")
 add_subdirectory("tools/memtrack")
 add_subdirectory("tools/viewer")
 add_subdirectory("tools/profiler")
