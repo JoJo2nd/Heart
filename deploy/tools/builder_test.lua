@@ -8,7 +8,7 @@ end
 
 local G = _G
 local buildables = {}
-local data_path = filesystem.canonical("C:/dev/heart_lua/data/") --TODO: parse these from command line
+local data_pasath = filesystem.canonical("C:/dev/heart_lua/data/") --TODO: parse these from command line
 local temp_data_path = data_path.."/.tmp"
 local output_data_path = "C:/dev/heart_lua/deploy/gamedata"
 local job_count = cores or 3              --TODO: parse these from command line
@@ -68,27 +68,21 @@ local function add_build_folder(folder_path, type_parameters, package)
         filesystem          = filesystem,
         assert              = assert,
         collectgarbage      = collectgarbage,
-        --dofile,            = --dofile,
         error               = error,
         getmetatable        = getmetatable,
         ipairs              = ipairs,
-        --load               = --load
-        --loadfile           = --loadfile
         next                = next,
         pairs               = pairs,
-        --pcall              = --pcall
         print               = print,
         rawequal            = rawequal,
         rawget              = rawget,
         rawlen              = rawlen,
         rawset              = rawset,
-        --require            = --require
         select              = select,
         setmetatable        = setmetatable,
         tonumber            = tonumber,
         tostring            = tostring,
         type                = type,
-        --xpcall             = --xpcall
     }
     folder_path = filesystem.canonical(folder_path)
    
