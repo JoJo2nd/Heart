@@ -73,102 +73,102 @@ Heart::hXMLEnumReamp g_parameterTypes[] =
 
 Heart::hXMLEnumReamp g_samplerStates[] =
 {
-    { "repeat",                  Heart::SSV_WRAP },
-    { "wrap",                    Heart::SSV_WRAP },
+    { "repeat",                  Heart::proto::renderstate::wrap },
+    { "wrap",                    Heart::proto::renderstate::wrap },
 
-    { "clamp",                   Heart::SSV_CLAMP },
-    { "clamptoedge",             Heart::SSV_CLAMP },
-    { "mirror",                  Heart::SSV_MIRROR },
-    { "border",                  Heart::SSV_BORDER },
-    { "aniso",                   Heart::SSV_ANISOTROPIC },
-    { "point",                   Heart::SSV_POINT },
-    { "linear",                  Heart::SSV_LINEAR },
-    { "linearmipmaplinear",      Heart::SSV_LINEAR },
+    { "clamp",                   Heart::proto::renderstate::clamp },
+    { "clamptoedge",             Heart::proto::renderstate::clamp },
+    { "mirror",                  Heart::proto::renderstate::mirror },
+    { "border",                  Heart::proto::renderstate::border },
+    { "aniso",                   Heart::proto::renderstate::anisotropic },
+    { "point",                   Heart::proto::renderstate::point },
+    { "linear",                  Heart::proto::renderstate::linear },
+    { "linearmipmaplinear",      Heart::proto::renderstate::linear },
     { NULL,                      0}
 };
 
 Heart::hXMLEnumReamp g_trueFalseEnum[] = 
 {
-    { "true", Heart::RSV_ENABLE },
-    { "false", Heart::RSV_DISABLE },
+    { "true", 1 },
+    { "false", 0 },
     {NULL, 0}
 };
 
 Heart::hXMLEnumReamp g_blendFuncEnum[] = 
 {
-    { "funcadd" , Heart::RSV_BLEND_FUNC_ADD },
-    { "funcsubtract" , Heart::RSV_BLEND_FUNC_SUB },
-    { "add" , Heart::RSV_BLEND_FUNC_ADD },
-    { "subtract" , Heart::RSV_BLEND_FUNC_SUB },
-    { "min" , Heart::RSV_BLEND_FUNC_MIN },
-    { "max" , Heart::RSV_BLEND_FUNC_MAX },
+    { "funcadd" , Heart::proto::renderstate::Add },
+    { "funcsubtract" , Heart::proto::renderstate::Sub },
+    { "add" , Heart::proto::renderstate::Add },
+    { "subtract" , Heart::proto::renderstate::Sub },
+    { "min" , Heart::proto::renderstate::Min },
+    { "max" , Heart::proto::renderstate::Max },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_blendOpEnum[] =
 {
-    { "zero" , Heart::RSV_BLEND_OP_ZERO },
-    { "one" , Heart::RSV_BLEND_OP_ONE },
-    { "destcolor" , Heart::RSV_BLEND_OP_DEST_COLOUR },
-    { "invdestcolor" , Heart::RSV_BLEND_OP_INVDEST_COLOUR },
-    { "srcalpha" , Heart::RSV_BLEND_OP_SRC_ALPHA },
-    { "invsrcalpha" , Heart::RSV_BLEND_OP_INVSRC_ALPHA },
-    { "dstalpha" , Heart::RSV_BLEND_OP_DEST_ALPHA },
-    { "invdestalpha" , Heart::RSV_BLEND_OP_INVDEST_ALPHA },
-    { "srccolor" , Heart::RSV_BLEND_OP_SRC_COLOUR },
-    { "invsrccolor" , Heart::RSV_BLEND_OP_INVSRC_COLOUR },
+    { "zero" , Heart::proto::renderstate::BlendZero },
+    { "one" , Heart::proto::renderstate::BlendOne },
+    { "destcolor" , Heart::proto::renderstate::BlendDestColour },
+    { "invdestcolor" , Heart::proto::renderstate::BlendInverseDestColour },
+    { "srcalpha" , Heart::proto::renderstate::BlendSrcAlpha }, 
+    { "invsrcalpha" , Heart::proto::renderstate::BlendInverseSrcAlpha },
+    { "dstalpha" , Heart::proto::renderstate::BlendDestAlpha },
+    { "invdestalpha" , Heart::proto::renderstate::BlendInverseDestAlpha },
+    { "srccolor" , Heart::proto::renderstate::BlendSrcColour },
+    { "invsrccolor" , Heart::proto::renderstate::BlendInverseSrcColour },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_depthEnum[] = 
 {
-    { "never" , Heart::RSV_Z_CMP_NEVER },
-    { "less" , Heart::RSV_Z_CMP_LESS },
-    { "lequal" , Heart::RSV_Z_CMP_LESSEQUAL },
-    { "lessequal" , Heart::RSV_Z_CMP_LESSEQUAL },
-    { "equal" , Heart::RSV_Z_CMP_EQUAL },
-    { "greater" , Heart::RSV_Z_CMP_GREATER },
-    { "notequal" , Heart::RSV_Z_CMP_NOT_EQUAL },
-    { "gequal" , Heart::RSV_Z_CMP_GREATER_EQUAL },
-    { "greaterequal" , Heart::RSV_Z_CMP_GREATER_EQUAL },
-    { "always" , Heart::RSV_Z_CMP_ALWAYS },
+    { "never" , Heart::proto::renderstate::CompareNever },
+    { "less" , Heart::proto::renderstate::CompareLess },
+    { "lequal" , Heart::proto::renderstate::CompareLessEqual },
+    { "lessequal" , Heart::proto::renderstate::CompareLessEqual },
+    { "equal" , Heart::proto::renderstate::CompareEqual },
+    { "greater" , Heart::proto::renderstate::CompareGreater },
+    { "notequal" , Heart::proto::renderstate::CompareNotEqual },
+    { "gequal" , Heart::proto::renderstate::CompareGreaterEqual },
+    { "greaterequal" , Heart::proto::renderstate::CompareGreater },
+    { "always" , Heart::proto::renderstate::CompareAlways },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_fillModeEnum[] = 
 {
-    { "solid" , Heart::RSV_FILL_MODE_SOLID },
-    { "wireframe" , Heart::RSV_FILL_MODE_WIREFRAME },
+    { "solid" , Heart::proto::renderstate::Solid },
+    { "wireframe" , Heart::proto::renderstate::Wireframe },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_cullModeEnum[] =
 {
-    { "none" , Heart::RSV_CULL_MODE_NONE },
-    { "cw" , Heart::RSV_CULL_MODE_CW },
-    { "ccw" , Heart::RSV_CULL_MODE_CCW },
+    { "none" , Heart::proto::renderstate::CullNone },
+    { "cw" , Heart::proto::renderstate::CullClockwise },
+    { "ccw" , Heart::proto::renderstate::CullCounterClockwise },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_stencilFuncEnum[] =
 {
-    { "never" , Heart::RSV_SF_CMP_NEVER },
-    { "less" , Heart::RSV_SF_CMP_LESS },
-    { "lequal" , Heart::RSV_SF_CMP_LESSEQUAL },
-    { "lessequal" , Heart::RSV_SF_CMP_LESSEQUAL },
-    { "equal" , Heart::RSV_SF_CMP_EQUAL },
-    { "greater" , Heart::RSV_SF_CMP_GREATER },
-    { "notequal" , Heart::RSV_SF_CMP_NOT_EQUAL },
-    { "gequal" , Heart::RSV_SF_CMP_GREATER_EQUAL },
-    { "greaterequal" , Heart::RSV_SF_CMP_GREATER_EQUAL },
-    { "always" , Heart::RSV_SF_CMP_ALWAYS },
+    { "never" , Heart::proto::renderstate::CompareNever },
+    { "less" , Heart::proto::renderstate::CompareLess },
+    { "lequal" , Heart::proto::renderstate::CompareLessEqual },
+    { "lessequal" , Heart::proto::renderstate::CompareLessEqual },
+    { "equal" , Heart::proto::renderstate::CompareEqual },
+    { "greater" , Heart::proto::renderstate::CompareGreater },
+    { "notequal" , Heart::proto::renderstate::CompareNotEqual },
+    { "gequal" , Heart::proto::renderstate::CompareGreaterEqual },
+    { "greaterequal" , Heart::proto::renderstate::CompareGreaterEqual },
+    { "always" , Heart::proto::renderstate::CompareAlways },
     {NULL, 0}
 };
 Heart::hXMLEnumReamp g_stencilOpEnum[] = 
 {
-    { "keep" ,      Heart::RSV_SO_KEEP, },
-    { "zero" ,      Heart::RSV_SO_ZERO, },
-    { "replace" ,   Heart::RSV_SO_REPLACE, },
-    { "incr" ,      Heart::RSV_SO_INCR, },
-    { "decr" ,      Heart::RSV_SO_DECR, },
-    { "invert" ,    Heart::RSV_SO_INVERT, },
-    { "incrsat" ,   Heart::RSV_SO_INCRSAT },
-    { "decrsat" ,   Heart::RSV_SO_DECRSAT },
+    { "keep" ,      Heart::proto::renderstate::StencilKeep, },
+    { "zero" ,      Heart::proto::renderstate::StencilZero, },
+    { "replace" ,   Heart::proto::renderstate::StencilReplace, },
+    { "incr" ,      Heart::proto::renderstate::StencilIncr, },
+    { "decr" ,      Heart::proto::renderstate::StencilDecr, },
+    { "invert" ,    Heart::proto::renderstate::StencilInvert, },
+    { "incrsat" ,   Heart::proto::renderstate::StencilIncSat },
+    { "decrsat" ,   Heart::proto::renderstate::StencilDecSat },
     {NULL, 0}
 };
 
@@ -376,13 +376,13 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         }
 
         if (xSampler.FirstChild("addressu").ToNode()) {
-            sampler->mutable_samplerstate()->set_addressu((hUint)xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, SSV_CLAMP));
+            sampler->mutable_samplerstate()->set_addressu(xSampler.FirstChild("addressu").GetValueEnum(g_samplerStates, Heart::proto::renderstate::clamp));
         }
         if (xSampler.FirstChild("addressv").ToNode()) {
-            sampler->mutable_samplerstate()->set_addressv((hUint)xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, SSV_CLAMP));
+            sampler->mutable_samplerstate()->set_addressv(xSampler.FirstChild("addressv").GetValueEnum(g_samplerStates, Heart::proto::renderstate::clamp));
         }
         if (xSampler.FirstChild("addressw").ToNode()) {
-            sampler->mutable_samplerstate()->set_addressw((hUint)xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, SSV_CLAMP));
+            sampler->mutable_samplerstate()->set_addressw(xSampler.FirstChild("addressw").GetValueEnum(g_samplerStates, Heart::proto::renderstate::clamp));
         }
         if (xSampler.FirstChild("bordercolour").ToNode()) {
             auto colour=xSampler.FirstChild("bordercolour").GetValueColour(hColour(0.f, 0.f, 0.f, 1.f));
@@ -392,19 +392,19 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             sampler->mutable_samplerstate()->mutable_bordercolour()->set_alpha((hUint)(colour.a_*255.f+.5f));
         }
         if (xSampler.FirstChild("filter").ToNode()) {
-            sampler->mutable_samplerstate()->set_filter((hUint)xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, SSV_POINT));
+            sampler->mutable_samplerstate()->set_filter(xSampler.FirstChild("filter").GetValueEnum(g_samplerStates, Heart::proto::renderstate::point));
         }
         if (xSampler.FirstChild("maxanisotropy").ToNode()) {
-            sampler->mutable_samplerstate()->set_maxanisotropy((hUint)xSampler.FirstChild("maxanisotropy").GetValueInt(1));
+            sampler->mutable_samplerstate()->set_maxanisotropy(xSampler.FirstChild("maxanisotropy").GetValueInt(1));
         }
         if (xSampler.FirstChild("minlod").ToNode()) {
-            sampler->mutable_samplerstate()->set_minlod((hFloat)xSampler.FirstChild("minlod").GetValueFloat());
+            sampler->mutable_samplerstate()->set_minlod(xSampler.FirstChild("minlod").GetValueFloat());
         }
         if (xSampler.FirstChild("maxlod").ToNode()) {
-            sampler->mutable_samplerstate()->set_maxlod((hFloat)xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX));
+            sampler->mutable_samplerstate()->set_maxlod(xSampler.FirstChild("maxlod").GetValueFloat(FLT_MAX));
         }
         if (xSampler.FirstChild("miplodbias").ToNode()) {
-            sampler->mutable_samplerstate()->set_miplodbias((hFloat)xSampler.FirstChild("miplodbias").GetValueFloat());
+            sampler->mutable_samplerstate()->set_miplodbias(xSampler.FirstChild("miplodbias").GetValueFloat());
         }
     }
 
@@ -486,53 +486,53 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
                 Heart::proto::MaterialPass* pass=findOrAddMaterialPass(tech, passIdx);
 
                 if (xPass.FirstChild("blendenable").ToNode()) {
-                    pass->mutable_blend()->set_blendenable(xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_blend()->set_blendenable(xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, false));
                 }
                 if (xPass.FirstChild("blendop").ToNode()) {
-                    pass->mutable_blend()->set_blendop(xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD));
+                    pass->mutable_blend()->set_blendop(xPass.FirstChild("blendop").GetValueEnum(g_blendFuncEnum, Heart::proto::renderstate::Add));
                 }
                 if (xPass.FirstChild("blendopalpha").ToNode()) {
-                    pass->mutable_blend()->set_blendopalpha(xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, RSV_BLEND_FUNC_ADD));
+                    pass->mutable_blend()->set_blendopalpha(xPass.FirstChild("blendopalpha").GetValueEnum(g_blendFuncEnum, Heart::proto::renderstate::Add));
                 }
                 if (xPass.FirstChild("destblend").ToNode()) {
-                    pass->mutable_blend()->set_destblend(xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
+                    pass->mutable_blend()->set_destblend(xPass.FirstChild("destblend").GetValueEnum(g_blendOpEnum, Heart::proto::renderstate::BlendOne));
                 }
                 if (xPass.FirstChild("destblendalpha").ToNode()) {
-                    pass->mutable_blend()->set_destblendalpha(xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
+                    pass->mutable_blend()->set_destblendalpha(xPass.FirstChild("destblendalpha").GetValueEnum(g_blendOpEnum, Heart::proto::renderstate::BlendOne));
                 }
                 if (xPass.FirstChild("srcblend").ToNode()) {
-                    pass->mutable_blend()->set_srcblend(xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
+                    pass->mutable_blend()->set_srcblend(xPass.FirstChild("srcblend").GetValueEnum(g_blendOpEnum, Heart::proto::renderstate::BlendOne));
                 }
                 if (xPass.FirstChild("srcblendalpha").ToNode()) {
-                    pass->mutable_blend()->set_srcblendalpha(xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, RSV_BLEND_OP_ONE));
+                    pass->mutable_blend()->set_srcblendalpha(xPass.FirstChild("srcblendalpha").GetValueEnum(g_blendOpEnum, Heart::proto::renderstate::BlendOne));
                 }
                 if (xPass.FirstChild("rendertargetwritemask").ToNode()) {
                     pass->mutable_blend()->set_rendertargetwritemask(xPass.FirstChild("rendertargetwritemask").GetValueHex(0xFF));
                 }
                 
                 if (xPass.FirstChild("depthtest").ToNode()) {
-                    pass->mutable_depthstencil()->set_depthenable(xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_depthstencil()->set_depthenable(xPass.FirstChild("depthtest").GetValueEnum(g_trueFalseEnum, false));
                 }
                 if (xPass.FirstChild("depthfunc").ToNode()) {
-                    pass->mutable_depthstencil()->set_depthfunc(xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, RSV_Z_CMP_LESS));
+                    pass->mutable_depthstencil()->set_depthfunc(xPass.FirstChild("depthfunc").GetValueEnum(g_depthEnum, Heart::proto::renderstate::CompareLess));
                 }
                 if (xPass.FirstChild("depthwrite").ToNode()) {
-                    pass->mutable_depthstencil()->set_depthwritemask(xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_depthstencil()->set_depthwritemask(xPass.FirstChild("depthwrite").GetValueEnum(g_trueFalseEnum, false));
                 }
                 if (xPass.FirstChild("stencilenable").ToNode()) {
-                    pass->mutable_depthstencil()->set_stencilenable(xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_depthstencil()->set_stencilenable(xPass.FirstChild("stencilenable").GetValueEnum(g_trueFalseEnum, false));
                 }
                 if (xPass.FirstChild("stencilfunc").ToNode()) {
-                    pass->mutable_depthstencil()->set_stencilfunc(xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, RSV_SF_CMP_NEVER));
+                    pass->mutable_depthstencil()->set_stencilfunc(xPass.FirstChild("stencilfunc").GetValueEnum(g_stencilFuncEnum, Heart::proto::renderstate::CompareNever));
                 }
                 if (xPass.FirstChild("stencildepthfailop").ToNode()) {
-                    pass->mutable_depthstencil()->set_stencildepthfailop(xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
+                    pass->mutable_depthstencil()->set_stencildepthfailop(xPass.FirstChild("stencildepthfailop").GetValueEnum(g_stencilOpEnum, Heart::proto::renderstate::StencilKeep));
                 }
                 if (xPass.FirstChild("stencilfail").ToNode()) {
-                    pass->mutable_depthstencil()->set_stencilfailop(xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
+                    pass->mutable_depthstencil()->set_stencilfailop(xPass.FirstChild("stencilfail").GetValueEnum(g_stencilOpEnum, Heart::proto::renderstate::StencilKeep));
                 }
                 if (xPass.FirstChild("stencilpass").ToNode()) {
-                    pass->mutable_depthstencil()->set_stencilpassop(xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, RSV_SO_KEEP));
+                    pass->mutable_depthstencil()->set_stencilpassop(xPass.FirstChild("stencilpass").GetValueEnum(g_stencilOpEnum, Heart::proto::renderstate::StencilKeep));
                 }
                 if (xPass.FirstChild("stencilreadmask").ToNode()) {
                     pass->mutable_depthstencil()->set_stencilreadmask(xPass.FirstChild("stencilreadmask").GetValueHex(0xFFFFFFFF));
@@ -545,23 +545,23 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
                 }
                 
                 if (xPass.FirstChild("cullmode").ToNode()) {
-                    pass->mutable_rasterizer()->set_cullmode(xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, RSV_CULL_MODE_CCW));
+                    pass->mutable_rasterizer()->set_cullmode(xPass.FirstChild("cullmode").GetValueEnum(g_cullModeEnum, Heart::proto::renderstate::CullCounterClockwise));
                 }
                 //passDef.rasterizerState.depthBias_ = 0;//xPass.FirstChild("depthbias").GetValueFloat();
                 if (xPass.FirstChild("depthbiasclamp").ToNode()) {
                     pass->mutable_rasterizer()->set_depthbiasclamp(xPass.FirstChild("depthbiasclamp").GetValueFloat());
                 }
                 if (xPass.FirstChild("depthclipenable").ToNode()) {
-                    pass->mutable_rasterizer()->set_depthclipenable(xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_rasterizer()->set_depthclipenable(xPass.FirstChild("depthclipenable").GetValueEnum(g_trueFalseEnum, false));
                 }
                 if (xPass.FirstChild("fillmode").ToNode()) {
-                    pass->mutable_rasterizer()->set_fillmode(xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, RSV_FILL_MODE_SOLID));
+                    pass->mutable_rasterizer()->set_fillmode(xPass.FirstChild("fillmode").GetValueEnum(g_fillModeEnum, Heart::proto::renderstate::Solid));
                 }
                 if (xPass.FirstChild("slopescaleddepthbias").ToNode()) {
                     pass->mutable_rasterizer()->set_slopescaleddepthbias(xPass.FirstChild("slopescaleddepthbias").GetValueFloat());
                 }
                 if (xPass.FirstChild("scissortest").ToNode()) {
-                    pass->mutable_rasterizer()->set_scissorenable(xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, RSV_DISABLE));
+                    pass->mutable_rasterizer()->set_scissorenable(xPass.FirstChild("scissortest").GetValueEnum(g_trueFalseEnum, false));
                 }
                 //passDef.rasterizerState.frontCounterClockwise_ = RSV_ENABLE;
                 
