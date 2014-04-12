@@ -118,11 +118,10 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	  COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/create_pb_lite_file.bat" ARGS ${ABS_ROOT} ${ABS_FIL} ${PROTO_IM_FILE}
-	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --cpp_out  ${PROTO_IM_DIR} --proto_path ${PROTO_IM_DIR} ${PROTO_IM_FILE}
+	  COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.bat" ARGS ${ABS_ROOT} ${PROTO_IM_DIR}
+	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
-      COMMENT "Running C++ lite protocol buffer compiler on ${FIL}"
-      VERBATIM )
+      COMMENT "Running C++ lite protocol buffer compiler on ${FIL} [ ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE} ]")
   endforeach()
 
   set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
@@ -154,6 +153,7 @@ option(DO_PROFILE "Enable profiling in exe" OFF)
 option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including debug builds" OFF)
 option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
 option(USE_SDL2 "Enable use of SDL2" ON)
+option(BUILD_HEART_DLL ON)
 
 MACRO(ENABLE_PROFILE_IF_SET)
 	if (DO_PROFILE)
@@ -170,6 +170,10 @@ if (DO_PROFILE)
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /PROFILE")
 	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /PROFILE")
 endif(DO_PROFILE)
+
+if (BUILD_HEART_DLL)
+    add_definitions(-DHEART_DLL)
+endif(BUILD_HEART_DLL)
 
 if (FORCE_DISABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)

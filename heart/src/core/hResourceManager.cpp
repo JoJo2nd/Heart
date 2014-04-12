@@ -223,7 +223,7 @@ void resourceAddRef(hStringID res_id) {
 
 void resourceDecRef(hStringID res_id) {
     auto found_item = rootResources_.find(res_id);
-    hcAssert(found_item == rootResources_.end())
+    hcAssert(found_item == rootResources_.end());
         if (found_item != rootResources_.end()) {
             --found_item->second;
             if (found_item->second == 0) {

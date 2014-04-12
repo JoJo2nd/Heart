@@ -165,4 +165,8 @@ namespace Heart
 #   define hNoExcept(func) func noexcept 
 #endif
 
+#include <string>
+
+typedef std::string hString;
+
 #endif // hcTypes_h__

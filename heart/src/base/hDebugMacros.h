@@ -57,9 +57,9 @@ HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg,
 
 #define hcPrintf		hcOutputString
 
-#define hcAssert		__noop
-#define hcAssertMsg		__noop
-#define hcAssertFailMsg __noop
+#define hcAssert		__noop;
+#define hcAssertMsg		__noop;
+#define hcAssertFailMsg __noop;
 #define hcBreak	
 #define hcCompileTimeAssert
 

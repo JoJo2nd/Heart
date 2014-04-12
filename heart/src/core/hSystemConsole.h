@@ -71,7 +71,7 @@ namespace Heart
         static void     printConsoleMessage(const hChar* string);
 
         template< hUint32 t_size >
-        class HEART_FORCEDLLEXPORT hStringRingBuffer
+        class HEART_DLLEXPORT hStringRingBuffer
         {
         public:
             hStringRingBuffer()

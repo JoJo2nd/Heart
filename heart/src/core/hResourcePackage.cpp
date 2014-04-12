@@ -1,7 +1,5 @@
 /********************************************************************
-
-    filename: 	hResourcePackage.cpp	
-    
+ 
     Copyright (c) 14:8:2011 James Moran
     
     This software is provided 'as-is', without any express or implied

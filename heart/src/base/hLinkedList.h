@@ -35,7 +35,7 @@ namespace Heart
     class hLinkedList;
 
     template< typename _Ty >
-    class HEART_FORCEDLLEXPORT hLinkedListElement
+    class HEART_DLLEXPORT hLinkedListElement
     {
     public:
 
@@ -66,7 +66,7 @@ namespace Heart
     };
 
     template< typename _Ty >
-    class HEART_FORCEDLLEXPORT hLinkedList
+    class HEART_DLLEXPORT hLinkedList
     {
     public:
 

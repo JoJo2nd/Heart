@@ -331,6 +331,25 @@ namespace Heart
 
         const rapidxml::xml_node<>*       node_;
     };
+
+    template <>
+    hForceInline bool hXMLGetter::GetValueEnum<bool>(hXMLEnumReamp* enums, bool defaultVal) const
+    {
+        if (!node_)
+            return defaultVal;
+        if (!node_->value())
+            return defaultVal;
+        while(enums->enumStr_)
+        {
+            if (hStrICmp(enums->enumStr_, node_->value()) == 0)
+            {
+                return enums->enumValue_ == 1;
+            }
+            ++enums;
+        }
+
+        return defaultVal;
+    }
 }
 
 #endif // HRAPIDXML_H__

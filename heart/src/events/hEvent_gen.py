@@ -53,7 +53,7 @@ def outputPublisherClassDef(outfile, argcount):
         if i+1 % 10 == 0:
             outfile.write("\n    ")
     outfile.write(">\n")
-    outfile.write("class HEART_FORCEDLLEXPORT hPublisher< void(*)(")
+    outfile.write("class HEART_DLLEXPORT hPublisher< void(*)(")
     for i in range(0, argcount):
         if i > 0: outfile.write(", ")
         outfile.write(Template("t_P$itr").substitute(itr=i+1))

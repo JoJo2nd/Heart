@@ -31,7 +31,7 @@
 namespace Heart
 {
     template< class _Ty, hUint32 ArraySize > 
-    class HEART_FORCEDLLEXPORT hArray
+    class HEART_DLLEXPORT hArray
     {
     public: 
 
@@ -90,7 +90,7 @@ namespace Heart
     };
 
     template< class _Ty, hSize_t _Granularity = 8 > 
-    class HEART_FORCEDLLEXPORT hVector
+    class HEART_DLLEXPORT hVector
     {
     public: 
         typedef hVector< _Ty, _Granularity > SelfType;

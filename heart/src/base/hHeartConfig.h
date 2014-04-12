@@ -32,23 +32,9 @@
 #   ifndef HEART_DEBUG
 #       define HEART_DEBUG
 #   endif
-#   ifndef HEART_SUFFIX
-#       ifdef HEART_TOOL_BUILD
-#           define HEART_SUFFIX "_td"
-#       else
-#           define HEART_SUFFIX "_d"
-#       endif
-#   endif
 #else
 #   ifndef HEART_RELEASE
 #       define HEART_RELEASE
-#   endif
-#   ifndef HEART_SUFFIX
-#       ifdef HEART_TOOL_BUILD
-#           define HEART_SUFFIX "_tr"
-#       else
-#           define HEART_SUFFIX "_r"
-#       endif
 #   endif
 #endif
 
@@ -93,20 +79,13 @@
 #endif
 
 #ifdef HEART_DLL
-#   ifdef HEART_COMPILE_DLL
+#   ifdef heart_EXPORTS
 #       define HEART_DLLEXPORT  __declspec(dllexport)
-#       define HEART_FORCEDLLEXPORT __declspec(dllexport)
 #   else
 #       define HEART_DLLEXPORT  __declspec(dllimport)
-#       define HEART_FORCEDLLEXPORT __declspec(dllexport)
 #   endif
 #else
 #   define HEART_DLLEXPORT
-#   define HEART_FORCEDLLEXPORT
-#endif
-
-#if !defined (GWEN_COMPILE_DLL) && !defined(GWEN_DLL)
-#   define GWEN_DLL
 #endif
 
 #define HEART_BASECLASS(x) typedef x ParentClass;
@@ -147,29 +126,6 @@
 #   else
 #      error "Platform not supported"
 #   endif
-#endif
-
-//#define HEART_DO_PROFILE
-
-#if defined (HEART_DEBUG) && !defined (HEART_DO_PROFILE)
-//#   define HEART_DO_PROFILE
-#endif
-
-#ifdef HEART_PACKER
-#   define HEART_USE_DEFAULT_MEM_ALLOC
-#endif
-
-#ifndef HEART_FINAL
-#   define HEART_ALLOW_DATA_COMPILE
-#endif
-
-#ifdef HEART_TOOL_BUILD
-//#   define HEART_USE_DEFAULT_MEM_ALLOC
-#endif //HEART_TOOL_BUILD
-
-#ifdef _MSC_VER 
-// TODO: this needs fixing really
-#   pragma warning (disable:4251)
 #endif
 
 #define hGetMurmurHashSeed() (12345)

@@ -35,7 +35,7 @@ namespace Heart
 	template< typename _Ky, typename _Ty > class hMap;
 
 	template < typename _Ky, typename _Ty >
-	class HEART_FORCEDLLEXPORT hMapElement
+	class HEART_DLLEXPORT hMapElement
 	{
 	public:
 		typedef _Ky			KeyType;
@@ -122,7 +122,7 @@ namespace Heart
 	// http://eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx //
 	////////////////////////////////////////////////////////////////////////////
 	template< typename _Ky, typename _Ty >
-	class HEART_FORCEDLLEXPORT hMap
+	class HEART_DLLEXPORT hMap
 	{
 	public:
 

@@ -88,7 +88,6 @@
 #include "base/hReflectionUtils.h"
 #include "base/hSerialiser.h"
 
-#include "base/hSTL.h"
 #include "base/hArray.h"
 #include "base/hFunctor.h"
 #include "base/hReferenceCounted.h"
@@ -97,7 +96,6 @@
 #include "base/hQueue.h"
 #include "base/hMap.h"
 #include "base/hStack.h"
-#include "base/hString.h"
 #include "base/hUTF8.h"
 #include "base/hRendererConstants.h"
 #include "base/hIBuiltDataCache.h"
