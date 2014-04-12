@@ -36,6 +36,7 @@ namespace {
 struct DataBuild {
     BuildLogHandler     msgProc_;
     std::string         buildPath_;
+    std::string         outputPath_;
     void*               userPtr_;
 };
 
@@ -99,11 +100,17 @@ void luaBuildThread(const DataBuild* build_input, Report* build_output) {
         {"print", luaReportPrint},
         {NULL, NULL}
     };
-    // push our version of require and other package releated things
+    // push our version of print
     lua_pushglobaltable(L);
     lua_pushlightuserdata(L, build_input->msgProc_);
     lua_pushlightuserdata(L, build_input->userPtr_);
     luaL_setfuncs(L, printLib, 2);
+
+    // push input parameters for build
+    lua_pushstring(L, build_input->buildPath_.c_str());
+    lua_setfield(L, -2, "in_data_path");
+    lua_pushstring(L, build_input->outputPath_.c_str());
+    lua_setfield(L, -2, "in_output_data_path");
 
     //do the build...
     int error = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "Data Builder Script");
@@ -127,7 +134,7 @@ void luaBuildThread(const DataBuild* build_input, Report* build_output) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-ErrorCodeEnum beginDataBuild(const std::string& build_path, BuildLogHandler msg_handler, void* user_ptr) {
+ErrorCodeEnum beginDataBuild(const std::string& build_path, const std::string& output_path, BuildLogHandler msg_handler, void* user_ptr) {
     if (isBuildingData()) {
         return ErrorCode::AlreadyBuilding;
     }
@@ -137,6 +144,7 @@ ErrorCodeEnum beginDataBuild(const std::string& build_path, BuildLogHandler msg_
     delete activeBuild_;
     activeBuild_ = new DataBuild();
     activeBuild_->buildPath_ = build_path;
+    activeBuild_->outputPath_ = output_path;
     activeBuild_->msgProc_ = msg_handler;
     activeBuild_->userPtr_ = user_ptr;
 

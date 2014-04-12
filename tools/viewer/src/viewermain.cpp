@@ -38,6 +38,8 @@ IMPLEMENT_APP(ViewerApp);
 namespace {
     ui::ID ID_SHOWCONSOLE = ui::marshallNameToID("SHOWCONSOLE");
     ui::ID ID_BUILDDATA = ui::marshallNameToID("BUILDDATA");
+    ui::ID ID_INPUTDATA = ui::marshallNameToID("SETINPUTDATA");
+    ui::ID ID_OUTPUTDATA = ui::marshallNameToID("SETOUTPUTDATA");
     ViewerMainFrame* g_mainFrame = nullptr;
 }
 
@@ -117,6 +119,8 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 BEGIN_EVENT_TABLE(ViewerMainFrame, wxFrame)
     EVT_MENU(ID_SHOWCONSOLE, ViewerMainFrame::evtShowConsole)
     EVT_MENU(ID_BUILDDATA, ViewerMainFrame::evtDoDataBuild)
+    EVT_MENU(ID_INPUTDATA, ViewerMainFrame::evtDoSelectDataInput)
+    EVT_MENU(ID_OUTPUTDATA, ViewerMainFrame::evtDoSelectDataOutput)
     EVT_AUI_PANE_CLOSE(ViewerMainFrame::evtOnPaneClose)
     EVT_CLOSE(ViewerMainFrame::evtClose)
 END_EVENT_TABLE()
@@ -145,6 +149,8 @@ void ViewerMainFrame::initFrame(const wxString& heartpath, const wxString& plugi
 
     wxMenu* filemenu = new wxMenu();
     filemenu->Append(ID_BUILDDATA, uiLoc("Build Game Data..."));
+    filemenu->Append(ID_INPUTDATA, uiLoc("Set Game Data Input Directory..."));
+    filemenu->Append(ID_OUTPUTDATA, uiLoc("Set Game Data Output Directory..."));
 
     menuBar_->Append(filemenu, uiLoc("&File"));
 
@@ -264,7 +270,38 @@ void ViewerMainFrame::evtDoDataBuild(wxCommandEvent& evt) {
         msg.ShowModal();
         return;
     }
-    build::beginDataBuild("C:/some/path", &ViewerMainFrame::consoleMsgCallback, this);
+    boost::system::error_code error;
+    if (boost::filesystem::is_directory(dataPath_, error) == false) {
+        evtDoSelectDataInput(evt);
+    }
+    if (boost::filesystem::is_directory(dataPath_, error) && boost::filesystem::is_directory(outputPath_, error) == false) {
+        evtDoSelectDataOutput(evt);
+    }
+    if (boost::filesystem::is_directory(dataPath_, error) && boost::filesystem::is_directory(outputPath_, error)) {
+        build::beginDataBuild(dataPath_.generic_string(), outputPath_.generic_string(), &ViewerMainFrame::consoleMsgCallback, this);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::evtDoSelectDataInput(wxCommandEvent& evt) {
+    wxDirDialog dir_select(this, uiLoc("Select Input Data Directory..."), "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+    if (dir_select.ShowModal() != wxCANCEL) {
+        dataPath_ = dir_select.GetPath();
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void ViewerMainFrame::evtDoSelectDataOutput(wxCommandEvent& evt) {
+    wxDirDialog dir_select(this, uiLoc("Select Output Data Directory..."), "", wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST);
+    if (dir_select.ShowModal() != wxCANCEL) {
+        outputPath_ = dir_select.GetPath();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////

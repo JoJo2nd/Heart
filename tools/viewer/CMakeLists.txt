@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization regex)
 find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
 
-#add_definitions(-DWXUSINGDLL)
+add_definitions(-DWXUSINGDLL)
 
 if (MSVC)
     #add_definitions(/wd"4244")
@@ -93,8 +93,6 @@ message("assimp lib directory ${assimp_LIB_DIR_FULL}")
 include_directories(${VIEWER_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(
 	${LIBHEART_LIB_DIRS}
-	${assimp_LIB_DIR_FULL}
-	${nvtt_LIB_DIR}
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
 )
 if (BUILD_64_BIT)
@@ -112,6 +110,5 @@ ADD_CUSTOM_COMMAND(
 	TARGET viewer
     POST_BUILD
 	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" viewer "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-	#COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-
+	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
 )

@@ -78,6 +78,8 @@ private:
     DECLARE_EVENT_TABLE();
     void            evtShowConsole(wxCommandEvent& evt);
     void            evtDoDataBuild(wxCommandEvent& evt);
+    void            evtDoSelectDataInput(wxCommandEvent& evt);
+    void            evtDoSelectDataOutput(wxCommandEvent& evt);
     void            evtOnPaneClose(wxAuiManagerEvent& evt);
     void            evtClose(wxCloseEvent& evt);
 
@@ -88,6 +90,7 @@ private:
     wxMenuBar*              menuBar_;
     RenderTimer             timer_;
     boost::filesystem::path dataPath_;
+    boost::filesystem::path outputPath_;
     std::string             pathString_;
     SavedPaneInfo           paneSavedLayouts_;
     std::thread             luaThread_;

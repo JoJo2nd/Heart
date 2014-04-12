@@ -8,21 +8,15 @@ local protobuf = require "proto_lua"
 
 local G = _G
 local buildables = {}
-local data_path = filesystem.canonical("C:/dev/heart_lua/data/") --TODO: parse these from command line
-local temp_data_path = data_path.."/.tmp"
-local output_data_path = "C:/dev/heart_lua/deploy/gamedata"
-local job_count = cores or 3              --TODO: parse these from command line
-local verbose = true
+local data_path = filesystem.canonical(in_data_path) 
+local output_data_path = filesystem.canonical(in_output_data_path)	 
+local job_count = in_cores or 3									 
+local verbose = in_verbose or true								 
 local current_jobs = 0
 local processes = {}
 local success = 0
 local failure = 0
-
-print(string.format("Build data path %s", data_path))
-print(string.format("Build output path %s", output_data_path))
-print(string.format("Build tmp path %s", temp_data_path))
-print(string.format("Build core count %s", job_count))
-
+local temp_data_path = data_path.."/.tmp" 
 
 if filesystem.isdirectory(temp_data_path) == false then
     os.execute("mkdir \""..temp_data_path.."\"")
@@ -30,7 +24,12 @@ end
 if filesystem.isdirectory(output_data_path) == false then
     os.execute("mkdir \""..output_data_path.."\"")
 end
-temp_data_path = data_path.."/.tmp" --TODO: parse these from command line
+
+print(string.format("Build data path %s", data_path))
+print(string.format("Build output path %s", output_data_path))
+print(string.format("Build tmp path %s", temp_data_path))
+print(string.format("Build core count %s", job_count))
+
 
 local function verbose_log(str)
     if verbose then

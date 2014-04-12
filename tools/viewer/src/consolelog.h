@@ -61,6 +61,6 @@ private:
 };
 
 // how to declare a custom event. this can go in a header
-DECLARE_EVENT_TYPE(wxEVT_CONSOLE_STRING, -1)
+DECLARE_LOCAL_EVENT_TYPE(wxEVT_CONSOLE_STRING, -1)
 
 #endif // CONSOLELOG_H__

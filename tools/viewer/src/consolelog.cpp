@@ -30,7 +30,7 @@
 #include "common/ui_id.h"
 
 // how to define the custom event
-DEFINE_EVENT_TYPE(wxEVT_CONSOLE_STRING)
+DEFINE_LOCAL_EVENT_TYPE(wxEVT_CONSOLE_STRING)
 
 namespace {
     ui::ID ID_CONSOLESUBMIT = ui::marshallNameToID("CONSOLESUBMIT");
