@@ -1,0 +1,62 @@
+
+package Heart.proto.renderstate;
+
+enum SamplerState {
+    none        = 0;
+    point       = 1;
+    linear      = 2;
+    anisotropic = 3;
+}
+enum SamplerBorder {
+    wrap        = 0;
+    mirror      = 1;
+    clamp       = 2;
+    border      = 3;
+}
+enum CullMode {
+    CullNone			 = 0;
+    CullClockwise		 = 1;
+    CullCounterClockwise = 2;
+}
+enum FillMode {
+    Solid		= 0;
+    Wireframe	= 1;
+}
+enum BlendOp {
+    BlendZero              =  1;
+    BlendOne               =  2;
+    BlendSrcColour         =  3;
+    BlendInverseSrcColour  =  4;
+    BlendDestColour        =  5;
+    BlendInverseDestColour =  6;
+    BlendSrcAlpha          =  7;
+    BlendInverseSrcAlpha   =  8;
+    BlendDestAlpha         =  9;
+    BlendInverseDestAlpha  = 10;
+}
+enum BlendFunction {
+    Add = 0;
+    Sub = 1;
+    Min = 2;
+    Max = 3;
+}
+enum FunctionCompare {
+    CompareNever        = 0;
+    CompareLess         = 1;
+    CompareEqual        = 2;
+    CompareLessEqual    = 3;
+    CompareGreater      = 4;
+    CompareNotEqual     = 5;
+    CompareGreaterEqual = 6;
+    CompareAlways       = 7;
+}
+enum StencilOp {
+    StencilKeep    = 0;
+    StencilZero    = 1;
+    StencilReplace = 2;
+    StencilIncSat  = 3;
+    StencilDecSat  = 4;
+    StencilInvert  = 5;
+    StencilIncr    = 6;
+    StencilDecr    = 7;
+}
