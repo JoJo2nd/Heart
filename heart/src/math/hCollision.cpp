@@ -47,15 +47,15 @@ namespace hPlaneFunc
 	{
 		// Get radius of aabb along plane normal
 		//hFloat r = ( a.r[ 0 ] * fabs( p.n.x ) ) + ( a.r[ 1 ] * fabs( p.n.y ) ) + ( a.r[ 2 ] * fabs( p.n.z ) );
-		hFloat r = hVec3Func::dot( a.r_, hVec128Abs( p.p ) );
+		hFloat r = dot( a.r_, absPerElem(p.n) );
 		hVec3 p1 = a.c_;
 		hVec3 p2 = a.c_ + d;
 
  		// Get the distance for both a and b from plane p
 		//hFloat adist = hVec3Func::dot( p1, p.n ) - p.d;
 		//hFloat bdist = hVec3Func::dot( p2, p.n ) - p.d;
-        hFloat adist = hPlaneFunc::DistFromPlane( p1, p );
-        hFloat bdist = hPlaneFunc::DistFromPlane( p2, p );
+        hFloat adist = distFromPlane( p1, p );
+        hFloat bdist = distFromPlane( p2, p );
 		
  		// Intersects if on different sides of plane (distances have different signs)
  		if (adist * bdist < 0.0f) 
@@ -83,8 +83,8 @@ namespace hPlaneFunc
 		// Return infront
 		//return adist;
 		// 
-        hFloat r = hVec3Func::dot( a.r_, hVec128Abs( p.p ) );
-        return r < hFabs( hPlaneFunc::DistFromPlane( a.c_, p ) );
+        hFloat r = dot( a.r_, absPerElem(p.n) );
+        return r < hFabs( distFromPlane( a.c_, p ) );
 	}
 }
 }

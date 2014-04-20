@@ -1,18 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
-
-option(BUILD_LUA_FILESYSTEM_SHARED_LIB "Build lua file system as a Shared library - (TODO: Make this work)" ON)
-
-if (MSVC)
-    #add_definitions(/wd"4244")
-    #add_definitions(/wd"4146")
-    #add_definitions(/wd"4305")
-endif()
-
-if (BUILD_LUA_FILESYSTEM_SHARED_LIB)
-	add_definitions(-DluaFILESYSTEM_COMPILE_SHARED_LIB)
-endif()
 #if (MSVC)
 #	add_definitions(-D_ITERATOR_DEBUG_LEVEL=2)
 #endif()
@@ -20,7 +7,7 @@ endif()
 set(LUA_FILESYSTEM_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
+ 
 set( LUA_FILESYSTEM_INCLUDE_DIRS
     "${LUA_FILESYSTEM_SRC_DIR}/include"
 	"${EXTERNAL_SRC_ROOT}/lua/src"

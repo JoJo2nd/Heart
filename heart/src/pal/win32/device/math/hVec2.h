@@ -30,43 +30,7 @@
 
 namespace Heart
 {
-#if defined (HEART_USE_XNAMATH)
-    typedef XMFLOAT2 hCPUVec2;
-#else
-    typedef DirectX::XMFLOAT2 hCPUVec2;
-    using DirectX::XMVectorZero;
-    using DirectX::XMVector2Length;
-    using DirectX::XMVector2Normalize;
-    using DirectX::XMVector2NormalizeEst;
-    using DirectX::XMVectorAdd;
-    using DirectX::XMVectorSubtract;
-    using DirectX::XMVectorScale;
-    using DirectX::XMVectorDivide;
-    using DirectX::XMVector2Dot;
-    using DirectX::XMVectorNegate;
-    using DirectX::XMVector2Cross;
-    using DirectX::XMVectorSet;
-    using DirectX::XMVector2Equal;
-    using DirectX::XMStoreFloat2;
-    using DirectX::XMLoadFloat2;
-    using DirectX::XMVector2LengthEst;
-#endif
-
-    struct hVec2
-    {
-        hVec128 v;
-        
-        hVec2() {}
-        hVec2( const hVec128& rhs );
-        explicit hVec2( const hCPUVec2& rhs );
-        hVec2( hFloat x, hFloat y );
-        hVec2& operator = ( const hCPUVec2& b );
-        operator hCPUVec2 () const;
-        operator hFloatInVec() const { return v; }
-        operator hVec128() const { return v; }
-        hVec128 Get128() const { return v; }
-    };
-
+    typedef Vectormath::Aos::Vector3 hVec2;
 }
 
 #endif // hmVec2_h__

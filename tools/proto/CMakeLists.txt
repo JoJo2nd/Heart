@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Protobuf REQUIRED)
-
 ENABLE_PROFILE_IF_SET()
 
 if (MSVC)
@@ -21,7 +19,6 @@ set( PROTO_INCLUDE_DIRS
 
 file(GLOB PROTO_SRC_FILES "${PROTO_SRC_DIR}/*.proto")
 
-message("${PROTO_SRC_FILES}")
 set(PROTO_LITE_SRC_FILES ${PROTO_SRC_FILES})
 
 include_directories(${PROTOBUF_INCLUDE_DIR} ${GENERATED_PROTO_INC_DIRS})
@@ -32,7 +29,7 @@ source_group(proto_files FILES ${PROTO_LITE_SRC_FILES})
 source_group(autogen FILES ${LiteProtoSources} ${LiteProtoHeaders})
 
 add_library(proto ${PROTO_LITE_SRC_FILES} ${LiteProtoSources} ${LiteProtoHeaders})
-target_link_libraries(proto debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS})
-target_link_libraries(proto optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})
+target_link_libraries(proto debug ${PROTOBUF_LITE_LIBRARY_DEBUG} ${PROFILE_LIBS})
+target_link_libraries(proto optimized ${PROTOBUF_LITE_LIBRARY} ${PROFILE_LIBS})
 set_property(TARGET proto PROPERTY DEBUG_POSTFIX)
 

@@ -63,11 +63,11 @@ namespace Heart
     {
     public:
         hdSystemWindow()
-            : sdlWindow_(hNullptr)
-            , hInstance_(hNullptr)
-            , hWnd_(hNullptr)
+            : impl_(nullptr)
+            , hInstance_(nullptr)
+            , hWnd_(nullptr)
             , ownWindow_(hFalse)
-            , procChain_(hNullptr)
+            , procChain_(nullptr)
             , exitSignal_(hFalse)
         {
             wndTitle_[0] = 0;
@@ -109,10 +109,7 @@ namespace Heart
         static hdSystemWindow*      s_instance;
 
 #ifdef HEART_USE_SDL2
-        typedef std::unordered_map<hUint, hSysEventHandler> hSysEventHandlerMap;
-
-        SDL_Window*                 sdlWindow_;
-        hSysEventHandlerMap         sysEventHandlers_;
+        struct hdSystemWindowImpl*   impl_;
 #endif
         HINSTANCE					hInstance_;
         HWND						hWnd_;

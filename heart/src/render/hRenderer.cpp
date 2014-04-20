@@ -102,9 +102,12 @@ namespace Heart
         setup.free_ = RnTmpFree;
         setup.depthBufferTex_ = hNullptr;
         //setup.depthBufferTex_= depthBuffer_;
-        ParentClass::Create( system_, width_, height_, fullscreen_, vsync_, setup );
+        gal_ = gal::createDevice(system_->GetSystemHandle()->hWnd_);
+        //ParentClass::Create( system_, width_, height_, fullscreen_, vsync_, setup );
 
+#if 0
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
+#endif
 
 //         depthBuffer_->format_=TFORMAT_D24S8F;
 //         depthBuffer_->nLevels_=1;
@@ -219,7 +222,9 @@ namespace Heart
 
         //hDELETE_ARRAY_SAFE(GetGlobalHeap(), depthBuffer_->levelDescs_);
         //depthBuffer_->DecRef();
+#if 0
         ParentClass::Destroy();
+#endif
 
         hDebugDrawRenderer::it()->destroyResources();
     }
@@ -239,7 +244,9 @@ namespace Heart
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
         hAtomic::AtomicSet(drawResourceUpdateCalls_, 0);
 
+#if 0
         ParentClass::BeginRender(&gpuTime_);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -253,9 +260,13 @@ namespace Heart
             backBuffer_=materialManager_.getGlobalTexture("back_buffer");
         }
 
+#if 0
         ParentClass::EndRender();
+#endif
         hDebugDrawRenderer::it()->render(this, &mainSubmissionCtx_);
+#if 0
         ParentClass::SwapBuffers(backBuffer_);
+#endif
 
         hZeroMem(&stats_, sizeof(stats_));
         stats_.gpuTime_=0.f;
@@ -391,7 +402,7 @@ namespace Heart
     void hRenderer::createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB)
     {
         hVertexBuffer* pdata = hNEW(hVertexBuffer)(
-            hFUNCTOR_BINDMEMBER(hVertexBuffer::hZeroProc, hRenderer, destroyVertexBuffer, this));
+            hFUNCTOR_BINDMEMBER(hVertexBufferZeroProc, hRenderer, destroyVertexBuffer, this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
         ParentClass::createVertexBufferDevice(desc, desccount, pdata->stride_, nElements*pdata->stride_, initData, flags, pdata);
@@ -624,7 +635,7 @@ namespace Heart
         camera->bindRenderTargetSetup(rtDesc);
         camera->SetFieldOfView(45.f);
         camera->SetOrthoParams(0.f, 0.f, (hFloat)GetWidth(), (hFloat)GetHeight(), 0.1f, 100.f);
-        camera->SetViewMatrix( Heart::hMatrixFunc::identity() );
+        camera->SetViewMatrix( Heart::hMatrix::identity() );
         camera->setViewport(vp);
         camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
 
@@ -742,7 +753,7 @@ namespace Heart
 
     void hRenderer::createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
         (*outsrv) = hNEW(hShaderResourceView)(
-            hFUNCTOR_BINDMEMBER(hShaderResourceView::hZeroRefProc, hRenderer, destroyShaderResourceView, this));
+            hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
         ParentClass::createShaderResourseViewDevice(tex, desc, *outsrv);
         (*outsrv)->refType_=desc.resourceType_;
         (*outsrv)->refTex_=tex;
@@ -755,7 +766,7 @@ namespace Heart
 
     void hRenderer::createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
         (*outsrv) = hNEW(hShaderResourceView)(
-            hFUNCTOR_BINDMEMBER(hShaderResourceView::hZeroRefProc, hRenderer, destroyShaderResourceView, this));
+            hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
         ParentClass::createShaderResourseViewDevice(cb, desc, *outsrv);
         (*outsrv)->refType_=desc.resourceType_;
         (*outsrv)->refCB_=cb;
@@ -779,7 +790,7 @@ namespace Heart
 
     void hRenderer::createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv) {
         (*outrtv) = hNEW(hRenderTargetView)(
-            hFUNCTOR_BINDMEMBER(hRenderTargetView::hZeroRefProc, hRenderer, destroyRenderTargetView, this));
+            hFUNCTOR_BINDMEMBER(hRenderTargetViewZeroRefProc, hRenderer, destroyRenderTargetView, this));
         ParentClass::createRenderTargetViewDevice(tex, rtvd, *outrtv);
         (*outrtv)->bindTexture(tex);
     }
@@ -790,7 +801,7 @@ namespace Heart
 
     void hRenderer::createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv) {
         (*outdsv) = hNEW(hDepthStencilView)(
-            hFUNCTOR_BINDMEMBER(hDepthStencilView::hZeroRefProc, hRenderer, destroyDepthStencilView, this));
+            hFUNCTOR_BINDMEMBER(hDepthStencilViewZeroRefProc, hRenderer, destroyDepthStencilView, this));
         ParentClass::createDepthStencilViewDevice(tex, dsvd, *outdsv);
         (*outdsv)->bindTexture(tex);
     }
@@ -828,7 +839,7 @@ namespace Heart
         hBlendState* state = blendStates_.Find(stateKey);
         if ( !state ) {
             state = hNEW(hBlendState)(
-                hFUNCTOR_BINDMEMBER(hBlendState::hZeroRefProc, hRenderer, destroyBlendState, this));
+                hFUNCTOR_BINDMEMBER(hBlendZeroRefProc, hRenderer, destroyBlendState, this));
             ParentClass::createBlendStateDevice(desc, state);
             blendStates_.Insert(stateKey, state);
         }
@@ -863,7 +874,7 @@ namespace Heart
         hRasterizerState* state = rasterizerStates_.Find(stateKey);
         if ( !state ) {
             state = hNEW(hRasterizerState)(
-                hFUNCTOR_BINDMEMBER(hRasterizerState::hZeroRefProc, hRenderer, destoryRasterizerState, this));
+                hFUNCTOR_BINDMEMBER(hRasterizerZeroRefProc, hRenderer, destoryRasterizerState, this));
             ParentClass::createRasterizerStateDevice(desc, state);
             rasterizerStates_.Insert(stateKey, state);
         }
@@ -898,7 +909,7 @@ namespace Heart
         hDepthStencilState* state = depthStencilStates_.Find(stateKey);
         if ( !state ) {
             state = hNEW(hDepthStencilState)(
-                hFUNCTOR_BINDMEMBER(hDepthStencilState::hZeroRefProc, hRenderer, destroyDepthStencilState, this));
+                hFUNCTOR_BINDMEMBER(hDepthStencilZeroRefProc, hRenderer, destroyDepthStencilState, this));
             ParentClass::createDepthStencilStateDevice(desc, state);
             depthStencilStates_.Insert(stateKey, state);
         }
@@ -933,7 +944,7 @@ namespace Heart
         hSamplerState* state = samplerStateMap_.Find(stateKey);
         if ( !state ) {
             state = hNEW(hSamplerState)(
-                hFUNCTOR_BINDMEMBER(hSamplerState::hZeroRefProc, hRenderer, destroySamplerState, this));
+                hFUNCTOR_BINDMEMBER(hSamplerZeroRefProc, hRenderer, destroySamplerState, this));
             ParentClass::createSamplerStateDevice(desc, state);
             samplerStateMap_.Insert(stateKey, state);
         }
@@ -2116,9 +2127,9 @@ namespace Heart
         hRenderBufferMapInfo mapinfo;
         hRendererCamera* viewcam=renderer->GetRenderCamera(targetInfo_.viewCameraIndex_);
         hMatrix view=viewcam->GetViewMatrix();
-        hMatrix invView=hMatrixFunc::inverse(view);
+        hMatrix invView=inverse(view);
         hMatrix project=viewcam->GetProjectionMatrix();
-        hMatrix invProject=hMatrixFunc::inverse(project);
+        hMatrix invProject=inverse(project);
 
         drawDebugLightInfo();
 
@@ -2128,7 +2139,7 @@ namespace Heart
             mapptr->inverseViewMtx_=invView;
             mapptr->projectionMtx_=project;
             mapptr->inverseProjectMtx_=invProject;
-            mapptr->eyePos_=hMatrixFunc::getRow(invView, 3);
+            mapptr->eyePos_=invView.getRow(3);
             mapptr->directionalLightCount_ = lightInfo_.directionalLightCount_;
             mapptr->quadLightCount_ = lightInfo_.quadLightCount_;
             mapptr->sphereLightCount_=lightInfo_.sphereLightCount_;
@@ -2172,8 +2183,8 @@ namespace Heart
         dd->begin();
 
         for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
-            hVec3 forward=hVec3Func::cross(quadLights_[i].halfv_[0], quadLights_[i].halfv_[1]);
-            forward=hVec3Func::normaliseFast(forward)*hVec3Func::lengthFast(quadLights_[i].halfv_[0]);
+            hVec3 forward=cross(quadLights_[i].halfv_[0], quadLights_[i].halfv_[1]);
+            forward=normalizeApprox(forward)*length(quadLights_[i].halfv_[0]);
             Heart::hDebugLine quadlight[] = {
                 //quad
                 {quadLights_[i].points_[0], quadLights_[i].points_[1], hColour(1.f, 0.f, 1.f, 1.f)},
@@ -2191,27 +2202,27 @@ namespace Heart
         for (hSphereLight* i=activeSphereLights_.begin(), *n=activeSphereLights_.end(); i!=n; i=i->GetNext()) {
             const hSphereLight& l=*i;
             Heart::hDebugLine spherelines[] = {
-                { l.centreRadius_+hVec3(l.centreRadius_.getW(), 0.f, 0.f), l.centreRadius_-hVec3(l.centreRadius_.getW(), 0.f, 0.f), hColour(1.f, 0.f, 0.f, 1.f) },
-                { l.centreRadius_+hVec3(0.f, l.centreRadius_.getW(), 0.f), l.centreRadius_-hVec3(0.f, l.centreRadius_.getW(), 0.f), hColour(0.f, 1.f, 0.f, 1.f) },
-                { l.centreRadius_+hVec3(0.f, 0.f, l.centreRadius_.getW()), l.centreRadius_-hVec3(0.f, 0.f, l.centreRadius_.getW()), hColour(0.f, 0.f, 1.f, 1.f) },
-                // rings
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  0.f, l.centreRadius_.getW()*hSin(0.f)   ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f), 0.f, l.centreRadius_.getW()*hSin(0.785f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.785f),  0.f, l.centreRadius_.getW()*hSin(0.785f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) , 0.f, l.centreRadius_.getW()*hSin(1.57f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  0.f, l.centreRadius_.getW()*hSin(1.57f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f), 0.f, l.centreRadius_.getW()*hSin(2.355f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(2.355f),  0.f, l.centreRadius_.getW()*hSin(2.355f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) , 0.f, l.centreRadius_.getW()*hSin(3.14f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  0.f, l.centreRadius_.getW()*hSin(3.14f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f), 0.f, l.centreRadius_.getW()*hSin(3.925f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(3.925f),  0.f, l.centreRadius_.getW()*hSin(3.925f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) , 0.f, l.centreRadius_.getW()*hSin(4.71f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  0.f, l.centreRadius_.getW()*hSin(4.71f) ), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f), 0.f, l.centreRadius_.getW()*hSin(5.495f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(5.495f),  0.f, l.centreRadius_.getW()*hSin(5.495f)), l.centreRadius_+hVec3(l.centreRadius_.getW()*hCos(0.f)   , 0.f, l.centreRadius_.getW()*hSin(0.f)   ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW(), 0.f, 0.f), l.centreRadius_.getXYZ()-hVec3(l.centreRadius_.getW(), 0.f, 0.f), hColour(1.f, 0.f, 0.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(0.f, l.centreRadius_.getW(), 0.f), l.centreRadius_.getXYZ()-hVec3(0.f, l.centreRadius_.getW(), 0.f), hColour(0.f, 1.f, 0.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(0.f, 0.f, l.centreRadius_.getW()), l.centreRadius_.getXYZ()-hVec3(0.f, 0.f, l.centreRadius_.getW()), hColour(0.f, 0.f, 1.f, 1.f) },
+                // rings         .getXYZ()
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
+                //               .getXYZ()
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  0.f, l.centreRadius_.getW()*hSin(0.f)   ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f), 0.f, l.centreRadius_.getW()*hSin(0.785f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  0.f, l.centreRadius_.getW()*hSin(0.785f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) , 0.f, l.centreRadius_.getW()*hSin(1.57f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  0.f, l.centreRadius_.getW()*hSin(1.57f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f), 0.f, l.centreRadius_.getW()*hSin(2.355f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  0.f, l.centreRadius_.getW()*hSin(2.355f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) , 0.f, l.centreRadius_.getW()*hSin(3.14f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  0.f, l.centreRadius_.getW()*hSin(3.14f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f), 0.f, l.centreRadius_.getW()*hSin(3.925f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  0.f, l.centreRadius_.getW()*hSin(3.925f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) , 0.f, l.centreRadius_.getW()*hSin(4.71f) ), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  0.f, l.centreRadius_.getW()*hSin(4.71f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f), 0.f, l.centreRadius_.getW()*hSin(5.495f)), hColour(1.f, 0.f, 1.f, 1.f) },
+                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  0.f, l.centreRadius_.getW()*hSin(5.495f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   , 0.f, l.centreRadius_.getW()*hSin(0.f)   ), hColour(1.f, 0.f, 1.f, 1.f) },
             };
 
             dd->drawLines(spherelines, (hUint)hArraySize(spherelines), eDebugSet_3DDepth);

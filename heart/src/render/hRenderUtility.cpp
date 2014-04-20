@@ -78,7 +78,7 @@ namespace hRenderUtility
     void ComputeBlurOffsets( hFloat dx, hFloat dy, hUint32 samples, hVec2* pOutSamples )
     {
         // The first sample always has a zero offset.
-        pOutSamples[0] = hVec2Func::zeroVector();
+        pOutSamples[0] = hVec2(0.f, 0.f, 0.f);
 
         // Add pairs of additional sample taps, positioned
         // along a line in both directions from the center.
@@ -94,7 +94,7 @@ namespace hRenderUtility
             // positioning us nicely in between two texels.
             hFloat sampleOffset = i * 2 + 1.5f;
 
-            hVec2 delta = hVec2( dx, dy ) * sampleOffset;
+            hVec2 delta = hVec2(dx, dy, 0.f) * sampleOffset;
 
             // Store texture coordinate offsets for the positive and negative taps.
             pOutSamples[i * 2 + 1] = delta;
@@ -140,7 +140,7 @@ namespace hRenderUtility
                 float x0 = r0 * sinf(seg * dSegAngle);
                 float z0 = r0 * cosf(seg * dSegAngle);
                 hVec3 v( x0, y0, z0 );
-                hCPUVec3 vNormal = hVec3Func::normaliseFast( v );//needs flipping, but shouldn't
+                hVec3 vNormal = normalize( v );//needs flipping, but shouldn't
 
                 // Add one vertex to the strip which makes up the sphere
                 *vtx++ = x0;
@@ -148,9 +148,9 @@ namespace hRenderUtility
                 *vtx++ = z0;
 
 				//Normal
-	 			*vtx++ = vNormal.x;
-	 			*vtx++ = vNormal.y;
-	 			*vtx++ = vNormal.z;
+	 			*vtx++ = vNormal.getX();
+	 			*vtx++ = vNormal.getY();
+	 			*vtx++ = vNormal.getZ();
 // 
 // 				//UV
 // 	 			*vtx++ = (float) seg / (float) segments;
@@ -193,8 +193,13 @@ namespace hRenderUtility
         hFloat ho2 = height / 2.0f;
         struct Vertex
         {
-            hCPUVec3 pos;
-            hCPUVec2 uv;
+            hFloat pos[3];
+            hFloat uv[2];
+        } init_vtx [] = {
+            {{-wo2,  ho2, 0.25f}, {0.f, 0.f}},
+            {{ wo2,  ho2, 0.25f}, {1.f, 0.f}},
+            {{-wo2, -ho2, 0.25f}, {0.f, 1.f}},
+            {{ wo2, -ho2, 0.25f}, {1.f, 1.f}},
         };
 
         hIndexBufferMapInfo ibMapInfo;
@@ -206,21 +211,7 @@ namespace hRenderUtility
 
         hVertexBufferMapInfo vbMapInfo;
         ctx->Map( vtxBuf, &vbMapInfo );
-
-        Vertex* vtx = (Vertex*)vbMapInfo.ptr_;
-
-        vtx[0].pos = hCPUVec3( -wo2, ho2,  0.25f );
-        vtx[0].uv  = hCPUVec2( 0.f, 0.f );
-
-        vtx[0].pos = hCPUVec3(  wo2, ho2,  0.25f );
-        vtx[0].uv  = hCPUVec2( 1.f, 0.f );
-
-        vtx[0].pos = hCPUVec3( -wo2, -ho2, 0.25f );
-        vtx[0].uv  = hCPUVec2( 0.f, 1.f );
-
-        vtx[0].pos = hCPUVec3(  wo2, -ho2, 0.25f );
-        vtx[0].uv  = hCPUVec2( 1.f, 1.f );
-
+        hMemCpy(vbMapInfo.ptr_, init_vtx, sizeof(init_vtx));
         ctx->Unmap( &vbMapInfo );
     }
 
@@ -292,8 +283,8 @@ namespace hRenderUtility
         };
         struct Vertex
         {
-            hCPUVec3 pos;
-            hCPUVec3 normal;
+            hFloat pos[3];
+            hFloat normal[3];
         };
 
         segments = hMax(segments, 4);
@@ -320,12 +311,17 @@ namespace hRenderUtility
             hVec3 v1(x1, y1, z1);
             hVec3 v2=conetip;
             hVec3 v3(x2, y2, z2);
-            vtx[0].pos = v1;
-            vtx[1].pos = v2;
-            vtx[2].pos = v3;
-            vtx[0].normal=hVec3Func::cross(v3-v1, v2-v1);
-            vtx[1].normal=hVec3Func::cross(v1-v2, v3-v2);
-            vtx[2].normal=hVec3Func::cross(v2-v3, v1-v3);
+            hVec3 n1 = cross(v3-v1, v2-v1);
+            hVec3 n2 = cross(v1-v2, v3-v2);
+            hVec3 n3 = cross(v2-v3, v1-v3);
+            for (hUint i=0; i<3; ++i) {
+                vtx[0].pos[i] = v1[i];
+                vtx[1].pos[i] = v2[i];
+                vtx[2].pos[i] = v3[i];
+                vtx[0].normal[i]=n1[i];
+                vtx[1].normal[i]=n2[i];
+                vtx[2].normal[i]=n3[i];
+            }
             vtx+=3;
         }
 
@@ -342,12 +338,23 @@ namespace hRenderUtility
             hVec3 v1=conebase;
             hVec3 v2(x1, y1, z1);
             hVec3 v3(x2, y2, z2);
-            vtx[0].pos = v1;
-            vtx[1].pos = v2;
-            vtx[2].pos = v3;
-            vtx[0].normal=hVec3Func::cross(v3-v1, v2-v1);
-            vtx[1].normal=hVec3Func::cross(v1-v2, v3-v2);
-            vtx[2].normal=hVec3Func::cross(v2-v3, v1-v3);
+            hVec3 n1 = cross(v3-v1, v2-v1);
+            hVec3 n2 = cross(v1-v2, v3-v2);
+            hVec3 n3 = cross(v2-v3, v1-v3);
+            for (hUint i=0; i<3; ++i) {
+                vtx[0].pos[i] = v1[i];
+                vtx[1].pos[i] = v2[i];
+                vtx[2].pos[i] = v3[i];
+                vtx[0].normal[i]=n1[i];
+                vtx[1].normal[i]=n2[i];
+                vtx[2].normal[i]=n3[i];
+            }
+//             vtx[0].pos = v1;
+//             vtx[1].pos = v2;
+//             vtx[2].pos = v3;
+//             vtx[0].normal=hVec3Func::cross(v3-v1, v2-v1);
+//             vtx[1].normal=hVec3Func::cross(v1-v2, v3-v2);
+//             vtx[2].normal=hVec3Func::cross(v2-v3, v1-v3);
             vtx+=3;
         }
 

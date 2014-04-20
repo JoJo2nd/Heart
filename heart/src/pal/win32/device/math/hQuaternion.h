@@ -30,43 +30,11 @@
 
 namespace Heart
 {
-#if defined (HEART_USE_XNAMATH)
-    typedef XMFLOAT4 hCPUQuaternion;
-#else
-    typedef DirectX::XMFLOAT4 hCPUQuaternion;
-    using DirectX::XMQuaternionIdentity;
-    using DirectX::XMQuaternionRotationAxis;
-    using DirectX::XMQuaternionRotationRollPitchYaw;
-    using DirectX::XMQuaternionMultiply;
-    using DirectX::XMVector3Rotate;
-    using DirectX::XMQuaternionNormalize;
-    using DirectX::XMQuaternionLength;
-    using DirectX::XMQuaternionLengthSq;
-    using DirectX::XMQuaternionDot;
-    using DirectX::XMQuaternionConjugate;
-    using DirectX::XMQuaternionSlerp;
-    using DirectX::XMQuaternionIsIdentity;
-    using DirectX::XMStoreFloat4;
-    using DirectX::XMLoadFloat4;
-    using DirectX::XMQuaternionRotationRollPitchYawFromVector;
-#endif
-
-    struct hQuaternion
-    {
-        hVec128 q;
-
-        hQuaternion() {}
-        hQuaternion( const hVec128& rhs );
-        explicit hQuaternion( const hCPUQuaternion& rhs );
-        hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w );
-        hQuaternion& operator = ( const hCPUQuaternion& b );
-        operator hCPUQuaternion () const;
-        hFORCEINLINE operator hFloatInVec() const { return q; }
-        hFORCEINLINE operator hVec128() const { return q; }
-    };
+    typedef Vectormath::Aos::Quat hQuaternion;
 
 namespace hQuaternionFunc
 {
+#if 0
     hFORCEINLINE hQuaternion identity()
 	{
         return XMQuaternionIdentity();
@@ -177,38 +145,8 @@ namespace hQuaternionFunc
     {
         a.q = XMLoadFloat4( b );
     }
+#endif
 }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hFORCEINLINE hQuaternion::hQuaternion( const hVec128& rhs ) 
-        : q(rhs)
-    {
-    }
-
-    hFORCEINLINE hQuaternion::hQuaternion( const hCPUQuaternion& rhs ) 
-    {
-        *this = hQuaternionFunc::set( rhs.x, rhs.y, rhs.z, rhs.w );
-    }
-
-    hFORCEINLINE hQuaternion::hQuaternion( hFloat x, hFloat y, hFloat z, hFloat w )
-    {
-        *this = hQuaternionFunc::set( x, y, z, w );
-    }
-
-    hFORCEINLINE hQuaternion& hQuaternion::operator = ( const hCPUQuaternion& b )
-    {
-        hQuaternionFunc::load( *this, &b );
-        return *this;
-    }
-
-    hFORCEINLINE hQuaternion::operator hCPUQuaternion () const
-    {
-        hCPUQuaternion r;
-        hQuaternionFunc::store( *this, &r );
-        return r;
-    }
 }
 
 #endif // HMQUATERNION_H__

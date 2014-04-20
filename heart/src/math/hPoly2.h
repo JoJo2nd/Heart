@@ -41,7 +41,7 @@ namespace Heart
 	public:
 
 		hVec2			verts_[ _sides ];
-		Plane2			axes_[ _sides ];
+		hPlane			axes_[ _sides ];
 
 		//////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ namespace Poly2Util
 			hVec2 b = points[ (i+1) % nPoints ];
 			hVec2 c = points[ (i+2) % nPoints ];
 
-			if ( ((hCPUVec2)hVec2Func::cross( b-a, c-b )).x > 0.0f )
+			if ( cross( b-a, c-b ).getX() > 0.0f )
 			{
 				return hFalse;
 			}
@@ -118,11 +118,11 @@ namespace Poly2Util
 
 		for ( hUint32 i = 0; i < _sides1; ++i )
 		{
-			const Plane2* axis = &a.axes_[ i ];
+			const hPlane* axis = &a.axes_[ i ];
 			hBool allInfront = hTrue;
 			for ( hUint32 i2 = 0; i2 < _sides2; ++i2 )
 			{
-				hFloat t = Plane2::DistanceFrom( b.verts_[ i2 ], *axis );
+				hFloat t = distFromPlane( b.verts_[ i2 ], *axis );
 				if ( t < 0.0f )
 				{
 					allInfront = hFalse;
@@ -145,7 +145,7 @@ namespace Poly2Util
 			hBool allInfront = hTrue;
 			for ( hUint32 i2 = 0; i2 < _sides2; ++i2 )
 			{
-				hFloat t = Plane2::DistanceFrom( a.verts_[ i2 ], *axis );
+				hFloat t = distFromPlane( a.verts_[ i2 ], *axis );
 				if ( t < 0.0f )
 				{
 					allInfront = hFalse;
@@ -226,7 +226,7 @@ namespace Poly2Util
 			hVec2 a = out.verts_[ (i+1)%_sides ] - out.verts_[ i ];
 			hVec2 n( -a.y, a.x );
 
-			Plane2::BuildPlane( n, out.verts_[ i ], out.axes_[ i ] );
+			buildPlane( n, out.verts_[ i ], out.axes_[ i ] );
 		}
 	}
 }

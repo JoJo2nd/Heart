@@ -45,10 +45,10 @@ namespace Heart
 		hFloat NearH = 2 * tan( fov / 2 ) * oNear;
 		hFloat NearW = NearH * Aspect;
 		hVec3 Right;
-		hVec3 D = hVec3Func::normalise( LookDir );
+		hVec3 D = normalize( LookDir );
 		hVec3 EyeFar = EyeVec + ( D * Far );
 		hVec3 EyeNear = EyeVec + ( D * Near );
-		Right = hVec3Func::cross( Up, D );
+		Right = cross( Up, D );
 
 		// re-generate our 6 planes [1/8/2009 James]
 	#define ftl 0
@@ -84,21 +84,21 @@ namespace Heart
 		//
 		if ( ortho )
 		{
-			near_   = hPlaneFunc::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
-			far_    = hPlaneFunc::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
-			top_    = hPlaneFunc::buildPlane( vex[ ntr ], vex[ ftr ], vex[ ftl ] );
-			bottom_ = hPlaneFunc::buildPlane( vex[ nbl ], vex[ fbl ], vex[ fbr ] );
-			right_  = hPlaneFunc::buildPlane( vex[ nbr ], vex[ fbr ], vex[ ftr ] );
-			left_   = hPlaneFunc::buildPlane( vex[ ntl ], vex[ ftl ], vex[ fbl ] );
+			near_   = buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
+			far_    = buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
+			top_    = buildPlane( vex[ ntr ], vex[ ftr ], vex[ ftl ] );
+			bottom_ = buildPlane( vex[ nbl ], vex[ fbl ], vex[ fbr ] );
+			right_  = buildPlane( vex[ nbr ], vex[ fbr ], vex[ ftr ] );
+			left_   = buildPlane( vex[ ntl ], vex[ ftl ], vex[ fbl ] );
 		}
 		else
 		{
-			near_   = hPlaneFunc::buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
-			far_    = hPlaneFunc::buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
-			top_    = hPlaneFunc::buildPlane( EyeVec, vex[ ftr ], vex[ ftl ] );
-			bottom_ = hPlaneFunc::buildPlane( EyeVec, vex[ fbl ], vex[ fbr ] );
-			right_  = hPlaneFunc::buildPlane( EyeVec, vex[ fbr ], vex[ ftr ] );
-			left_   = hPlaneFunc::buildPlane( EyeVec, vex[ ftl ], vex[ fbl ] );
+			near_   = buildPlane( EyeNear, vex[ ntr ], vex[ ntl ] );
+			far_    = buildPlane( EyeFar, vex[ ftl ], vex[ ftr ] );
+			top_    = buildPlane( EyeVec, vex[ ftr ], vex[ ftl ] );
+			bottom_ = buildPlane( EyeVec, vex[ fbl ], vex[ fbr ] );
+			right_  = buildPlane( EyeVec, vex[ fbr ], vex[ ftr ] );
+			left_   = buildPlane( EyeVec, vex[ ftl ], vex[ fbl ] );
 		}
 
         viewFrustumAABB_ = hAABB::computeFromPointSet( vex, 8 );
@@ -128,19 +128,19 @@ namespace Heart
 			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 0 ] );//bottem left near
             vex[0] = AABB.c_ - AABB.r_;
 			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 1 ] );//bottem right near
-            vex[1] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, -1.f, -1.f ) );
+            vex[1] = AABB.c_ + mulPerElem( AABB.r_, hVec3( 1.f, -1.f, -1.f ) );
 			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 2 ] );//bottem right far
-            vex[2] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, -1.f, 1.f ) );
+            vex[2] = AABB.c_ + mulPerElem( AABB.r_, hVec3( 1.f, -1.f, 1.f ) );
 			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y - AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 3 ] );//bottem left far
-            vex[3] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, -1.f, +1.f ) );
+            vex[3] = AABB.c_ + mulPerElem( AABB.r_, hVec3( -1.f, -1.f, +1.f ) );
 			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 4 ] );//top left near
-            vex[4] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, 1.f, -1.f ) );
+            vex[4] = AABB.c_ + mulPerElem( AABB.r_, hVec3( -1.f, 1.f, -1.f ) );
 			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z - AABB.r[ 2 ] , vex[ 5 ] );//top right near
-            vex[5] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( 1.f, 1.f, -1.f ) );
+            vex[5] = AABB.c_ + mulPerElem( AABB.r_, hVec3( 1.f, 1.f, -1.f ) );
 			//hVec3Func::set( AABB.c.x + AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 6 ] );//top right far
             vex[6] = AABB.c_ + AABB.r_;
 			//hVec3Func::set( AABB.c.x - AABB.r[ 0 ], AABB.c.y + AABB.r[ 1 ], AABB.c.z + AABB.r[ 2 ] , vex[ 7 ] );//top left far
-            vex[7] = AABB.c_ + hVec3Func::componentMult( AABB.r_, hVec3( -1.f, 1.f, 1.f ) );
+            vex[7] = AABB.c_ + mulPerElem( AABB.r_, hVec3( -1.f, 1.f, 1.f ) );
 
 			hPlane* planes[ 5 ] = {&top_, &bottom_, &left_, &right_, &far_ };
 			for ( hUint32 p = 0; p < 5; ++p )
@@ -149,7 +149,7 @@ namespace Heart
 				hBool fullyBehindPlane = hTrue;
 				for ( hUint32 i = 0; i < 8; ++i )
 				{
-					if ( !hPlaneFunc::pointBehindPlane( vex[ i ], *pPlane ) )
+					if ( !pointBehindPlane( vex[ i ], *pPlane ) )
 					{
 						fullyBehindPlane = hFalse;
 						break;
@@ -179,7 +179,7 @@ namespace Heart
 		hFloat f,l;
 		hBool inside = hTrue;
 
-        if ( hAABB::intersectMovingAABB( viewFrustumAABB_, aabb, hVec3Func::zeroVector(), dir, f, l ) )
+        if ( hAABB::intersectMovingAABB( viewFrustumAABB_, aabb, hVec3(0.f, 0.f, 0.f), dir, f, l ) )
 		{
  			for ( hUint32 p = 0; p < 6; ++p )
  			{

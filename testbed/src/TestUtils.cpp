@@ -34,7 +34,6 @@
 
 void SimpleFirstPersonFlyCamera::update(hFloat delta) {
     using namespace Heart;
-    using namespace Heart::hVec3Func;
 #if 1
     hcPrintf("Stub");
 #else

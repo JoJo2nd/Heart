@@ -446,38 +446,38 @@ namespace Heart
                         //
                         mapptr->vtx=pos+tl;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV1_.x;
-                        mapptr->uv[1]=fc.UV2_.y;
+                        mapptr->uv[0]=fc.UV1_[0];
+                        mapptr->uv[1]=fc.UV2_[1];
                         ++mapptr;
                         //
                         mapptr->vtx=pos+tr;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV2_.x;
-                        mapptr->uv[1]=fc.UV2_.y;
+                        mapptr->uv[0]=fc.UV2_[0];
+                        mapptr->uv[1]=fc.UV2_[1];
                         ++mapptr;
                         //
                         mapptr->vtx=pos+bl;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV1_.x;
-                        mapptr->uv[1]=fc.UV1_.y;
+                        mapptr->uv[0]=fc.UV1_[0];
+                        mapptr->uv[1]=fc.UV1_[1];
                         ++mapptr;
                         //
                         mapptr->vtx=pos+tr;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV2_.x;
-                        mapptr->uv[1]=fc.UV2_.y;
+                        mapptr->uv[0]=fc.UV2_[0];
+                        mapptr->uv[1]=fc.UV2_[1];
                         ++mapptr;
                         //
                         mapptr->vtx=pos+br;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV2_.x;
-                        mapptr->uv[1]=fc.UV1_.y;
+                        mapptr->uv[0]=fc.UV2_[0];
+                        mapptr->uv[1]=fc.UV1_[1];
                         ++mapptr;
                         //
                         mapptr->vtx=pos+bl;
                         mapptr->colour=colour;
-                        mapptr->uv[0]=fc.UV1_.x;
-                        mapptr->uv[1]=fc.UV1_.y;
+                        mapptr->uv[0]=fc.UV1_[0];
+                        mapptr->uv[1]=fc.UV1_[1];
                         ++mapptr;
 
                         pos+=hVec3(fc.xAdvan_, 0.f, 0.f);
@@ -533,7 +533,7 @@ namespace Heart
         ctx->SetScissorRect(scissor);
         ctx->Map(perDrawParameters_, &map);
         inst = (hInstanceConstants*)map.ptr;
-        inst->world_ = hMatrixFunc::identity();
+        inst->world_ = hMatrix::identity();
         ctx->Unmap(&map);
 
         ctx->Map(viewParameters_, &map);
@@ -552,14 +552,14 @@ namespace Heart
 
         //2D pass
         ctx->Map(viewParameters_, &map); {
-            hMatrix view=hMatrixFunc::identity();
-            hMatrix proj=hMatrixFunc::orthoProj((hFloat)colourW, (hFloat)colourH, 0.f, 1000.f);
+            hMatrix view=hMatrix::identity();
+            hMatrix proj=hMatrix::orthographic(0, 0, (hFloat)colourW, (hFloat)colourH, 0.f, 1000.f);
             viewconst=(hViewportShaderConstants*)map.ptr;
             viewconst->view_=view;
             viewconst->viewInverse_=view;
             viewconst->viewInverseTranspose_=view;
             viewconst->projection_=proj;
-            viewconst->projectionInverse_=hMatrixFunc::inverse(proj);
+            viewconst->projectionInverse_=inverse(proj);
             viewconst->viewProjection_=proj;
             viewconst->viewProjectionInverse_=viewconst->projectionInverse_;
             viewconst->viewportSize_[0]=(hFloat)colourW;

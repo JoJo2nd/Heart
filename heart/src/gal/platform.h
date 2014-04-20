@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename: 	hVec3.h	
     
-    Copyright (c) 1:4:2012 James Moran
+    Copyright (c) 20:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,12 +23,32 @@
 
 *********************************************************************/
 
-#ifndef hmVec3_h__
-#define hmVec3_h__
+#pragma once
 
-namespace Heart
-{
-    typedef Vectormath::Aos::Vector3 hVec3;
+#include "gal/types.h"
+
+namespace gal {
+
+struct mutex;
+mutex* createMutex();
+void lockMutex(mutex* mtx);
+void unlockMutex(mutex* mtx);
+void destroyMutex(mutex* mtx);
+
+class MutexSentry {
+public:
+    MutexSentry(mutex* mtx)
+        : mtx_(mtx)
+    {
+        lockMutex(mtx_);
+    }
+    ~MutexSentry()
+    {
+        unlockMutex(mtx_);
+    }
+
+    mutex* mtx_;
+};
+
+gal_uintptr_t getThreadID();
 }
-
-#endif // hmVec3_h__

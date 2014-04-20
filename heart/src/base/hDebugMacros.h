@@ -76,4 +76,6 @@ HEART_DLLEXPORT void HEART_API hcOutputString( const hChar* msg, ... );
 
 #endif
 
+#define hStub() hcPrintf("STUBBED OUT %s", __FUNCTION__)
+
 #endif // hcDebugMacros_h__

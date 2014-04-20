@@ -181,7 +181,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         hVec3 camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
         hVec3 camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
 
-        Heart::hMatrix vm = Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
+        Heart::hMatrix vm = Heart::hMatrix::lookAt(Heart::hPoint3(camPos_), Heart::hPoint3(camPos_+camDir_), camUp_);
 
         camera->bindRenderTargetSetup(rtDesc);
         camera->SetFieldOfView(45.f);

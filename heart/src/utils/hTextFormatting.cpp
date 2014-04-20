@@ -78,7 +78,7 @@ namespace Heart
         }
     }
 
-    void hFontFormatting::writeTextToBuffer(const hCPUVec2& topleft)
+    void hFontFormatting::writeTextToBuffer(const hVec3& topleft)
     {
         HEART_PROFILE_FUNC();
         hUint32 charsWritten = 0;
@@ -89,8 +89,8 @@ namespace Heart
 
         for (hUint32 line = 0, lines = formattedLines_.size(); line < lines; ++line) {
             hTextLine* lineptr = &formattedLines_[line];
-            hFloat starty = lineptr->startY_+topleft.y;
-            hFloat startx = lineptr->startX_+topleft.x;
+            hFloat starty = lineptr->startY_+topleft.getX();
+            hFloat startx = lineptr->startX_+topleft.getY();
             for (hTextIterator c = lineptr->lineStart_; c <= lineptr->lineEnd_ && *c; ++c) {
                 hUint32 cc = *c;
                 const hFontCharacter& fc = *font_->GetFontCharacter(cc);
@@ -119,10 +119,10 @@ namespace Heart
                 hFloat w1 = (fc.xOffset_)*scale_;
                 hFloat w2 = (fc.xOffset_+fc.width_)*scale_;
                 hFontVex quad[ 4 ] = {
-                    { hCPUVec3( startx + w1             , starty+h1, 0.0f ), colour_, fc.UV1_ },
-                    { hCPUVec3( startx + w2             , starty+h1, 0.0f ), colour_, hCPUVec2( fc.UV2_.x, fc.UV1_.y ) },
-                    { hCPUVec3( startx + w1             , starty+h2, 0.0f ), colour_, hCPUVec2( fc.UV1_.x, fc.UV2_.y ) },
-                    { hCPUVec3( startx + w2             , starty+h2, 0.0f ), colour_, fc.UV2_ },
+                    { {startx + w1, starty+h1, 0.0f}, colour_, {fc.UV1_[0], fc.UV1_[0]} },
+                    { {startx + w2, starty+h1, 0.0f}, colour_, {fc.UV2_[0], fc.UV1_[0]} },
+                    { {startx + w1, starty+h2, 0.0f}, colour_, {fc.UV1_[0], fc.UV2_[0]} },
+                    { {startx + w2, starty+h2, 0.0f}, colour_, {fc.UV2_[0], fc.UV2_[0]} },
                 };
 
                 *vtx = quad[ 0 ]; ++vtx;

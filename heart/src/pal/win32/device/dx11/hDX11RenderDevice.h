@@ -276,7 +276,6 @@ namespace Heart
 
         ID3D11Texture2D*            pBackBuffer;
     };
-
 }
 
 #endif // DEVICEDX11RENDERDEVICE_H__

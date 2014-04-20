@@ -70,9 +70,9 @@ def outputPublisherClassDef(outfile, argcount):
         temp = Template("    typedef t_P$itr Param${itr}Type;\n")
         outfile.write(temp.substitute(itr=i+1))
     if argcount == 0:
-        outfile.write("    hFUNCTOR_TYPEDEF(void(*)(")
+        outfile.write("    hFUNCTOR_TYPEDEF_NOEXPORT(void(*)(")
     else:
-        outfile.write("    typename hFUNCTOR_TYPEDEF(void(*)(")
+        outfile.write("    typename hFUNCTOR_TYPEDEF_NOEXPORT(void(*)(")
     for i in range(0, argcount):
         if i > 0: outfile.write(", ")
         temp = Template("Param${itr}Type")
@@ -110,7 +110,7 @@ def outputPublisherClassDef(outfile, argcount):
     outfile.write("    {\n")
     outfile.write("        ParamStruct* params = (ParamStruct*)ctx->pushSignal(\n")
     outfile.write("            sizeof(ParamStruct), \n")
-    outfile.write("            hFUNCTOR_BINDMEMBER(hPublisherContext::hDispatchDelegate, SelfType, publishDispatch, this));\n")
+    outfile.write("            hFUNCTOR_BINDMEMBER(hDispatchDelegate, SelfType, publishDispatch, this));\n")
     outfile.write("        // Write out parameters to params\n")
     outfile.write("        if (params) {\n")
     for i in range(0, argcount):

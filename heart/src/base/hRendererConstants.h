@@ -681,7 +681,9 @@ namespace Heart
         eIF_FORCEDWORD = 0xFFFFFFFF
     };
 
-    struct hInputLayoutDesc
+    HEART_PRE_TEMPLATE_DLLEXPORT template class HEART_DLLEXPORT std::vector<std::string>;
+
+    struct HEART_DLLEXPORT hInputLayoutDesc
     {
     public:
         hInputLayoutDesc()

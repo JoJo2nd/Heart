@@ -1,8 +1,6 @@
 /********************************************************************
-
-    filename: 	hVec3.h	
     
-    Copyright (c) 1:4:2012 James Moran
+    Copyright (c) 20:4:2014 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -25,12 +23,17 @@
 
 *********************************************************************/
 
-#ifndef hmVec3_h__
-#define hmVec3_h__
+#pragma once
 
-namespace Heart
-{
-    typedef Vectormath::Aos::Vector3 hVec3;
+// Can we avoid this include in some way...?
+#include <windows.h> 
+
+namespace gal {
+
+struct Device;
+
+Device* createDevice(HWND hWnd);
+void    releaseDevice(Device* );
+bool    aquireRenderThread(Device*);
+bool    releaseRenderThread(Device*);
 }
-
-#endif // hmVec3_h__

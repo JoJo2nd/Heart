@@ -33,12 +33,11 @@ namespace Heart
     /************************************************************************
     * Different system using publisher/subscriber style pattern
     ************************************************************************/
-    
+    hFUNCTOR_TYPEDEF(void (*)(void*/*data*/, hUint/*size*/), hDispatchDelegate);
+
     class HEART_DLLEXPORT hPublisherContext
     {
     public:
-        hFUNCTOR_TYPEDEF(void (*)(void*/*data*/, hUint/*size*/), hDispatchDelegate);
-
         hPublisherContext() 
             : threadID_(NULL)
             , activeBuffer_(0)

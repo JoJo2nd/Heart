@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
-
-#add_definitions(-DWXUSINGDLL)
-
-if (MSVC)
-    #add_definitions(/wd"4244")
-    #add_definitions(/wd"4146")
-    #add_definitions(/wd"4305")
-endif()
+add_definitions(-DWXUSINGDLL)
 
 set(MEMTRACK_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}

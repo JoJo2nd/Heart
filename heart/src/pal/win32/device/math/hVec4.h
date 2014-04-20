@@ -30,53 +30,7 @@
 
 namespace Heart
 {
-#ifdef HEART_USE_XNAMATH
-    typedef XMFLOAT4 hCPUVec4;
-#else
-    typedef DirectX::XMFLOAT4 hCPUVec4;
-    using DirectX::XMVectorZero;
-    using DirectX::XMVector4Length;
-    using DirectX::XMVector4LengthEst;
-    using DirectX::XMVector4LengthSq;
-    using DirectX::XMVector4Normalize;
-    using DirectX::XMVector4NormalizeEst;
-    using DirectX::XMVectorAdd;
-    using DirectX::XMVectorSubtract;
-    using DirectX::XMVectorScale;
-    using DirectX::XMVectorDivide;
-    using DirectX::XMVector4Dot;
-    using DirectX::XMVectorNegate;
-    using DirectX::XMVector4Cross;
-    using DirectX::XMVectorSet;
-    using DirectX::XMVector4Equal;
-    using DirectX::XMStoreFloat4;
-    using DirectX::XMLoadFloat4;
-#endif
-
-    struct hVec3;
-
-    struct hVec4
-    {
-        hVec128 v;
-
-        
-        hVec4() {}
-        hVec4( const hVec128& rhs );
-        explicit hVec4( const hVec3& rhs );
-        explicit hVec4( const hCPUVec4& rhs );
-        hVec4(const hVec3& rhs, hFloat w);
-        hVec4( hFloat x, hFloat y, hFloat z, hFloat w );
-        hVec4& operator = ( const hCPUVec4& b );
-        operator hCPUVec4 () const;
-        operator hFloatInVec() const { return v; }
-        operator hVec128() const { return v; }
-        hVec128 Get128() const { return v; }
-        hFloat getX() const { return hVec128GetX(v); }
-        hFloat getY() const { return hVec128GetY(v); }
-        hFloat getZ() const { return hVec128GetZ(v); }
-        hFloat getW() const { return hVec128GetW(v); }
-    };
-
+    typedef Vectormath::Aos::Vector4 hVec4;
 }
 
 #endif // hmVec4_h__

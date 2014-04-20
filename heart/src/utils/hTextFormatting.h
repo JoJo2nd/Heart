@@ -99,7 +99,7 @@ public:
     void setColour(hColour col) { colour_ = col; }
     void setReserve(hUint32 lines) { formattedLines_.reserve(lines); }
     void formatText();
-    void writeTextToBuffer(const hCPUVec2& topleft);
+    void writeTextToBuffer(const hVec3& topleft);
     hTextExtents getTextExtents() const { return textExtents_; }
     hTextExtents getFormatExtents() const { return extents_; }
     hBool getTextFitsExtents() const { return textExtents_.height < extents_.height; }

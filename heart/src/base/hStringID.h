@@ -35,7 +35,7 @@ namespace Heart
     *   hStringID is a unique id for a string across a single run of the program. They are 
     *   not valid across multiple runs.
     */
-    class hStringID
+    class HEART_DLLEXPORT hStringID
     {
     public:
         hStringID() 
@@ -63,7 +63,7 @@ namespace Heart
 
     private:
 
-        struct hStringIDEntry {
+        struct HEART_DLLEXPORT hStringIDEntry {
             hStringIDEntry() 
                 : strValue_("")
                 , next_(hNullptr)
@@ -91,17 +91,19 @@ namespace Heart
 namespace std
 {
     template<>
-    struct hash<Heart::hStringID>
+    struct HEART_DLLEXPORT hash<Heart::hStringID>
     {
         size_t operator () (const Heart::hStringID& rhs) { return rhs.hash(); }
     };
 
     template<>
-    struct less<Heart::hStringID>
+    struct HEART_DLLEXPORT less<Heart::hStringID>
     {
         bool operator () (const Heart::hStringID& lhs, const Heart::hStringID& rhs) { return lhs.hash() < rhs.hash(); }
     };
 }
 
+//HEART_PRE_TEMPLATE_DLLEXPORT template struct HEART_DLLEXPORT std::hash<Heart::hStringID>;
+//HEART_PRE_TEMPLATE_DLLEXPORT template struct HEART_DLLEXPORT std::less<Heart::hStringID>;
 
 #endif // HSTRINGID_H__

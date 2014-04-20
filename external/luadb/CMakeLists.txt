@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system)
-find_package(Protobuf REQUIRED)
-
 if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings
     add_definitions(/wd"4267") # proto buffers spits out a lot of size_t to int conversion warnings

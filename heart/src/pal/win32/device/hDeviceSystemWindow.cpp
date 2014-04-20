@@ -28,6 +28,18 @@
 
 namespace Heart
 {
+typedef std::unordered_map<hUint, hSysEventHandler> hSysEventHandlerMap;
+struct hdSystemWindowImpl
+{
+    hdSystemWindowImpl()
+        : sdlWindow_(nullptr)
+    {
+    }
+
+    SDL_Window*                 sdlWindow_;
+    hSysEventHandlerMap         sysEventHandlers_;
+};
+
     hdSystemWindow* hdSystemWindow::s_instance = NULL;
 
     //////////////////////////////////////////////////////////////////////////
@@ -37,13 +49,15 @@ namespace Heart
     hBool hdSystemWindow::Create( const hdDeviceConfig& deviceconfig )
     {
 #ifdef HEART_USE_SDL2
+        impl_ = new hdSystemWindowImpl;
+        auto& sdlWindow_ = impl_->sdlWindow_;
         sdlWindow_ = SDL_CreateWindow(
             "HeartEngine", 
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
             deviceconfig.width_,
             deviceconfig.height_,
-            SDL_WINDOW_SHOWN);
+            SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
         if (!sdlWindow_) {
             hcPrintf("SDL_CreateWindow() Error: %s", SDL_GetError());
             return hFalse;
@@ -141,8 +155,9 @@ namespace Heart
     void hdSystemWindow::Destroy()
     {
 #ifdef HEART_USE_SDL2
-        SDL_DestroyWindow(sdlWindow_);
-        sdlWindow_=nullptr;
+        SDL_DestroyWindow(impl_->sdlWindow_);
+        delete impl_;
+        impl_ = nullptr;
 #else
         if (ownWindow_) {
             DestroyWindow( hWnd_ );
@@ -304,7 +319,7 @@ namespace Heart
     void hdSystemWindow::SetWindowTitle( const hChar* titleStr )
     {
 #ifdef HEART_USE_SDL2
-        SDL_SetWindowTitle(sdlWindow_, titleStr);
+        SDL_SetWindowTitle(impl_->sdlWindow_, titleStr);
 #else
         SetWindowText( hWnd_, titleStr );
 #endif
@@ -316,6 +331,7 @@ namespace Heart
 
     void hdSystemWindow::PumpMessages() {
 #ifdef HEART_USE_SDL2
+        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         SDL_Event sdl_event;
         auto invalidhandler = sysEventHandlers_.end();
         while(SDL_PollEvent(&sdl_event)) {
@@ -345,6 +361,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::setSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
+        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         hcAssert(sysEventHandlers_.find(sysEventID) == sysEventHandlers_.end());
         sysEventHandlers_.insert(hSysEventHandlerMap::value_type(sysEventID, handler));
     }
@@ -354,6 +371,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::removeSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
+        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         hcAssert((sysEventHandlers_.find(sysEventID) != sysEventHandlers_.end())
                 && (sysEventHandlers_.find(sysEventID)->second == handler));
         sysEventHandlers_.erase(sysEventID);

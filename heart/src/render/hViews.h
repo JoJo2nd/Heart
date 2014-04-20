@@ -35,12 +35,12 @@ namespace Heart
 class hTexture;
 class hRenderBuffer;
 
+hFUNCTOR_TYPEDEF(void(*)(class hShaderResourceView*), hShaderResourceViewZeroRefProc);
 class HEART_DLLEXPORT hShaderResourceView : public hIReferenceCounted,
                                             public hdShaderResourceView
 {
 public:
-    hFUNCTOR_TYPEDEF(void(*)(hShaderResourceView*), hZeroRefProc);
-    hShaderResourceView(hZeroRefProc relproc)
+    hShaderResourceView(hShaderResourceViewZeroRefProc relproc)
         : zeroRefProc_(relproc)
         , refType_(eRenderResourceType_Invalid)
         , refTex_(NULL)
@@ -57,7 +57,7 @@ private:
     void bindConstBlock(hRenderBuffer* cb);
     virtual void OnZeroRef();
 
-    hZeroRefProc        zeroRefProc_;
+    hShaderResourceViewZeroRefProc zeroRefProc_;
     hRenderResourceType refType_;
     union {
         hTexture*                   refTex_;
@@ -65,12 +65,12 @@ private:
     };
 };
 
+hFUNCTOR_TYPEDEF(void(*)(class hRenderTargetView*), hRenderTargetViewZeroRefProc);
 class HEART_DLLEXPORT hRenderTargetView : public hIReferenceCounted,
                                           public hdRenderTargetView
 {
 public:
-    hFUNCTOR_TYPEDEF(void(*)(hRenderTargetView*), hZeroRefProc);
-    hRenderTargetView(hZeroRefProc zeroproc)
+    hRenderTargetView(hRenderTargetViewZeroRefProc zeroproc)
         : zeroRefProc_(zeroproc)
         , refTex_(NULL)
     {
@@ -86,16 +86,16 @@ private:
     void bindTexture(hTexture* tex);
     virtual void OnZeroRef();
 
-    hZeroRefProc    zeroRefProc_;
+    hRenderTargetViewZeroRefProc    zeroRefProc_;
     hTexture*       refTex_;
 };
 
+hFUNCTOR_TYPEDEF(void(*)(class hDepthStencilView*), hDepthStencilViewZeroRefProc);
 class HEART_DLLEXPORT hDepthStencilView : public hIReferenceCounted,
                                           public hdDepthStencilView
 {
 public:
-    hFUNCTOR_TYPEDEF(void(*)(hDepthStencilView*), hZeroRefProc);
-    hDepthStencilView(hZeroRefProc zeroproc)
+    hDepthStencilView(hDepthStencilViewZeroRefProc zeroproc)
         : zeroRefProc_(zeroproc)
         , refTex_(NULL)
     {
@@ -109,7 +109,7 @@ private:
     void bindTexture(hTexture* tex);
     virtual void OnZeroRef();
 
-    hZeroRefProc    zeroRefProc_;
+    hDepthStencilViewZeroRefProc    zeroRefProc_;
     hTexture*       refTex_;
 };
 }

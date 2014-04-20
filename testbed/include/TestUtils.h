@@ -41,7 +41,7 @@ public:
         , look_(0.f, 0.f, 1.f)
         , position_(0.f, 0.f, 0.f)
     {
-        viewMatrix_ = Heart::hMatrixFunc::identity();
+        viewMatrix_ = Heart::hMatrix::identity();
     }
     ~SimpleFirstPersonFlyCamera()
     {}
@@ -51,7 +51,7 @@ public:
         forward_=forward;
         look_=forward;
         position_=position;
-        viewMatrix_ = Heart::hMatrixFunc::LookAt(position_, position_+look_, up_);
+        viewMatrix_ = Heart::hMatrix::lookAt(Heart::hPoint3(position_), Heart::hPoint3(position_+look_), up_);
     }
     void setMoveSpeed(hFloat speed) { moveSpeed_ = speed; }
     void setTurnSpeed(hFloat speed) { turnSpeed_ = speed; }

@@ -126,8 +126,6 @@ namespace Heart
 
     private:
 
-        static hTypePoolMemoryHeap<hJob, 1024> s_jobPool;
-
         struct hWorkerThread
         {
             hdThread    thread_;

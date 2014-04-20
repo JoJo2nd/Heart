@@ -77,17 +77,17 @@ namespace Private
     // be packed into ~3 bits.
     struct hFontCharacter
     {
-        hUint32					page_;      //4;
-        hUint32					unicode_;   //8;Decoded from UTF-8, where -1 is invalid
+        hUint32                 page_;      //4;
+        hUint32                 unicode_;   //8;Decoded from UTF-8, where -1 is invalid
         hFloat                  x_;         //12;
         hFloat                  y_;         //16;
-        hFloat					height_;    //20;
-        hFloat					width_;     //24;
+        hFloat                  height_;    //20;
+        hFloat                  width_;     //24;
         hFloat                  xOffset_;   //28;
         hFloat                  yOffset_;   //32;
-        hFloat					xAdvan_;    //36;
-        hCPUVec2				UV1_;       //(8)44;
-        hCPUVec2				UV2_;       //(8)52;
+        hFloat                  xAdvan_;    //36;
+        hFloat                  UV1_[2];    //(8)44;
+        hFloat                  UV2_[2];    //(8)52;
         hByte                   pad_[12];   //(12)64;
     };
 
@@ -97,9 +97,9 @@ namespace Private
 
     struct hFontVex
     {
-        hCPUVec3    pos_;
+        hFloat      pos_[3];
         hColour     colour_;
-        hCPUVec2    uv_;
+        hFloat      uv_[2];
     };
 
     class HEART_DLLEXPORT hFont

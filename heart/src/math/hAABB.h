@@ -53,62 +53,72 @@ namespace Heart
     // 		if ( hVec3Func::length( a.c_ - point ) < d  )
     // 			return true;
     // 		return false;
-
-            if ( hVec128AllGreaterEqual( hVec3Func::length( a.c_ - point ), a.r_ ) )
-                return hFalse;
-            return hTrue;
+            return length(a.c_ - point) < minElem(a.r_);
 	    }
 
-	    hFORCEINLINE static hBool hAABB::intersect( const hAABB& a, const hAABB& b )
-	    {
-    // 		if ( abs( ((const hFloat*)&a.c)[ 0 ] - ((const hFloat*)&b.c)[ 0 ] )  > ( a.r[ 0 ] + b.r[ 0 ] ) )		return hFalse;
-    // 		if ( abs( ((const hFloat*)&a.c)[ 1 ] - ((const hFloat*)&b.c)[ 1 ] )  > ( a.r[ 1 ] + b.r[ 1 ] ) )		return hFalse;
-    // 		if ( abs( ((const hFloat*)&a.c)[ 2 ] - ((const hFloat*)&b.c)[ 2 ] )  > ( a.r[ 2 ] + b.r[ 2 ] ) )		return hFalse;
-    // 
-    // 		return hTrue;
-            if ( hVec128AllLessEqual( hVec128Abs( ( a.c_ - b.c_ ) ), ( a.r_ + b.r_ ) ) )
-                return hTrue;
-
-            return hFalse;
+        hFORCEINLINE static hBool hAABB::intersect( const hAABB& a, const hAABB& b )
+        {
+            hVec3 cdiff = absPerElem(a.c_ - b.c_);
+            hVec3 rsum = a.r_+b.r_;
+            if (cdiff.getX() > rsum.getX()) return hFalse;
+            if (cdiff.getY() > rsum.getY()) return hFalse;
+            if (cdiff.getZ() > rsum.getZ()) return hFalse;
+            return hTrue;
+            // reference
+//             if ( abs( ((const hFloat*)&a.c)[ 0 ] - ((const hFloat*)&b.c)[ 0 ] )  > ( a.r[ 0 ] + b.r[ 0 ] ) )		return hFalse;
+//             if ( abs( ((const hFloat*)&a.c)[ 1 ] - ((const hFloat*)&b.c)[ 1 ] )  > ( a.r[ 1 ] + b.r[ 1 ] ) )		return hFalse;
+//             if ( abs( ((const hFloat*)&a.c)[ 2 ] - ((const hFloat*)&b.c)[ 2 ] )  > ( a.r[ 2 ] + b.r[ 2 ] ) )		return hFalse;
+//         
+//             return hTrue;
 	    }
 
 	    hFORCEINLINE static hAABB hAABB::rotate( const hAABB& a, const hMatrix& m )
 	    {
-    //   		b.c.x = m.m11*a.c.x + m.m21*a.c.y + m.m31*a.c.z + m.m41;
-    //   		b.c.y = m.m12*a.c.x + m.m22*a.c.y + m.m32*a.c.z + m.m42;
-    //   		b.c.z = m.m13*a.c.x + m.m23*a.c.y + m.m33*a.c.z + m.m43;
-    // 	  
-    //   		b.r[0] = abs(m.m11)*a.r[0] + abs(m.m21)*a.r[1] + abs(m.m31)*a.r[2];
-    //   		b.r[1] = abs(m.m12)*a.r[0] + abs(m.m22)*a.r[1] + abs(m.m32)*a.r[2];
-    //   		b.r[2] = abs(m.m13)*a.r[0] + abs(m.m23)*a.r[1] + abs(m.m33)*a.r[2];
+            // reference
+            //b.c.x = m.m11*a.c.x + m.m21*a.c.y + m.m31*a.c.z + m.m41;
+            //b.c.y = m.m12*a.c.x + m.m22*a.c.y + m.m32*a.c.z + m.m42;
+            //b.c.z = m.m13*a.c.x + m.m23*a.c.y + m.m33*a.c.z + m.m43;
+            //
+            //b.r[0] = abs(m.m11)*a.r[0] + abs(m.m21)*a.r[1] + abs(m.m31)*a.r[2];
+            //b.r[1] = abs(m.m12)*a.r[0] + abs(m.m22)*a.r[1] + abs(m.m32)*a.r[2];
+            //b.r[2] = abs(m.m13)*a.r[0] + abs(m.m23)*a.r[1] + abs(m.m33)*a.r[2];
             
             hAABB r;
-            r.c_ = hMatrixFunc::multNormal( a.c_, m );
-            r.r_ = hMatrixFunc::multNormal( a.r_, m );
+            r.c_ = m.getUpper3x3()*a.c_;
+            r.r_ = m.getUpper3x3()*a.r_;
             return r;
 	    }
 
 	    hFORCEINLINE static hAABB hAABB::MatrixMult( const hAABB& a, const hMatrix& m )
 	    {
             hAABB r;
-		    r.c_ = hMatrixFunc::mult( a.c_, m );
-            r.r_ = hMatrixFunc::multNormal( a.r_, m );
+		    r.c_ = (m*a.c_).getXYZ();
+            r.r_ = m.getUpper3x3()*a.r_;
             return r;
 	    }
 
 	    hFORCEINLINE static hVec3 hAABB::closestPoint( const hAABB& a, const hVec3& vin )
 	    {
-    // 		for ( hUint32 i = 0; i < 3; ++i )
-    // 		{
-    // 			hFloat v = vin.v[ i ];
-    // 			if ( v < ( a.c.v[ i ] - a.r[ i ] ) ) v = ( a.c.v[ i ] - a.r[ i ] );
-    // 			if ( v > ( a.c.v[ i ] + a.r[ i ] ) ) v = ( a.c.v[ i ] - a.r[ i ] );
-    // 			vout.v[ i ] = v;
-    // 		}
+            //reference
+//             for ( hUint32 i = 0; i < 3; ++i )
+//             {
+//                 hFloat v = vin.v[ i ];
+//                 if ( v < ( a.c.v[ i ] - a.r[ i ] ) ) v = ( a.c.v[ i ] - a.r[ i ] );
+//                 if ( v > ( a.c.v[ i ] + a.r[ i ] ) ) v = ( a.c.v[ i ] + a.r[ i ] );
+//                 vout.v[ i ] = v;
+//             }
 
-            hVec3 tmp;
-            tmp = hVec128Max( a.Min(), vin );
-            return hVec128Min( a.Max(), tmp );
+            const hVec3 amin = a.c_ - a.r_;
+            const hVec3 amax = a.c_ + a.r_;
+            hVec3 r;
+            for ( hUint32 i = 0; i < 3; ++i )
+            {
+                hFloat128 v = vin[i];
+                if ( v < amin[ i ] ) v = amin[i];
+                if ( v > amax[ i ] ) v = amax[i];
+                r[i] = v;
+            }
+            return r;
 	    }
 
 	    hFORCEINLINE static hAABB hAABB::computeFromPointSet( const hVec3* points, hUint32 nPoints )
@@ -145,8 +155,8 @@ namespace Heart
          
             for ( hUint32 i = 0; i < nPoints; ++i )
             {
-                vmin = hVec128Min( vmin, points[i] );
-                vmax = hVec128Max( vmax, points[i] );
+                vmin = minPerElem( vmin, points[i] );
+                vmax = maxPerElem( vmax, points[i] );
             }  
 
             hAABB r;
@@ -171,8 +181,8 @@ namespace Heart
     // 
     // 		computeFromPointSet( t, 3, aabb );
     
-            hVec3 vmin = hVec128Min( a.Min(), point );
-            hVec3 vmax = hVec128Max( a.Max(), point );
+            hVec3 vmin = minPerElem( a.Min(), point );
+            hVec3 vmax = maxPerElem( a.Max(), point );
             
             hAABB r;
             r.r_ = ((vmin+vmax)*0.5f);
@@ -204,8 +214,8 @@ namespace Heart
     // 
     // 		computeFromPointSet( t, 4, a );
     // 		
-            hVec3 vmin = hVec128Min( a.Min(), a.Min() );
-            hVec3 vmax = hVec128Max( a.Max(), a.Max() );
+            hVec3 vmin = minPerElem(a.Min(), b.Min());
+            hVec3 vmax = maxPerElem(a.Max(), b.Max());
 
             hAABB r;
             r.r_ = ((vmin+vmax)*0.5f);

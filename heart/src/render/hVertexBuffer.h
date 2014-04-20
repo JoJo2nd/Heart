@@ -36,12 +36,12 @@ namespace Cmd
     class FlushVertexBufferData;
 }
 
+    hFUNCTOR_TYPEDEF(void(*)(class hVertexBuffer*), hVertexBufferZeroProc);
     class hVertexBuffer : public hdVtxBuffer, 
                           public hIReferenceCounted
     {
     public:
-        hFUNCTOR_TYPEDEF(void(*)(hVertexBuffer*), hZeroProc);
-        hVertexBuffer(hZeroProc zeroproc)
+        hVertexBuffer(hVertexBufferZeroProc zeroproc)
             : zeroProc_(zeroproc)
         {}
         ~hVertexBuffer() 
@@ -58,7 +58,7 @@ namespace Cmd
             zeroProc_(this);
         }
 
-        hZeroProc               zeroProc_;
+        hVertexBufferZeroProc               zeroProc_;
         hUint32                 stride_;
         hUint32					vtxCount_;
     };

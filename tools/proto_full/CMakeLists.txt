@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Protobuf REQUIRED)
-
 ENABLE_PROFILE_IF_SET()
 
 if (MSVC)
@@ -31,14 +29,14 @@ source_group(proto_files FILES ${PROTO_SRC_FILES})
 source_group(autogen FILES ${ProtoSources} ${ProtoHeaders} ${LiteProtoSources} ${LiteProtoHeaders} ${LuaProtoSources} ${LuaProtoHeaders})
 
 add_library(proto_full ${PROTO_SRC_FILES} ${ProtoSources} ${ProtoHeaders})
-target_link_libraries(proto_full debug ${PROTOBUF_LIBRARY_FULL_DEBUG} ${PROFILE_LIBS})
-target_link_libraries(proto_full optimized ${PROTOBUF_LIBRARY_FULL} ${PROFILE_LIBS})
+target_link_libraries(proto_full debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS})
+target_link_libraries(proto_full optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})
 set_property(TARGET proto_full PROPERTY DEBUG_POSTFIX)
 
 file(GLOB PROTO_LUA_SRC_FILES "${PROTO_SRC_DIR}/proto_lua*.cpp" "${PROTO_SRC_DIR}/proto_lua*.h")
 add_library(proto_lua SHARED ${PROTO_LUA_SRC_FILES} ${PROTO_SRC_FILES} ${LuaProtoHeaders} ${LuaProtoSources})
-target_link_libraries(proto_lua debug ${PROTOBUF_LIBRARY_FULL_DEBUG} ${PROFILE_LIBS} lua52 proto_full)
-target_link_libraries(proto_lua optimized ${PROTOBUF_LIBRARY_FULL} ${PROFILE_LIBS} lua52 proto_full)
+target_link_libraries(proto_lua debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS} lua52 proto_full)
+target_link_libraries(proto_lua optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS} lua52 proto_full)
 set_property(TARGET proto_lua PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(

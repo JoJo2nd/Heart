@@ -245,6 +245,8 @@ namespace Heart
         hBool													vsync_;
         hFloat                                                  gpuTime_;
 
+        gal::Device*             gal_;
+
         hdMutex                   resourceMutex_;
         BlendStateMapType        blendStates_;
         RasterizerStateMapType   rasterizerStates_;

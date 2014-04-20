@@ -88,7 +88,7 @@ namespace Heart
         vp.y= 0.f;
         vp.w= 1.f;
         vp.h= 1.f;
-        Heart::hMatrix vm = Heart::hMatrixFunc::identity();
+        Heart::hMatrix vm = Heart::hMatrix::identity();
         camera_.Initialise(renderer);
         camera_.bindRenderTargetSetup(rtDesc);
         camera_.SetFieldOfView(45.f);

@@ -35,8 +35,8 @@ namespace
     typedef std::unordered_map< hStringID, hStringID, hStringID::hasher >            hSerialiserToObjectTable;
 
     static hBool                    doneGlobalInit_ = hFalse;
-    static hObjectDefinitionTable   objectDefTable_;
-    static hObjectDefinitionTable   serialiserDefTable_;
+    static hObjectDefinitionTable*  objectDefTable_;
+    static hObjectDefinitionTable*  serialiserDefTable_;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -44,8 +44,8 @@ namespace
 //////////////////////////////////////////////////////////////////////////
 
 const hObjectDefinition* getEntityDefinition(hStringID name) {
-    const auto definition = objectDefTable_.find(name);
-    if (definition == objectDefTable_.end()) {
+    const auto definition = objectDefTable_->find(name);
+    if (definition == objectDefTable_->end()) {
         return hNullptr;
     }
     return definition->second;
@@ -56,8 +56,8 @@ const hObjectDefinition* getEntityDefinition(hStringID name) {
 //////////////////////////////////////////////////////////////////////////
 
 void* createEntity(hStringID name) {
-    auto definition = objectDefTable_.find(name);
-    if (definition == objectDefTable_.end()) {
+    auto definition = objectDefTable_->find(name);
+    if (definition == objectDefTable_->end()) {
         return hNullptr;
     }
     void* ptr=definition->second->construct_();
@@ -69,8 +69,8 @@ void* createEntity(hStringID name) {
 //////////////////////////////////////////////////////////////////////////
 
 hObjectMarshall* createObjectMarshallFromTypeName(hStringID name) {
-    auto definition = objectDefTable_.find(name);
-    if (definition == objectDefTable_.end()) {
+    auto definition = objectDefTable_->find(name);
+    if (definition == objectDefTable_->end()) {
         return hNullptr;
     }
     return definition->second->constructMarshall_();;
@@ -81,11 +81,19 @@ hObjectMarshall* createObjectMarshallFromTypeName(hStringID name) {
 //////////////////////////////////////////////////////////////////////////
 
 hBool objectFactoryRegistar(hObjectDefinition* definition, const char* serialiser_type_name, ...) {
+    static hObjectDefinitionTable   localObjectDefTable_;
+    static hObjectDefinitionTable   localSerialiserDefTable_;
+    if (objectDefTable_ == nullptr) {
+        objectDefTable_=&localObjectDefTable_;
+    }
+    if (serialiserDefTable_ == nullptr) {
+        serialiserDefTable_ = &localSerialiserDefTable_;
+    }
     hcAssertMsg(doneGlobalInit_ == hFalse, "Registering Type too later, this should be done before main()");
     if (doneGlobalInit_ || definition->entityName_.is_default()) {
         return hFalse;
     }
-    objectDefTable_[definition->entityName_] = definition;
+    (*objectDefTable_)[definition->entityName_] = definition;
 
     hString real_serialiser_type_name = serialiser_type_name;
     for (auto loc=real_serialiser_type_name.find("::"); loc != real_serialiser_type_name.npos; loc=real_serialiser_type_name.find("::")) {
@@ -93,7 +101,7 @@ hBool objectFactoryRegistar(hObjectDefinition* definition, const char* serialise
     }
     
     definition->serialiserName_ = hStringID(real_serialiser_type_name.c_str());
-    serialiserDefTable_[definition->serialiserName_] = definition;
+    (*serialiserDefTable_)[definition->serialiserName_] = definition;
 
     va_list marker;
     va_start(marker, serialiser_type_name);
@@ -111,7 +119,7 @@ hBool objectFactoryRegistar(hObjectDefinition* definition, const char* serialise
 //////////////////////////////////////////////////////////////////////////
 
 void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID* out_type_name) {
-    hObjectDefinition* obj_def = serialiserDefTable_[hStringID(msg_container->type_name().c_str())];
+    hObjectDefinition* obj_def = (*serialiserDefTable_)[hStringID(msg_container->type_name().c_str())];
     if (!obj_def) {
         return nullptr;
     }
@@ -141,7 +149,7 @@ hBool hObjectFactory::canUpcastTo(hStringID type1, hStringID type2) {
     if (type1 == type2) {
         return hTrue;
     }
-    hObjectDefinition* obj_def = objectDefTable_[type1];
+    hObjectDefinition* obj_def = (*objectDefTable_)[type1];
     if (!obj_def) {
         return hFalse;
     }

@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization regex)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
-
 add_definitions(-DWXUSINGDLL)
-
-if (MSVC)
-    #add_definitions(/wd"4244")
-    #add_definitions(/wd"4146")
-    #add_definitions(/wd"4305")
-endif()
 
 set(VIEWER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -77,7 +68,6 @@ set(ALL_SRC_FILES
 	${GENERATED_FILES}
 )
 
-message(${ALL_SRC_FILES})
 ADD_MSVC_PRECOMPILED_HEADER(
 	"${VIEWER_SRC_DIR}/src/precompiled/precompiled.h" 
 	"${VIEWER_SRC_DIR}/src/precompiled/precompiled.cpp" 
@@ -89,7 +79,6 @@ if (MSVC)
 	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 endif()
 
-message("assimp lib directory ${assimp_LIB_DIR_FULL}")
 include_directories(${VIEWER_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(
 	${LIBHEART_LIB_DIRS}

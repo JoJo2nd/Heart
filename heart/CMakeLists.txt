@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(HEART)
 
-#TODO: execute_process -> to build files? 
-
-find_package(Protobuf REQUIRED)
-
 ENABLE_PROFILE_IF_SET()
 
 # set project directories
@@ -24,14 +20,13 @@ set( HEART_INCLUDE_DIRS
     "${EXTERNAL_SRC_ROOT}/minizip/include"
     "${EXTERNAL_SRC_ROOT}/libogg/include"
     "${EXTERNAL_SRC_ROOT}/libvorbis/include"
+    "${EXTERNAL_SRC_ROOT}/sce_vectormath/include"
     "${PROTOBUF_INCLUDE_DIR}"
     "${GENERATED_PROTO_INC_DIRS}"
+    "${SDL2_INCLUDE_DIR}"
+    "${GLEW_INCLUDE_DIRS}"
 )
-if (USE_SDL2)
-	set(HEART_INCLUDE_DIRS
-		${HEART_INCLUDE_DIRS}
-		${SDL2_INCLUDE_DIR})
-endif (USE_SDL2)
+
 set(HEART_LIB_DIRS)
 if (WIN32)
 	if (BUILD_64_BIT)
@@ -112,6 +107,10 @@ file(GLOB HEART_MATH_FILES
 file(GLOB HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
+)
+file(GLOB HEART_GAL_FILES
+    "${HEART_SOURCE_DIR}/src/gal/*.h"
+    "${HEART_SOURCE_DIR}/src/gal/*.cpp"
 )
 file(GLOB HEART_SCENE_FILES
     "${HEART_SOURCE_DIR}/src/scene/*.h"
@@ -201,6 +200,7 @@ source_group(input FILES ${HEART_INPUT_FILES})
 source_group(lua FILES ${HEART_LUA_FILES})
 source_group(math FILES ${HEART_MATH_FILES})
 source_group(render FILES ${HEART_RENDER_FILES})
+source_group(gal FILES ${HEART_GAL_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
 source_group(thread FILES ${HEART_THREAD_FILES})
 source_group(utils FILES ${HEART_UTILS_FILES})
@@ -212,20 +212,16 @@ set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
-	zlib crypto lua52 minizip libogg libvorbis proto enet)
-if (USE_SDL2)
-	set(HEART_LIBRARIES
-		${HEART_LIBRARIES} 
-		${SDL2_LIBRARIES})
-endif (USE_SDL2)
+	zlib crypto lua52 minizip libogg libvorbis proto enet ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
-add_library(heart SHARED ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
+add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GAL_FILES})
 target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
 ADD_CUSTOM_COMMAND(
-	TARGET heart
+    TARGET heart
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" glew32 "${GLEW_BIN_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
+    #COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
 )

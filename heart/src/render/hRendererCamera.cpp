@@ -55,7 +55,7 @@ namespace Heart
     {
         renderer_ = renderer;
         fov = HEART_PI / 4.0f;//45.0f
-        viewMatrix_ = hMatrixFunc::identity();
+        viewMatrix_ = hMatrix::identity();
         isOrtho_ = hFalse;
         viewport_.x = 0.f;
         viewport_.y = 0.f;
@@ -74,18 +74,18 @@ namespace Heart
     void hRendererCamera::UpdateParameters(hRenderSubmissionCtx* ctx)
     {
         hViewport vp=getTargetViewport();
-        hVec3 eye = hMatrixFunc::getRow( viewMatrix_, 3 );
-        hVec3 dir = hMatrixFunc::getRow( viewMatrix_, 2 );
-        hVec3 up  = hMatrixFunc::getRow( viewMatrix_, 1 );
+        hVec3 eye = viewMatrix_.getRow(3).getXYZ();
+        hVec3 dir = viewMatrix_.getRow(2).getXYZ();
+        hVec3 up  = viewMatrix_.getRow(1).getXYZ();
         frustum_.UpdateFromCamera( eye, dir, up, fov, aspect_, near_, far_, isOrtho_ );
 
         viewportConstants_.projection_ = projectionMatrix_;
-        viewportConstants_.projectionInverse_ = hMatrixFunc::inverse(projectionMatrix_);
+        viewportConstants_.projectionInverse_ = inverse(projectionMatrix_);
         viewportConstants_.view_ = viewMatrix_;
-        viewportConstants_.viewInverse_ = hMatrixFunc::inverse( viewMatrix_ );
-        viewportConstants_.viewInverseTranspose_ = hMatrixFunc::transpose( viewportConstants_.viewInverse_ );
-        viewportConstants_.viewProjection_ = hMatrixFunc::mult(viewMatrix_, projectionMatrix_);
-        viewportConstants_.viewProjectionInverse_ = hMatrixFunc::inverse(viewportConstants_.viewProjection_);
+        viewportConstants_.viewInverse_ = inverse( viewMatrix_ );
+        viewportConstants_.viewInverseTranspose_ = transpose( viewportConstants_.viewInverse_ );
+        viewportConstants_.viewProjection_ = projectionMatrix_*viewMatrix_;
+        viewportConstants_.viewProjectionInverse_ = inverse(viewportConstants_.viewProjection_);
         viewportConstants_.viewportSize_[0]=(hFloat)vp.width_;
         viewportConstants_.viewportSize_[1]=(hFloat)vp.height_;
         viewportConstants_.viewportSize_[2]=0.f;
@@ -133,7 +133,7 @@ namespace Heart
         far_ = Far;
         isOrtho_ = hFalse;
 
-        projectionMatrix_ = hMatrixFunc::perspectiveFOV( fov, aspect_, near_, far_ );
+        projectionMatrix_ = hMatrix::perspective( fov, aspect_, near_, far_ );
 
         //UpdateParameters();
     }
@@ -149,9 +149,7 @@ namespace Heart
         far_ = zfar;
         isOrtho_ = hTrue;
 
-        projectionMatrix_ = hMatrixFunc::orthoProj( width, height, near_, far_ );
-
-        //UpdateParameters();
+        projectionMatrix_ = hMatrix::orthographic(0.f, 0.f, width, height, near_, far_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -165,9 +163,7 @@ namespace Heart
         far_ = zfar;
         isOrtho_ = hTrue;
 
-        projectionMatrix_ = hMatrixFunc::orthoProjOffCentre( left, right, bottom, top, near_, far_ );
-
-        //UpdateParameters();
+        projectionMatrix_ = hMatrix::orthographic(left, right, bottom, top, near_, far_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -183,12 +179,12 @@ namespace Heart
         view = GetViewMatrix();
         proj = GetProjectionMatrix();
         hVec4 point4( point );
-        viewProj = hMatrixFunc::mult( view, proj );
-        ret = hMatrixFunc::mult( point4, viewProj ); 
+        viewProj = proj*view;
+        ret = viewProj*point4; 
         //hVec3 r2( ((ret.x/ret.w) * viewport_.width_ / 2), ((ret.y/ret.w) * viewport_.height_ / 2), ret.z/ret.w );
-        hVec3 r2( hVec3Func::div( (hVec3)ret, hVec128SplatW( ret ) ) );
+        hVec3 r2 = ret.getXYZ() / ret.getW();
         
-        return hVec3Func::componentMult( r2, hVec3( vp.width_ / 2.f, vp.height_ / 2.f, 1.f ) );
+        return mulPerElem( r2, hVec3(vp.width_ / 2.f, vp.height_ / 2.f, 1.f));
 
     }
 

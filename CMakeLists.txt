@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
+project(HEART)
+
+if (MSVC)
+  set(BUILD_PLATFORM "windows")
+endif()
 
 #macros
 MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
@@ -8,10 +13,10 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
     SET(Sources SourcesVar)
 
     SET_SOURCE_FILES_PROPERTIES(${PrecompiledSource}
-                                PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledBasename}.h\" /Fp\"${PrecompiledBinary}\""
+                                PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledBasename}.h\" -Zm256 /Fp\"${PrecompiledBinary}\""
                                            OBJECT_OUTPUTS "${PrecompiledBinary}")
     SET_SOURCE_FILES_PROPERTIES(${SourcesVar}
-                                PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledBinary}\" /FI\"${PrecompiledBinary}\" /Fp\"${PrecompiledBinary}\""
+                                PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledBinary}\" -Zm256 /FI\"${PrecompiledBinary}\" /Fp\"${PrecompiledBinary}\""
                                            OBJECT_DEPENDS "${PrecompiledBinary}")  
     # Add precompiled header to SourcesVar
     SET(SourcesVar ${SourcesVar} ${PrecompiledSource} ${PrecompiledHeader})
@@ -26,18 +31,18 @@ MACRO(GET_BASE_FILENAMES destVar sourceVar)
 	endforeach(FILEPATH)
 ENDMACRO(GET_BASE_FILENAMES)
 
-MACRO(SET_USE_PRCOMPILED_HEADER files headername)
-	if(MSVC)
-		foreach( file ${files} )
-				message("${file} COMPILE_FLAGS /Yu${headername}")
-				set_source_files_properties(
-					${file}
-					PROPERTIES
-					COMPILE_FLAGS "/Yu${headername}"
-					)
-		endforeach()
-	endif(MSVC)
-ENDMACRO(SET_USE_PRCOMPILED_HEADER)
+#MACRO(SET_USE_PRCOMPILED_HEADER files headername)
+	#if(MSVC)
+		#foreach( file ${files} )
+				#message("${file} COMPILE_FLAGS /Yu${headername}")
+				#set_source_files_properties(
+					#${file}
+					#PROPERTIES
+					#COMPILE_FLAGS "/Yu${headername}"
+					#)
+		#endforeach()
+	#endif(MSVC)
+#ENDMACRO(SET_USE_PRCOMPILED_HEADER)
 
 function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
   if(NOT ARGN)
@@ -46,8 +51,6 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
   endif(NOT ARGN)
   
   get_filename_component(PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY ${PROTOBUF_PROTOC_EXECUTABLE} DIRECTORY)
-
-  message("${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}")
     
   set(${SRCS})
   set(${HDRS})
@@ -66,8 +69,6 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
 
 	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
 	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
-    message("${ABS_FIL}")
-    message("${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc")
 
     add_custom_command(
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc"
@@ -75,7 +76,7 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc"
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h"
 	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}/../plugin/protoc-gen-lua.exe
+      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/protoc-gen-lua.exe
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ & Lua protocol buffer compiler on ${FIL}"
       VERBATIM )
@@ -96,8 +97,6 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
   endif(NOT ARGN)
   
   get_filename_component(PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY ${PROTOBUF_PROTOC_EXECUTABLE} DIRECTORY)
-
-  message("${PROTOBUF_PROTOC_EXECUTABLE_DIRECTORY}")
     
   set(${SRCS})
   set(${HDRS})
@@ -139,20 +138,17 @@ else()
 endif()
 
 #config vars
-set(CMAKE_USE_RELATIVE_PATHS ON)
+#set(CMAKE_USE_RELATIVE_PATHS ON)
 set(CMAKE_DEBUG_POSTFIX "_d")
 set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 
 #build options
 option(USE_XNAMATH "Use old XNA math libraries" OFF)
 option(USE_OLD_DXSDK "Use old DirectX SDK. Will cause issues with Windows 8 SDK" OFF)
-option(BUILD_HEART_TESTBED "Build testbed for heart" OFF)
-option(BUILD_BUILDER_PROJECT "Build builder lib and stand alone" ON)
 option(USE_ASSIMP_DEBUG "Use debug assimp libraries" OFF)
 option(DO_PROFILE "Enable profiling in exe" OFF)
 option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including debug builds" OFF)
 option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
-option(USE_SDL2 "Enable use of SDL2" ON)
 option(BUILD_HEART_DLL ON)
 
 MACRO(ENABLE_PROFILE_IF_SET)
@@ -171,9 +167,7 @@ if (DO_PROFILE)
 	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /PROFILE")
 endif(DO_PROFILE)
 
-if (BUILD_HEART_DLL)
-    add_definitions(-DHEART_DLL)
-endif(BUILD_HEART_DLL)
+#add_definitions(-DHEART_DLL)
 
 if (FORCE_DISABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
@@ -181,22 +175,64 @@ elseif (FORCE_ENABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
 endif(FORCE_DISABLE_MEMORY_TRACKING)
 
+# Helper setup vars
+set(Boost_NO_SYSTEM_PATHS ON)
+set(BOOST_ROOT_HINT "C:/set/me/to/something/valid" CACHE PATH "Root path for boost 1.53.0")
+set(BOOST_LIBRARYDIR_HINT "C:/set/me/to/something/valid" CACHE PATH "Root library path for boost 1.53.0")
+set(BOOST_ROOT ${BOOST_ROOT_HINT})
+set(BOOST_LIBRARYDIR ${BOOST_LIBRARYDIR_HINT})
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/modules/")
+
+#Boost setup
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON) 
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_DEBUG OFF)
+
+find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system regex serialization)
+find_package(Protobuf REQUIRED)
+find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
+find_package(SDL2 REQUIRED)
+
+find_package(OpenGL REQUIRED)
+set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")
+find_package(GLEW)
+if (NOT GLEW_FOUND)
+    set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${GLEW_PATH_HINT}/include")
+    if (BUILD_64_BIT)
+        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${GLEW_PATH_HINT}/lib/Release/x64")
+    else()
+        set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${GLEW_PATH_HINT}/lib/Release/Win32")
+    endif(BUILD_64_BIT)
+    find_package(GLEW REQUIRED)
+endif()
+# path to glew shared library
+if (BUILD_64_BIT)
+    if(WIN32)
+        set(GLEW_BIN_PATH "${GLEW_INCLUDE_DIR}/../bin/Release/x64")
+    endif()
+else()
+    if(WIN32)
+        set(GLEW_BIN_PATH "${GLEW_INCLUDE_DIR}/../bin/Release/Win32")
+    endif()
+endif(BUILD_64_BIT)
+
+
 #cache vars
-set(assimp_BIN_DIR "C:/assimp_sdk_folder/bin" CACHE PATH "Directory for assimp binaries")
-set(assimp_LIB_DIR "C:/assimp_sdk_folder/lib" CACHE PATH "Directory for assimp libraries")
-set(assimp_INCLUDE_DIR "C:/assimp_sdk_folder/include" CACHE PATH "Directory for assimp includes")
-set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
-set(nvtt_INCLUDE_DIR "C:/nvtt_sdk_folder/include" CACHE PATH "Directory for nVidia Texture Tools includes")
-set(nvtt_LIB_DIR "C:/nvtt_sdk_folder/project/xxx/lib" CACHE PATH "Directory for nVidia Texture Tools libraries")
-set(nvtt_BIN_DIR "C:/nvtt_sdk_folder/project/xxx/bin" CACHE PATH "Directory for nVidia Texture Tools binaries")
-set(nvtt_DEPENDENT_BIN_DIR "C:/nvtt_sdk_folder/gnumake32/bin" CACHE PATH "Directory for nVidia Texture Tools external binaries")
-set(wxLua_BIN_DIR_ROOT "C:/wxLua/bin" CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
-set(SDL2_LIBPATH "C:/SDL2/VisualC/SDL" CACHE PATH "Root of directory containing SDL libs")
-set(SDL2_INCLUDE_DIR "C:/SDL2/include" CACHE PATH "Directory containing SDL Headers")
+set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
+set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
+set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")
+#set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
+set(nvtt_INCLUDE_DIR CACHE PATH "Directory for nVidia Texture Tools includes")
+set(nvtt_LIB_DIR CACHE PATH "Directory for nVidia Texture Tools libraries")
+set(nvtt_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools binaries")
+set(nvtt_DEPENDENT_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools external binaries")
+set(wxLua_BIN_DIR_ROOT CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
 
 #Set wxWidgets search path
-set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
-set(wxWidgets_CONFIGURATION CACHE STRING mswdll)
+#set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
+#set(wxWidgets_CONFIGURATION CACHE STRING mswdll)
 #set(wxWidgets_CONFIGURATION mswdlld)# for debug
 
 #Common var
@@ -247,52 +283,43 @@ set(assimp_BIN_DIR_FULL "${assimp_BIN_DIR}/${assimp_BUILD_EXT}")
 set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
 #SDL2
-if (USE_SDL2)
 	add_definitions(-DHEART_USE_SDL2)
-	if (BUILD_64_BIT)
-		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/x64/Release")
-	else()
-		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/Win32/Release")
-	endif()
-	set(SDL2_LIBRARIES SDL2)
-endif(USE_SDL2)
+#	if (BUILD_64_BIT)
+#		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/x64/Release")
+#	else()
+#		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/Win32/Release")
+#	endif()
+#	set(SDL2_LIBRARIES SDL2)
 
-#Add boost
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON) 
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_DEBUG OFF)
 #turn off auto link by boost, we manage this ourselves
-add_definitions(-DBOOST_FILESYSTEM_NO_LIB)
-if (DEFINED ENV{BOOST_ROOT})
-	message("Boost Env Var found. Using boost path $ENV{BOOST_ROOT}")
-else()
-	message("Boost Env Var NOT found. Using boost path ${EXTERNAL_SRC_ROOT}/boost")
-	set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${EXTERNAL_SRC_ROOT}/boost")
-	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${EXTERNAL_SRC_ROOT}/boost/stage/lib")
-endif()
+#add_definitions(-DBOOST_FILESYSTEM_NO_LIB)
+#if (DEFINED ENV{BOOST_ROOT})
+#	message("Boost Env Var found. Using boost path $ENV{BOOST_ROOT}")
+#else()
+#	message("Boost Env Var NOT found. Using boost path ${EXTERNAL_SRC_ROOT}/boost")
+#	set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${EXTERNAL_SRC_ROOT}/boost")
+#	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${EXTERNAL_SRC_ROOT}/boost/stage/lib")
+#endif()
 
 # Add proto buffers
-set(PROTOBUF_INCLUDE_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/include"
-)
-set(PROTOBUF_LIBRARY
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf-lite.lib"
-)
-set(PROTOBUF_LIBRARY_DEBUG
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf-lite.lib"
-)
-set(PROTOBUF_LIBRARY_FULL
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf.lib"
-)
-set(PROTOBUF_LIBRARY_FULL_DEBUG
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf.lib"
-)
-set(PROTOBUF_PROTOC_EXECUTABLE
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/bin/protoc.exe"
-)
-
-project(HEART)
+# set(PROTOBUF_INCLUDE_DIR
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/include"
+# )
+# set(PROTOBUF_LIBRARY
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf-lite.lib"
+# )
+# set(PROTOBUF_LIBRARY_DEBUG
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf-lite.lib"
+# )
+# set(PROTOBUF_LIBRARY_FULL
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf.lib"
+# )
+# set(PROTOBUF_LIBRARY_FULL_DEBUG
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf.lib"
+# )
+# set(PROTOBUF_PROTOC_EXECUTABLE
+    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/bin/protoc.exe"
+# )
 
 #project defines
 if (MSVC)
@@ -304,7 +331,7 @@ endif()
 if (USE_OLD_DXSDK)
     add_definitions(-DHEART_USE_DXSDK)
 endif()
-#add_definitions(-DHEART_LUA_LIBS -DLUA_COMPAT_MODULE -DLUA_BUILD_AS_DLL)
+
 add_definitions(-DHEART_LUA_LIBS -DLUA_BUILD_AS_DLL)
 
 add_subdirectory ("external/zlib")
@@ -317,9 +344,8 @@ add_subdirectory ("external/enet")
 add_subdirectory ("external/libprof")
 add_subdirectory ("external/luadb")
 add_subdirectory ("heart")
-if (BUILD_HEART_TESTBED)
-	add_subdirectory ("testbed")
-endif()
+
+add_subdirectory ("testbed")
 
 add_subdirectory("resourceloaders/shaderloader")
 add_subdirectory("resourceloaders/textureloader")
@@ -338,5 +364,3 @@ add_subdirectory("tools/proto_full")
 add_subdirectory("tools/memtrack")
 add_subdirectory("tools/viewer")
 add_subdirectory("tools/profiler")
-
-message(${CMAKE_BINARY_DIR})

@@ -28,8 +28,6 @@ file(GLOB LUA_SA_SRC_LUA_FILES "${LUA_SA_SRC_DIR}/src/lua/*.lua")
 source_group(source  FILES ${LUA_SA_SRC_FILES})
 source_group(lua FILES ${LUA_SA_SRC_LUA_FILES})
 
-message( ${LUA_SA_SRC_LUA_FILES} )
-
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()

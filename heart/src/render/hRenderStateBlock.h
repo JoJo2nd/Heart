@@ -32,68 +32,68 @@
 
 namespace Heart
 {
+    hFUNCTOR_TYPEDEF(void(*)(class hBlendState*), hBlendZeroRefProc);
     class HEART_DLLEXPORT hBlendState : public hdBlendState,
                                         public hIReferenceCounted,
                                         public hMapElement< hUint32, hBlendState >
     {
     public:
-        hFUNCTOR_TYPEDEF(void(*)(hBlendState*), hZeroRefProc);
-        hBlendState(hZeroRefProc zeroproc)
+        hBlendState(hBlendZeroRefProc zeroproc)
             : zeroProc_(zeroproc)
         {}
     private:
         void OnZeroRef() {
             zeroProc_(this);
         }
-        hZeroRefProc zeroProc_;
+        hBlendZeroRefProc zeroProc_;
     };
 
+    hFUNCTOR_TYPEDEF(void(*)(class hRasterizerState*), hRasterizerZeroRefProc);
     class HEART_DLLEXPORT hRasterizerState : public hdRasterizerState,
                                              public hIReferenceCounted,
                                              public hMapElement< hUint32, hRasterizerState >
     {
     public:
-        hFUNCTOR_TYPEDEF(void(*)(hRasterizerState*), hZeroRefProc);
-        hRasterizerState(hZeroRefProc zeroproc)
+        hRasterizerState(hRasterizerZeroRefProc zeroproc)
             : zeroProc_(zeroproc)
         {}
     private:
         void OnZeroRef() {
             zeroProc_(this);
         }
-        hZeroRefProc zeroProc_;
+        hRasterizerZeroRefProc zeroProc_;
     };
 
-    struct HEART_DLLEXPORT hDepthStencilState : public hdDepthStencilState,
+    hFUNCTOR_TYPEDEF(void(*)(class hDepthStencilState*), hDepthStencilZeroRefProc);
+    class HEART_DLLEXPORT hDepthStencilState : public hdDepthStencilState,
                                                 public hIReferenceCounted,
                                                 public hMapElement< hUint32, hDepthStencilState >
     {
     public:
-        hFUNCTOR_TYPEDEF(void(*)(hDepthStencilState*), hZeroRefProc);
-        hDepthStencilState(hZeroRefProc zeroproc)
+        hDepthStencilState(hDepthStencilZeroRefProc zeroproc)
             : zeroProc_(zeroproc)
         {}
     private:
         void OnZeroRef() {
             zeroProc_(this);
         }
-        hZeroRefProc zeroProc_;
+        hDepthStencilZeroRefProc zeroProc_;
     };
 
-    struct HEART_DLLEXPORT hSamplerState : public hdSamplerState,
+    hFUNCTOR_TYPEDEF(void(*)(class hSamplerState*), hSamplerZeroRefProc);
+    class HEART_DLLEXPORT hSamplerState : public hdSamplerState,
                                            public hIReferenceCounted,
                                            public hMapElement< hUint32, hSamplerState >
     {
     public:
-        hFUNCTOR_TYPEDEF(void(*)(hSamplerState*), hZeroRefProc);
-        hSamplerState(hZeroRefProc zeroproc)
+        hSamplerState(hSamplerZeroRefProc zeroproc)
             : zeroProc_(zeroproc)
         {}
     private:
         void OnZeroRef() {
             zeroProc_(this);
         }
-        hZeroRefProc zeroProc_;
+        hSamplerZeroRefProc zeroProc_;
     };
 }
 
