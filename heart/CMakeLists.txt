@@ -111,6 +111,8 @@ file(GLOB HEART_RENDER_FILES
 file(GLOB HEART_GAL_FILES
     "${HEART_SOURCE_DIR}/src/gal/*.h"
     "${HEART_SOURCE_DIR}/src/gal/*.cpp"
+    "${HEART_SOURCE_DIR}/src/gal/private/*.h"
+    "${HEART_SOURCE_DIR}/src/gal/private/*.cpp"
 )
 file(GLOB HEART_SCENE_FILES
     "${HEART_SOURCE_DIR}/src/scene/*.h"

@@ -1,0 +1,20 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": ".",
+			"folder_exclude_patterns": ["deploy", "cmake*"]
+		}
+	],
+	"build_systems":
+	[
+    	{
+        	"name": "Heart x64",
+            "cmd": "cmake --build $project_path/cmake64",
+            "working_dir": ".",
+            "file_regex": "(.*?)\\((.*?) :",
+            "selector": "source.c++"
+        }
+    ]
+}
