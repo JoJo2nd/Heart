@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "threading/hJobManager.h"
+#include "base/hStringUtil.h"
+#include "hMutexAutoScope.h"
+
 namespace Heart
 {
 #define HEART_JOB_THREADS (8)
@@ -45,7 +49,7 @@ namespace Heart
             workerThreads_[ i ].workerMask_ = 1 << i;
             workerThreads_[ i ].thread_.create(
                 threadname,
-                hdThread::PRIORITY_NORMAL,
+                hThread::PRIORITY_NORMAL,
                 hFUNCTOR_BINDMEMBER(hThreadFunc, hJobManager, jobThread, this),
                 &workerThreads_[i] );
         }
@@ -81,7 +85,7 @@ namespace Heart
             hJob* job = grabJob(worker->workerMask_);
             if ( job ) {
                 job->runJob();
-                hDELETE(job);
+                delete job;
             }
         }
         return 0;
@@ -237,7 +241,7 @@ namespace Heart
         for (hJob* i=pendingJobs_.begin(), *n=pendingJobs_.end(); i!=n; ) {
             hJob* del=i;
             i=pendingJobs_.remove(del);
-            hDELETE(del);
+            delete del;
         }
     }
 

@@ -28,6 +28,17 @@ distribution.
 #ifndef HEART_ENGINE_H__
 #define HEART_ENGINE_H__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "base/hFunctor.h"
+#include "base/hProtobuf.h"
+#include "core/hConfigOptions.h"
+#include "core/hSystemConsole.h"
+#include "pal/hMutex.h"
+#include "pal/hEvent.h"
+#include "pal/hDeviceConfig.h"
+#include "pal/hDeviceSystemWindow.h"
+
 namespace Heart
 {
     class hHeartEngine;
@@ -57,30 +68,35 @@ extern "C"
 {
 #ifdef WIN32
 
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*, HINSTANCE hInstance, HWND hWnd);
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
+     Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*, HINSTANCE hInstance, HWND hWnd);
+     Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
 #else
 #   error ("Platform not supported")
 #endif
-    HEART_DLLEXPORT hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* );
-    HEART_DLLEXPORT void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* );
+     hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* );
+     void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* );
 };
 
 namespace Heart
 {
 
+    class hActionManager;
+    class hDebugInfo;
+    class hDebugMenuManager;
     class hDriveFileSystem;
-    class hZipFileSystem;
-    class hJobManager;
-    class hSystemConsole;
-    class hSoundManager;
-    class hPublisherContext;
-    class hSystem;
-    class hRenderer;
-    class hSceneGraph;
-    class hLuaStateManager;
     class hEntityFactory;
     class hHeartEngine;
+    class hIFileSystem;    
+    class hJobManager;
+    class hLuaStateManager;
+    class hPublisherContext;
+    class hRenderer;   
+    class hSceneGraph;
+    class hSoundManager;
+    class hSystem;
+    class hSystemConsole;
+    class hSystemConsole;  
+    class hZipFileSystem;
 
     template < typename _ty >
     class hGlobalFinaliser
@@ -88,7 +104,7 @@ namespace Heart
     public:
         ~hGlobalFinaliser() {
             for (auto i=objectList_.begin(), n=objectList_.end(); i!=n; ++i) {
-                hDELETE_SAFE(*i);
+                delete *i; *i = nullptr;
             }
         }
 
@@ -99,11 +115,11 @@ namespace Heart
 
     private:
 
-        hdMutex            lock_;
+        hMutex            lock_;
         std::vector<_ty*> objectList_;
     };
 
-    class HEART_DLLEXPORT HeartConfig
+    class  HeartConfig
     {
     public:
 
@@ -134,7 +150,7 @@ namespace Heart
         hHeartState_Finised = hErrorCode,
     };
 
-    class HEART_DLLEXPORT hHeartEngine
+    class  hHeartEngine
     {
     public:
 
@@ -159,13 +175,13 @@ namespace Heart
 
     private:
 
-        friend HEART_DLLEXPORT hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*);
+        friend  hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*);
 
         static hChar         HEART_VERSION_STRING[];
         static const hFloat  HEART_VERSION; 
         static const hUint32 HEART_VERSION_MAJOR = 0;
         static const hUint32 HEART_VERSION_MINOR = 4;
-        static hdW32ThreadEvent exitSignal_;
+        static hThreadEvent exitSignal_;
 
         static void                     ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message);
 

@@ -29,14 +29,15 @@ distribution.
 /*    Engine Init                                                         */
 /************************************************************************/
 
+#include "Heart.h"
+#include "lua/hLuaHeartLib.h"
+
 namespace Heart
 {
 
     extern hProfilerManager* g_ProfilerManager_;
 
-    __declspec(selectany)
     hChar           hHeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
-    __declspec(selectany)
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
 
     //////////////////////////////////////////////////////////////////////////
@@ -95,17 +96,17 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        mainPublisherCtx_ = hNEW(hPublisherContext);
-        jobManager_ = hNEW(hJobManager);
-        actionManager_ = hNEW(hActionManager);
-        system_ = hNEW(hSystem);
-        fileMananger_ = hNEW(hDriveFileSystem)();
-        renderer_ = hNEW(hRenderer);
-        soundManager_ = hNEW(hSoundManager);
-        console_ = hNEW(hSystemConsole)(consoleCb, consoleUser);
-        luaVM_ = hNEW(hLuaStateManager);
-        debugMenuManager_ = hNEW(hDebugMenuManager);
-        debugServer_=hNEW(hNetHost);
+        mainPublisherCtx_ = new hPublisherContext;
+        jobManager_ = new hJobManager;
+        actionManager_ = new hActionManager;
+        system_ = new hSystem;
+        fileMananger_ = new hDriveFileSystem;
+        renderer_ = new hRenderer;
+        soundManager_ = nullptr;//new hSoundManager;
+        console_ = new hSystemConsole(consoleCb, consoleUser);
+        luaVM_ = new hLuaStateManager;
+        debugMenuManager_ = new hDebugMenuManager;
+        debugServer_=new hNetHost;
 
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
@@ -143,10 +144,10 @@ namespace Heart
             config_.Fullscreen_,
             config_.vsync_);
         hResourceManager::initialise(fileMananger_, jobManager_);
-        soundManager_->Initialise();
+        //!!JM todo: soundManager_->Initialise();
         luaVM_->Initialise();
 
-        g_ProfilerManager_ = hNEW(hProfilerManager)();
+        g_ProfilerManager_ = new hProfilerManager;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
@@ -184,7 +185,7 @@ namespace Heart
         console_->initialise(actionManager_, luaVM_, renderer_, mainPublisherCtx_, debugServer_);
         debugMenuManager_->Initialise(renderer_, actionManager_);
 
-        debugInfo_ = hNEW(hDebugInfo)(this);
+        debugInfo_ = new hDebugInfo(this);
         debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
         debugMenuManager_->SetMenuVisiablity("dbinfo", true);
 
@@ -227,7 +228,7 @@ namespace Heart
                     return;
                 }
             }
-            GetSoundManager()->Update();
+            //!!JM todo: GetSoundManager()->Update();
             if (mainUpdate_ && runnableState)
                 (*mainUpdate_)( this );
             GetVM()->Update();
@@ -272,26 +273,26 @@ namespace Heart
 
         debugMenuManager_->Destroy();
         console_->destroy();
-        soundManager_->Destory(); 
+        //!JM todo: soundManager_->Destory(); 
         hResourceManager::shutdown();
         luaVM_->Destroy();
         renderer_->Destroy();
         debugServer_->destroy();
         jobManager_->shutdown();
 
-        //hDELETE_SAFE(GetGlobalHeap(), debugInfo_);
-        hDELETE_SAFE(g_ProfilerManager_);
-        hDELETE_SAFE(debugMenuManager_);
-        hDELETE_SAFE(luaVM_);
-        hDELETE_SAFE(console_);
-        hDELETE_SAFE(soundManager_);
-        hDELETE_SAFE(renderer_);
-        hDELETE_SAFE(actionManager_);
-        hDELETE_SAFE(fileMananger_);
-        hDELETE_SAFE(jobManager_);
-        hDELETE_SAFE(mainPublisherCtx_);
-        hDELETE_SAFE(system_);
-        hDELETE_SAFE(debugServer_);
+        //delete GetGlobalHeap(), debugInfo_; GetGlobalHeap(), debugInfo_ = nullptr;
+        delete g_ProfilerManager_; g_ProfilerManager_ = nullptr;
+        delete debugMenuManager_; debugMenuManager_ = nullptr;
+        delete luaVM_; luaVM_ = nullptr;
+        delete console_; console_ = nullptr;
+        //!!JM todo: delete soundManager_; soundManager_ = nullptr;
+        delete renderer_; renderer_ = nullptr;
+        delete actionManager_; actionManager_ = nullptr;
+        delete fileMananger_; fileMananger_ = nullptr;
+        delete jobManager_; jobManager_ = nullptr;
+        delete mainPublisherCtx_; mainPublisherCtx_ = nullptr;
+        delete system_; system_ = nullptr;
+        delete debugServer_; debugServer_ = nullptr;
 
         hNetwork::shutdown();
 
@@ -354,11 +355,11 @@ namespace Heart
         //////////////////////////////////////////////////////////////////////////
 #ifdef HEART_DEBUG
 #pragma message ("TODO- Real time profiler menu")
-/*        hRTProfilerMenu* rtProfileMenu_ = hNEW(GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer());
+/*        hRTProfilerMenu* rtProfileMenu_ = new GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer();
         rtProfileMenu_->SetHidden(hTrue);
         debugMenuManager_->RegisterMenu("rtp", rtProfileMenu_);
 
-        hMemoryViewMenu* mvMenu_ = hNEW(GetDebugHeap(), hMemoryViewMenu)(debugMenuManager_->GetDebugCanvas());
+        hMemoryViewMenu* mvMenu_ = new GetDebugHeap(), hMemoryViewMenu)(debugMenuManager_->GetDebugCanvas();
         //mvMenu_->SetHidden(hTrue);
         debugMenuManager_->RegisterMenu("mv", mvMenu_);*/
 #endif
@@ -389,14 +390,14 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
-    HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar* appLib, HINSTANCE hInstance, HWND hWnd)
+    Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar* appLib, HINSTANCE hInstance, HWND hWnd)
 
 {
     Heart::hdDeviceConfig deviceConfig;
     deviceConfig.instance_ = hInstance;
     deviceConfig.hWnd_ = hWnd;
 
-    Heart::hHeartEngine* engine = hNEW(Heart::hHeartEngine) (NULL, NULL, NULL, &deviceConfig);
+    Heart::hHeartEngine* engine = new Heart::hHeartEngine(NULL, NULL, NULL, &deviceConfig);
 
     engine->sharedLib_ = Heart::hd_OpenSharedLib(appLib);
 
@@ -434,7 +435,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
+Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
     Heart::hSysCall::hInitSystemDebugLibs();
     heart_thread_prof_begin("profile_startup.prof");
@@ -443,7 +444,7 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCall
     deviceConfig.hWnd_ = hWnd;
 
     Heart::hHeartEngine* engine = 
-        hNEW(Heart::hHeartEngine) (callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
+        new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
 
     engine->firstLoaded_        = callbacks->firstLoaded_;
     engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;
@@ -469,7 +470,6 @@ HEART_DLLEXPORT Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCall
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-HEART_DLLEXPORT 
 hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* engine )
 {
     if (engine)
@@ -483,10 +483,9 @@ hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* engine )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-HEART_DLLEXPORT 
 void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* engine )
 {
     Heart::hd_CloseSharedLib(engine->sharedLib_);
 
-    hDELETE(engine);
+    delete engine;
 }

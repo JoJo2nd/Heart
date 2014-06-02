@@ -29,6 +29,11 @@
 #ifndef HTEXTFORMATTING_H__
 #define HTEXTFORMATTING_H__
 
+#include "base/hTypes.h"
+#include "base/hRendererConstants.h"
+#include "math/hVec3.h"
+#include "base/hUTF8.h"
+
 namespace Heart
 {
 

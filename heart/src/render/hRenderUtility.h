@@ -28,12 +28,21 @@
 #ifndef HRRENDERUTILITY_H__
 #define HRRENDERUTILITY_H__
 
+#include "base/hTypes.h"
+#include "math/hVec2.h"
+#include "math/hVec3.h"
+
 namespace Heart
 {
-
+    class hRenderer;
 	class hRenderSubmissionCtx;
 	class hIndexBuffer;
 	class hVertexBuffer;
+    class hMaterial;
+    class hTexture;
+    class hFont;
+    class hRendererCamera;
+    struct hDrawCall;
 
 namespace hRenderUtility
 {
@@ -46,7 +55,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     inline hUint16  GetSphereMeshVertexCount( hUint16 segments, hUint16 rings ) { return (hUint16)((rings + 1) * (segments+1)) + 1; }
     inline hUint16  GetSphereMeshIndexCount( hUint16 segments, hUint16 rings ) { return (hUint16)(6 * rings * (segments+1)) + 1; }
-	HEART_DLLEXPORT
+	
     void HEART_API buildSphereMesh( 
 		hUint16 segments, 
 		hUint16 rings, 
@@ -54,39 +63,39 @@ namespace hRenderUtility
 		hRenderer* rndr, 
 		hIndexBuffer** outIdxBuf,
 		hVertexBuffer** outVtxBuf );
-	HEART_DLLEXPORT 
+	 
     void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth,
     hRenderer* rndr, hVertexBuffer** outVtxBuf);
-	HEART_DLLEXPORT 
+	 
     void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint hdivs, hUint vdivs, 
     hRenderer* rndr, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf);
-    HEART_DLLEXPORT
+    
     hVertexBuffer* HEART_API buildDebugCubeMesh(hRenderer* rndr, hVertexBuffer** retVB);
     //////////////////////////////////////////////////////////////////////////
     // Materials /////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat);
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat);
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat);
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat);
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat);
-    HEART_DLLEXPORT
+    
     hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex);
-    HEART_DLLEXPORT
+    
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex);
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    HEART_DLLEXPORT
+    
     void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera);
-    HEART_DLLEXPORT
+    
     void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, const hDrawCall* dcs, hUint dcn, hUint32 clearflags);
-    HEART_DLLEXPORT
+    
     void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn);
 }
 }

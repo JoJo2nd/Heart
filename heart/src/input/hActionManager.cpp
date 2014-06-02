@@ -25,6 +25,15 @@
 
 *********************************************************************/
 
+#include "input/hActionManager.h"
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "pal/hDeviceInput.h"
+#include "pal/hDeviceSystemWindow.h"
+#include "lua/hLuaStateManager.h"
+#include <unordered_map>
+#include <vector>
+
 namespace Heart
 {
 enum hDeviceID 
@@ -76,6 +85,8 @@ typedef std::vector<hInputAction> hActionArray;
 typedef std::vector<DeviceInput::hGameController*> hControllerArray;
 typedef std::vector<hActionInputMapping> hBoundMappingsArray;
 typedef std::vector<hUint> hIntArray;
+
+class hdSystemWindow;
 
 struct hActionManagerImpl
 {

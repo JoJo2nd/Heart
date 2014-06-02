@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "components/hObjectFactory.h"
+#include <unordered_map>
+#include <stdarg.h>
+
 namespace Heart
 {
 namespace hObjectFactory
@@ -126,15 +130,19 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     void* obj = obj_def->construct_();
     hObjectMarshall* marshall = obj_def->constructMarshall_();
     if (!obj || !marshall) {
-        hDELETE_SAFE(obj);
-        hDELETE_SAFE(marshall);
+        delete obj;
+        obj = nullptr;
+        delete marshall;
+        marshall = nullptr;
         return nullptr;
     }
     marshall->ParseFromString(msg_container->messagedata());
     if (!obj_def->deserialise_(obj, marshall)) {
-        hDELETE_SAFE(obj);
+        delete obj;
+        obj = nullptr;
     }
-    hDELETE_SAFE(marshall);
+    delete marshall;
+    marshall = nullptr;
     if (out_type_name) {
         *out_type_name = obj_def->entityName_;
     }

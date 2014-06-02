@@ -11,3 +11,4 @@
 /platform_win64/
 /tools/viewer/src/lua/builder_script.inl
 /cmake64
+/*.sublime-workspace

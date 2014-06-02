@@ -28,13 +28,21 @@
 #ifndef JOBMANAGER_H__
 #define JOBMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hLinkedList.h"
+#include "base/hArray.h"
+#include "pal/hMutex.h"
+#include "pal/hDeviceThread.h"
+#include "pal/hConditionVariable.h"
+#include "pal/hSemaphore.h"
+
 namespace Heart
 {
     class hJobQueue;
 
     hFUNCTOR_TYPEDEF(void (*)(void* /*inputs*/, void* /*outputs*/), hJobProc);
 
-    class HEART_DLLEXPORT hJob : public hLinkedListElement< hJob >
+    class hJob : public hLinkedListElement< hJob >
     {
     public:
         hJob() {
@@ -104,13 +112,13 @@ namespace Heart
         void kickJobs(hLinkedList< hJob >* queue, hJobManager* jm);
         void notifyJobCompleted();
 
-        hdMutex             incompleteJobsAccess_;
-        hdConditionVariable incompleteJobsCV_;
+        hMutex              incompleteJobsAccess_;
+        hConditionVariable  incompleteJobsCV_;
         hUint               incompleteJobs_;
         hLinkedList< hJob > pendingJobs_;
     };
 
-    class HEART_DLLEXPORT hJobManager
+    class hJobManager
     {
     public:
         hJobManager() {}
@@ -128,7 +136,7 @@ namespace Heart
 
         struct hWorkerThread
         {
-            hdThread    thread_;
+            hThread     thread_;
             hSemaphore  pendingJobsSemaphore_;
             hUint16     workerMask_;
         };
@@ -138,7 +146,7 @@ namespace Heart
 
         //
         hSemaphore                killSignal_;
-        hdMutex                   pendingJobsAccess_;
+        hMutex                    pendingJobsAccess_;
         hLinkedList< hJob >       pendingJobs_;
         hVector< hWorkerThread >  workerThreads_;
     };

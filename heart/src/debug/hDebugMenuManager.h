@@ -27,8 +27,16 @@
 #ifndef HDEBUGMENUMANAGER_H__
 #define HDEBUGMENUMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hMap.h"
+#include "render/hRendererCamera.h"
+
 namespace Heart
 {
+    class hRenderSubmissionCtx;
+    class hRenderBuffer;
+    class hRenderMaterialManager;
+
     struct hDebugRenderParams
     {
         hUint32 rtWidth_;
@@ -55,6 +63,8 @@ namespace Heart
         hBool visible_;
     };
 
+    class hActionManager;
+
     class hDebugMenuManager
     {
     public:
@@ -79,7 +89,7 @@ namespace Heart
 
         static hDebugMenuManager*   instance_;
         hRenderer*                  renderer_;
-        Heart::hRendererCamera      camera_;
+        hRendererCamera             camera_;
         hActionManager*             actionManager_;
         hMenuMap                    menuMap_;
     };

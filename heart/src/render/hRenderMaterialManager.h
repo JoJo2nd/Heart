@@ -27,12 +27,27 @@
 #ifndef HRENDERTECHNIQUEMANAGER_H__
 #define HRENDERTECHNIQUEMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+extern "C" {
+#   include "lua.h"
+#   include "lualib.h"
+#   include "lauxlib.h"
+}
+#include "pal/hMutex.h"
+#include "base/hMemoryUtil.h"
+#include "base/hRendererConstants.h"
+#include "base/hMap.h"
+
 namespace Heart
 {
     class hMaterial;
     class hMaterialInstance;
+    class hTexture;
+    class hRenderer;
+    class hRenderBuffer;
 
-    struct HEART_DLLEXPORT hRenderTechniqueInfo
+    struct hRenderTechniqueInfo
     {
         hRenderTechniqueInfo() 
             : mask_(0)
@@ -44,7 +59,7 @@ namespace Heart
         hUint32             mask_;
     };
 
-    struct HEART_DLLEXPORT hMaterialKeyContainer
+    struct hMaterialKeyContainer
     {
         hMaterial*  mat_;
         hUint32     key_; // only 19bits bit, make sure this matches hBuildRenderSortKey()
@@ -55,7 +70,7 @@ namespace Heart
         }
     };
 
-    class HEART_DLLEXPORT hRenderMaterialManager
+    class hRenderMaterialManager
     {
     public:
         hRenderMaterialManager();
@@ -100,7 +115,7 @@ namespace Heart
         {
             const hChar*              name_;
             hUint32                   nameHash_; // CRC32 of block name
-            hRenderBuffer* constBlock_;
+            hRenderBuffer*            constBlock_;
             hUint                     strPoolSize_;
             hChar*                    strPool_;
             hUint                     aliasCount_;
@@ -140,7 +155,7 @@ namespace Heart
 
         hRenderer*              renderer_;
         lua_State*              mainLuaState_;
-        hdMutex                 accessMutex_;
+        hMutex                  accessMutex_;
         hUint32                 nMatKeys_;
         hUint32                 maxKeys_;
         hMaterialKeyContainer*  matKeys_;

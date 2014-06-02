@@ -30,13 +30,21 @@
 
 class TextureBuilder;
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+#include "base/hRendererConstants.h"
+#include "base/hReferenceCounted.h"
+#include "base/hProtobuf.h"
+#include "components/hObjectFactory.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
     class hRenderer;
     class hTexture;
 
-    class HEART_DLLEXPORT hTexture : public hdTexture,
-                                     public hIReferenceCounted
+    class  hTexture : public hdTexture,
+                      public hIReferenceCounted
     {
     public:
         hObjectType(Heart::hTexture, Heart::proto::TextureResource);
@@ -59,8 +67,8 @@ namespace Heart
         ~hTexture()
         {
             ReleaseCPUTextureData();
-
-            hDELETE_ARRAY_SAFE(levelDescs_);
+            delete[] levelDescs_;
+            levelDescs_ = nullptr;
         }
 
         struct LevelDesc

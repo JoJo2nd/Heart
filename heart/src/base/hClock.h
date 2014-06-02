@@ -28,6 +28,8 @@
 #ifndef hcClock_h__
 #define hcClock_h__
 
+#include "base/hTypes.h"
+
 namespace Heart
 {
     class hTimer;
@@ -38,25 +40,15 @@ namespace Heart
 
     namespace hClock
     {
-        HEART_DLLEXPORT
         void initialise();
-        HEART_DLLEXPORT
         hFloat elapsed();
-        HEART_DLLEXPORT
         hInt64 elapsedMS();
-        HEART_DLLEXPORT
         hUint32 deltams();
-        HEART_DLLEXPORT
         hFloat fdeltams();
-        HEART_DLLEXPORT
         hFloat delta();
-        HEART_DLLEXPORT
         hUint32 hours();
-        HEART_DLLEXPORT
         hUint32 mins();
-        HEART_DLLEXPORT
         hUint32 secs();
-        HEART_DLLEXPORT
         void update();
     };
 
@@ -64,7 +56,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class HEART_DLLEXPORT hTimer
+    class hTimer
     {
     public:
 

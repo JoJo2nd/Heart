@@ -80,22 +80,22 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     hcPrintf("%s", texturemsg.GetTypeName().c_str());
 
 // 
-//     char* leak = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
-//     char* dontleak1 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
-//     char* dontleak2 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
+//     char* leak = new Heart::GetGlobalHeap(), char[64];
+//     char* dontleak1 = new Heart::GetGlobalHeap(), char[64];
+//     char* dontleak2 = new Heart::GetGlobalHeap(), char[64];
 // 
 //     Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
 // 
-//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak1);
-//     char* dontleak3 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
-//     char* leak2 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
-//     char* dontleak4 = hNEW_ARRAY(Heart::GetGlobalHeap(), char, 64);
-//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak4);
+//delete[] Heart::GetGlobalHeap(), dontleak1;     %2 = nullptr;
+//     char* dontleak3 = new Heart::GetGlobalHeap(), char[64];
+//     char* leak2 = new Heart::GetGlobalHeap(), char[64];
+//     char* dontleak4 = new Heart::GetGlobalHeap(), char[64];
+//delete[] Heart::GetGlobalHeap(), dontleak4; %2 = nullptr;
 // 
 //     Heart::hMemTracking::TrackPopMarker();
 // 
-//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak2);
-//     hDELETE_ARRAY_SAFE(Heart::GetGlobalHeap(), dontleak3);
+//delete[] Heart::GetGlobalHeap(), dontleak2;%2 = nullptr;
+//delete[] Heart::GetGlobalHeap(), dontleak3;%2 = nullptr;
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
 

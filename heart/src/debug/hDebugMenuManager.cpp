@@ -25,6 +25,17 @@
 
 *********************************************************************/
 
+#include "debug/hDebugMenuManager.h"
+#include "base/hCRC32.h"
+#include "base/hProfiler.h"
+#include "input/hActionManager.h"
+#include "render/hTexture.h"
+#include "render/hViews.h"
+#include "render/hRenderer.h"
+#include "render/hRenderUtility.h"
+#include "render/hRenderSubmissionContext.h"
+#include "render/hRenderMaterialManager.h"
+
 namespace Heart
 {
 

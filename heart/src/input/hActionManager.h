@@ -29,12 +29,14 @@
 #ifndef HACTIONMANAGER_H__
 #define HACTIONMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
 
 namespace Heart
 {
     class hLuaStateManager;
 
-    struct HEART_DLLEXPORT hInputAction
+    struct  hInputAction
     {
         hStringID   actionName_;
         hUint       deviceID_;
@@ -45,10 +47,12 @@ namespace Heart
         hUint       isAxis_ : 1;
     };
 
+    class hdSystemWindow;
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    class HEART_DLLEXPORT hActionManager
+    class  hActionManager
     {
     public:
 

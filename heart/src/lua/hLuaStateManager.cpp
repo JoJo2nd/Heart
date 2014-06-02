@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "lua/hLuaStateManager.h"
+#include "base/hMemory.h"
+#include "base/hProfiler.h"
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -83,7 +87,7 @@ namespace Heart
             if ( RunLuaThread( i ) )
             {
                 hLuaThreadState* removed = luaThreads_.remove( i );
-                hDELETE(removed);
+                delete removed;
             }
 
             i = next;
@@ -112,7 +116,7 @@ namespace Heart
 //         if ( newthread.status_ == LUA_YIELD )
 //         {
 //             newthread.yieldRet_ = lua_gettop( newthread.lua_ );
-//             hLuaThreadState* listState = hNEW(GetGlobalHeap()/*!heap*/, hLuaThreadState);
+//             hLuaThreadState* listState = new GetGlobalHeap()/*!heap*/, hLuaThreadState;
 //             *listState = newthread;
 //             luaThreads_.PushBack( listState );
 //         }
@@ -145,7 +149,7 @@ namespace Heart
         }
         else
         {
-            return hHeapRealloc("lua", ptr, nsize);
+            return hRealloc(ptr, nsize);
         }
     }
 

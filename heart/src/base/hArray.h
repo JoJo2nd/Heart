@@ -28,10 +28,13 @@
 #ifndef huArray_h__
 #define huArray_h__
 
+#include "base/hTypes.h"
+#include "base/hMemory.h"
+
 namespace Heart
 {
     template< class _Ty, hUint32 ArraySize > 
-    class HEART_DLLEXPORT hArray
+    class  hArray
     {
     public: 
 
@@ -90,7 +93,7 @@ namespace Heart
     };
 
     template< class _Ty, hSize_t _Granularity = 8 > 
-    class HEART_DLLEXPORT hVector
+    class  hVector
     {
     public: 
         typedef hVector< _Ty, _Granularity > SelfType;
@@ -113,7 +116,8 @@ namespace Heart
         ~hVector()
         {
             clear();
-            hFreeSafe(values_);
+            hFree(values_);
+            values_=nullptr;
             reserve_ = 0;
         }
 
@@ -153,7 +157,7 @@ namespace Heart
             if ( size > reserve_ )
             {
                 reserve_ = size;
-                values_ = (_Ty*)hAlignRealloc(values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hRealloc(values_, sizeof(_Ty)*reserve_, hAlignOf(_Ty));
             }
         }
 
@@ -201,7 +205,7 @@ namespace Heart
             if ( size > reserve_ ) {
                 reserve_ = hAlign( size, _Granularity );
                 hcAssert( reserve_ >= size );
-                values_ = (_Ty*)hAlignRealloc(values_, hAlignOf(_Ty), sizeof(_Ty)*reserve_);
+                values_ = (_Ty*)hRealloc(values_, sizeof(_Ty)*reserve_, hAlignOf(_Ty));
             }
         }
 

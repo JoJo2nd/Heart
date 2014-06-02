@@ -28,8 +28,24 @@
 #ifndef hrRenderer_h__
 #define hrRenderer_h__
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+#include "base/hClock.h"
+#include "base/hLinkedList.h"
+#include "base/hArray.h"
+#include "core/hResource.h"
+#include "math/hMatrix.h"
+#include "math/hVec3.h"
+#include "math/hVec4.h"
+#include "render/hRenderStateBlock.h"
+#include "render/hRenderSubmissionContext.h"
+#include "render/hRendererCamera.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
+
+    class hShaderProgram;
 
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
@@ -37,7 +53,7 @@ namespace Heart
     hFUNCTOR_TYPEDEF(void (*)(const hChar*, void**, hUint32*), hShaderIncludeCallback);
     hFUNCTOR_TYPEDEF(void (*)(hRenderer*, hRenderSubmissionCtx*), hCustomRenderCallback);
 
-    struct HEART_DLLEXPORT hDrawCall
+    struct  hDrawCall
     {
         hDrawCall() : customCallFlag_(false) {}
         hUint64                 sortKey_;//8b        -> 8b
@@ -52,7 +68,7 @@ namespace Heart
         hBool                   customCallFlag_;
     };
 
-    class HEART_DLLEXPORT hRenderCommandGenerator : public hdRenderCommandGenerator
+    class  hRenderCommandGenerator : public hdRenderCommandGenerator
     {
     public:
         hRenderCommandGenerator();
@@ -110,7 +126,9 @@ namespace Heart
         hRenderCommands*    renderCommands_;
     };
 
-    class HEART_DLLEXPORT hRenderer : public hdRenderDevice
+    class hSystem;
+
+    class  hRenderer : public hdRenderDevice
     {
     public:
 
@@ -245,16 +263,14 @@ namespace Heart
         hBool													vsync_;
         hFloat                                                  gpuTime_;
 
-        gal::Device*             gal_;
-
-        hdMutex                   resourceMutex_;
+        hMutex                   resourceMutex_;
         BlendStateMapType        blendStates_;
         RasterizerStateMapType   rasterizerStates_;
         DepthStencilStateMapType depthStencilStates_;
         SamplerStateMapType      samplerStateMap_;
 
         hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
-        hRenderState*           renderStateCache_;
+        void*                   renderStateCache_; // todo: remove
         hRenderMaterialManager  materialManager_;
         hRenderSubmissionCtx    mainSubmissionCtx_;
 

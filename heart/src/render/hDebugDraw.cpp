@@ -25,6 +25,20 @@
 
 *********************************************************************/
 
+#include "render/hDebugDraw.h"
+#include "core/hHeart.h"
+#include "render/hFont.h"
+#include "render/hMaterial.h"
+#include "render/hRenderer.h"
+#include "render/hRenderMaterialManager.h"
+#include "render/hRenderUtility.h"
+#include "render/hTexture.h"
+#include "render/hVertexBuffer.h"
+#include "render/hIndexBuffer.h"
+#include "render/hRenderShaderProgram.h"
+#include "threading/hMutexAutoScope.h"
+#include "base/hUTF8.h"
+
 namespace Heart
 {
 
@@ -33,7 +47,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hDebugDraw::hDebugDraw() 
-        : renderer_(hNullptr)
+        : renderer_(nullptr)
     {
         renderer_=hDebugDrawRenderer::it();
     }
@@ -132,7 +146,7 @@ namespace Heart
 
     hDebugDraw* hDebugDraw::it() {
         if (!g_debugDraw) {
-            g_debugDraw=hNEW(hDebugDraw)();
+            g_debugDraw=new hDebugDraw;
             g_debugDrawFinaliser.addObject(g_debugDraw);
         }
         return g_debugDraw;
@@ -198,7 +212,7 @@ namespace Heart
         debugPosColUVMat_=matmgr->getDebugPosColUVMat();
         debugPosColAlphaMat_=matmgr->getDebugPosColAlphaMat();
         debugPosColUVAlphaMat_=matmgr->getDebugPosColUVAlphaMat();
-        debugFont_=hNEW(hFont)();
+        debugFont_=new hFont;
         hRenderUtility::createDebugFont(renderer, debugFont_, &debugFontTex_);
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoldesc, (hUint)hArraySize(poscoldesc), RESOURCEFLAG_DYNAMIC, &posColBuffer_);
         renderer->createVertexBuffer(hNullptr, s_maxDebugPrims, poscoluvdesc, (hUint)hArraySize(poscoluvdesc), RESOURCEFLAG_DYNAMIC, &posColUVBuffer_);
@@ -303,7 +317,7 @@ namespace Heart
                 debugFontTex_->DecRef();
                 debugFontTex_=hNullptr;
             }
-            hDELETE_SAFE(debugFont_);
+            delete debugFont_; debugFont_ = nullptr;
 
             if (posColBuffer_) {
                 posColBuffer_->DecRef();
@@ -581,7 +595,7 @@ namespace Heart
         if (quads.size() > 0) {
             ctx->runRenderCommands(posColUVAlphaRdrCmds_.getFirst());
             for (hUint i=0, n=(hUint)quads.size(); i<n; ++i) {
-                ctx->setViewPixel(0, quads[i].srv);
+                //!!JM todo: ctx->setViewPixel(0, quads[i].srv);
                 ctx->DrawPrimitive(2, quads[i].startvtx);
             }
         }

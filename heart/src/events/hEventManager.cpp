@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "events/hEventManager.h"
+#include "pal/hDeviceThread.h"
 
 namespace Heart
 {
@@ -40,7 +42,7 @@ namespace Heart
         signalBufferSize_ = bufferSize;
         activeBuffer_ = 0;
         threadID_ = Heart::Device::GetCurrentThreadID();
-        sbPos_ = signalBuffer_[0] = (hUint8*)hHeapMalloc("general", signalBufferSize_*2);
+        sbPos_ = signalBuffer_[0] = (hUint8*)hMalloc(signalBufferSize_*2);
         signalBuffer_[1] = signalBuffer_[0]+signalBufferSize_;
     }
 

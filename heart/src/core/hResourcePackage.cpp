@@ -23,6 +23,12 @@
 
 *********************************************************************/
 
+#include "core/hResourcePackage.h"
+#include "base/hStringUtil.h"
+#include "base/hClock.h"
+#include "core/hResourceManager.h"
+#include "threading/hJobManager.h"
+
 namespace Heart
 {
 hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeader);
@@ -128,7 +134,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         hBool ret = hFalse;
         switch(packageState_) {
         case State_Load_PkgDesc: {
-                hJob* descreadjob=hNEW(hJob)();
+                hJob* descreadjob=new hJob;
                 descreadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadPackageDescription, this));
                 descreadjob->setWorkerMask(1);
                 fileQueue_->pushJob(descreadjob);
@@ -163,7 +169,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                 hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
                 hFloat start_time = hClock::elapsed();
                 for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
-                    hJob* loadjob=hNEW(hJob)();
+                    hJob* loadjob=new hJob;
                     resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
                     resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
                     resourceJobArray_[i].createdResource_=nullptr;

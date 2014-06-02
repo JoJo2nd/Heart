@@ -28,12 +28,14 @@
 #ifndef hcMutex_h__
 #define hcMutex_h__
 
+#include "pal/hMutex.h"
+
 namespace Heart
 {
     class hMutexAutoScope
     {
     public:
-        hMutexAutoScope( hdMutex* mtx )
+        hMutexAutoScope( hMutex* mtx )
             : mtx_(mtx)
         {
             mtx_->Lock();
@@ -46,7 +48,7 @@ namespace Heart
         
         hMutexAutoScope( const hMutexAutoScope& rhs );
 
-        hdMutex*     mtx_;
+        hMutex*     mtx_;
     };
 
 }

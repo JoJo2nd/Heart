@@ -27,6 +27,9 @@
 #ifndef _CONFIGOPTIONS_H__
 #define _CONFIGOPTIONS_H__
 
+#include "base/hTypes.h"
+#include "pal/hDeviceFilewatch.h"
+
 namespace Heart
 {
     class hIFileSystem;
@@ -38,8 +41,7 @@ namespace Heart
             : filewatch_(0)
         {
         }
-        ~hConfigOptions()
-        {
+        ~hConfigOptions() {
             if (filewatch_) {
                 hdEndFilewatch(filewatch_);
                 filewatch_=0;
@@ -54,22 +56,7 @@ namespace Heart
         const hChar* getOptionStr(const hChar* key, const hChar* defval) const;
 
     private:
-
-        struct hOption : public hMapElement< hUint32, hOption > 
-        {
-            hOption() {}
-            ~hOption() {}
-
-            hXMLGetter op;
-        };
-
-        typedef hMap< hUint32, hOption > hConfigMap;
-
-        void configChange(const hChar* watchDir, const hChar* filepath, hdFilewatchEvents fileevent);
-        void readDocToMap(const hXMLDocument& doc);
         
-        hXMLDocument        doc_;
-        hConfigMap          config_;
         hdFilewatchHandle   filewatch_;
     };
 }

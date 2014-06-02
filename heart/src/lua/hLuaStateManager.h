@@ -29,6 +29,15 @@
 #ifndef LUASTATEMANAGER_H__
 #define LUASTATEMANAGER_H__
 
+#include "base/hTypes.h"    
+extern "C" {
+#   include "lua.h"
+#   include "lualib.h"
+#   include "lauxlib.h"
+}
+#include "base/hLinkedList.h"
+#include "base/hFunctor.h"
+
 namespace Heart
 {
 #define HEART_LUA_GET_ENGINE(L) \
@@ -43,7 +52,7 @@ namespace Heart
 	typedef hFunctor< hBool (*)( lua_State* ) >::type VMYieldCallback;
 	typedef hFunctor< void (*)( lua_State* ) >::type VMResumeCallback;
 
-    struct HEART_DLLEXPORT hLuaThreadState : hLinkedListElement< hLuaThreadState >
+    struct hLuaThreadState : hLinkedListElement< hLuaThreadState >
     {
         hLuaThreadState() 
             : lua_(NULL)
@@ -55,7 +64,7 @@ namespace Heart
         hInt32				yieldRet_;
     };
 
-	class HEART_DLLEXPORT hLuaStateManager
+	class hLuaStateManager
 	{
 	public:
 		hLuaStateManager();
@@ -77,8 +86,6 @@ namespace Heart
 		static void*	            LuaAlloc( void *ud, void *ptr, size_t osize, size_t nsize );
 		static int		            LuaPanic (lua_State* L);
 		static void		            LuaHook( lua_State* L, lua_Debug* LD );
-        hComponent*                 LuaScriptComponentCreate( hEntity* owner );
-        void                        LuaScriptComponentDestroy( hComponent* luaComp );
 
 		lua_State*		            mainLuaState_;
 		ThreadList		            luaThreads_;

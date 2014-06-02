@@ -1,3 +1,4 @@
+#if 0
 /********************************************************************
 
 	filename: 	hSoundManager.cpp	
@@ -24,6 +25,11 @@
 	distribution.
 
 *********************************************************************/
+
+#include "audio/hSoundManager.h"
+#include "base/hProfiler.h"
+#include "audiohSoundSource.h"
+
 namespace Heart
 {
 
@@ -64,7 +70,7 @@ namespace Heart
 
     hSoundSource* hSoundManager::CreateSoundSource( hUint32 channel )
     {
-        hSoundSource* sound = hNEW(hSoundSource);
+        hSoundSource* sound = new hSoundSource;
         soundSources_.pushBack( sound );
 
         return sound;
@@ -77,7 +83,8 @@ namespace Heart
     void hSoundManager::DestroySoundSource( hSoundSource* source )
     {
         soundSources_.remove( source );
-        hDELETE(source);
+        delete source;
     }
 
 }
+#endif

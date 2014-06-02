@@ -20,7 +20,7 @@ def hFuncTraits_header( outFile ):
     outFile.write( "//////////////////////////////////////////////////////////////////////////\n" )
     outFile.write( "// hFuncTraits\n\n" )
     outFile.write( "template< typename _Fn >\n" )
-    outFile.write( "struct HEART_FORCEDLLEXPORT hFuncTraits;\n\n" )
+    outFile.write( "struct hFuncTraits;\n\n" )
 
 def hFuncTraits_gen( outFile, numParams, isClass ):
     outString = ""
@@ -29,7 +29,7 @@ def hFuncTraits_gen( outFile, numParams, isClass ):
         paramList = genSeperatedString( range( 0, numParams ), "_P%NUM%", ", " )
         typedefList = genSeperatedString( range( 0, numParams ), "\ttypedef _P%NUM% param%NUM%_type;\n", "" )
         outString += "template< typename _R" + templateList + " >\n"
-        outString += "struct HEART_FORCEDLLEXPORT hFuncTraits< _R(*)(" + paramList + ") >\n"
+        outString += "struct hFuncTraits< _R(*)(" + paramList + ") >\n"
         outString += "{\n"
         outString += "  static const int PARAMS = " + str( numParams ) + ";\n"
         outString += "  typedef _R return_type;\n"
@@ -41,7 +41,7 @@ def hFuncTraits_gen( outFile, numParams, isClass ):
         paramList = genSeperatedString( range( 0, numParams ), "_P%NUM%", ", " )
         typedefList = genSeperatedString( range( 0, numParams ), "\ttypedef _P%NUM% param%NUM%_type;\n", "" )
         outString += "template< typename _Ty, typename _R" + templateList + " >\n"
-        outString += "struct HEART_FORCEDLLEXPORT hFuncTraits< _R(_Ty::*)(" + paramList + ") >\n"
+        outString += "struct hFuncTraits< _R(_Ty::*)(" + paramList + ") >\n"
         outString += "{\n"
         outString += "  static const int PARAMS = " + str( numParams ) + ";\n"
         outString += "  typedef _Ty class_type;\n"
@@ -66,7 +66,7 @@ def hFunctor_gen( outFile, numParams ):
     paramTypeList = genSeperatedString( range( 0, numParams ), "typename hFuncTraits< _Fn >::param%NUM%_type", ", " )
     paramCallList = genSeperatedString( range( 0, numParams ), "P%NUM%", ", " )
     outString += "template< typename _Fn >\n"
-    outString += "class HEART_FORCEDLLEXPORT _hFunctor< _Fn, " + str( numParams ) + " >\n"
+    outString += "class _hFunctor< _Fn, " + str( numParams ) + " >\n"
     outString += "{\n"
     outString += "public:\n"
     outString += "  typedef typename hFuncTraits< _Fn >::return_type return_type;\n"
@@ -146,7 +146,7 @@ def hFunctor_gen( outFile, numParams ):
 def hFunctor_footer( outFile ):
     outString = ""
     outString += "template< typename _Fn >\n"
-    outString += "struct HEART_FORCEDLLEXPORT hFunctor\n"
+    outString += "struct hFunctor\n"
     outString += "{\n"
     outString += "  typedef _hFunctor< _Fn, hFuncTraits< _Fn >::PARAMS > type;\n"
     outString += "};\n";

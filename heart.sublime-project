@@ -9,12 +9,15 @@
 	],
 	"build_systems":
 	[
-    	{
+        {
         	"name": "Heart x64",
-            "cmd": "cmake --build $project_path/cmake64",
-            "working_dir": ".",
-            "file_regex": "(.*?)\\((.*?) :",
-            "selector": "source.c++"
+            "cmd": ["python", "cmake_build.py", "-p", "$project_path/cmake64", "-r", "$project_path"],
+            "selector": "source.c++",
+            "working_dir": "$project_path/build",
+            "windows":
+            {
+            	"file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
+            }
         }
     ]
 }

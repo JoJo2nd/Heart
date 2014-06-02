@@ -28,11 +28,24 @@
 #ifndef __HRCAMERA_H__
 #define __HRCAMERA_H__
 
+#include "base/hTypes.h"
+#include "base/hRendererConstants.h"
+#include "math/hViewFrustum.h"
+#include "math/hMatrix.h"
+#include "math/hVec3.h"
+#include "math/hMathUtil.h"
+#include "render/hRenderSubmissionContext.h"
+#include "render/hRenderMaterialManager.h"
+
 namespace Heart
 {
     class hRenderer;
+    class hTexture;
+    class hRenderTargetView;
+    class hDepthStencilView;
+    struct hRenderTechniqueInfo;
 
-    struct HEART_DLLEXPORT hRenderViewportTargetSetup
+    struct hRenderViewportTargetSetup
     {
         hUint               nTargets_;
         hTexture*           targetTex_; // used for dims- must not be NULL
@@ -44,7 +57,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class HEART_DLLEXPORT hRendererCamera
+    class hRendererCamera
     {
     public:
 

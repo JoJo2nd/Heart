@@ -28,66 +28,61 @@
 #ifndef HSTRINGUTIL_H__
 #define HSTRINGUTIL_H__
 
+#include "base/hTypes.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+
 namespace Heart
 {
-    HEART_DLLEXPORT
     inline hUint32 HEART_API hStrLen( const hChar* s1 )
     {
         return (hUint32)strlen( s1 );
     }
 
-    HEART_DLLEXPORT
     inline void HEART_API hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
         hcAssert( (hUint32)hStrLen( src ) < destlen );
         strcpy( dest, src );
     }
 
-    HEART_DLLEXPORT
     inline void HEART_API hStrNCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
         strncpy( dest, src, destlen-1 );
         dest[destlen-1] = 0;
     }
 
-    HEART_DLLEXPORT
     inline void HEART_API hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
     {
         hcAssert( destlen - (hUint32)hStrLen( dest ) <= destlen );
         strcat( dest, src );
     }
 
-    HEART_DLLEXPORT
     inline hInt HEART_API hStrCmp( const hChar* s1, const hChar* s2 )
     {
         return strcmp( s1, s2 );
     }
 
-    HEART_DLLEXPORT
     inline hChar* HEART_API hStrChr( hChar* s1, hChar ch)
     {
         return strchr(s1,(hInt)ch);
     }
 
-    HEART_DLLEXPORT
     inline hChar* HEART_API hStrRChr(hChar* s1, hChar ch)
     {
         return strrchr(s1,(hInt)ch);
     }
 
-    HEART_DLLEXPORT
     inline const hChar* HEART_API hStrRChr(const hChar* s1, hChar ch)
     {
         return strrchr(s1,(hInt)ch);
     }
 
-    HEART_DLLEXPORT
     inline const hChar* HEART_API hStrChr( const hChar* s1, hChar ch)
     {
         return strchr(s1,(hInt)ch);
     }
 
-    HEART_DLLEXPORT
     inline hUint32 HEART_API hStrICmp( const hChar* s1, const hChar* s2 )
     {
 #ifdef WIN32
@@ -97,7 +92,6 @@ namespace Heart
 #endif
     }
 
-    HEART_DLLEXPORT
     inline hInt32 HEART_API hStrPrintf( hChar* dest, hUint32 destlen, const hChar* format, ... )
     {
         va_list marker;
@@ -110,7 +104,6 @@ namespace Heart
         return r;
     }
 
-    HEART_DLLEXPORT
     inline void HEART_API hStrMove(hChar* src, hChar* dest, hUint count)
     {
         memmove(dest, src, count);
@@ -118,22 +111,18 @@ namespace Heart
 
 #define hScanf scanf
 
-    HEART_DLLEXPORT
     inline hInt32 HEART_API hAtoI(const hChar* str)
     {
         return atoi(str);
     }
 
-    HEART_DLLEXPORT
     inline hFloat HEART_API hAtoF(const hChar* str)
     {
         return (hFloat)atof(str);
     }
 
-    HEART_DLLEXPORT
     int HEART_API hStrWildcardMatch(const hChar *wildcard, const hChar *target);
 
-    HEART_DLLEXPORT
     inline hInt HEART_API hIsSpace(hChar c)
     {
         return isspace(c);

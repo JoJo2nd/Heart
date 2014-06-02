@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "core/hConfigOptions.h"
+#include "core/hIFile.h"
+#include "core/hIFileSystem.h"
+
 namespace Heart
 {
 
@@ -36,86 +40,25 @@ namespace Heart
     {
         hIFile* file = filesystem->OpenFile(filename, FILEMODE_READ);
         if ( file ) {
-            hUint32 read;
-            char* data = (hChar*)hHeapMalloc("general", (hUint32)file->Length());
-            read = file->Read(data, (hUint32)file->Length());
-            if ( read == file->Length() ) {
-                
-                if ( doc_.ParseSafe< rapidxml::parse_default >(data) ) {
-                    hXMLGetter getter(&doc_);
-                    readDocToMap(doc_);
-                }
-            }
-            filesystem->CloseFile( file );
         }
 
-        filewatch_=hdBeginFilewatch("cfg:/", hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hConfigOptions, configChange, this));
+        // filewatch_=hdBeginFilewatch("cfg:/", hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hConfigOptions, configChange, this));
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    static void buildStringKey(const hXMLGetter& node, hChar* outstr, hUint* bufsize) {
-        if (node.parent().ToNode() && node.parent().getNameLen() > 0) {
-            buildStringKey(node.parent(), outstr, bufsize);
-            hStrCat(outstr, *bufsize, ".");
-            *bufsize-=1;
-        }
-        hStrCat(outstr, *bufsize, node.getName());
-        *bufsize-=node.getNameLen();
-    }
-
+#if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     void hConfigOptions::readDocToMap(const hXMLDocument& doc) {
-        hXMLGetter node(&doc);
-        while (node.ToNode()) {
-            if (node.GetValueString() && node.GetValueStringLen() > 0 
-            && node.getName() && node.getNameLen() > 0) {
-                hUint32 crc;
-                hChar namebuf[2048]={0};
-                hUint len=(hUint)hStaticArraySize(namebuf);
-                buildStringKey(node, namebuf, &len);
-                crc=hCRC32::StringCRC(namebuf);
-                hOption* op=config_.Find(crc); 
-                if (!op) {
-                    op=hNEW(hOption);
-                    config_.Insert(crc, op);
-                }
-                op->op=node;
-            }
-            if (node.FirstChild(NULL).ToNode()) {
-                node=node.FirstChild(NULL);
-            } else if (node.NextSibling().ToNode()) {
-                node=node.NextSibling();
-            } else {
-                while(node.ToNode()) {
-                    if (node.parent().NextSibling(NULL).ToNode()) {
-                        node=node.parent().NextSibling(NULL);
-                        break;
-                    } else {
-                        node=node.parent();
-                    }
-                }
-            }
-        }
-    }
 
+    }
+#endif    
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     hUint hConfigOptions::getOptionUint(const hChar* key, hUint defval) const {
-        hUint32 keycrc=hCRC32::StringCRC(key);
-        hOption* op=config_.Find(keycrc);
-        if (!op) {
-            return defval;
-        } else {
-            return op->op.GetValueInt(defval);
-        }
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -123,13 +66,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hInt hConfigOptions::getOptionInt(const hChar* key, hInt defval) const {
-        hUint32 keycrc=hCRC32::StringCRC(key);
-        hOption* op=config_.Find(keycrc);
-        if (!op) {
-            return defval;
-        } else {
-            return op->op.GetValueInt(defval);
-        }
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -137,13 +74,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hFloat hConfigOptions::getOptionFloat(const hChar* key, hFloat defval) const {
-        hUint32 keycrc=hCRC32::StringCRC(key);
-        hOption* op=config_.Find(keycrc);
-        if (!op) {
-            return defval;
-        } else {
-            return op->op.GetValueFloat(defval);
-        }
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -151,13 +82,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hConfigOptions::getOptionBool(const hChar* key, hBool defval) const {
-        hUint32 keycrc=hCRC32::StringCRC(key);
-        hOption* op=config_.Find(keycrc);
-        if (!op) {
-            return defval;
-        } else {
-            return hStrICmp(op->op.GetValueString(defval ? "true" : "false"), "true")==0;
-        }
+        return 0;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -165,15 +90,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     const hChar* hConfigOptions::getOptionStr(const hChar* key, const hChar* defval) const {
-        hUint32 keycrc=hCRC32::StringCRC(key);
-        hOption* op=config_.Find(keycrc);
-        if (!op) {
-            return defval;
-        } else {
-            return op->op.GetValueString(defval);
-        }
+        return nullptr;
     }
-
+#if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -181,5 +100,6 @@ namespace Heart
     void hConfigOptions::configChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent) {
         hcPrintf("Config file \"%s%s\" event %u", watchDirectory, filepath, fileevent);
     }
+#endif
 
 }

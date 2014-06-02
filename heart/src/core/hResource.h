@@ -28,6 +28,11 @@
 #ifndef RESOURCE_H__
 #define RESOURCE_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "base/hFunctor.h"
+#include <vector>
+#include "core/hResourceManager.h"
 
 namespace Heart
 {
@@ -106,47 +111,8 @@ namespace Heart
     };
 #endif
 
-    typedef std::vector< hStringID > hResourceNodeLinks;
-
-    namespace hResourceColour
-    {
-        enum Type {
-            White,
-            Grey,
-            Black,
-        };
-    }
-
-    struct hResourceGraphNode
-    {
-        hResourceGraphNode()
-            : resourceData_(nullptr)
-            , colour_(hResourceColour::White)
-        {
-
-        }
-
-        void*                   resourceData_;
-        hStringID               typeID_;
-        hResourceNodeLinks      links_;
-        hResourceColour::Type   colour_;
-    };
-
-    enum hResurceEvent 
-    {
-        hResourceEvent_None,
-        hResourceEvent_Created,
-        hResourceEvent_Linked,
-        hResourceEvent_Unlinked,
-        hResourceEvent_Unloaded,
-
-        hResourceEvent_DBInsert,
-        hResourceEvent_DBRemove,
-        hResourceEvent_HotSwap,
-    };
-
 #if 0 // Removing, we don't want to constrain resources to fit our interface
-    class HEART_DLLEXPORT hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >
+    class  hResourceClassBase : public hMapElement< hUint32, hResourceClassBase >
     {
     public:
         hResourceClassBase() 
@@ -174,11 +140,6 @@ namespace Heart
         hResourceType      type_;
     };
 #endif
-
-#if 0 // hResourceEventProc is replaced by hNewResoruceEventProc (awaiting rename)
-    hFUNCTOR_TYPEDEF(hBool (*)(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*), hResourceEventProc);
-#endif
-    hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void*/*data_ptr*/), hNewResourceEventProc);
 
     class hResourceHandle
     {

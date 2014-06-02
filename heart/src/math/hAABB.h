@@ -28,6 +28,10 @@
 #ifndef __HMAABB_H__
 #define __HMAABB_H__
 
+#include "base/hTypes.h"
+#include "math/hVec3.h"
+#include "math/hMatrix.h"
+
 namespace Heart
 {
 
@@ -113,7 +117,7 @@ namespace Heart
             hVec3 r;
             for ( hUint32 i = 0; i < 3; ++i )
             {
-                hFloat128 v = vin[i];
+                hFloat v = vin[i];
                 if ( v < amin[ i ] ) v = amin[i];
                 if ( v > amax[ i ] ) v = amax[i];
                 r[i] = v;

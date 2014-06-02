@@ -57,15 +57,16 @@ set( HEART_SRC_FILES
 	"${HEART_SOURCE_DIR}/src/Heart.h"
 	"${HEART_SOURCE_DIR}/src/HeartBase.h"
 )
-set( HEART_SRC_FILES
-    ${HEART_SRC_FILES}
-    "${HEART_SOURCE_DIR}/src/heartBaseUnity.cpp"
-    "${HEART_SOURCE_DIR}/src/heartCoreUnity.cpp"
+file(GLOB HEART_UNITY_SRC
+    "${HEART_SOURCE_DIR}/src/*.cpp"
 )
-
 file(GLOB HEART_BASE_FILES 
     "${HEART_SOURCE_DIR}/src/base/*.h"
     "${HEART_SOURCE_DIR}/src/base/*.cpp"
+)
+file(GLOB HEART_AUDIO_FILES 
+    "${HEART_SOURCE_DIR}/src/audio/*.h"
+    "${HEART_SOURCE_DIR}/src/audio/*.cpp"
 )
 file(GLOB HEART_COMPONENTS_FILES 
     "${HEART_SOURCE_DIR}/src/components/*.h"
@@ -108,12 +109,6 @@ file(GLOB HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
-file(GLOB HEART_GAL_FILES
-    "${HEART_SOURCE_DIR}/src/gal/*.h"
-    "${HEART_SOURCE_DIR}/src/gal/*.cpp"
-    "${HEART_SOURCE_DIR}/src/gal/private/*.h"
-    "${HEART_SOURCE_DIR}/src/gal/private/*.cpp"
-)
 file(GLOB HEART_SCENE_FILES
     "${HEART_SOURCE_DIR}/src/scene/*.h"
     "${HEART_SOURCE_DIR}/src/scene/*.cpp"
@@ -138,43 +133,40 @@ file(GLOB HEART_RESOURCE_FILES
 if (WIN32)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
-		"${HEART_SOURCE_DIR}/src/pal/win32"
-        "${HEART_SOURCE_DIR}/src/pal/win32"
-    )
-    # Add platform math files.
-    file(GLOB HEART_DEVICE_MATH_FILES
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/math/*.h"
-	)
-    set( HEART_SRC_FILES 
-        ${HEART_SRC_FILES}
-        "${HEART_SOURCE_DIR}/src/pal/win32/heartWin32Unity.cpp"
+		"${HEART_SOURCE_DIR}/src/win32"
+        "${HEART_SOURCE_DIR}/src/win32"
     )
     file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.h"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/*.cpp"
-		"${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/*.h"
-        "${HEART_SOURCE_DIR}/src/pal/win32/device/dx11/*.cpp"
+        "${HEART_SOURCE_DIR}/src/win32/pal/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/*.cpp"
+        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.cpp"
+        "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
+		"${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.cpp"
     )
 endif (WIN32)
 
 set( HEART_NON_UNITY_FILES
+    ${HEART_PLATFORM_NON_UNITY_FILES}
+    ${HEART_RESOURCE_FILES}
+    ${HEART_AUDIO_FILES}
     ${HEART_BASE_FILES} 
     ${HEART_COMPONENTS_FILES}
     ${HEART_COMPUTE_FILES}
     ${HEART_CORE_FILES}
     ${HEART_DEBUG_FILES}
+    ${HEART_DEVICE_MATH_FILES}
     ${HEART_EVENTS_FILES}
     ${HEART_INPUT_FILES}
     ${HEART_LUA_FILES}
     ${HEART_MATH_FILES}
+    ${HEART_NETWORK_FILES}
     ${HEART_RENDER_FILES}
     ${HEART_SCENE_FILES}
     ${HEART_THREAD_FILES}
     ${HEART_UTILS_FILES}
-    ${HEART_DEVICE_MATH_FILES}
-	${HEART_PLATFORM_NON_UNITY_FILES}
-	${HEART_RESOURCE_FILES}
-    ${HEART_NETWORK_FILES}
 )
 #common vars to pass up to parent directory
 set( LIBHEART_INCLUDES
@@ -190,9 +182,8 @@ if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()
 
-source_group(unity FILES ${HEART_SRC_FILES})
+source_group(audio FILES ${HEART_AUDIO_FILES})
 source_group(base FILES ${HEART_BASE_FILES})
-source_group(math FILES ${HEART_DEVICE_MATH_FILES})
 source_group(components FILES ${HEART_COMPONENTS_FILES})
 source_group(compute FILES ${HEART_COMPUTE_FILES})
 source_group(core FILES ${HEART_CORE_FILES})
@@ -201,16 +192,22 @@ source_group(events FILES ${HEART_EVENTS_FILES})
 source_group(input FILES ${HEART_INPUT_FILES})
 source_group(lua FILES ${HEART_LUA_FILES})
 source_group(math FILES ${HEART_MATH_FILES})
+source_group(network FILES ${HEART_NETWORK_FILES})
+source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 source_group(render FILES ${HEART_RENDER_FILES})
-source_group(gal FILES ${HEART_GAL_FILES})
+source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
 source_group(thread FILES ${HEART_THREAD_FILES})
+source_group(unity FILES ${HEART_UNITY_SRC})
 source_group(utils FILES ${HEART_UTILS_FILES})
-source_group(resource_data FILES ${HEART_RESOURCE_FILES})
-source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
-source_group(network FILES ${HEART_NETWORK_FILES})
 
-set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
+if (UNITY_BUILD)
+    message("Heart unity build.")
+    set (HEART_SRC_FILES 
+        ${HEART_SRC_FILES} ${HEART_UNITY_SRC})
+    set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
+endif()
+
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
@@ -218,7 +215,7 @@ set(HEART_LIBRARIES
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
-add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GAL_FILES})
+add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
 target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
 ADD_CUSTOM_COMMAND(

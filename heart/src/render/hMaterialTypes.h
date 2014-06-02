@@ -28,8 +28,18 @@
 #ifndef HMATERIALTYPES_H__
 #define HMATERIALTYPES_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "base/hArray.h"
+#include "render/hRenderStateBlock.h"
+#include "render/hViews.h"
+#include "core/hResource.h"
+#include <vector>
+
 namespace Heart
 {
+    class hShaderProgram;
+
     enum hParameterType
     {
         ePTFloat,
@@ -40,7 +50,7 @@ namespace Heart
         ePTNone = ~0U
     };
 
-    class HEART_DLLEXPORT hMaterialTechniquePass
+    class  hMaterialTechniquePass
     {
     public:
 
@@ -76,11 +86,11 @@ namespace Heart
             }
         }
 
-        hShaderProgram*         GetVertexShader() { return programs_[ShaderType_VERTEXPROG].weakPtr<hShaderProgram>(); }
+        hShaderProgram*         GetVertexShader();
         void                    setProgramID(hUint shadertype, hStringID resid) { programs_[shadertype]=hResourceHandle(resid); }
         hStringID               getProgramID(hUint shadertype) const { return programs_[shadertype].getResourceID(); }
         hUint32                 GetProgramCount() { return s_maxPrograms; }
-        hShaderProgram*         getProgram(hUint32 i) { hcAssert(i < s_maxPrograms); return programs_[i].weakPtr<hShaderProgram>();}
+        hShaderProgram*         getProgram(hUint32 i);
         hBlendState*            GetBlendState() { return blendState_; }
         hDepthStencilState*     GetDepthStencilState() { return depthStencilState_; }
         hRasterizerState*       GetRasterizerState() { return rasterizerState_; }
@@ -162,7 +172,7 @@ namespace Heart
         hRasterizerState*                   rasterizerState_;
     };
 
-    class HEART_DLLEXPORT hMaterialTechnique
+    class  hMaterialTechnique
     {
     public:
 
@@ -226,7 +236,7 @@ namespace Heart
         hByte         layer_;
     };
 
-    struct HEART_DLLEXPORT hMaterialGroup
+    struct  hMaterialGroup
     {
         typedef std::vector< hMaterialTechnique > TechniqueArrayType;
 

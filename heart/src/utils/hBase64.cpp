@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "utils/hBase64.h"
+
 namespace Heart
 {
 namespace hBase64
@@ -80,7 +82,7 @@ namespace hBase64
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hUint HEART_API EncodeCalcRequiredSize(hUint inputCount) {
         hUint reqsize=(inputCount+2)/3;
         return (reqsize*4);
@@ -90,7 +92,7 @@ namespace hBase64
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
    
-    HEART_DLLEXPORT
+    
     hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
         hByte* in;
         hByte* out;
@@ -113,7 +115,7 @@ namespace hBase64
         return blocksout*4;
     }
 
-    HEART_DLLEXPORT
+    
     hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount) {
         hcAssert(inputbuf);
         hUint reqlen=((inputCount/4)-1)*3;
@@ -125,7 +127,7 @@ namespace hBase64
         return reqlen+3;
     }
 
-    HEART_DLLEXPORT
+    
     hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
         hByte* in, *inend;
         hByte* out, *outend;

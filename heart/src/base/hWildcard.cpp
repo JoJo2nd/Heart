@@ -24,6 +24,8 @@
 	distribution.
 
 *********************************************************************/
+#include "hStringUtil.h"
+
 /*
  * Wildcard matching engine for use with SFTP-based file transfer
  * programs (PSFTP, new-look PSCP): since SFTP has no notion of

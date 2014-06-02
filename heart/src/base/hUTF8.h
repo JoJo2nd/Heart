@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#pragma once
+
+#include "base/hTypes.h"
+
 namespace Heart
 {
 namespace hUTF8

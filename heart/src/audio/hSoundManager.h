@@ -24,12 +24,18 @@
 	distribution.
 
 *********************************************************************/
+#if 0
 #ifndef HSOUNDMANAGER_H__
 #define HSOUNDMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hLinkedList.h"
+
 namespace Heart
 {
-    class HEART_DLLEXPORT hSoundManager
+    class hSoundSource;
+
+    class  hSoundManager
     {
     public:
         hSoundManager()
@@ -57,3 +63,4 @@ namespace Heart
 }
 
 #endif // HSOUNDMANAGER_H__
+#endif

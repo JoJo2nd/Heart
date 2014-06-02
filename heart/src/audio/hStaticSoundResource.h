@@ -31,6 +31,7 @@ class OGGSoundBankBuilder;
 
 namespace Heart
 {
+#if 0
     struct hStaticSoundSource : public hISoundSourceBuffer
     {
     public:
@@ -93,9 +94,12 @@ namespace Heart
         }
         ~hSoundBankResource()
         {
-            hDELETE_ARRAY_SAFE(sources_);
-            hDELETE_ARRAY_SAFE(sourcesData_);
-            hDELETE_ARRAY_SAFE(namePool_);
+            delete[] sources_;
+            sources_ = nullptr;
+            delete[] sourcesData_;
+            sourcesData_ = nullptr;
+            delete[] namePool_;
+            namePool_ = nullptr;
         }
 
         hUint32                      GetSourceCount() { return sourceCount_; }
@@ -118,6 +122,7 @@ namespace Heart
         hUint32              namePoolSize_;
         hChar*               namePool_;
     };
+#endif
 
 }
 

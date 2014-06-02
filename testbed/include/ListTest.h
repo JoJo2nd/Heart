@@ -110,7 +110,7 @@ public:
     {
         for ( hUint32 i = 0; i < tc; ++i )
         {
-            TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
+            TestListElement* p = new Heart::GetGlobalHeap(), TestListElement;
             p->value_ = t[i];
             list_.PushBack( p );
         }
@@ -134,7 +134,7 @@ public:
     {
         for ( hUint32 i = 0; i < tc; ++i )
         {
-            TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
+            TestListElement* p = new Heart::GetGlobalHeap(), TestListElement;
             p->value_ = t[i];
             if ( i % 2 )
                 list_.PushFront( p );
@@ -161,7 +161,7 @@ public:
     {
         for ( hUint32 i = 0; i < tc; ++i )
         {
-            TestListElement* p = hNEW(Heart::GetGlobalHeap(), TestListElement);
+            TestListElement* p = new Heart::GetGlobalHeap(), TestListElement;
             p->value_ = t[i];
             list_.PushBack( p );
         }
@@ -189,17 +189,17 @@ public:
             {
                 LINKTESTPRINT( "Deleting Ele : %u", li->value_ );
                 list_.Remove( li );
-                hDELETE(Heart::GetGlobalHeap(), li);
+                delete Heart::GetGlobalHeap(), li;
                 break;
             }
         }
 
         li = list_.GetHead();
         list_.Remove(li);
-        hDELETE(Heart::GetGlobalHeap(), li);
+        delete Heart::GetGlobalHeap(), li;
         li = list_.GetTail();
         list_.Remove(li);
-        hDELETE(Heart::GetGlobalHeap(), li);
+        delete Heart::GetGlobalHeap(), li;
 
         LINKTESTPRINT( "!==========================================" );
         LINKTESTPRINT( "Going Forward" );

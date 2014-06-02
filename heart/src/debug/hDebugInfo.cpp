@@ -25,6 +25,13 @@
 
 *********************************************************************/
 
+#include "debug/hDebugInfo.h"
+#include "base/hStringUtil.h"
+#include "core/hHeart.h"
+#include "render/hDebugDraw.h"
+#include "render/hRenderSubmissionContext.h"
+#include "render/hRenderer.h"
+
 namespace Heart
 {
 

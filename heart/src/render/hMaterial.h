@@ -28,8 +28,16 @@
 #ifndef HIMATERIAL_H__
 #define HIMATERIAL_H__
 
-class MaterialEffectBuilder;
-class ShaderProgramBuilder;
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "base/hRendererConstants.h"
+#include "base/hStringUtil.h"
+#include "base/hCRC32.h"
+#include "core/hResource.h"
+#include "render/hRenderStateBlock.h"
+#include "render/hMaterialTypes.h"
+#include "base/hProtobuf.h"
+#include "components/hObjectFactory.h"
 
 namespace Heart
 {
@@ -38,9 +46,10 @@ namespace Heart
     class hTexture;
     class hMaterial;
     class hMaterialInstance;
+    class hRenderMaterialManager;
     class hRenderSubmissionCtx;
 
-    HEART_DLLEXPORT
+    
     hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits);
 
     /*
@@ -56,13 +65,13 @@ namespace Heart
      */
     typedef hUint64 hMaterialSortKey;
 
-    HEART_DLLEXPORT
+    
     hMaterialSortKey HEART_API hBuildRenderSortKey(hByte cameraID, hByte sortLayer, hBool transparent, hFloat viewSpaceDepth, hUint32 materialID, hByte pass);
 
     static const hUint32                    hMAX_PARAMETER_NAME_LEN = 32;
     static const hUint32                    hMAX_SEMANTIC_LEN = 32;
 
-    struct HEART_DLLEXPORT hSamplerParameter
+    struct  hSamplerParameter
     {
         hSamplerParameter()
             : samplerState_(NULL)
@@ -166,7 +175,7 @@ namespace Heart
         hUint16             dataOffset;
     };
 
-    class HEART_DLLEXPORT hMaterial
+    class  hMaterial
     {
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);

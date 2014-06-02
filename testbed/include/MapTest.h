@@ -108,7 +108,7 @@ public:
 		{
 			MAPTESTPRINT( "!==========================================");
 
-            TestElement* v = hNEW(Heart::GetGlobalHeap(), TestElement);
+            TestElement* v = new Heart::GetGlobalHeap(), TestElement;
 			v->value_ = i;
 			v->somethingElse_ = ~i;
 			MAPTESTPRINT( "Inserting Key,Value (%u,%u)", t[i], i );
@@ -155,7 +155,7 @@ public:
 			//Test Delete
 			MAPTESTPRINT( "Removing Key,Value (%u,%u)", t[i], 0 );
             TestElement* v = map_.Remove( t[i] );
-			hDELETE(Heart::GetGlobalHeap(), v);
+			delete Heart::GetGlobalHeap(), v;
 			hcAssert( map_.Validate() );
 
 			hUint32 c = 0;

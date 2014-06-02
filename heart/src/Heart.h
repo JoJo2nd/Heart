@@ -104,38 +104,7 @@ extern "C"
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
-//////////////////////////////////////////////////////////////////////////
-/// Proto buffer classes /////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-/*
-    Proto buffers spits out a lot of warnings about 64 bit to 32 bit conversions.
-    We disable these warnings just around these sections.
-*/
-#if defined (_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable:4244)
-#   pragma warning(disable:4267)
-#else
-#   pragma error ("Unknown platform")
-#endif
-
-#include "google/protobuf/io/coded_stream.h"
-#include "google/protobuf/io/zero_copy_stream.h"
-#include "google/protobuf/io/zero_copy_stream_impl_lite.h"
-
-#include "debug_server_common.pb.h"
-#include "package.pb.h"
-#include "resource_common.pb.h"
-#include "resource_shader.pb.h"
-#include "resource_texture.pb.h"
-#include "resource_material_fx.pb.h"
-#include "resource_mesh.pb.h"
-
-
-#if defined (_MSC_VER)
-#   pragma warning(pop)
-#endif
+#include "base/hProtobuf.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Base //////////////////////////////////////////////////////////////////
@@ -149,9 +118,7 @@ extern "C"
 #include "components/hEntity.h"
 #include "components/hObjectFactory.h"
 
-#ifdef HEART_PLAT_WINDOWS
-    #include "device/hWin32.h"
-#endif
+#include "pal/hPlatform.h"
 
 #include "utils/hBase64.h"
 
@@ -169,11 +136,7 @@ extern "C"
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Core ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#include "core/hMemoryHeap.h"
-#include "core/hStackMemoryHeap.h"
-#include "core/hTypePoolMemoryHeap.h"
 #include "threading/hJobManager.h"
-#include "utils/hRapidXML.h"
 #include "core/hConfigOptions.h"
 #include "core/hIFileSystem.h"
 #include "core/hIFile.h"

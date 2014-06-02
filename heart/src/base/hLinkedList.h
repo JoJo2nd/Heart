@@ -29,13 +29,15 @@
 #ifndef huLinkList_h__
 #define huLinkList_h__
 
+#include "base/hTypes.h"
+
 namespace Heart
 {
     template< typename _Ty >
     class hLinkedList;
 
     template< typename _Ty >
-    class HEART_DLLEXPORT hLinkedListElement
+    class hLinkedListElement
     {
     public:
 
@@ -66,7 +68,7 @@ namespace Heart
     };
 
     template< typename _Ty >
-    class HEART_DLLEXPORT hLinkedList
+    class hLinkedList
     {
     public:
 

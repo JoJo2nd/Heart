@@ -25,6 +25,17 @@
 
 *********************************************************************/
 
+#include "core/hResourceManager.h"
+#include "base/hMap.h"
+#include "base/hStringID.h"
+#include "base/hProfiler.h"
+#include "base/hCRC32.h"
+#include "core/hResource.h"
+#include "core/hResourcePackage.h"
+#include <unordered_map>
+#include <map>
+#include <stack>
+
 namespace Heart
 {
 namespace hResourceManager
@@ -70,7 +81,7 @@ namespace hGCState
     hResourcePackageMap         activePackages_;
 
     //
-    hdMutex                     resourceDBMtx_;
+    hMutex                     resourceDBMtx_;
     hResourceNotifyTable        resourceNotify_;
     hResourceTable              resourceDB_;
     hRootResourceSet            rootResources_;
@@ -116,7 +127,7 @@ void update() {
             if (i->GetRefCount()==0) {
                 hResourcePackage* next;
                 activePackages_.Erase(i, &next);
-                hDELETE_SAFE(i);
+                delete i; i = nullptr;
                 i=next;
             } else {
                 //reload the package
@@ -140,7 +151,7 @@ void loadPackage( const hChar* name ) {
     hUint32 pkcrc = hCRC32::StringCRC(name);
     hResourcePackage* pkg=activePackages_.Find(pkcrc);
     if (!pkg) {
-        pkg = hNEW(hResourcePackage)();
+        pkg = new hResourcePackage;
         pkg->initialise(filesystem_, &fileReadJobQueue_, &workerQueue_, name);
         activePackages_.Insert(pkcrc, pkg);
         pkg->beginLoad();

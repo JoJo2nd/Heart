@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "render/hTexture.h"
+
 namespace Heart
 {
     hRegisterObjectType(texture, Heart::hTexture, Heart::proto::TextureResource,
@@ -63,7 +65,8 @@ namespace Heart
         {
             for (hUint32 i = 0; i < nLevels_; ++i)
             {
-                hDELETE_ARRAY_SAFE(levelDescs_[i].mipdata_);
+                delete[] levelDescs_[i].mipdata_;
+                levelDescs_[i].mipdata_ = nullptr;
             }
         }
     }

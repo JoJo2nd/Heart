@@ -31,7 +31,7 @@
 namespace Heart
 {
     HEART_ALIGNMENT_BEGIN(32)
-    struct HEART_DLLEXPORT hAtomicInt
+    struct  hAtomicInt
     {
         hUint32 value_;
     }
@@ -42,14 +42,14 @@ namespace hAtomic
 
 #ifdef WIN32
 
-HEART_DLLEXPORT void HEART_API Increment( hAtomicInt& i );
-HEART_DLLEXPORT void HEART_API Decrement( hAtomicInt& i );
-HEART_DLLEXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
-HEART_DLLEXPORT hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
-HEART_DLLEXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
-HEART_DLLEXPORT hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
-HEART_DLLEXPORT void HEART_API LWMemoryBarrier();
-HEART_DLLEXPORT void HEART_API HWMemoryBarrier();
+ void HEART_API Increment( hAtomicInt& i );
+ void HEART_API Decrement( hAtomicInt& i );
+ hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
+ hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
+ hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
+ hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
+ void HEART_API LWMemoryBarrier();
+ void HEART_API HWMemoryBarrier();
 
 #else 
     #error ("platform not supported")

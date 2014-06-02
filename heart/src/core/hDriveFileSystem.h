@@ -28,6 +28,8 @@
 #ifndef DRIVEFILESYSTEM_H__
 #define DRIVEFILESYSTEM_H__
 
+#include "core/hIFileSystem.h"
+
 namespace Heart
 {
     class hDriveFileSystem : public hIFileSystem
@@ -40,31 +42,10 @@ namespace Heart
         {
         }
 
-        /**
-        * OpenFile 
-        *
-        * @param 	const hChar * filename
-        * @param 	FileMode mode
-        * @return   hIFile*
-        */
         hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const;
-        
-        /**
-        * CloseFile 
-        *
-        * @return   void
-        */
         void	CloseFile( hIFile* pFile ) const;
-
-        /**
-        * EnumerateFiles 
-        *
-        * @param 	const hChar * path
-        * @param 	EnumerateFilesCallback fn
-        * @return   void
-        */
         void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const;
-        void    CreateDirectory(const hChar* path);
+        void    createDirectory(const hChar* path);
 
     private:
     };

@@ -25,6 +25,11 @@
 
 *********************************************************************/
 
+#include "utils/hTextFormatting.h"
+#include "base/hProfiler.h"
+#include "render/hFont.h"
+#include "base/hStringUtil.h"
+
 namespace Heart
 {
 

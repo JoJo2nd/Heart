@@ -28,8 +28,12 @@
 #ifndef HRAPIDXML_H__
 #define HRAPIDXML_H__
 
-#include "rapidxml\rapidxml.hpp"
-#include "rapidxml\rapidxml_print.hpp"
+#include "base/hTypes.h"
+#include "base/hMemory.h"
+#include "base/hRendererConstants.h"
+#include "base/hStringUtil.h"
+#include "rapidxml/rapidxml.hpp"
+#include "rapidxml/rapidxml_print.hpp"
 
 namespace Heart
 {
@@ -37,15 +41,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    HEART_DLLEXPORT void* HEART_API hXML_alloc_func(size_t size );
-    HEART_DLLEXPORT void HEART_API hXML_free_func(void* ptr );
+    void* HEART_API hXML_alloc_func(size_t size );
+    void HEART_API hXML_free_func(void* ptr );
 
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class HEART_DLLEXPORT hXMLDocument : public rapidxml::xml_document<>
+    class hXMLDocument : public rapidxml::xml_document<>
     {
     public:
         hXMLDocument()
@@ -56,13 +60,13 @@ namespace Heart
 
         ~hXMLDocument()
         {
-            hFreeSafe(data_);
+            hFree(data_); data_ = nullptr;
         }
 
         template< hUint32 flags >
         hBool ParseSafe(hChar* data)
         {
-            hFreeSafe(data_);
+            hFree(data_); data_ = nullptr;
             data_ = data;
             try {
                 parse< flags >( data );
@@ -86,7 +90,7 @@ namespace Heart
         hUint32      enumValue_;
     };
 
-    class HEART_DLLEXPORT hXMLGetter
+    class hXMLGetter
     {
     public:
         hXMLGetter() 

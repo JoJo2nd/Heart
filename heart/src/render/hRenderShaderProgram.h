@@ -28,9 +28,15 @@
 #ifndef HRENDERSHADERPROGRAM_H__
 #define HRENDERSHADERPROGRAM_H__
 
+#include "base/hTypes.h"
+#include "base/hProtobuf.h"
+#include "components/hObjectFactory.h"
+#include "pal/dx11/hWin32DX11.h"
+#include "base/hReferenceCounted.h"
+
 namespace Heart
 {
-    class HEART_DLLEXPORT hShaderProgram : public hdShaderProgram,
+    class  hShaderProgram : public hdShaderProgram,
                                            public hIReferenceCounted
     {
     public:

@@ -28,6 +28,9 @@
 #ifndef hcFileManager_h__
 #define hcFileManager_h__
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+
 namespace Heart
 {
     class hIFile;
@@ -49,36 +52,15 @@ namespace Heart
 
     hFUNCTOR_TYPEDEF(hBool(*)(const hFileInfo*), hEnumerateFilesCallback);
 
-    class HEART_DLLEXPORT hIFileSystem
+    class  hIFileSystem
     {
     public:
         virtual ~hIFileSystem() {}
 
-        /**
-        * OpenFile 
-        *
-        * @param 	const hChar * filename
-        * @param 	FileMode mode
-        * @return   hIFile*
-        */
         virtual hIFile*	OpenFile( const hChar* filename, hFileMode mode ) const = 0;
-        
-        /**
-        * CloseFile 
-        *
-        * @return   void
-        */
         virtual void	CloseFile( hIFile* pFile ) const = 0;
-
-        /**
-        * EnumerateFiles 
-        *
-        * @param 	const hChar * path
-        * @param 	EnumerateFilesCallback fn
-        * @return   void
-        */
         virtual void	EnumerateFiles( const hChar* path, hEnumerateFilesCallback fn ) const = 0;
-        virtual void    CreateDirectory(const hChar* path) = 0;
+        virtual void    createDirectory(const hChar* path) = 0;
         virtual hBool   WriteableSystem() const { return hTrue; }
 
     };

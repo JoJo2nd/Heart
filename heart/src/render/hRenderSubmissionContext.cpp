@@ -25,6 +25,14 @@
 
 *********************************************************************/
 
+#include "render/hRenderSubmissionContext.h"
+#include "render/hIndexBuffer.h"
+#include "render/hVertexBuffer.h"
+#include "render/hTexture.h"
+#include "render/hParameterConstBlock.h"
+#include "render/hRenderer.h"
+#include "render/hViews.h"
+
 namespace Heart
 {
 

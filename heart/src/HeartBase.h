@@ -59,8 +59,6 @@
 
 #endif
 
-#include "gal/gal.h"
-
 //////////////////////////////////////////////////////////////////////////
 // crypto ////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -78,17 +76,12 @@
 #include "base/hStringUtil.h"
 #include "base/hStringID.h"
 
-#include "base/hMemoryHeapBase.h"
-#include "base/hMemoryDefines.h"
+#include "base/hMemory.h"
 #include "base/hMemoryUtil.h"
 
 #include "base/hSysCalls.h"
 
 #include "base/hCRC32.h"
-
-#include "base/hReflection.h"
-#include "base/hReflectionUtils.h"
-#include "base/hSerialiser.h"
 
 #include "base/hArray.h"
 #include "base/hFunctor.h"
@@ -100,8 +93,19 @@
 #include "base/hStack.h"
 #include "base/hUTF8.h"
 #include "base/hRendererConstants.h"
-#include "base/hIBuiltDataCache.h"
 #include "base/hClock.h"
 #include "base/hProfiler.h"
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Math ///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#include "vectormath/SSE/cpp/vectormath_aos.h"
+
+#include "math/hVector.h"
+#include "math/hVec2.h"
+#include "math/hVec3.h"
+#include "math/hVec4.h"
+#include "math/hQuaternion.h"
+#include "math/hMatrix.h"
 
 #endif // HEARTBASE_H__

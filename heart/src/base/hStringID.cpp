@@ -25,6 +25,12 @@
 
 *********************************************************************/
 
+#include "base/hStringID.h"
+#include "base/hStringUtil.h"
+#include "threading/hMutexAutoScope.h"
+#include "pal/hMutex.h"
+#include "cryptoMurmurHash.h"
+
 namespace Heart
 {
 
@@ -32,7 +38,7 @@ namespace Heart
     hUint hStringID::s_hashTableCount;
     hStringID::hStringIDEntry hStringID::s_default;
 
-    static hdMutex s_writeMutex;
+    static hMutex s_writeMutex;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -73,12 +79,12 @@ namespace Heart
             entry = entry->next_;
         } while (entry);
 
-        hStringIDEntry* newentry = entry ? entry : hNEW(hStringIDEntry);
+        hStringIDEntry* newentry = entry ? entry : new hStringIDEntry();
         newentry->byteLen_ = len;
         newentry->charLen_ = len;
         newentry->next_ = hNullptr;
         newentry->strHash_ = fullhash;
-        newentry->strValue_ = hNEW_ARRAY(hChar, newentry->byteLen_+1);
+        newentry->strValue_ = new hChar[newentry->byteLen_+1];
         hStrCopy(newentry->strValue_, (hUint)newentry->byteLen_+1, str);
         if (preventry) {
             preventry->next_ = newentry;

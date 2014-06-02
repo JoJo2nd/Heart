@@ -27,6 +27,10 @@
 #ifndef HRENDERSUBMISSIONCONTEXT_H__
 #define HRENDERSUBMISSIONCONTEXT_H__
 
+#include "base/hTypes.h"
+#include "math/hMatrix.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
     struct hViewport;
@@ -48,6 +52,11 @@ namespace Heart
     class hShaderProgram;
     class hRendererCamera;
     class hRenderer;
+    class hRenderBuffer;
+    class hRenderTargetView;
+    class hDepthStencilView;
+    class hComputeObject;
+    class hShaderResourceView;
 
     //Should these be in there own file?
     struct hViewportShaderConstants
@@ -75,7 +84,7 @@ namespace Heart
 
     class hRenderInputStreams;
 
-    class HEART_DLLEXPORT hRenderSubmissionCtx
+    class hRenderSubmissionCtx
     {
     public:
 
@@ -90,10 +99,6 @@ namespace Heart
         void    runCommandBuffer(hdRenderCommandBuffer cmdBuf);
         void    runRenderCommands(hRCmd* cmds);
         void    setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth);
-        void    setComputeInput(const hComputeObject* cInput) { 
-            hcAssert(cInput);
-            impl_.setComputeInput(&cInput->inputs_); 
-        }
         void    SetViewport(const hViewport& viewport);
         void    SetScissorRect(const hScissorRect& scissor);
         void    setRenderStateBlock(hdBlendState* st) {
@@ -111,10 +116,6 @@ namespace Heart
         void    DrawIndexedPrimitive(hUint32 nPrimatives, hUint32 startVertex);
         void    DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
         void    dispatch(hUint x, hUint y, hUint z) { impl_.dispatch(x, y, z); }
-        // single state setters, add as needed - useful for one off special cases like debug
-        void    setViewPixel(hUint slot, hShaderResourceView* buffers) {
-            impl_.setViewPixel(slot, buffers);
-        }
         // mapping
         void    Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo);
         void    Unmap(hIndexBufferMapInfo* outInfo);

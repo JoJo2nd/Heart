@@ -30,36 +30,17 @@
 namespace Heart
 {
 
-namespace hSysCall
-{
-    HEART_DLLEXPORT
+namespace hSysCall {
     hUint64 HEART_API GetProcessorSpeed();
-
-    HEART_DLLEXPORT
     void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize);
-
-    HEART_DLLEXPORT
     void HEART_API hInitSystemDebugLibs();
 }
 
-namespace hMemTracking
-{
-    HEART_DLLEXPORT
+namespace hMemTracking {
     void HEART_API InitMemTracking();
-
-    HEART_DLLEXPORT
     void HEART_API TrackAlloc(const hChar* tag, hSize_t line, void* heap, void* ptr, hSize_t size, const hChar* heaptag);
-
-    HEART_DLLEXPORT
-    void HEART_API TrackRealloc(const hChar* tag, hSize_t line, void* heap, void* ptr, hSize_t size, const hChar* heaptag);
-
-    HEART_DLLEXPORT
     void HEART_API TrackFree(void* heap, void* ptr, const hChar* heaptag);
-
-    HEART_DLLEXPORT
     void HEART_API TrackPushMarker(const hChar* heaptag);
-
-    HEART_DLLEXPORT
     void HEART_API TrackPopMarker();
 }
 

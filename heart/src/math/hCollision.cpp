@@ -25,6 +25,11 @@
 
 *********************************************************************/
 
+#include "base/hTypes.h"
+#include "math/hVec3.h"
+#include "math/hMatrix.h"
+#include "math/hPlane.h"
+#include "math/hAABB.h"
 
 // Test if sphere with radius r moving from a to b intersects with plane p
 // int TestMovingSpherePlane(Point a, Point b, float r, Plane p)
@@ -39,12 +44,8 @@
 // 	// No intersection
 // 	return 0;
 // }
-namespace Heart
-{
-namespace hPlaneFunc
-{
-	hBool intersectMovingAABB( const hAABB& a, const hVec3& d, const hPlane& p )
-	{
+namespace Heart {
+	hBool intersectMovingAABB( const hAABB& a, const hVec3& d, const hPlane& p ) {
 		// Get radius of aabb along plane normal
 		//hFloat r = ( a.r[ 0 ] * fabs( p.n.x ) ) + ( a.r[ 1 ] * fabs( p.n.y ) ) + ( a.r[ 2 ] * fabs( p.n.z ) );
 		hFloat r = dot( a.r_, absPerElem(p.n) );
@@ -72,8 +73,7 @@ namespace hPlaneFunc
  		return hFalse;
 	}
 
-	hFloat AABBInfrontOfPlane( const hAABB& a, const hPlane& p )
-	{
+	hFloat AABBInfrontOfPlane( const hAABB& a, const hPlane& p ) {
 		// Get radius of aabb along plane normal
 		//hFloat r = ( a.r[ 0 ] * fabs( p.n.x ) ) + ( a.r[ 1 ] * fabs( p.n.y ) ) + ( a.r[ 2 ] * fabs( p.n.z ) );
 		//hVec3 p1 = a.c;
@@ -86,5 +86,4 @@ namespace hPlaneFunc
         hFloat r = dot( a.r_, absPerElem(p.n) );
         return r < hFabs( distFromPlane( a.c_, p ) );
 	}
-}
 }

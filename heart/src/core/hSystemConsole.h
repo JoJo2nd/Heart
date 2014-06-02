@@ -28,6 +28,11 @@
 #ifndef SYSTEMCONSOLE_H__
 #define SYSTEMCONSOLE_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "base/hMemoryUtil.h"
+#include "pal/hMutex.h"
+
 typedef void (*hConsoleOutputProc)(const hChar*, void*);
 
 namespace Heart
@@ -40,8 +45,11 @@ namespace Heart
     class hIndexBuffer;
     class hVertexDeclaration;
     class hConsoleUI;
+    class hActionManager;
+    class hPublisherContext;
+    class hNetHost;
 
-    class HEART_DLLEXPORT hSystemConsole
+    class hSystemConsole
     {
     public:
         hSystemConsole(::hConsoleOutputProc outputcallback, void* user)
@@ -71,7 +79,7 @@ namespace Heart
         static void     printConsoleMessage(const hChar* string);
 
         template< hUint32 t_size >
-        class HEART_DLLEXPORT hStringRingBuffer
+        class hStringRingBuffer
         {
         public:
             hStringRingBuffer()
@@ -205,7 +213,7 @@ namespace Heart
         hLuaStateManager*   vm_;
 
         //console print mutex
-        static hdMutex           messagesMutex_;
+        static hMutex           messagesMutex_;
         static hConsoleLogType  messageBuffer_;  
         static hUint32          msgBufferLen_;
         static hBool            alive_;

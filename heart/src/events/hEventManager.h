@@ -28,29 +28,33 @@
 #ifndef EVENT_H__
 #define EVENT_H__
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+#include "base/hArray.h"
+
 namespace Heart
 {
     /************************************************************************
     * Different system using publisher/subscriber style pattern
     ************************************************************************/
-    hFUNCTOR_TYPEDEF(void (*)(void*/*data*/, hUint/*size*/), hDispatchDelegate);
+    hFUNCTOR_TYPEDEF(void (*)(void* /*data*/, hUint /*size*/), hDispatchDelegate);
 
-    class HEART_DLLEXPORT hPublisherContext
+    class  hPublisherContext
     {
     public:
         hPublisherContext() 
-            : threadID_(NULL)
+            : threadID_(nullptr)
             , activeBuffer_(0)
-            , sbPos_(NULL)
+            , sbPos_(nullptr)
             , signalBufferSize_(0)
         {
-            signalBuffer_[0] = signalBuffer_[1] = NULL;
+            signalBuffer_[0] = signalBuffer_[1] = nullptr;
         }
         ~hPublisherContext()
         {
-            hFreeSafe(signalBuffer_[0]);
-            signalBuffer_[1] = NULL;
-            sbPos_ = NULL;
+            delete[] signalBuffer_[0];
+            signalBuffer_[1] = nullptr;
+            sbPos_ = nullptr;
             signalBufferSize_ = 0;
         }
         void  initialise(hUint bufferSize);

@@ -27,11 +27,11 @@
 #ifndef HSOUNDSOURCE_H__
 #define HSOUNDSOURCE_H__
 
-
+#if 0
 namespace Heart
 {
 
-    class HEART_DLLEXPORT hSoundSource : public hLinkedListElement< hSoundSource >
+    class  hSoundSource : public hLinkedListElement< hSoundSource >
     {
     public:
         hSoundSource()
@@ -71,3 +71,4 @@ namespace Heart
 }
 
 #endif // HSOUNDSOURCE_H__
+#endif

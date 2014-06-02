@@ -29,6 +29,14 @@
 #ifndef HDEBUGDRAW_H__
 #define HDEBUGDRAW_H__
 
+#include "base/hArray.h"
+#include "base/hRendererConstants.h"
+#include "base/hTypes.h" 
+#include "math/hVec3.h"
+#include "pal/dx11/hWin32DX11.h"
+#include "pal/hMutex.h"
+#include <vector>
+
 namespace Heart
 {
     class hFont;
@@ -51,6 +59,8 @@ namespace Heart
         hVec3   position;
         hUint   txtBufOffset;
     };
+
+    class hShaderResourceView;
 
     struct hDebugTexQuad
     {
@@ -106,6 +116,18 @@ namespace Heart
         hDebugPrimsSet debugPrims_[eDebugSet_Max];
     };
 
+    class hDepthStencilView;
+    class hFont;
+    class hIndexBuffer;
+    class hMaterial;
+    class hRenderBuffer;
+    class hRenderer;
+    class hRenderSubmissionCtx;
+    class hRenderTargetView;
+    class hShaderResourceView;
+    class hTexture;
+    class hVertexBuffer;
+
     class hDebugDrawRenderer
     {
     public:
@@ -125,7 +147,7 @@ namespace Heart
 
         static const hUint s_maxDebugPrims = 20000;
 
-        hdMutex              critSection_;
+        hMutex              critSection_;
         hRenderTargetView*  colourView_;
         hDepthStencilView*  depthView_;
         hDebugPrimsSet      debugPrims_[eDebugSet_Max];

@@ -28,6 +28,9 @@
 #ifndef hcFile_h__
 #define hcFile_h__
 
+#include "base/hTypes.h"
+#include "pal/hDeviceFileSystem.h"
+
 namespace Heart
 {
 	class hIFile

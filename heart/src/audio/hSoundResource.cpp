@@ -1,3 +1,4 @@
+#if 0
 /********************************************************************
 
 	filename: 	hSoundResource.cpp	
@@ -39,10 +40,10 @@ namespace Heart
         hcPrintf("Stub :"__FUNCTION__);
         return hNullptr;
 #else
-        hSoundResource* sound = hNEW(hSoundResource);
+        hSoundResource* sound = new hSoundResource;
         if ( !sound->DecodeVorbisHeader( dataStream ) )
         {
-            hDELETE(sound);
+            delete sound;
             sound = NULL;
         }
         return sound;
@@ -60,7 +61,7 @@ namespace Heart
 #else
         hSoundResource* sound = static_cast<hSoundResource*>(resource);
 
-        hDELETE(sound);
+        delete sound;
 #endif
         return 0;
     }
@@ -490,3 +491,4 @@ namespace Heart
     }
 
 }
+#endif

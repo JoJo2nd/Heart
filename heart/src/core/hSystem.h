@@ -28,6 +28,9 @@
 #ifndef hoWindow_h__
 #define hoWindow_h__
 
+#include "base/hTypes.h"
+#include "pal/hDeviceSystemWindow.h"
+
 namespace Heart
 {
 
@@ -39,9 +42,9 @@ namespace Heart
 	    {
 	    }
 
-	    hBool										Create(const HeartConfig& config, const hdDeviceConfig& deviceconfig);
-	    void										Update();
-	    void										Destroy();
+	    hBool	Create(const HeartConfig& config, const hdDeviceConfig& deviceconfig);
+	    void	Update();
+	    void	Destroy();
 
     private:
 

@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "render/hViews.h"
+#include "render/hTexture.h"
+#include "render/hParameterConstBlock.h"
+
 namespace Heart
 {
 

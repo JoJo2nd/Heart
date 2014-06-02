@@ -30,10 +30,16 @@
 #ifndef HRENDERSTATEBLOCK_H__
 #define HRENDERSTATEBLOCK_H__
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+#include "base/hMap.h"
+#include "base/hReferenceCounted.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
     hFUNCTOR_TYPEDEF(void(*)(class hBlendState*), hBlendZeroRefProc);
-    class HEART_DLLEXPORT hBlendState : public hdBlendState,
+    class  hBlendState : public hdBlendState,
                                         public hIReferenceCounted,
                                         public hMapElement< hUint32, hBlendState >
     {
@@ -49,7 +55,7 @@ namespace Heart
     };
 
     hFUNCTOR_TYPEDEF(void(*)(class hRasterizerState*), hRasterizerZeroRefProc);
-    class HEART_DLLEXPORT hRasterizerState : public hdRasterizerState,
+    class  hRasterizerState : public hdRasterizerState,
                                              public hIReferenceCounted,
                                              public hMapElement< hUint32, hRasterizerState >
     {
@@ -65,7 +71,7 @@ namespace Heart
     };
 
     hFUNCTOR_TYPEDEF(void(*)(class hDepthStencilState*), hDepthStencilZeroRefProc);
-    class HEART_DLLEXPORT hDepthStencilState : public hdDepthStencilState,
+    class  hDepthStencilState : public hdDepthStencilState,
                                                 public hIReferenceCounted,
                                                 public hMapElement< hUint32, hDepthStencilState >
     {
@@ -81,7 +87,7 @@ namespace Heart
     };
 
     hFUNCTOR_TYPEDEF(void(*)(class hSamplerState*), hSamplerZeroRefProc);
-    class HEART_DLLEXPORT hSamplerState : public hdSamplerState,
+    class  hSamplerState : public hdSamplerState,
                                            public hIReferenceCounted,
                                            public hMapElement< hUint32, hSamplerState >
     {

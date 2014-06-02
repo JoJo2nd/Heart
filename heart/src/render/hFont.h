@@ -27,12 +27,20 @@
 #ifndef __HRFONT_H__
 #define __HRFONT_H__
 
+#include "base/hTypes.h"
+#include "base/hProtobuf.h"
+#include "base/hStringID.h"
+#include "base/hRendererConstants.h"
+#include "components/hObjectFactory.h"
+
 class FontBuilder;
 
 namespace Heart
 {
     class hTexture;
     class hRenderSubmissionCtx;
+    class hMaterialInstance;
+    class hMaterial;
     class hFont;
 
     struct hFontStyle
@@ -102,7 +110,7 @@ namespace Private
         hFloat      uv_[2];
     };
 
-    class HEART_DLLEXPORT hFont
+    class  hFont
     {
     public:
         hObjectType(Heart::hFont, Heart::proto::MessageContainer); /*TODO*/

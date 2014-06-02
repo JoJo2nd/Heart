@@ -25,6 +25,9 @@
 
 *********************************************************************/
 
+#include "core/hDriveFile.h"
+#include "base/hMemoryUtil.h"
+
 namespace Heart
 {
 

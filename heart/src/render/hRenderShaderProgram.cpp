@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "render/hRenderShaderProgram.h"
+#include "hRenderer.h"
+#include "base/hStringUtil.h"
+
 namespace Heart
 {
     hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResource,

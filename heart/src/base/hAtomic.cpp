@@ -26,10 +26,12 @@
 *********************************************************************/
 
 #ifdef WIN32
+    #include <winsock2.h>
     #include <windows.h>
 #else
     #error ("Platform not supported")
 #endif
+#include "base/hTypes.h"
 
 namespace Heart
 {
@@ -37,35 +39,35 @@ namespace hAtomic
 {
 #ifdef WIN32
 
-    HEART_DLLEXPORT void HEART_API Increment( hAtomicInt& i )
+    void HEART_API Increment( hAtomicInt& i )
     {
         hcAssert( ((hUint32)&i.value_ % 32) == 0 );
         InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
     }
 
-    HEART_DLLEXPORT void HEART_API Decrement( hAtomicInt& i )
+    void HEART_API Decrement( hAtomicInt& i )
     {
         hcAssert( ((hUint32)&i.value_ % 32) == 0 );
         InterlockedDecrementAcquire( (volatile LONG*)&i.value_ );
     }
 
-    HEART_DLLEXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal )
+    hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal )
     {
         hcAssert( ((hUint32)&val.value_ % 32) == 0 );
         return InterlockedCompareExchangeAcquire( (volatile LONG*) &val.value_, newVal, compare );
     }
 
-    HEART_DLLEXPORT void HEART_API LWMemoryBarrier()
+    void HEART_API LWMemoryBarrier()
     {
         MemoryBarrier();
     }
 
-    HEART_DLLEXPORT void HEART_API HWMemoryBarrier()
+    void HEART_API HWMemoryBarrier()
     {
         MemoryBarrier();
     }
 
-    HEART_DLLEXPORT hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val )
+    hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val )
     {
         /*
          * 'cos I always forget how to do this. 
@@ -80,7 +82,7 @@ namespace hAtomic
         return val;
     }
 
-    HEART_DLLEXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount)
+    hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount)
     {
         /*
          * 'cos I always forget how to do this. 
@@ -100,7 +102,7 @@ namespace hAtomic
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT hUint32 HEART_API AtomicAddWithPrev( hAtomicInt& i, hUint32 amount, hUint32* prev )
+    hUint32 HEART_API AtomicAddWithPrev( hAtomicInt& i, hUint32 amount, hUint32* prev )
     {
         hUint32 old, newv;
         do 

@@ -28,6 +28,9 @@
 #ifndef __HMPLANE_H__
 #define __HMPLANE_H__
 
+#include "base/hTypes.h"
+#include "math/hVec3.h"    
+
 namespace Heart
 {
     struct hAABB;

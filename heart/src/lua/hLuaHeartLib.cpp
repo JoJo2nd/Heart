@@ -1,4 +1,3 @@
-#include "lauxlib.h"
 /********************************************************************
 
     filename: 	LuaHeartLib.cpp	
@@ -25,6 +24,23 @@
     distribution.
 
 *********************************************************************/
+
+#include "lua/hLuaHeartLib.h"
+#include "lua/hLuaStateManager.h"
+#include "base/hClock.h"
+#include "base/hStringUtil.h"
+#include "core/hIFile.h"
+#include "core/hIFileSystem.h"
+#include "core/hSystem.h"
+#include "core/hSystemConsole.h"
+#include "core/hResourceManager.h"
+#include "core/hHeart.h"
+extern "C" {
+#   include "lua.h"
+#   include "lualib.h"
+#   include "lauxlib.h"
+}
+#include "debug/hDebugMenuManager.h"
 
 namespace Heart
 {

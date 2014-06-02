@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
+#include "utils/hRapidXML.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(push)

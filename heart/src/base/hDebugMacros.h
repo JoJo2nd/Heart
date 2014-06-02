@@ -9,7 +9,7 @@
 //#define HEART_DO_ASSERTS
 
 typedef void (*hPrintfCallback)(const hChar*);
-HEART_DLLEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
+ void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 
 #if defined HEART_DEBUG || defined HEART_DO_ASSERTS
 
@@ -40,9 +40,9 @@ HEART_DLLEXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
 #define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!: "x, __VA_ARGS__ ); }
 
-HEART_DLLEXPORT void HEART_API hcOutputStringRaw(const hChar* msg, ...);
-HEART_DLLEXPORT void HEART_API hcOutputString(const hChar* msg, ...);
-HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
+ void HEART_API hcOutputStringRaw(const hChar* msg, ...);
+ void HEART_API hcOutputString(const hChar* msg, ...);
+ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
 #ifdef HEART_64BIT
 #   define hcBreak __debugbreak()
@@ -63,7 +63,7 @@ HEART_DLLEXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg,
 #define hcBreak	
 #define hcCompileTimeAssert
 
-HEART_DLLEXPORT void HEART_API hcOutputString( const hChar* msg, ... );
+ void HEART_API hcOutputString( const hChar* msg, ... );
 
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )

@@ -28,10 +28,16 @@
 #ifndef __HRVIEWFRUSTUM_H__
 #define __HRVIEWFRUSTUM_H__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "math/hAABB.h"
+#include "math/hVec3.h"
+#include "math/hPlane.h"
+
 namespace Heart
 {
 
-	class HEART_DLLEXPORT hViewFrustum
+	class  hViewFrustum
 	{
 	public:
 										hViewFrustum();

@@ -28,25 +28,20 @@
 #ifndef PROFILER_H__
 #define PROFILER_H__
 
-#ifdef HEART_PLAT_WINDOWS
-
-#include <intrin.h>
-#pragma intrinsic(__rdtsc)
-
-#endif // HEART_PLAT_WINDOWS
-
-//#define HEART_PROFILE_QUICK_OFF
+#include "base/hTypes.h"
+#include "base/hSysCalls.h"
+#include "base/hClock.h"
 
 namespace Heart
 {
-    struct HEART_DLLEXPORT hProfileEntry
+    struct hProfileEntry
     {
         const hChar*    tag_;
-        hUint32         microSecExclusive_;
-        hUint32         microSecInclusive_;
+        hUint64         microSecExclusive_;
+        hUint64         microSecInclusive_;
     };
 
-	class HEART_DLLEXPORT hProfilerManager
+	class hProfilerManager
 	{
 	public:
 		hProfilerManager();
@@ -55,11 +50,11 @@ namespace Heart
         static const hUint32    s_maxProfileEntries = 512;
 
         hProfileEntry*          CreateEntry(const hChar* tag);
-        hUint32                 GetTotalEntries() const { return entryCount_; }
+        hUint64                 GetTotalEntries() const { return entryCount_; }
         void                    CopyAndSortEntries(hProfileEntry* outEntries);
 		void			        BeginFrame();
         void			        EnterScope( hProfileEntry* et );
-        void			        ExitScope( hProfileEntry* et, hUint32 time );
+        void			        ExitScope( hProfileEntry* et, hUint64 time );
         void                    SetFrameTime(hFloat val) { frameTime_ = val; }
         hFloat                  GetFrameTime() const { return frameTime_; }
         static hUint64          GetProcessorCycles() { return hSysCall::GetProcessorSpeed(); }
@@ -67,51 +62,31 @@ namespace Heart
         static hUint64          GetProcessorCyclesToMicro() { return GetProcessorCycles()/100000; }
 	private:
 
-        hUint32                 inclusiveTime_;
-        hUint32                 entryCount_;
+        hUint64                 inclusiveTime_;
+        hUint64                 entryCount_;
         hProfileEntry           entries_[s_maxProfileEntries];
-        hUint32                 stackTop_;
+        hUint64                 stackTop_;
         hProfileEntry*          stack_[s_maxProfileEntries];
         hFloat                  frameTime_;
 	};
 
-    HEART_DLLEXPORT hProfilerManager* GetProfiler();
+    hProfilerManager* GetProfiler();
 
-	struct HEART_DLLEXPORT hProfileScope
+	struct hProfileScope
 	{
-		hProfileScope( hProfileEntry* pIdx )
+		hProfileScope(hProfileEntry* pIdx)
             : entry_(pIdx)
         {
-#ifndef HEART_PROFILE_QUICK_OFF
-#if defined HEART_PLAT_WINDOWS
-            cycles_ = __rdtsc();
-#else
-			hClock::BeginTimer( timer_ );
-#endif
             GetProfiler()->EnterScope( entry_ );
-#endif // HEART_PROFILE_QUICK_OFF
 		}
 
 		~hProfileScope()
 		{
-#ifndef HEART_PROFILE_QUICK_OFF
-#if defined HEART_PLAT_WINDOWS
-            cycles_ = __rdtsc() - cycles_;
-            cycles_ = cycles_/GetProfiler()->GetProcessorCyclesToMicro();
-            GetProfiler()->ExitScope( entry_, (hUint32)cycles_ );
-#else
-			hClock::EndTimer( timer_ );
-            GetProfiler()->ExitScope( entry_, timer_.elapsedMicroSec() );
-#endif
-#endif // HEART_PROFILE_QUICK_OFF
+            GetProfiler()->ExitScope( entry_, timer_.elapsedMilliSec() );
 		}
 
-        hProfileEntry*           entry_;
-#if defined HEART_PLAT_WINDOWS
-        hUint64                 cycles_;
-#else
-		hTimer					timer_;
-#endif
+        hProfileEntry*  entry_;
+		hTimer			timer_;
 	};
 }
 

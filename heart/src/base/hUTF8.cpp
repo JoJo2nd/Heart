@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "base/hUTF8.h"
+
 namespace Heart
 {
 namespace hUTF8

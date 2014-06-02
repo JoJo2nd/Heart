@@ -28,12 +28,16 @@
 #ifndef HLODGROUP_H__
 #define HLODGROUP_H__
 
-class ModelBuilder;
+#include "base/hTypes.h"
+#include "hRenderable.h"
+#include "math/hAABB.h"
+#include "base/hRendererConstants.h"
+
 
 namespace Heart
 {
 
-    class HEART_DLLEXPORT hRenderModel
+    class  hRenderModel
     {
     public:
 

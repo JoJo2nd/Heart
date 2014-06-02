@@ -25,6 +25,18 @@
 
 *********************************************************************/
 
+#include "render/hRenderUtility.h"
+#include "render/hFont.h"
+#include "base/hRendererConstants.h"
+#include "render/hIndexBuffer.h"
+#include "render/hVertexBuffer.h"
+#include "math/hMathUtil.h"
+#include "hRenderer.h"
+#include "hMaterialTypes.h"
+#include "hMaterial.h"
+#include "hTexture.h"
+#include "base/hProfiler.h"
+
 extern const float g_debugfontHeight;
 extern const unsigned int g_debugpageCount;
 extern const unsigned int g_debugglyphCount;
@@ -106,7 +118,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     void HEART_API buildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
     hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
@@ -219,7 +231,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT 
+     
     void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint wdivs, hUint hdivs, 
     hRenderer* rndr, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
         hcAssert(width > 0.f && height > 0.f && wdivs >= 1 && hdivs >= 1);
@@ -273,7 +285,7 @@ namespace hRenderUtility
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT 
+     
     void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hRenderer* rndr, hVertexBuffer** outVtxBuf)
     {
         hcAssert(outVtxBuf && rndr);
@@ -437,7 +449,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
@@ -520,7 +532,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
@@ -601,7 +613,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
@@ -665,7 +677,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
@@ -747,7 +759,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
         hcAssert(rndr && ddrawmat);
 
@@ -811,7 +823,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex) {
         hcAssert(rndr && outfont && outtex);
 
@@ -846,7 +858,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
         hcAssert(rndr && font && tex);
         hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
@@ -855,7 +867,7 @@ namespace hRenderUtility
 #else
         hcPrintf("Stub "__FUNCTION__);
 #endif
-        hDELETE(fontres);
+        delete fontres;
 
         hTexture* texres=hResourceHandle("?builtin.debug_font_surface").weakPtr<hTexture>();
 #if 0
@@ -870,7 +882,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, 
     const hDrawCall* dcs, hUint dcn, hUint32 clearflags) {
         HEART_PROFILE_FUNC();
@@ -940,13 +952,13 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    HEART_DLLEXPORT
+    
     void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn) {
         HEART_PROFILE_FUNC();
         qsort(dcs, dcn, sizeof(hDrawCall), drawCallCompare);
     }
 
-    HEART_DLLEXPORT
+    
     void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera)
     {
         HEART_PROFILE_FUNC();

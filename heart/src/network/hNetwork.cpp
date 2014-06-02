@@ -25,6 +25,12 @@
 
 *********************************************************************/
 
+#include "network/hNetwork.h"
+#include <winsock2.h>
+#include <windows.h>
+#include "enet/enet.h"
+#include "base/hTypes.h"
+
 namespace Heart
 {
 namespace hNetwork

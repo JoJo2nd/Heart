@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "utils/hRapidXML.h"
+
 namespace rapidxml
 {
     //! When exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, 
@@ -43,7 +45,7 @@ namespace rapidxml
     //! </pre>
     //! \param what Human readable description of the error.
     //! \param where Pointer to character data where error was detected.
-    HEART_DLLEXPORT void HEART_API parse_error_handler(const char *what, void *where)
+     void HEART_API parse_error_handler(const char *what, void *where)
     {
         hcPrintf( "XML Parse Error: %s", what );
         throw std::exception( what );
@@ -51,11 +53,11 @@ namespace rapidxml
 }
 namespace Heart
 {
-    HEART_DLLEXPORT void* HEART_API hXML_alloc_func(size_t size )
+     void* HEART_API hXML_alloc_func(size_t size )
     {
         return hMalloc( size );
     }
-    HEART_DLLEXPORT void HEART_API hXML_free_func(void* ptr )
+     void HEART_API hXML_free_func(void* ptr )
     {
         hFree( ptr );
     }

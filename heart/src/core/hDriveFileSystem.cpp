@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "core/hDriveFileSystem.h"
+#include "core/hDriveFile.h"
+#include "pal/hDeviceFileSystem.h"
+
 namespace Heart
 {
 namespace 
@@ -74,7 +78,7 @@ namespace
 
         hdFileStat fhstat=hdFstat(&fh);
         hUint64 fsize=hdFsize(&fh);
-        hDriveFile* pFile = hNEW(hDriveFile);
+        hDriveFile* pFile = new hDriveFile;
         pFile->fileHandle_ = fh;
         pFile->stat_=fhstat;
         pFile->size_=fsize;
@@ -112,7 +116,7 @@ namespace
             hdFclose(&f->fileHandle_);
         }
 
-        hDELETE(pFile);
+        delete pFile;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -131,7 +135,7 @@ namespace
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDriveFileSystem::CreateDirectory( const hChar* path )
+    void hDriveFileSystem::createDirectory( const hChar* path )
     {
         hdCreateDirectory(path);
     }

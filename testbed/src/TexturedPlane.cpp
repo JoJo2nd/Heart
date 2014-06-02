@@ -156,7 +156,7 @@ void TexturedPlane::CreateRenderResources()
     vp.w=1.f;
     vp.h=1.f;
 
-    hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
+    hUint32* inittexdata=(hUint32*)hMalloc(sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
     Heart::hMatrix vm = Heart::hMatrixFunc::identity();//Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
     hMipDesc resTexInit={
         TEST_TEXTURE_WIDTH, 

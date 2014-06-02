@@ -138,7 +138,7 @@ else()
 endif()
 
 #config vars
-#set(CMAKE_USE_RELATIVE_PATHS ON)
+set(CMAKE_USE_RELATIVE_PATHS OFF)
 set(CMAKE_DEBUG_POSTFIX "_d")
 set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 
@@ -149,7 +149,8 @@ option(USE_ASSIMP_DEBUG "Use debug assimp libraries" OFF)
 option(DO_PROFILE "Enable profiling in exe" OFF)
 option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including debug builds" OFF)
 option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
-option(BUILD_HEART_DLL ON)
+option(UNITY_BUILD "Unity build where possible" OFF)
+
 
 MACRO(ENABLE_PROFILE_IF_SET)
 	if (DO_PROFILE)

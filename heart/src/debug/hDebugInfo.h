@@ -29,8 +29,15 @@
 #ifndef HDEBUGINFO_H__
 #define HDEBUGINFO_H__
 
+#include "base/hTypes.h"
+#include "debug/hDebugMenuManager.h"
+
 namespace Heart
 {
+    class hHeartEngine;
+    class hRenderSubmissionCtx;
+    class hRenderBuffer;
+
     class hDebugInfo : public hDebugMenuBase
     {
     public:

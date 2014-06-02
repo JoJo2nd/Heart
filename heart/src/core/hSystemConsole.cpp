@@ -25,6 +25,19 @@
 
 *********************************************************************/
 
+#include "core/hSystemConsole.h"
+#include "base/hClock.h"
+#include "base/hStringUtil.h"
+#include "base/hProfiler.h"
+#include "base/hProtobuf.h"
+#include "debug/hDebugMenuManager.h"
+#include "input/hActionManager.h"
+#include "lua/hLuaStateManager.h"
+#include "render/hDebugDraw.h"
+#include "render/hRenderSubmissionContext.h"
+#include "network/hNetHost.h"
+#include "threading/hMutexAutoScope.h"
+
 namespace Heart
 {
 
@@ -41,7 +54,6 @@ namespace Heart
     class hConsoleUI : public hDebugMenuBase
     {
     public:
-        //GWEN_CONTROL_CONSTRUCTOR(hConsoleUI)
         hConsoleUI(hSystemConsole* systemConsole) 
             : console_(systemConsole)
             , windowOffset_(1.f)
@@ -135,7 +147,7 @@ namespace Heart
 
     hStringID                       hSystemConsole::FONT_RESOURCE_NAME = hStringID("core/console");
     hStringID                       hSystemConsole::CONSOLE_MATERIAL_NAME = hStringID("core/console");
-    hdMutex				            hSystemConsole::messagesMutex_;
+    hMutex				            hSystemConsole::messagesMutex_;
     hSystemConsole::hConsoleLogType	hSystemConsole::messageBuffer_;
     hUint32				            hSystemConsole::msgBufferLen_ = 0;
     hBool				            hSystemConsole::alive_ = hTrue;
@@ -183,7 +195,7 @@ namespace Heart
                 //////////////////////////////////////////////////////////////////////////
                 loaded_ = hTrue;
 
-                consoleWindow_ = hNEW(hConsoleUI)(this);
+                consoleWindow_ = new hConsoleUI(this);
                 consoleWindow_->InitRenderResources(renderer_);
                 hDebugMenuManager::GetInstance()->RegisterMenu("console",consoleWindow_);
             }

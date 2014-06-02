@@ -108,7 +108,7 @@ void OGGSoundBankBuilder::BuildResource()
             ThrowFatalError( "Couldn't open sound file %s", banks[i].input_.c_str() );
         }
         banks[i].datasize_ = (hUint32)file->GetFileSize();
-        banks[i].data_ = hNEW_ARRAY(hGeneralHeap, hByte, banks[i].datasize_);
+        banks[i].data_ = new hGeneralHeap, hByte[banks[i].datasize_];
         file->Read( banks[i].data_, banks[i].datasize_ );
 
         soundBank.sourceDataSize_ += banks[i].datasize_;
@@ -146,5 +146,5 @@ void OGGSoundBankBuilder::BuildResource()
 
 void OGGSoundBankBuilder::CleanUpFromBuild()
 {
-    hFreeSafe(xmlDocStr_);
+    hFree(xmlDocStr_);
 }

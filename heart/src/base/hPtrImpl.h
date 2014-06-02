@@ -36,7 +36,7 @@ namespace Heart
 
         hPtrImpl() : pImpl_(NULL) {}
         explicit hPtrImpl( _Ty* pImpl ) : pImpl_( pImpl ) {}
-        virtual ~hPtrImpl() { hDELETE_SAFE(pImpl_); }
+        virtual ~hPtrImpl() { delete pImpl_; pImpl_ = nullptr; }
 
         hFORCEINLINE void SetImpl(_Ty* pImpl) { pImpl_ = pImpl; }
         hFORCEINLINE _Ty* pImpl() { return pImpl_; }

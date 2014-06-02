@@ -25,6 +25,12 @@
 
 *********************************************************************/
 
+#include "render/hMaterial.h"
+#include "render/hRenderer.h"
+#include "render/hParameterConstBlock.h"
+#include "pal/dx11/hWin32DX11.h"
+#include "hRenderShaderProgram.h"
+#include "hTexture.h"
 
 namespace Heart
 {
@@ -244,7 +250,7 @@ namespace Heart
         return hTrue;
     }
 
-    HEART_DLLEXPORT
+    
     hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits)
     {
         hUint32 factor = 1 << fixedpointbits;
@@ -270,7 +276,7 @@ namespace Heart
      */
     typedef hUint64 hMaterialSortKey;
 
-    HEART_DLLEXPORT
+    
     hMaterialSortKey HEART_API hBuildRenderSortKey(hByte cameraID, hByte sortLayer, hBool transparent, hFloat viewSpaceDepth, hUint32 materialID, hByte pass)
     {
         hUint64 msb1  = (hUint64)(cameraID&0xF)  << 60;
@@ -658,7 +664,7 @@ namespace Heart
         defVal.paramid=hCRC32::StringCRC(name);
         defVal.count=count;
         defVal.dataOffset=defaultDataSize_;
-        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        defaultData_=(hUint8*)hRealloc(defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
         defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
@@ -675,7 +681,7 @@ namespace Heart
         defVal.paramid=hCRC32::StringCRC(name);
         defVal.count=count;
         defVal.dataOffset=defaultDataSize_;
-        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        defaultData_=(hUint8*)hRealloc(defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, data, bytecount);
         defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
@@ -692,7 +698,7 @@ namespace Heart
         defVal.paramid=hCRC32::StringCRC(name);
         defVal.count=1;
         defVal.dataOffset=defaultDataSize_;
-        defaultData_=(hUint8*)hHeapRealloc("general", defaultData_, defaultDataSize_+bytecount);
+        defaultData_=(hUint8*)hRealloc(defaultData_, defaultDataSize_+bytecount);
         hMemCpy(((hUint8*)defaultData_)+defVal.dataOffset, &colour, bytecount);
         defaultValues_.push_back(defVal);
         defaultDataSize_=bytecount;
@@ -756,7 +762,7 @@ namespace Heart
         releaseRenderCommands();
         hRenderCommandGenerator rcGen(&renderCmds_);
         selectorCount_=getGroupCount()+getTotalTechniqueCount()+getTotalPassCount();
-        groupCmds_=hNEW_ARRAY(hUint, selectorCount_);
+        groupCmds_=new hUint[selectorCount_];
         techCmds_=groupCmds_+getGroupCount();
         passCmds_=techCmds_+getTotalTechniqueCount();
         hUint groups=getGroupCount();
@@ -806,7 +812,8 @@ namespace Heart
     void hMaterial::releaseRenderCommands() {
         renderCmds_.reset();
         selectorCount_=0;
-        hDELETE_ARRAY_SAFE(groupCmds_);
+        delete[] groupCmds_;
+        groupCmds_ = nullptr;
         techCmds_=hNullptr;
         passCmds_=hNullptr;
     }
@@ -1001,7 +1008,7 @@ namespace Heart
         defaultSamplers_.resize(0);
 
         defaultDataSize_=0;
-        hFreeSafe(defaultData_);
+        hFree(defaultData_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1010,7 +1017,7 @@ namespace Heart
 
     void hMaterialCmdLookUpHelper::init(hMaterial* material) {
         count_=material->getGroupCount()+material->getTotalTechniqueCount()+material->getTotalPassCount();
-        group_=hNEW_ARRAY(hUint, count_);
+        group_=new hUint[count_];
         tech_=group_+material->getGroupCount();
         pass_=tech_+material->getTotalTechniqueCount();
         hUint groupsWritten=0;
@@ -1036,7 +1043,8 @@ namespace Heart
 
     void hMaterialCmdLookUpHelper::destroy() {
         count_=0;
-        hDELETE_ARRAY_SAFE(group_);
+        delete[] group_;
+        group_ = nullptr;
         tech_=hNullptr;
         pass_=hNullptr;
     }

@@ -78,19 +78,6 @@
 #   endif
 #endif
 
-#ifdef HEART_DLL
-#   ifdef heart_EXPORTS
-#       define HEART_DLLEXPORT  __declspec(dllexport)
-#       define HEART_PRE_TEMPLATE_DLLEXPORT
-#   else
-#       define HEART_DLLEXPORT  __declspec(dllimport)
-#       define HEART_PRE_TEMPLATE_DLLEXPORT extern
-#   endif
-#else
-#   define HEART_DLLEXPORT
-#   define HEART_PRE_TEMPLATE_DLLEXPORT
-#endif
-
 #define HEART_BASECLASS(x) typedef x ParentClass;
 
 #if defined BUILD_64_BIT

@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
 #include "Heart.h" // TODO: remove this somehow
+#include "utils/hRapidXML.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(push)

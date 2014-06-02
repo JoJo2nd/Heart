@@ -28,6 +28,7 @@
 #define LUAHEARTLIB_H__
 
 struct lua_State;
+class hHeartEngine;
 
 namespace Heart
 {

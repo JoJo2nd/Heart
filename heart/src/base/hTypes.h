@@ -27,7 +27,8 @@
 #ifndef hcTypes_h__
 #define hcTypes_h__
 
-#include "hTypeTraits.h"
+#include "base/hHeartConfig.h"
+#include "base/hTypeTraits.h"
 
 typedef	char				hChar;
 typedef unsigned char		hByte;

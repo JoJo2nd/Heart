@@ -217,7 +217,7 @@ void ComputeBlur::CreateRenderResources()
     Heart::hMatrix vm = fpCamera_.getViewmatrix();//Heart::hMatrixFunc::LookAt(camPos_, camPos_+camDir_, camUp_);
 
 #ifdef CREATE_TEXTURE
-    hUint32* inittexdata=(hUint32*)hHeapMalloc(GetGlobalHeap(), sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
+    hUint32* inittexdata=(hUint32*)hMalloc(sizeof(hUint32)*TEST_TEXTURE_WIDTH*TEST_TEXTURE_HEIGHT);
     hMipDesc resTexInit={
         TEST_TEXTURE_WIDTH, 
         TEST_TEXTURE_HEIGHT, 
@@ -251,7 +251,8 @@ void ComputeBlur::CreateRenderResources()
 #endif
         }
     }
-    hHeapFreeSafe(GetGlobalHeap(), inittexdata);
+    hFree(inittexdata);
+    inittexdata=nullptr;
 #endif //CREATE_TEXTURE
 
     camera->Initialise(renderer);

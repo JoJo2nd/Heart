@@ -25,6 +25,9 @@
 
 *********************************************************************/
 
+#include "math/hViewFrustum.h"
+#include "math/hPlane.h"
+
 namespace Heart
 {
 
@@ -184,11 +187,11 @@ namespace Heart
  			for ( hUint32 p = 0; p < 6; ++p )
  			{
  				hPlane* pPlane = planes[ p ];
- 				if ( hPlaneFunc::intersectMovingAABB( aabb, dir, *pPlane ) )
+ 				if ( intersectMovingAABB( aabb, dir, *pPlane ) )
  				{
  					return hTrue;
  				}
-				inside &= hPlaneFunc::AABBInfrontOfPlane( aabb, *pPlane ) > 0.0f;
+				inside &= AABBInfrontOfPlane( aabb, *pPlane ) > 0.0f;
  			}
 		}
 

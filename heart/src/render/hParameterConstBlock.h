@@ -33,7 +33,7 @@
 namespace Heart
 {
 
-class HEART_DLLEXPORT hRenderBuffer : public hIReferenceCounted,
+class  hRenderBuffer : public hIReferenceCounted,
     public hdRenderBuffer
 {
 public:

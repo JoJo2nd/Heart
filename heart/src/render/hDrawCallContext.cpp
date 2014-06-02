@@ -25,6 +25,9 @@
 
 *********************************************************************/
 
+#include "render/hDrawCallContext.h"
+#include "render/hRenderer.h"
+
 namespace Heart
 {
 

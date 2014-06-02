@@ -25,6 +25,10 @@
 
 *********************************************************************/
 
+#include "base/hRendererConstants.h"
+#include "base/hStringUtil.h"
+#include <vector>
+
 namespace Heart
 {
     std::vector<std::string> hInputLayoutDesc::s_semanticNameMap;

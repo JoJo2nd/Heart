@@ -32,17 +32,13 @@
 #ifndef HBASE64_H__
 #define HBASE64_H__
 
-namespace Heart
-{
-namespace hBase64
-{
-    HEART_DLLEXPORT
+#include "base/hTypes.h"
+
+namespace Heart {
+namespace hBase64 {
     hUint HEART_API EncodeCalcRequiredSize(hUint inputCount);
-    HEART_DLLEXPORT
     hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
-    HEART_DLLEXPORT
     hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount);
-    HEART_DLLEXPORT
     hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
 }
 }

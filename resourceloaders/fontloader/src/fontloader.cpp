@@ -63,7 +63,7 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
     using namespace Heart;
     FontHeader header = {0};
 
-    hFont* font = hNEW(memalloc->resourcePakHeap_, hFont)(memalloc->resourcePakHeap_);
+    hFont* font = new memalloc->resourcePakHeap_, hFont)(memalloc->resourcePakHeap_;
 
     inStream->Read(&header, sizeof(header));
 
@@ -289,7 +289,7 @@ void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::h
     using namespace Heart;
 
     hFont* font = static_cast<hFont*>(resource);
-    hDELETE(memalloc->resourcePakHeap_, font);
+    delete memalloc->resourcePakHeap_, font;
 }
 #endif
 

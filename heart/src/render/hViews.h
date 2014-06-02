@@ -29,6 +29,12 @@
 #ifndef HVIEWS_H__
 #define HVIEWS_H__
 
+#include "base/hTypes.h"
+#include "base/hFunctor.h"
+#include "base/hRendererConstants.h"
+#include "base/hReferenceCounted.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
 
@@ -36,7 +42,7 @@ class hTexture;
 class hRenderBuffer;
 
 hFUNCTOR_TYPEDEF(void(*)(class hShaderResourceView*), hShaderResourceViewZeroRefProc);
-class HEART_DLLEXPORT hShaderResourceView : public hIReferenceCounted,
+class  hShaderResourceView : public hIReferenceCounted,
                                             public hdShaderResourceView
 {
 public:
@@ -66,7 +72,7 @@ private:
 };
 
 hFUNCTOR_TYPEDEF(void(*)(class hRenderTargetView*), hRenderTargetViewZeroRefProc);
-class HEART_DLLEXPORT hRenderTargetView : public hIReferenceCounted,
+class  hRenderTargetView : public hIReferenceCounted,
                                           public hdRenderTargetView
 {
 public:
@@ -91,7 +97,7 @@ private:
 };
 
 hFUNCTOR_TYPEDEF(void(*)(class hDepthStencilView*), hDepthStencilViewZeroRefProc);
-class HEART_DLLEXPORT hDepthStencilView : public hIReferenceCounted,
+class  hDepthStencilView : public hIReferenceCounted,
                                           public hdDepthStencilView
 {
 public:

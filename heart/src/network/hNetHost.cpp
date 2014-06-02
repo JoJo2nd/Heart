@@ -25,6 +25,13 @@
 
 *********************************************************************/
 
+#include "network/hNetHost.h"
+#include "math/hVec3.h"
+#include "render/hDebugDraw.h"
+#include "base/hStringUtil.h"
+#include "base/hCRC32.h"
+#include "base/hProtobuf.h"
+
 namespace Heart
 {
     //////////////////////////////////////////////////////////////////////////

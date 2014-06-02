@@ -25,6 +25,8 @@
 
 *********************************************************************/
 
+#include "render/hFont.h"
+#include "base/hProfiler.h"
 
 namespace Heart
 {
@@ -51,8 +53,10 @@ hBool hFont::deserialiseObject(Heart::proto::MessageContainer* obj) {
 
 hFont::~hFont()
 {
-    hDELETE_ARRAY_SAFE(fontCharacters_);
-    hDELETE_ARRAY_SAFE(fontLookup_);
+    delete[] fontCharacters_;
+    fontCharacters_ = nullptr;
+    delete[] fontLookup_;
+    fontLookup_ = nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,10 +109,12 @@ const hFontCharacter* hFont::GetFontCharacter(hUint32 charcode) const
 void hFont::SetFontCharacterLimit( hUint32 nChars )
 {
     nMaxFontCharacters_ = nChars;
-    hDELETE_ARRAY_SAFE(fontCharacters_);
-    hDELETE_ARRAY_SAFE(fontLookup_);
-    fontCharacters_ = hNEW_ARRAY(hFontCharacter, nMaxFontCharacters_);
-    fontLookup_ = hNEW_ARRAY(hFontLookup, nMaxFontCharacters_);//TODO: reduce this
+    delete[] fontCharacters_;
+    fontCharacters_ = nullptr;
+    delete[] fontLookup_;
+    fontLookup_ = nullptr;
+    fontCharacters_ = new hFontCharacter[nMaxFontCharacters_];
+    fontLookup_ = new hFontLookup[nMaxFontCharacters_];//TODO: reduce this
     nFontCharacters_ = 0;
 }
 
@@ -175,3 +181,5 @@ hBool hFont::Link()
 }
 
 }
+
+#include "render/hDebugFontData.inl"

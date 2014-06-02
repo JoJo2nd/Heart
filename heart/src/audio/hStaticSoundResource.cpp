@@ -1,3 +1,4 @@
+#if 0
 /********************************************************************
 
 	filename: 	hStaticSoundResource.cpp	
@@ -51,7 +52,7 @@ namespace Heart
 
     hResourceClassBase* hSoundBankResource::OnSoundBankLoad( const hChar* ext, hUint32 resID, void* dataStream, hResourceManager* resManager )
     {
-        hSoundBankResource* resource = hNEW(hSoundBankResource);
+        hSoundBankResource* resource = new hSoundBankResource;
         hSerialiser ser;
 
         return resource;
@@ -63,7 +64,7 @@ namespace Heart
 
     hUint32 hSoundBankResource::OnSoundBankUnload( const hChar* ext, hResourceClassBase* resource, hResourceManager* resManager )
     {
-        hDELETE(resource);
+        delete resource;
 
         return 0;
     }
@@ -215,3 +216,4 @@ namespace Heart
     }
 
 }
+#endif

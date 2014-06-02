@@ -30,6 +30,10 @@
 #ifndef HOBJECTFACTORY_H__
 #define HOBJECTFACTORY_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "base/hProtobuf.h"
+
 namespace Heart
 {
     typedef ::google::protobuf::MessageLite hObjectMarshall;
@@ -71,8 +75,8 @@ namespace Heart
 #define hRegisterObjectType(name, type, serialiser_type, ...) \
     struct Heart::hObjectDefinition; \
     extern hBool Heart::hObjectFactory::objectFactoryRegistar(Heart::hObjectDefinition*, const char*, ...); \
-    static void* autogen_construct_##name () { return hNEW(type); } \
-    static hObjectMarshall* autogen_create_serialiser_##name () { return hNEW(serialiser_type); } \
+    static void* autogen_construct_##name () { return new type; } \
+    static hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
     static hBool autogen_serialise_##name(void* type_ptr_raw, hObjectMarshall* msg_raw) { \
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
         serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \

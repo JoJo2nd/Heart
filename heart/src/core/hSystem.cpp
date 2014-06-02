@@ -25,6 +25,9 @@
 
 *********************************************************************/
 
+#include "core/hSystem.h"
+#include "base/hProfiler.h"
+
 namespace Heart
 {
 

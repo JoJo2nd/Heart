@@ -28,6 +28,10 @@
 #ifndef INDEXBUFFER_H__
 #define INDEXBUFFER_H__
 
+#include "base/hTypes.h"
+#include "base/hReferenceCounted.h"
+#include "pal/dx11/hWin32DX11.h"
+
 namespace Heart
 {
     class hRenderer;

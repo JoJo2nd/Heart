@@ -28,6 +28,15 @@
 #ifndef hiMesh_h__
 #define hiMesh_h__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "core/hResource.h"
+#include "math/hAABB.h"
+#include "render/hIndexBuffer.h"
+#include "render/hMaterial.h"
+#include "render/hVertexBuffer.h"
+#include <vector>
+
 namespace Heart
 {
     class hRenderer;
@@ -36,7 +45,7 @@ namespace Heart
     // A Renderable simply describes a collection of triangles that can be ///
     // rendered by the renderer along with a material. ///////////////////////
     //////////////////////////////////////////////////////////////////////////
-    class HEART_DLLEXPORT hRenderable
+    class  hRenderable
     {
     public:
 

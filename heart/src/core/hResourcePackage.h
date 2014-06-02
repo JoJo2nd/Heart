@@ -27,6 +27,19 @@
 #ifndef HRESOURCEPACKAGE_H__
 #define HRESOURCEPACKAGE_H__
 
+#include "base/hTypes.h"
+#include "base/hMap.h"
+#include "base/hReferenceCounted.h"
+#include "base/hProtobuf.h"
+#include "base/hClock.h"
+#include "core/hIFile.h"
+#include "core/hIFileSystem.h"
+#include "core/hResource.h"
+#include "components/hObjectFactory.h"
+#include "threading/hJobManager.h"
+#include "pal/hDeviceFileWatch.h"
+#include <queue>
+
 namespace Heart
 {
     class hHeartEngine;
@@ -41,10 +54,11 @@ namespace Heart
             , pos_(0)
             , bytesRead_(0)
         {
-            bytes_=hNEW_ARRAY(hByte, s_bufferSize);
+            bytes_=new hByte[s_bufferSize];
         }
         ~hResourceFileStream() {
-            hDELETE_ARRAY_SAFE(bytes_);
+            delete[] bytes_;
+            bytes_ = nullptr;
         }
 
         virtual bool Next(const void** data, int* size) {

@@ -30,18 +30,15 @@
 
 namespace Heart
 {
-    hFORCEINLINE void hMemSet(void* dest, hByte val, hSize_t size)
-    {
+    hFORCEINLINE void hMemSet(void* dest, hByte val, hSize_t size) {
         memset(dest, val, size);
     }
 
-    hFORCEINLINE void hMemCpy( void* dest, const void* src, hSize_t size )
-    {
+    hFORCEINLINE void hMemCpy( void* dest, const void* src, hSize_t size ) {
         memcpy( dest, src, size );
     }
 
-    hFORCEINLINE void hZeroMem( void* dest, hSize_t size )
-    {
+    hFORCEINLINE void hZeroMem( void* dest, hSize_t size ) {
         memset( dest, 0, size );
     }
 

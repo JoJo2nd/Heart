@@ -31,7 +31,7 @@
 
 namespace Heart
 {
-    class HEART_DLLEXPORT hIReferenceCounted 
+    class  hIReferenceCounted 
     {
     public:
         hIReferenceCounted() 

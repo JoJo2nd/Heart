@@ -27,12 +27,18 @@
 #ifndef HDRAWCALLCONTEXT_H__
 #define HDRAWCALLCONTEXT_H__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "base/hRendererConstants.h"
+#include "render/hRenderer.h"
+
 namespace Heart
 {
     class hVertexBuffer;
     class hIndexBuffer;
+    class hRenderer;
 
-    class HEART_DLLEXPORT hDrawCallContext
+    class  hDrawCallContext
     {
     public:
         hDrawCallContext()

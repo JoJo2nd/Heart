@@ -25,6 +25,9 @@
 
 *********************************************************************/
 
+#include "render/hRenderModel.h"
+#include "render/hRenderer.h"
+
 namespace Heart
 {
 

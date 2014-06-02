@@ -28,6 +28,11 @@
 #ifndef RENDERERCONSTANTS_H__
 #define RENDERERCONSTANTS_H__
 
+#include "base/hTypes.h"
+#include "base/hArray.h"
+#include "base/hMemoryUtil.h"
+#include <vector>
+
 namespace Heart
 {
     struct hRect 
@@ -262,7 +267,7 @@ namespace Heart
 
 #define HEART_RENDER_CMD_APPEND (hErrorCode)
 
-    struct HEART_DLLEXPORT hRCmd 
+    struct hRCmd 
     {
         hRCmd(hRenderCmdOpCode oc, hSize_t size) 
             : opCode_(oc), size_((hByte)size) {}
@@ -270,7 +275,7 @@ namespace Heart
         hByte               size_;
     };
 
-    struct HEART_DLLEXPORT hRCmdJump : public hRCmd
+    struct hRCmdJump : public hRCmd
     {
         hRCmdJump(hRCmd* cmd) 
             : hRCmd(eRenderCmd_Jump, sizeof(hRCmdJump))
@@ -278,17 +283,17 @@ namespace Heart
         hRCmd* cmd_;
     };
 
-    struct HEART_DLLEXPORT hRCmdReturn : public hRCmd
+    struct hRCmdReturn : public hRCmd
     {
         hRCmdReturn() : hRCmd(eRenderCmd_Return, sizeof(hRCmdReturn)) {}
     };
 
-    struct HEART_DLLEXPORT hRCmdNOOP : public hRCmd
+    struct hRCmdNOOP : public hRCmd
     {
         hRCmdNOOP() : hRCmd(eRenderCmd_NOOP, sizeof(hRCmdNOOP)) {}
     };
 
-    struct HEART_DLLEXPORT hRCmdDraw : public hRCmd
+    struct hRCmdDraw : public hRCmd
     {
         hRCmdDraw(hUint nPrims, hUint startvtx) 
             : hRCmd(eRenderCmd_Draw, sizeof(hRCmdDraw))
@@ -297,7 +302,7 @@ namespace Heart
         hUint startVertex_;
     };
 
-    struct HEART_DLLEXPORT hRCmdDrawIndex : public hRCmd
+    struct hRCmdDrawIndex : public hRCmd
     {
         hRCmdDrawIndex(hUint nPrims, hUint startvtx) 
             : hRCmd(eRenderCmd_DrawIndex, sizeof(hRCmdDrawIndex))
@@ -306,7 +311,7 @@ namespace Heart
         hUint startVertex_;
     };
 
-    struct HEART_DLLEXPORT hRCmdDrawInstanced : public hRCmd
+    struct hRCmdDrawInstanced : public hRCmd
     {
         hRCmdDrawInstanced(hUint nPrims, hUint startvtx, hUint count) 
             : hRCmd(eRenderCmd_DrawInstanced, sizeof(hRCmdDrawInstanced))
@@ -316,7 +321,7 @@ namespace Heart
         hUint instanceCount_;
     };
 
-    struct HEART_DLLEXPORT hRCmdDrawInstancedIndex : public hRCmd
+    struct hRCmdDrawInstancedIndex : public hRCmd
     {
         hRCmdDrawInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
             : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdDrawInstancedIndex))
@@ -326,7 +331,7 @@ namespace Heart
         hUint instanceCount_;
     };
 
-    class HEART_DLLEXPORT hRenderCommands
+    class hRenderCommands
     {
     public:
         hRenderCommands()
@@ -350,7 +355,8 @@ namespace Heart
             return (hRCmd*)((hByte*)cmds_+offset);
         }
         void    release() {
-            hFreeSafe(cmds_);
+            delete[] cmds_;
+            cmds_ = nullptr;
         }
 
     private:
@@ -681,9 +687,7 @@ namespace Heart
         eIF_FORCEDWORD = 0xFFFFFFFF
     };
 
-    HEART_PRE_TEMPLATE_DLLEXPORT template class HEART_DLLEXPORT std::vector<std::string>;
-
-    struct HEART_DLLEXPORT hInputLayoutDesc
+    struct hInputLayoutDesc
     {
     public:
         hInputLayoutDesc()

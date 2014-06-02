@@ -28,8 +28,57 @@
 #ifndef RESOURCEMANAGER_H__
 #define RESOURCEMANAGER_H__
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+#include "core/hIFileSystem.h"
+#include "threading/hJobManager.h"
+#include <unordered_map>
+
 namespace Heart
 {
+    typedef std::vector< hStringID > hResourceNodeLinks;
+
+    namespace hResourceColour
+    {
+        enum Type {
+            White,
+            Grey,
+            Black,
+        };
+    }
+
+    struct hResourceGraphNode
+    {
+        hResourceGraphNode()
+            : resourceData_(nullptr)
+            , colour_(hResourceColour::White)
+        {
+
+        }
+
+        void*                   resourceData_;
+        hStringID               typeID_;
+        hResourceNodeLinks      links_;
+        hResourceColour::Type   colour_;
+    };
+
+    enum hResurceEvent 
+    {
+        hResourceEvent_None,
+        hResourceEvent_Created,
+        hResourceEvent_Linked,
+        hResourceEvent_Unlinked,
+        hResourceEvent_Unloaded,
+
+        hResourceEvent_DBInsert,
+        hResourceEvent_DBRemove,
+        hResourceEvent_HotSwap,
+    };
+
+#if 0 // hResourceEventProc is replaced by hNewResoruceEventProc (awaiting rename)
+    hFUNCTOR_TYPEDEF(hBool (*)(hResourceID , hResurceEvent, hResourceManager*, hResourceClassBase*), hResourceEventProc);
+#endif
+    hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void* /*data_ptr*/), hNewResourceEventProc);
 
     class hRenderer;
     class hRenderMaterialManager;
@@ -43,7 +92,7 @@ namespace Heart
     {
         enum Type {
             AddResource,    // Adds a resource to the resource graph, does not fill in any data
-            MarkAsRoot,     // Marks a node as a 
+            MarkAsRoot,     // Marks a node as a Root node
 
             InsertResource, // Inserts resource data into a node in the graph, node must exist
             RemoveResource, // Inserts resource data into a node in the graph, node must exist

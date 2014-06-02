@@ -111,7 +111,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         hcPrintf( "cmd line: %s\n", pCmdLine );
         hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
-        factory_ = hNEW(UnitTestFactory)(pEngine, unitTests_, (hUint)hStaticArraySize(unitTests_));
+        factory_ = new UnitTestFactory(pEngine, unitTests_, (hUint)hStaticArraySize(unitTests_));
         engine_ = pEngine;
 
         static const luaL_Reg funcs[] = {
@@ -234,7 +234,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 #endif
             currentTest_->RunUnitTest();
             if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
-                hDELETE_SAFE(currentTest_);
+                delete currentTest_; currentTest_ = nullptr;
                 currentTestIdx_=(currentTestIdx_+1)%hStaticArraySize(unitTests_);
             }
         }
@@ -281,9 +281,9 @@ DEFINE_HEART_UNIT_TEST(Base64);
     void TestBedCore::EngineShutdown( Heart::hHeartEngine* pEngine )
     {
         if (currentTest_) {
-            hDELETE_SAFE(currentTest_);
+            delete currentTest_; currentTest_ = nullptr;
         }
-        hDELETE_SAFE(factory_);
+        delete factory_; factory_ = nullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////
