@@ -12,3 +12,4 @@
 /tools/viewer/src/lua/builder_script.inl
 /cmake64
 /*.sublime-workspace
+/build/build.timestamp.txt

@@ -67,15 +67,15 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
     list(APPEND ${luaSRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc")
     list(APPEND ${luaHDRS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h")
 
-	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
-	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
+	  set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
+	  get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
 
     add_custom_command(
       OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc"
              "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h"
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc"
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h"
-	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+      COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
       ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/protoc-gen-lua.exe
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ & Lua protocol buffer compiler on ${FIL}"
@@ -117,8 +117,8 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	  COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.bat" ARGS ${ABS_ROOT} ${PROTO_IM_DIR}
-	  COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
+	    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" ARGS "-s" ${ABS_FIL} "-d" ${PROTO_IM_DIR}
+	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ lite protocol buffer compiler on ${FIL} [ ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE} ]")
   endforeach()
