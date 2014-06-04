@@ -45,6 +45,6 @@ set_target_properties(lua_standalone PROPERTIES OUTPUT_NAME lua)
 ADD_CUSTOM_COMMAND(
 	TARGET lua_standalone
     POST_BUILD
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" lua "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lua_libs.bat" "${LUA_SA_SRC_DIR}/src/lua" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
