@@ -14,6 +14,15 @@ file(GLOB SHADER_BUILDER_FILES
 )
 set(SHADER_BUILDER_LIB_DIRS
 	"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
+    ${GLEW_LIB_PATH}
+    ${SDL2_LIB_PATH}
+)
+set(SB_LIBS 
+    "lua52"
+    "crypto"
+    "proto"
+    "glew32"
+    ${SDL2_LIBRARY}
 )
 
 source_group(source  FILES ${SHADER_BUILDER_FILES})
@@ -21,8 +30,8 @@ source_group(source  FILES ${SHADER_BUILDER_FILES})
 include_directories(${SHADER_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
 add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
-target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
-target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
 set_property(TARGET shader_builder PROPERTY DEBUG_POSTFIX)
@@ -40,10 +49,12 @@ if (NOT ${BUILD_64_BIT} MATCHES 1)
 else()
 	set(PLATTYPE x64)
 endif()
-
+message(${SDL2_LIB_PATH})
 ADD_CUSTOM_COMMAND(
 	TARGET shader_builder
     POST_BUILD
     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l d3dcompiler -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )

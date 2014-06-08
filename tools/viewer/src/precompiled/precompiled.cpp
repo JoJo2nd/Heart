@@ -92,6 +92,7 @@ DEFINE_AND_REGISTER_TYPE(Heart::proto, Mesh);
 DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderIncludeSource);
 DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderInputStream);
 DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResource);
+DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResourceContainer);
 //resource_texture.proto
 DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureMip);
 DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureResource);

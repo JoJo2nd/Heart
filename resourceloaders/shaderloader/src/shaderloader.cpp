@@ -34,6 +34,8 @@
 #include <d3d11.h>
 #include <d3d11shader.h>
 #include <d3dcompiler.h>
+#include <gl/glew.h>
+#include "SDL.h"
 #include "resource_shader.pb.h"
 
 extern "C" {
@@ -54,6 +56,7 @@ extern "C" {
 #if defined (_MSC_VER)
 #   pragma warning(pop)
 #endif
+#include <regex>
 
 
 #define SB_API __cdecl
@@ -65,91 +68,14 @@ extern "C" {
 
 typedef unsigned char   uchar;
 typedef unsigned int    uint;
+typedef std::regex_iterator<std::string::iterator> sre_iterator;
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
+#define luaL_errorthrow(L, fmt, ...) \
+    luaL_where(L, 1); \
+    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_concat(L, 2); \
+    throw std::exception();
 
-size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource);
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-struct FXIncludeHandler : public ID3DInclude 
-{
-    struct Include 
-    {
-        std::string                 includestring_; // string passed to #include pragma
-        boost::filesystem::path     fullpath_;
-        boost::filesystem::path     basepath_;
-        std::shared_ptr<uchar>      data_;
-        UINT                        datasize_;
-    };
-    typedef std::map<const void*, Include> IncludeMap;
-
-    FXIncludeHandler() {}
-    ~FXIncludeHandler() {}
-
-    void addDefaultPath(const char* path) {
-        Include inc;
-        inc.fullpath_=path;
-        inc.basepath_=boost::filesystem::canonical(inc.fullpath_.parent_path());
-        inc.datasize_=0;
-        includedFiles_.insert(IncludeMap::value_type((void*)(includedFiles_.size()), inc));
-    }
-
-    void addIncludePath(const char* path) {
-        Include inc;
-        inc.fullpath_=path;
-        inc.basepath_=boost::filesystem::canonical(inc.fullpath_);
-        inc.datasize_=0;
-        includedFiles_.insert(IncludeMap::value_type((void*)(includedFiles_.size()), inc));
-    }
-
-    STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
-        using namespace boost;
-
-        system::error_code ec;
-
-        for (IncludeMap::iterator i=includedFiles_.begin(), n=includedFiles_.end(); i!=n; ++i) {
-            filesystem::path srcfile=i->second.basepath_ / filesystem::path(pFileName);
-            bool exist=filesystem::exists(srcfile, ec);
-            if (ec) {
-                continue;
-            }
-            if (exist) {
-                size_t filesize=filesystem::file_size(srcfile, ec);
-                if (ec) {
-                    continue;
-                }
-                std::shared_ptr<uchar> readbuffer(new uchar[filesize+1]);
-                memset(readbuffer.get(), 0, filesize+1);
-                FILE* f = fopen(srcfile.generic_string().c_str(), "rt");
-                fread(readbuffer.get(), 1, filesize, f);
-                fclose(f);
-                Include inc;
-                inc.includestring_=pFileName;
-                inc.fullpath_=srcfile;
-                inc.basepath_=inc.fullpath_.parent_path();
-                inc.data_=readbuffer;
-                inc.datasize_=(UINT)filesize;
-                includedFiles_.insert(IncludeMap::value_type(readbuffer.get(), inc));
-
-                *ppData = readbuffer.get();
-                *pBytes = (UINT)filesize;
-                return S_OK;
-            }
-        }
-        return E_FAIL;
-    }
-
-    STDMETHOD(Close)(THIS_ LPCVOID pData) {
-        return S_OK;
-    }
-
-    IncludeMap    includedFiles_;
-};
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -178,31 +104,11 @@ const char* shaderProfiles[] = {
     "ds5_0"    , //eShaderType_ds5_0 = 19;
 };
 
-const char* d3d_shaderProfiles[] = {
-    "vs_4_0"   ,  //eShaderType_Vertex		= 0;
-    "ps_4_0"    , //eShaderType_Pixel		= 1;
-    "gs_4_0" ,     //eShaderType_Geometery	= 2;
-    "hs_5_0"     ,//eShaderType_Hull		= 3;
-    "ss_5_0"   ,  //eShaderType_Domain		= 4;
-    "cs_4_0"  ,   //eShaderType_Compute		= 5;
-    "vs_4_0"    , //eShaderType_vs4_0 = 6;
-    "vs_4_1"    , //eShaderType_vs4_1 = 7;
-    "vs_5_0"    , //eShaderType_vs5_0 = 8;
-    "ps_4_0"    , //eShaderType_ps4_0 = 9;
-    "ps_4_1"    , //eShaderType_ps4_1 = 10;
-    "ps_5_0"    , //eShaderType_ps5_0 = 11;
-    "gs_4_0"    , //eShaderType_gs4_0 = 12;
-    "gs_4_1"    , //eShaderType_gs4_1 = 13;
-    "gs_5_0"    , //eShaderType_gs5_0 = 14;
-    "cs_4_0"    , //eShaderType_cs4_0 = 15;
-    "cs_4_1"    , //eShaderType_cs4_1 = 16;
-    "cs_5_0"    , //eShaderType_cs5_0 = 17;
-    "hs_5_0"    , //eShaderType_hs5_0 = 18;
-    "ds_5_0"    , //eShaderType_ds5_0 = 19;
-};
 
 struct ShaderDefine 
 {
+    ShaderDefine()
+    {}
     ShaderDefine(const char* define, const char* value) 
         : define_(define), value_(value)
     {}
@@ -218,11 +124,20 @@ struct ShaderCompileParams
     std::vector<ShaderDefine>   macros_;
 };
 
-#define luaL_errorthrow(L, fmt, ...) \
-    luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, __VA_ARGS__); \
-    lua_concat(L, 2); \
-    throw std::exception();
+typedef uint (*CompilerFunc)(std::string*, const ShaderCompileParams&, std::string*, void**, size_t*);
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource);
+uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
+std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
+uint initGLCompiler(std::string* out_errors);
+uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
+std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
+uint parseShaderSource(const boost::filesystem::path& shader_path, std::vector<boost::filesystem::path> in_include_paths, 
+std::string* out_source_string, std::map<boost::filesystem::path, std::string>* inc_ctx);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -236,7 +151,7 @@ int SB_API shaderCompiler(lua_State* L) {
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
-    
+
 try {
     system::error_code ec;
     proto::eShaderType progtype;
@@ -252,23 +167,7 @@ try {
     progtype = (proto::eShaderType)luaL_checkoption(L, -1, "vs4_0", shaderProfiles);
     lua_pop(L, 1);
 
-    struct D3DBlobSentry {
-        D3DBlobSentry() : blob_(nullptr) {}
-        ~D3DBlobSentry() { 
-            if (blob_) {
-                blob_->Release();
-                blob_ = nullptr;
-            }
-        }
-        ID3DBlob* blob_;
-    };
-
-    Heart::proto::ShaderResource shaderresource;
-    FXIncludeHandler includeHandler;
-    HRESULT hr;
-    bool includesource=false;
-    D3DBlobSentry errors;
-    D3DBlobSentry result;
+    ShaderCompileParams shader_compile_params;
     uint compileFlags = 0;
     lua_getfield(L, 3, "debug");
     if (lua_toboolean(L, -1)) {
@@ -283,11 +182,6 @@ try {
     lua_getfield(L, 3, "warningsaserrors");
     if (lua_toboolean(L, -1)) {
         compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-    }
-    lua_pop(L, 1);
-    lua_getfield(L, 3, "includesource");
-    if (lua_toboolean(L, -1)) {
-        includesource=true;
     }
     lua_pop(L, 1);
 
@@ -323,15 +217,12 @@ try {
         "HEART_COMPILE_HULL_PROG"    ,    // "hs5_0"     
         "HEART_COMPILE_DOMIAN_PROG"  ,    // "ds5_0"     
     };
-    D3D_SHADER_MACRO macro;
-    std::vector<D3D_SHADER_MACRO> fullmacros;
-    fullmacros.reserve(64);
-    macro.Name = "HEART_USING_HLSL"; macro.Definition = "1";
-    fullmacros.push_back(macro);
-    macro.Name = "HEART_ENGINE"; macro.Definition = "1";
-    fullmacros.push_back(macro);
-    macro.Name = progTypeMacros[progtype]; macro.Definition = "1";
-    fullmacros.push_back(macro);
+
+    shader_compile_params.entry_ = entry;
+    shader_compile_params.compileFlags_ = compileFlags;
+    shader_compile_params.profile_ = progtype;
+    shader_compile_params.macros_.emplace_back("HEART_ENGINE", "1");
+    shader_compile_params.macros_.emplace_back(progTypeMacros[progtype], "1");
 
     if (hasdefines) {
         uint i=0;
@@ -343,21 +234,16 @@ try {
                     lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
                 break;
             }
-            macro.Name = lua_tostring(L,-2);
-            macro.Definition = lua_tostring(L, -1);
-            fullmacros.emplace_back(macro);
+            shader_compile_params.macros_.emplace_back(lua_tostring(L,-2), lua_tostring(L,-1));
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
             ++i;
         }
     }
     lua_pop(L, 1);
-    macro.Name = nullptr;
-    macro.Definition = nullptr;
-    fullmacros.push_back(macro);
 
     const char* path=lua_tostring(L, 1);
-    includeHandler.addDefaultPath(path);
+    std::vector<boost::filesystem::path> base_include_paths;
 
     lua_getfield(L, 3, "include_dirs");
     if (lua_istable(L, -1)) {
@@ -368,82 +254,64 @@ try {
             if (lua_isstring(L, -1)) {
                 auto include_path = source_root / lua_tostring(L, -1);
                 auto include_path_str = include_path.generic_string();
-                includeHandler.addIncludePath(include_path_str.c_str());
+                base_include_paths.push_back(include_path);
             }
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
         }
     }
 
-    size_t filesize=(size_t)filesystem::file_size(path, ec);
-    if (ec) {
-        luaL_errorthrow(L, "Unable to read filesize of shader input %s", path);
-    }
-    std::shared_ptr<char> sourcedata;
-    size_t sourcedatalen = filesize;
-    sourcedata = std::shared_ptr<char>(new char[sourcedatalen+1]);
-    memset(sourcedata.get(), 0, sourcedatalen);
-    FILE* f=fopen(path, "rt");
-    if (!f) {
-        luaL_errorthrow(L, "Unable to open shader input file %s", path);
-    }
-    fread(sourcedata.get(), 1, sourcedatalen, f);
-    fclose(f);
-    sourcedata.get()[sourcedatalen] = 0;
-    hr = D3DCompile( 
-        sourcedata.get(), 
-        sourcedatalen, 
-        path,
-        fullmacros.data(), 
-        &includeHandler, //Includes
-        entry,
-        d3d_shaderProfiles[progtype], 
-        compileFlags, 
-        0, 
-        &result.blob_, 
-        &errors.blob_);
+    struct ShaderCompiler {
+        CompilerFunc func_;
+        proto::eShaderRenderSystem system_;
+    };
+    ShaderCompiler compilers[] = {
+        {compileD3DShader, proto::eShaderRenderSystem_D3D11},
+        {compileGLShader , proto::eShaderRenderSystem_OpenGL},
+        {nullptr, proto::eShaderRenderSystem_None}
+    };
 
-    if (FAILED(hr) && errors.blob_) {
-        std::string err=(char*)errors.blob_->GetBufferPointer();
-        luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", (char*)errors.blob_->GetBufferPointer());
-    }
+    proto::ShaderResourceContainer resource_container;
+    std::string full_shader_source;
+    std::map<boost::filesystem::path, std::string> parse_ctx;
+    parseShaderSource(path, base_include_paths, &full_shader_source, &parse_ctx);
 
-    shaderresource.set_entry(entry);
-    shaderresource.set_profile(progtype);
-    shaderresource.set_compiledprogram(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
-    shaderresource.set_type(progtype);
-    for (size_t i=0, n=fullmacros.size()-1; i<n; ++i) {
-        proto::ShaderResource_Defines* defres=shaderresource.add_defines();
-        defres->set_define(fullmacros[i].Name);
-        defres->set_value(fullmacros[i].Definition);
-    }
-
-    ID3D11ShaderReflection* reflect;
-    hr = D3DReflect(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
-    if (FAILED( hr )) {
-        luaL_errorthrow(L, "Couldn't create reflection information.");
-    }
-
-    D3D11_SHADER_DESC desc;
-    reflect->GetDesc( &desc );
-    if (progtype == proto::eShaderType_Vertex) {
-        if (parseVertexInputFormat(desc, reflect, &shaderresource) == 0) {
-            luaL_errorthrow(L, "Failed to parse vertex input format from shader");
+    ShaderCompiler* current_compiler = compilers;
+    while (current_compiler->func_){
+        Heart::proto::ShaderResource* shaderresource = resource_container.add_shaderresources();
+        std::string full_result_source = full_shader_source;
+        std::string error_string;
+        void* bin_blob;
+        size_t bin_blob_len;
+        if (current_compiler->func_(&full_result_source, shader_compile_params, &error_string, &bin_blob, &bin_blob_len) != 0) {
+            luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", error_string.c_str());
         }
+
+        shaderresource->set_rendersystem(current_compiler->system_);
+        shaderresource->set_entry(entry);
+        shaderresource->set_profile(progtype);
+        if (bin_blob) {
+            shaderresource->set_compiledprogram(bin_blob, bin_blob_len);
+        }
+        shaderresource->set_type(progtype);
+        shaderresource->set_source(full_result_source);
+
+        ++current_compiler;
     }
 
-    //output the source sections desc
-    if (includesource) {
-        shaderresource.set_source(sourcedata.get(), sourcedatalen);
-        for (auto i=includeHandler.includedFiles_.begin(), n=includeHandler.includedFiles_.end(); i!=n; ++i) {
-            if (i->second.datasize_ > 0) {
-                Heart::proto::ShaderIncludeSource* include = shaderresource.add_includedfiles();
-                include->set_filepath(i->second.fullpath_.generic_string());
-                include->set_source((char*)i->second.data_.get(), i->second.datasize_);
-                include->set_filepath_short(i->second.includestring_);
-            }
-        }
-    }
+    // ID3D11ShaderReflection* reflect;
+    // hr = D3DReflect(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
+    // if (FAILED( hr )) {
+    //     luaL_errorthrow(L, "Couldn't create reflection information.");
+    // }
+
+    // D3D11_SHADER_DESC desc;
+    // reflect->GetDesc( &desc );
+    // if (progtype == proto::eShaderType_Vertex) {
+    //     if (parseVertexInputFormat(desc, reflect, &shaderresource) == 0) {
+    //         luaL_errorthrow(L, "Failed to parse vertex input format from shader");
+    //     }
+    // }
 
     //write the resource
     const char* outputpath=lua_tostring(L, 4);
@@ -459,16 +327,16 @@ try {
         google::protobuf::io::OstreamOutputStream filestream(&output);
         google::protobuf::io::CodedOutputStream outputstream(&filestream);
         Heart::proto::MessageContainer msgContainer;
-        msgContainer.set_type_name(shaderresource.GetTypeName());
-        msgContainer.set_messagedata(shaderresource.SerializeAsString());
+        msgContainer.set_type_name(resource_container.GetTypeName());
+        msgContainer.set_messagedata(resource_container.SerializeAsString());
         msgContainer.SerializePartialToCodedStream(&outputstream);
     }
     output.close();
 
-    lua_newtable(L); // push table of files files that where included by 
+    lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
     int idx=1;
-    for (FXIncludeHandler::IncludeMap::iterator i=includeHandler.includedFiles_.begin(), n=includeHandler.includedFiles_.end(); i!=n; ++i) {
-        lua_pushstring(L, i->second.fullpath_.generic_string().c_str());
+    for (auto i=parse_ctx.begin(), n=parse_ctx.end(); i!=n; ++i) {
+        lua_pushstring(L, i->first.generic_string().c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
@@ -482,6 +350,72 @@ try {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
+uint parseShaderSource(const boost::filesystem::path& shader_path, 
+std::vector<boost::filesystem::path> in_include_paths, 
+std::string* out_source_string,
+std::map<boost::filesystem::path, std::string>* inc_ctx) {
+    using namespace boost;
+
+    system::error_code ec;
+    std::map<std::string, std::string> inc_map;
+    in_include_paths.insert(in_include_paths.begin(), filesystem::canonical(shader_path.parent_path()));
+    out_source_string->clear();
+    bool exist=filesystem::exists(shader_path, ec);
+    if (ec && !exist) {
+        return -1;
+    }
+    size_t filesize=filesystem::file_size(shader_path, ec);
+    if (ec) {
+        return -1;
+    }
+    char* buffer = new char[filesize+1];
+    memset(buffer, 0, filesize+1);
+    FILE* f = fopen(shader_path.generic_string().c_str(), "rt");
+    fread(buffer, 1, filesize, f);
+    fclose(f);
+    *out_source_string = buffer;
+    // std::string line_dir = "#line 1\n";
+    // out_source_string->insert(0, line_dir);
+    delete[] buffer;
+    buffer = nullptr;
+    std::remove(out_source_string->begin(), out_source_string->end(), 0);
+    // regex #includes in shader to be replaced later
+    std::regex inc_regex("#include \\s*?\\\"(.*?)\\\"");
+    sre_iterator re_i(out_source_string->begin(), out_source_string->end(), inc_regex);
+    for (sre_iterator re_n; re_i != re_n; ++re_i) {
+        std::string inc_string;
+        bool did_include=true;
+        for (auto i=in_include_paths.begin(), n=in_include_paths.end(); i!=n; ++i) {
+            filesystem::path inc_file = *i / filesystem::path((*re_i)[1].str());
+            inc_file =filesystem::canonical(inc_file, ec);
+            if (ec) {
+                continue;
+            }
+            const auto inc_source_itr = inc_ctx->find(inc_file);
+            if (inc_source_itr != inc_ctx->end()) {
+                did_include = true;
+                inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_source_itr->second));
+            } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx) == 0) {
+                did_include = true;
+                inc_ctx->insert(std::pair<boost::filesystem::path, std::string>(inc_file, inc_string));
+                inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
+            }
+        }
+        if (!did_include) {
+            //todo: throw error!
+        }
+    }
+    // replace #includes
+    std::smatch re_match;
+    while (std::regex_search(*out_source_string, re_match, inc_regex)) {
+        const auto& replace_text = inc_map.find(re_match[1].str());
+        out_source_string->replace(re_match.position(), re_match.length(), replace_text->second, 0, replace_text->second.length()-1);
+    }
+
+    return 0;
+}
+
 
 size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource)
 {
@@ -511,6 +445,208 @@ size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflect
     }
 
     return desc.InputParameters;
+}
+
+uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
+std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
+    static const char* d3d_shaderProfiles[] = {
+        "vs_4_0"        , //eShaderType_Vertex          = 0;
+        "ps_4_0"        , //eShaderType_Pixel           = 1;
+        "gs_4_0"        , //eShaderType_Geometery       = 2;
+        "hs_5_0"        , //eShaderType_Hull            = 3;
+        "ss_5_0"        , //eShaderType_Domain          = 4;
+        "cs_4_0"        , //eShaderType_Compute         = 5;
+        "vs_4_0"        , //eShaderType_vs4_0           = 6;
+        "vs_4_1"        , //eShaderType_vs4_1           = 7;
+        "vs_5_0"        , //eShaderType_vs5_0           = 8;
+        "ps_4_0"        , //eShaderType_ps4_0           = 9;
+        "ps_4_1"        , //eShaderType_ps4_1           = 10;
+        "ps_5_0"        , //eShaderType_ps5_0           = 11;
+        "gs_4_0"        , //eShaderType_gs4_0           = 12;
+        "gs_4_1"        , //eShaderType_gs4_1           = 13;
+        "gs_5_0"        , //eShaderType_gs5_0           = 14;
+        "cs_4_0"        , //eShaderType_cs4_0           = 15;
+        "cs_4_1"        , //eShaderType_cs4_1           = 16;
+        "cs_5_0"        , //eShaderType_cs5_0           = 17;
+        "hs_5_0"        , //eShaderType_hs5_0           = 18;
+        "ds_5_0"        , //eShaderType_ds5_0           = 19;
+    };
+    struct D3DBlobSentry {
+        D3DBlobSentry() : blob_(nullptr) {}
+        ~D3DBlobSentry() { 
+            if (blob_) {
+                blob_->Release();
+                blob_ = nullptr;
+            }
+        }
+        ID3DBlob* blob_;
+    };
+    D3DBlobSentry errors;
+    D3DBlobSentry result;
+
+    std::string define_str;
+    for (size_t i=0, n=shader_params.macros_.size(); i<n; ++i) {
+        define_str = "#define " + shader_params.macros_[i].define_;
+        define_str += " " + shader_params.macros_[i].value_ + "\n";
+        shader_source->insert(0, define_str);
+    }
+
+    shader_source->insert(0, "#define HEART_IS_HLSL 1\n");
+
+    printf("D3D Source: \n%s\n", shader_source->c_str());
+
+    HRESULT hr = D3DCompile( 
+        shader_source->c_str(), 
+        shader_source->length(), 
+        "direct3D shader source",
+        nullptr, // macros
+        nullptr, //Includes
+        shader_params.entry_.c_str(),
+        d3d_shaderProfiles[shader_params.profile_], 
+        shader_params.compileFlags_, 
+        0, 
+        &result.blob_, 
+        &errors.blob_);
+
+    if (FAILED(hr) && errors.blob_) {
+        std::string err=(char*)errors.blob_->GetBufferPointer();
+        *out_errors = (char*)errors.blob_->GetBufferPointer();
+        return -1;
+    }
+
+    *bin_blob = new uchar[result.blob_->GetBufferSize()];
+    *bin_blob_len = result.blob_->GetBufferSize();
+    memcpy(*bin_blob, result.blob_->GetBufferPointer(), *bin_blob_len);
+
+    return 0;
+}
+
+uint initGLCompiler(std::string* out_errors){
+    static bool run_once = false;
+    if (run_once) {
+        return 0;
+    }
+    
+    SDL_Window *mainwindow;
+    SDL_GLContext opengl_context;
+ 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        return -1; /* Or die on error */
+    }
+ 
+    // Request opengl 3.3 context.
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+ 
+    mainwindow = SDL_CreateWindow("OpenGL Shader Compiler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+    if (!mainwindow) {
+        return -2;
+    }
+
+    opengl_context = SDL_GL_CreateContext(mainwindow);
+
+    glewExperimental=GL_TRUE;
+    int ret = glewInit();
+    if (ret != GLEW_OK) {
+        *out_errors = (char*)glewGetErrorString(ret);
+    }
+
+    run_once = true;
+    return 0;
+}
+
+uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
+std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
+    if (initGLCompiler(out_errors) != 0) {
+        *out_errors = "Failed to initialise OpenGL";
+    }
+    static const GLuint OpenGL_shaderProfiles[] = {
+        GL_VERTEX_SHADER    , //eShaderType_Vertex          = 0;
+        GL_FRAGMENT_SHADER  , //eShaderType_Pixel           = 1;
+        GL_GEOMETRY_SHADER  , //eShaderType_Geometery       = 2;
+        GL_INVALID_ENUM     , //eShaderType_Hull            = 3;
+        GL_INVALID_ENUM     , //eShaderType_Domain          = 4;
+        GL_INVALID_ENUM     , //eShaderType_Compute         = 5;
+        GL_VERTEX_SHADER    , //eShaderType_vs4_0           = 6;
+        GL_VERTEX_SHADER    , //eShaderType_vs4_1           = 7;
+        GL_VERTEX_SHADER    , //eShaderType_vs5_0           = 8;
+        GL_FRAGMENT_SHADER  , //eShaderType_ps4_0           = 9;
+        GL_FRAGMENT_SHADER  , //eShaderType_ps4_1           = 10;
+        GL_FRAGMENT_SHADER  , //eShaderType_ps5_0           = 11;
+        GL_GEOMETRY_SHADER  , //eShaderType_gs4_0           = 12;
+        GL_GEOMETRY_SHADER  , //eShaderType_gs4_1           = 13;
+        GL_GEOMETRY_SHADER  , //eShaderType_gs5_0           = 14;
+        GL_INVALID_ENUM     , //eShaderType_cs4_0           = 15;
+        GL_INVALID_ENUM     , //eShaderType_cs4_1           = 16;
+        GL_INVALID_ENUM     , //eShaderType_cs5_0           = 17;
+        GL_INVALID_ENUM     , //eShaderType_hs5_0           = 18;
+        GL_INVALID_ENUM     , //eShaderType_ds5_0           = 19;
+    };
+
+    // no binaries for GL
+    *bin_blob = nullptr;
+    *bin_blob_len = 0;
+
+    GLuint shader_type = OpenGL_shaderProfiles[shader_params.profile_];
+
+    std::string define_str;
+    for (size_t i=0, n=shader_params.macros_.size(); i<n; ++i) {
+        define_str = "#define " + shader_params.macros_[i].define_;
+        define_str += " " + shader_params.macros_[i].value_ + "\n";
+        shader_source->insert(0, define_str);
+    }
+
+    shader_source->insert(0, "#define HEART_IS_GLSL 1\n");
+
+    define_str = "#version 330\n";
+    shader_source->insert(0, define_str);
+
+    // parse the gl shader looking for input & output
+    // maybe at somepoint I'll fix this to auto-gen boiler plate for this...
+    std::string input_struct_name;
+    std::string output_struct_name;
+    std::regex in_out_regex("glsl_(in|out)_struct\\(\\s*(.+?)\\s*\\)");
+    sre_iterator re_i(shader_source->begin(), shader_source->end(), in_out_regex);
+    for (sre_iterator re_n; re_i!=re_n; ++re_i) {
+        if ((*re_i)[2].str() == "__x__") {
+            continue;
+        }
+        if ((*re_i)[1].str() == "in") {
+            input_struct_name = (*re_i)[2].str();
+        } else if ((*re_i)[1].str() == "out") {
+            output_struct_name = (*re_i)[2].str();
+        }
+    }
+
+    printf("input struct name: %s\n", input_struct_name.c_str());
+    printf("output struct name: %s\n", output_struct_name.c_str());
+
+    //read in the parameters for input (seperate function later...?)
+    //std::string tmp_str("struct\\s*?");
+    //std::regex in_struct_regex(tmp_str+input_struct_name+)
+
+    printf("OpenGL Source: \n%s\n", shader_source->c_str());
+
+    GLint params = -1;
+    GLuint shader_obj = glCreateShader(shader_type);
+    const char* sources[] = {
+        shader_source->c_str(),
+    };
+    GLint sources_len[] = {
+        (GLint)shader_source->length(),
+    };
+    glShaderSource(shader_obj, 1, sources, sources_len);
+    glCompileShader(shader_obj);
+    glGetShaderiv(shader_obj, GL_COMPILE_STATUS, &params);
+    if (params != GL_TRUE) {
+        GLint actual_length = 0;
+        char log[8*1024] = {0};
+        glGetShaderInfoLog (shader_obj, sizeof(log)-1, &actual_length, log);
+        *out_errors = log;
+        return -1;
+    }
+    glDeleteShader(shader_obj);
+    return 0;
 }
 
 extern "C" {

@@ -2,6 +2,12 @@ import "resource_common.proto";
 
 package Heart.proto;
 
+enum eShaderRenderSystem {
+	eShaderRenderSystem_None 	= -1;
+	eShaderRenderSystem_D3D11 	= 0;
+	eShaderRenderSystem_OpenGL 	= 1;
+}
+
 enum eShaderType {
 	eShaderType_Vertex		= 0;
 	eShaderType_Pixel		= 1;
@@ -49,13 +55,12 @@ message ShaderResource {
 	optional eShaderType type = 1;
 	optional string source = 2;
 	optional bytes compiledProgram = 3;
-	// NOTE: lua protobuf doesn't support this yet...
-	repeated group  Defines = 4 {
-		required string define = 5;
-		optional string value = 6;
-	}
 	optional string entry = 7;
 	optional uint32 profile = 8;
 	repeated ShaderInputStream inputStreams = 9;
-	repeated ShaderIncludeSource includedFiles = 10;
+	optional eShaderRenderSystem renderSystem = 10;
+}
+
+message ShaderResourceContainer {
+	repeated ShaderResource shaderResources = 1;
 }

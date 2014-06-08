@@ -31,46 +31,42 @@
 
 namespace Heart
 {
-    hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResource,
+    hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResourceContainer,
         hObjectBaseType(Heart::hdShaderProgram));
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    hBool hShaderProgram::serialiseObject(Heart::proto::ShaderResource* obj) const {
+    hBool hShaderProgram::serialiseObject(Heart::proto::ShaderResourceContainer* obj) const {
         return hTrue;
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    hBool hShaderProgram::deserialiseObject(Heart::proto::ShaderResource* obj) {
+    hBool hShaderProgram::deserialiseObject(Heart::proto::ShaderResourceContainer* obj_cont) {
         hBool prefersource=hTrue;
-
+        const Heart::proto::ShaderResource* obj=nullptr;
+        for (hUint i=0, n=obj_cont->shaderresources_size(); i<n; ++i) {
+            if (obj_cont->shaderresources(i).rendersystem() == proto::eShaderRenderSystem_D3D11) {
+                obj = &obj_cont->shaderresources(i);
+            }
+        }
 #if defined (HEART_ALLOW_SHADER_SOURCE_COMPILE)
         class hIncluder : public hIIncludeHandler 
         {
         public:
-            hIncluder(const Heart::proto::ShaderIncludeSource* const* sections, hUint sectioncount) 
-                : sections_(sections)
-                , sectioncount_(sectioncount)
-            {}
+            hIncluder() {}
             void findInclude(const hChar* includepath, const void** outdata, hUint* outlen) {
                 *outdata=nullptr;
                 *outlen=0;
-                for (hUint i=0, n=sectioncount_; i<n; ++i) {
-                    if (hStrCmp(includepath, sections_[i]->filepath().c_str()) == 0) {
-                        *outdata=sections_[i]->source().data();
-                        *outlen=(hUint)sections_[i]->source().size();
-                        return;
-                    }
-                }
+                return;
             }
 
             const Heart::proto::ShaderIncludeSource* const* sections_;
             hUint sectioncount_;
         };
-        hIncluder includes(obj->includedfiles().data(), obj->includedfiles_size());
+        hIncluder includes;
 #endif
         if (!obj->has_source() || !prefersource) {
             hShaderType type;
@@ -94,15 +90,8 @@ namespace Heart
             case proto::eShaderType_Domain:     type=ShaderType_DOMAINPROG;    break;
             case proto::eShaderType_Compute:    type=ShaderType_COMPUTEPROG;   break;
             }
-            hShaderDefine* defines=hNullptr;
-            hUint definecount=obj->defines_size();
-            if (definecount) {
-                defines=(hShaderDefine*)hAlloca(sizeof(hShaderDefine)*definecount);
-                for (hUint di=0; di<definecount; ++di) {
-                    defines[di].define_=obj->defines(di).define().c_str();
-                    defines[di].value_=obj->defines(di).value().c_str();
-                }
-            }
+            hShaderDefine* defines=nullptr;
+            hUint definecount=0;
             hRenderer::get()->compileShaderFromSource((hChar*)obj->compiledprogram().data(), (hUint32)obj->compiledprogram().size(), obj->entry().c_str(), (hShaderProfile)obj->profile(), &includes, defines, definecount, this);
 #endif
         } else {
