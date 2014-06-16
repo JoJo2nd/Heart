@@ -24,7 +24,7 @@
 	distribution.
 
 *********************************************************************/
-
+#if 0 //todo !!JM
 #include "render/hTexture.h"
 
 namespace Heart
@@ -116,3 +116,4 @@ namespace Heart
 
 }
 
+#endif

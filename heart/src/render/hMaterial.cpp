@@ -48,6 +48,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     hBool hMaterial::deserialiseObject(Heart::proto::MaterialResource* obj) {
+#if 0
         for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
             const proto::MaterialGroup& groupdef=obj->groups(gi);
             hMaterialGroup* group=addGroup(groupdef.groupname().c_str());
@@ -247,6 +248,7 @@ namespace Heart
                 addDefaultParameterValue(paramdef.paramname().c_str(), colour);
             }
         }
+#endif
         return hTrue;
     }
 
@@ -291,7 +293,7 @@ namespace Heart
 
     static const hUint32 VIEWPORT_CONST_BUFFER_ID = hCRC32::StringCRC( "ViewportConstants" );
     static const hUint32 INSTANCE_CONST_BUFFER_ID = hCRC32::StringCRC( "InstanceConstants" );
-
+#if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -423,6 +425,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hMaterial::bind() {
+#if 0 // !!JM
         // Grab and Bind const block info
         struct {
             hUint32 hash;
@@ -548,7 +551,7 @@ namespace Heart
         }
 
         generateRenderCommands();
-
+#endif
         return hTrue;
     }
 
@@ -1048,5 +1051,5 @@ namespace Heart
         tech_=hNullptr;
         pass_=hNullptr;
     }
-
+#endif
 }//Heart

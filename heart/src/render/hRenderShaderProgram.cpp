@@ -24,7 +24,7 @@
 	distribution.
 
 *********************************************************************/
-
+#if 0 //todo !!JM
 #include "render/hRenderShaderProgram.h"
 #include "hRenderer.h"
 #include "base/hStringUtil.h"
@@ -100,3 +100,4 @@ namespace Heart
         return hTrue;
     }
 }
+#endif

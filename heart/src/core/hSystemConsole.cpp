@@ -24,7 +24,7 @@
     distribution.
 
 *********************************************************************/
-
+#if 0
 #include "core/hSystemConsole.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
@@ -333,3 +333,4 @@ namespace Heart
     }
 
 }
+#endif

@@ -41,7 +41,6 @@
 #include "C:\dev\heart_lua\heart\src\render\hRenderer.cpp"
 #include "C:\dev\heart_lua\heart\src\render\hRendererCamera.cpp"
 #include "C:\dev\heart_lua\heart\src\render\hRendererConstants.cpp"
-#include "C:\dev\heart_lua\heart\src\render\hRenderMaterialManager.cpp"
 #include "C:\dev\heart_lua\heart\src\render\hRenderModel.cpp"
 #include "C:\dev\heart_lua\heart\src\render\hRenderShaderProgram.cpp"
 #include "C:\dev\heart_lua\heart\src\render\hRenderSubmissionContext.cpp"

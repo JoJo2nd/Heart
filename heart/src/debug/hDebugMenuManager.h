@@ -24,8 +24,8 @@
     distribution.
 
 *********************************************************************/
+#define HDEBUGMENUMANAGER_H__ //todo !!JM
 #ifndef HDEBUGMENUMANAGER_H__
-#define HDEBUGMENUMANAGER_H__
 
 #include "base/hTypes.h"
 #include "base/hMap.h"

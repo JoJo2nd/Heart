@@ -51,10 +51,14 @@ hBool hRenderModel::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
 //////////////////////////////////////////////////////////////////////////
 
 void hRenderModel::initialiseRenderCommands() {
+#if 0
     hRenderCommandGenerator rcGen(&renderCommands_);
     for (auto i=renderables_.begin(),n=renderables_.end(); i<n; ++i) {
         i->initialiseRenderCommands(&rcGen);
     }
+#else
+    hStub();
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////

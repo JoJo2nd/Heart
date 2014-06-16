@@ -37,12 +37,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hShaderResourceView::OnZeroRef() {
+#if 0 // !!JM
         if (refTex_ && refType_!=eRenderResourceType_Buffer) {
             refTex_->DecRef();
         } else if (refCB_) {
             refCB_->DecRef();
         }
         zeroRefProc_(this);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -50,6 +54,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hShaderResourceView::bindTexture(hTexture* tex) {
+#if 0 // !!JM
         if (tex) {
             tex->AddRef();
         }
@@ -58,6 +63,9 @@ namespace Heart
         }
         refType_=tex->getRenderType();
         refTex_=tex;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -65,6 +73,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hShaderResourceView::bindConstBlock(hRenderBuffer* cb) {
+#if 0 // !!JM
         if (cb) {
             cb->AddRef();
         }
@@ -73,6 +82,9 @@ namespace Heart
         }
         refType_=eRenderResourceType_Buffer;
         refCB_=cb;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -80,10 +92,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderTargetView::OnZeroRef() {
+#if 0 // !!JM
         if (refTex_) {
             refTex_->DecRef();
         }
         zeroRefProc_(this);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -91,6 +107,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderTargetView::bindTexture(hTexture* tex) {
+#if 0 // !!JM
         if (refTex_) {
             refTex_->DecRef();
         }
@@ -98,6 +115,9 @@ namespace Heart
         if (refTex_) {
             refTex_->AddRef();
         }
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -105,10 +125,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hDepthStencilView::OnZeroRef() {
+#if 0 // !!JM
         if (refTex_) {
             refTex_->DecRef();
         }
         zeroRefProc_(this);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -116,6 +140,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hDepthStencilView::bindTexture(hTexture* tex) {
+#if 0 // !!JM
         if (refTex_) {
             refTex_->DecRef();
         }
@@ -123,6 +148,9 @@ namespace Heart
         if (refTex_) {
             refTex_->AddRef();
         }
+#else
+        hStub();
+#endif
     }
 
 }

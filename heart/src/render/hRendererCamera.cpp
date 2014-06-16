@@ -27,7 +27,6 @@
 
 #include "render/hRendererCamera.h"
 #include "render/hRenderer.h"
-#include "render/hRenderMaterialManager.h"
 #include "render/hTexture.h"
 #include "render/hViews.h"
 
@@ -39,7 +38,6 @@ namespace Heart
 
     hRendererCamera::hRendererCamera() 
         : renderer_(NULL)
-        , validTechnique_(NULL)
         , clear_(hFalse)
     {
     }
@@ -58,6 +56,7 @@ namespace Heart
 
     void hRendererCamera::Initialise(hRenderer* renderer)
     {
+#if 0
         renderer_ = renderer;
         fov = HEART_PI / 4.0f;//45.0f
         viewMatrix_ = hMatrix::identity();
@@ -70,6 +69,9 @@ namespace Heart
         hZeroMem(&setup_, sizeof(setup_));
 
         cameraConstBlock_ = renderer_->GetMaterialManager()->GetGlobalConstantBlockByAlias("CameraConstants");
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -78,6 +80,7 @@ namespace Heart
 
     void hRendererCamera::UpdateParameters(hRenderSubmissionCtx* ctx)
     {
+#if 0
         hViewport vp=getTargetViewport();
         hVec3 eye = viewMatrix_.getRow(3).getXYZ();
         hVec3 dir = viewMatrix_.getRow(2).getXYZ();
@@ -100,6 +103,9 @@ namespace Heart
         ctx->Map(cameraConstBlock_, &map);
         hMemCpy(map.ptr, &viewportConstants_, sizeof(viewportConstants_));
         ctx->Unmap(&map);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -107,6 +113,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     Heart::hViewport hRendererCamera::getTargetViewport() const {
+#if 0
         if (setup_.targetTex_){
             hUint w=setup_.targetTex_->getWidth();
             hUint h=setup_.targetTex_->getHeight();
@@ -115,6 +122,10 @@ namespace Heart
             //zero out
             return hViewport(0, 0, 1, 1);
         }
+#else
+        hStub();
+        return hViewport(0, 0, 1, 1);
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -199,6 +210,7 @@ namespace Heart
 
     void hRendererCamera::bindRenderTargetSetup(const hRenderViewportTargetSetup& desc)
     {
+#if 0
         hcAssertMsg( renderer_, "Call Initialise first!" );
         hcAssertMsg(desc.targetTex_, "Must supply a target texture, can be depth or colour target");
         releaseRenderTargetSetup();
@@ -212,6 +224,9 @@ namespace Heart
         if (setup_.depth_) {
             setup_.depth_->AddRef();
         }
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -220,6 +235,7 @@ namespace Heart
 
     void hRendererCamera::releaseRenderTargetSetup()
     {
+#if 0
         if (setup_.targetTex_) {
             setup_.targetTex_->DecRef();
         }
@@ -232,6 +248,9 @@ namespace Heart
             setup_.depth_->DecRef();
         }
         hZeroMem(&setup_, sizeof(setup_));
+#else
+        hStub();
+#endif
     }
 
 }

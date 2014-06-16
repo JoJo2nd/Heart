@@ -42,7 +42,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetViewport( const hViewport& viewport )
     {
+#if 0
         impl_.SetViewport( viewport );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -51,7 +55,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::SetScissorRect( const hScissorRect& scissor )
     {
+#if 0
         impl_.SetScissorRect( scissor );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -60,7 +68,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::DrawPrimitive( hUint32 nPrimatives, hUint32 startVertex )
     {
+#if 0
         impl_.DrawPrimitive( nPrimatives, startVertex );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -69,7 +81,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::DrawIndexedPrimitive( hUint32 nPrimatives, hUint32 startVertex )
     {
+#if 0
         impl_.DrawIndexedPrimitive( nPrimatives, startVertex );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -77,7 +93,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderSubmissionCtx::DrawIndexedPrimitiveInstanced(hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex) {
+#if 0
         impl_.DrawIndexedPrimitiveInstanced(instanceCount, nPrimatives, startVertex);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -86,7 +106,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::runCommandBuffer( hdRenderCommandBuffer cmdBuf )
     {
+#if 0
         impl_.RunSubmissionBuffer( cmdBuf );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -95,11 +119,15 @@ namespace Heart
 
     void hRenderSubmissionCtx::Map(hIndexBuffer* ib, hIndexBufferMapInfo* outInfo)
     {
+#if 0
         hdMappedData md;
         impl_.Map(ib, &md);
         outInfo->ib_ = ib;
         outInfo->ptr_ = md.pData;
         outInfo->size_ = 0;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -108,11 +136,15 @@ namespace Heart
 
     void hRenderSubmissionCtx::Map( hVertexBuffer* vb, hVertexBufferMapInfo* outInfo )
     {
+#if 0
         hdMappedData md;
         impl_.Map(vb, &md);
         outInfo->vb_ = vb;
         outInfo->ptr_ = md.pData;
         outInfo->size_ = 0;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -121,12 +153,16 @@ namespace Heart
 
     void hRenderSubmissionCtx::Map( hTexture* tex, hUint32 level, hTextureMapInfo* outInfo )
     {
+#if 0
         hdMappedData md;
         impl_.Map(tex, level, &md);
         outInfo->tex_ = tex;
         outInfo->ptr_ = md.pData;
         outInfo->pitch_ = md.RowPitch;
         outInfo->level_ = level;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -135,10 +171,14 @@ namespace Heart
 
     void hRenderSubmissionCtx::Map(hRenderBuffer* cb, hRenderBufferMapInfo* outInfo)
     {
+#if 0
         hdMappedData md;
         impl_.Map(cb, &md);
         outInfo->ptr = md.pData;
         outInfo->cb = cb;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -147,7 +187,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap( hIndexBufferMapInfo* outInfo )
     {
+#if 0
         impl_.Unmap(outInfo->ib_, outInfo->ptr_);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -156,7 +200,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap( hVertexBufferMapInfo* outInfo )
     {
+#if 0
         impl_.Unmap(outInfo->vb_, outInfo->ptr_);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -165,7 +213,11 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap(hTextureMapInfo* outInfo)
     {
+#if 0
         impl_.Unmap( outInfo->tex_, outInfo->level_, outInfo->ptr_ );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -174,9 +226,13 @@ namespace Heart
 
     void hRenderSubmissionCtx::Unmap(hRenderBufferMapInfo* info)
     {
+#if 0
         impl_.Unmap(info->cb, info->ptr);
         info->ptr = NULL;
         info->cb = NULL;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -185,8 +241,12 @@ namespace Heart
 
     void hRenderSubmissionCtx::Initialise( hRenderer* renderer )
     {
+#if 0
         hUint32 size = sizeof( hInstanceConstants );
         renderer_ = renderer;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -202,11 +262,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderSubmissionCtx::setTargets(hUint32 n, hRenderTargetView** targets, hDepthStencilView* depth) {
+#if 0
         hdRenderTargetView* dtargets[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
         for (hUint i=0; i<n; ++i) {
             dtargets[i]=targets[i];
         }
         impl_.setTargets(n, dtargets, depth);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -214,8 +278,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderSubmissionCtx::clearColour(hRenderTargetView* view, const hColour& colour) {
+#if 0
         hcAssert(view);
         impl_.clearColour(view, colour);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -223,8 +291,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderSubmissionCtx::clearDepth(hDepthStencilView* view, hFloat z) {
+#if 0
         hcAssert(view);
         impl_.clearDepth(view, z);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -232,6 +304,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderSubmissionCtx::runRenderCommands(hRCmd* cmds) {
+#if 0
         hRCmd* cmd=cmds;
         for(;;) {
             switch (cmd->opCode_) {
@@ -310,6 +383,9 @@ namespace Heart
             }
             cmd=(hRCmd*)((hByte*)cmd+cmd->size_);
         }
+#else
+        hStub();
+#endif
     }
 
 }

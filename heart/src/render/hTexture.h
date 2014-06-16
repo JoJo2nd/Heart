@@ -25,8 +25,8 @@
 
 *********************************************************************/
 
+#define hiTexture_h__ //todo !!JM left for reference
 #ifndef hiTexture_h__
-#define hiTexture_h__
 
 class TextureBuilder;
 

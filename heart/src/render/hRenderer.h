@@ -67,7 +67,7 @@ namespace Heart
         };
         hBool                   customCallFlag_;
     };
-
+#if 0
     class  hRenderCommandGenerator : public hdRenderCommandGenerator
     {
     public:
@@ -125,6 +125,7 @@ namespace Heart
 
         hRenderCommands*    renderCommands_;
     };
+#endif
 
     class hSystem;
 
@@ -146,7 +147,6 @@ namespace Heart
         hRenderer();
         void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
         void													Destroy();
-        void                                                    initialiseCameras();
         hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
         hRendererCamera*                                        GetRenderCamera(hUint32 id) { hcAssertMsg(id < HEART_MAX_RENDER_CAMERAS, "Invalid camera id access"); return &renderCameras_[id];}
         hRenderSubmissionCtx*                                   GetMainSubmissionCtx() { return &mainSubmissionCtx_; };
@@ -157,7 +157,6 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
         const hRenderFrameStats*                                getRenderStats() const { return &stats_; }
-        hRenderMaterialManager*                                 GetMaterialManager() { return &materialManager_; }
 
         //////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
@@ -271,7 +270,6 @@ namespace Heart
 
         hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
         void*                   renderStateCache_; // todo: remove
-        hRenderMaterialManager  materialManager_;
         hRenderSubmissionCtx    mainSubmissionCtx_;
 
         hTexture*               backBuffer_;
@@ -287,126 +285,6 @@ namespace Heart
         hRenderFrameStats   stats_;
         
         static void*											pRenderThreadID_;
-    };
-
-    class hLightingManager
-    {
-    public:
-
-        struct hRenderTargetInfo
-        {
-            hResourceHandle vertexLightShader_;
-            hResourceHandle pixelLightShader_;
-            hTexture*       albedo_;
-            hTexture*       normal_;
-            hTexture*       spec_;
-            hTexture*       depth_;
-            hUint           viewCameraIndex_;
-        };
-
-        hLightingManager()
-            : inputLayout_(hNullptr)
-            , inputLightData_(hNullptr)
-            , directionLightData_(hNullptr)
-            , quadLightData_(hNullptr)
-            , sphereLightData_(hNullptr)
-            , screenQuadIB_(hNullptr)
-            , screenQuadVB_(hNullptr)
-            , blendState_(hNullptr)
-            , rasterState_(hNullptr)
-            , depthStencilState_(hNullptr)
-            , samplerState_(hNullptr)
-        {
-        }
-        ~hLightingManager() {
-            stopResourceEventListening();
-            destroy();
-        }
-
-        void initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo);
-
-        void stopResourceEventListening();
-
-        void destroy();
-        void addDirectionalLight(const hVec3& direction, const hColour& colour);
-        void addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour);
-        void enableSphereLight(hUint light, hBool enable);
-        void setSphereLight(hUint light, const hVec3& centre, hFloat radius);
-
-        void doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx);
-        hBool resourceUpdate(hStringID , hResurceEvent);
-
-    private:
-
-        struct hInputLightData
-        {
-            hMatrix viewMatrix_;
-            hMatrix inverseViewMtx_;
-            hMatrix projectionMtx_;
-            hMatrix inverseProjectMtx_;
-            hVec4   eyePos_;
-            hUint   directionalLightCount_;
-            hUint   quadLightCount_;
-            hUint   sphereLightCount_;
-        };
-
-        struct hDirectionalLight
-        {
-            hVec3   direction_;
-            hColour colour_;
-        };
-
-        struct hQuadLight 
-        {
-            hVec3   points_[4];
-            hVec3   centre_;
-            hVec3   halfv_[2];
-            hColour colour_;
-        };
-
-        struct hSphereLightRenderData
-        {
-            hVec4   centreRadius_;
-            hColour colour_;
-        };
-
-        struct hSphereLight : public hLinkedListElement<hSphereLight>
-        {
-            hVec4   centreRadius_;
-            hColour colour_;
-        };
-
-        static const hUint s_maxDirectionalLights = 15;
-        static const hUint s_maxQuadLights = 32;
-        static const hUint s_maxSphereLights = 64;
-
-        void drawDebugLightInfo();
-        void generateRenderCommands(hRenderer* renderer);
-
-        hRenderer*                                          renderer_;
-        hRenderTargetInfo                                   targetInfo_;
-        hdInputLayout*                                      inputLayout_;
-        hRenderBuffer*                                      inputLightData_;
-        hRenderBuffer*                                      directionLightData_;
-        hRenderBuffer*                                      quadLightData_;
-        hRenderBuffer*                                      sphereLightData_;
-        hIndexBuffer*                                       screenQuadIB_;
-        hVertexBuffer*                                      screenQuadVB_;
-        hBlendState*                                        blendState_;
-        hRasterizerState*                                   rasterState_;
-        hDepthStencilState*                                 depthStencilState_;
-        hSamplerState*                                      samplerState_;
-        hUint                                               samplerBindPoint_;
-        hVector<hShaderResourceView*>                       srv_;
-        hVector<hRenderBuffer*>                             buffers_;
-        hRenderCommands                                     renderCmds_;
-
-        hInputLightData                                     lightInfo_;
-        hArray<hDirectionalLight, s_maxDirectionalLights>   directionalLights_;
-        hArray<hQuadLight, s_maxDirectionalLights>          quadLights_;
-        hArray<hSphereLight, s_maxSphereLights>             sphereLights_;
-        hLinkedList<hSphereLight>                           freeSphereLights_;
-        hLinkedList<hSphereLight>                           activeSphereLights_;
     };
 }
 

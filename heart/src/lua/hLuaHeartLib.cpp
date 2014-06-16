@@ -78,7 +78,7 @@ by Lua can also return many results.
     {
         HEART_LUA_GET_ENGINE(L);
         const hChar* str = luaL_checkstring(L, -2);
-        hDebugMenuManager::GetInstance()->SetMenuVisiablity(str, luaL_checkinteger(L, -1) != 0);
+        //hDebugMenuManager::GetInstance()->SetMenuVisiablity(str, luaL_checkinteger(L, -1) != 0); 
         return 0;
     }
 
@@ -98,7 +98,7 @@ by Lua can also return many results.
 
     int hLuaConsoleSize(lua_State* L)
     {
-        hSystemConsole::setFontSize((hFloat)lua_tonumber(L,-1));
+        //hSystemConsole::setFontSize((hFloat)lua_tonumber(L,-1)); !!JM
         return 0;
     }
 
@@ -134,17 +134,40 @@ by Lua can also return many results.
             if (s == NULL)
                 return luaL_error(L,
                 LUA_QL("tostring") " must return a string to " LUA_QL("print"));
-            if (i>1) hSystemConsole::printConsoleMessage("\t");
-            hSystemConsole::printConsoleMessage(s);
+            //if (i>1) hSystemConsole::printConsoleMessage("\t"); !!JM
+            //hSystemConsole::printConsoleMessage(s); !!JM
             lua_pop(L, 1);  /* pop result */
         }
-        hSystemConsole::printConsoleMessage("\n");
+        //hSystemConsole::printConsoleMessage("\n"); !!JM
         return 0;
+    }
+
+    static int heart_luaB_cvar(lua_State* L) {
+        int n = lua_gettop(L);  /* number of arguments */
+        lua_getfield(L, LUA_REGISTRYINDEX, "_hCVARS");
+        if (!lua_istable(L, -1)) {
+            lua_newtable(L);
+            lua_pushvalue(L, -1);
+            lua_setfield(L, LUA_REGISTRYINDEX, "_hCVARS");
+        }
+        if (n == 2) { //set path
+            lua_pushvalue(L, 1); // push key
+            lua_pushvalue(L, 2); // push value
+            lua_settable(L, -3);
+            return 0;
+        } else if (n==1) { // get path
+            lua_pushvalue(L, 1);
+            lua_gettable(L, -2);
+            return 1;
+        } else {
+            return luaL_error(L, "Expected 1 or 2 values for cvar");
+        }
     }
 
     static const luaL_Reg heartBaseLib[] = {
         {"print", heart_luaB_print},
-        {NULL, NULL}
+        {"cvar", heart_luaB_cvar},
+        {nullptr, nullptr}
     };
 
     int luaopen_heartbase(lua_State *L) 
@@ -238,49 +261,8 @@ by Lua can also return many results.
         return luaL_error(L, "error loading module \"%s\": file not found", name);
     }
 
-    int heart_lua_require_flush(lua_State* L) {
-        HEART_LUA_GET_ENGINE(L);
-        hIFileSystem* fsys = engine->GetFileManager();
-        hIFile* file = NULL;
-        void* lrdata[2];
-        const hChar* name = luaL_checkstring(L,-1);
-        lua_getfield(L, LUA_REGISTRYINDEX, "_hSEARCHPATH");//get search string, default is HEART_LUA_SEARCHPATH
-        if (!lua_isstring(L,-1)) return luaL_error(L, "require search path must be a string");
-        const hChar* path = lua_tostring(L, -1);
-        while (path = pushNextSearchPath(L, path)) {
-            const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
-            lua_remove(L, -2);//remove path template left by pushNextSearchPath
-            file = fsys->OpenFile(filename, FILEMODE_READ);
-            if (file) {
-                //Opened file, read, parse and run
-                lrdata[0] = (void*)file;
-                lrdata[1] = hAlloca(HEART_LUA_READ_SIZE);
-                int loadret = lua_load(L, luaReader, (void*)lrdata, filename, NULL);
-                fsys->CloseFile(file);
-                if (loadret != 0) {
-                    return luaL_error(L, 
-                        "error loading module %s from file %s: %s", 
-                        name, filename, lua_tostring(L, -1));
-                }
-                if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
-                    return luaL_error(L, 
-                        "error loading module %s from file %s: %s", 
-                        name, filename, lua_tostring(L, -1));
-                }
-                //module loaded ok, set _hLOADED[name] to true
-                lua_getfield(L, LUA_REGISTRYINDEX, "_hLOADED");
-                lua_pushboolean(L, 1);
-                lua_setfield(L, -2, name);
-                return 1;
-            }
-        }
-        //if we get this far we failed to load the package
-        return luaL_error(L, "error loading module \"%s\": file not found", name);
-    }
-
     static const luaL_Reg heartBasePackageLib[] = {
         {"require", heart_lua_require},
-        {"requireflush", heart_lua_require_flush},
         {NULL, NULL}
     };
 
@@ -301,11 +283,7 @@ by Lua can also return many results.
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void OpenHeartLuaLib(lua_State* L, hHeartEngine* engine)
-    {
-        luaL_requiref(L, "heart", luaopen_heartbase, true);
-        lua_pop(L, 1);//remove module from stack return by requiref
-
+    void OpenHeartLuaLib(lua_State* L, hHeartEngine* engine) {
         lua_getglobal(L, "heart");
         hcAssertMsg(lua_istable(L, -1),"Type is not table, is %s",lua_typename(L, lua_type(L, -1)));
         lua_pushlightuserdata(L, engine);

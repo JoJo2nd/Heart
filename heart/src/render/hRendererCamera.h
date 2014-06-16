@@ -35,7 +35,6 @@
 #include "math/hVec3.h"
 #include "math/hMathUtil.h"
 #include "render/hRenderSubmissionContext.h"
-#include "render/hRenderMaterialManager.h"
 
 namespace Heart
 {
@@ -79,9 +78,6 @@ namespace Heart
         hViewport                   getTargetViewport() const;
         hFloat                      GetFar() const { return far_; }
         hFloat                      GetNear() const { return near_; }
-        void                        SetTechniquePass( const hRenderTechniqueInfo* tech ) { validTechnique_ = tech; }
-        const hRenderTechniqueInfo* getTechniquePass() const { return validTechnique_; }
-        hUint32                     GetTechniqueMask() const { return validTechnique_ ? validTechnique_->mask_ : 0; }
         void                        bindRenderTargetSetup( const hRenderViewportTargetSetup& desc );
         void                        releaseRenderTargetSetup();
         hUint                       getTargetCount() const { return setup_.nTargets_; }
@@ -96,7 +92,7 @@ namespace Heart
         void                        setClearScreenFlag(hBool val) { clear_=val;}
         hBool                       getClearScreenFlag() const { return clear_;}
     private:
-        const hRenderTechniqueInfo* validTechnique_;
+
         hFloat                      fov;
         hFloat                      aspect_;
         hFloat                      near_;
@@ -109,7 +105,7 @@ namespace Heart
         hRelativeViewport           viewport_;
         hRenderer*                  renderer_;
         hRenderViewportTargetSetup  setup_;
-        hRenderBuffer*   cameraConstBlock_;
+        hRenderBuffer*              cameraConstBlock_;
         hViewportShaderConstants    viewportConstants_;
     };
     

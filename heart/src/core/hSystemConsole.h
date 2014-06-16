@@ -26,7 +26,7 @@
 *********************************************************************/
 
 #ifndef SYSTEMCONSOLE_H__
-#define SYSTEMCONSOLE_H__
+#define SYSTEMCONSOLE_H__ 
 
 #include "base/hTypes.h"
 #include "base/hStringID.h"
@@ -34,7 +34,7 @@
 #include "pal/hMutex.h"
 
 typedef void (*hConsoleOutputProc)(const hChar*, void*);
-
+#if 0 // !!JM
 namespace Heart
 {
     class hKeyboard;
@@ -221,5 +221,5 @@ namespace Heart
         hBool                   loaded_;
     };
 }
-
+#endif
 #endif // SYSTEMCONSOLE_H__

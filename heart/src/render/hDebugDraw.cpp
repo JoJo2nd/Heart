@@ -30,7 +30,6 @@
 #include "render/hFont.h"
 #include "render/hMaterial.h"
 #include "render/hRenderer.h"
-#include "render/hRenderMaterialManager.h"
 #include "render/hRenderUtility.h"
 #include "render/hTexture.h"
 #include "render/hVertexBuffer.h"
@@ -197,6 +196,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hDebugDrawRenderer::initialiseResources(hRenderer* renderer) {
+#if 0 //!!JM
         hInputLayoutDesc poscoldesc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT4, 0, 0),
             hInputLayoutDesc("COLOR", 0, eIF_FLOAT4, 0, 0),
@@ -305,6 +305,7 @@ namespace Heart
         perDrawParameters_=renderer->GetMaterialManager()->GetGlobalConstantBlockByAlias("InstanceConstants");
 
         resourcesCreated_=true;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -312,6 +313,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hDebugDrawRenderer::destroyResources() {
+#if 0 // !!JM
         if (resourcesCreated_) {
             if (debugFontTex_) {
                 debugFontTex_->DecRef();
@@ -354,6 +356,7 @@ namespace Heart
 
             resourcesCreated_ = false;
         }
+#endif
     }
 
 
@@ -362,6 +365,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hDebugDrawRenderer::render(hRenderer* renderer, hRenderSubmissionCtx* ctx) {
+#if 0  //!!JM      
         if (!colourView_ || !depthView_ || !resourcesCreated_) {
             return;
         }
@@ -608,6 +612,7 @@ namespace Heart
         for (hUint32 i=0; i<eDebugSet_Max; ++i) {
             debugPrims_[i].reset();
         }
+#endif
     }
 
     template < typename _ty >

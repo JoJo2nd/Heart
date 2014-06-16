@@ -13,3 +13,4 @@
 /cmake64
 /*.sublime-workspace
 /build/build.timestamp.txt
+/deploy/game

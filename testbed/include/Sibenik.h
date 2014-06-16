@@ -68,12 +68,12 @@ private:
     State                   state_;
     hFloat                  timer_;
     Heart::hResourceHandle  renderModelHandle_;
-    Heart::hDrawCallContext drawCtx_;
-    Heart::hLightingManager deferredLightManager_;
-    Heart::hShaderResourceView* albedoSRV_;
-    Heart::hShaderResourceView* normalSRV_;
-    Heart::hShaderResourceView* specSRV_;
-    Heart::hShaderResourceView* depthSRV_;
+    // Heart::hDrawCallContext drawCtx_;
+    // Heart::hLightingManager deferredLightManager_;
+    // Heart::hShaderResourceView* albedoSRV_;
+    // Heart::hShaderResourceView* normalSRV_;
+    // Heart::hShaderResourceView* specSRV_;
+    // Heart::hShaderResourceView* depthSRV_;
 
     //Camera Control
     SimpleFirstPersonFlyCamera fpCamera_;

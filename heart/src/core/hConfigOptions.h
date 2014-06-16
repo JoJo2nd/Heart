@@ -28,37 +28,25 @@
 #define _CONFIGOPTIONS_H__
 
 #include "base/hTypes.h"
-#include "pal/hDeviceFilewatch.h"
+extern "C" {
+#   include "lua.h"
+#   include "lualib.h"
+#   include "lauxlib.h"
+}
 
-namespace Heart
-{
-    class hIFileSystem;
+namespace Heart {
+class hIFileSystem;
 
-    class hConfigOptions
-    {
-    public:
-        hConfigOptions() 
-            : filewatch_(0)
-        {
-        }
-        ~hConfigOptions() {
-            if (filewatch_) {
-                hdEndFilewatch(filewatch_);
-                filewatch_=0;
-            }
-        }
+namespace hConfigurationVariables {
 
-        void         readConfig( const hChar* filename, hIFileSystem* filesystem );
-        hUint        getOptionUint(const hChar* key, hUint defval) const;
-        hInt         getOptionInt(const hChar* key, hInt defval) const;
-        hFloat       getOptionFloat(const hChar* key, hFloat defval) const;
-        hBool        getOptionBool(const hChar* key, hBool defval) const;
-        const hChar* getOptionStr(const hChar* key, const hChar* defval) const;
+void         loadCVars(lua_State* L, hIFileSystem* file_system);
+hUint        getCVarUint(const hChar* key, hUint defval);
+hInt         getCVarInt(const hChar* key, hInt defval);
+hFloat       getCVarFloat(const hChar* key, hFloat defval);
+hBool        getCVarBool(const hChar* key, hBool defval);
+const hChar* getCVarStr(const hChar* key, const hChar* defval);
 
-    private:
-        
-        hdFilewatchHandle   filewatch_;
-    };
+}
 }
 
 #endif // _CONFIGOPTIONS_H__

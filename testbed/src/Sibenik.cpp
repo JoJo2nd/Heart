@@ -60,6 +60,7 @@ hUint32 Sibenik::RunUnitTest()
         break;
     case eLoading:
         {
+#if 0
             if (Heart::hResourceManager::getIsPackageLoaded(PACKAGE_NAME) &&
                 Heart::hResourceHandle("MATERIALS.DEFERRED_PS").weakPtr<Heart::hShaderProgram>() && // <- Not correct way to handle this!
                 Heart::hResourceHandle("MATERIALS.DEFERRED_VS").weakPtr<Heart::hShaderProgram>())
@@ -70,14 +71,15 @@ hUint32 Sibenik::RunUnitTest()
                 CreateRenderResources();
                 SetCanRender(hTrue);
             }
+#else
+            hStub();
+#endif
         }
         break;
     case eRender:
         {
             timer_ += Heart::hClock::delta();
             UpdateCamera();
-            deferredLightManager_.setSphereLight(0, Heart::hVec3(Heart::hCos(timer_*0.5f)*0.f, 250.f, 0.f), 100.f+Heart::hSin(timer_*0.5f)*99.f);
-            deferredLightManager_.setSphereLight(1, Heart::hVec3(Heart::hCos(timer_*0.5f)*1000.f, 600.f, 0.f), 100.f);
             if (getForceExitFlag()) {
                 state_ = eBeginUnload;
             }
@@ -109,12 +111,13 @@ hUint32 Sibenik::RunUnitTest()
 
 void Sibenik::RenderUnitTest()
 {
+#if 0 
     Heart::hRenderer* renderer = engine_->GetRenderer();
     const Heart::hRenderTechniqueInfo* techinfo = engine_->GetRenderer()->GetMaterialManager()->GetRenderTechniqueInfo("main");
     Heart::hDrawCall drawcall;
     drawCtx_.Begin(renderer);
     Heart::hRenderModel* renderModel;
-#if 0
+
     Heart::hResourceHandleScope<Heart::hRenderModel> handleScope(renderModelHandle_, &renderModel);
 
     if (renderModel) {
@@ -169,7 +172,7 @@ void Sibenik::RenderUnitTest()
 //     dd->drawText(Heart::hVec3(10.f, 10.f, 0.f), "Hello World from debug text", Heart::hColour(1.f,1.f,1.f,1.f));
     dd->end();
 #else
-    hcPrintf("Stub "__FUNCTION__);
+    hStub();
 #endif
 }
 
@@ -180,6 +183,7 @@ void Sibenik::RenderUnitTest()
 
 void Sibenik::CreateRenderResources()
 {
+#if 0
     using namespace Heart;
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
@@ -358,6 +362,9 @@ void Sibenik::CreateRenderResources()
     deferredLightManager_.setSphereLight(0, hVec3(0.f, 100.f, 0.f), 50.f);
     deferredLightManager_.enableSphereLight(1, hTrue);
     deferredLightManager_.setSphereLight(1, hVec3(0.f, 600.f, 0.f), 110.f);
+#else
+    hStub();
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -371,7 +378,7 @@ void Sibenik::DestroyRenderResources()
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->releaseRenderTargetSetup();
-
+#if 0 // !!JM
     if (albedoSRV_) {
         albedoSRV_->DecRef();
         albedoSRV_=hNullptr;
@@ -388,6 +395,7 @@ void Sibenik::DestroyRenderResources()
         depthSRV_->DecRef();
         depthSRV_=hNullptr;
     }
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////

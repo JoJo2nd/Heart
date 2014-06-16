@@ -68,122 +68,15 @@ namespace Heart
     
     hMaterialSortKey HEART_API hBuildRenderSortKey(hByte cameraID, hByte sortLayer, hBool transparent, hFloat viewSpaceDepth, hUint32 materialID, hByte pass);
 
-    static const hUint32                    hMAX_PARAMETER_NAME_LEN = 32;
-    static const hUint32                    hMAX_SEMANTIC_LEN = 32;
-
-    struct  hSamplerParameter
-    {
-        hSamplerParameter()
-            : samplerState_(NULL)
-        {
-            hZeroMem(name_.GetBuffer(),name_.GetMaxSize());
-        }
-        ~hSamplerParameter()
-        {
-        }
-        void init(const hChar* name, hSamplerState* ss) {
-            hStrCopy(name_, name_.GetMaxSize(), name);
-            paramID_=hCRC32::StringCRC(name_);
-            samplerState_=ss;
-        }
-
-        hArray<hChar, hMAX_PARAMETER_NAME_LEN>  name_;
-        hShaderParameterID                      paramID_;
-        hSamplerState*                          samplerState_;
-    };
-
-    typedef hVector< hSamplerParameter >  hSamplerArrayType;
-
-    class hMaterialCmdLookUpHelper
-    {
-    public:
-        hMaterialCmdLookUpHelper() 
-            : count_(0)
-            , group_(hNullptr)
-            , tech_(hNullptr)
-            , pass_(hNullptr)
-        {}
-        hMaterialCmdLookUpHelper(hMaterialCmdLookUpHelper&& rhs) {
-            hPLACEMENT_NEW(this) hMaterialCmdLookUpHelper();
-            swap(this, &rhs);
-        }
-        hMaterialCmdLookUpHelper& operator = (hMaterialCmdLookUpHelper&& rhs) {
-            swap(this, &rhs);
-            return *this;
-        }
-        ~hMaterialCmdLookUpHelper() {
-            destroy();
-        }
-
-        void  init(hMaterial* material);
-        void  destroy();
-        void  setCommand(hUint group, hUint tech, hUint pass, hUint cmdoffset) {
-            hcAssert(&pass_[tech_[group_[group]]+pass] < group_+count_);
-            pass_[tech_[group_[group]]+pass]=cmdoffset;
-        }
-        hUint getCommand(hUint group, hUint tech, hUint pass) const {
-            hcAssert(&pass_[tech_[group_[group]]+pass] < group_+count_);
-            return pass_[tech_[group_[group]]+pass];
-        }
-
-    private:
-        HEART_PRIVATE_COPY(hMaterialCmdLookUpHelper);
-        static void swap(hMaterialCmdLookUpHelper* lhs, hMaterialCmdLookUpHelper* rhs) {
-            std::swap(lhs->count_, rhs->count_);
-            std::swap(lhs->group_, rhs->group_);
-            std::swap(lhs->tech_,  rhs->tech_);
-            std::swap(lhs->pass_,  rhs->pass_);
-        }
-
-        hUint  count_;
-        hUint* group_;
-        hUint* tech_; 
-        hUint* pass_; 
-    };
-
-    struct hBoundSampler 
-    {
-        hShaderParameterID paramid;
-        hSamplerState* state;
-    };
-
-    struct hBoundResource
-    {
-        hShaderParameterID paramid;
-        hShaderResourceView* srv;
-    };
-
-    struct hBoundConstBlock
-    {
-        hShaderParameterID paramid;
-        hRenderBuffer* constBlock;
-    };
-
-    struct hDefaultParameterValue
-    {
-        hDefaultParameterValue() 
-            : type(ePTNone)
-            , count(0)
-            , paramid(0)
-            //, resourcePtr(hNullptr) 
-            , dataOffset(0)
-        {}
-        hParameterType      type;
-        hUint               count;
-        hShaderParameterID  paramid;
-        hResourceHandle     resourcePtr; // Needs to be merged with resourceID. Resource Handles can be loaded from disk safely now...
-        hUint16             dataOffset;
-    };
-
     class  hMaterial
     {
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
 
-        hMaterial();
-        hMaterial(hRenderer* renderer);
-        ~hMaterial();
-
+        hMaterial() {}
+        hMaterial(hRenderer* renderer) {}
+        ~hMaterial() {}
+#if 0
         hRenderMaterialManager* GetManager() const { return manager_; }
         void                    SetManager(hRenderMaterialManager* val) { manager_ = val; }
         hMaterialGroup*         addGroup(const hChar* name);
@@ -264,6 +157,7 @@ namespace Heart
         hUint*                      groupCmds_; // pointer within selectorIDs array
         hUint*                      techCmds_;  // pointer within selectorIDs array
         hUint*                      passCmds_;  // pointer within selectorIDs array
+#endif
     };
 }
 

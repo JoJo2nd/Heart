@@ -203,7 +203,6 @@ namespace Heart
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;
         hJobManager*                    jobManager_;
-        hConfigOptions                  configFile_;
 
         //Debug 
         hDebugMenuManager*              debugMenuManager_;

@@ -48,7 +48,7 @@ namespace Heart
     class  hRenderable
     {
     public:
-
+#if 0
         hRenderable() 
             : materialKey_(0)
             , primType_(PRIMITIVETYPE_TRILIST)
@@ -136,6 +136,7 @@ namespace Heart
         std::vector<hVertexBuffer*> vertexBuffer_;
         hMaterialCmdLookUpHelper    cmdLookUp_;
         hVector<hdInputLayout*>     inputLayouts_;
+#endif
     };
 }
 

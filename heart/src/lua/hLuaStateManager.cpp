@@ -283,6 +283,8 @@ namespace Heart
     // 10:00:52 ////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
+    int luaopen_heartbase(lua_State *L);
+
     lua_State* hLuaStateManager::NewLuaState( lua_State* parent )
     {
         lua_State* L = NULL;
@@ -297,6 +299,9 @@ namespace Heart
             lua_atpanic( L, LuaPanic );
             lua_sethook( L, LuaHook, LUA_MASKCALL | LUA_MASKRET | LUA_MASKLINE, 0 );
         }
+
+        luaL_requiref(L, "heart", luaopen_heartbase, true);
+        lua_pop(L, 1);//remove module from stack return by requiref
         return L;
     }
 

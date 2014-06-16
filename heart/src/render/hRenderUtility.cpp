@@ -451,6 +451,7 @@ namespace hRenderUtility
 
     
     hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+#if 0
         hcAssert(rndr && ddrawmat);
 
         
@@ -526,6 +527,10 @@ namespace hRenderUtility
         ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -534,6 +539,7 @@ namespace hRenderUtility
 
     
     hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+#if 0
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -607,6 +613,10 @@ namespace hRenderUtility
         ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -615,6 +625,7 @@ namespace hRenderUtility
 
     
     hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+#if 0
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -671,6 +682,10 @@ namespace hRenderUtility
         ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -679,6 +694,7 @@ namespace hRenderUtility
 
     
     hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+#if 0
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -753,6 +769,10 @@ namespace hRenderUtility
         ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -761,6 +781,7 @@ namespace hRenderUtility
 
     
     hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+#if 0
         hcAssert(rndr && ddrawmat);
 
         hBlendStateDesc blendDesc;
@@ -817,6 +838,10 @@ namespace hRenderUtility
         ddrawmat->listenToResourceEvents();
 
         return ddrawmat;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -860,22 +885,18 @@ namespace hRenderUtility
 
     
     void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
+#if 0
         hcAssert(rndr && font && tex);
         hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
-#if 0
         resmana->removeResource("?builtin.debug_font");
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
         delete fontres;
 
         hTexture* texres=hResourceHandle("?builtin.debug_font_surface").weakPtr<hTexture>();
-#if 0
         resmana->removeResource("?builtin.debug_font_surface");
-#else
-    hcPrintf("Stub "__FUNCTION__);
-#endif
         tex->DecRef();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

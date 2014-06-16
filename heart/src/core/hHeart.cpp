@@ -77,8 +77,7 @@ namespace Heart
 
         hdMountPoint(processDir_, "proc");
         hdMountPoint(workingDir_, "cd");
-        hdMountPoint("cd:/CONFIG/", "cfg");
-        hdMountPoint("cd:/SCRIPT/", "script");
+        hdMountPoint("cd:/../scripts/", "script");
         hdMountPoint("cd:/../gamedata/", "data");
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
@@ -103,20 +102,21 @@ namespace Heart
         fileMananger_ = new hDriveFileSystem;
         renderer_ = new hRenderer;
         soundManager_ = nullptr;//new hSoundManager;
-        console_ = new hSystemConsole(consoleCb, consoleUser);
+        console_ = nullptr;//new hSystemConsole(consoleCb, consoleUser);
         luaVM_ = new hLuaStateManager;
-        debugMenuManager_ = new hDebugMenuManager;
+        debugMenuManager_ = nullptr;//new hDebugMenuManager;
         debugServer_=new hNetHost;
 
         //////////////////////////////////////////////////////////////////////////
         // Read in the configFile_ ///////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        configFile_.readConfig( "cfg:/config.cfg", fileMananger_ );
+        luaVM_->Initialise();
+        hConfigurationVariables::loadCVars(luaVM_->GetMainState(), fileMananger_ );
 
-        config_.Width_ = configFile_.getOptionUint("renderer.width", 640);
-        config_.Height_ = configFile_.getOptionUint("renderer.height", 480);
-        config_.Fullscreen_ = configFile_.getOptionBool("renderer.fullscreen", false);
-        config_.vsync_ = configFile_.getOptionBool("renderer.vsync", false);
+        config_.Width_ = hConfigurationVariables::getCVarUint("renderer.width", 640);
+        config_.Height_ = hConfigurationVariables::getCVarUint("renderer.height", 480);
+        config_.Fullscreen_ = hConfigurationVariables::getCVarBool("renderer.fullscreen", false);
+        config_.vsync_ = hConfigurationVariables::getCVarBool("renderer.vsync", false);
 
         deviceConfig_ = *deviceConfig;
         deviceConfig_.width_ = config_.Width_;
@@ -126,8 +126,8 @@ namespace Heart
         // Init Engine Classes ///////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         
-        hcSetOutputStringCallback(hSystemConsole::printConsoleMessage);
-        debugServer_->initialise(configFile_.getOptionInt("debug.server.port", 8335));
+        //hcSetOutputStringCallback(hSystemConsole::printConsoleMessage);
+        debugServer_->initialise(hConfigurationVariables::getCVarInt("debug.server.port", 8335));
         mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
         jobManager_->initialise();
@@ -145,7 +145,6 @@ namespace Heart
             config_.vsync_);
         hResourceManager::initialise(fileMananger_, jobManager_);
         //!!JM todo: soundManager_->Initialise();
-        luaVM_->Initialise();
 
         g_ProfilerManager_ = new hProfilerManager;
 
@@ -154,40 +153,37 @@ namespace Heart
         ///////////////////////////////////////////////////////////////////////////////////////////////////
 
         OpenHeartLuaLib(luaVM_->GetMainState(), this);
-        renderer_->GetMaterialManager()->openLuaMaterialLib(luaVM_->GetMainState());
         actionManager_->registerLuaLib(luaVM_);
 
         //Run the start up script
-        hIFile* startupscript = fileMananger_->OpenFile("script:/startup.lua", FILEMODE_READ);
-        if (startupscript)
+        const hChar* script_name = hConfigurationVariables::getCVarStr("startup.script", nullptr);
+        if (hIFile* startup_script = fileMananger_->OpenFile(script_name, FILEMODE_READ))
         {
-            hChar* script=hNullptr;
-            if (startupscript->getIsMemMapped()) {
-                script=(hChar*)startupscript->getMemoryMappedBase();
+            hChar* script=nullptr;
+            if (startup_script->getIsMemMapped()) {
+                script=(hChar*)startup_script->getMemoryMappedBase();
             } else {
-                script = (hChar*)hAlloca((hSize_t)startupscript->Length()+1);
-                startupscript->Read(script, (hUint)startupscript->Length());
+                script = (hChar*)hAlloca((hSize_t)startup_script->Length()+1);
+                startup_script->Read(script, (hUint)startup_script->Length());
             }
-            luaL_loadbuffer(luaVM_->GetMainState(), script, startupscript->Length(), "script:/startup.lua");
+            luaL_loadbuffer(luaVM_->GetMainState(), script, startup_script->Length(), script_name);
             if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
                 hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
                 lua_pop(luaVM_->GetMainState(), 1);
             }
-            fileMananger_->CloseFile(startupscript);
+            fileMananger_->CloseFile(startup_script);
         }
 
         //////////////////////////////////////////////////////////////////////////
         // Do any post start up init /////////////////////////////////////////////
         // Console needs resources, call after setup functions ///////////////////
         //////////////////////////////////////////////////////////////////////////
-        renderer_->GetMaterialManager()->createDebugMaterials();
-        renderer_->initialiseCameras();
-        console_->initialise(actionManager_, luaVM_, renderer_, mainPublisherCtx_, debugServer_);
-        debugMenuManager_->Initialise(renderer_, actionManager_);
+        //console_->initialise(actionManager_, luaVM_, renderer_, mainPublisherCtx_, debugServer_); !!JM
+        //debugMenuManager_->Initialise(renderer_, actionManager_); !!JM
 
-        debugInfo_ = new hDebugInfo(this);
-        debugMenuManager_->RegisterMenu("dbinfo", debugInfo_);
-        debugMenuManager_->SetMenuVisiablity("dbinfo", true);
+        debugInfo_ = nullptr;//new hDebugInfo(this);
+        //debugMenuManager_->RegisterMenu("dbinfo", debugInfo_); !!JM
+        //debugMenuManager_->SetMenuVisiablity("dbinfo", true); !!JM
 
         //////////////////////////////////////////////////////////////////////////
         // Load core assets - are none now... ////////////////////////////////////
@@ -218,7 +214,7 @@ namespace Heart
             debugServer_->service();
             hResourceManager::update();
             getActionManager()->update();
-            GetConsole()->update();
+            //GetConsole()->update(); !!JM
             if (GetSystem()->exitSignaled()) {
                 if (!shutdownUpdate_ || shutdownUpdate_(this)) {
                     //wait on game to say ok to shutdown
@@ -234,7 +230,7 @@ namespace Heart
             GetVM()->Update();
             //before calling Update dispatch the last frames messages
             GetMainEventPublisher()->updateDispatch();
-            debugMenuManager_->PreRenderUpdate();
+            //debugMenuManager_->PreRenderUpdate(); !!JM
 
             /*
              * Begin new frame of draw calls
@@ -250,9 +246,9 @@ namespace Heart
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
              **/
-            debugMenuManager_->RenderMenus(
-                GetRenderer()->GetMainSubmissionCtx(), 
-                GetRenderer()->GetMaterialManager());
+            //debugMenuManager_->RenderMenus( !!JM
+            //    GetRenderer()->GetMainSubmissionCtx(), 
+            //    GetRenderer()->GetMaterialManager());
             /*
              * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
              **/
@@ -264,15 +260,15 @@ namespace Heart
 #ifdef HEART_DO_PROFILE
         g_ProfilerManager_->SetFrameTime(frameTimer.elapsedMicroSec()/1000.f);
 #endif
-        debugMenuManager_->EndFrameUpdate();
+        //debugMenuManager_->EndFrameUpdate(); !!JM
     }
 
     hHeartEngine::~hHeartEngine()
     {
         hMemTracking::TrackPopMarker();
 
-        debugMenuManager_->Destroy();
-        console_->destroy();
+        //debugMenuManager_->Destroy(); !!JM
+        //console_->destroy(); !!JM
         //!JM todo: soundManager_->Destory(); 
         hResourceManager::shutdown();
         luaVM_->Destroy();
@@ -282,9 +278,9 @@ namespace Heart
 
         //delete GetGlobalHeap(), debugInfo_; GetGlobalHeap(), debugInfo_ = nullptr;
         delete g_ProfilerManager_; g_ProfilerManager_ = nullptr;
-        delete debugMenuManager_; debugMenuManager_ = nullptr;
+        //delete debugMenuManager_; debugMenuManager_ = nullptr; !!JM
         delete luaVM_; luaVM_ = nullptr;
-        delete console_; console_ = nullptr;
+        //delete console_; console_ = nullptr; !!JM
         //!!JM todo: delete soundManager_; soundManager_ = nullptr;
         delete renderer_; renderer_ = nullptr;
         delete actionManager_; actionManager_ = nullptr;

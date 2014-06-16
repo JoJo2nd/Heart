@@ -67,4 +67,29 @@ namespace Heart
         }
         ID3D11SamplerState*      stateObj_;
     };
+
+    class hRenderStateObject {
+        hRenderStateObject() {
+
+        }
+        ~hRenderStateObject() {
+
+        }
+
+        ID3D11BlendState*        blendStateObj_;
+        ID3D11RasterizerState*   rasterStateObj_;
+        ID3D11DepthStencilState* depthStencilStateObj_;
+        hUint32                  stencilRef_;
+    };
+
+    class hSamplerStateObject {
+        hSamplerStateObject() {
+
+        }
+        ~hSamplerStateObject() {
+
+        }
+
+        ID3D11SamplerState*      stateObj_;
+    };
 }

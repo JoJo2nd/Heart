@@ -53,7 +53,7 @@ namespace Heart
     class  hMaterialTechniquePass
     {
     public:
-
+#if 0
         hMaterialTechniquePass()
             : blendState_(hNullptr)
             , depthStencilState_(hNullptr)
@@ -170,12 +170,13 @@ namespace Heart
         hBlendState*                        blendState_;
         hDepthStencilState*                 depthStencilState_;
         hRasterizerState*                   rasterizerState_;
+#endif
     };
 
     class  hMaterialTechnique
     {
     public:
-
+#if 0
         hMaterialTechnique()
             : mask_(0)
             , transparent_(false)
@@ -234,6 +235,7 @@ namespace Heart
         hUint32       mask_;            //Set on load/create
         hBool         transparent_;
         hByte         layer_;
+#endif
     };
 
     struct  hMaterialGroup

@@ -26,8 +26,8 @@
 *********************************************************************/
 #pragma once
 
+#define HDEBUGINFO_H__ //todo !!JM 
 #ifndef HDEBUGINFO_H__
-#define HDEBUGINFO_H__
 
 #include "base/hTypes.h"
 #include "debug/hDebugMenuManager.h"

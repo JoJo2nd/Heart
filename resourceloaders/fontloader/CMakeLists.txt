@@ -30,8 +30,8 @@ target_link_libraries(font_builder lua52 crypto ${Boost_LIBRARIES} ${PLATFORM_LI
 
 set_target_properties(font_builder PROPERTIES OUTPUT_NAME font)
 
-ADD_CUSTOM_COMMAND(
-	TARGET font_builder
-    POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l font -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/builder/font"
-)
+# ADD_CUSTOM_COMMAND(
+# 	TARGET font_builder
+#     POST_BUILD
+#     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l font -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/builder/font"
+# )

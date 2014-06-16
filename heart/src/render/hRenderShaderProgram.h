@@ -25,8 +25,8 @@
 
 *********************************************************************/
 
+#define HRENDERSHADERPROGRAM_H__ //todo !!JM tmp for reference
 #ifndef HRENDERSHADERPROGRAM_H__
-#define HRENDERSHADERPROGRAM_H__
 
 #include "base/hTypes.h"
 #include "base/hProtobuf.h"

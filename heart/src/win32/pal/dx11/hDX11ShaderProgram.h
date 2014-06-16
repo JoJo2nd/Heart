@@ -28,7 +28,7 @@
 #define DEVICEDX11SHADERPROGRAM_H__
 
 #include "base\hTypes.h"
-#include "..\..\..\base\hRendererConstants.h"
+#include "base\hRendererConstants.h"
 
 namespace Heart
 {
@@ -103,6 +103,38 @@ namespace Heart
         ID3D11ShaderReflection* shaderInfo_;
         hUint                   blobLen_;   // Only valid for vertex shader, stores input layout
         hUint8*                 shaderBlob_;//
+    };
+
+    class hShaderReflection;
+
+    class hShaderStage {
+    public:
+        hShaderStage() {
+
+        }
+        ~hShaderStage() {
+
+        }
+        
+        hShaderType                 type_;
+        union 
+        {
+            ID3D11PixelShader*      pixelShader_;
+            ID3D11VertexShader*     vertexShader_;
+            ID3D11GeometryShader*   geomShader_;
+            ID3D11HullShader*       hullShader_;
+            ID3D11DomainShader*     domainShader_;
+            ID3D11ComputeShader*    computeShader_;
+        };
+    };
+
+    class hShaderProgram {
+        hShaderProgram() {}
+        ~hShaderProgram() {}
+
+        hShaderReflection* getReflectionInfo() const;
+        void attachStage(hShaderStage* stage);
+        void link();
     };
 }
 #endif // DEVICEDX11SHADERPROGRAM_H__

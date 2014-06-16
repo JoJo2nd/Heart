@@ -137,6 +137,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
     void TestBedCore::createRenderResources()
     {
+#if 0
         using namespace Heart;
         hRenderer* renderer = engine_->GetRenderer();
         hRendererCamera* camera = renderer->GetRenderCamera(0);
@@ -195,6 +196,9 @@ DEFINE_HEART_UNIT_TEST(Base64);
         dsv->DecRef();
 
         createdDummyTarget_=hTrue;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -25,6 +25,7 @@
 
 *********************************************************************/
 
+#if 0 // todo !!JM
 #include "debug/hDebugInfo.h"
 #include "base/hStringUtil.h"
 #include "core/hHeart.h"
@@ -78,3 +79,4 @@ namespace Heart
     }
 
 }
+#endif

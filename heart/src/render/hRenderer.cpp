@@ -92,7 +92,6 @@ namespace Heart
         instance_ = this;
 
         frameTimer_.reset();
-        materialManager_.setRenderer(this);
 
         width_			= width;
         height_			= height;
@@ -187,8 +186,6 @@ namespace Heart
         {
             GetRenderCamera(i)->releaseRenderTargetSetup();
         }
-        materialManager_.destroyRenderResources();
-
 #if 0
         hShaderProgram* prog=hNullptr;
         prog=hResourceHandle(hDebugShaderResourceID_PixelWhite).weakPtr<hShaderProgram>();
@@ -267,9 +264,6 @@ namespace Heart
     void hRenderer::EndRenderFrame()
     {
         HEART_PROFILE_FUNC();
-        if (!backBuffer_) {
-            backBuffer_=materialManager_.getGlobalTexture("back_buffer");
-        }
 
 #if 0
         ParentClass::EndRender();
@@ -293,6 +287,7 @@ namespace Heart
 
     void hRenderer::createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex)
     {
+#if 0
         hcAssert(initialData);
         hcAssert(levels > 0);
 
@@ -326,6 +321,9 @@ namespace Heart
                 (*outTex)->levelDescs_[ i ].mipdataSize_ = 0;
             }
         }
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -334,6 +332,7 @@ namespace Heart
 
     void hRenderer::resizeTexture(hUint32 width, hUint32 height, hTexture* inout)
     {
+#if 0
         hcAssert(width > 0 && height > 0 && inout);
         //TODO: do a down-size render? Atm this is only used for render targets so content is throw away.
         if (inout == backBuffer_) {
@@ -367,6 +366,9 @@ namespace Heart
             inout->levelDescs_[ i ].mipdata_     = mipsdata[i].data;
             inout->levelDescs_[ i ].mipdataSize_ = mipsdata[i].size;
         }
+#else
+        hStub();
+#endif
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -375,9 +377,13 @@ namespace Heart
 
     void hRenderer::destroyTexture(hTexture* pOut)
     {
+#if 0
         hcAssert(pOut->GetRefCount() == 0);
         ParentClass::destroyTextureDevice(pOut);
         delete pOut; pOut = nullptr;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -506,7 +512,7 @@ namespace Heart
     {
         hRendererCamera* camera = GetRenderCamera(camID);
         camera->UpdateParameters(ctx);
-        hUint32 retTechMask = camera->GetTechniqueMask();
+        hUint32 retTechMask = 0; // !!JM camera->GetTechniqueMask();
 
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
         ctx->SetViewport(camera->getTargetViewport());
@@ -595,66 +601,6 @@ namespace Heart
                 mainSubmissionCtx_.runRenderCommands(dcall->rCmds_);
             }
         }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::initialiseCameras()
-    {
-        // TODO: power this by a lua script
-        for (hUint32 i = 0; i < HEART_MAX_RENDER_CAMERAS; ++i)
-        {
-            GetRenderCamera(i)->Initialise(this);
-        }
-
-        hTexture* bb=materialManager_.getGlobalTexture("back_buffer");
-        hTexture* db=materialManager_.getGlobalTexture("depth_buffer");
-        hRenderTargetView* rtv=NULL;
-        hDepthStencilView* dsv=NULL;
-        hRenderTargetViewDesc rtvd;
-        hDepthStencilViewDesc dsvd;
-        hZeroMem(&rtvd, sizeof(rtvd));
-        hZeroMem(&dsvd, sizeof(dsvd));
-        rtvd.format_=bb->getTextureFormat();
-        rtvd.resourceType_=bb->getRenderType();
-        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
-        rtvd.tex2D_.topMip_=0;
-        rtvd.tex2D_.mipLevels_=~0;
-        dsvd.format_=eTextureFormat_D32_float;//db->getTextureFormat();
-        dsvd.resourceType_=db->getRenderType();
-        hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
-        dsvd.tex2D_.topMip_=0;
-        dsvd.tex2D_.mipLevels_=~0;
-        createRenderTargetView(bb, rtvd, &rtv);
-        createDepthStencilView(db, dsvd, &dsv);
-
-        //Create viewport/camera for debug drawing
-        hRendererCamera* camera = GetRenderCamera(HEART_DEBUGUI_CAMERA_ID);
-        hRenderViewportTargetSetup rtDesc = {0};
-        rtDesc.nTargets_=1;
-        rtDesc.targetTex_=bb;
-        rtDesc.targets_[0]=rtv;
-        rtDesc.depth_=dsv;
-
-        hRelativeViewport vp;
-        vp.x=0.f;
-        vp.y=0.f;
-        vp.w=1.f;
-        vp.h=1.f;
-
-        camera->bindRenderTargetSetup(rtDesc);
-        camera->SetFieldOfView(45.f);
-        camera->SetOrthoParams(0.f, 0.f, (hFloat)GetWidth(), (hFloat)GetHeight(), 0.1f, 100.f);
-        camera->SetViewMatrix( Heart::hMatrix::identity() );
-        camera->setViewport(vp);
-        camera->SetTechniquePass(materialManager_.GetRenderTechniqueInfo("main"));
-
-        rtv->DecRef();
-        dsv->DecRef();
-
-        hDebugDrawRenderer::it()->initialiseResources(this);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -764,12 +710,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+#if 0
         (*outsrv) = new hShaderResourceView(
             hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
         ParentClass::createShaderResourseViewDevice(tex, desc, *outsrv);
         (*outsrv)->refType_=desc.resourceType_;
         (*outsrv)->refTex_=tex;
         tex->AddRef();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -777,12 +727,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+#if 0
         (*outsrv) = new hShaderResourceView(
             hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
         ParentClass::createShaderResourseViewDevice(cb, desc, *outsrv);
         (*outsrv)->refType_=desc.resourceType_;
         (*outsrv)->refCB_=cb;
         cb->AddRef();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -790,10 +744,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyShaderResourceView(hShaderResourceView* srv) {
+#if 0
         hcAssert(srv);
         hcAssert(srv->GetRefCount() == 0);
         ParentClass::destroyShaderResourceViewDevice(srv);
         delete srv; srv = nullptr;
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -801,10 +759,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv) {
+#if 0
         (*outrtv) = new hRenderTargetView(
             hFUNCTOR_BINDMEMBER(hRenderTargetViewZeroRefProc, hRenderer, destroyRenderTargetView, this));
         ParentClass::createRenderTargetViewDevice(tex, rtvd, *outrtv);
         (*outrtv)->bindTexture(tex);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -812,10 +774,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv) {
+#if 0
         (*outdsv) = new hDepthStencilView(
             hFUNCTOR_BINDMEMBER(hDepthStencilViewZeroRefProc, hRenderer, destroyDepthStencilView, this));
         ParentClass::createDepthStencilViewDevice(tex, dsvd, *outdsv);
         (*outdsv)->bindTexture(tex);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -823,10 +789,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyRenderTargetView(hRenderTargetView* view) {
+#if 0
         hcAssert(view);
         hcAssert(view->GetRefCount() == 0);
         ParentClass::destroyRenderTargetViewDevice(view);
         delete view; view = nullptr;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -834,10 +804,14 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyDepthStencilView(hDepthStencilView* view) {
+#if 0
         hcAssert(view);
         hcAssert(view->GetRefCount() == 0);
         ParentClass::destroyDepthStencilViewDevice(view);
         delete view; view = nullptr;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -845,6 +819,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBlendState* hRenderer::createBlendState(const hBlendStateDesc& desc) {
+#if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
         resourceMutex_.Lock();
@@ -860,6 +835,10 @@ namespace Heart
         }
         resourceMutex_.Unlock();
         return state;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -867,12 +846,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyBlendState(hBlendState* state) {
+#if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
         blendStates_.Remove(state->GetKey());
         ParentClass::destroyBlendStateDevice(state);
         delete state;
         resourceMutex_.Unlock();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -880,6 +863,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hRasterizerState* hRenderer::createRasterizerState(const hRasterizerStateDesc& desc) {
+#if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
         resourceMutex_.Lock();
@@ -895,6 +879,10 @@ namespace Heart
         }
         resourceMutex_.Unlock();
         return state;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -902,12 +890,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destoryRasterizerState(hRasterizerState* state) {
+#if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
         rasterizerStates_.Remove(state->GetKey());
         ParentClass::destroyRasterizerStateDevice(state);
         delete state;
         resourceMutex_.Unlock();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -915,6 +907,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hDepthStencilState* hRenderer::createDepthStencilState(const hDepthStencilStateDesc& desc) {
+#if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
         resourceMutex_.Lock();
@@ -930,6 +923,10 @@ namespace Heart
         }
         resourceMutex_.Unlock();
         return state;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -937,12 +934,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyDepthStencilState(hDepthStencilState* state) {
+#if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
         depthStencilStates_.Remove(state->GetKey());
         ParentClass::destroyDepthStencilStateDevice(state);
         delete state;
         resourceMutex_.Unlock();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -950,6 +951,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hSamplerState* hRenderer::createSamplerState(const hSamplerStateDesc& desc) {
+#if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
         resourceMutex_.Lock();
@@ -965,6 +967,10 @@ namespace Heart
         }
         resourceMutex_.Unlock();
         return state;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -972,12 +978,16 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroySamplerState(hSamplerState* state) {
+#if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
         samplerStateMap_.Remove(state->GetKey());
         ParentClass::destroySamplerStateDevice(state);
         delete state;
         resourceMutex_.Unlock();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -985,9 +995,13 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb) {
+#if 0
         (*outcb) = new hRenderBuffer(
             hFUNCTOR_BINDMEMBER(hRenderBuffer::hZeroRefProc, hRenderer, destroyConstantBlock, this));
         ParentClass::createBufferDevice(size, data, flags, stride, *outcb);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -995,8 +1009,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyConstantBlock(hRenderBuffer* block) {
+#if 0
         ParentClass::destroyConstantBlockDevice(block);
         delete block;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1005,6 +1023,7 @@ namespace Heart
 
     void hRenderer::compileShaderFromSource(const hChar* shaderProg, hUint32 len, 
         const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram* out) {
+#if 0
         ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, includes, defines, ndefines, out);
         if (profile >= eShaderProfile_vs4_0 && profile <= eShaderProfile_vs5_0) {
             out->SetShaderType(ShaderType_VERTEXPROG);
@@ -1019,6 +1038,9 @@ namespace Heart
         } else if (profile == eShaderProfile_ds5_0) {
             out->SetShaderType(ShaderType_DOMAINPROG);
         }
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1026,8 +1048,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out) {
+#if 0
         ParentClass::compileShaderDevice(shaderProg, len, type, out);
         out->SetShaderType(type);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1035,8 +1061,10 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hRenderer::destroyShader(hShaderProgram* prog) {
+#if 0        
         ParentClass::destroyShaderDevice(prog);
         delete prog;
+#endif
     }
 
 #if 0
@@ -1604,7 +1632,7 @@ namespace Heart
     }
 #endif
 
-
+#if 0 //!!JM
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -2009,487 +2037,5 @@ namespace Heart
         }
         return hdRenderCommandGenerator::updateStreamInputs(cmd, primType, index, format, vertexlayout, dvtx, firstStream, streamCount);
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::initialise(hRenderer* renderer, const hRenderTargetInfo* rndrinfo) {
-        stopResourceEventListening();
-
-
-        destroy();
-
-        targetInfo_=*rndrinfo;
-#if 0
-        if (targetInfo_.vertexLightShader_.getIsValid()) {
-            targetInfo_.vertexLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
-        }
-        if (targetInfo_.pixelLightShader_.getIsValid()) {
-            targetInfo_.pixelLightShader_.registerForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
-        }
-#else
-        hcPrintf("Stub "__FUNCTION__);
 #endif
-        renderer_=renderer;
-        generateRenderCommands(renderer);
-
-        for (hUint i=0, n=sphereLights_.GetMaxSize(); i<n; ++i) {
-            freeSphereLights_.addTail(&sphereLights_[i]);
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::destroy() {
-        for (hUint i=0, n=srv_.size(); i<n; ++i) {
-            if (srv_[i]) {
-                srv_[i]->DecRef();
-                srv_[i]=hNullptr;
-            }
-        }
-        srv_.resize(0);
-        buffers_.resize(0);
-        if (blendState_) {
-            blendState_->DecRef();
-            blendState_=hNullptr;
-        }
-        if (rasterState_) {
-            rasterState_->DecRef();
-            rasterState_=hNullptr;
-        }
-        if (depthStencilState_) {
-            //depthStencilState_->DecRef();
-            depthStencilState_=hNullptr;
-        }
-        if (samplerState_) {
-            samplerState_->DecRef();
-            samplerState_=hNullptr;
-        }
-        if (inputLayout_ && targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()) {
-            targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()->destroyVertexLayout(inputLayout_);
-            inputLayout_=hNullptr;
-        }
-        if (inputLightData_) {
-            inputLightData_->DecRef();
-            inputLightData_=hNullptr;
-        }
-        if (directionLightData_) {
-            directionLightData_->DecRef();
-            directionLightData_=hNullptr;
-        }
-        if (quadLightData_) {
-            quadLightData_->DecRef();
-            quadLightData_=hNullptr;
-        }
-        if (sphereLightData_) {
-            sphereLightData_->DecRef();
-            sphereLightData_=hNullptr;
-        }
-        if (screenQuadIB_) {
-            screenQuadIB_->DecRef();
-            screenQuadIB_=hNullptr;
-        }
-        if (screenQuadVB_) {
-            screenQuadVB_->DecRef();
-            screenQuadVB_=hNullptr;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::addDirectionalLight(const hVec3& direction, const hColour& colour) {
-        directionalLights_[lightInfo_.directionalLightCount_].direction_=direction;
-        directionalLights_[lightInfo_.directionalLightCount_].colour_=colour;
-        ++lightInfo_.directionalLightCount_;
-    }
-
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::addQuadLight(const hVec3& halfwidth, const hVec3& halfheight, const hVec3& centre, const hColour& colour) {
-        hQuadLight quad;
-        quadLights_[lightInfo_.quadLightCount_].points_[0] = centre-halfwidth-halfheight;
-        quadLights_[lightInfo_.quadLightCount_].points_[1] = centre+halfwidth-halfheight;
-        quadLights_[lightInfo_.quadLightCount_].points_[2] = centre+halfwidth+halfheight;
-        quadLights_[lightInfo_.quadLightCount_].points_[3] = centre-halfwidth+halfheight;
-        quadLights_[lightInfo_.quadLightCount_].colour_ = colour;
-        quadLights_[lightInfo_.quadLightCount_].centre_=centre;
-        quadLights_[lightInfo_.quadLightCount_].halfv_[0]=halfwidth;
-        quadLights_[lightInfo_.quadLightCount_].halfv_[1]=halfheight;
-        ++lightInfo_.quadLightCount_;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::doDeferredLightPass(hRenderer* renderer, hRenderSubmissionCtx* ctx) {
-        if (renderCmds_.isEmpty()) {
-            return;
-        }
-
-        (void)renderer;
-        hRenderBufferMapInfo mapinfo;
-        hRendererCamera* viewcam=renderer->GetRenderCamera(targetInfo_.viewCameraIndex_);
-        hMatrix view=viewcam->GetViewMatrix();
-        hMatrix invView=inverse(view);
-        hMatrix project=viewcam->GetProjectionMatrix();
-        hMatrix invProject=inverse(project);
-
-        drawDebugLightInfo();
-
-        ctx->Map(inputLightData_, &mapinfo); {
-            hInputLightData* mapptr=(hInputLightData*)mapinfo.ptr;
-            mapptr->viewMatrix_=view;
-            mapptr->inverseViewMtx_=invView;
-            mapptr->projectionMtx_=project;
-            mapptr->inverseProjectMtx_=invProject;
-            mapptr->eyePos_=invView.getRow(3);
-            mapptr->directionalLightCount_ = lightInfo_.directionalLightCount_;
-            mapptr->quadLightCount_ = lightInfo_.quadLightCount_;
-            mapptr->sphereLightCount_=lightInfo_.sphereLightCount_;
-            ctx->Unmap(&mapinfo);
-        }
-        ctx->Map(directionLightData_, &mapinfo); {
-            hDirectionalLight* mapptr=(hDirectionalLight*)mapinfo.ptr;
-            for (hUint i=0; i<lightInfo_.directionalLightCount_; ++i) {
-                mapptr[i]=directionalLights_[i];
-            }
-            ctx->Unmap(&mapinfo);
-        }
-        ctx->Map(quadLightData_, &mapinfo); {
-            hQuadLight* mapptr=(hQuadLight*)mapinfo.ptr;
-            for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
-                mapptr[i]=quadLights_[i];
-            }
-            ctx->Unmap(&mapinfo);
-        }
-        ctx->Map(sphereLightData_, &mapinfo); {
-            hSphereLightRenderData* mapptr=(hSphereLightRenderData*)mapinfo.ptr;
-            for (hSphereLight* i=activeSphereLights_.begin(), *n=activeSphereLights_.end(); i!=n; i=i->GetNext()) {
-                mapptr->centreRadius_=i->centreRadius_;
-                mapptr->colour_=i->colour_;
-                mapptr->colour_.r_=12.57f*10.f;//light power
-                mapptr->colour_.g_=12.57f*10.f;//light power
-                mapptr->colour_.b_=12.57f*10.f;//light power
-                mapptr->colour_.a_=12.57f*10.f;//light power
-                ++mapptr;
-            }
-            ctx->Unmap(&mapinfo);
-        }
-        ctx->runRenderCommands(renderCmds_.getFirst());
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::drawDebugLightInfo() {
-        hDebugDraw* dd=hDebugDraw::it();
-        dd->begin();
-
-        for (hUint i=0; i<lightInfo_.quadLightCount_; ++i) {
-            hVec3 forward=cross(quadLights_[i].halfv_[0], quadLights_[i].halfv_[1]);
-            forward=normalizeApprox(forward)*length(quadLights_[i].halfv_[0]);
-            Heart::hDebugLine quadlight[] = {
-                //quad
-                {quadLights_[i].points_[0], quadLights_[i].points_[1], hColour(1.f, 0.f, 1.f, 1.f)},
-                {quadLights_[i].points_[1], quadLights_[i].points_[2], hColour(1.f, 0.f, 1.f, 1.f)},
-                {quadLights_[i].points_[2], quadLights_[i].points_[3], hColour(1.f, 0.f, 1.f, 1.f)},
-                {quadLights_[i].points_[3], quadLights_[i].points_[0], hColour(1.f, 0.f, 1.f, 1.f)},
-                //half widths
-                {quadLights_[i].centre_, quadLights_[i].centre_+quadLights_[i].halfv_[0], hColour(1.f, 0.f, 0.f, 1.f)},
-                {quadLights_[i].centre_, quadLights_[i].centre_+quadLights_[i].halfv_[1], hColour(0.f, 1.f, 0.f, 1.f)},
-                {quadLights_[i].centre_, quadLights_[i].centre_+forward, hColour(0.f, 0.f, 1.f, 1.f)},
-            };
-            dd->drawLines(quadlight, (hUint)hArraySize(quadlight), eDebugSet_3DDepth);
-        }
-
-        for (hSphereLight* i=activeSphereLights_.begin(), *n=activeSphereLights_.end(); i!=n; i=i->GetNext()) {
-            const hSphereLight& l=*i;
-            Heart::hDebugLine spherelines[] = {
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW(), 0.f, 0.f), l.centreRadius_.getXYZ()-hVec3(l.centreRadius_.getW(), 0.f, 0.f), hColour(1.f, 0.f, 0.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(0.f, l.centreRadius_.getW(), 0.f), l.centreRadius_.getXYZ()-hVec3(0.f, l.centreRadius_.getW(), 0.f), hColour(0.f, 1.f, 0.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(0.f, 0.f, l.centreRadius_.getW()), l.centreRadius_.getXYZ()-hVec3(0.f, 0.f, l.centreRadius_.getW()), hColour(0.f, 0.f, 1.f, 1.f) },
-                // rings         .getXYZ()
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  l.centreRadius_.getW()*hSin(0.785f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  l.centreRadius_.getW()*hSin(1.57f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  l.centreRadius_.getW()*hSin(2.355f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  l.centreRadius_.getW()*hSin(3.14f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  l.centreRadius_.getW()*hSin(3.925f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  l.centreRadius_.getW()*hSin(4.71f) , 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  l.centreRadius_.getW()*hSin(5.495f), 0.f), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  l.centreRadius_.getW()*hSin(0.f)   , 0.f), hColour(1.f, 0.f, 1.f, 1.f) },
-                //               .getXYZ()
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   ,  0.f, l.centreRadius_.getW()*hSin(0.f)   ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f), 0.f, l.centreRadius_.getW()*hSin(0.785f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.785f),  0.f, l.centreRadius_.getW()*hSin(0.785f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) , 0.f, l.centreRadius_.getW()*hSin(1.57f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(1.57f) ,  0.f, l.centreRadius_.getW()*hSin(1.57f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f), 0.f, l.centreRadius_.getW()*hSin(2.355f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(2.355f),  0.f, l.centreRadius_.getW()*hSin(2.355f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) , 0.f, l.centreRadius_.getW()*hSin(3.14f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.14f) ,  0.f, l.centreRadius_.getW()*hSin(3.14f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f), 0.f, l.centreRadius_.getW()*hSin(3.925f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(3.925f),  0.f, l.centreRadius_.getW()*hSin(3.925f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) , 0.f, l.centreRadius_.getW()*hSin(4.71f) ), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(4.71f) ,  0.f, l.centreRadius_.getW()*hSin(4.71f) ), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f), 0.f, l.centreRadius_.getW()*hSin(5.495f)), hColour(1.f, 0.f, 1.f, 1.f) },
-                { l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(5.495f),  0.f, l.centreRadius_.getW()*hSin(5.495f)), l.centreRadius_.getXYZ()+hVec3(l.centreRadius_.getW()*hCos(0.f)   , 0.f, l.centreRadius_.getW()*hSin(0.f)   ), hColour(1.f, 0.f, 1.f, 1.f) },
-            };
-
-            dd->drawLines(spherelines, (hUint)hArraySize(spherelines), eDebugSet_3DDepth);
-        }
-
-        dd->end();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::enableSphereLight(hUint light, hBool enable) {
-        if (enable) {
-            hcAssert(!activeSphereLights_.existInList(&sphereLights_[light]));
-            freeSphereLights_.remove(&sphereLights_[light]);
-            activeSphereLights_.addHead(&sphereLights_[light]);
-        } else if (!enable) {
-            hcAssert(activeSphereLights_.existInList(&sphereLights_[light]));
-            activeSphereLights_.remove(&sphereLights_[light]);
-            freeSphereLights_.addHead(&sphereLights_[light]);
-        }
-        lightInfo_.sphereLightCount_=activeSphereLights_.getSize();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::setSphereLight(hUint light, const hVec3& centre, hFloat radius) {
-        sphereLights_[light].centreRadius_=hVec4(centre, radius);
-        sphereLights_[light].colour_=WHITE;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::generateRenderCommands(hRenderer* renderer) {
-        hRenderCommandGenerator rcGen(&renderCmds_);
-        if (!targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>() || !targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()) {
-            return;
-        }
-
-        destroy();
-
-        lightInfo_.directionalLightCount_=0;
-        lightInfo_.quadLightCount_=0;
-        renderer->createBuffer(sizeof(hInputLightData), hNullptr, eResourceFlag_ConstantBuffer, 0, &inputLightData_);
-        renderer->createBuffer(sizeof(hDirectionalLight)*s_maxDirectionalLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hDirectionalLight), &directionLightData_);
-        renderer->createBuffer(sizeof(hQuadLight)*s_maxQuadLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hQuadLight), &quadLightData_);
-        renderer->createBuffer(sizeof(hSphereLightRenderData)*s_maxSphereLights, hNullptr, eResourceFlag_ShaderResource | eResourceFlag_StructuredBuffer, sizeof(hSphereLightRenderData), &sphereLightData_);
-        hRenderUtility::buildTessellatedQuadMesh(1.f, 1.f, 10, 10, renderer, &screenQuadIB_, &screenQuadVB_);
-        hBlendStateDesc blendstatedesc;
-        hZeroMem(&blendstatedesc, sizeof(blendstatedesc));
-        blendstatedesc.blendEnable_           = RSV_DISABLE;
-        blendstatedesc.srcBlend_              = RSV_BLEND_OP_ONE;
-        blendstatedesc.destBlend_             = RSV_BLEND_OP_ZERO;
-        blendstatedesc.blendOp_               = RSV_BLEND_FUNC_ADD;
-        blendstatedesc.srcBlendAlpha_         = RSV_BLEND_OP_ONE;
-        blendstatedesc.destBlendAlpha_        = RSV_BLEND_OP_ZERO;
-        blendstatedesc.blendOpAlpha_          = RSV_BLEND_FUNC_ADD;
-        blendstatedesc.renderTargetWriteMask_ = RSV_COLOUR_WRITE_FULL;
-        blendState_=renderer->createBlendState(blendstatedesc);
-        hRasterizerStateDesc rasterstatedesc;
-        hZeroMem(&rasterstatedesc, sizeof(rasterstatedesc));
-        rasterstatedesc.fillMode_              = RSV_FILL_MODE_SOLID;
-        rasterstatedesc.cullMode_              = RSV_CULL_MODE_NONE;
-        rasterstatedesc.frontCounterClockwise_ = RSV_DISABLE;
-        rasterstatedesc.depthBias_             = 0;
-        rasterstatedesc.depthBiasClamp_        = 0.f;
-        rasterstatedesc.slopeScaledDepthBias_  = 0.f;
-        rasterstatedesc.depthClipEnable_       = RSV_ENABLE;
-        rasterstatedesc.scissorEnable_         = RSV_DISABLE;
-        rasterState_=renderer->createRasterizerState(rasterstatedesc);
-        hDepthStencilStateDesc depthstatedesc;
-        hZeroMem(&depthstatedesc, sizeof(depthstatedesc));
-        depthstatedesc.depthEnable_        = RSV_DISABLE;
-        depthstatedesc.depthWriteMask_     = RSV_DISABLE;
-        depthstatedesc.depthFunc_          = RSV_Z_CMP_LESS;
-        depthstatedesc.stencilEnable_      = RSV_DISABLE;
-        depthstatedesc.stencilReadMask_    = ~0U;
-        depthstatedesc.stencilWriteMask_   = ~0U;
-        depthstatedesc.stencilFailOp_      = RSV_SO_KEEP;
-        depthstatedesc.stencilDepthFailOp_ = RSV_SO_KEEP;
-        depthstatedesc.stencilPassOp_      = RSV_SO_KEEP;
-        depthstatedesc.stencilFunc_        = RSV_SF_CMP_ALWAYS;
-        depthstatedesc.stencilRef_         = 0;  
-        depthStencilState_=renderer->createDepthStencilState(depthstatedesc);
-        hSamplerStateDesc samplerstatedesc;
-        samplerstatedesc.filter_        = SSV_POINT;
-        samplerstatedesc.addressU_      = SSV_CLAMP;
-        samplerstatedesc.addressV_      = SSV_CLAMP;
-        samplerstatedesc.addressW_      = SSV_CLAMP;
-        samplerstatedesc.mipLODBias_    = 0;
-        samplerstatedesc.maxAnisotropy_ = 16;
-        samplerstatedesc.borderColour_  = WHITE;
-        samplerstatedesc.minLOD_        = -FLT_MAX;
-        samplerstatedesc.maxLOD_        = FLT_MAX;
-        samplerState_=renderer->createSamplerState(samplerstatedesc);
-        inputLayout_=targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>()->createVertexLayout(screenQuadVB_->getLayoutDesc(), screenQuadVB_->getDescCount());
-
-
-        for (hUint i=0, n=targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>()->getInputCount(); i<n; ++i) {
-            hShaderInput shaderInput;
-            targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>()->getInput(i, &shaderInput);
-            if (hStrCmp(shaderInput.name_, "gbuffer_albedo")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=targetInfo_.albedo_->getTextureFormat();
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.albedo_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_normal")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=targetInfo_.normal_->getTextureFormat();
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.normal_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_spec")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=targetInfo_.spec_->getTextureFormat();
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.spec_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "gbuffer_depth")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Tex2D;
-                srvdesc.format_=eTextureFormat_R32_float;
-                srvdesc.tex2D_.mipLevels_=~0;
-                srvdesc.tex2D_.topMip_=0;
-                renderer->createShaderResourceView(targetInfo_.depth_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "tex_sampler")==0 && shaderInput.type_==eShaderInputType_Sampler) {
-                samplerBindPoint_=shaderInput.bindPoint_;
-            } else if (hStrCmp(shaderInput.name_, "lighting_setup")==0 && shaderInput.type_==eShaderInputType_Buffer) {
-                if (buffers_.size() < shaderInput.bindPoint_+1) {
-                    buffers_.resize(shaderInput.bindPoint_+1);
-                }
-                buffers_[shaderInput.bindPoint_]=inputLightData_;
-            } else if (hStrCmp(shaderInput.name_, "direction_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hDirectionalLight);
-                srvdesc.buffer_.numElements_=s_maxDirectionalLights;
-                renderer->createShaderResourceView(directionLightData_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "quad_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hQuadLight);
-                srvdesc.buffer_.numElements_=s_maxQuadLights;
-                renderer->createShaderResourceView(quadLightData_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            } else if (hStrCmp(shaderInput.name_, "sphere_lighting")==0 && shaderInput.type_==eShaderInputType_Resource) {
-                hShaderResourceViewDesc srvdesc;
-                hShaderResourceView* srv;
-                hZeroMem(&srvdesc, sizeof(srvdesc));
-                srvdesc.resourceType_=eRenderResourceType_Buffer;
-                srvdesc.format_=eTextureFormat_Unknown;
-                srvdesc.buffer_.firstElement_=0;
-                srvdesc.buffer_.elementOffset_=0;
-                srvdesc.buffer_.elementWidth_=sizeof(hSphereLightRenderData);
-                srvdesc.buffer_.numElements_=s_maxSphereLights;
-                renderer->createShaderResourceView(sphereLightData_, srvdesc, &srv);
-                if (srv_.size() < shaderInput.bindPoint_+1) {
-                    srv_.resize(shaderInput.bindPoint_+1);
-                }
-                srv_[shaderInput.bindPoint_]=srv;
-            }
-        }
-        rcGen.setRenderStates(blendState_, rasterState_, depthStencilState_);
-        rcGen.setShader(targetInfo_.vertexLightShader_.weakPtr<hShaderProgram>(), ShaderType_VERTEXPROG);
-        rcGen.setShader(targetInfo_.pixelLightShader_.weakPtr<hShaderProgram>(), ShaderType_FRAGMENTPROG);
-        rcGen.setPixelInputs(&samplerState_, 1, srv_.data(), srv_.size(), buffers_.data(), buffers_.size());
-        rcGen.setStreamInputs(PRIMITIVETYPE_TRILIST, screenQuadIB_, screenQuadIB_->getIndexBufferType(), inputLayout_, &screenQuadVB_, 0, 1);
-        rcGen.setDrawIndex(screenQuadIB_->GetIndexCount()/3, 0);
-        rcGen.setReturn();
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hLightingManager::resourceUpdate(hStringID , hResurceEvent event) {
-#if 0
-        destroy();
-        if (event == hResourceEvent_DBInsert) {
-            generateRenderCommands(renderer_);
-        }
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
-        return hTrue;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hLightingManager::stopResourceEventListening() {
-#if 0
-        if (targetInfo_.vertexLightShader_.getIsValid()) {
-            targetInfo_.vertexLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
-            targetInfo_.vertexLightShader_=hResourceHandle();
-        }
-        if (targetInfo_.pixelLightShader_.getIsValid()) {
-            targetInfo_.pixelLightShader_.unregisterForUpdates(hFUNCTOR_BINDMEMBER(hResourceEventProc, hLightingManager, resourceUpdate, this));
-            targetInfo_.pixelLightShader_=hResourceHandle();
-        }
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
-    }
-
 }
