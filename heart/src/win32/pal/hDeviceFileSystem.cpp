@@ -85,7 +85,7 @@ public:
         }
         mountAccessMutex_.Unlock();
     }
-    hUint getMountPathLenght(const hChar* mount) {
+    hUint getMountPathlength(const hChar* mount) {
         mountAccessMutex_.Lock();
         hUint len=0;
         hUint midx=findMountIndex(mount);
@@ -469,7 +469,7 @@ private:
         const hChar* term=hStrChr(path, ':');
         if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
             hStrNCopy(mnt, (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path)+1, path);
-            ret+=g_fileSystemInfo.getMountPathLenght(mnt);
+            ret+=g_fileSystemInfo.getMountPathlength(mnt);
         }
         g_fileSystemInfo.unlock();
         return ret;

@@ -16,7 +16,7 @@
             "working_dir": "$project_path/build",
             "windows":
             {
-            	"file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
+            	"file_regex": "\\s*?\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
             }
         }
     ]

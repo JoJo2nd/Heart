@@ -48,7 +48,7 @@ namespace Heart
         {}
 
         hSize_t size() const { return strEntry_->byteLen_; }
-        hSize_t lenght() const { return strEntry_->byteLen_; }
+        hSize_t length() const { return strEntry_->byteLen_; }
         const char* c_str() const { return strEntry_->strValue_; }
         hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
         hBool operator == (const hStringID& rhs) const { return strEntry_ == rhs.strEntry_; }

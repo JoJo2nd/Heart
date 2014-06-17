@@ -24,15 +24,12 @@
 	distribution.
 
 *********************************************************************/
-#if 0 //todo !!JM
+
 #include "render/hRenderShaderProgram.h"
-#include "hRenderer.h"
-#include "base/hStringUtil.h"
 
 namespace Heart
 {
-    hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResourceContainer,
-        hObjectBaseType(Heart::hdShaderProgram));
+    hRegisterObjectType(shader, Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -45,6 +42,8 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     hBool hShaderProgram::deserialiseObject(Heart::proto::ShaderResourceContainer* obj_cont) {
+        return hTrue;
+#if 0 // !!JM old code for reference
         hBool prefersource=hTrue;
         const Heart::proto::ShaderResource* obj=nullptr;
         for (hUint i=0, n=obj_cont->shaderresources_size(); i<n; ++i) {
@@ -98,6 +97,6 @@ namespace Heart
             return hFalse;
         }
         return hTrue;
+#endif
     }
 }
-#endif

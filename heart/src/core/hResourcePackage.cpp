@@ -159,7 +159,9 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             } break;
         case State_Load_DepPkgs: {
                 for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
-                    hResourceManager::loadPackage(packageLinks_[i].c_str());
+                    if (packageLinks_[i].length() > 0) { // !!JM todo: find out why this package name is empty
+                        hResourceManager::loadPackage(packageLinks_[i].c_str());
+                    }
                 }
                 packageState_ = State_Kick_ResourceLoads; 
             } break;

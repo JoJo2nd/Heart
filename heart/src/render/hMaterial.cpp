@@ -34,8 +34,7 @@
 
 namespace Heart
 {
-    hRegisterObjectType(material, Heart::hMaterial, Heart::proto::MaterialResource,
-        hObjectBaseType(Heart::hResourceClassBase));
+    hRegisterObjectType(material, Heart::hMaterial, Heart::proto::MaterialResource);
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

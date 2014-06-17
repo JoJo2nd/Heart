@@ -128,9 +128,9 @@ namespace Heart
         };
     };
 
-    class hShaderProgram {
-        hShaderProgram() {}
-        ~hShaderProgram() {}
+    class hShaderLinkedProgram {
+        hShaderLinkedProgram() {}
+        ~hShaderLinkedProgram() {}
 
         hShaderReflection* getReflectionInfo() const;
         void attachStage(hShaderStage* stage);

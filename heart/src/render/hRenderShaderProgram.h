@@ -25,50 +25,26 @@
 
 *********************************************************************/
 
-#define HRENDERSHADERPROGRAM_H__ //todo !!JM tmp for reference
 #ifndef HRENDERSHADERPROGRAM_H__
+#define HRENDERSHADERPROGRAM_H__ //todo !!JM tmp for reference
 
 #include "base/hTypes.h"
 #include "base/hProtobuf.h"
-#include "components/hObjectFactory.h"
-#include "pal/dx11/hWin32DX11.h"
-#include "base/hReferenceCounted.h"
 
 namespace Heart
 {
-    class  hShaderProgram : public hdShaderProgram,
-                                           public hIReferenceCounted
+    class  hShaderProgram
     {
     public:
         hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
         hFUNCTOR_TYPEDEF(void(*)(hShaderProgram*), hZeroProc);
-        hShaderProgram()
-            : shaderType_(ShaderType_MAX)
-        {
-
-        }
-        hShaderProgram(hdRenderDevice* device, hZeroProc zeroproc) 
-            : hdShaderProgram(device)
-            , shaderType_(ShaderType_MAX)
-            , zeroProc_(zeroproc)
-        {
-
-        }
-        ~hShaderProgram()
-        {
+        hShaderProgram() {}
+        ~hShaderProgram() {
         }
 
-        hShaderType             GetShaderType() const { return shaderType_; } 
-        void                    SetShaderType(hShaderType shadertype) { shaderType_ = shadertype; }
-
-    private:
-        void OnZeroRef() {
-            zeroProc_(this);
-        }
-        friend class hRenderer;
-
-        hZeroProc           zeroProc_;
-        hShaderType         shaderType_;
+        /*
+            Placeholder class !!JM
+        */
     };
 }
 
