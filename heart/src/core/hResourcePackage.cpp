@@ -164,12 +164,12 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                 packageState_ = State_Kick_ResourceLoads; 
             } break;
         case State_Kick_ResourceLoads: {
-                hcPrintf("Stub "__FUNCTION__);
+                hStub();
                 hcAssert(pkgFileHandle_->getIsMemMapped());
                 hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
                 hFloat start_time = hClock::elapsed();
                 for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
-                    hJob* loadjob=new hJob;
+                    //hJob* loadjob=new hJob;
                     resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
                     resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
                     resourceJobArray_[i].createdResource_=nullptr;

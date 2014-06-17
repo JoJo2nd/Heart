@@ -30,12 +30,12 @@
 
 namespace Heart
 {
-    HEART_ALIGNMENT_BEGIN(32)
+    HEART_ALIGNMENT_BEGIN(16)
     struct  hAtomicInt
     {
         hUint32 value_;
     }
-    HEART_ALIGNMENT_END(32);
+    HEART_ALIGNMENT_END(16);
 
 namespace hAtomic
 {

@@ -41,19 +41,19 @@ namespace hAtomic
 
     void HEART_API Increment( hAtomicInt& i )
     {
-        hcAssert( ((hUint32)&i.value_ % 32) == 0 );
+        hcAssert( ((hUint32)&i.value_ % 16) == 0 );
         InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
     }
 
     void HEART_API Decrement( hAtomicInt& i )
     {
-        hcAssert( ((hUint32)&i.value_ % 32) == 0 );
+        hcAssert( ((hUint32)&i.value_ % 16) == 0 );
         InterlockedDecrementAcquire( (volatile LONG*)&i.value_ );
     }
 
     hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal )
     {
-        hcAssert( ((hUint32)&val.value_ % 32) == 0 );
+        hcAssert( ((hUint32)&val.value_ % 16) == 0 );
         return InterlockedCompareExchangeAcquire( (volatile LONG*) &val.value_, newVal, compare );
     }
 

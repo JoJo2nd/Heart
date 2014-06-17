@@ -279,7 +279,7 @@ void removeResourceContainer(hStringID res_id) {
 //////////////////////////////////////////////////////////////////////////
 
 void addResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc) {
-    hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
+    hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
     auto found_item = resourceDB_.find(res_id);
 #ifdef HEART_DEBUG
     for (hUint i=0; i<num_links; ++i) {
@@ -317,10 +317,9 @@ void breakResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNew
 //////////////////////////////////////////////////////////////////////////
 
 void registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-    hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
     auto found_item = resourceDB_.find(res_id);
     resourceNotify_.insert(hResourceNotifyTable::value_type(res_id, proc));
-    if (found_item->second.resourceData_) {
+    if (resourceDB_.find(res_id) != resourceDB_.end() && found_item->second.resourceData_) {
         proc(res_id, hResourceEvent_DBInsert, found_item->second.typeID_, found_item->second.resourceData_);
     }
 }
@@ -330,7 +329,6 @@ void registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
 //////////////////////////////////////////////////////////////////////////
 
 void unregisterForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-    hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
     auto found_range = resourceNotify_.equal_range(res_id);
     for (auto i=found_range.first; i!=found_range.second; ++i) {
         if (i->second == proc) {
