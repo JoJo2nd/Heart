@@ -205,14 +205,17 @@ DEFINE_HEART_UNIT_TEST(Base64);
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void TestBedCore::destroyRenderResources()
-    {
+    void TestBedCore::destroyRenderResources() {
+#if 0
         using namespace Heart;
         hRenderer* renderer = engine_->GetRenderer();
         hRendererCamera* camera = renderer->GetRenderCamera(0);
 
         camera->releaseRenderTargetSetup();
         createdDummyTarget_=hFalse;
+#else
+        hStub();
+#endif        
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,8 +251,8 @@ DEFINE_HEART_UNIT_TEST(Base64);
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine )
-    {
+    void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine ) {
+#if 0
         if ( currentTest_ && currentTest_->GetCanRender() ) {
             if (createdDummyTarget_) {
                 createdDummyTarget_=hFalse;
@@ -261,6 +264,9 @@ DEFINE_HEART_UNIT_TEST(Base64);
             }
             pEngine->GetRenderer()->beginCameraRender(pEngine->GetRenderer()->GetMainSubmissionCtx(), 0);
         }
+#else
+        hStub();
+#endif
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

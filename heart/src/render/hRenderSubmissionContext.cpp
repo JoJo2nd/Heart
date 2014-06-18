@@ -239,7 +239,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderSubmissionCtx::Initialise( hRenderer* renderer )
+    void hRenderSubmissionCtx::Initialise()
     {
 #if 0
         hUint32 size = sizeof( hInstanceConstants );

@@ -46,8 +46,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hDebugDraw::hDebugDraw() 
-        : renderer_(nullptr)
-    {
+        : renderer_(nullptr) {
         renderer_=hDebugDrawRenderer::it();
     }
 
@@ -195,7 +194,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugDrawRenderer::initialiseResources(hRenderer* renderer) {
+    void hDebugDrawRenderer::initialiseResources() {
 #if 0 //!!JM
         hInputLayoutDesc poscoldesc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT4, 0, 0),
@@ -364,7 +363,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hDebugDrawRenderer::render(hRenderer* renderer, hRenderSubmissionCtx* ctx) {
+    void hDebugDrawRenderer::render(hRenderSubmissionCtx* ctx) {
 #if 0  //!!JM      
         if (!colourView_ || !depthView_ || !resourcesCreated_) {
             return;

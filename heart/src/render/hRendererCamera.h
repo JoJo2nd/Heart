@@ -38,7 +38,7 @@
 
 namespace Heart
 {
-    class hRenderer;
+    
     class hTexture;
     class hRenderTargetView;
     class hDepthStencilView;
@@ -63,7 +63,7 @@ namespace Heart
         hRendererCamera();
         virtual ~hRendererCamera();
 
-        void                        Initialise( hRenderer* renderer );
+        void                        Initialise();
         void                        SetFieldOfView( hFloat fovDegrees ) { fov = hDegToRad( fovDegrees ); }
         void                        SetProjectionParams( hFloat Ratio, hFloat Near, hFloat Far );
         void                        SetOrthoParams( hFloat width, hFloat height, hFloat znear, hFloat zfar );
@@ -103,7 +103,6 @@ namespace Heart
         hMatrix                     projectionMatrix_;
         hViewFrustum                frustum_;
         hRelativeViewport           viewport_;
-        hRenderer*                  renderer_;
         hRenderViewportTargetSetup  setup_;
         hRenderBuffer*              cameraConstBlock_;
         hViewportShaderConstants    viewportConstants_;

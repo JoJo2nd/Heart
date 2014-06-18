@@ -39,7 +39,7 @@ namespace Heart
 {
     class hKeyboard;
     class hLuaStateManager;
-    class hRenderer;
+    
     class hMaterial;
     class hVertexBuffer;
     class hIndexBuffer;

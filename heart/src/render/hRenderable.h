@@ -39,7 +39,7 @@
 
 namespace Heart
 {
-    class hRenderer;
+    
 
     //////////////////////////////////////////////////////////////////////////
     // A Renderable simply describes a collection of triangles that can be ///

@@ -80,7 +80,7 @@ namespace Heart
 #endif
     hFUNCTOR_TYPEDEF(hBool (*)(hStringID/*res_id*/, hResurceEvent/*event_type*/, hStringID/*type_id*/, void* /*data_ptr*/), hNewResourceEventProc);
 
-    class hRenderer;
+    
     class hRenderMaterialManager;
     class hIFile;
     class hHeartEngine;

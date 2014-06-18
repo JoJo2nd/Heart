@@ -40,7 +40,7 @@ class TextureBuilder;
 
 namespace Heart
 {
-    class hRenderer;
+    
     class hTexture;
 
     class  hTexture : public hdTexture,
@@ -96,7 +96,7 @@ namespace Heart
 
     private:
 
-        friend class hRenderer;
+        
 
         void OnZeroRef();
 

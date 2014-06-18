@@ -90,7 +90,7 @@ namespace Heart
     class hJobManager;
     class hLuaStateManager;
     class hPublisherContext;
-    class hRenderer;   
+       
     class hSceneGraph;
     class hSoundManager;
     class hSystem;
@@ -159,7 +159,6 @@ namespace Heart
 
         hIFileSystem*       GetFileManager()        { return fileMananger_; }
         hSystem*            GetSystem()             { return system_; }
-        hRenderer*          GetRenderer()           { return renderer_; }
         hPublisherContext*  GetMainEventPublisher() { return mainPublisherCtx_; }
         hActionManager*     getActionManager()      { return actionManager_; }
         hSystemConsole*     GetConsole()            { return console_; }
@@ -196,7 +195,6 @@ namespace Heart
         
         hIFileSystem*                   fileMananger_;
         hSystem*                        system_;
-        hRenderer*                      renderer_;
         hSoundManager*                  soundManager_;
         hPublisherContext*              mainPublisherCtx_;
         hActionManager*                 actionManager_;

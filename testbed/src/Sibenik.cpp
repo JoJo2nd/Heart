@@ -374,11 +374,11 @@ void Sibenik::CreateRenderResources()
 void Sibenik::DestroyRenderResources()
 {
     using namespace Heart;
+#if 0 // !!JM
     hRenderer* renderer = engine_->GetRenderer();
     hRendererCamera* camera = renderer->GetRenderCamera(0);
 
     camera->releaseRenderTargetSetup();
-#if 0 // !!JM
     if (albedoSRV_) {
         albedoSRV_->DecRef();
         albedoSRV_=hNullptr;
@@ -404,6 +404,7 @@ void Sibenik::DestroyRenderResources()
 
 void Sibenik::UpdateCamera()
 {
+#if 0
     using namespace Heart;
 
     hRenderer* renderer = engine_->GetRenderer();
@@ -411,4 +412,7 @@ void Sibenik::UpdateCamera()
 
     fpCamera_.update(hClock::delta());
     camera->SetViewMatrix(fpCamera_.getViewmatrix());
+#else
+    hStub();
+#endif
 }

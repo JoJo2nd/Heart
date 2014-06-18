@@ -113,7 +113,7 @@ namespace Private
     class  hFont
     {
     public:
-        hObjectType(Heart::hFont, Heart::proto::MessageContainer); /*TODO*/
+        hObjectType(Heart::hFont, Heart::proto::Placeholder); /*TODO*/
 
         hFont() 
             : nTexturePages_(0)

@@ -42,250 +42,126 @@
 #include "render/hRendererCamera.h"
 #include "pal/dx11/hWin32DX11.h"
 
-namespace Heart
-{
+namespace Heart {
 
-    class hShaderProgram;
+class hShaderProgram;
 
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
 
-    hFUNCTOR_TYPEDEF(void (*)(const hChar*, void**, hUint32*), hShaderIncludeCallback);
-    hFUNCTOR_TYPEDEF(void (*)(hRenderer*, hRenderSubmissionCtx*), hCustomRenderCallback);
+hFUNCTOR_TYPEDEF(void (*)(const hChar*, void**, hUint32*), hShaderIncludeCallback);
+hFUNCTOR_TYPEDEF(void (*)(hRenderSubmissionCtx*), hCustomRenderCallback);
 
-    struct  hDrawCall
-    {
-        hDrawCall() : customCallFlag_(false) {}
-        hUint64                 sortKey_;//8b        -> 8b
-        union {
-            struct {
-                hCustomRenderCallback   customCall_;
-            };
-            struct {
-                hRCmd* rCmds_;
-            };
-        };
-        hBool                   customCallFlag_;
-    };
-#if 0
-    class  hRenderCommandGenerator : public hdRenderCommandGenerator
-    {
-    public:
-        hRenderCommandGenerator();
-        hRenderCommandGenerator(hRenderCommands* rcmds);
+class hSystem;
 
-        void             setRenderCommands(hRenderCommands* rcmds) { renderCommands_ = rcmds; }
-        hRenderCommands* getRenderCommands() { return renderCommands_; }
-        hUint            getRenderCommandsSize() const { return renderCommands_->cmdSize_; }
-        hUint resetCommands();
-        hUint setJump(hRCmd* cmd);
-        hUint setReturn();
-        hUint setNoOp();
-        hUint setDraw(hUint nPrimatives, hUint startVertex);
-        hUint setDrawIndex(hUint nPrimatives, hUint startVertex);
-        hUint setDrawInstance(hUint nPrimatives, hUint startVertex, hUint instancecount);
-        hUint setDrawInstanceIndex(hUint nPrimatives, hUint startVertex, hUint instancecount);
-        hUint setRenderStates(hBlendState* bs, hRasterizerState* rs, hDepthStencilState* dss);
-        hUint setShader(hShaderProgram* shader, hShaderType type);
-        hUint setVertexInputs(hSamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint updateVertexInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint setPixelInputs(hSamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint updatePixelInputs(hRCmd* cmd, hSamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint setGeometryInputs(hdDX11SamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint setHullInputs(hdDX11SamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint setDomainInputs(hdDX11SamplerState** samplers, hUint nsamplers,
-            hShaderResourceView** srv, hUint nsrv,
-            hRenderBuffer** cb, hUint ncb);
-        hUint setStreamInputs(PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
-            hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount);
-        hUint updateShaderInputBuffer(hRCmd* cmd, hUint reg, hRenderBuffer* cb);
-        hUint updateShaderInputSampler(hRCmd* cmd, hUint reg, hSamplerState* ss);
-        hUint updateShaderInputView(hRCmd* cmd, hUint reg, hShaderResourceView* srv);
-        hUint updateStreamInputs(hRCmd* cmd, PrimitiveType primType, hIndexBuffer* index, hIndexBufferType format,
-            hdInputLayout* vertexlayout, hVertexBuffer** vtx, hUint firstStream, hUint streamCount);
+namespace hRenderer {
 
-    private:
+    static const hUint32	DEFAULT_SCRATCH_BUFFER_SIZE = 1024*1024*8;
+    static const hUint32    MAX_DCBLOCKS = (64*1024);
+    static const hUint32    s_resoruceUpdateLimit = 1024;
+    static const hUint32    s_scratchBufferCount = 5;
 
-        virtual hRCmd* getCmdBufferStart();
-        virtual hUint  appendCmd(const hRCmd* cmd);
-        virtual hUint  overwriteCmd(const hRCmd* oldcmd, const hRCmd* newcmd);
-        virtual void   reset();
+    void					create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
+    void					destroy();
+    hFORCEINLINE hFloat                  getRatio() { return 1.f; }
 
-        hRenderCommands*    renderCommands_;
-    };
-#endif
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    class hSystem;
+    const hRenderFrameStats* getRenderStats();
 
-    class  hRenderer : public hdRenderDevice
-    {
-    public:
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    hRenderSubmissionCtx* createRenderSubmissionCtx();
+    void                  destroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx );
+    /*
+        pimpl methods
+    */
+    void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram* out);
+    void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
+    void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
+    void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
+    void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
+    void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
+    void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+    void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+    void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
+    void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
+    hBlendState*        createBlendState( const hBlendStateDesc& desc );
+    hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
+    hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
+    hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
+    void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
+//private:  
+    void  destroyShader(hShaderProgram* prog);
+    void  destroyTexture(hTexture* pOut);
+    void  destroyIndexBuffer(hIndexBuffer* pOut);
+    void  destroyVertexBuffer(hVertexBuffer* pOut);
+    void  destroyShaderResourceView(hShaderResourceView* srv);  
+    void  destroyRenderTargetView(hRenderTargetView* view);
+    void  destroyDepthStencilView(hDepthStencilView* view);
+    void  destroyBlendState( hBlendState* state );
+    void  destoryRasterizerState( hRasterizerState* state );
+    void  destroyDepthStencilState( hDepthStencilState* state );
+    void  destroySamplerState( hSamplerState* state );
+    void  destroyConstantBlock(hRenderBuffer* block);
+//public:
+    void* allocTempRenderMemory( hUint32 size );
+    /*
+        end new engine design methods
+    */
+    void BeginRenderFrame();
+    void EndRenderFrame();
+    void rendererFrameSubmit();
+    hFloat getLastGPUTime();
+    hBool isRenderThread();
 
-        HEART_BASECLASS(hdRenderDevice);
+    // typedef hMap< hUint32, hBlendState >         BlendStateMapType;
+    // typedef hMap< hUint32, hRasterizerState >    RasterizerStateMapType;
+    // typedef hMap< hUint32, hDepthStencilState >  DepthStencilStateMapType;
+    // typedef hMap< hUint32, hSamplerState >       SamplerStateMapType;
 
-        static const hUint32									DEFAULT_SCRATCH_BUFFER_SIZE = 1024*1024*8;
-        static const hUint32                                    MAX_DCBLOCKS = (64*1024);
-        static const hUint32                                    s_resoruceUpdateLimit = 1024;
-        static const hUint32                                    s_scratchBufferCount = 5;
+    // //
+    // void                                                    CollectAndSortDrawCalls();
+    // void                                                    SubmitDrawCallsMT();
+    // void                                                    SubmitDrawCallsST();
+    // void                                                    createDebugShadersInternal();
 
-        static hRenderer* get() { // meh... do not want
-            return instance_;
-        }
+    // static hRenderer*    instance_;
 
-        hRenderer();
-        void													Create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
-        void													Destroy();
-        hFloat                                                  GetRatio() const { return (hFloat)GetWidth()/(hFloat)GetHeight(); }
-        hRendererCamera*                                        GetRenderCamera(hUint32 id) { hcAssertMsg(id < HEART_MAX_RENDER_CAMERAS, "Invalid camera id access"); return &renderCameras_[id];}
-        hRenderSubmissionCtx*                                   GetMainSubmissionCtx() { return &mainSubmissionCtx_; };
-        hUint32                                                 beginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID);
+    // // Init params
+    // hSystem*												system_;
+    // hUint32 												width_;
+    // hUint32 												height_; 
+    // hUint32 												bpp_;
+    // hFloat													shaderVersion_;
+    // hBool													fullscreen_;
+    // hBool													vsync_;
+    // hFloat                                                  gpuTime_;
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
+    // hMutex                   resourceMutex_;
+    // BlendStateMapType        blendStates_;
+    // RasterizerStateMapType   rasterizerStates_;
+    // DepthStencilStateMapType depthStencilStates_;
+    // SamplerStateMapType      samplerStateMap_;
 
-        const hRenderFrameStats*                                getRenderStats() const { return &stats_; }
+    // hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
+    // void*                   renderStateCache_; // todo: remove
+    // hRenderSubmissionCtx    mainSubmissionCtx_;
 
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        hRenderSubmissionCtx*                                   CreateRenderSubmissionCtx();
-        void                                                    DestroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx );
-        /*
-            pimpl methods
-        */
-        void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram* out);
-        void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
-        void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
-        void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
-        void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
-        void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
-        void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-        void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-        void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
-        void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
-        hBlendState*        createBlendState( const hBlendStateDesc& desc );
-        hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
-        hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
-        hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
-        void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
-    private:  
-        void  destroyShader(hShaderProgram* prog);
-        void  destroyTexture(hTexture* pOut);
-        void  destroyIndexBuffer(hIndexBuffer* pOut);
-        void  destroyVertexBuffer(hVertexBuffer* pOut);
-        void  destroyShaderResourceView(hShaderResourceView* srv);  
-        void  destroyRenderTargetView(hRenderTargetView* view);
-        void  destroyDepthStencilView(hDepthStencilView* view);
-        void  destroyBlendState( hBlendState* state );
-        void  destoryRasterizerState( hRasterizerState* state );
-        void  destroyDepthStencilState( hDepthStencilState* state );
-        void  destroySamplerState( hSamplerState* state );
-        void  destroyConstantBlock(hRenderBuffer* block);
-    public:
-        void  SubmitDrawCallBlock(hDrawCall* block, hUint32 count);
-        void* allocTempRenderMemory( hUint32 size );
+    // hTexture*               backBuffer_;
 
-        /*
-            end new engine design methods
-        */
-        void                                                    BeginRenderFrame();
-        void                                                    EndRenderFrame();
-        void                                                    rendererFrameSubmit();
+    // hUint32                                                 scratchBufferSize_;
+    // hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];
+    // hAtomicInt                                              scratchPtrOffset_;
+    // hAtomicInt                                              drawCallBlockIdx_;
+    // hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
+    // hAtomicInt                                              drawResourceUpdateCalls_;
 
-        hFloat                                                  GetLastGPUTime() { return gpuTime_; }
-
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-
-        static bool                                             IsRenderThread();
-
-    private:
-        typedef hMap< hUint32, hBlendState >         BlendStateMapType;
-        typedef hMap< hUint32, hRasterizerState >    RasterizerStateMapType;
-        typedef hMap< hUint32, hDepthStencilState >  DepthStencilStateMapType;
-        typedef hMap< hUint32, hSamplerState >       SamplerStateMapType;
-
-        //
-        void                                                    CollectAndSortDrawCalls();
-        void                                                    SubmitDrawCallsMT();
-        void                                                    SubmitDrawCallsST();
-        void                                                    createDebugShadersInternal();
-
-#if 0
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        hResourceClassBase*  textureResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        void                 textureResourcePostLoad(hResourceManager* manager, hResourceClassBase* texture);
-        void                 textureResourcePreUnload(hResourceManager* manager, hResourceClassBase* texture);
-        void                 textureResourceUnload(hResourceClassBase* texture);
-
-        hResourceClassBase*  shaderResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        void                 shaderResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource);
-        void                 shaderResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource);
-        void                 shaderResourceUnload(hResourceClassBase* resource);
-
-        hResourceClassBase*  materialResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        void                 materialResourcePostLoad(hResourceManager* manager, hResourceClassBase* resource);
-        void                 materialResourcePreUnload(hResourceManager* manager, hResourceClassBase* resource);
-        void                 materialResourceUnload(hResourceClassBase* resource);
-
-        hResourceClassBase*  meshResourceLoader(const hResourceSection* sections, hUint sectioncount);
-        void                 meshResourceLink(hResourceManager* manager, hResourceClassBase* resource);
-        void                 meshResourceUnlink(hResourceManager* manager, hResourceClassBase* resource);
-        void                 meshResourceUnload(hResourceClassBase* resource);
-#endif
-
-        static hRenderer*    instance_;
-
-        // Init params
-        hSystem*												system_;
-        hUint32 												width_;
-        hUint32 												height_; 
-        hUint32 												bpp_;
-        hFloat													shaderVersion_;
-        hBool													fullscreen_;
-        hBool													vsync_;
-        hFloat                                                  gpuTime_;
-
-        hMutex                   resourceMutex_;
-        BlendStateMapType        blendStates_;
-        RasterizerStateMapType   rasterizerStates_;
-        DepthStencilStateMapType depthStencilStates_;
-        SamplerStateMapType      samplerStateMap_;
-
-        hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
-        void*                   renderStateCache_; // todo: remove
-        hRenderSubmissionCtx    mainSubmissionCtx_;
-
-        hTexture*               backBuffer_;
-
-        hUint32                                                 scratchBufferSize_;
-        hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];
-        hAtomicInt                                              scratchPtrOffset_;
-        hAtomicInt                                              drawCallBlockIdx_;
-        hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
-        hAtomicInt                                              drawResourceUpdateCalls_;
-
-        hTimer              frameTimer_;
-        hRenderFrameStats   stats_;
-        
-        static void*											pRenderThreadID_;
-    };
+    // hTimer              frameTimer_;
+    // hRenderFrameStats   stats_;
 }
-
+}
 #endif // hrRenderer_h__

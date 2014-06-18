@@ -30,7 +30,7 @@
 
 namespace Heart
 {
-    class hRenderer;
+    
 namespace Cmd
 {
     class FlushVertexBufferData;
@@ -53,7 +53,7 @@ namespace Cmd
 
     private:
 
-        friend class hRenderer;
+        
         void OnZeroRef() {
             zeroProc_(this);
         }

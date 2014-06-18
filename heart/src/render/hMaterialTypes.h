@@ -150,7 +150,7 @@ namespace Heart
             }
         }
 
-        friend class hRenderer;
+        
         friend class hMaterial;
 
         static const hUint32 s_maxPrograms = ShaderType_MAX;
@@ -225,7 +225,7 @@ namespace Heart
             std::swap(lhs->layer_, rhs->layer_);
         }
 
-        friend class hRenderer;
+        
         friend class hMaterial;
 
         typedef std::vector< hMaterialTechniquePass > PassArrayType;

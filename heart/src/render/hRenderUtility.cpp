@@ -119,9 +119,10 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    void HEART_API buildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, hRenderer* rndr, 
+    void HEART_API buildSphereMesh(hUint16 segments, hUint16 rings, hFloat radius, 
     hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf)
     {
+#if 0
         hInputLayoutDesc desc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
             hInputLayoutDesc("NORMAL", 0, eIF_FLOAT3, 0, 0),
@@ -184,6 +185,9 @@ namespace hRenderUtility
 
         rndr->createIndexBuffer(indices, idxCnt, 0, outIdxBuf);
         rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -197,6 +201,7 @@ namespace hRenderUtility
         hIndexBuffer* idxBuf, 
         hVertexBuffer* vtxBuf )
     {
+#if 0
         hUint16 quadIdx[] =
         {
             0,2,1,2,3,1
@@ -225,6 +230,9 @@ namespace hRenderUtility
         ctx->Map( vtxBuf, &vbMapInfo );
         hMemCpy(vbMapInfo.ptr_, init_vtx, sizeof(init_vtx));
         ctx->Unmap( &vbMapInfo );
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -233,7 +241,8 @@ namespace hRenderUtility
 
      
     void HEART_API buildTessellatedQuadMesh(hFloat width, hFloat height, hUint wdivs, hUint hdivs, 
-    hRenderer* rndr, hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
+    hIndexBuffer** outIdxBuf, hVertexBuffer** outVtxBuf) {
+#if 0
         hcAssert(width > 0.f && height > 0.f && wdivs >= 1 && hdivs >= 1);
         hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
@@ -279,6 +288,9 @@ namespace hRenderUtility
 
         rndr->createIndexBuffer(index, 6*(wdivs)*(hdivs), 0, outIdxBuf);
         rndr->createVertexBuffer(verts, (wdivs+1)*(hdivs+1), desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
+#else
+        hStub();
+#endif
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,8 +298,8 @@ namespace hRenderUtility
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
      
-    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hRenderer* rndr, hVertexBuffer** outVtxBuf)
-    {
+    void HEART_API buildConeMesh(hUint16 segments, hFloat radius, hFloat depth, hVertexBuffer** outVtxBuf) {
+#if 0
         hcAssert(outVtxBuf && rndr);
         hInputLayoutDesc desc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
@@ -371,6 +383,9 @@ namespace hRenderUtility
         }
 
         rndr->createVertexBuffer(verts, vtxCnt, desc, (hUint32)hStaticArraySize(desc), 0, outVtxBuf);
+#else
+        hStub();
+#endif
     }
 
 
@@ -379,7 +394,8 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
 #define PRIM_COUNT (36)
-    hVertexBuffer* buildDebugCubeMesh(hRenderer* rndr, hVertexBuffer** retVB) {
+    hVertexBuffer* buildDebugCubeMesh(hVertexBuffer** retVB) {
+#if 0
         hInputLayoutDesc desc[] = {
             hInputLayoutDesc("POSITION", 0, eIF_FLOAT3, 0, 0),
             hInputLayoutDesc("NORMAL", 0, eIF_FLOAT3, 0, 0),
@@ -442,6 +458,10 @@ namespace hRenderUtility
         };
         rndr->createVertexBuffer(verts, PRIM_COUNT, desc, (hUint32)hStaticArraySize(desc), 0, retVB);
         return *retVB;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 #undef PRIM_COUNT
 
@@ -450,7 +470,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hMaterial* HEART_API buildDebugFontMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugFontMaterial(hMaterial* ddrawmat) {
 #if 0
         hcAssert(rndr && ddrawmat);
 
@@ -538,7 +558,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hMaterial* HEART_API buildDebugPosColUVMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVMaterial(hMaterial* ddrawmat) {
 #if 0
         hcAssert(rndr && ddrawmat);
 
@@ -624,7 +644,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hMaterial* HEART_API buildDebugPosColMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColMaterial(hMaterial* ddrawmat) {
 #if 0
         hcAssert(rndr && ddrawmat);
 
@@ -693,7 +713,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColUVAlphaMaterial(hMaterial* ddrawmat) {
 #if 0
         hcAssert(rndr && ddrawmat);
 
@@ -780,7 +800,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hRenderer* rndr, hMaterial* ddrawmat) {
+    hMaterial* HEART_API buildDebugPosColAlphaMaterial(hMaterial* ddrawmat) {
 #if 0
         hcAssert(rndr && ddrawmat);
 
@@ -849,7 +869,8 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    hFont* HEART_API createDebugFont(hRenderer* rndr, hFont* outfont, hTexture** outtex) {
+    hFont* HEART_API createDebugFont(hFont* outfont, hTexture** outtex) {
+#if 0
         hcAssert(rndr && outfont && outtex);
 
         outfont->SetFontHeight((hUint32)g_debugfontHeight);
@@ -869,14 +890,14 @@ namespace hRenderUtility
         };
         rndr->createTexture(1, mipsdesc, eTextureFormat_R8_unorm, RESOURCEFLAG_DONTOWNCPUDATA, outtex);
 
-#if 0
         resmana->insertResourceContainer(hStringID("?builtin/debug_font_surface"), *outtex, (*outtex)->getTypeName());
         resmana->insertResourceContainer(hStringID("?builtin/debug_font"), outfont, outfont->getTypeName());
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
 
         return outfont;
+#else
+        hStub();
+        return nullptr;
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -884,7 +905,7 @@ namespace hRenderUtility
     //////////////////////////////////////////////////////////////////////////
 
     
-    void HEART_API destroyDebugFont(hRenderer* rndr, hFont* font, hTexture* tex) {
+    void HEART_API destroyDebugFont(hFont* font, hTexture* tex) {
 #if 0
         hcAssert(rndr && font && tex);
         hFont* fontres=hResourceHandle("?builtin.debug_font").weakPtr<hFont>();
@@ -906,6 +927,7 @@ namespace hRenderUtility
     
     void HEART_API submitDrawCalls(hRenderSubmissionCtx* ctx, hRendererCamera* camera, 
     const hDrawCall* dcs, hUint dcn, hUint32 clearflags) {
+#if 0
         HEART_PROFILE_FUNC();
         camera->UpdateParameters(ctx);
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
@@ -948,6 +970,9 @@ namespace hRenderUtility
 //                 ctx->DrawIndexedPrimitive(dcall->drawPrimCount_, 0);
 //             }
         }
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -956,7 +981,7 @@ namespace hRenderUtility
 
     static int drawCallCompare(const void* lhs, const void* rhs)
     {
-#if 1
+#if 0
         if (((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_) {
             return -1;
         } else if ((((hDrawCall*)lhs)->sortKey_ > ((hDrawCall*)rhs)->sortKey_)) {
@@ -965,7 +990,8 @@ namespace hRenderUtility
             return 0;
         }
 #else
-        return (hInt32)((hInt64)((hDrawCall*)rhs)->sortKey_ - (hInt64)((hDrawCall*)lhs)->sortKey_);
+        hStub();
+        return 0;//return (hInt32)((hInt64)((hDrawCall*)rhs)->sortKey_ - (hInt64)((hDrawCall*)lhs)->sortKey_);
 #endif
     }
 
@@ -975,17 +1001,24 @@ namespace hRenderUtility
 
     
     void HEART_API sortDrawCalls(hDrawCall* dcs, hUint dcn) {
+#if 0
         HEART_PROFILE_FUNC();
         qsort(dcs, dcn, sizeof(hDrawCall), drawCallCompare);
+#else
+        hStub();
+#endif
     }
 
     
-    void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera)
-    {
+    void HEART_API setCameraParameters(hRenderSubmissionCtx* ctx, hRendererCamera* camera) {
+#if 0
         HEART_PROFILE_FUNC();
         camera->UpdateParameters(ctx);
         ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
         ctx->SetViewport(camera->getTargetViewport());
+#else
+        hStub();
+#endif
     }
 
 }

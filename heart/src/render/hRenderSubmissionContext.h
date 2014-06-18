@@ -51,7 +51,7 @@ namespace Heart
     struct hSamplerParameter;
     class hShaderProgram;
     class hRendererCamera;
-    class hRenderer;
+    
     class hRenderBuffer;
     class hRenderTargetView;
     class hDepthStencilView;
@@ -88,12 +88,10 @@ namespace Heart
     {
     public:
 
-        hRenderSubmissionCtx()
-            : renderer_(NULL)
-        {}
+        hRenderSubmissionCtx() {}
         ~hRenderSubmissionCtx();
 
-        void    Initialise( hRenderer* renderer );
+        void    Initialise();
 
         hdRenderCommandBuffer saveToCommandBuffer() { return impl_.SaveToCommandBuffer(); }
         void    runCommandBuffer(hdRenderCommandBuffer cmdBuf);
@@ -132,9 +130,6 @@ namespace Heart
 
     private:
 
-        friend class hRenderer; 
-           
-        hRenderer*                      renderer_;
         hdRenderSubmissionCtx           impl_;
     };
 

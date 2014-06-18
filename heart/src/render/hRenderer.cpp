@@ -39,15 +39,8 @@
 #include "render/hRenderShaderProgram.h"
 #include "render/hRenderUtility.h"
 
-namespace Heart
-{
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hRenderer* hRenderer::instance_ = nullptr;
-    void* hRenderer::pRenderThreadID_ = NULL;
+namespace Heart {
+namespace hRenderer {
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -71,16 +64,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hRenderer::hRenderer()
-    {
-        //SetImpl( new GetGlobalHeap(), hdRenderDevice) ;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::Create( 
+    void Create( 
         hSystem* pSystem, 
         hUint32 width, 
         hUint32 height, 
@@ -89,21 +73,20 @@ namespace Heart
         hBool fullscreen, 
         hBool vsync)
     {
-        instance_ = this;
-
-        frameTimer_.reset();
-
-        width_			= width;
-        height_			= height;
-        bpp_			= bpp;
-        shaderVersion_	= shaderVersion;
-        fullscreen_		= fullscreen;
-        vsync_			= vsync;
-        system_			=  pSystem;
-        backBuffer_     = hNullptr;
-
-        hAtomic::AtomicSet(scratchPtrOffset_, 0);
-        hAtomic::AtomicSet(drawCallBlockIdx_, 0);
+#if 0
+        // frameTimer_.reset();
+ 
+        // width_			= width;
+        // height_			= height;
+        // bpp_			= bpp;
+        // shaderVersion_	= shaderVersion;
+        // fullscreen_		= fullscreen;
+        // vsync_			= vsync;
+        // system_			=  pSystem;
+        // backBuffer_     = hNullptr;
+ 
+        // hAtomic::AtomicSet(scratchPtrOffset_, 0);
+        // hAtomic::AtomicSet(drawCallBlockIdx_, 0);
 
         //depthBuffer_=new GetGlobalHeap(), hTexture(
         //    hFUNCTOR_BINDMEMBER(hTexture::hZeroRefProc, hRenderer, destroyTexture, this), eRenderResourceType_Tex2D, GetGlobalHeap());
@@ -115,9 +98,7 @@ namespace Heart
         //setup.depthBufferTex_= depthBuffer_;
         //ParentClass::Create( system_, width_, height_, fullscreen_, vsync_, setup );
 
-#if 0
         ParentClass::InitialiseMainRenderSubmissionCtx(&mainSubmissionCtx_.impl_);
-#endif
 
 //         depthBuffer_->format_=TFORMAT_D24S8F;
 //         depthBuffer_->nLevels_=1;
@@ -142,51 +123,24 @@ namespace Heart
 //         materialManager_.registerGlobalTexture("depth_buffer", depthBuffer_, dbalias, hStaticArraySize(dbalias));
 
         createDebugShadersInternal();
-        
-#if 0
-        hResourceHandler texreshandler;
-        texreshandler.loadProc_     =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      textureResourceLoader,     this);
-        texreshandler.postLoadProc_ =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  textureResourcePostLoad,   this);
-        texreshandler.preUnloadProc_=hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, textureResourcePreUnload,  this);
-        texreshandler.unloadProc_   =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    textureResourceUnload,     this);
-        resourceManager_->registerResourceHandler("texture", texreshandler);
-        
-        hResourceHandler shaderreshandler;
-        shaderreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      shaderResourceLoader,    this);
-        shaderreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  shaderResourcePostLoad,  this);
-        shaderreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, shaderResourcePreUnload, this);
-        shaderreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    shaderResourceUnload,    this);
-        resourceManager_->registerResourceHandler("gpu", shaderreshandler);
-        
-        hResourceHandler matreshandler;
-        matreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,      materialResourceLoader,    this);
-        matreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,  materialResourcePostLoad,  this);
-        matreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, materialResourcePreUnload, this);
-        matreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer,    materialResourceUnload,    this);
-        resourceManager_->registerResourceHandler("mfx", matreshandler);
-
-        hResourceHandler meshreshandler;
-        meshreshandler.loadProc_      =hFUNCTOR_BINDMEMBER(hResourceLoadProc, hRenderer,   meshResourceLoader, this);
-        meshreshandler.postLoadProc_  =hFUNCTOR_BINDMEMBER(hResourcePostLoadProc, hRenderer,   meshResourceLink,   this);
-        meshreshandler.preUnloadProc_ =hFUNCTOR_BINDMEMBER(hResourcePreUnloadProc, hRenderer, meshResourceUnlink, this);
-        meshreshandler.unloadProc_    =hFUNCTOR_BINDMEMBER(hResourceUnloadProc, hRenderer, meshResourceUnload, this);
-        resourceManager_->registerResourceHandler("mesh", meshreshandler);
-#endif
-        
+#else
+        hStub();
+#endif    
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::Destroy()
+    void Destroy()
     {
+#if 0
         instance_ = nullptr;
         for (hUint32 i = 0; i < HEART_MAX_RENDER_CAMERAS; ++i)
         {
             GetRenderCamera(i)->releaseRenderTargetSetup();
         }
-#if 0
+
         hShaderProgram* prog=hNullptr;
         prog=hResourceHandle(hDebugShaderResourceID_PixelWhite).weakPtr<hShaderProgram>();
         resourceManager_->removeResource(hDebugShaderResourceID_PixelWhite);
@@ -224,25 +178,25 @@ namespace Heart
         prog=hResourceHandle(hDebugShaderResourceID_PixelPosCol).weakPtr<hShaderProgram>();
         resourceManager_->removeResource(hDebugShaderResourceID_PixelPosCol);
         prog->DecRef();
-#else
-        hcPrintf("Stub "__FUNCTION__);
-#endif
 
         //delete[] GetGlobalHeap(), depthBuffer_->levelDescs_;  = nullptr;
         //depthBuffer_->DecRef();
-#if 0
+
         ParentClass::Destroy();
-#endif
 
         hDebugDrawRenderer::it()->destroyResources();
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::BeginRenderFrame()
+    void BeginRenderFrame()
     {
+#if 0        
         HEART_PROFILE_FUNC();
         //ReleasePendingRenderResources();
         //Start new frame
@@ -252,8 +206,9 @@ namespace Heart
         hAtomic::AtomicSet(drawCallBlockIdx_, 0);
         hAtomic::AtomicSet(drawResourceUpdateCalls_, 0);
 
-#if 0
         ParentClass::BeginRender(&gpuTime_);
+#else
+        hStub();
 #endif
     }
 
@@ -261,17 +216,15 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    void hRenderer::EndRenderFrame()
+    void EndRenderFrame()
     {
+#if 0
         HEART_PROFILE_FUNC();
 
-#if 0
+
         ParentClass::EndRender();
-#endif
         hDebugDrawRenderer::it()->render(this, &mainSubmissionCtx_);
-#if 0
         ParentClass::SwapBuffers(backBuffer_);
-#endif
 
         hZeroMem(&stats_, sizeof(stats_));
         stats_.gpuTime_=0.f;
@@ -279,13 +232,16 @@ namespace Heart
         frameTimer_.reset();
         mainSubmissionCtx_.appendRenderStats(&stats_);
         mainSubmissionCtx_.resetStats();
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex)
+    void createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex)
     {
 #if 0
         hcAssert(initialData);
@@ -330,7 +286,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::resizeTexture(hUint32 width, hUint32 height, hTexture* inout)
+    void resizeTexture(hUint32 width, hUint32 height, hTexture* inout)
     {
 #if 0
         hcAssert(width > 0 && height > 0 && inout);
@@ -375,7 +331,7 @@ namespace Heart
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyTexture(hTexture* pOut)
+    void destroyTexture(hTexture* pOut)
     {
 #if 0
         hcAssert(pOut->GetRefCount() == 0);
@@ -390,8 +346,9 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
+    void createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB)
     {
+#if 0
         hUint elementSize= nIndices > 0xFFFF ? sizeof(hUint32) : sizeof(hUint16);
         hIndexBuffer* pdata = new hIndexBuffer(
             hFUNCTOR_BINDMEMBER(hIndexBuffer::hZeroProc, hRenderer, destroyIndexBuffer, this));
@@ -400,86 +357,118 @@ namespace Heart
         pdata->type_= nIndices > 0xFFFF ? hIndexBufferType_Index32 : hIndexBufferType_Index16;
         ParentClass::createIndexBufferDevice(nIndices*elementSize, pIndices, flags, pdata);
         *outIB = pdata;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyIndexBuffer(hIndexBuffer* ib)
+    void destroyIndexBuffer(hIndexBuffer* ib)
     {
+#if 0
         hcAssert(ib);
         ParentClass::destroyIndexBufferDevice(ib);
         delete ib; ib = nullptr;
+#else
+        hStub();
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB)
+    void createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB)
     {
+#if 0        
         hVertexBuffer* pdata = new hVertexBuffer(
             hFUNCTOR_BINDMEMBER(hVertexBufferZeroProc, hRenderer, destroyVertexBuffer, this));
         pdata->vtxCount_ = nElements;
         pdata->stride_ = ParentClass::computeVertexLayoutStride( desc, desccount );
         ParentClass::createVertexBufferDevice(desc, desccount, pdata->stride_, nElements*pdata->stride_, initData, flags, pdata);
         *outVB = pdata;
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyVertexBuffer(hVertexBuffer* vb)
+    void destroyVertexBuffer(hVertexBuffer* vb)
     {
+#if 0        
         hcAssert(vb);
         ParentClass::destroyVertexBufferDevice(vb);
         delete vb; vb = nullptr;
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hRenderSubmissionCtx* hRenderer::CreateRenderSubmissionCtx()
+    hRenderSubmissionCtx* CreateRenderSubmissionCtx()
     {
+#if 0
         hRenderSubmissionCtx* ret = new hRenderSubmissionCtx;
         ret->Initialise( this );
+       
         ParentClass::InitialiseRenderSubmissionCtx( &ret->impl_ );
 
         return ret;
+#else
+        hStub();
+        return nullptr;
+#endif 
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::DestroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx )
+    void DestroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx )
     {
+#if 0        
         hcAssert( ctx );
         ParentClass::DestroyRenderSubmissionCtx( &ctx->impl_ );
         delete ctx; ctx = nullptr;
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    bool hRenderer::IsRenderThread()
+    hBool isRenderThread()
     {
+#if 0        
         //means nothing now...
         return pRenderThreadID_ == Device::GetCurrentThreadID();
+#else
+        hStub();
+        return hFalse;
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
+    void SubmitDrawCallBlock( hDrawCall* block, hUint32 count )
     {
+#if 0  
         hcAssertMsg(drawCallBlockIdx_.value_+count < MAX_DCBLOCKS, "Too many draw calls");
         if (drawCallBlockIdx_.value_+count >= MAX_DCBLOCKS)
+           
             return;
 
         hUint32 wIdx;
@@ -491,123 +480,33 @@ namespace Heart
         {
             drawCallBlocks_[wIdx] = *block;
         }
+#else
+        hStub();
+#endif         
     }
+  
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void* hRenderer::allocTempRenderMemory( hUint32 size )
+    void* allocTempRenderMemory( hUint32 size )
     {
+#if 0        
         hUint32 ret;
         hAtomic::AtomicAddWithPrev(scratchPtrOffset_, size, &ret);
         return drawDataScratchBuffer_+ret;
+#else
+        hStub();
+        return nullptr;
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hUint32 hRenderer::beginCameraRender(hRenderSubmissionCtx* ctx, hUint32 camID)
-    {
-        hRendererCamera* camera = GetRenderCamera(camID);
-        camera->UpdateParameters(ctx);
-        hUint32 retTechMask = 0; // !!JM camera->GetTechniqueMask();
-
-        ctx->setTargets(camera->getTargetCount(), camera->getTargets(), camera->getDepthTarget());
-        ctx->SetViewport(camera->getTargetViewport());
-        if (camera->getClearScreenFlag()) {
-            for (hUint t=0, n=camera->getTargetCount(); t<n; ++t) {
-                ctx->clearColour(camera->getTargets()[t], BLACK);
-            }
-            if (camera->getDepthTarget()) {
-                ctx->clearDepth(camera->getDepthTarget(), 1.f);
-            }
-        }
-
-        return retTechMask;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    int drawCallCompare(const void* lhs, const void* rhs)
-    {
-        if (((hDrawCall*)lhs)->sortKey_ < ((hDrawCall*)rhs)->sortKey_) {
-            return -1;
-        } else if ((((hDrawCall*)lhs)->sortKey_ > ((hDrawCall*)rhs)->sortKey_)) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::CollectAndSortDrawCalls()
-    {
-        HEART_PROFILE_FUNC();
-        //TODO: wait on job chain
-        
-        // POSSIBLE TODO: parallel merge sort
-        qsort(drawCallBlocks_.GetBuffer(), drawCallBlockIdx_.value_, sizeof(hDrawCall), drawCallCompare);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::SubmitDrawCallsMT()
-    {
-        HEART_PROFILE_FUNC();
-        /* TODO: Multi-thread submit, but ST is debug-able */
-        SubmitDrawCallsST();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::SubmitDrawCallsST()
-    {
-        HEART_PROFILE_FUNC();
-        /*Single thread submit*/
-        hUint32 camera = ~0U;
-        const hMaterial* material = NULL;
-        hMaterial* materialInst = NULL;
-        hUint32 lastMatKey = 0;
-        hUint32 pass = ~0U;
-        hUint32 tmask = ~0U;
-        hUint32 dcs = drawCallBlockIdx_.value_;
-
-        for (hUint32 dc = 0; dc < dcs; ++dc) {
-            hDrawCall* dcall=&drawCallBlocks_[dc];
-            // For masks check hBuildRenderSortKey()
-            hUint32 nCam = (dcall->sortKey_&0xF000000000000000) >> 60;
-            hUint32 nPass = (dcall->sortKey_&0xF);
-            hUint32 matKey = (dcall->sortKey_&0x3FFFFF); // stored in lower 28 bits
-            if (nCam != camera)
-            {
-                //Begin camera pass
-                tmask = beginCameraRender(&mainSubmissionCtx_, nCam);
-                camera = nCam;
-            }
-            if (dcall->customCallFlag_) {
-                dcall->customCall_(this, &mainSubmissionCtx_);
-            } else {
-                mainSubmissionCtx_.runRenderCommands(dcall->rCmds_);
-            }
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hRenderer::createDebugShadersInternal() {
+    void createDebugShadersInternal() {
 #if 0
         hShaderProgram* prog=new hShaderProgram)(this, hFUNCTOR_BINDMEMBER(hShaderProgram::hZeroProc, hRenderer, destroyShader, this);
         ParentClass::compileShaderFromSourceDevice(
@@ -698,18 +597,22 @@ namespace Heart
 
     }
 
-    void hRenderer::rendererFrameSubmit()
+    void rendererFrameSubmit()
     {
+#if 0        
         HEART_PROFILE_FUNC();
         CollectAndSortDrawCalls();
         SubmitDrawCallsMT();
+#else
+        hStub();
+#endif        
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+    void createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
 #if 0
         (*outsrv) = new hShaderResourceView(
             hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
@@ -726,7 +629,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
+    void createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv) {
 #if 0
         (*outsrv) = new hShaderResourceView(
             hFUNCTOR_BINDMEMBER(hShaderResourceViewZeroRefProc, hRenderer, destroyShaderResourceView, this));
@@ -743,7 +646,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyShaderResourceView(hShaderResourceView* srv) {
+    void destroyShaderResourceView(hShaderResourceView* srv) {
 #if 0
         hcAssert(srv);
         hcAssert(srv->GetRefCount() == 0);
@@ -758,7 +661,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv) {
+    void createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv) {
 #if 0
         (*outrtv) = new hRenderTargetView(
             hFUNCTOR_BINDMEMBER(hRenderTargetViewZeroRefProc, hRenderer, destroyRenderTargetView, this));
@@ -773,7 +676,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv) {
+    void createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv) {
 #if 0
         (*outdsv) = new hDepthStencilView(
             hFUNCTOR_BINDMEMBER(hDepthStencilViewZeroRefProc, hRenderer, destroyDepthStencilView, this));
@@ -788,7 +691,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyRenderTargetView(hRenderTargetView* view) {
+    void destroyRenderTargetView(hRenderTargetView* view) {
 #if 0
         hcAssert(view);
         hcAssert(view->GetRefCount() == 0);
@@ -803,7 +706,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyDepthStencilView(hDepthStencilView* view) {
+    void destroyDepthStencilView(hDepthStencilView* view) {
 #if 0
         hcAssert(view);
         hcAssert(view->GetRefCount() == 0);
@@ -818,7 +721,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBlendState* hRenderer::createBlendState(const hBlendStateDesc& desc) {
+    hBlendState* createBlendState(const hBlendStateDesc& desc) {
 #if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
@@ -845,7 +748,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyBlendState(hBlendState* state) {
+    void destroyBlendState(hBlendState* state) {
 #if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
@@ -862,7 +765,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hRasterizerState* hRenderer::createRasterizerState(const hRasterizerStateDesc& desc) {
+    hRasterizerState* createRasterizerState(const hRasterizerStateDesc& desc) {
 #if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
@@ -889,7 +792,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destoryRasterizerState(hRasterizerState* state) {
+    void destoryRasterizerState(hRasterizerState* state) {
 #if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
@@ -906,7 +809,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hDepthStencilState* hRenderer::createDepthStencilState(const hDepthStencilStateDesc& desc) {
+    hDepthStencilState* createDepthStencilState(const hDepthStencilStateDesc& desc) {
 #if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
@@ -933,7 +836,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyDepthStencilState(hDepthStencilState* state) {
+    void destroyDepthStencilState(hDepthStencilState* state) {
 #if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
@@ -950,7 +853,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hSamplerState* hRenderer::createSamplerState(const hSamplerStateDesc& desc) {
+    hSamplerState* createSamplerState(const hSamplerStateDesc& desc) {
 #if 0
         //Build state key
         hUint32 stateKey = hCRC32::FullCRC( (const hChar*)&desc, sizeof(desc) );
@@ -977,7 +880,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroySamplerState(hSamplerState* state) {
+    void destroySamplerState(hSamplerState* state) {
 #if 0
         hcAssert(state->GetRefCount() == 0);
         resourceMutex_.Lock();
@@ -994,7 +897,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb) {
+    void createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb) {
 #if 0
         (*outcb) = new hRenderBuffer(
             hFUNCTOR_BINDMEMBER(hRenderBuffer::hZeroRefProc, hRenderer, destroyConstantBlock, this));
@@ -1008,7 +911,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyConstantBlock(hRenderBuffer* block) {
+    void destroyConstantBlock(hRenderBuffer* block) {
 #if 0
         ParentClass::destroyConstantBlockDevice(block);
         delete block;
@@ -1021,7 +924,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::compileShaderFromSource(const hChar* shaderProg, hUint32 len, 
+    void compileShaderFromSource(const hChar* shaderProg, hUint32 len, 
         const hChar* entry, hShaderProfile profile, hIIncludeHandler* includes, hShaderDefine* defines, hUint ndefines, hShaderProgram* out) {
 #if 0
         ParentClass::compileShaderFromSourceDevice(shaderProg, len, entry, profile, includes, defines, ndefines, out);
@@ -1047,7 +950,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out) {
+    void createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out) {
 #if 0
         ParentClass::compileShaderDevice(shaderProg, len, type, out);
         out->SetShaderType(type);
@@ -1060,7 +963,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRenderer::destroyShader(hShaderProgram* prog) {
+    void destroyShader(hShaderProgram* prog) {
 #if 0        
         ParentClass::destroyShaderDevice(prog);
         delete prog;
@@ -2038,4 +1941,5 @@ namespace Heart
         return hdRenderCommandGenerator::updateStreamInputs(cmd, primType, index, format, vertexlayout, dvtx, firstStream, streamCount);
     }
 #endif
+}
 }

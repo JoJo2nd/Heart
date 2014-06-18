@@ -110,8 +110,6 @@ namespace Heart
         
         friend class hDebugDrawRenderer;
 
-
-
         hDebugDrawRenderer* renderer_;
         hDebugPrimsSet debugPrims_[eDebugSet_Max];
     };
@@ -121,7 +119,7 @@ namespace Heart
     class hIndexBuffer;
     class hMaterial;
     class hRenderBuffer;
-    class hRenderer;
+    
     class hRenderSubmissionCtx;
     class hRenderTargetView;
     class hShaderResourceView;
@@ -135,11 +133,11 @@ namespace Heart
         hDebugDrawRenderer();
         ~hDebugDrawRenderer();
 
-        void initialiseResources(hRenderer* renderer);
+        void initialiseResources();
         void destroyResources();
         void setMainViewCameraIndex(hUint camIndex);
 
-        void render(hRenderer* renderer, hRenderSubmissionCtx* ctx);
+        void render(hRenderSubmissionCtx* ctx);
         void append(hDebugDraw* debugdraw);
 
         static hDebugDrawRenderer* it();

@@ -39,3 +39,7 @@ message ResourceHeader {
 	optional string author = 3;
 	repeated ResourceSection sections = 4;
 }
+
+message Placeholder {
+	optional uint32 nothingToSeeHere = 1;
+}

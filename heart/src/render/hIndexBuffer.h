@@ -34,7 +34,7 @@
 
 namespace Heart
 {
-    class hRenderer;
+    
 namespace Cmd
 {
     class FlushIndexBufferData;
@@ -57,7 +57,7 @@ namespace Cmd
 
     private:
 
-        friend class hRenderer;
+        
         friend class IndexBufferBuilder;
 
         void OnZeroRef() {

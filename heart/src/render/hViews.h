@@ -55,7 +55,7 @@ public:
     }
 
 private:
-    friend class hRenderer;
+    
 
     HEART_PRIVATE_COPY(hShaderResourceView);
 
@@ -85,7 +85,7 @@ public:
     const hTexture* getTarget() const { return refTex_; }
 
 private:
-    friend class hRenderer;
+    
 
     HEART_PRIVATE_COPY(hRenderTargetView);
 
@@ -108,7 +108,7 @@ public:
     }
 
 private:
-    friend class hRenderer;
+    
 
     HEART_PRIVATE_COPY(hDepthStencilView);
 

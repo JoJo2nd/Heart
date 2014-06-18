@@ -41,7 +41,7 @@
 
 namespace Heart
 {
-    class hRenderer;
+    
     class hRenderState;
     class hTexture;
     class hMaterial;
@@ -74,7 +74,6 @@ namespace Heart
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
 
         hMaterial() {}
-        hMaterial(hRenderer* renderer) {}
         ~hMaterial() {}
 #if 0
         hRenderMaterialManager* GetManager() const { return manager_; }
@@ -118,7 +117,7 @@ namespace Heart
         hMaterial(const hMaterial&);
         hMaterial& operator = (hMaterial);
 
-        friend class hRenderer;
+        
         friend class hRenderMaterialManager;
 
         typedef std::vector< hMaterialGroup >           GroupArrayType;

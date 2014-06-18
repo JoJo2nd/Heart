@@ -100,7 +100,6 @@ namespace Heart
         actionManager_ = new hActionManager;
         system_ = new hSystem;
         fileMananger_ = new hDriveFileSystem;
-        renderer_ = new hRenderer;
         soundManager_ = nullptr;//new hSoundManager;
         console_ = nullptr;//new hSystemConsole(consoleCb, consoleUser);
         luaVM_ = new hLuaStateManager;
@@ -135,7 +134,7 @@ namespace Heart
         hClock::initialise();
         config_.Width_ = system_->getWindowWidth();
         config_.Height_ = system_->getWindowHeight();
-        renderer_->Create( 
+        hRenderer::create( 
             system_,
             config_.Width_,
             config_.Height_,
@@ -216,17 +215,18 @@ namespace Heart
             getActionManager()->update();
             //GetConsole()->update(); !!JM
             if (GetSystem()->exitSignaled()) {
-                if (!shutdownUpdate_ || shutdownUpdate_(this)) {
+                /*if (!shutdownUpdate_ || shutdownUpdate_(this))*/ {
                     //wait on game to say ok to shutdown
                     //GetJobManager()->Destory(); // Should this be here?
-                    if (onShutdown_ && runnableState) onShutdown_(this);
+                    // if (onShutdown_ && runnableState) onShutdown_(this); !!JM 
                     engineState_ = hHeartState_ShuttingDown;
                     return;
                 }
             }
             //!!JM todo: GetSoundManager()->Update();
-            if (mainUpdate_ && runnableState)
-                (*mainUpdate_)( this );
+            // !!JM culled client side work
+            //if (mainUpdate_ && runnableState)
+            //    (*mainUpdate_)( this );
             GetVM()->Update();
             //before calling Update dispatch the last frames messages
             GetMainEventPublisher()->updateDispatch();
@@ -235,13 +235,14 @@ namespace Heart
             /*
              * Begin new frame of draw calls
              **/
-            GetRenderer()->BeginRenderFrame();
-            debugServer_->printDebugInfo((hFloat)GetRenderer()->GetWidth(), (hFloat)GetRenderer()->GetHeight());
+            // GetRenderer()->BeginRenderFrame(); !! JM
+            // debugServer_->printDebugInfo((hFloat)GetRenderer()->GetWidth(), (hFloat)GetRenderer()->GetHeight()); !!JM
 
-            if (mainRender_ && runnableState)
-                (*mainRender_)( this );
+            // !!JM culled client side work
+            //if (mainRender_ && runnableState)
+            //    (*mainRender_)( this );
 
-            GetRenderer()->rendererFrameSubmit();
+            // GetRenderer()->rendererFrameSubmit(); !!JM
             /*
              * Frame isn't swapped until next call to EndRenderFrame() so
              * can render to back buffer here
@@ -252,7 +253,7 @@ namespace Heart
             /*
              * Swap back buffer and Submit to GPU draw calls sent to renderer in mainRender()
              **/
-            GetRenderer()->EndRenderFrame();
+            // GetRenderer()->EndRenderFrame(); !! JM
             
             getActionManager()->endOfFrameUpdate();
         }
@@ -272,7 +273,7 @@ namespace Heart
         //!JM todo: soundManager_->Destory(); 
         hResourceManager::shutdown();
         luaVM_->Destroy();
-        renderer_->Destroy();
+        hRenderer::destroy();
         debugServer_->destroy();
         jobManager_->shutdown();
 
@@ -282,7 +283,6 @@ namespace Heart
         delete luaVM_; luaVM_ = nullptr;
         //delete console_; console_ = nullptr; !!JM
         //!!JM todo: delete soundManager_; soundManager_ = nullptr;
-        delete renderer_; renderer_ = nullptr;
         delete actionManager_; actionManager_ = nullptr;
         delete fileMananger_; fileMananger_ = nullptr;
         delete jobManager_; jobManager_ = nullptr;
@@ -385,52 +385,6 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-#ifdef _WIN32
-    Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar* appLib, HINSTANCE hInstance, HWND hWnd)
-
-{
-    Heart::hdDeviceConfig deviceConfig;
-    deviceConfig.instance_ = hInstance;
-    deviceConfig.hWnd_ = hWnd;
-
-    Heart::hHeartEngine* engine = new Heart::hHeartEngine(NULL, NULL, NULL, &deviceConfig);
-
-    engine->sharedLib_ = Heart::hd_OpenSharedLib(appLib);
-
-    if ( engine->sharedLib_ != HEART_SHAREDLIB_INVALIDADDRESS )
-    {
-        engine->firstLoaded_        = (hFirstLoadedProc)Heart::hd_GetFunctionAddress(engine->sharedLib_,      "HeartAppFirstLoaded"      );
-        engine->coreAssetsLoaded_   = (hCoreAssetsLoadedProc)Heart::hd_GetFunctionAddress(engine->sharedLib_, "HeartAppCoreAssetsLoaded" );
-        engine->mainUpdate_         = (hMainUpdateProc)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppMainUpate"        );
-        engine->mainRender_         = (hMainRenderProc)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppMainRender"       );
-        engine->shutdownUpdate_     = (hShutdownUpdateProc)Heart::hd_GetFunctionAddress(engine->sharedLib_,   "HeartAppShutdownUpdate"   );
-        engine->onShutdown_         = (hOnShutdownProc)Heart::hd_GetFunctionAddress(engine->sharedLib_,       "HeartAppOnShutdown"       );
-
-        if ( 
-            !engine->firstLoaded_        ||
-            !engine->coreAssetsLoaded_   ||
-            !engine->mainUpdate_         ||
-            !engine->mainRender_         ||
-            !engine->shutdownUpdate_     ||
-            !engine->onShutdown_        
-            )
-        {
-            engine->sharedLib_ = HEART_SHAREDLIB_INVALIDADDRESS;
-        }
-    }
-
-    if (engine->firstLoaded_)
-    {
-        (*engine->firstLoaded_)(engine);
-    }
-
-    return engine;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
     Heart::hSysCall::hInitSystemDebugLibs();
@@ -449,18 +403,15 @@ Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks
     engine->shutdownUpdate_     = callbacks->shutdownUpdate_;
     engine->onShutdown_         = callbacks->onShutdown_;
 
-    if (engine->firstLoaded_)
-    {
-        (*engine->firstLoaded_)(engine);
-    }
+    // !!JM culled client side work
+    // if (engine->firstLoaded_)
+    // {
+    //     (*engine->firstLoaded_)(engine);
+    // }
 
     heart_thread_prof_end(0);
     return engine;
 }
-
-#else
-#   error ("Platform not supported")
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
