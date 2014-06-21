@@ -34,73 +34,11 @@
 #include "base/hFunctor.h"
 #include "base/hMap.h"
 #include "base/hReferenceCounted.h"
-#include "pal/dx11/hWin32DX11.h"
 
-namespace Heart
-{
-    hFUNCTOR_TYPEDEF(void(*)(class hBlendState*), hBlendZeroRefProc);
-    class  hBlendState : public hdBlendState,
-                                        public hIReferenceCounted,
-                                        public hMapElement< hUint32, hBlendState >
-    {
-    public:
-        hBlendState(hBlendZeroRefProc zeroproc)
-            : zeroProc_(zeroproc)
-        {}
-    private:
-        void OnZeroRef() {
-            zeroProc_(this);
-        }
-        hBlendZeroRefProc zeroProc_;
-    };
-
-    hFUNCTOR_TYPEDEF(void(*)(class hRasterizerState*), hRasterizerZeroRefProc);
-    class  hRasterizerState : public hdRasterizerState,
-                                             public hIReferenceCounted,
-                                             public hMapElement< hUint32, hRasterizerState >
-    {
-    public:
-        hRasterizerState(hRasterizerZeroRefProc zeroproc)
-            : zeroProc_(zeroproc)
-        {}
-    private:
-        void OnZeroRef() {
-            zeroProc_(this);
-        }
-        hRasterizerZeroRefProc zeroProc_;
-    };
-
-    hFUNCTOR_TYPEDEF(void(*)(class hDepthStencilState*), hDepthStencilZeroRefProc);
-    class  hDepthStencilState : public hdDepthStencilState,
-                                                public hIReferenceCounted,
-                                                public hMapElement< hUint32, hDepthStencilState >
-    {
-    public:
-        hDepthStencilState(hDepthStencilZeroRefProc zeroproc)
-            : zeroProc_(zeroproc)
-        {}
-    private:
-        void OnZeroRef() {
-            zeroProc_(this);
-        }
-        hDepthStencilZeroRefProc zeroProc_;
-    };
-
-    hFUNCTOR_TYPEDEF(void(*)(class hSamplerState*), hSamplerZeroRefProc);
-    class  hSamplerState : public hdSamplerState,
-                                           public hIReferenceCounted,
-                                           public hMapElement< hUint32, hSamplerState >
-    {
-    public:
-        hSamplerState(hSamplerZeroRefProc zeroproc)
-            : zeroProc_(zeroproc)
-        {}
-    private:
-        void OnZeroRef() {
-            zeroProc_(this);
-        }
-        hSamplerZeroRefProc zeroProc_;
-    };
+namespace Heart {
+namespace hRenderer {
+class hRenderStateBlock;
+}
 }
 
 #endif // HRENDERSTATEBLOCK_H__

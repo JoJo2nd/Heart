@@ -30,16 +30,16 @@
 
 #include "base/hTypes.h"
 #include "base/hReferenceCounted.h"
-#include "pal/dx11/hWin32DX11.h"
 
-namespace Heart
-{
-    
-namespace Cmd
-{
-    class FlushIndexBufferData;
+namespace Heart {
+namespace hRenderer {
+class hIndexBuffer;
+
+hUint getIndexCount(const hIndexBuffer* ib);
+hIndexBufferType getIndexBufferType(const hIndexBuffer* ib);
+
 }
-
+#if 0
     class hIndexBuffer : public hdIndexBuffer,
                          public hIReferenceCounted
     {
@@ -76,6 +76,7 @@ namespace Cmd
         hUint32         size_;
         hIndexBuffer*   ib_;
     };
+#endif
 }
 
 #endif // INDEXBUFFER_H__

@@ -33,7 +33,6 @@
 #include "base/hRendererConstants.h"
 #include "base/hTypes.h" 
 #include "math/hVec3.h"
-#include "pal/dx11/hWin32DX11.h"
 #include "pal/hMutex.h"
 #include <vector>
 
@@ -163,7 +162,7 @@ namespace Heart
         hTexture*           debugFontTex_;
         hShaderResourceView* debugFontSRV_;
 
-        hVector<hdInputLayout*> inputlayout_;
+        //hVector<hdInputLayout*> inputlayout_;
         hRenderBuffer*      viewParameters_;
         hRenderBuffer*      perDrawParameters_;
 

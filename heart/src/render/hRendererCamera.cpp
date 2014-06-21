@@ -28,7 +28,6 @@
 #include "render/hRendererCamera.h"
 #include "render/hRenderer.h"
 #include "render/hTexture.h"
-#include "render/hViews.h"
 
 namespace Heart
 {

@@ -40,7 +40,6 @@
 #include "render/hRenderStateBlock.h"
 #include "render/hRenderSubmissionContext.h"
 #include "render/hRendererCamera.h"
-#include "pal/dx11/hWin32DX11.h"
 
 namespace Heart {
 
@@ -79,34 +78,33 @@ namespace hRenderer {
     /*
         pimpl methods
     */
-    void  compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram* out);
-    void  createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
+    hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
+    hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type);
     void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
-    void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
     void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
     void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
-    void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-    void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-    void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
-    void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
-    hBlendState*        createBlendState( const hBlendStateDesc& desc );
-    hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
-    hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
-    hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
-    void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
+    //void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+    //void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
+    //void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
+    //void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
+    //hBlendState*        createBlendState( const hBlendStateDesc& desc );
+    //hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
+    //hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
+    //hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
+    //void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
 //private:  
     void  destroyShader(hShaderProgram* prog);
     void  destroyTexture(hTexture* pOut);
     void  destroyIndexBuffer(hIndexBuffer* pOut);
     void  destroyVertexBuffer(hVertexBuffer* pOut);
-    void  destroyShaderResourceView(hShaderResourceView* srv);  
-    void  destroyRenderTargetView(hRenderTargetView* view);
-    void  destroyDepthStencilView(hDepthStencilView* view);
-    void  destroyBlendState( hBlendState* state );
-    void  destoryRasterizerState( hRasterizerState* state );
-    void  destroyDepthStencilState( hDepthStencilState* state );
-    void  destroySamplerState( hSamplerState* state );
-    void  destroyConstantBlock(hRenderBuffer* block);
+    //void  destroyShaderResourceView(hShaderResourceView* srv);  
+    //void  destroyRenderTargetView(hRenderTargetView* view);
+    //void  destroyDepthStencilView(hDepthStencilView* view);
+    //void  destroyBlendState( hBlendState* state );
+    //void  destoryRasterizerState( hRasterizerState* state );
+    //void  destroyDepthStencilState( hDepthStencilState* state );
+    //void  destroySamplerState( hSamplerState* state );
+    //void  destroyConstantBlock(hRenderBuffer* block);
 //public:
     void* allocTempRenderMemory( hUint32 size );
     /*

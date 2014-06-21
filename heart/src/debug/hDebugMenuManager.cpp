@@ -30,7 +30,6 @@
 #include "base/hProfiler.h"
 #include "input/hActionManager.h"
 #include "render/hTexture.h"
-#include "render/hViews.h"
 #include "render/hRenderer.h"
 #include "render/hRenderUtility.h"
 #include "render/hRenderSubmissionContext.h"

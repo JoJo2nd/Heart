@@ -87,7 +87,7 @@ namespace Heart
             return setup_.targets_[idx]; 
         }
         hDepthStencilView*          getDepthTarget() const { return setup_.depth_; }
-        hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
+        //hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
         void                        UpdateParameters(hRenderSubmissionCtx* ctx);
         void                        setClearScreenFlag(hBool val) { clear_=val;}
         hBool                       getClearScreenFlag() const { return clear_;}
@@ -104,8 +104,8 @@ namespace Heart
         hViewFrustum                frustum_;
         hRelativeViewport           viewport_;
         hRenderViewportTargetSetup  setup_;
-        hRenderBuffer*              cameraConstBlock_;
-        hViewportShaderConstants    viewportConstants_;
+        //hRenderBuffer*              cameraConstBlock_;
+        //hViewportShaderConstants    viewportConstants_;
     };
     
 }

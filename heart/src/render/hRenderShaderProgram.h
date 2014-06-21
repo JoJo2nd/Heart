@@ -31,21 +31,36 @@
 #include "base/hTypes.h"
 #include "base/hProtobuf.h"
 
-namespace Heart
-{
-    class  hShaderProgram
-    {
-    public:
-        hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
-        hFUNCTOR_TYPEDEF(void(*)(hShaderProgram*), hZeroProc);
-        hShaderProgram() {}
-        ~hShaderProgram() {
-        }
+namespace Heart {
+namespace hRenderer {
+    class hShaderReflection;
 
-        /*
-            Placeholder class !!JM
-        */
-    };
+    /*
+        Shader Stage interface
+    */
+    class hShaderStage;
+    hShaderType getShaderType(const hShaderStage* stage);
+    /*
+        hShaderLinkedProgram interface
+    */
+    class hShaderLinkedProgram;
+    const hShaderReflection* getReflectionInfo(const hShaderLinkedProgram* prog);
+    void attachStage(hShaderLinkedProgram* prog, hShaderStage* stage);
+    void link(hShaderLinkedProgram* prog);
+}
+
+class  hShaderProgram {
+public:
+    hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
+
+    hShaderProgram() {}
+    ~hShaderProgram() {
+    }
+
+    /*
+        Placeholder class !!JM
+    */
+};    
 }
 
 #endif // HRENDERSHADERPROGRAM_H__

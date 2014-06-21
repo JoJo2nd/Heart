@@ -27,8 +27,6 @@
 
 #include "render/hMaterial.h"
 #include "render/hRenderer.h"
-#include "render/hParameterConstBlock.h"
-#include "pal/dx11/hWin32DX11.h"
 #include "hRenderShaderProgram.h"
 #include "hTexture.h"
 

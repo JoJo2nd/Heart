@@ -36,7 +36,6 @@ class TextureBuilder;
 #include "base/hReferenceCounted.h"
 #include "base/hProtobuf.h"
 #include "components/hObjectFactory.h"
-#include "pal/dx11/hWin32DX11.h"
 
 namespace Heart
 {

@@ -29,61 +29,21 @@
 
 #include "base/hTypes.h"
 #include "math/hMatrix.h"
-#include "pal/dx11/hWin32DX11.h"
 
-namespace Heart
-{
-    struct hViewport;
-    class hTexture;
-    struct hTextureMapInfo;
-    class hTextureBase;
-    class hRenderTargetTexture;
-    class DepthSurface;
-    class hVertexDeclaration;
-    class hMaterialInstance;
-    class hMaterialTechnique;
-    class hIndexBuffer;
-    struct hIndexBufferMapInfo;
-    class hVertexBuffer;
-    struct hVertexBufferMapInfo;
-    class hMesh;
-    class hMaterial;
-    struct hSamplerParameter;
-    class hShaderProgram;
-    class hRendererCamera;
-    
-    class hRenderBuffer;
-    class hRenderTargetView;
-    class hDepthStencilView;
-    class hComputeObject;
-    class hShaderResourceView;
+namespace Heart {
+namespace hRender {
+class hContext;
 
-    //Should these be in there own file?
-    struct hViewportShaderConstants
-    {
-        hMatrix view_;
-        hMatrix viewInverse_;
-        hMatrix viewInverseTranspose_;
-        hMatrix projection_;
-        hMatrix projectionInverse_;
-        hMatrix viewProjection_;
-        hMatrix viewProjectionInverse_;
-        hFloat  viewportSize_[4]; //x,y,0,0
-    };
+void    setViewport(hContext* ctx, const hViewport& viewport);
+void    setScissorRect(hContext* ctx, const hScissorRect& scissor);
+void    clearColour(hContext* ctx, const hColour& colour);
+void    clearDepth(hContext* ctx, hFloat z);
+void    drawPrimitive(hContext* ctx, hUint32 nPrimatives, hUint32 startVertex);
+void    drawIndexedPrimitive(hContext* ctx, hUint32 nPrimatives, hUint32 startVertex);
+void    drawIndexedPrimitiveInstanced(hContext* ctx, hUint instanceCount, hUint32 nPrimatives, hUint32 startVertex);
 
-    struct hInstanceConstants
-    {
-        hMatrix world_;
-    };
-
-    struct hRenderBufferMapInfo
-    {
-        hRenderBuffer* cb;
-        void* ptr;
-    };
-
-    class hRenderInputStreams;
-
+}
+#if 0
     class hRenderSubmissionCtx
     {
     public:
@@ -132,7 +92,7 @@ namespace Heart
 
         hdRenderSubmissionCtx           impl_;
     };
-
+#endif
 }
 
 #endif // HRENDERSUBMISSIONCONTEXT_H__

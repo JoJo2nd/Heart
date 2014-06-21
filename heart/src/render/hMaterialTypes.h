@@ -32,7 +32,6 @@
 #include "base/hStringID.h"
 #include "base/hArray.h"
 #include "render/hRenderStateBlock.h"
-#include "render/hViews.h"
 #include "core/hResource.h"
 #include <vector>
 

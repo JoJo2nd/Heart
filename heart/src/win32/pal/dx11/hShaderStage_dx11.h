@@ -1,8 +1,6 @@
 /********************************************************************
 
-    filename:   hDX11ComputeTypes.h  
-    
-    Copyright (c) 24:2:2013 James Moran
+    Copyright (c) James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -27,16 +25,31 @@
 
 #pragma once
 
-#ifndef HDX11COMPUTETYPES_H__
-#define HDX11COMPUTETYPES_H__
+#include "base/hRendererConstants.h"
+#include <d3d11.h>
 
-namespace Heart
-{
-    class  hdDX11ComputeUAV
+namespace Heart {
+namespace hRenderer {
+class hShaderStage {
+public:
+    hShaderStage(hShaderType type) 
+        : type_(type)
+        , shaderPtr_(nullptr) {
+    }
+    ~hShaderStage() {
+    }
+    
+    hShaderType                 type_;
+    union 
     {
-    public:
-        ID3D11UnorderedAccessView*  uav_;
+        ID3D11PixelShader*      pixelShader_;
+        ID3D11VertexShader*     vertexShader_;
+        ID3D11GeometryShader*   geomShader_;
+        ID3D11HullShader*       hullShader_;
+        ID3D11DomainShader*     domainShader_;
+        ID3D11ComputeShader*    computeShader_;
+        void*                   shaderPtr_;
     };
+};
 }
-
-#endif // HDX11COMPUTETYPES_H__
+}

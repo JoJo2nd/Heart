@@ -26,7 +26,6 @@
 *********************************************************************/
 
 #include "render/hMaterialTypes.h"
-#include "render/hParameterConstBlock.h"
 #include "render/hRenderShaderProgram.h"
 #include "base/hRendererConstants.h"
 #include "base/hStringUtil.h"
