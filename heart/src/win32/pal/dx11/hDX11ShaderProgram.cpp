@@ -155,7 +155,7 @@ namespace Heart
         //if (n < shaderdesc.InputParameters) {
         //    return NULL;
         //}
-        return device_->CreateVertexLayout(desc, n, shaderBlob_, blobLen_);
+        return nullptr;//device_->CreateVertexLayout(desc, n, shaderBlob_, blobLen_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -164,7 +164,7 @@ namespace Heart
 
     void hdDX11ShaderProgram::destroyVertexLayout(hdDX11VertexLayout* vtxlayout) const {
         if (!vtxlayout) return;
-        device_->DestroyVertexLayout(vtxlayout);
+        //device_->DestroyVertexLayout(vtxlayout);
     }
 
     //////////////////////////////////////////////////////////////////////////

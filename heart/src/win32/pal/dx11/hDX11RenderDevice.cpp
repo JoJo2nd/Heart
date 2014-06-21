@@ -63,7 +63,7 @@ namespace Heart
     };                                   \
     "
 
-    const hChar* hdDX11RenderDevice::s_shaderProfileNames[] = {
+    static const hChar* s_shaderProfileNames[] = {
         "vs_4_0",   //eShaderProfile_vs4_0,
         "vs_4_1",   //eShaderProfile_vs4_1,
         "vs_5_0",   //eShaderProfile_vs5_0,
@@ -320,60 +320,43 @@ namespace Heart
         s_debugWSVertexCol,
     };
 
-    class hSourceIncludeHandler : public ID3DInclude
-    {
-    public:
-        hSourceIncludeHandler(hIIncludeHandler* impl)
-            : impl_(impl)
-        {}
-        STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes) {
-            if (!impl_) {
-                return E_FAIL;
-            }
-            impl_->findInclude(pFileName, ppData, pBytes);
-            if (*ppData==hNullptr) {
-                return E_FAIL;
-            }
-            return S_OK;
-        }
-        STDMETHOD(Close)(THIS_ LPCVOID pData) {
-            return S_OK;
-        }
-    private:
-        hIIncludeHandler* impl_;
-    };
+class hSystem;
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+namespace hRenderer {
+struct hDX11System {
+    hSystem*                  system_;
+    hUint64                   frameCounter_;
+    hUint32                   width_;
+    hUint32                   height_;
+    hdDX11RenderSubmissionCtx mainRenderCtx_;
+    IDXGISwapChain*           mainSwapChain_;
+    ID3D11Device*             d3d11Device_;
+    ID3D11DeviceContext*      mainDeviceCtx_;
+    D3D_FEATURE_LEVEL         featureLevel_;
+    ID3D11RenderTargetView*   renderTargetView_;
+    ID3D11Query*              timerDisjoint_;
+    ID3D11Query*              timerFrameStart_;
+    ID3D11Query*              timerFrameEnd_;
+    hDeviceResizeCallback     resizeCallback_;
+    ID3D11Texture2D*          backBuffer;
+    hThread                   renderThread_;
+    hThreadEvent              renderKill_;
+};
+static hDX11System dx11;
 
-    hdDX11RenderDevice::hdDX11RenderDevice() 
-        : sysWindow_(NULL)
-    {
+    hUint32 renderThreadMain(void* param) {
+        while (!dx11.renderKill_.TryWait()) {
+
+        }
+        return 0;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hdDX11RenderDevice::~hdDX11RenderDevice()
-    {
-
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hdDX11RenderDevice::Create(hdSystemWindow* sysHandle, hUint32 width, hUint32 height, hBool fullscreen, hBool vsync, hRenderDeviceSetup setup)
-    {
+    void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
         HRESULT hr;
 
-        sysWindow_ = sysHandle;
-        width_ = width;
-        height_ = height;
-        alloc_ = setup.alloc_;
-        free_ = setup.free_;
+        dx11.system_ = system;
+        dx11.width_ = width;
+        dx11.height_ = height;
         //depthBufferTex_ = setup.depthBufferTex_;
         //hcAssert(depthBufferTex_);
 
@@ -396,10 +379,10 @@ namespace Heart
         sd.BufferDesc.RefreshRate.Numerator = 60;
         sd.BufferDesc.RefreshRate.Denominator = 1;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        sd.OutputWindow = sysHandle->GetSystemHandle()->hWnd_;
+        sd.OutputWindow = dx11.system_->GetSystemHandle()->hWnd_;
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
-        sd.Windowed = sysWindow_->getOwnWindow() ? !fullscreen : TRUE;
+        sd.Windowed = dx11.system_->getOwnWindow() ? !fullscreen : TRUE;
         sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
         hcPrintf("Creating DirectX 11 Device");
@@ -416,24 +399,24 @@ namespace Heart
                 numFeatureLevels,
                 D3D11_SDK_VERSION, 
                 &sd, 
-                &mainSwapChain_, 
-                &d3d11Device_, 
-                &featureLevel_, 
-                &mainDeviceCtx_ ) != S_OK )
+                &dx11.mainSwapChain_, 
+                &dx11.d3d11Device_, 
+                &dx11.featureLevel_, 
+                &dx11.mainDeviceCtx_ ) != S_OK )
         {
             hcAssertFailMsg( "Couldn't Create D3D11 context" );
         }
-        HEART_D3D_DEBUG_NAME_OBJECT(mainDeviceCtx_, "main context");
+        HEART_D3D_DEBUG_NAME_OBJECT(dx11.mainDeviceCtx_, "main context");
 
         //Grab the back buffer & depth buffer
         // Create a render target view
-        hr = mainSwapChain_->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&pBackBuffer );
+        hr = dx11.mainSwapChain_->GetBuffer( 0, __uuidof( ID3D11Texture2D ), (LPVOID*)&dx11.backBuffer );
         hcAssert( SUCCEEDED( hr ) );
-        HEART_D3D_DEBUG_NAME_OBJECT(pBackBuffer, "back buffer");
+        HEART_D3D_DEBUG_NAME_OBJECT(dx11.backBuffer, "back buffer");
 
-        hr = d3d11Device_->CreateRenderTargetView( pBackBuffer, NULL, &renderTargetView_ );
+        hr = dx11.d3d11Device_->CreateRenderTargetView( dx11.backBuffer, NULL, &dx11.renderTargetView_ );
         hcAssert( SUCCEEDED( hr ) );
-        HEART_D3D_DEBUG_NAME_OBJECT(renderTargetView_, "back buffer Target View");
+        HEART_D3D_DEBUG_NAME_OBJECT(dx11.renderTargetView_, "back buffer Target View");
 
         // Create depth stencil texture
 //         D3D11_TEXTURE2D_DESC descDepth;
@@ -463,7 +446,7 @@ namespace Heart
 //         hcAssert( SUCCEEDED( hr ) );
 //         HEART_D3D_DEBUG_NAME_OBJECT(depthStencilView_, "Depth Stencil View");
 
-        mainRenderCtx_.SetDeviceCtx( mainDeviceCtx_, alloc_, free_ );
+        dx11.mainRenderCtx_.SetDeviceCtx(dx11.mainDeviceCtx_, nullptr, nullptr);
 
         //update textures
         //depthBufferTex_->dx11Texture_=depthStencil_;
@@ -473,43 +456,47 @@ namespace Heart
 
 #ifdef HEART_DO_FRAMETIMES
         qdesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-        hr = d3d11Device_->CreateQuery(&qdesc, &timerDisjoint_);
+        hr = d3d11Device_->CreateQuery(&qdesc, &dx11.timerDisjoint_);
         hcAssert(SUCCEEDED(hr));
 
         qdesc.Query = D3D11_QUERY_TIMESTAMP;
-        hr = d3d11Device_->CreateQuery(&qdesc, &timerFrameStart_);
+        hr = d3d11Device_->CreateQuery(&qdesc, &dx11.timerFrameStart_);
         hcAssert(SUCCEEDED(hr));
 
         qdesc.Query = D3D11_QUERY_TIMESTAMP;
-        hr = d3d11Device_->CreateQuery(&qdesc, &timerFrameEnd_);
+        hr = d3d11Device_->CreateQuery(&qdesc, &dx11.timerFrameEnd_);
         hcAssert(SUCCEEDED(hr));
 #endif
 
-        frameCounter_ = 0;
+        dx11.frameCounter_ = 0;
+        dx11.renderThread_.create("RenderThread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hdDX11RenderDevice::Destroy()
-    {
+    void destroy() {
+        // !!JM todo: a better method may be to push a kill command and 
+        // let the thread wind down normally
+        dx11.renderKill_.Signal();
+        dx11.renderThread_.join();
 #ifdef HEART_DO_FRAMETIMES
-        timerDisjoint_->Release();
-        timerFrameStart_->Release();
-        timerFrameEnd_->Release();
+        dx11.timerDisjoint_->Release();
+        dx11.timerFrameStart_->Release();
+        dx11.timerFrameEnd_->Release();
 #endif
         
-        if( mainDeviceCtx_ ) {
-            mainDeviceCtx_->ClearState();
-            mainDeviceCtx_->Flush();
-            mainDeviceCtx_->Release();
+        if( dx11.mainDeviceCtx_ ) {
+            dx11.mainDeviceCtx_->ClearState();
+            dx11.mainDeviceCtx_->Flush();
+            dx11.mainDeviceCtx_->Release();
         }
-        if ( renderTargetView_ ) {
-            renderTargetView_->Release();
+        if ( dx11.renderTargetView_ ) {
+            dx11.renderTargetView_->Release();
         }
-        if (pBackBuffer) {
-            pBackBuffer->Release();
+        if (dx11.backBuffer) {
+            dx11.backBuffer->Release();
         }
 //         if ( depthStencilView_ ) {
 //             depthStencilView_->Release();
@@ -517,82 +504,119 @@ namespace Heart
 //         if ( depthStencil_ ) {
 //             depthStencil_->Release();
 //         }
-        if ( mainSwapChain_ ) {
-            mainSwapChain_->Release();
+        if ( dx11.mainSwapChain_ ) {
+            dx11.mainSwapChain_->Release();
         }
-        if ( d3d11Device_ ) {
-            ULONG ref=d3d11Device_->Release();
+        if ( dx11.d3d11Device_ ) {
+            ULONG ref=dx11.d3d11Device_->Release();
             hcPrintf("D3DDevice Ref %u", ref);
             if (ref != 0) {
-                HEART_D3D_OBJECT_REPORT(d3d11Device_);
+                HEART_D3D_OBJECT_REPORT(dx11.d3d11Device_);
             }
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
 
-    DXGI_FORMAT hdDX11RenderDevice::toDXGIFormat(hTextureFormat format, hBool* compressed) {
-        DXGI_FORMAT fmt = DXGI_FORMAT_FORCE_UINT;
-        hBool compressedFormat=hFalse;
-        switch ( format )
-        {
-        case eTextureFormat_Unknown: fmt = DXGI_FORMAT_UNKNOWN; break;
-        case eTextureFormat_RGBA32_typeless: fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; break;
-        case eTextureFormat_RGBA32_float: fmt = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-        case eTextureFormat_RGBA32_uint: fmt = DXGI_FORMAT_R32G32B32A32_UINT; break;
-        case eTextureFormat_RGBA32_sint: fmt = DXGI_FORMAT_R32G32B32A32_SINT; break;
-        case eTextureFormat_RGB32_typeless: fmt = DXGI_FORMAT_R32G32B32_TYPELESS; break;
-        case eTextureFormat_RGB32_float: fmt = DXGI_FORMAT_R32G32B32_FLOAT; break;
-        case eTextureFormat_RGB32_uint: fmt = DXGI_FORMAT_R32G32B32_UINT; break;
-        case eTextureFormat_RGB32_sint: fmt = DXGI_FORMAT_R32G32B32_SINT; break;
-        case eTextureFormat_RGBA16_typeless: fmt = DXGI_FORMAT_R16G16B16A16_TYPELESS; break;
-        case eTextureFormat_RGBA16_float: fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-        case eTextureFormat_RGBA16_unorm: fmt = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-        case eTextureFormat_RGBA16_uint: fmt = DXGI_FORMAT_R16G16B16A16_UINT; break;
-        case eTextureFormat_RGBA16_snorm: fmt = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-        case eTextureFormat_RGBA16_sint: fmt = DXGI_FORMAT_R16G16B16A16_SINT; break;
-        case eTextureFormat_RG32_typeless: fmt = DXGI_FORMAT_R32G32_TYPELESS; break;
-        case eTextureFormat_RG32_float: fmt = DXGI_FORMAT_R32G32_FLOAT; break;
-        case eTextureFormat_RG32_uint: fmt = DXGI_FORMAT_R32G32_UINT; break;
-        case eTextureFormat_RG32_sint: fmt = DXGI_FORMAT_R32G32_SINT; break;
-        case eTextureFormat_RG16_typeless: fmt = DXGI_FORMAT_R16G16_TYPELESS; break;
-        case eTextureFormat_RG16_float: fmt = DXGI_FORMAT_R16G16_FLOAT; break;
-        case eTextureFormat_RG16_uint: fmt = DXGI_FORMAT_R16G16_UINT; break;
-        case eTextureFormat_RG16_sint: fmt = DXGI_FORMAT_R16G16_SINT; break;
-        case eTextureFormat_R32_typeless: fmt = DXGI_FORMAT_R32_TYPELESS; break;
-        case eTextureFormat_R32_float: fmt = DXGI_FORMAT_R32_FLOAT; break;
-        case eTextureFormat_R32_uint: fmt = DXGI_FORMAT_R32_UINT; break;
-        case eTextureFormat_R32_sint: fmt = DXGI_FORMAT_R32_SINT; break;
-        case eTextureFormat_R16_typeless: fmt = DXGI_FORMAT_R16_TYPELESS; break;
-        case eTextureFormat_R16_float: fmt = DXGI_FORMAT_R16_FLOAT; break;
-        case eTextureFormat_R16_uint: fmt = DXGI_FORMAT_R16_UINT; break;
-        case eTextureFormat_R16_sint: fmt = DXGI_FORMAT_R16_SINT; break;
-        case eTextureFormat_RGB10A2_typeless: fmt = DXGI_FORMAT_R10G10B10A2_TYPELESS; break;
-        case eTextureFormat_RGB10A2_unorm: fmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
-        case eTextureFormat_RGB10A2_uint: fmt = DXGI_FORMAT_R10G10B10A2_UINT; break;
-        case eTextureFormat_RGBA8_unorm: fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-        case eTextureFormat_RGBA8_typeless: fmt = DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
-        case eTextureFormat_D32_float: fmt = DXGI_FORMAT_D32_FLOAT; break;
-        case eTextureFormat_D24S8_float: fmt = DXGI_FORMAT_D24_UNORM_S8_UINT; break;
-        case eTextureFormat_R8_unorm: fmt = DXGI_FORMAT_A8_UNORM; break;
+void createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderStage* out) {
+    HRESULT hr;
+    ID3D11Device* dx11_device = dx11.d3d11Device_;
+    hShaderStage* shader = new hShaderStage(type);
 
-        case eTextureFormat_RGBA8_sRGB_unorm:   fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case eTextureFormat_BC3_unorm:          fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
-        case eTextureFormat_BC2_unorm:          fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
-        case eTextureFormat_BC1_unorm:          fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
-        case eTextureFormat_BC3_sRGB_unorm:     fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
-        case eTextureFormat_BC2_sRGB_unorm:     fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
-        case eTextureFormat_BC1_sRGB_unorm:     fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
-        }
-        if(compressed) {
-            *compressed=compressedFormat;
-        }
-        hcAssert(fmt!=DXGI_FORMAT_FORCE_UINT);
-        return fmt;
+    if ( type == ShaderType_FRAGMENTPROG ) {
+        hr = dx11_device->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
+        hcAssert( SUCCEEDED( hr ) );
+    } else if ( type == ShaderType_VERTEXPROG ) {
+        hr = dx11_device->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
+        hcAssert( SUCCEEDED( hr ) );
+    } else if (type==ShaderType_GEOMETRYPROG) {
+        hr=dx11_device->CreateGeometryShader(shaderProg, len, NULL, &shader->geomShader_);
+        hcAssert( SUCCEEDED( hr ) );
+    } else if (type==ShaderType_DOMAINPROG) {
+        hr=dx11_device->CreateDomainShader(shaderProg, len, NULL, &shader->domainShader_);
+        hcAssert( SUCCEEDED( hr ) );
+    } else if (type==ShaderType_HULLPROG) {
+        hr=dx11_device->CreateHullShader(shaderProg, len, NULL, &shader->hullShader_);
+        hcAssert( SUCCEEDED( hr ) );
+    } else if (type==ShaderType_COMPUTEPROG) {
+        hr=dx11_device->CreateComputeShader(shaderProg, len, NULL, &shader->computeShader_);
+        hcAssert( SUCCEEDED( hr ) );
     }
 
+    if (shader->shaderPtr_ == nullptr) {
+        delete shader;
+        shader = nullptr;
+    }
+}
+
+DXGI_FORMAT toDXGIFormat(hTextureFormat format, hBool* compressed) {
+    DXGI_FORMAT fmt = DXGI_FORMAT_FORCE_UINT;
+    hBool compressedFormat=hFalse;
+    switch ( format )
+    {
+    case eTextureFormat_Unknown: fmt = DXGI_FORMAT_UNKNOWN; break;
+    case eTextureFormat_RGBA32_typeless: fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; break;
+    case eTextureFormat_RGBA32_float: fmt = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+    case eTextureFormat_RGBA32_uint: fmt = DXGI_FORMAT_R32G32B32A32_UINT; break;
+    case eTextureFormat_RGBA32_sint: fmt = DXGI_FORMAT_R32G32B32A32_SINT; break;
+    case eTextureFormat_RGB32_typeless: fmt = DXGI_FORMAT_R32G32B32_TYPELESS; break;
+    case eTextureFormat_RGB32_float: fmt = DXGI_FORMAT_R32G32B32_FLOAT; break;
+    case eTextureFormat_RGB32_uint: fmt = DXGI_FORMAT_R32G32B32_UINT; break;
+    case eTextureFormat_RGB32_sint: fmt = DXGI_FORMAT_R32G32B32_SINT; break;
+    case eTextureFormat_RGBA16_typeless: fmt = DXGI_FORMAT_R16G16B16A16_TYPELESS; break;
+    case eTextureFormat_RGBA16_float: fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+    case eTextureFormat_RGBA16_unorm: fmt = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+    case eTextureFormat_RGBA16_uint: fmt = DXGI_FORMAT_R16G16B16A16_UINT; break;
+    case eTextureFormat_RGBA16_snorm: fmt = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+    case eTextureFormat_RGBA16_sint: fmt = DXGI_FORMAT_R16G16B16A16_SINT; break;
+    case eTextureFormat_RG32_typeless: fmt = DXGI_FORMAT_R32G32_TYPELESS; break;
+    case eTextureFormat_RG32_float: fmt = DXGI_FORMAT_R32G32_FLOAT; break;
+    case eTextureFormat_RG32_uint: fmt = DXGI_FORMAT_R32G32_UINT; break;
+    case eTextureFormat_RG32_sint: fmt = DXGI_FORMAT_R32G32_SINT; break;
+    case eTextureFormat_RG16_typeless: fmt = DXGI_FORMAT_R16G16_TYPELESS; break;
+    case eTextureFormat_RG16_float: fmt = DXGI_FORMAT_R16G16_FLOAT; break;
+    case eTextureFormat_RG16_uint: fmt = DXGI_FORMAT_R16G16_UINT; break;
+    case eTextureFormat_RG16_sint: fmt = DXGI_FORMAT_R16G16_SINT; break;
+    case eTextureFormat_R32_typeless: fmt = DXGI_FORMAT_R32_TYPELESS; break;
+    case eTextureFormat_R32_float: fmt = DXGI_FORMAT_R32_FLOAT; break;
+    case eTextureFormat_R32_uint: fmt = DXGI_FORMAT_R32_UINT; break;
+    case eTextureFormat_R32_sint: fmt = DXGI_FORMAT_R32_SINT; break;
+    case eTextureFormat_R16_typeless: fmt = DXGI_FORMAT_R16_TYPELESS; break;
+    case eTextureFormat_R16_float: fmt = DXGI_FORMAT_R16_FLOAT; break;
+    case eTextureFormat_R16_uint: fmt = DXGI_FORMAT_R16_UINT; break;
+    case eTextureFormat_R16_sint: fmt = DXGI_FORMAT_R16_SINT; break;
+    case eTextureFormat_RGB10A2_typeless: fmt = DXGI_FORMAT_R10G10B10A2_TYPELESS; break;
+    case eTextureFormat_RGB10A2_unorm: fmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
+    case eTextureFormat_RGB10A2_uint: fmt = DXGI_FORMAT_R10G10B10A2_UINT; break;
+    case eTextureFormat_RGBA8_unorm: fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+    case eTextureFormat_RGBA8_typeless: fmt = DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
+    case eTextureFormat_D32_float: fmt = DXGI_FORMAT_D32_FLOAT; break;
+    case eTextureFormat_D24S8_float: fmt = DXGI_FORMAT_D24_UNORM_S8_UINT; break;
+    case eTextureFormat_R8_unorm: fmt = DXGI_FORMAT_A8_UNORM; break;
+
+    case eTextureFormat_RGBA8_sRGB_unorm:   fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+    case eTextureFormat_BC3_unorm:          fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
+    case eTextureFormat_BC2_unorm:          fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
+    case eTextureFormat_BC1_unorm:          fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
+    case eTextureFormat_BC3_sRGB_unorm:     fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
+    case eTextureFormat_BC2_sRGB_unorm:     fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
+    case eTextureFormat_BC1_sRGB_unorm:     fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
+    }
+    if(compressed) {
+        *compressed=compressedFormat;
+    }
+    hcAssert(fmt!=DXGI_FORMAT_FORCE_UINT);
+    return fmt;
+}
+
+static hShaderProfile getProfileFromString(const hChar* str) {
+    for (hUint i=0; i<hStaticArraySize(s_shaderProfileNames); ++i) {
+        if (hStrICmp(s_shaderProfileNames[i],str) == 0) {
+            return (hShaderProfile)i;
+        }
+    }
+    return eShaderProfile_Max;
+}
+#if REF_IMPL
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -768,19 +792,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hShaderProfile hdDX11RenderDevice::getProfileFromString(const hChar* str) {
-        for (hUint i=0; i<hStaticArraySize(s_shaderProfileNames); ++i) {
-            if (hStrICmp(s_shaderProfileNames[i],str) == 0) {
-                return (hShaderProfile)i;
-            }
-        }
-        return eShaderProfile_Max;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderFromSourceDevice(
         const hChar* shaderProg, hSize_t len, const hChar* entry, 
         hShaderProfile profile, hIIncludeHandler* includesimpl, 
@@ -835,62 +846,6 @@ namespace Heart
         out=compileShaderDevice((hChar*)codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), type, out);
         codeBlob->Release();
         return out;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hdDX11ShaderProgram* hdDX11RenderDevice::compileShaderDevice(const hChar* shaderProg, 
-    hSize_t len, hShaderType type, hdDX11ShaderProgram* out) {
-        HRESULT hr;
-        hdDX11ShaderProgram* shader = out;
-        shader->type_ = type;
-        shader->blobLen_= 0;
-        shader->shaderBlob_= hNullptr;
-
-        if ( type == ShaderType_FRAGMENTPROG ) {
-            hr = d3d11Device_->CreatePixelShader( shaderProg, len, NULL, &shader->pixelShader_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-        } else if ( type == ShaderType_VERTEXPROG ) {
-            ID3DBlob* inputBlob;
-            hr = d3d11Device_->CreateVertexShader( shaderProg, len, NULL, &shader->vertexShader_ );
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-
-            hr = D3DGetInputSignatureBlob(shaderProg, len, &inputBlob);
-            hcAssert(SUCCEEDED(hr));
-            shader->blobLen_= (hUint)inputBlob->GetBufferSize();
-            hcAssert(shader->blobLen_ == inputBlob->GetBufferSize());
-            shader->shaderBlob_= new hUint8[shader->blobLen_];
-            hMemCpy(shader->shaderBlob_, inputBlob->GetBufferPointer(), shader->blobLen_);
-            inputBlob->Release();
-        } else if (type==ShaderType_GEOMETRYPROG) {
-            hr=d3d11Device_->CreateGeometryShader(shaderProg, len, NULL, &shader->geomShader_);
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-        } else if (type==ShaderType_DOMAINPROG) {
-            hr=d3d11Device_->CreateDomainShader(shaderProg, len, NULL, &shader->domainShader_);
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-        } else if (type==ShaderType_HULLPROG) {
-            hr=d3d11Device_->CreateHullShader(shaderProg, len, NULL, &shader->hullShader_);
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-        } else if (type==ShaderType_COMPUTEPROG) {
-            hr=d3d11Device_->CreateComputeShader(shaderProg, len, NULL, &shader->computeShader_);
-            hcAssert( SUCCEEDED( hr ) );
-            hr = D3DReflect( shaderProg, len, IID_ID3D11ShaderReflection, (void**)&shader->shaderInfo_ );
-            hcAssert( SUCCEEDED( hr ) );
-        }
-
-        return shader;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -1910,7 +1865,8 @@ namespace Heart
         device->CSSetShaderResources(0, HEART_MAX_RESOURCE_INPUTS, (ID3D11ShaderResourceView**)&nullout);
         device->CSSetUnorderedAccessViews(0, HEART_MAX_UAV_INPUTS, (ID3D11UnorderedAccessView**)&nullout, NULL);
     }
-
+#endif //REF_IMPL    
+}
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

@@ -61,7 +61,7 @@ namespace hRenderer {
     static const hUint32    s_resoruceUpdateLimit = 1024;
     static const hUint32    s_scratchBufferCount = 5;
 
-    void					create( hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
+    void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
     void					destroy();
     hFORCEINLINE hFloat                  getRatio() { return 1.f; }
 
@@ -79,8 +79,8 @@ namespace hRenderer {
     /*
         pimpl methods
     */
-    void  compileShaderFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram* out);
-    void  createShader(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
+    void  compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile, hShaderProgram* out);
+    void  createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type, hShaderProgram* out);
     void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
     void  resizeTexture(hUint32 width, hUint32 height, hTexture* inout);
     void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);

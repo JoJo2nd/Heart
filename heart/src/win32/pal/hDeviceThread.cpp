@@ -100,6 +100,7 @@ namespace Heart
         SetThreadName( pThis_->threadName_ );
         SetThreadPriority( pThis_->ThreadHand_, pThis_->priority_ );
         pThis_->returnCode_ = pThis_->threadFunc_( pThis_->pThreadParam_ );
+        TLS::threadExit();
         return pThis_->returnCode_;
     }
 

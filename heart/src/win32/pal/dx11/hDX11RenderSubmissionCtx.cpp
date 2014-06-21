@@ -91,7 +91,7 @@ namespace Heart
         for (hUint i=0; i<n; ++i) {
             rtviews[i]=target[i] ? target[i]->rtv_ : NULL;
         }
-        hdDX11RenderDevice::clearDeviceInputs(device_);
+        //hdDX11RenderDevice::clearDeviceInputs(device_);
         device_->OMSetRenderTargets(n, rtviews, depth ? depth->dsv_ : NULL);
         HEART_RSTAT_DEVICE_CALL();
     }

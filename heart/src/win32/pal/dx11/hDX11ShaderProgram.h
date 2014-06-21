@@ -105,15 +105,22 @@ namespace Heart
         hUint8*                 shaderBlob_;//
     };
 
+namespace hRenderer {
     class hShaderReflection;
+
+    /*
+        Shader Stage interface
+    */
+    class hShaderStage;
+    hShaderType getShaderType(const hShaderStage* stage);
 
     class hShaderStage {
     public:
-        hShaderStage() {
-
+        hShaderStage(hShaderType type) 
+            : type_(type)
+            , shaderPtr_(nullptr) {
         }
         ~hShaderStage() {
-
         }
         
         hShaderType                 type_;
@@ -125,16 +132,23 @@ namespace Heart
             ID3D11HullShader*       hullShader_;
             ID3D11DomainShader*     domainShader_;
             ID3D11ComputeShader*    computeShader_;
+            void*                   shaderPtr_;
         };
     };
+
+    /*
+        hShaderLinkedProgram interface
+    */
+    class hShaderLinkedProgram;
+    const hShaderReflection* getReflectionInfo(const hShaderLinkedProgram* prog);
+    void attachStage(hShaderLinkedProgram* prog, hShaderStage* stage);
+    void link(hShaderLinkedProgram* prog);
 
     class hShaderLinkedProgram {
         hShaderLinkedProgram() {}
         ~hShaderLinkedProgram() {}
 
-        hShaderReflection* getReflectionInfo() const;
-        void attachStage(hShaderStage* stage);
-        void link();
     };
+}
 }
 #endif // DEVICEDX11SHADERPROGRAM_H__
