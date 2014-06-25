@@ -4,7 +4,7 @@
 		{
 			"follow_symlinks": true,
 			"path": ".",
-			"folder_exclude_patterns": ["deploy/tools", "deploy/gamedata", "deploy/viewer", "deploy/game*.*", "deploy/game/gamedata", "cmake*"]
+			"folder_exclude_patterns": ["deploy/tools", "deploy/gamedata", "deploy/viewer", "deploy/game*.*", "deploy/game/gamedata", "cmake64", "cmake32"]
 		}
 	],
 	"build_systems":

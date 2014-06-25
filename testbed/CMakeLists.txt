@@ -61,7 +61,7 @@ ADD_MSVC_PRECOMPILED_HEADER(
 	TESTBED_PRECOMPILED_SRC_FILES
 )
 
-if (NOT DEFINED ENV{WindowsSDKDir})
+if (NOT DEFINED ENV{WindowsSDKDir} AND MSVC)
 	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
 	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
 endif()
@@ -78,8 +78,14 @@ set_property(TARGET heart_testbed PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(heart_testbed heart)
 
 ADD_CUSTOM_COMMAND(
-	TARGET heart_testbed
+    TARGET heart_testbed
     POST_BUILD
     COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/game" -l d3dcompiler
 )
+if (MSVC)
+    ADD_CUSTOM_COMMAND(
+    	TARGET heart_testbed
+        POST_BUILD
+    	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/game" -l d3dcompiler
+    )
+endif()

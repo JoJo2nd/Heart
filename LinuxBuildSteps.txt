@@ -1,0 +1,57 @@
+Linux Build steps:
+[key >> cmd line]
+Important cmake vars: CMAKE_INCLUDE_PATH; CMAKE_LIBRARY_PATH
+
+Install steps initial:
+* install git
+* >> sudo apt-get install git
+* install cmake 2.8.12.2 minimum
+* download cmake 2.8.12.2, unzip somewhere, build & install
+* >> ./configure --prefix=$HOME/dev/installs
+* >> make
+* >> sudo make install
+* Add cmake to your path, I did this via the .profile script under ~ so...
+* >> gedit ~/.profile
+* add the following...
+if [ -d "$HOME/dev/installs/bin" ] ; then
+	PATH="$HOME/dev/installs/bin:$PATH"
+fi
+* Clone the repo to $heart_repo
+* >> git clone https://github.com/JoJo2nd/Heart
+* create a directory to build camke in $build_dir
+* >> cd $build_dir
+* Install GCC tool chain etc
+* >> sudo apt-get install build-essential
+* >> sudo apt-get install clang-3.4
+* download protobuf 2.5.0 and unzip somewhere
+* cd to protobuf source
+* >> ./configure --prefix=$HOME/dev/installs
+* >> make
+* >> make install
+* should now be in $HOME/dev/installs
+* download boost 1.53
+* unzip somewhere and cd to directory
+* >> ./bootstrap.sh --prefix=$HOME/dev/installs
+* >> ./bjam install
+* Download SDL2, unzip somewhere and cd to it
+* >> sudo apt-get install autoconf
+* >> sh autogen.sh
+* >> ./configure --prefix=$HOME/dev/installs
+* >> make
+* >> make install
+* [install wxWidgets - package manager install - mint/ubuntu]
+* >> sudo apt-add-repository 'deb http://repos.codelite.org/wx3.0.1/ubuntu/ trusty universe'
+* >> sudo apt-get update
+* >> sudo apt-get install libwxbase3.0-0-unofficial libwxbase3.0-dev libwxgtk3.0-0-unofficial libwxgtk3.0-dev wx3.0-headers wx-common libwxbase3.0-dbg libwxgtk3.0-dbg wx3.0-i18n wx3.0-examples wx3.0-doc
+* [Install GLEW]
+* download glew source (latest at 1.10), unzip somewhere and cd to directory
+* >> sudo apt-get install mesa-common-dev
+* >> set GLEW_DEST=$HOME/dev/installs
+* >> sudo apt-get install libx11-dev
+* >> sudo apt-get install libxmu-dev libxi-dev
+* >> make install
+* cd $heart_repo
+* mkdir $build_dir
+* rm -rf *
+* cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64"
+* Profit

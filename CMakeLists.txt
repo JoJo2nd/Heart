@@ -1,8 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12.2)
 project(HEART)
 
 if (MSVC)
   set(BUILD_PLATFORM "windows")
+elif (UNIX)
+  set(BUILD_PLATFORM "linux")
 endif()
 
 #macros
@@ -30,19 +32,6 @@ MACRO(GET_BASE_FILENAMES destVar sourceVar)
 		set(descVar ${destVar} ${FILENAME})
 	endforeach(FILEPATH)
 ENDMACRO(GET_BASE_FILENAMES)
-
-#MACRO(SET_USE_PRCOMPILED_HEADER files headername)
-	#if(MSVC)
-		#foreach( file ${files} )
-				#message("${file} COMPILE_FLAGS /Yu${headername}")
-				#set_source_files_properties(
-					#${file}
-					#PROPERTIES
-					#COMPILE_FLAGS "/Yu${headername}"
-					#)
-		#endforeach()
-	#endif(MSVC)
-#ENDMACRO(SET_USE_PRCOMPILED_HEADER)
 
 function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
   if(NOT ARGN)
@@ -140,7 +129,6 @@ endif()
 #config vars
 set(CMAKE_USE_RELATIVE_PATHS OFF)
 set(CMAKE_DEBUG_POSTFIX "_d")
-set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 
 #build options
 option(USE_XNAMATH "Use old XNA math libraries" OFF)
@@ -162,11 +150,11 @@ MACRO(ENABLE_PROFILE_IF_SET)
 	endif (DO_PROFILE)
 ENDMACRO(ENABLE_PROFILE_IF_SET)
 
-if (DO_PROFILE)
+if (DO_PROFILE AND MSVC)
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /PROFILE")
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /PROFILE")
 	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /PROFILE")
-endif(DO_PROFILE)
+endif()
 
 #add_definitions(-DHEART_DLL)
 
@@ -191,10 +179,10 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_DEBUG OFF)
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system regex serialization)
 find_package(Protobuf REQUIRED)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
+find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system regex serialization)
 find_package(SDL2 REQUIRED)
+find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
 
 find_package(OpenGL REQUIRED)
 set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")
@@ -261,22 +249,27 @@ set(LUA_INCLUDE_DIR
 )
 
 if (WIN32)
-    #OpenAL and ws2 are still called "32" 64bit build...
+  #OpenAL and ws2 are still called "32" 64bit build...
 	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32 ws2_32 Winmm)
 	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
 endif()
+
 if (USE_ASSIMP_DEBUG)
-	if (BUILD_64_BIT)
-		set(assimp_BUILD_EXT "assimp_debug-dll_x64")
-	else()
-		set(assimp_BUILD_EXT "assimp_debug-dll_win32")
-	endif()
+  if (MSVC)
+  	if (BUILD_64_BIT)
+  		set(assimp_BUILD_EXT "assimp_debug-dll_x64")
+  	else()
+  		set(assimp_BUILD_EXT "assimp_debug-dll_win32")
+  	endif()
+  endif()
 else()
-	if (BUILD_64_BIT)
-		set(assimp_BUILD_EXT "assimp_release-dll_x64")
-	else()
-		set(assimp_BUILD_EXT "assimp_release-dll_win32")
-	endif()
+  if (MSVC)
+  	if (BUILD_64_BIT)
+  		set(assimp_BUILD_EXT "assimp_release-dll_x64")
+  	else()
+  		set(assimp_BUILD_EXT "assimp_release-dll_win32")
+  	endif()
+  endif()
 endif()
 
 set(assimp_BIN_DIR_FULL "${assimp_BIN_DIR}/${assimp_BUILD_EXT}")
@@ -284,7 +277,9 @@ set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
 #SDL2
 add_definitions(-DHEART_USE_SDL2)
-get_filename_component(SDL2_LIB_PATH ${SDL2_LIBRARY} DIRECTORY)
+if (WIN32)
+  get_filename_component(SDL2_LIB_PATH ${SDL2_LIBRARY} DIRECTORY)
+endif()
 #	if (BUILD_64_BIT)
 #		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/x64/Release")
 #	else()
@@ -342,7 +337,9 @@ add_subdirectory ("external/minizip")
 add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
-add_subdirectory ("external/libprof")
+if (MSVC)
+  add_subdirectory ("external/libprof")
+endif()
 add_subdirectory ("external/luadb")
 add_subdirectory ("heart")
 

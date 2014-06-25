@@ -38,18 +38,19 @@ set_property(TARGET shader_builder PROPERTY DEBUG_POSTFIX)
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
+
+    if (NOT DEFINED ENV{WindowsSDKDir})
+    	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
+    	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
+    endif()
 endif()
 
-if (NOT DEFINED ENV{WindowsSDKDir})
-	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
-	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
-endif()
 if (NOT ${BUILD_64_BIT} MATCHES 1)
 	set(PLATTYPE x86)
 else()
 	set(PLATTYPE x64)
 endif()
-message(${SDL2_LIB_PATH})
+
 ADD_CUSTOM_COMMAND(
 	TARGET shader_builder
     POST_BUILD
