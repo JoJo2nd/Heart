@@ -14,3 +14,5 @@
 /*.sublime-workspace
 /build/build.timestamp.txt
 /deploy/game
+*.unity.cpp
+*.unity.c

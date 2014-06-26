@@ -10,11 +10,16 @@ file(GLOB_RECURSE ENET_SRC_FILES
     "${ENET_SRC_DIR}/include/*.h"
     "${ENET_SRC_DIR}/*.c"
 )
-list(REMOVE_ITEM ENET_SRC_FILES "src/unix.c")
+if (PLATFORM_WINDOWS)
+	list(REMOVE_ITEM ENET_SRC_FILES "src/unix.c")
+endif()
+if (PLATFORM_LINUX)
+	add_definitions(-DHAS_SOCKLEN_T)
+	list(REMOVE_ITEM ENET_SRC_FILES "src/win32.c")
+endif()
 
 source_group(source FILES ${ENET_SRC_FILES})
 
 include_directories(${ENET_INCLUDE_DIR})
-#link_directories(${MATERIAL_BUILDER_LIB_DIRS})
 add_library(enet ${ENET_SRC_FILES})
 target_link_libraries(enet ws2_32 Winmm ${PROFILE_LIBS})

@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 2.8.12.2)
 project(HEART)
 
-if (MSVC)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
-elif (UNIX)
+  set(PLATFORM_WINDOWS true)
+  add_definitions(-DPLATFORM_WINDOWS)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(BUILD_PLATFORM "linux")
+  set(PLATFORM_LINUX true)
+  add_definitions(-DPLATFORM_LINUX)
+endif()
+
+if (NOT BUILD_PLATFORM)
+  message("Unknown platform ${CMAKE_SYSTEM_NAME} got ${BUILD_PLATFORM} - cannot build")
 endif()
 
 #macros
@@ -328,7 +338,10 @@ if (USE_OLD_DXSDK)
     add_definitions(-DHEART_USE_DXSDK)
 endif()
 
-add_definitions(-DHEART_LUA_LIBS -DLUA_BUILD_AS_DLL)
+add_definitions(-DHEART_LUA_LIBS)
+if (PLATFORM_WINDOWS)
+  add_definitions(-DLUA_BUILD_AS_DLL)
+endif()
 
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")

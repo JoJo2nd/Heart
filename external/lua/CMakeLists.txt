@@ -26,6 +26,11 @@ file(GLOB LUA_SRC_FILES
 list(REMOVE_ITEM LUA_SRC_FILES "${LUA_SRC_DIR}/src/lua.c")
 list(REMOVE_ITEM LUA_SRC_FILES "${LUA_SRC_DIR}/src/luac.c")
 
+if (PLATFORM_LINUX)
+    # on linux 'tmpname' is dangerous, better use 'mkstemp'
+    add_definitions(-Dtmpname=mkstemp)
+endif()
+
 source_group(source  FILES ${LUA_SRC_FILES})
 
 #set_source_files_properties(${LUA_SRC_FILES} PROPERTIES LANGUAGE CXX)
