@@ -30,6 +30,7 @@
 
 #include "hShaderStage_dx11.h"
 #include <d3d11.h>
+#include <D3Dcompiler.h>
 
 namespace Heart {    
 
@@ -556,7 +557,7 @@ hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len,
     if (FAILED(hr)) {
         return NULL;
     }
-    hShaderStage* out = createShaderStage((hChar*)codeBlob->GetBufferPointer(), codeBlob->GetBufferSize(), type);
+    hShaderStage* out = createShaderStage((hChar*)codeBlob->GetBufferPointer(), (hUint32)codeBlob->GetBufferSize(), type);
     codeBlob->Release();
     return out;
 }
@@ -677,8 +678,8 @@ void swapBuffers() {
                 resizeCallback_(width_, height_);
             }
         }
-#endif
     }
+#endif
 }
    
 }
