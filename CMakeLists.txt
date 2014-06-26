@@ -6,6 +6,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(PLATFORM_WINDOWS true)
   set(PROTOBUG_LUA_PLUGIN protoc-gen-lua.exe)
   add_definitions(-DPLATFORM_WINDOWS)
+  set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
