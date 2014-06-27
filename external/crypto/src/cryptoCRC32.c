@@ -94,7 +94,7 @@ static void CY_API cyPartialCRC32( cyUint32* incrc, const cyByte* buf, cyUint32 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 CY_DLLEXPORT 
-cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len )
+cyUint32 CY_API cyFullCRC32( const cyByte* data, cyUint len )
 {
      cyUint32 crc;
      cyStartCRC32( &crc, data, len );

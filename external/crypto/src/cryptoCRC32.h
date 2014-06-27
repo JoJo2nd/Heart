@@ -36,7 +36,7 @@
 extern "C" {
 #endif//
 
-    CY_DLLEXPORT cyUint32 CY_API cyFullCRC32( const cyChar* data, cyUint len );
+    CY_DLLEXPORT cyUint32 CY_API cyFullCRC32( const cyByte* data, cyUint len );
     CY_DLLEXPORT void     CY_API cyStartCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
     CY_DLLEXPORT void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
     CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );

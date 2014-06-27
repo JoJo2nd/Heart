@@ -30,6 +30,9 @@
 #include "base/hHeartConfig.h"
 #include "base/hTypeTraits.h"
 
+#include <stdint.h>
+#include <time.h>
+
 typedef	char				hChar;
 typedef unsigned char		hByte;
 typedef char                hInt8;
@@ -71,10 +74,12 @@ namespace Heart
 #define HEART_ALIGNMENT_END( x )
 
 #if defined (HEART_PLAT_WINDOWS)
-    #define hThreadLocal  __declspec(thread)
-    #define hRestrict     __restrict
+#   define hThreadLocal  __declspec(thread)
+#   define hRestrict     __restrict
+#elif defined (HEART_PLAT_LINUX)
+#   
 #else
-    #error ("Unknown platform ")
+#   error ("Unknown platform ")
 #endif
 
 namespace Heart
@@ -139,6 +144,9 @@ namespace Heart
 #       define hAlignOf(x)  hAlignment_of<##x>::value
 #       define hNullptr     (nullptr)
 #   endif
+#elif defined (HEART_PLAT_LINUX)
+#       define hAlignOf(x)  hAlignment_of<##x>::value
+#       define hNullptr     (nullptr)
 #else
 #   error ("Unknown platform ")
 #endif

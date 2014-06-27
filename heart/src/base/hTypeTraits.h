@@ -25,7 +25,7 @@
 
 *********************************************************************/
 
-#if (_MSC_VER >= 1500)
+#if (_MSC_VER >= 1500) || defined (__clang__)
 #   include <type_traits>
    
 #define hIs_array                   std::is_array                  
@@ -51,5 +51,5 @@
 #define hRemove_extent              std::remove_extent
 
 #else
-#   pragma error ("Unsupported compiler, however using boost::type_traits is a possilbe option")
+#   error ("Unsupported compiler, however using boost::type_traits is a possilbe option")
 #endif

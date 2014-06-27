@@ -28,7 +28,7 @@ list(REMOVE_ITEM LUA_SRC_FILES "${LUA_SRC_DIR}/src/luac.c")
 
 if (PLATFORM_LINUX)
     # on linux 'tmpname' is dangerous, better use 'mkstemp'
-    add_definitions(-Dtmpname=mkstemp)
+    add_definitions(-DLUA_USE_MKSTEMP)
 endif()
 
 source_group(source  FILES ${LUA_SRC_FILES})
@@ -43,7 +43,7 @@ set_property(TARGET lua52 PROPERTY DEBUG_POSTFIX)
 ADD_CUSTOM_COMMAND(
 	TARGET lua52
     POST_BUILD
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l wx  -s "${wxLua_BIN_DIR_ROOT}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
+	COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l wx  -s "${wxLua_BIN_DIR_ROOT}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )

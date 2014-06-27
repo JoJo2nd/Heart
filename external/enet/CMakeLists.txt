@@ -22,4 +22,9 @@ source_group(source FILES ${ENET_SRC_FILES})
 
 include_directories(${ENET_INCLUDE_DIR})
 add_library(enet ${ENET_SRC_FILES})
-target_link_libraries(enet ws2_32 Winmm ${PROFILE_LIBS})
+set(ENET_LIBS ${PROFILE_LIBS})
+if (PLATFORM_WINDOWS)
+    set(ENET_LIBS "${ENET_LIBS} ws2_32 Winmm")
+endif()
+
+target_link_libraries(enet ${ENET_LIBS})

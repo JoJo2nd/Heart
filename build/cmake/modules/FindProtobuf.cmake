@@ -223,7 +223,7 @@ mark_as_advanced(PROTOBUF_INCLUDE_DIR)
 find_program(PROTOBUF_PROTOC_EXECUTABLE
     NAMES protoc
     DOC "The Google Protocol Buffers Compiler"
-    PATHS
+    PATHS    
     ${PROTOBUF_SRC_ROOT_FOLDER}/vsprojects/Release
     ${PROTOBUF_SRC_ROOT_FOLDER}/vsprojects/Debug
 )
@@ -237,3 +237,7 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(PROTOBUF DEFAULT_MSG
 if(PROTOBUF_FOUND)
     set(PROTOBUF_INCLUDE_DIRS ${PROTOBUF_INCLUDE_DIR})
 endif()
+
+get_filename_component(PROTOBUF_SRC_ROOT_FOLDER ${PROTOBUF_INCLUDE_DIR} DIRECTORY)
+
+message("${PROTOBUF_LIBRARY}")

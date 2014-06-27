@@ -61,7 +61,7 @@ static void initVarDesc(ldbVarDesc* var, const luadb::proto::RPCVar& rpcvar) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-ldb_bool ldbClient::connect(ldb_string& addressstr, ldb_int port) {
+ldb_bool ldbClient::connect(const ldb_string& addressstr, ldb_int port) {
     ENetAddress enetaddress;
     ENetEvent event;
 
@@ -132,6 +132,8 @@ void ldbClient::disconnect() {
                 break;
             case ENET_EVENT_TYPE_DISCONNECT:
                 return;
+            default:
+                break;
             }
         }
         /* We've arrived here, so the disconnect attempt didn't */
@@ -416,7 +418,7 @@ ldb_bool ldbClient::stepOut() {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-ldb_bool ldbClient::setBreakpoint(ldb_string& filepath, ldb_uint line, ldb_bool set) {
+ldb_bool ldbClient::setBreakpoint(const ldb_string& filepath, ldb_uint line, ldb_bool set) {
     using namespace luadb;
     ldbTickResults results;
     proto::RPCCall rpccall;
@@ -454,7 +456,7 @@ ldb_bool ldbClient::getBacktrace() {
         tickSingleEvent(1000, &results);
     }
 
-    ++rpcOpComplete_;
+    rpcOpComplete_ |= true;
     return isConnected();
 }
 
@@ -502,7 +504,7 @@ ldb_bool ldbClient::getLocals(ldb_int stacklevel, std::vector< ldbVarDesc >* out
             tickSingleEvent(1000, &results);
         }
 
-        ++rpcOpComplete_;
+        rpcOpComplete_ |= true;
     }
 
     *outlocals = locals_;
@@ -530,7 +532,7 @@ ldb_bool ldbClient::getMoreInfo(ldb_int varEntryID, ldbVarDesc* outvar) {
         tickSingleEvent(1000, &results);
     }
 
-    ++rpcOpComplete_;
+    rpcOpComplete_ |= true;
 
     return isConnected();
 }
@@ -556,7 +558,7 @@ ldb_bool ldbClient::getWatch(const ldb_char* varname, ldb_int stacklevel, ldbVar
         tickSingleEvent(1000, &results);
     }
 
-    ++rpcOpComplete_;
+    rpcOpComplete_ |= true;
 
     return isConnected();
 }

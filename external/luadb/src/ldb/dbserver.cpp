@@ -65,7 +65,7 @@ static int ldb_getVariableValue(lua_State* L, lua_Debug* ar, const ldb_char* nam
     }
     
     const ldb_char* varname = nullptr;
-    for (ldb_int i = 1; varname = lua_getlocal(L, ar, i); ++i) {
+    for (ldb_int i = 1; (varname = lua_getlocal(L, ar, i)); ++i) {
         if (strcmp(name, varname) == 0) {
             //found, leave on the stack and return
             return 1;
@@ -76,7 +76,7 @@ static int ldb_getVariableValue(lua_State* L, lua_Debug* ar, const ldb_char* nam
 
     // check up-values
     lua_getinfo(L, "Sf", ar);
-    for (ldb_int i=1; varname=lua_getupvalue(L, -1, i); ++i) {
+    for (ldb_int i=1; (varname=lua_getupvalue(L, -1, i)); ++i) {
         if (strcmp(name, varname) == 0) {
             //found, leave on the stack and return
             return 1;
@@ -198,7 +198,6 @@ ldb_bool ldbDebugServer::dettach() {
 //////////////////////////////////////////////////////////////////////////
 
 void ldbDebugServer::luaHook(lua_State* L, lua_Debug* ar) {
-    ldb_bool run=false;
     ldb_int timelimit = 0;
     lua_getinfo(L, "nSltu", ar);
     ldb_int stackdepth=0;
@@ -217,7 +216,6 @@ void ldbDebugServer::luaHook(lua_State* L, lua_Debug* ar) {
 
 ldb_bool ldbDebugServer::debuggerTick(lua_State* L, ldb_int stackdepth, lua_Debug* ar) {
     //check if we have hit a breakpoint
-    DebugState prevstate = debuggerState_.state_;
     ldb_string sourcefile;
     if (*ar->source == '@') {
         sourcefile = ar->source+1;
@@ -348,7 +346,7 @@ void ldbDebugServer::handlePacket(ENetPeer* peer, ENetPacket* packet, lua_State*
             if (lua_getstack(L, rpccall.localsstacklevel(), ar)) {
                 // valid stack level, 
                 const ldb_char* varname = nullptr;
-                for (ldb_int i = 1; varname = lua_getlocal(L, ar, i); ++i) {
+                for (ldb_int i = 1; (varname = lua_getlocal(L, ar, i)); ++i) {
                     //values is at top of stack
                     proto::RPCVar* rpcvar = rpccall.add_locals();
                     initialiseRPCVar(L, rpcvar, varname, &localsRegFields_);
@@ -474,7 +472,7 @@ void ldbDebugServer::debugOutputf(const char* str, ...) {
     va_start(marker, str);
 
     ldb_char buffer[ 4*1024 ];
-    ldb_uint len = vsprintf_s( buffer, sizeof(buffer), str, marker);
+    vsprintf(buffer, str, marker);
     debugOutput(buffer, strlen(buffer));
     va_end(marker);
 }
@@ -616,7 +614,6 @@ void ldbDebugServer::initialiseRPCVar(lua_State* L, luadb::proto::RPCVar* rpcvar
     rpcvar->set_name(varname);
     switch (luatype) {
     case LUA_TNUMBER: {
-        lua_Number num = lua_tonumber(L, stackidx);
         lua_pushvalue(L, stackidx);
         rpcvar->set_printableval(lua_tostring(L, -1));
         lua_pop(L, 1);
@@ -628,8 +625,6 @@ void ldbDebugServer::initialiseRPCVar(lua_State* L, luadb::proto::RPCVar* rpcvar
         rpcvar->set_printableval(lua_tostring(L, stackidx));
     } break;
     case LUA_TTABLE: {
-        ldb_int tableidx=0;
-        ldb_int len=lua_rawlen(L, stackidx);
         /* table is in the stack at index 't' */
         lua_pushnil(L);  /* first key */
         while (lua_next(L,stackidx-1) != 0) {

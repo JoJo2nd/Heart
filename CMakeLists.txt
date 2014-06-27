@@ -4,13 +4,17 @@ project(HEART)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
   set(PLATFORM_WINDOWS true)
+  set(PROTOBUG_LUA_PLUGIN protoc-gen-lua.exe)
   add_definitions(-DPLATFORM_WINDOWS)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(BUILD_PLATFORM "linux")
   set(PLATFORM_LINUX true)
+  set(PROTOBUG_LUA_PLUGIN protoc-gen-lua)
   add_definitions(-DPLATFORM_LINUX)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++11")
 endif()
 
 if (NOT BUILD_PLATFORM)
@@ -75,7 +79,7 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc"
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h"
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/protoc-gen-lua.exe
+      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/${PROTOBUG_LUA_PLUGIN}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ & Lua protocol buffer compiler on ${FIL}"
       VERBATIM )
@@ -116,10 +120,10 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" ARGS "-s" ${ABS_FIL} "-d" ${PROTO_IM_DIR}
+	    COMMAND python ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" ${ABS_FIL} "-d" ${PROTO_IM_DIR}
 	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
-      COMMENT "Running C++ lite protocol buffer compiler on ${FIL} [ ${PROTOBUF_PROTOC_EXECUTABLE} --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE} ]")
+      COMMENT "Running C++ lite protocol buffer compiler on ${FIL_WE}")
   endforeach()
 
   set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
@@ -216,7 +220,6 @@ else()
     endif()
 endif(BUILD_64_BIT)
 
-
 #cache vars
 set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
@@ -227,11 +230,6 @@ set(nvtt_LIB_DIR CACHE PATH "Directory for nVidia Texture Tools libraries")
 set(nvtt_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools binaries")
 set(nvtt_DEPENDENT_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools external binaries")
 set(wxLua_BIN_DIR_ROOT CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
-
-#Set wxWidgets search path
-#set(wxWidgets_ROOT_DIR ${wxWidgets_CUSTOM_SEARCH_DIR})
-#set(wxWidgets_CONFIGURATION CACHE STRING mswdll)
-#set(wxWidgets_CONFIGURATION mswdlld)# for debug
 
 #Common var
 set(EXTERNAL_SRC_ROOT

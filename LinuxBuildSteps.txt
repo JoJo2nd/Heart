@@ -5,6 +5,12 @@ Important cmake vars: CMAKE_INCLUDE_PATH; CMAKE_LIBRARY_PATH
 Install steps initial:
 * install git
 * >> sudo apt-get install git
+* [install llvm & clang]
+* >> wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
+* >> sudo apt-get install clang-3.4 lldb-3.4
+* enable clang toolchain, 
+* >> sudo update-alternatives --config c++ [and select clang++]
+* >> sudo update-alternatives --config cc [and select clang++]
 * install cmake 2.8.12.2 minimum
 * download cmake 2.8.12.2, unzip somewhere, build & install
 * >> ./configure --prefix=$HOME/dev/installs
@@ -32,7 +38,7 @@ fi
 * download boost 1.53
 * unzip somewhere and cd to directory
 * >> ./bootstrap.sh --prefix=$HOME/dev/installs
-* >> ./bjam install
+* >> ./b2 cxxflags="-fPIC" install
 * Download SDL2, unzip somewhere and cd to it
 * >> sudo apt-get install autoconf
 * >> sh autogen.sh
@@ -53,5 +59,5 @@ fi
 * cd $heart_repo
 * mkdir $build_dir
 * rm -rf *
-* cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64"
+* cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64" -DCMAKE_PROGRAM_PATH="$HOME/dev/user/local/bin;$HOME/dev/installs/bin"
 * Profit

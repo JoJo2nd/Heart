@@ -40,11 +40,14 @@ extern "C" {
 #include <string>
 #include <sstream>
 
-
-#if defined (luadb_EXPORTS)
-#   define ldb_dll_export __declspec(dllexport)
+#if defined (PLATFORM_WINDOWS)
+#   if defined (luadb_EXPORTS)
+#       define ldb_dll_export __declspec(dllexport)
+#   else
+#       define ldb_dll_export
+#   endif
 #else
-#   define ldb_dll_export
+#   define ldb_dll_export   extern
 #endif
 
 static const char *const luaT_typenames_[] = {

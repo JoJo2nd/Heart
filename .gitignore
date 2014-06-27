@@ -16,3 +16,15 @@
 /deploy/game
 *.unity.cpp
 *.unity.c
+/external/libogg/Makefile
+/external/libogg/*.log
+/external/libogg/*.status
+/external/libogg/doc/Makefile
+/external/libogg/doc/libogg/Makefile
+/external/libogg/include/Makefile
+/external/libogg/include/ogg/Makefile
+/external/libogg/libtool
+/external/libogg/*.pc
+/external/libogg/src/*.deps/
+/external/libogg/src/Makefile
+/external/libogg/stamp-h1

@@ -1,11 +1,14 @@
 #! /usr/bin/python
 
 import argparse
-from os.path import join, realpath, split
+from os.path import join, realpath, split, exists
 from re import match as re_match
 import os
 
 def writeFile(root, in_file, dest):
+    base, file = split(realpath(join(dest, in_file)))
+    if not exists(base):
+        os.makedirs(base)
     in_file = str(in_file)
     out_includes = []
     input_file = open(realpath(join(root, in_file)), 'r')

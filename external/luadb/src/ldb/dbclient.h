@@ -116,7 +116,7 @@ public:
         ldbVarDesc*     outResult;
     };
 
-    ldb_bool                connect(ldb_string& address,ldb_int port);
+    ldb_bool                connect(const ldb_string& address,ldb_int port);
     void                    tickSingleEvent(ldb_uint timeout, ldbTickResults* outresults);
     void                    tickMultipleEvents(ldb_uint timeout, ldbTickResults* outresults);
     ldb_bool                isRunning() const { return debuggerRunning_; }
@@ -130,7 +130,7 @@ public:
     ldb_bool                stepOut();
     ldb_bool                trap();
     ldb_debugMsgDelegate    setMessageDelegate(const ldb_debugMsgDelegate& val);
-    ldb_bool                setBreakpoint(ldb_string& filepath, ldb_uint line, ldb_bool set);
+    ldb_bool                setBreakpoint(const ldb_string& filepath, ldb_uint line, ldb_bool set);
     ldb_bool                getBacktrace();
     ldb_uint                getBacktraceSize() const { return stack_.size(); }
     const ldbStackLevel*    getBacktraceLevel(ldb_uint lvl) const { return &stack_[lvl]; }
@@ -145,7 +145,7 @@ private:
     typedef std::vector< ldbStackLevel > ldb_stackInfo;
 
     ldbClient(const ldbClient& rhs) {}
-    ldbClient& operator = (const ldbClient& rhs) {}
+    ldbClient& operator = (const ldbClient& rhs) { return *this; }
     void        handlePacket(ENetHost* client, ENetPeer * peer, ENetPacket * packet, ldbTickResults* outresults);
     void        sendPacket(ENetPeer* peer, const luadb::proto::RPCCall& packetdata);
 

@@ -40,7 +40,7 @@ namespace Heart
 namespace hAtomic
 {
 
-#ifdef WIN32
+#ifdef HEART_PLAT_WINDOWS
 
  void HEART_API Increment( hAtomicInt& i );
  void HEART_API Decrement( hAtomicInt& i );
@@ -50,6 +50,9 @@ namespace hAtomic
  hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
  void HEART_API LWMemoryBarrier();
  void HEART_API HWMemoryBarrier();
+
+#elif defined HEART_PLAT_LINUX
+
 
 #else 
     #error ("platform not supported")
