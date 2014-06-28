@@ -32,13 +32,13 @@ namespace hCRC32
     hFORCEINLINE
     hUint32 HEART_API FullCRC( const hChar* sData, hUint32 ulLength)
     {
-        return cyFullCRC32( sData, ulLength );
+        return cyFullCRC32( (const hByte*)sData, ulLength );
     }
 
     hFORCEINLINE
 	hUint32 HEART_API StringCRC( const hChar* string )
     {
-        return cyStringCRC32( string );
+        return cyStringCRC32(string);
     }
 
 }

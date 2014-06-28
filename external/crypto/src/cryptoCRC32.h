@@ -41,7 +41,7 @@ extern "C" {
     CY_DLLEXPORT void     CY_API cyContinueCRC32( cyUint32* incrc, const cyByte* data, cyUint32 len );
     CY_DLLEXPORT cyUint32 CY_API cyFinaliseCRC32( cyUint32* incrc );
 
-#define cyStringCRC32( string ) cyFullCRC32( string, (cyUint32)strlen( string ) )
+#define cyStringCRC32( string ) cyFullCRC32((const cyByte*)string, (cyUint32)strlen(string ) )
 
 #ifdef __cplusplus
 };
