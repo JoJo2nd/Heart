@@ -22,6 +22,20 @@
             {
                 "file_regex": "(\/.+?):(\\d+):\\d+:"
             }
+        },
+        {
+            "name": "Heart x32",
+            "cmd": ["python", "cmake_build.py", "-p", "$project_path/cmake32", "-r", "$project_path"],
+            "selector": "source.c++",
+            "working_dir": "$project_path/build",
+            "windows":
+            {
+                "file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
+            },
+            "linux":
+            {
+                "file_regex": "(\/.+?):(\\d+):\\d+:"
+            }
         }
     ]
 }

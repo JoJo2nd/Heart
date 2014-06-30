@@ -39,7 +39,7 @@ source_group(include FILES ${MINIZIP_HDR_FILES})
 source_group(source  FILES ${MINIZIP_SRC_FILES})
 
 if (PLATFORM_LINUX)
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Wno-parentheses-equality")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-parentheses-equality")
 endif()
 
 include_directories(${MINIZIP_INCLUDE_DIRS})

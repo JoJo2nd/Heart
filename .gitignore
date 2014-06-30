@@ -11,6 +11,7 @@
 /platform_win64/
 /tools/viewer/src/lua/builder_script.inl
 /cmake64
+/cmake32
 /*.sublime-workspace
 /build/build.timestamp.txt
 /deploy/game

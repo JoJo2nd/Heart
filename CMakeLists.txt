@@ -15,7 +15,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(PROTOBUG_LUA_PLUGIN protoc-gen-lua)
   add_definitions(-DPLATFORM_LINUX)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -stdlib=libc++ -std=c++11 -fPIC -v")
 endif()
 
 if (NOT BUILD_PLATFORM)

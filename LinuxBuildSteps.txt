@@ -3,6 +3,8 @@ Linux Build steps:
 Important cmake vars: CMAKE_INCLUDE_PATH; CMAKE_LIBRARY_PATH
 
 Install steps initial:
+* Install GCC tool chain etc
+* >> sudo apt-get install build-essential
 * install git
 * >> sudo apt-get install git
 * [install llvm & clang]
@@ -26,9 +28,6 @@ fi
 * >> git clone https://github.com/JoJo2nd/Heart
 * create a directory to build camke in $build_dir
 * >> cd $build_dir
-* Install GCC tool chain etc
-* >> sudo apt-get install build-essential
-* >> sudo apt-get install clang-3.4
 * download protobuf 2.5.0 and unzip somewhere
 * cd to protobuf source
 * >> ./configure --prefix=$HOME/dev/installs
@@ -52,9 +51,8 @@ fi
 * [Install GLEW]
 * download glew source (latest at 1.10), unzip somewhere and cd to directory
 * >> sudo apt-get install mesa-common-dev
-* >> set GLEW_DEST=$HOME/dev/installs
-* >> sudo apt-get install libx11-dev
-* >> sudo apt-get install libxmu-dev libxi-dev
+* >> sudo apt-get install libx11-dev libxmu-dev libxi-dev libgl-dev
+* >> export GLEW_DEST=$HOME/dev/installs
 * >> make install
 * cd $heart_repo
 * mkdir $build_dir
