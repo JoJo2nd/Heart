@@ -80,19 +80,19 @@ hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut )
     // 1110xxxx 10xxxxxx 10xxxxxx
     if( (uft8In[ ret ] & MASK3BYTES) == MASK3BYTES )
     {
-        ucOut = ( (uft8In[ret++] & 0x0F)     << 12)	|
-            ( (uft8In[ret++] & MASKBITS) << 6 )	|
-            ( (uft8In[ret++] & MASKBITS) );
+        ucOut = ( (uft8In[ret+1] & 0x0F)     << 12)	|
+            ( (uft8In[ret+2] & MASKBITS) << 6 )	|
+            ( (uft8In[ret+3] & MASKBITS) );
     }
     // 110xxxxx 10xxxxxx
     else if((uft8In[ ret ] & MASK2BYTES) == MASK2BYTES)
     {
-        ucOut = ( ( uft8In[ ret++ ] & 0x1F ) << 6 ) | ( uft8In[ ret++ ] & MASKBITS );
+        ucOut = ( ( uft8In[ ret+1 ] & 0x1F ) << 6 ) | ( uft8In[ ret+2 ] & MASKBITS );
     }
     // 0xxxxxxx
     else if(uft8In[ ret ] < MASKBYTE)
     {
-        ucOut = uft8In[ ret++ ];
+        ucOut = uft8In[ ret+1 ];
     }
 
     return ret;

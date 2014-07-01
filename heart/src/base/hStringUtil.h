@@ -85,10 +85,12 @@ namespace Heart
 
     inline hUint32 HEART_API hStrICmp( const hChar* s1, const hChar* s2 )
     {
-#ifdef WIN32
+#if defined (PLATFORM_WINDOWS)
         return _stricmp( s1, s2 );
+#elif defined (PLATFORM_LINUX)
+        return strcasecmp( s1, s2 );
 #else
-        return stricmp( s1, s2 );
+#       error ("Unknown platform")
 #endif
     }
 
@@ -97,7 +99,13 @@ namespace Heart
         va_list marker;
         va_start( marker, format );
 
+#if defined (PLATFORM_LINUX)
+        hInt32 r = vsprintf( dest, format, marker );
+#elif defined (PLATFORM_WINDOWS)
         hInt32 r = vsprintf_s( dest, destlen, format, marker );
+#else
+#       error ("Unknown platform")
+#endif
 
         va_end( marker );
 

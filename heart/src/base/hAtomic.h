@@ -28,14 +28,23 @@
 #ifndef ATOMIC_H__
 #define ATOMIC_H__
 
+#include <atomic>
+
 namespace Heart
 {
+#if defined (PLATFORM_WINDOWS)
     HEART_ALIGNMENT_BEGIN(16)
     struct  hAtomicInt
     {
         hUint32 value_;
     }
     HEART_ALIGNMENT_END(16);
+#elif defined (PLATFORM_LINUX)
+    typedef std::atomic<hUint32> hAtomicInt;
+    typedef std::atomic<hUint64> hAtomicInt64;
+#else
+#   error ("Unknown Platform")
+#endif
 
 namespace hAtomic
 {

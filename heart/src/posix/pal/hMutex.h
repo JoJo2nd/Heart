@@ -1,8 +1,6 @@
 /********************************************************************
 
-    filename: 	hUTF8.h	
-    
-    Copyright (c) 5:9:2010 James Moran
+    Copyright (c) James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -27,27 +25,32 @@
 
 #pragma once
 
-#include "base/hTypes.h"
+#include <pthread.h>
 
-namespace Heart
-{
-namespace hUTF8
-{
-    static const hInt32 MASKBITS   = 0x3F;
-    static const hInt32 MASKBYTE   = 0x80;
-    static const hInt32 MASK2BYTES = 0xC0;
-    static const hInt32 MASK3BYTES = 0xE0;
-    static const hInt32 MASK4BYTES = 0xF0;
-    static const hInt32 MASK5BYTES = 0xF8;
-    static const hInt32 MASK6BYTES = 0xFC;
+namespace Heart {
+    class hMutex {
+    public:
+        hMutex() {
+            pthread_mutexattr_t attr;
 
-    typedef hUint16   Unicode;
-
-    hUint32 encodeFromUnicode(Unicode ucIn, hChar* utf8Out);
-    hUint   encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit);
-    hUint   bytesRequiredForUTF8(const Unicode& ucin);
-    hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut );
-    hUint32 BytesInUTF8Character(const hChar* uft8In);
-
-}
+            pthread_mutexattr_init(&attr);
+            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+            pthread_mutex_init(&mutex_, attr);
+            pthread_mutexattr_destroy(&attr);
+        }
+        void Lock() {
+            pthread_mutex_lock(&mutex_);
+        }
+        hBool TryLock() {
+            return pthread_mutex_trylock(&mutex_) ? hTrue : hFalse;
+        }
+        void Unlock() {
+            pthread_mutex_unlock(&mutex_);
+        }
+        ~hMutex() {
+            pthread_mutex_destroy(&mutex_);
+        }
+    
+        pthread_mutex_init mutex_;
+    };
 }

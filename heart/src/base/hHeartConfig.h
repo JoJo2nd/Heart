@@ -94,7 +94,11 @@
 #ifdef PLATFORM_WINDOWS
 #   define HEART_API   __cdecl
 #elif PLATFORM_LINUX
-#	define HEART_API   __attribute__((__cdecl__))
+#	if BUILD_64_BIT
+#		define HEART_API
+#	else
+#		define HEART_API   __attribute__((__cdecl__))
+#	endif
 #else
 #   error "Platform not supported"
 #endif
