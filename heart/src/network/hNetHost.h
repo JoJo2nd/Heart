@@ -29,8 +29,6 @@
 #ifndef HNETHOST_H__
 #define HNETHOST_H__
 
-#include <winsock2.h>
-#include <windows.h>
 #include "enet/enet.h"
 #include "base/hTypes.h"
 #include "base/hFunctor.h"

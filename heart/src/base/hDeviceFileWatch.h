@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	hRenderShaderProgram.h	
+    filename:   hDeviceFileWatch.h  
     
-    Copyright (c) 6:9:2012 James Moran
+    Copyright (c) 16:10:2013 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,50 +24,28 @@
     distribution.
 
 *********************************************************************/
-
 #pragma once
 
 #include "base/hTypes.h"
-#include "base/hProtobuf.h"
-#include "components/hObjectFactory.h"
+#include "base/hFunctor.h"
 
 namespace Heart {
-namespace hRenderer {
-    class hShaderReflection;
+    enum hdFilewatchEvents {
+        hdFilewatchEvents_AddRemove      = 1 << 1,
+        hdFilewatchEvents_FileModified   = 1 << 2,
+        //hdFilewatchEvents_RecursiveWatch = 1 << 3,
 
-// !!JM add to it's own header.
-namespace hShaderType {
-    enum Type {
-        Vertex,
-        Pixel,
+        hdFilewatchEvents_Added          = 1 << 4,
+        hdFilewatchEvents_Removed        = 1 << 5, 
+        hdFilewatchEvents_Modified       = 1 << 6,
+        hdFilewatchEvents_Rename         = 1 << 7,
 
+        hdFilewatchEvents_Unknown,
     };
-}
 
-    /*
-        Shader Stage interface
-    */
-    class hShaderStage;
-    hShaderType::Type getShaderType(const hShaderStage* stage);
-    /*
-        hShaderLinkedProgram interface
-    */
-    class hShaderLinkedProgram;
-    const hShaderReflection* getReflectionInfo(const hShaderLinkedProgram* prog);
-    void attachStage(hShaderLinkedProgram* prog, hShaderStage* stage);
-    void link(hShaderLinkedProgram* prog);
-}
+    hFUNCTOR_TYPEDEF(void(*)(const hChar*, const hChar*, hdFilewatchEvents), hdFilewatchEventCallback);
+    typedef hUintptr_t hdFilewatchHandle;
 
-class  hShaderProgram {
-public:
-    hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
-
-    hShaderProgram() {}
-    ~hShaderProgram() {
-    }
-
-    /*
-        Placeholder class !!JM
-    */
-};    
+    hdFilewatchHandle hdBeginFilewatch(const hChar* path, hUint validevents, hdFilewatchEventCallback callback);
+    void              hdEndFilewatch(hdFilewatchHandle);
 }

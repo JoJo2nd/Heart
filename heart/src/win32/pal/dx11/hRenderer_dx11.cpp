@@ -343,12 +343,13 @@ struct hDX11System {
     //hDeviceResizeCallback     resizeCallback_; !!JM todo
     ID3D11Texture2D*          backBuffer;
     hThread                   renderThread_;
-    hThreadEvent              renderKill_;
+    hMutex                    renderMtx_;
+    hConditionVariable        renderKill_;
 };
 static hDX11System dx11;
 
     hUint32 renderThreadMain(void* param) {
-        while (!dx11.renderKill_.TryWait()) {
+        while (!dx11.renderKill_.wait(&dx11.renderMtx_)) {
 
         }
         return 0;

@@ -50,7 +50,7 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdSystemWindow::Create( const hdDeviceConfig& deviceconfig )
+    hBool hdSystemWindow::Create( const hdDeviceConfig* deviceconfig )
     {
 #ifdef HEART_USE_SDL2
         impl_ = new hdSystemWindowImpl;
@@ -85,10 +85,10 @@ struct hdSystemWindowImpl
 
         return hTrue;
 #else
-        hInstance_ = deviceconfig.instance_;
-        hWnd_ = deviceconfig.hWnd_;
-        wndWidth_ = deviceconfig.width_;
-        wndHeight_ = deviceconfig.height_;
+        deviceconfig->getDataMember("hInstance", &instance_);
+        deviceconfig->getDataMember("hWnd", &hWnd_);
+        deviceconfig->getDataMember("WindowWidth", &wndWidth_);
+        deviceconfig->getDataMember("WindowHeight", &wndHeight_);
         ownWindow_ = hFalse;
 
         strcpy( &wndClassName_[ 0 ], "hWindow" );
@@ -169,144 +169,6 @@ struct hdSystemWindowImpl
         }
 #endif
     }
-
-#ifndef HEART_USE_SDL2
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hdSystemWindow::CreateWndClassEx( HINSTANCE hinstance, const hChar* classname )
-    {
-        // Fill in the window class structure with parameters 
-        // that describe the main window. 
-        ZeroMemory( &wndClassEx_, sizeof( wndClassEx_ ) );
-        wndClassEx_.cbSize = sizeof( wndClassEx_ );				// size of structure 
-        wndClassEx_.style = CS_HREDRAW | CS_VREDRAW;            // redraw if size changes 
-        wndClassEx_.lpfnWndProc = &hdSystemWindow::WindowProc;	// points to window procedure 
-        wndClassEx_.cbClsExtra = 0;								// no extra class memory 
-        wndClassEx_.cbWndExtra = 0;				                // no extra window memory 
-        wndClassEx_.hInstance = hinstance;						// handle to instance 
-        wndClassEx_.hIcon = LoadIcon( NULL, IDI_APPLICATION );  // predefined app. icon 
-        wndClassEx_.hCursor = LoadCursor( NULL, IDC_ARROW );    // predefined arrow 
-        wndClassEx_.hbrBackground = NULL;						// white background brush 
-        wndClassEx_.lpszMenuName =  NULL;						// name of menu resource 
-        wndClassEx_.lpszClassName = classname;					// name of window class 
-        wndClassEx_.hIconSm = NULL;								// small class icon 
-
-        // Register the window class. 
-        return RegisterClassEx( &wndClassEx_ ) != 0 ? hTrue : hFalse;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    LRESULT CALLBACK hdSystemWindow::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
-    {
-        // call the windows message handler
-        if ( s_instance )
-        {
-            s_instance->WndProc( hwnd, uMsg, wParam, lParam );
-        }
-
-        if (s_instance->procChain_) {
-            return CallWindowProc(s_instance->procChain_, hwnd, uMsg, wParam, lParam);
-        }
-        else {
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    LRESULT hdSystemWindow::WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
-    {
-        switch (uMsg) 
-        { 
-        case WM_CLOSE:
-            PostQuitMessage( 0 );
-            signalExit();
-            return 0;
-        case WM_ACTIVATE: {
-                hasFocus_ = LOWORD(wParam) != WA_INACTIVE;
-                hcPrintf("Window Focus[%s]", hasFocus_ ? "true" : "false");
-            }
-            return 0;
-        case WM_SIZE: {
-                hcPrintf("Size Event: Width %u, Height %u", LOWORD(lParam), HIWORD(lParam));
-                wndWidth_=LOWORD(lParam);
-                wndHeight_=HIWORD(lParam);
-            }
-            return 0;
-        case WM_MOUSEMOVE:
-            {
-                int x = (signed short)LOWORD( lParam );
-                int y = (signed short)HIWORD( lParam );
-
-                mouse_.SetMousePosition((hFloat)x, (hFloat)y);
-            }
-        case WM_KEYDOWN:
-            {
-                keyboard_.SetButton((hdInputID)wParam, hButtonState_IS_DOWN);
-            }
-            break;
-        case WM_KEYUP:
-            {
-                keyboard_.SetButton((hdInputID)wParam, hButtonState_IS_UP); 
-            }
-            break;
-        case WM_MOUSEWHEEL:
-            {
-                wheelMove_ = (hInt16)HIWORD( wParam );
-            }
-            break;
-        case WM_LBUTTONDOWN:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON1, hButtonState_IS_DOWN);
-            }
-            break;
-        case WM_LBUTTONUP:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON1, hButtonState_IS_UP);
-            }
-            break;
-        case WM_RBUTTONDOWN:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON2, hButtonState_IS_DOWN);
-            }
-            break;
-        case WM_RBUTTONUP:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON2, hButtonState_IS_UP);
-            }
-            break;
-        case WM_MBUTTONDOWN:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON3, hButtonState_IS_DOWN);
-            }
-            break;
-        case WM_MBUTTONUP:
-            {
-                mouse_.SetButton(HEART_MOUSE_BUTTON3, hButtonState_IS_UP);
-            }
-            break;
-        case WM_CHAR:
-            {
-                hChar charcode = ( wParam & 0x7F );
-                if ( charcode > 0 )
-                {
-                    keyboard_.PushCharacterEvent(charcode);
-                }
-            }
-            break;
-        default:
-            break;
-        }
-        return 0;
-    }
-#endif // HEART_USE_SDL2
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

@@ -121,7 +121,7 @@ namespace Heart
             reserve_ = 0;
         }
 
-        template< typename _Uy, hUint32 _OtherGranularity >
+        template< typename _Uy, hSize_t _OtherGranularity >
         void copy_to( hVector< _Uy, _OtherGranularity >* rhs ) const
         {
             rhs->clear();
@@ -132,7 +132,7 @@ namespace Heart
             }
         }
 
-        template< typename _Uy, hUint32 _OtherGranularity >
+        template< typename _Uy, hSize_t _OtherGranularity >
         void swap( hVector< _Uy, _OtherGranularity >* rhs )
         {
             std::swap(values_, rhs->values_);

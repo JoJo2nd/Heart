@@ -27,21 +27,31 @@
 #ifndef THREAD_H__
 #define THREAD_H__
 
-#include <winsock2.h>
-#include <windows.h>
 #include "base/hTypes.h"
 #include "base/hFunctor.h"
+#include <pthread.h>
 
 namespace Heart
 {
 namespace Device
 {
-    hForceInline
-    void* HEART_API GetCurrentThreadID() { return (void*)GetCurrentThreadId(); }
-    hForceInline
-    void  HEART_API ThreadSleep( DWORD dwMilliseconds ) { Sleep( dwMilliseconds ); }
-    hForceInline
-    void  HEART_API ThreadYield() { SwitchToThread(); }
+    hFORCEINLINE void* HEART_API GetCurrentThreadID() { 
+        return (void*)pthread_self();
+    }
+    hFORCEINLINE void  HEART_API ThreadSleep(hUint milliseconds) {
+#if _POSIX_C_SOURCE >= 199309L
+        hUint secs = milliseconds/1000;
+        timespec t;
+        t.tv_sec = (time_t)(secs+.5f);
+        t.tv_nsec = (long)(secs - t.tv_sec)*1000000000;
+        nanosleep(&t, nullptr);
+#else        
+        sleep((uint_t)(secs+.5f));
+#endif
+    }
+    hFORCEINLINE void  HEART_API ThreadYield() {
+        sched_yield();
+    }
 }
 
     hFUNCTOR_TYPEDEF(hUint32(*)(void*), hThreadFunc);
@@ -61,19 +71,17 @@ namespace Device
 
         void			create( const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param );
         hUint32			returnCode() { return returnCode_; }
-        void            join(){ WaitForSingleObject(ThreadHand_, INFINITE); }
+        void            join();
 
     private:
 
         static const int THREAD_NAME_SIZE = 32;
-
-        static void SetThreadName( LPCSTR szThreadName );
-        static unsigned long WINAPI staticFunc( LPVOID pParam );
+        static void* staticFunc(void* param);
 
         hChar							threadName_[THREAD_NAME_SIZE];
         hThreadFunc		                threadFunc_;
-        void*							pThreadParam_;	
-        HANDLE							ThreadHand_;
+        void*							threadParam_;	
+        pthread_t                       thread_;
         hInt32							priority_;
         hUint32							returnCode_;
     };

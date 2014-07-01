@@ -493,7 +493,7 @@ namespace Heart
 				}
 				else
 				{
-					MapElement::TreeColour strc = parent->colour_;
+					typename MapElement::TreeColour strc = parent->colour_;
 					hBool newRoot = (root == parent);
 
 					if ( CheckRed( sibling->leftRight_[!direct] ) )
@@ -536,7 +536,7 @@ namespace Heart
         void SwapNodes( MapElementPtr a, MapElementPtr b )
         {
             MapElementPtr p=a->parent_,l=a->leftRight_[0],r=a->leftRight_[1];
-            MapElement::TreeColour tc = a->colour_;
+            typename MapElement::TreeColour tc = a->colour_;
 
             //special cases
             if (a->parent_ == b)

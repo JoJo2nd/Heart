@@ -40,7 +40,7 @@ namespace Heart
         if (mmap_) {
             return mmapPos_;
         } else {
-            return hdFtell(&fileHandle_);
+            return hdFtell(fileHandle_);
         }
 	}
 
@@ -62,10 +62,10 @@ namespace Heart
         hUint32 ret;
         if (mmap_) {
             ret=(hUint32)hMin(size, size_-mmapPos_);
-            hMemCpy(pBuffer, (hByte*)(mmap_->basePtr_)+mmapPos_, ret);
+            hMemCpy(pBuffer, (hByte*)(mmap_)+mmapPos_, ret);
             Seek(size, SEEKOFFSET_CURRENT);
         } else {
-            if ( hdFread(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
+            if ( hdFread(fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
                 return 0;
         }
         return ret;
@@ -81,7 +81,7 @@ namespace Heart
         if (mmap_) {
             hcAssertFailMsg("not supported yet...");
         } else {
-            if ( hdFwrite(&fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
+            if ( hdFwrite(fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )
                 return 0;
         }
         return ret;
@@ -102,7 +102,7 @@ namespace Heart
             mmapPos_=hMin(size_, mmapPos_);
         } else {
             hdSeekOffset devFrom = (hdSeekOffset)from;
-            hdFseek(&fileHandle_, offset, devFrom);
+            hdFseek(fileHandle_, offset, devFrom);
         }
         return 0;
     }
@@ -121,7 +121,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     hBool hDriveFile::getIsMemMapped() const {
-        return mmap_ != hNullptr;
+        return mmap_ != nullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void* hDriveFile::getMemoryMappedBase() const {
-        return mmap_ ? mmap_->basePtr_ : hNullptr;
+        return mmap_;
     }
 
 }

@@ -31,6 +31,7 @@
 #define TYPES_H__
 
 #include <time.h>
+#include <cstddef>
 #include <string>
 #include <thread>
 #include <mutex>
@@ -61,6 +62,14 @@ typedef std::thread         ldb_thread;
 typedef std::recursive_mutex ldb_mutex;
 typedef std::lock_guard<ldb_mutex> ldb_mutexsentry;
 
-#define ldb_api   __cdecl
+#if (PLATFORM_WINDOWS)
+#   define ldb_api   __cdecl
+#elif (PLATFORM_LINUX)
+#   if BUILD_64_BIT
+#       define ldb_api
+#   else
+#       define ldb_api   __attribute__((__cdecl__))   
+#   endif
+#endif
 
 #endif // TYPES_H__

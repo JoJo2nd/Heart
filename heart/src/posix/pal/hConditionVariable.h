@@ -30,31 +30,39 @@
 #define HCONDITIONVARIABLE_H__
 
 namespace Heart {
-    class hConditionVariable
-    {
+    class hConditionVariable {
     public:
         hConditionVariable() {
-            InitializeConditionVariable(&var_);
+            pthread_condattr_t attr;
+            pthread_condattr_init(&attr);
+            pthread_cond_init(&var_, &attr);
+            pthread_condattr_destroy(&attr);
         }
         ~hConditionVariable() {
-
+            pthread_cond_destroy(&var_);
+        }
+        bool tryWait(hMutex* mtx) {
+            struct timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_nsec = 0;
+            return pthread_cond_timedwait(&var_, &mtx->mutex_, &ts) == 0;
         }
         void wait(hMutex* mtx) {
-            SleepConditionVariableCS(&var_, &mtx->mutex_, INFINITE);
+            pthread_cond_wait(&var_, &mtx->mutex_);
         }
         /* Wake a single thread waiting on CV */
         void signal() {
-            WakeConditionVariable(&var_);
+            pthread_cond_signal(&var_);
         }
         /* Wake ALL threads waiting on CV */
         void broadcast() {
-            WakeAllConditionVariable(&var_);
+            pthread_cond_broadcast(&var_);
         }
     private:
-        hConditionVariable(const hConditionVariable&);
-        hConditionVariable& operator = (const hConditionVariable&);
+        hConditionVariable(const hConditionVariable&) {}
+        hConditionVariable& operator = (const hConditionVariable&) { return *this; }
 
-        CONDITION_VARIABLE var_;
+        pthread_cond_t var_;
     };
 }
 

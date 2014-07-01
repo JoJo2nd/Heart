@@ -25,12 +25,16 @@
 
 *********************************************************************/
 
-#include "pal/hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 #include "pal/hMutex.h"
 #include "base/hStringUtil.h"
+#include <ftw.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
-namespace Heart
-{
+namespace Heart {
     enum hdFileOp
     {
         FILEOP_NONE,
@@ -41,20 +45,10 @@ namespace Heart
         FILEOP_MAX
     };
 
-    class hdFileHandle {
-    public:
-
-        HANDLE              fileHandle_;
-        OVERLAPPED          operation_;
-        hUint64             filePos_;
-        hUint32             opPending_;
-    };
-
-    class hdMemoryMappedFile : public hLinkedListElement<hdMemoryMappedFile> {
-    public:
-        HANDLE  mmap_;
-        void*   basePtr_;
-    };
+struct hdMemoryMappedFile {
+    void* mmap_;
+    hUint64 len_;
+};
 
 class hdFileSystemMountInfo
 {
@@ -126,8 +120,7 @@ public:
 
 private:
 
-    struct hdMount
-    {
+    struct hdMount {
         hChar   mountName_[s_maxMountLen];
         hUint   pathLen_;
         hChar*  mountPath_;
@@ -150,56 +143,34 @@ private:
     hdFileSystemMountInfo           g_fileSystemInfo;
     hMutex                          g_mmapAccessMutex;
     hBool                           g_mmapInit=hFalse;
-    hLinkedList<hdMemoryMappedFile> g_freeList;
-    hLinkedList<hdMemoryMappedFile> g_usedList;
-    hdMemoryMappedFile              g_mmapFiles[128];
+
+    class hdFileHandle {
+    public:
+        FILE*   file_;
+    };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     
-    hdFileHandle* HEART_API hdFopen(const hChar* filename, const hChar* mode)
-    {
-        DWORD access = 0;
-        DWORD share = 0;// < always ZERO, dont let things happen to file in use!
-        LPSECURITY_ATTRIBUTES secatt = NULL;// could be a prob if passed across threads>?
-        DWORD creation = 0;
-        DWORD flags = FILE_ATTRIBUTE_NORMAL;
-        HANDLE fhandle;
-
-        hcAssert( pOut != hNullptr );
-
-        if ( mode[ 0 ] == 'r' || mode[ 0 ] == 'R' )
-        {
-            access = GENERIC_READ;
-            creation = OPEN_EXISTING;
-        }
-        else if ( mode[ 0 ] == 'w' || mode[ 0 ] == 'W' )
-        {
-            access = GENERIC_WRITE;
-            creation = CREATE_ALWAYS;
-        }
-
+    hdFileHandle* HEART_API hdFopen(const hChar* filename, const hChar* mode) {
         g_fileSystemInfo.lock();
         hUint syspathlen=hdGetSystemPathSize(filename);
         hChar* syspath=(hChar*)hAlloca(syspathlen+1);
         hdGetSystemPath(filename, syspath, syspathlen+1);
         g_fileSystemInfo.unlock();
         
-        fhandle = CreateFile(syspath, access, share, secatt, creation, flags, hNullptr);
-
-        if ( fhandle == INVALID_HANDLE_VALUE )
-        {
+        FILE* f = fopen(syspath, mode);
+        if (!f){
             return nullptr;
         }
 
-        hdFileHandle* fd = new hdFileHandle();
-        fd->fileHandle_ = fhandle;
-        fd->filePos_	= 0;
-        fd->opPending_ = FILEOP_NONE;
+        hdFileHandle* out = nullptr;
+        out = new hdFileHandle;
+        out->file_ = f;
 
-        return fd;
+        return out;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -207,11 +178,12 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     
-    hBool HEART_API hdFclose(hdFileHandle* pHandle)
-    {
-        CloseHandle( pHandle->fileHandle_ );
-        pHandle->fileHandle_=INVALID_HANDLE_VALUE;
-
+    hBool HEART_API hdFclose(hdFileHandle* handle) {
+        if (!handle) {
+            return hFalse;
+        }
+        fclose(handle->file_);
+        delete handle;
         return hTrue;
     }
 
@@ -220,24 +192,9 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     
-    hdFileError HEART_API hdFread(hdFileHandle* pHandle, void* pBuffer, hUint32 size, hUint32* read)
-    {
-        pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
-        pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
-
-        if ( ReadFile( pHandle->fileHandle_, pBuffer, size, read, NULL ) == 0 )
-        {
-            return FILEERROR_FAILED;
-        }
-
-        pHandle->filePos_ += size;
-        if ( pHandle->filePos_ > hdFsize( pHandle ) )
-        {
-            pHandle->filePos_ = hdFsize( pHandle );
-        }
-
-        pHandle->opPending_ = FILEOP_READ;
-        return FILEERROR_NONE;
+    hdFileError HEART_API hdFread(hdFileHandle* handle, void* buffer, hUint32 size, hUint32* read) {
+        hSize_t read_bytes = fread(handle->file_, 1, size, handle->file_);
+        return read_bytes == size ? FILEERROR_NONE : FILEERROR_FAILED;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -245,122 +202,70 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     
-    hdFileError HEART_API hdFseek(hdFileHandle* pHandle, hUint64 offset, hdSeekOffset from)
-    {
-        hUint64 size = hdFsize( pHandle );
-        switch ( from )
-        {
-        case SEEKOFFSET_BEGIN:
-            {
-                pHandle->filePos_ = offset;
-            }
-            break;
-        case SEEKOFFSET_CURRENT:	
-            {
-                pHandle->filePos_ += offset;
-            }
-            break;
-        case SEEKOFFSET_END:
-            {
-                pHandle->filePos_ = size;
-                pHandle->filePos_ += offset;
-            }
+    hdFileError HEART_API hdFseek(hdFileHandle* handle, hUint64 offset, hdSeekOffset from) {
+        int whence = SEEK_CUR;
+        switch(from) {
+        case SEEKOFFSET_BEGIN: whence = SEEK_SET; break;
+        case SEEKOFFSET_END: whence = SEEK_END; break;
+        default:
             break;
         }
+        return fseek(handle->file_, offset, whence) == 0 ? FILEERROR_NONE : FILEERROR_FAILED;
+    }
 
-        pHandle->opPending_ = FILEOP_SEEK;
-        
-        if ( pHandle->filePos_ > size )
-        {
-            pHandle->filePos_ = size;
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    
+    hUint64 HEART_API hdFtell(hdFileHandle* handle) {
+        return ftell(handle->file_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    
+    hUint64 HEART_API hdFsize(hdFileHandle* handle) {
+        struct stat info;
+        fstat(fileno(handle->file_), &info);
+        return (hUint64)info.st_size;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    
+    hdFileError HEART_API hdFwrite(hdFileHandle* handle, const void* buffer, hUint32 size, hUint32* written) {
+        *written = fwrite(buffer, 1, size, handle->file_);
+        return *written == size ? FILEERROR_NONE : FILEERROR_FAILED;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    static hdEnumerateFilesCallback directoryEnumeratorProc;
+    int directoryEnumerator(const char *fpath, const struct stat *sb, int typeflag) {
+        hdFileHandleInfo finfo;
+        finfo.path_ = fpath;
+        finfo.name_ = hStrRChr(fpath, '/');
+        finfo.name_ = finfo.name_ ? finfo.name_ : fpath;    
+        finfo.directory_ = typeflag == FTW_D;
+        if (typeflag == FTW_F || typeflag == FTW_D) {
+            directoryEnumeratorProc(&finfo);
         }
-
-        SetFilePointer( pHandle->fileHandle_, (LONG)pHandle->filePos_, 0, FILE_BEGIN );
-
-        return FILEERROR_NONE;
+        return 0; // return non-zero to stop
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     
-    hUint64 HEART_API hdFtell(hdFileHandle* pHandle)
-    {
-        return pHandle->filePos_;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    
-    hUint64 HEART_API hdFsize(hdFileHandle* pHandle)
-    {
-        return GetFileSize( pHandle->fileHandle_, NULL );
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    
-    hdFileError HEART_API hdFwrite(hdFileHandle* pHandle, const void* pBuffer, hUint32 size, hUint32* written)
-    {
-        pHandle->operation_.Offset = (DWORD)(pHandle->filePos_ & 0xFFFFFFFF);;
-        pHandle->operation_.OffsetHigh = (LONG)((pHandle->filePos_ & 0xFFFFFFFF00000000) >> 32);
-
-        if ( WriteFile( pHandle->fileHandle_, pBuffer, size, written, NULL ) == 0 )
-        {
-            return FILEERROR_FAILED;
-        }
-
-        pHandle->filePos_ += size;
-        if ( pHandle->filePos_ > hdFsize( pHandle ) )
-        {
-            pHandle->filePos_ = hdFsize( pHandle );
-        }
-
-        pHandle->opPending_ = FILEOP_WRITE;
-        return FILEERROR_NONE;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    
-    void HEART_API hdEnumerateFiles(const hChar* path, hdEnumerateFilesCallback fn)
-    {
-        WIN32_FIND_DATA found;
-
+    void HEART_API hdEnumerateFiles(const hChar* path, hdEnumerateFilesCallback fn) {
         hUint syspathlen=hdGetSystemPathSize(path);
-        hChar* syspath=(hChar*)hAlloca(syspathlen+3);
+        hChar* syspath=(hChar*)hAlloca(syspathlen+1);
         hdGetSystemPath(path, syspath, syspathlen+1);
 
-        hStrCat(syspath, syspathlen+3, "/*" );
-
-        HANDLE searchHandle = FindFirstFile(syspath, &found);
-
-        if ( searchHandle == INVALID_HANDLE_VALUE )
-            return;
-
-        do 
-        {
-            hdFileHandleInfo info;
-            info.path_ = path;
-            info.name_ = found.cFileName;
-            info.directory_ = ( found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
-
-            if ( fn( &info ) == false )
-            {
-                FindClose( searchHandle );
-                return;
-            }
-        }
-        while ( FindNextFile( searchHandle, &found ) );
-
-        FindClose( searchHandle );
+        directoryEnumeratorProc = fn;
+        ftw(syspath, directoryEnumerator, 32);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -368,18 +273,16 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     
-    hdFileStat HEART_API hdFstat(hdFileHandle* handle)
-    {
-        hdFileStat stat;
-        BY_HANDLE_FILE_INFORMATION fileInfo;
+    hdFileStat HEART_API hdFstat(hdFileHandle* handle) {
+        hdFileStat outstat;
+        struct stat info;
+        fstat(fileno(handle->file_), &info);
 
-        GetFileInformationByHandle(handle->fileHandle_, &fileInfo);
+        outstat.createTime_     = info.st_ctime;
+        outstat.lastModTime_    = info.st_mtime;
+        outstat.lastAccessTime_ = info.st_atime;
 
-        stat.createTime_     = (((hUint64)fileInfo.ftCreationTime.dwHighDateTime) << 32)   | fileInfo.ftCreationTime.dwLowDateTime;
-        stat.lastModTime_    = (((hUint64)fileInfo.ftLastWriteTime.dwHighDateTime) << 32)  | fileInfo.ftLastWriteTime.dwLowDateTime;
-        stat.lastAccessTime_ = (((hUint64)fileInfo.ftLastAccessTime.dwHighDateTime) << 32) | fileInfo.ftLastAccessTime.dwLowDateTime;
-
-        return stat;
+        return outstat;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -387,13 +290,13 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     
-    void        HEART_API hdCreateDirectory(const hChar* path) {
+    void HEART_API hdCreateDirectory(const hChar* path) {
         g_fileSystemInfo.lock();
         hUint syspathlen=hdGetSystemPathSize(path);
         hChar* syspath=(hChar*)hAlloca(syspathlen+1);
         hdGetSystemPath(path, syspath, syspathlen+1);
         g_fileSystemInfo.unlock();
-        CreateDirectory(syspath, NULL);
+        mkdir(syspath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -426,7 +329,7 @@ private:
     void hdGetCurrentWorkingDir(hChar* out, hUint bufsize) {
         hcAssert(out);
         out[bufsize-1] = 0;
-        GetCurrentDirectoryA(bufsize-1, out);
+        getcwd(out, bufsize-1);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -435,12 +338,10 @@ private:
 
     void hdGetProcessDirectory(hChar* out, hUint bufsize) {
         hcAssert(out);
+        hUint64 pid = (hUint64)getpid();
+        fprintf(stdout, "Path to current process: '/proc/%llu/'\n", pid);
+        snprintf(out, bufsize-1, "/proc/%llu", pid);
         out[bufsize-1] = 0;
-        GetModuleFileNameA(0, out, bufsize-1);
-        hChar* path=hStrRChr(out, '\\');
-        if (path) {
-            *path=0;
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -448,7 +349,8 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     hBool hdIsAbsolutePath(const hChar* path) {
-        return hStrChr(path, ':') != hNullptr; //look for ':' e.g. C:/ or data:/ (It's cant be that simple can it?)
+        hcAssert(path);
+        return path[0] == '/';
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -496,57 +398,23 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     hdMemoryMappedFile* hdMMap(hdFileHandle* handle, hSize_t offset, hSize_t size, hdMMapMode mode) {
-        g_mmapAccessMutex.Lock();
-        if (!g_mmapInit) {
-            for (hUint i=0; i<(hUint)hArraySize(g_mmapFiles); ++i) {
-                g_freeList.addHead(&g_mmapFiles[i]);
-            }
-            g_mmapInit=hTrue;
-        }
-        g_mmapAccessMutex.Unlock();
-
-        if (g_freeList.getSize()==0) {
-            // NoMem
-            return hNullptr;
-        }
-
-        DWORD protect;
-        DWORD access;
+        // we only support read only mappings, currently
+        int prot;
+        int flags;
         switch(mode) {
-        case MMapMode_ReadOnly: protect=PAGE_READONLY; access=FILE_MAP_READ; break;
+        case MMapMode_ReadOnly: prot=PROT_READ; flags=MAP_SHARED; break;
         case MMapMode_Write:
         case MMapMode_None:
-        default: return hNullptr;
+        default: return nullptr;
         }
-        DWORD sizehi=0;
-        DWORD sizelow=0;
-        DWORD offsethi=0;
-        DWORD offsetlow=0;
-        if (sizeof(hSize_t)==8) {
-            sizehi  = (DWORD)(size >> 32);
-            sizelow = (DWORD)size & 0xFFFFFFFF;
-            offsethi  = (DWORD)(offset >> 32);
-            offsetlow = (DWORD)offset & 0xFFFFFFFF;
-        } else {
-            sizelow = (DWORD)size;
-            offsetlow = (DWORD)offset;
-        }
+        struct stat info;
+        int fd = fileno(handle->file_);
+        fstat(fd, &info);
+        void* mapped = mmap(nullptr, info.st_size, prot, flags, fd, 0);
 
-        HANDLE mmaphandle=CreateFileMapping(handle->fileHandle_, NULL, protect, sizehi, sizelow, hNullptr);
-        if (mmaphandle==INVALID_HANDLE_VALUE) {
-            return hNullptr;
-        }
-        void* ptr=MapViewOfFile(mmaphandle, access, offsethi, offsetlow, 0);
-        if (!ptr) {
-            return hNullptr;
-        }
-        hdMemoryMappedFile* mm=g_freeList.begin();
-        g_freeList.remove(mm);
-        g_usedList.addHead(mm);
-
-        mm->mmap_=mmaphandle;
-        mm->basePtr_=ptr;
-
+        hdMemoryMappedFile* mm = new hdMemoryMappedFile;
+        mm->mmap_ = mapped;
+        mm->len_ = info.st_size;
         return mm;
     }
 
@@ -555,14 +423,11 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     void hdUnmap(hdMemoryMappedFile* mmapview) {
-        UnmapViewOfFile(mmapview->basePtr_);
-        CloseHandle(mmapview->mmap_);
-
-        mmapview->basePtr_=hNullptr;
-        mmapview->mmap_=INVALID_HANDLE_VALUE;
-
-        g_usedList.remove(mmapview);
-        g_freeList.addHead(mmapview);
+        if (!mmapview) {
+            return;
+        }
+        munmap(mmapview->mmap_, mmapview->len_);
+        delete mmapview;
     }
 
 }

@@ -35,7 +35,7 @@ namespace Heart
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 
-	hBool hSystem::Create( const HeartConfig& config, const hdDeviceConfig& deviceconfig )
+	hBool hSystem::Create( const HeartConfig& config, const hdDeviceConfig* deviceconfig )
 	{
 		return hdSystemWindow::Create(deviceconfig);
 	}

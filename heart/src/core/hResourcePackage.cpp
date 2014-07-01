@@ -280,7 +280,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                 res->GetName(), res->GetType().typeCRC, res->GetKey());
         }
 #else
-        hcPrintf("Stub "__FUNCTION__);
+        hStub();
 #endif
     }
 

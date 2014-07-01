@@ -29,7 +29,7 @@
 #define DRIVEFILE_H__
 
 #include "core/hIFile.h"
-#include "pal/hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 
 namespace Heart
 {
@@ -38,7 +38,7 @@ namespace Heart
 	public:
 
         hDriveFile()
-            : mmap_(hNullptr)
+            : mmap_(nullptr)
         {}
         ~hDriveFile()
         {}
@@ -56,9 +56,9 @@ namespace Heart
 
 		friend class		hDriveFileSystem;
 
-		hdFileHandle        fileHandle_;
+		hdFileHandle*       fileHandle_;
         hdFileStat          stat_;
-        hdMemoryMappedFile* mmap_;
+        hdMemoryMappedFile*	mmap_;
         hUint64             mmapPos_;
         hUint64             size_;
 	};

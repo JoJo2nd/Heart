@@ -62,9 +62,8 @@ namespace Heart
 
 	};
 
-namespace Poly2Util
-{
-
+namespace Poly2Util {
+#if 0
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
@@ -78,9 +77,9 @@ namespace Poly2Util
 		{
 			out.verts_[ i ] = points[ i ];
 			hVec2 a = points[ (i+1)%_sides ] - points[ i ];
-			hVec2 n( -a.y, a.x );
+			hVec2 n( -a.getY(), a.getX() );
 
-			Plane2::BuildPlane( n, points[ i ], out.axes_[ i ] );
+			buildPlane( n, points[ i ], out.axes_[ i ] );
 		}
 	}
 	
@@ -141,7 +140,7 @@ namespace Poly2Util
 
 		for ( hUint32 i = 0; i < _sides2; ++i )
 		{
-			const Plane2* axis = &b.axes_[ i ];
+			const hPlane* axis = &b.axes_[ i ];
 			hBool allInfront = hTrue;
 			for ( hUint32 i2 = 0; i2 < _sides2; ++i2 )
 			{
@@ -229,6 +228,7 @@ namespace Poly2Util
 			buildPlane( n, out.verts_[ i ], out.axes_[ i ] );
 		}
 	}
+#endif
 }
 
 }

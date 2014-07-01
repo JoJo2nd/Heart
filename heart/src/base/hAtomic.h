@@ -28,14 +28,23 @@
 #ifndef ATOMIC_H__
 #define ATOMIC_H__
 
+#include <atomic>
+
 namespace Heart
 {
+#if defined (PLATFORM_WINDOWS)
     HEART_ALIGNMENT_BEGIN(16)
     struct  hAtomicInt
     {
         hUint32 value_;
     }
     HEART_ALIGNMENT_END(16);
+#elif defined (PLATFORM_LINUX)
+    typedef std::atomic<hUint32> hAtomicInt;
+    typedef std::atomic<hUint64> hAtomicInt64;
+#else
+#   error ("Unknown Platform")
+#endif
 
 namespace hAtomic
 {
@@ -46,6 +55,7 @@ namespace hAtomic
  void HEART_API Decrement( hAtomicInt& i );
  hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
  hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
+ hUint32 HEART_API AtomicGet(const hAtomicInt& i);
  hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
  hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
  void HEART_API LWMemoryBarrier();
@@ -53,6 +63,15 @@ namespace hAtomic
 
 #elif defined HEART_PLAT_LINUX
 
+ void HEART_API Increment( hAtomicInt& i );
+ void HEART_API Decrement( hAtomicInt& i );
+ hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
+ hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
+ hUint32 HEART_API AtomicGet(const hAtomicInt& i);
+ hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
+ hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
+ void HEART_API LWMemoryBarrier();
+ void HEART_API HWMemoryBarrier();
 
 #else 
     #error ("platform not supported")

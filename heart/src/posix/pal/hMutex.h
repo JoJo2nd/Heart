@@ -1,8 +1,6 @@
 /********************************************************************
 
-    filename: 	hRenderShaderProgram.h	
-    
-    Copyright (c) 6:9:2012 James Moran
+    Copyright (c) James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -27,47 +25,32 @@
 
 #pragma once
 
-#include "base/hTypes.h"
-#include "base/hProtobuf.h"
-#include "components/hObjectFactory.h"
+#include <pthread.h>
 
 namespace Heart {
-namespace hRenderer {
-    class hShaderReflection;
+    class hMutex {
+    public:
+        hMutex() {
+            pthread_mutexattr_t attr;
 
-// !!JM add to it's own header.
-namespace hShaderType {
-    enum Type {
-        Vertex,
-        Pixel,
-
+            pthread_mutexattr_init(&attr);
+            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+            pthread_mutex_init(&mutex_, &attr);
+            pthread_mutexattr_destroy(&attr);
+        }
+        void Lock() {
+            pthread_mutex_lock(&mutex_);
+        }
+        hBool TryLock() {
+            return pthread_mutex_trylock(&mutex_) ? hTrue : hFalse;
+        }
+        void Unlock() {
+            pthread_mutex_unlock(&mutex_);
+        }
+        ~hMutex() {
+            pthread_mutex_destroy(&mutex_);
+        }
+    
+        pthread_mutex_t mutex_;
     };
-}
-
-    /*
-        Shader Stage interface
-    */
-    class hShaderStage;
-    hShaderType::Type getShaderType(const hShaderStage* stage);
-    /*
-        hShaderLinkedProgram interface
-    */
-    class hShaderLinkedProgram;
-    const hShaderReflection* getReflectionInfo(const hShaderLinkedProgram* prog);
-    void attachStage(hShaderLinkedProgram* prog, hShaderStage* stage);
-    void link(hShaderLinkedProgram* prog);
-}
-
-class  hShaderProgram {
-public:
-    hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
-
-    hShaderProgram() {}
-    ~hShaderProgram() {
-    }
-
-    /*
-        Placeholder class !!JM
-    */
-};    
 }

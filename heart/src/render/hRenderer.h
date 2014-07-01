@@ -79,7 +79,7 @@ namespace hRenderer {
         pimpl methods
     */
     hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
-    hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type);
+    hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType::Type type);
     void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
     void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
     void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);

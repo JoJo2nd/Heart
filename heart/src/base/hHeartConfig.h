@@ -94,7 +94,11 @@
 #ifdef PLATFORM_WINDOWS
 #   define HEART_API   __cdecl
 #elif PLATFORM_LINUX
-#	define HEART_API   __attribute__((__cdecl__))
+#	if BUILD_64_BIT
+#		define HEART_API
+#	else
+#		define HEART_API   __attribute__((__cdecl__))
+#	endif
 #else
 #   error "Platform not supported"
 #endif
@@ -116,12 +120,12 @@
 #define RAPIDXML_NO_EXCEPTIONS
 
 #ifdef HEART_NO_FORCE_INLINE
-#   define hForceInline
+#   define hFORCEINLINE
 #else
 #   ifdef HEART_PLAT_WINDOWS
-#   	define hForceInline   __forceinline
+#   	define hFORCEINLINE   __forceinline
 #	elif defined (HEART_PLAT_LINUX)
-#		define hForceInline   __inline__
+#		define hFORCEINLINE   __inline__
 #   else
 #      error "Platform not supported"
 #   endif

@@ -29,7 +29,7 @@
 #define hoWindow_h__
 
 #include "base/hTypes.h"
-#include "pal/hDeviceSystemWindow.h"
+#include "core/hDeviceSystemWindow.h"
 
 namespace Heart
 {
@@ -42,7 +42,7 @@ namespace Heart
 	    {
 	    }
 
-	    hBool	Create(const HeartConfig& config, const hdDeviceConfig& deviceconfig);
+	    hBool	Create(const HeartConfig& config, const hdDeviceConfig* deviceconfig);
 	    void	Update();
 	    void	Destroy();
 

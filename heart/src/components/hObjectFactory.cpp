@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #include "components/hObjectFactory.h"
+#include "base/hMemory.h"
 #include <unordered_map>
 #include <stdarg.h>
 
@@ -35,8 +36,8 @@ namespace hObjectFactory
 {
 namespace
 {
-    typedef std::unordered_map< hStringID, hObjectDefinition*, hStringID::hasher >   hObjectDefinitionTable;
-    typedef std::unordered_map< hStringID, hStringID, hStringID::hasher >            hSerialiserToObjectTable;
+    typedef std::unordered_map< hStringID, hObjectDefinition* >   hObjectDefinitionTable;
+    typedef std::unordered_map< hStringID, hStringID >            hSerialiserToObjectTable;
 
     static hBool                    doneGlobalInit_ = hFalse;
     static hObjectDefinitionTable*  objectDefTable_;
@@ -130,7 +131,7 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     void* obj = obj_def->construct_();
     hObjectMarshall* marshall = obj_def->constructMarshall_();
     if (!obj || !marshall) {
-        delete obj;
+        hFree(obj);//delete obj; // delete void* is undefined
         obj = nullptr;
         delete marshall;
         marshall = nullptr;
@@ -138,7 +139,7 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     }
     marshall->ParseFromString(msg_container->messagedata());
     if (!obj_def->deserialise_(obj, marshall)) {
-        delete obj;
+        hFree(obj);//delete obj; // delete void* is undefined
         obj = nullptr;
     }
     delete marshall;
@@ -153,7 +154,7 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hBool hObjectFactory::canUpcastTo(hStringID type1, hStringID type2) {
+hBool canUpcastTo(hStringID type1, hStringID type2) {
     if (type1 == type2) {
         return hTrue;
     }

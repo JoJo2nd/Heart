@@ -27,7 +27,7 @@
 
 #include "core/hDriveFileSystem.h"
 #include "core/hDriveFile.h"
-#include "pal/hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 
 namespace Heart
 {
@@ -55,7 +55,7 @@ namespace
 
     hIFile* hDriveFileSystem::OpenFile(const hChar* filename, hFileMode mode) const
     {
-        hdFileHandle fh;
+        hdFileHandle* fh;
         const hChar* devMode;
 
         if ( mode == FILEMODE_WRITE )
@@ -68,16 +68,16 @@ namespace
         }
         else 
         {
-            return NULL;
+            return nullptr;
         }
 
-        if ( !hdFopen( filename, devMode, &fh ) )
+        if (!(fh = hdFopen(filename, devMode)))
         {
-            return NULL;
+            return nullptr;
         }
 
-        hdFileStat fhstat=hdFstat(&fh);
-        hUint64 fsize=hdFsize(&fh);
+        hdFileStat fhstat=hdFstat(fh);
+        hUint64 fsize=hdFsize(fh);
         hDriveFile* pFile = new hDriveFile;
         pFile->fileHandle_ = fh;
         pFile->stat_=fhstat;
@@ -86,10 +86,10 @@ namespace
 
         if (mode==FILEMODE_READ) {
             //attempt to memory map the file
-            pFile->mmap_=hdMMap(&fh, 0, fsize, MMapMode_ReadOnly);
+            pFile->mmap_=hdMMap(fh, 0, fsize, MMapMode_ReadOnly);
             if (pFile->mmap_) {
                 hcPrintf("Opened memory mapped file %s [%p]", filename, pFile->mmap_);
-                hdFclose(&pFile->fileHandle_);
+                hdFclose(pFile->fileHandle_);
             }
         }
 
@@ -113,7 +113,7 @@ namespace
             hdUnmap(f->mmap_);
             f->mmap_=hNullptr;
         } else {
-            hdFclose(&f->fileHandle_);
+            hdFclose(f->fileHandle_);
         }
 
         delete pFile;

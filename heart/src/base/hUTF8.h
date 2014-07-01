@@ -33,13 +33,13 @@ namespace Heart
 {
 namespace hUTF8
 {
-    static const hUint32 MASKBITS   = 0x3F;
-    static const hUint32 MASKBYTE   = 0x80;
-    static const hUint32 MASK2BYTES = 0xC0;
-    static const hUint32 MASK3BYTES = 0xE0;
-    static const hUint32 MASK4BYTES = 0xF0;
-    static const hUint32 MASK5BYTES = 0xF8;
-    static const hUint32 MASK6BYTES = 0xFC;
+    static const hInt32 MASKBITS   = 0x3F;
+    static const hInt32 MASKBYTE   = 0x80;
+    static const hInt32 MASK2BYTES = 0xC0;
+    static const hInt32 MASK3BYTES = 0xE0;
+    static const hInt32 MASK4BYTES = 0xF0;
+    static const hInt32 MASK5BYTES = 0xF8;
+    static const hInt32 MASK6BYTES = 0xFC;
 
     typedef hUint16   Unicode;
 

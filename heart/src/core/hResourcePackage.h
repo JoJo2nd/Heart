@@ -37,7 +37,7 @@
 #include "core/hResource.h"
 #include "components/hObjectFactory.h"
 #include "threading/hJobManager.h"
-#include "pal/hDeviceFileWatch.h"
+#include "base/hDeviceFileWatch.h"
 #include <queue>
 
 namespace Heart

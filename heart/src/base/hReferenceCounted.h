@@ -36,11 +36,11 @@ namespace Heart
     public:
         hIReferenceCounted() 
         {
-            reference_.value_ = 1;
+            hAtomic::AtomicSet(reference_, 1);
         }
         virtual ~hIReferenceCounted() 
         {
-            hcAssertMsg(reference_.value_ == 0, "Object instance deleted before all references were released (address=0x%p ref=%u)", this, reference_.value_);
+            hcAssertMsg(hAtomic::AtomicGet(reference_) == 0, "Object instance deleted before all references were released (address=0x%p ref=%u)", this, hAtomic::AtomicGet(reference_));
         }
         void			AddRef()
         {
@@ -48,14 +48,14 @@ namespace Heart
         }
         void			DecRef()
         { 
-            hcAssert(reference_.value_ > 0); 
+            hcAssert(hAtomic::AtomicGet(reference_) > 0); 
             hAtomic::Decrement( reference_ ); 
-            if ( reference_.value_ == 0 ) 
+            if ( hAtomic::AtomicGet(reference_) == 0 ) 
             { 
                 OnZeroRef(); 
             } 
         }
-        hUint32			GetRefCount() const { return reference_.value_; }
+        hUint32			GetRefCount() const { return hAtomic::AtomicGet(reference_); }
         
     protected:
         

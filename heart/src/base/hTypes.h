@@ -30,8 +30,10 @@
 #include "base/hHeartConfig.h"
 #include "base/hTypeTraits.h"
 
+#include <stddef.h>
 #include <stdint.h>
 #include <time.h>
+#include <float.h>
 
 typedef	char				hChar;
 typedef unsigned char		hByte;
@@ -69,15 +71,23 @@ namespace Heart
     };
 }
 
-#define HEART_ALIGN_VAR( alignment, type, name ) type __declspec( align(alignment) ) name
-#define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
-#define HEART_ALIGNMENT_END( x )
+#if defined (PLATFORM_WINDOWS)
+#   define HEART_ALIGN_VAR( alignment, type, name ) type __declspec( align(alignment) ) name
+#   define HEART_ALIGNMENT_BEGIN( x ) __declspec( align(x) )
+#   define HEART_ALIGNMENT_END( x )
+#elif defined (PLATFORM_LINUX)
+#   define HEART_ALIGN_VAR( alignment, type, name )
+#   define HEART_ALIGNMENT_BEGIN( x )
+#   define HEART_ALIGNMENT_END( x )
+#else
+#   error ("Unknown platform")
+#endif
 
 #if defined (HEART_PLAT_WINDOWS)
 #   define hThreadLocal  __declspec(thread)
 #   define hRestrict     __restrict
 #elif defined (HEART_PLAT_LINUX)
-#   
+#   define hRestrict     __restrict__
 #else
 #   error ("Unknown platform ")
 #endif
@@ -145,14 +155,10 @@ namespace Heart
 #       define hNullptr     (nullptr)
 #   endif
 #elif defined (HEART_PLAT_LINUX)
-#       define hAlignOf(x)  hAlignment_of<##x>::value
+#       define hAlignOf(x)  hAlignment_of< x >::value
 #       define hNullptr     (nullptr)
 #else
 #   error ("Unknown platform ")
-#endif
-
-#ifndef hFORCEINLINE
-#   define hFORCEINLINE __forceinline
 #endif
 
 #define hMAKE_FOURCC(a,b,c,d) \

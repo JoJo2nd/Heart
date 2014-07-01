@@ -28,6 +28,8 @@
 #ifndef HMEMORYUTIL_H__
 #define HMEMORYUTIL_H__
 
+#include <memory.h>
+
 namespace Heart
 {
     hFORCEINLINE void hMemSet(void* dest, hByte val, hSize_t size) {

@@ -26,20 +26,19 @@
 *********************************************************************/
 
 #include "network/hNetwork.h"
-#include <winsock2.h>
-#include <windows.h>
+//#include <winsock2.h>
+//#include <windows.h>
 #include "enet/enet.h"
 #include "base/hTypes.h"
+#include "base/hMemory.h"
 
-namespace Heart
-{
-namespace hNetwork
-{
+namespace Heart {
+namespace hNetwork {
     static void* ENET_CALLBACK henet_malloc(size_t size) {
-        return new hByte[size];
+        return hMalloc(size);
     }
     static void ENET_CALLBACK henet_free(void* ptr) {
-        delete [] ptr;
+        hFree(ptr);
     }
     static void ENET_CALLBACK henet_nomem() {
         hcAssertFailMsg("enet No Memory");
@@ -60,6 +59,5 @@ namespace hNetwork
     void shutdown() {
         enet_deinitialize();
     }
-
 }
 }

@@ -117,9 +117,7 @@ namespace Heart
         config_.Fullscreen_ = hConfigurationVariables::getCVarBool("renderer.fullscreen", false);
         config_.vsync_ = hConfigurationVariables::getCVarBool("renderer.vsync", false);
 
-        deviceConfig_ = *deviceConfig;
-        deviceConfig_.width_ = config_.Width_;
-        deviceConfig_.height_ = config_.Height_;
+        *deviceConfig_ = *deviceConfig;
 
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
@@ -384,7 +382,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
+#if defined (HEART_PLAT_WINDOWS)
 Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
     Heart::hSysCall::hInitSystemDebugLibs();
@@ -412,6 +410,32 @@ Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks
     heart_thread_prof_end(0);
     return engine;
 }
+#elif defined (HEART_PLAT_LINUX)
+Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks)
+{
+    Heart::hSysCall::hInitSystemDebugLibs();
+    heart_thread_prof_begin("profile_startup.prof");
+
+    Heart::hHeartEngine* engine = 
+        new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, nullptr);
+
+    engine->firstLoaded_        = callbacks->firstLoaded_;
+    engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;
+    engine->mainUpdate_         = callbacks->mainUpdate_;
+    engine->mainRender_         = callbacks->mainRender_;
+    engine->shutdownUpdate_     = callbacks->shutdownUpdate_;
+    engine->onShutdown_         = callbacks->onShutdown_;
+
+    // !!JM culled client side work
+    // if (engine->firstLoaded_)
+    // {
+    //     (*engine->firstLoaded_)(engine);
+    // }
+
+    heart_thread_prof_end(0);
+    return engine;
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

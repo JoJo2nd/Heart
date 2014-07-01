@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename: 	DeviceEvent.h	
+    filename: 	DeviceSemaphore.h	
     
-    Copyright (c) 15:2:2012 James Moran
+    Copyright (c) 20:3:2011 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,56 +24,40 @@
     distribution.
 
 *********************************************************************/
-#ifndef DEVICEEVENT_H__
-#define DEVICEEVENT_H__
 
+#ifndef DEVICESEMAPHORE_H__
+#define DEVICESEMAPHORE_H__
+
+#include <semaphore.h>
 
 namespace Heart
 {
-    class hThreadEvent
-    {
+    class hSemaphore {
     public:
-        hThreadEvent(hBool autoreset=hTrue) :
-            Event_( NULL )
-        {
-            Event_ = CreateEvent( NULL, !autoreset, FALSE, NULL );
-            hcAssert( Event_ != NULL );
-        }
 
-        virtual ~hThreadEvent()
-        {
-            hcAssert( Event_ != NULL );
-            CloseHandle( Event_ );
+        bool Create( hUint32 initCount, hUint32 maxCount ) {
+            return sem_init(&sema_, initCount, maxCount) == 0;
         }
-
-        void Wait()
-        {
-            hcAssert( Event_ != NULL );
-            WaitForSingleObject( Event_, INFINITE );
+        void Wait() {
+            sem_wait(&sema_);
         }
-
-        hBool TryWait()
-        {
-            hcAssert( Event_ != NULL );
-            DWORD ret = WaitForSingleObject( Event_, 0 );
-            return ret == WAIT_OBJECT_0 ? hTrue : hFalse;
+        hBool poll() {
+            timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_nsec = 0;
+            return sem_timedwait(&sema_, &ts) == 0;
         }
-
-        void Signal()
-        {
-            hcAssert( Event_ != NULL );
-            SetEvent( Event_ );
+        void Post() {
+            sem_post(&sema_);
         }
-
-        void reset() {
-            hcAssert( Event_ != NULL );
-            ResetEvent(Event_);
+        void Destroy() {
+            sem_destroy(&sema_);
         }
 
     private:
 
-        HANDLE		Event_;
+        sem_t sema_;
     };
 }
 
-#endif // DEVICEEVENT_H__
+#endif // DEVICESEMAPHORE_H__

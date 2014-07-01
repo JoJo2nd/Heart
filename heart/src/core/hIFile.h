@@ -29,7 +29,7 @@
 #define hcFile_h__
 
 #include "base/hTypes.h"
-#include "pal/hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 
 namespace Heart
 {

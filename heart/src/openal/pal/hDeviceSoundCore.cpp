@@ -27,6 +27,7 @@
 
 #include "pal/hDeviceSoundCore.h"
 #include "pal/hDeviceSoundUtil.h"
+#include "base/hStringUtil.h"
 
 namespace Heart
 {
@@ -69,7 +70,7 @@ namespace Heart
                 //Get next possible device name
                 if ( deviceNames )
                 {
-                    deviceNames += strlen( deviceNames ) + 1;
+                    deviceNames += hStrLen( deviceNames ) + 1;
                 }
             }
             while ( deviceNames && *deviceNames != '\0' );

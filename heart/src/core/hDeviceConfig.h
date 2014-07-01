@@ -24,22 +24,25 @@
 	distribution.
 
 *********************************************************************/
-#ifndef DEVICECONFIG_H__
-#define DEVICECONFIG_H__
+#pragma once
 
-#include <winsock2.h>
-#include <windows.h>
+#include "base/hTypes.h"
 
 namespace Heart
 {
 	class hdDeviceConfig
 	{
 	public:
-		HINSTANCE		instance_;
-        HWND            hWnd_; // Can be NULL, in which case a window is created
-		hUint32			width_;
-		hUint32			height_;
+		virtual ~hdDeviceConfig() {}
+		virtual hUint32 		getWidth() const = 0;
+		virtual void			setWidth(hUint32) = 0;
+		virtual hUint32 		getHeight() const = 0;
+		virtual void 			setHeight(hUint32) = 0;
+		virtual void 			getDataMember(const hChar* member_name, hUintptr_t*) = 0;
+		virtual void 			setDataMember(const hChar* member_name, hUintptr_t) = 0;
+		virtual void 			getDataMember(const hChar* member_name, hInt32*) = 0;
+		virtual void 			setDataMember(const hChar* member_name, hInt32) = 0;
+		virtual void 			getDataMember(const hChar* member_name, hFloat*) = 0;
+		virtual void 			setDataMember(const hChar* member_name, hFloat) = 0;
 	};
 }
-
-#endif // DEVICECONFIG_H__

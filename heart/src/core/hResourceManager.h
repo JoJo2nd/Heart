@@ -33,6 +33,7 @@
 #include "core/hIFileSystem.h"
 #include "threading/hJobManager.h"
 #include <unordered_map>
+#include <vector>
 
 namespace Heart
 {

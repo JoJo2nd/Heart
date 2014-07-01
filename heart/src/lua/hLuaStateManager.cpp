@@ -101,7 +101,7 @@ namespace Heart
     void hLuaStateManager::ExecuteBuffer( const hChar* buff, hUint32 size )
     {
         if (luaL_dostring(mainLuaState_, buff) != 0) {
-            hcPrintf(__FUNCTION__" Failed to run, Error: %s", lua_tostring(mainLuaState_, -1));
+            hcPrintf("%s Failed to run, Error: %s", __FUNCTION__, lua_tostring(mainLuaState_, -1));
             lua_pop(mainLuaState_, 1);
         }
 //         hLuaThreadState newthread;

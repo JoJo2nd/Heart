@@ -60,7 +60,7 @@ namespace Heart
             hPLACEMENT_NEW(this) hViewport();
             swap(*this, rhs);
         }
-        hViewport operator = (hViewport rhs) {
+        const hViewport& operator = (hViewport rhs) {
             swap(*this, rhs);
             return *this;
         }

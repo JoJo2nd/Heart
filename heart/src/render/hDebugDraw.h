@@ -39,6 +39,7 @@
 namespace Heart
 {
     class hFont;
+    class hDebugDrawRenderer;
 
     struct hDebugLine
     {

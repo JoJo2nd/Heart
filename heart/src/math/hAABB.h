@@ -47,7 +47,7 @@ namespace Heart
 		hFORCEINLINE hVec3 Max() const { return c_ + r_; }
 		hFORCEINLINE hVec3 Min() const { return c_ - r_; }
 
-	    hFORCEINLINE static hBool hAABB::PointWithinAABBSphere( const hVec3& point, const hAABB& a )
+	    hFORCEINLINE static hBool PointWithinAABBSphere( const hVec3& point, const hAABB& a )
 	    {
     //         hCPUVec3 r = a.r_;
     // 		hFloat d = r.x;
@@ -60,7 +60,7 @@ namespace Heart
             return length(a.c_ - point) < minElem(a.r_);
 	    }
 
-        hFORCEINLINE static hBool hAABB::intersect( const hAABB& a, const hAABB& b )
+        hFORCEINLINE static hBool intersect( const hAABB& a, const hAABB& b )
         {
             hVec3 cdiff = absPerElem(a.c_ - b.c_);
             hVec3 rsum = a.r_+b.r_;
@@ -76,7 +76,7 @@ namespace Heart
 //             return hTrue;
 	    }
 
-	    hFORCEINLINE static hAABB hAABB::rotate( const hAABB& a, const hMatrix& m )
+	    hFORCEINLINE static hAABB rotate( const hAABB& a, const hMatrix& m )
 	    {
             // reference
             //b.c.x = m.m11*a.c.x + m.m21*a.c.y + m.m31*a.c.z + m.m41;
@@ -93,7 +93,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE static hAABB hAABB::MatrixMult( const hAABB& a, const hMatrix& m )
+	    hFORCEINLINE static hAABB MatrixMult( const hAABB& a, const hMatrix& m )
 	    {
             hAABB r;
 		    r.c_ = (m*a.c_).getXYZ();
@@ -101,7 +101,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE static hVec3 hAABB::closestPoint( const hAABB& a, const hVec3& vin )
+	    hFORCEINLINE static hVec3 closestPoint( const hAABB& a, const hVec3& vin )
 	    {
             //reference
 //             for ( hUint32 i = 0; i < 3; ++i )
@@ -125,7 +125,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE static hAABB hAABB::computeFromPointSet( const hVec3* points, hUint32 nPoints )
+	    hFORCEINLINE static hAABB computeFromPointSet( const hVec3* points, hUint32 nPoints )
 	    {
     // 		hFloat MinX, MinY, MinZ;
     // 		hFloat MaxX, MaxY, MaxZ;
@@ -170,7 +170,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE static hAABB hAABB::expandBy( const hAABB& a, const hVec3& point )
+	    hFORCEINLINE static hAABB expandBy( const hAABB& a, const hVec3& point )
 	    {
     // 		hVec3 t[3];
     // 		t[ 2 ] = point;
@@ -195,7 +195,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE static hAABB hAABB::ExpandBy( const hAABB& a, const hAABB& b )
+	    hFORCEINLINE static hAABB ExpandBy( const hAABB& a, const hAABB& b )
 	    {
     // 		//NOTE: this can be quicker!
     // 		hVec3 t[4];
@@ -228,7 +228,7 @@ namespace Heart
             return r;
 	    }
 
-	    hFORCEINLINE hBool hAABB::liesWithinA( const hAABB& a, const hAABB& b )
+	    hFORCEINLINE hBool liesWithinA( const hAABB& a, const hAABB& b )
 	    {
     // 		hVec3 p1, p2;
     // 
@@ -267,6 +267,7 @@ namespace Heart
     // 		if ( p1 == p2 ) return hFalse;
     // 
     // 		return hTrue;
+            return hFalse;
 	    }
 
 
@@ -274,7 +275,7 @@ namespace Heart
 	    // return hTrue on intersection else hFalse
 	    // returns tmin as distance to intersect on AABB
 	    // returns q as the point of intersect on the AABB
-	    hFORCEINLINE hBool hAABB::intersectRayAABB( const hVec3& p, const hVec3& d, const hAABB& a, hFloat& tmin, hVec3& q )
+	    hFORCEINLINE hBool intersectRayAABB( const hVec3& p, const hVec3& d, const hAABB& a, hFloat& tmin, hVec3& q )
 	    {
     // 		tmin = 0;
     // 		hFloat tmax = Limits::FLOAT_MAX;
@@ -324,11 +325,12 @@ namespace Heart
     // 		// Ray intersect all 3 slab, Return point (q) and intersecitno t value [3/1/2009 James]
     // 		q = p + ( d * tmin );
     // 		return hTrue;
+            return hFalse;
 	    }
 
 	    // Intersect AABBs ‘a’ and ‘b’ moving with constant velocities va and vb.
 	    // On intersection, return time of first and last contact in tfirst and tlast
-	    hFORCEINLINE static hBool hAABB::intersectMovingAABB( const hAABB& a, const hAABB& b, const hVec3& va, const hVec3& vb, hFloat& tfirst, hFloat &tlast )
+	    hFORCEINLINE static hBool intersectMovingAABB( const hAABB& a, const hAABB& b, const hVec3& va, const hVec3& vb, hFloat& tfirst, hFloat &tlast )
 	    {
     // 		// Exit early if ‘a’ and ‘b’ initially overlapping
     // 		if ( intersect( a, b ) ) 

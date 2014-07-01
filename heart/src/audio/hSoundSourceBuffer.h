@@ -24,11 +24,11 @@
 	distribution.
 
 *********************************************************************/
-#ifndef HSOUNDSOURCEBUFFER_H__
-#define HSOUNDSOURCEBUFFER_H__
+#pragma once
 
-namespace Heart
-{
+#include "pal/hDeviceSoundUtil.h"
+
+namespace Heart {
     enum hOGGDecodeState
     {
         OGGDecode_OK,
@@ -57,5 +57,3 @@ namespace Heart
         virtual void                 ReleasePlaybackHandle( hSoundPlaybackHandle handle ) = 0;
     };
 }
-
-#endif // HSOUNDSOURCEBUFFER_H__

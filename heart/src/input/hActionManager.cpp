@@ -29,7 +29,7 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "pal/hDeviceInput.h"
-#include "pal/hDeviceSystemWindow.h"
+#include "core/hDeviceSystemWindow.h"
 #include "lua/hLuaStateManager.h"
 #include <unordered_map>
 #include <vector>

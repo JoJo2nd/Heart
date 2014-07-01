@@ -109,7 +109,7 @@ namespace Heart
         friend class hJob;
         friend class hJobManager;
 
-        void kickJobs(hLinkedList< hJob >* queue, hJobManager* jm);
+        void kickJobs(hLinkedList< hJob >* queue, class hJobManager* jm);
         void notifyJobCompleted();
 
         hMutex              incompleteJobsAccess_;

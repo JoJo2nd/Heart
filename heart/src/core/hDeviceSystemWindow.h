@@ -25,39 +25,33 @@
 
 *********************************************************************/
 
-#ifndef DEVICEKERNEL_H__
-#define DEVICEKERNEL_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hFunctor.h"
-#include "pal/hDeviceConfig.h"
-#include "pal/hEvent.h"
-#include <winsock2.h>
-#include <windows.h>
-#ifdef HEART_USE_SDL2
-#   include "SDL.h"
-#   include "SDL_syswm.h"
-#endif
+#include "core/hDeviceConfig.h"
+#include "pal/hMutex.h"
+#include "pal/hConditionVariable.h"
+#include "SDL.h"
+#include "SDL_syswm.h"
 
-namespace Heart
-{
+namespace Heart {
     class HeartConfig;
     class EventManager;
 
-    #define                             HEART_SHAREDLIB_INVALIDADDRESS (NULL)
-    typedef HMODULE                     hSharedLibAddress; 
+    #define                             HEART_SHAREDLIB_INVALIDADDRESS (nullptr)
+    typedef hUintptr_t                  hSharedLibAddress; 
 
-#ifdef HEART_USE_SDL2
     typedef SDL_Event                   hSysEvent; // just in-case it is replaced at a later date
-#   define hGetSystemEventID(x) (SDL_##x)
+#define hGetSystemEventID(x) (SDL_##x)
     hFUNCTOR_TYPEDEF(void(*)(hUint, const hSysEvent*), hSysEventHandler);
-#endif
 
-    class SystemHandle
+    class ISystemHandle
     {
     public:
-        HWND		hWnd_;
+        virtual hUintptr_t  getSystemHandle() = 0;
     };
+
     hBool HEART_API                hd_DefaultFullscreenSetting();
     hUint32 HEART_API              hd_DefaultScreenWidth();
     hUint32 HEART_API              hd_DefaultScreenHeight();
@@ -73,74 +67,37 @@ namespace Heart
     public:
         hdSystemWindow()
             : impl_(nullptr)
-            , hInstance_(nullptr)
-            , hWnd_(nullptr)
-            , ownWindow_(hFalse)
-            , procChain_(nullptr)
-            , exitSignal_(hFalse)
         {
-            wndTitle_[0] = 0;
         }
 
-        hBool                   Create( const hdDeviceConfig& config );
-        const SystemHandle*     GetSystemHandle() { return &systemHandle_; };
+        hBool                   Create( const hdDeviceConfig* config );
+        const ISystemHandle*    GetSystemHandle() { return systemHandle_; };
         void                    SetWindowTitle( const hChar* titleStr );
         void                    Update();
         void                    PumpMessages();
         void                    Destroy();
-#ifndef HEART_USE_SDL2
-        hdKeyboard*             GetSystemKeyboard() { return &keyboard_; }
-        hdMouse*                GetSystemMouse()    { return &mouse_; }
-#endif
-        void                    signalExit() { exitSignal_.Signal(); }
-        hBool                   exitSignaled() { return exitSignal_.TryWait();}
+        void                    signalExit() { exitSignal_.broadcast(); }
+        hBool                   exitSignaled() { return exitSignal_.tryWait(&exitMutex_); }
         hUint32                 getWindowWidth() const { return wndWidth_; }
         hUint32                 getWindowHeight() const { return wndHeight_; }
-        hBool                   getOwnWindow() const { return ownWindow_; }
-#ifdef HEART_USE_SDL2
+        hBool                   getOwnWindow() const { return hTrue; }
         void                    setSysEventHandler(hUint sysEventID, hSysEventHandler handler);
         void                    removeSysEventHandler(hUint sysEventID, hSysEventHandler handler);
-#endif
         
     private:
 
-#ifdef HEART_USE_SDL2
         void bindSysEventHandlers();
         void sysEventQuit(hUint syseventid, const hSysEvent* sysevent);
         void sysEventFocus(hUint syseventid, const hSysEvent* sysevent);
         void sysEventSize(hUint syseventid, const hSysEvent* sysevent);
-#else
-        hBool                   CreateWndClassEx( HINSTANCE hinstance, const hChar* classname );
-        static LRESULT CALLBACK WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-        LRESULT                 WndProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-#endif
 
         static hdSystemWindow*      s_instance;
 
-#ifdef HEART_USE_SDL2
-        struct hdSystemWindowImpl*   impl_;
-#endif
-        HINSTANCE					hInstance_;
-        HWND						hWnd_;
-        WNDCLASSEX					wndClassEx_;
-        hChar						wndClassName_[ 256 ];
-        hChar						wndTitle_[ 256 ];
-        hUint32						wndWidth_;
-        hUint32						wndHeight_;
-        SystemHandle				systemHandle_;
-        hThreadEvent                exitSignal_;
-        POINT						prevMousePos_;
-        hInt16                      wheelMove_;
-        hUint32                     cursorOffsetX_;
-        hUint32                     cursorOffsetY_;
-        WNDPROC                     procChain_;
-        hBool                       hasFocus_;
-        hBool                       ownWindow_;
-#ifndef HEART_USE_SDL2
-        hdKeyboard		            keyboard_;
-        hdMouse                     mouse_;
-#endif
+        struct hdSystemWindowImpl*  impl_;
+        ISystemHandle*              systemHandle_;
+        hUint32                     wndWidth_;
+        hUint32                     wndHeight_;
+        hMutex                      exitMutex_;
+        hConditionVariable          exitSignal_;
     };
 }
-
-#endif // DEVICEKERNEL_H__

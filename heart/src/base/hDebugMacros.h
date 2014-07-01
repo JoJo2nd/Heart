@@ -1,12 +1,14 @@
-#ifndef hcDebugMacros_h__
-#define hcDebugMacros_h__
+
+#pragma once
 
 #define WARNING_NONE ( 0 )
 #define WARNING_HIGH ( 1 )
 #define WARNING_MED ( 2 )
 #define WARNING_LOW ( 3 )
 
-//#define HEART_DO_ASSERTS
+#if defined (PLATFORM_LINUX)
+#   define __noop(...)
+#endif
 
 typedef void (*hPrintfCallback)(const hChar*);
  void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
@@ -38,7 +40,7 @@ typedef void (*hPrintfCallback)(const hChar*);
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
-#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!: "x, __VA_ARGS__ ); }
+#define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!: " x, __VA_ARGS__ ); }
 
  void HEART_API hcOutputStringRaw(const hChar* msg, ...);
  void HEART_API hcOutputString(const hChar* msg, ...);
@@ -57,9 +59,9 @@ typedef void (*hPrintfCallback)(const hChar*);
 
 #define hcPrintf		hcOutputString
 
-#define hcAssert		__noop;
-#define hcAssertMsg		__noop;
-#define hcAssertFailMsg __noop;
+#define hcAssert		__noop
+#define hcAssertMsg		__noop
+#define hcAssertFailMsg __noop
 #define hcBreak	
 #define hcCompileTimeAssert
 
@@ -68,7 +70,7 @@ typedef void (*hPrintfCallback)(const hChar*);
 #define hcWarningHigh( cond, msg, ... )				hcWarning( WARNING_HIGH, cond, msg, __VA_ARGS__ )
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
-#define hcWarning( lvl, cond, x, ... )				__noop
+#define hcWarning( lvl, cond, x, ... )				__noop()
 
 #else
 
@@ -77,5 +79,3 @@ typedef void (*hPrintfCallback)(const hChar*);
 #endif
 
 #define hStub() hcPrintf("STUBBED OUT %s", __FUNCTION__)
-
-#endif // hcDebugMacros_h__

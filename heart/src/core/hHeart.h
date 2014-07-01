@@ -34,10 +34,10 @@ distribution.
 #include "base/hProtobuf.h"
 #include "core/hConfigOptions.h"
 #include "core/hSystemConsole.h"
+#include "core/hDeviceConfig.h"
+#include "core/hDeviceSystemWindow.h"
 #include "pal/hMutex.h"
-#include "pal/hEvent.h"
-#include "pal/hDeviceConfig.h"
-#include "pal/hDeviceSystemWindow.h"
+#include "threading/hMutexAutoScope.h"
 
 namespace Heart
 {
@@ -67,11 +67,9 @@ struct hHeartEngineCallbacks
 extern "C"
 {
 #ifdef WIN32
-
-     Heart::hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*, HINSTANCE hInstance, HWND hWnd);
-     Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
+    Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
 #else
-#   error ("Platform not supported")
+    Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*);
 #endif
      hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* );
      void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* );
@@ -90,7 +88,7 @@ namespace Heart
     class hJobManager;
     class hLuaStateManager;
     class hPublisherContext;
-       
+    class hNetHost;
     class hSceneGraph;
     class hSoundManager;
     class hSystem;
@@ -124,12 +122,13 @@ namespace Heart
     public:
 
         HeartConfig() 
-            : bpp_( 32 )
+            : deviceConfig_(nullptr)
+            , bpp_( 32 )
             , MinShaderVersion_( 3.0 )
-            , pEngine_( NULL )
+            , pEngine_(nullptr)
         {}
 
-        hdDeviceConfig      deviceConfig_;
+        hdDeviceConfig*     deviceConfig_;
 
         hUint32             Width_;
         hUint32             Height_;
@@ -174,13 +173,10 @@ namespace Heart
 
     private:
 
-        friend  hHeartEngine* HEART_API hHeartInitEngineFromSharedLib(const hChar*);
-
         static hChar         HEART_VERSION_STRING[];
         static const hFloat  HEART_VERSION; 
         static const hUint32 HEART_VERSION_MAJOR = 0;
         static const hUint32 HEART_VERSION_MINOR = 4;
-        static hThreadEvent exitSignal_;
 
         static void                     ProtoBufLogHandler(google::protobuf::LogLevel level, const char* filename, int line, const std::string& message);
 
@@ -188,7 +184,7 @@ namespace Heart
         void                            DoUpdate();
 
         HeartConfig                     config_;
-        hdDeviceConfig                  deviceConfig_;
+        hdDeviceConfig*                 deviceConfig_;
         hHeartState                     engineState_;
         hArray< hChar, 1024 >           workingDir_;
         hArray< hChar, 1024 >           processDir_;
