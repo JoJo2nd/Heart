@@ -1,8 +1,8 @@
 /********************************************************************
 
-    filename:   hConditionVariable.h  
+    filename: 	DeviceSemaphore.h	
     
-    Copyright (c) 19:10:2013 James Moran
+    Copyright (c) 20:3:2011 James Moran
     
     This software is provided 'as-is', without any express or implied
     warranty. In no event will the authors be held liable for any damages
@@ -24,38 +24,40 @@
     distribution.
 
 *********************************************************************/
-#pragma once
 
-#ifndef HCONDITIONVARIABLE_H__
-#define HCONDITIONVARIABLE_H__
+#ifndef DEVICESEMAPHORE_H__
+#define DEVICESEMAPHORE_H__
 
-namespace Heart {
-    class hConditionVariable
-    {
+#include <semaphore.h>
+
+namespace Heart
+{
+    class hSemaphore {
     public:
-        hConditionVariable() {
-            InitializeConditionVariable(&var_);
-        }
-        ~hConditionVariable() {
 
+        bool Create( hUint32 initCount, hUint32 maxCount ) {
+            return sem_init(&sema_, initCount, maxCount) == 0;
         }
-        void wait(hMutex* mtx) {
-            SleepConditionVariableCS(&var_, &mtx->mutex_, INFINITE);
+        void Wait() {
+            sem_wait(&sema_);
         }
-        /* Wake a single thread waiting on CV */
-        void signal() {
-            WakeConditionVariable(&var_);
+        hBool poll() {
+            timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_nsec = 0;
+            return sem_timedwait(&sema_, &ts) == 0;
         }
-        /* Wake ALL threads waiting on CV */
-        void broadcast() {
-            WakeAllConditionVariable(&var_);
+        void Post() {
+            sem_post(&sema_);
         }
+        void Destroy() {
+            sem_destroy(&sema_);
+        }
+
     private:
-        hConditionVariable(const hConditionVariable&);
-        hConditionVariable& operator = (const hConditionVariable&);
 
-        CONDITION_VARIABLE var_;
+        sem_t sema_;
     };
 }
 
-#endif // HCONDITIONVARIABLE_H__
+#endif // DEVICESEMAPHORE_H__
