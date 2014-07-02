@@ -35,12 +35,13 @@
     Proto buffers spits out a lot of warnings about 64 bit to 32 bit conversions.
     We disable these warnings just around these sections.
 */
-#if defined (_MSC_VER)
+#if defined (HEART_PLAT_WINDOWS)
 #   pragma warning(push)
 #   pragma warning(disable:4244)
 #   pragma warning(disable:4267)
+#elif defined (HEART_PLAT_LINUX)
 #else
-#   pragma error ("Unknown platform")
+#   error ("Unknown platform")
 #endif
 
 #include "google/protobuf/io/coded_stream.h"
@@ -55,8 +56,10 @@
 #include "resource_material_fx.pb.h"
 #include "resource_mesh.pb.h"
 
-#if defined (_MSC_VER)
+#if defined (HEART_PLAT_WINDOWS)
 #   pragma warning(pop)
+#elif defined (HEART_PLAT_LINUX)
+#else
 #endif
 
 #endif

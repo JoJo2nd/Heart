@@ -160,10 +160,6 @@ namespace Heart
 #   error ("Unknown platform ")
 #endif
 
-#ifndef hFORCEINLINE
-#   define hFORCEINLINE __forceinline
-#endif
-
 #define hMAKE_FOURCC(a,b,c,d) \
         ((DWORD)(BYTE)(a)        | ((DWORD)(BYTE)(b) << 8) |       \
         ((DWORD)(BYTE)(c) << 16) | ((DWORD)(BYTE)(d) << 24 ))

@@ -28,6 +28,7 @@
 #include "base/hTypes.h"
 #include "base/hSysCalls.h"
 #include "base/hMemory.h"
+#include "base/hMemoryUtil.h"
 #include <malloc.h>
 
 namespace Heart {
@@ -42,7 +43,7 @@ namespace Heart {
             return mem;
         }
         void* ptr = hMalloc(size, alignment);
-        hMemCopy(ptr, mem, usable > size ? size : usable);
+        hMemCpy(ptr, mem, usable > size ? size : usable);
         hFree(mem);
         return ptr;
     }

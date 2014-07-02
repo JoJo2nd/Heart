@@ -36,11 +36,11 @@ namespace Heart
 {
 namespace Device
 {
-    hFORCEINLINE
+    hForceInline
     void* HEART_API GetCurrentThreadID() { return (void*)GetCurrentThreadId(); }
-    hFORCEINLINE
+    hForceInline
     void  HEART_API ThreadSleep( DWORD dwMilliseconds ) { Sleep( dwMilliseconds ); }
-    hFORCEINLINE
+    hForceInline
     void  HEART_API ThreadYield() { SwitchToThread(); }
 }
 
@@ -60,7 +60,6 @@ namespace Device
         };
 
         void			create( const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param );
-        hBool			isComplete();
         hUint32			returnCode() { return returnCode_; }
         void            join(){ WaitForSingleObject(ThreadHand_, INFINITE); }
 

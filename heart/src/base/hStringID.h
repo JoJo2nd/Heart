@@ -53,22 +53,17 @@ namespace Heart
         hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
         hBool operator == (const hStringID& rhs) const { return strEntry_ == rhs.strEntry_; }
         hBool operator != (const hStringID& rhs) const { return strEntry_ != rhs.strEntry_; }
-        hUint operator [] (const hSize_t pos) const { strEntry_->strValue_[pos]; }
+        hUint operator [] (const hSize_t pos) const { return strEntry_->strValue_[pos]; }
         hUint32 hash() const { return strEntry_->strHash_; }
         hUintptr_t id() const { return (hUintptr_t)strEntry_; }
         hBool is_default() const { return strEntry_ == &s_default; }
-
-        struct hasher
-        {
-            hSize_t operator () (const hStringID& rhs) { return rhs.hash(); }
-        };
 
     private:
 
         struct hStringIDEntry {
             hStringIDEntry() 
-                : strValue_("")
-                , next_(hNullptr)
+                : strValue_(nullptr)
+                , next_(nullptr)
                 , byteLen_(0)
                 , charLen_(0)
                 , strHash_(0)
@@ -95,13 +90,13 @@ namespace std
     template<>
     struct hash<Heart::hStringID>
     {
-        size_t operator () (const Heart::hStringID& rhs) { return rhs.hash(); }
+        size_t operator () (const Heart::hStringID& rhs) const { return rhs.hash(); }
     };
 
     template<>
     struct less<Heart::hStringID>
     {
-        bool operator () (const Heart::hStringID& lhs, const Heart::hStringID& rhs) { return lhs.hash() < rhs.hash(); }
+        bool operator () (const Heart::hStringID& lhs, const Heart::hStringID& rhs) const { return lhs.hash() < rhs.hash(); }
     };
 }
 

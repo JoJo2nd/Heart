@@ -76,7 +76,7 @@ if __name__ == '__main__':
             '-e', '.+(.unity[\d*].cpp)', 
             '-e', '.+([U|u]nity.cpp)', 
             '-o', heart_output_path, '-n', 'heart'])
-        subprocess.call(["cmake", args.path, '-DUNITY_BUILD=ON'])
+        #subprocess.call(["cmake", args.path, '-DUNITY_BUILD=OFF'])
         writeBuildTimestamp(project_build_dirs)
     else:
         print('project is up-to-date')

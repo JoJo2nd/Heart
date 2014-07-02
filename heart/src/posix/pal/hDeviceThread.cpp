@@ -26,82 +26,50 @@
 *********************************************************************/
 
 #include "pal/hDeviceThread.h"
+#include "base/hMemoryUtil.h"
+#include <sched.h>
 
-namespace Heart
-{
+namespace Heart {
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hThread::create(const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param)
-    {
-        memcpy( threadName_, threadName, THREAD_NAME_SIZE );
+    void hThread::create(const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param) {
+        hMemCpy( threadName_, threadName, THREAD_NAME_SIZE );
         threadFunc_ = pFunctor;
-        pThreadParam_ = param;
+        threadParam_ = param;
         priority_ = priority;
-        if ( priority_ < -2 )
-        {
+
+        hInt prio_min = sched_get_priority_min(SCHED_RR);
+        hInt prio_max = sched_get_priority_max(SCHED_RR);
+        hInt prio_seg = (prio_max - prio_min) / (PRIORITY_HIGH-PRIORITY_LOWEST);
+
+        if ( priority_ < -2 ) {
             priority_ = -2;
         }
-        if ( priority_ > 2 )
-        {
+        if ( priority_ > 2 ) {
             priority_ = 2;
         }
-        ThreadHand_ = CreateThread( NULL, (1024*1024)*2, staticFunc, this, 0, NULL );
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
 
-    hBool hThread::isComplete()
-    {
-        DWORD exitCode;
-        GetExitCodeThread( ThreadHand_, &exitCode );
-        return exitCode != STILL_ACTIVE;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+        sched_param sp;
+        sp.sched_priority = prio_min + (prio_seg * (priority_+2));
 
-    void hThread::SetThreadName(LPCSTR szThreadName)
-    {
-#pragma pack ( push,8 )
-        typedef struct tagTHREADNAME_INFO
-        {
-            DWORD dwType; // must be 0x1000
-            LPCSTR szName; // pointer to name (in user addr space)
-            DWORD dwThreadID; // thread ID (-1=caller thread)
-            DWORD dwFlags; // reserved for future use, must be zero
-        } THREADNAME_INFO;
-#pragma pack ( pop )
-        THREADNAME_INFO info;
-        info.dwType = 0x1000;
-        info.szName = szThreadName;
-        info.dwThreadID = -1;//caller thread
-        info.dwFlags = 0;
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        pthread_attr_setstacksize(&attr, 1024*1024*2);
+        pthread_attr_setschedpolicy(&attr, SCHED_RR);
+        pthread_attr_setschedparam(&attr, &sp);
+        pthread_create(&thread_, &attr, hThread::staticFunc, this);
 
-        __try
-        {
-            RaiseException( 0x406D1388, 0, sizeof(info)/sizeof(DWORD), (ULONG_PTR*)&info );
-        }
-        __except(EXCEPTION_CONTINUE_EXECUTION)
-        {
-        }
+        pthread_attr_destroy(&attr);
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+    void hThread::join() {
+        pthread_join(thread_, nullptr);
+    }
 
-    unsigned long WINAPI hThread::staticFunc(LPVOID pParam)
-    {
-        hThread* pThis_ = (hThread*)pParam;
-        SetThreadName( pThis_->threadName_ );
-        SetThreadPriority( pThis_->ThreadHand_, pThis_->priority_ );
-        pThis_->returnCode_ = pThis_->threadFunc_( pThis_->pThreadParam_ );
-        TLS::threadExit();
-        return pThis_->returnCode_;
+    void* hThread::staticFunc(void* param) {
+        hThread* this_ = (hThread*)param;
+        this_->returnCode_ = this_->threadFunc_( this_->threadParam_ );
+        return (void*)this_->returnCode_;
     }
 
 }
