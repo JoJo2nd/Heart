@@ -130,7 +130,7 @@ file(GLOB HEART_RESOURCE_FILES
 )
 
 #platform headers
-if (WIN32)
+if (PLATFORM_WINDOWS)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
 		"${HEART_SOURCE_DIR}/src/win32"
@@ -146,7 +146,22 @@ if (WIN32)
 		"${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.cpp"
     )
-endif (WIN32)
+endif()
+if (PLATFORM_LINUX)
+    set( HEART_INCLUDE_DIRS
+        ${HEART_INCLUDE_DIRS}
+        "${HEART_SOURCE_DIR}/src/posix"
+        "${HEART_SOURCE_DIR}/src/posix"
+    )
+    file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
+        "${HEART_SOURCE_DIR}/src/posix/pal/*.h"
+        "${HEART_SOURCE_DIR}/src/posix/pal/*.cpp"
+        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.h"
+        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.cpp"
+        "${HEART_SOURCE_DIR}/src/posix/pal/device/*.h"
+        "${HEART_SOURCE_DIR}/src/posix/pal/device/*.cpp"
+    )
+endif()
 
 set( HEART_NON_UNITY_FILES
     ${HEART_PLATFORM_NON_UNITY_FILES}
@@ -208,6 +223,15 @@ if (UNITY_BUILD)
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 endif()
 
+add_custom_command(
+      OUTPUT "${HEART_SOURCE_DIR}/src/base/hFunctor.h"
+      COMMAND python
+      ARGS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
+      DEPENDS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
+      COMMENT "Generating hFunctor.h"
+      VERBATIM )
+set_source_files_properties("${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)    
+
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
@@ -215,7 +239,7 @@ set(HEART_LIBRARIES
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
-add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES})
+add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
 target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
 ADD_CUSTOM_COMMAND(

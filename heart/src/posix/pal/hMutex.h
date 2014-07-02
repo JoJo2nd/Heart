@@ -35,7 +35,7 @@ namespace Heart {
 
             pthread_mutexattr_init(&attr);
             pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-            pthread_mutex_init(&mutex_, attr);
+            pthread_mutex_init(&mutex_, &attr);
             pthread_mutexattr_destroy(&attr);
         }
         void Lock() {
@@ -51,6 +51,6 @@ namespace Heart {
             pthread_mutex_destroy(&mutex_);
         }
     
-        pthread_mutex_init mutex_;
+        pthread_mutex_t mutex_;
     };
 }
