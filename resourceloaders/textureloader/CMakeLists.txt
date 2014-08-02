@@ -7,14 +7,13 @@ set( TEXTURE_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
     "${TEXTURE_BUILDER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
-	${nvtt_INCLUDE_DIR}
+if (PLATFORM_WINDOWS)
+	"${EXTERNAL_SRC_ROOT}/nvidia-texture-tools/src"
+endif()
 )
 file(GLOB TEXTURE_BUILDER_SRC_FILES 
     "${TEXTURE_BUILDER_SRC_DIR}/src/*.h"
     "${TEXTURE_BUILDER_SRC_DIR}/src/*.cpp"
-)
-set(TEXTURE_BUILDER_LIB_DIRS
-	"${EXTERNAL_SRC_ROOT}/openal/libs/Win32"
 )
 
 source_group(source  FILES ${TEXTURE_BUILDER_SRC_FILES})
@@ -46,8 +45,19 @@ set_property(TARGET texture_builder PROPERTY DEBUG_POSTFIX)
 ADD_CUSTOM_COMMAND(
 	TARGET texture_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l texture -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${freeimage_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${nvtt_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${nvtt_DEPENDENT_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l texture -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
+
+if (PLATFORM_WINDOWS)
+	ADD_CUSTOM_COMMAND(
+		TARGET texture_builder
+	    POST_BUILD
+		COMMAND python
+		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${freeimage_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+		COMMAND python
+		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${nvtt_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+		COMMAND python
+		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "${nvtt_DEPENDENT_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	)
+endif()

@@ -30,6 +30,7 @@
 
 #include "base/hTypes.h"
 #include "base/hReferenceCounted.h"
+#include "base/hRendererConstants.h"
 
 namespace Heart {
 namespace hRenderer {

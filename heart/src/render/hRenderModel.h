@@ -34,8 +34,8 @@
 #include "base/hRendererConstants.h"
 
 
-namespace Heart
-{
+namespace Heart {
+    class hVertexBuffer;
 
     class  hRenderModel
     {

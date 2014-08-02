@@ -227,14 +227,15 @@ if (UNITY_BUILD)
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 endif()
 
+set(HEART_GEN_FILES ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor.h")
 add_custom_command(
       OUTPUT "${HEART_SOURCE_DIR}/src/base/hFunctor.h"
+      WORKING_DIRECTORY "${HEART_SOURCE_DIR}/src/base/"
       COMMAND python
       ARGS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
       DEPENDS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
       COMMENT "Generating hFunctor.h"
       VERBATIM )
-set_source_files_properties("${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)    
 
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
@@ -243,12 +244,14 @@ set(HEART_LIBRARIES
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
-add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
+add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
 target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
-ADD_CUSTOM_COMMAND(
-    TARGET heart
-    POST_BUILD
-    COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-    #COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
-)
+if (PLATFORM_WINDOWS)
+    ADD_CUSTOM_COMMAND(
+        TARGET heart
+        POST_BUILD
+        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
+#        COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
+    )
+endif()

@@ -30,9 +30,11 @@
 #define PRECOMPILED_H__
 
 //include windows first then winundef.h otherwise we get some strange compile errors
-#include <winsock2.h>
-#include <windows.h>
-#include "wx/msw/winundef.h"
+#if defined (PLATFORM_WINDOWS)
+#	include <winsock2.h>
+#	include <windows.h>
+#	include "wx/msw/winundef.h"
+#endif
 //order of these 1st 3 is important
 
 extern "C" {
@@ -91,11 +93,11 @@ extern "C" {
 #include "boost/serialization/vector.hpp"
 #include "boost/serialization/shared_ptr.hpp"
 
-
-extern "C"
-{
+#if defined (PLATFORM_WINDOWS)
+extern "C" {
     WXDLLIMPEXP_BASE HINSTANCE wxGetInstance();
 }
+#endif
 
 /*
     Proto buffers spits out a lot of warnings about 64 bit to 32 bit conversions.
@@ -105,8 +107,6 @@ extern "C"
 #   pragma warning(push)
 #   pragma warning(disable:4244)
 #   pragma warning(disable:4267)
-#else
-#   pragma error ("Unknown platform")
 #endif
 
 #include "google/protobuf/io/coded_stream.h"

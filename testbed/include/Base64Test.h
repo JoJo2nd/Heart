@@ -54,16 +54,16 @@ public:
             hUint decode1[201];
             hUint decode2[200];
             hUint decode3[199];
-            hUint needencodesize;
             hUint needdecodesize;
+            hUint needencodesize;
 
-            hcPrintf(__FUNCTION__" Generating Data");
+            hcPrintf("%s Generating Data", __FUNCTION__);
 
             GenRandomNumbers(data1, (hUint)hStaticArraySize(data1));
             GenRandomNumbers(data2, (hUint)hStaticArraySize(data2));
             GenRandomNumbers(data3, (hUint)hStaticArraySize(data3));
 
-            hcPrintf(__FUNCTION__" Encoding Data");
+            hcPrintf("%s Encoding Data", __FUNCTION__);
 
             needencodesize=Heart::hBase64::EncodeCalcRequiredSize(sizeof(data1));
             hcAssert(needencodesize==sizeof(encode1));
@@ -77,7 +77,7 @@ public:
             hcAssert(needencodesize==sizeof(encode3));
             Heart::hBase64::Encode(data3, sizeof(data3), encode3, needencodesize);
 
-            hcPrintf(__FUNCTION__" Decoding Data");
+            hcPrintf("%s Decoding Data",__FUNCTION__);
 
             needdecodesize=Heart::hBase64::DecodeCalcRequiredSize(encode1, sizeof(encode1));
             hcAssert(needdecodesize==sizeof(decode1));
@@ -94,7 +94,7 @@ public:
             Heart::hBase64::Decode(encode3, sizeof(encode3), decode3, sizeof(decode3));
             hcAssert(memcmp(data3, decode3, sizeof(decode3)) == 0);
 
-            hcPrintf(__FUNCTION__" Test Complete");
+            hcPrintf("%s Test Complete",__FUNCTION__);
 
             doTest_=hFalse;
         }

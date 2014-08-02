@@ -59,6 +59,8 @@ void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine)
     g_TestCore.EngineShutdown(engine);
 }
 
+#if defined (PLATFORM_WINDOWS)
+
 void CreateErrorBox( DWORD error );
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -126,3 +128,13 @@ void CreateErrorBox( DWORD error )
         MessageBox(NULL, buffer, NULL, MB_OK);
     }
 }
+
+#elif defined (PLATFORM_LINUX)
+
+int main(int argc, char **argv) {
+    return 0;
+}
+
+#else
+#   error ("Unknown platform")
+#endif

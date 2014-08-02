@@ -23,7 +23,7 @@
 
 *********************************************************************/
 
-#include "pal/hThreadLocalStorage.h"
+#include "threading/hThreadLocalStorage.h"
 #include "pal/hMutex.h"
 #include <winsock2.h>
 #include <windows.h>

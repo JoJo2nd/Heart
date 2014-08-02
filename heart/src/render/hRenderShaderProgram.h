@@ -29,26 +29,18 @@
 
 #include "base/hTypes.h"
 #include "base/hProtobuf.h"
+#include "base/hRendererConstants.h"
 #include "components/hObjectFactory.h"
 
 namespace Heart {
 namespace hRenderer {
     class hShaderReflection;
-
-// !!JM add to it's own header.
-namespace hShaderType {
-    enum Type {
-        Vertex,
-        Pixel,
-
-    };
-}
+    class hShaderStage;
 
     /*
         Shader Stage interface
     */
-    class hShaderStage;
-    hShaderType::Type getShaderType(const hShaderStage* stage);
+    hShaderType getShaderType(const hShaderStage* stage);
     /*
         hShaderLinkedProgram interface
     */

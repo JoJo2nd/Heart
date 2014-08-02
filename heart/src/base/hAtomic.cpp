@@ -127,6 +127,10 @@ namespace hAtomic {
         return val;
     }
 
+    hUint32 HEART_API AtomicGet(const hAtomicInt& i) {
+        return i.load();
+    }
+
     hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount) {
         i.fetch_add(amount);
         return i.load();

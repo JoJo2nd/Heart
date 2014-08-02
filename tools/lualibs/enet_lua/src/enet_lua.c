@@ -30,13 +30,27 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#if defined (enet_lua_EXPORTS)
-#   define enet_lua_dll_export __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define enet_lua_api __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define enet_lua_api
+#   else
+#       define enet_lua_api __attribute__((cdecl))
+#   endif
+#else
+#   error
+#endif
+
+#if defined (PLATFORM_WINDOWS)
+#   if defined (enet_lua_EXPORTS)
+#       define enet_lua_dll_export __declspec(dllexport)
+#   else
+#       define enet_lua_dll_export __declspec(dllimport)
+#   endif
 #else
 #   define enet_lua_dll_export
 #endif
-
-#define enet_lua_api __cdecl
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

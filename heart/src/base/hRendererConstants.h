@@ -33,8 +33,7 @@
 #include "base/hMemoryUtil.h"
 #include <vector>
 
-namespace Heart
-{
+namespace Heart {
     struct hRect 
     {
         hUint32 top_,left_,right_,bottom_;

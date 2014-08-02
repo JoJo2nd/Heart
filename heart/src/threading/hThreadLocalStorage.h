@@ -35,7 +35,9 @@ void    deleteKey(hSize_t key);
 void	setKeyValue(hSize_t key, void* value);
 void*   getKeyValue(hSize_t key);
 
-void    threadExit();
+#if defined HEART_PLAT_WINDOWS
+    void    threadExit();
+#endif
 
 }	
 }    

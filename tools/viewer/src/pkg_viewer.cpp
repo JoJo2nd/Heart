@@ -26,6 +26,7 @@
 #include "precompiled/precompiled.h"
 #include "common/ui_id.h"
 #include "pkg_viewer.h"
+#include <fstream>
 
 namespace 
 {

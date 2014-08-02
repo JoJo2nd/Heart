@@ -29,12 +29,15 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/smart_ptr.hpp>
-#include <d3d11.h>
-#include <d3d11shader.h>
-#include <d3dcompiler.h>
-#include <gl/glew.h>
+#if defined (PLATFORM_WINDOWS)
+#   include <d3d11.h>
+#   include <d3d11shader.h>
+#   include <d3dcompiler.h>
+#endif
+#include "GL/glew.h"
 #include "SDL.h"
 #include "resource_shader.pb.h"
 
@@ -58,12 +61,26 @@ extern "C" {
 #endif
 #include <regex>
 
-
-#define SB_API __cdecl
-#if defined (shader_builder_EXPORTS)
-#   define DLL_EXPORT __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define SB_API __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define SB_API
+#   else
+#       define SB_API __attribute__((cdecl))
+#   endif
 #else
-#   define DLL_EXPORT __declspec(dllimport)
+#   error
+#endif
+
+#if defined (PLATFORM_WINDOWS)
+#   if defined (shader_builder_EXPORTS)
+#       define DLL_EXPORT __declspec(dllexport)
+#   else
+#       define DLL_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define DLL_EXPORT
 #endif
 
 typedef unsigned char   uchar;
@@ -72,7 +89,7 @@ typedef std::regex_iterator<std::string::iterator> sre_iterator;
 
 #define luaL_errorthrow(L, fmt, ...) \
     luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_pushfstring(L, fmt, ##__VA_ARGS__ ); \
     lua_concat(L, 2); \
     throw std::exception();
 
@@ -129,10 +146,11 @@ typedef uint (*CompilerFunc)(std::string*, const ShaderCompileParams&, std::stri
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
+#if defined (PLATFORM_WINDOWS)
 size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource);
 uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
+#endif
 uint initGLCompiler(std::string* out_errors);
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
@@ -169,6 +187,7 @@ try {
 
     ShaderCompileParams shader_compile_params;
     uint compileFlags = 0;
+#if defined (PLATFORM_WINDOWS)    
     lua_getfield(L, 3, "debug");
     if (lua_toboolean(L, -1)) {
         compileFlags |= D3DCOMPILE_DEBUG;
@@ -184,7 +203,7 @@ try {
         compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
     }
     lua_pop(L, 1);
-
+#endif
     uint definecount=0;
     bool hasdefines=false;
     lua_getfield(L, 3, "defines");
@@ -266,7 +285,9 @@ try {
         proto::eShaderRenderSystem system_;
     };
     ShaderCompiler compilers[] = {
+#if defined (PLATFORM_WINDOWS)
         {compileD3DShader, proto::eShaderRenderSystem_D3D11},
+#endif
         {compileGLShader , proto::eShaderRenderSystem_OpenGL},
         {nullptr, proto::eShaderRenderSystem_None}
     };
@@ -416,7 +437,7 @@ std::map<boost::filesystem::path, std::string>* inc_ctx) {
     return 0;
 }
 
-
+#if defined (PLATFORM_WINDOWS)
 size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource)
 {
     size_t vertexInputLayoutFlags = 0;
@@ -520,6 +541,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
 
     return 0;
 }
+#endif // if defined (PLATFORM_WINDOWS)
 
 uint initGLCompiler(std::string* out_errors){
     static bool run_once = false;

@@ -36,6 +36,7 @@
 #include "render/hIndexBuffer.h"
 #include "render/hRenderShaderProgram.h"
 #include "threading/hMutexAutoScope.h"
+#include "threading/hThreadLocalStorage.h"
 #include "base/hUTF8.h"
 
 namespace Heart
@@ -136,18 +137,18 @@ namespace Heart
         renderer_->append(this);
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    hThreadLocal static hDebugDraw* g_debugDraw = hNullptr;
-    static hGlobalFinaliser< hDebugDraw > g_debugDrawFinaliser; 
+    static void debugDrawTLSDestruct(void* key_value) {
+        delete (hDebugDraw*)key_value;
+    }
 
     hDebugDraw* hDebugDraw::it() {
-        if (!g_debugDraw) {
-            g_debugDraw=new hDebugDraw;
-            g_debugDrawFinaliser.addObject(g_debugDraw);
+        static hSize_t g_debugDrawTLS = TLS::createKey(debugDrawTLSDestruct);
+        hDebugDraw* ret = (hDebugDraw*)TLS::getKeyValue(g_debugDrawTLS);
+        if (!TLS::getKeyValue(g_debugDrawTLS)) {
+            ret=new hDebugDraw;
+            TLS::setKeyValue(g_debugDrawTLS, ret);
         }
-        return g_debugDraw;
+        return ret;
     }
 
     //////////////////////////////////////////////////////////////////////////

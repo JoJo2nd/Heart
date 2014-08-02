@@ -101,13 +101,19 @@ bool ViewerApp::OnCmdLineParsed(wxCmdLineParser& parser)
             pluginPaths_+=boost::filesystem::absolute(wrk.ToStdString()).c_str();
         }
     }
-
+#if 0 // !!JM todo: windows warns about putenv, todo handle better.
     if (pluginPaths_.length()>0) {
         wxString pathev="path=";
         pathev+=getenv("path");
         pathev+=pluginPaths_;
-        _putenv(pathev.c_str());
+        // !!JM todo: windows warns about putenv, todo handle better.
+        std::unique_ptr<char*> data;
+        data = new char[pathev.length()+1];
+        data[pathev.length()] = 0;
+        memcpy(data.get(), pathev.c_str(), pathev.length());
+        putenv(data.get());
     }
+#endif
 
     return true;
 }

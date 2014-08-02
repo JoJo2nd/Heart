@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace build {
 namespace ErrorCode {
 enum Type {

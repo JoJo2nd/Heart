@@ -77,10 +77,13 @@ add_executable(heart_testbed WIN32 ${TESTBED_HDR_FILES} ${TESTBED_SRC_FILES} ${T
 set_property(TARGET heart_testbed PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(heart_testbed heart)
 
+message("${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py -l heart_testbed -s ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR} -d ${CMAKE_SOURCE_DIR}/deploy/game")
+
 ADD_CUSTOM_COMMAND(
     TARGET heart_testbed
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
 )
 if (MSVC)
     ADD_CUSTOM_COMMAND(

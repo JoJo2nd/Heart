@@ -9,6 +9,10 @@ if (MSVC)
     add_definitions(-D_SCL_SECURE_NO_WARNINGS) # A secure MS future
 endif()
 
+if (PLATFORM_LINUX)
+	add_definitions(-DO_BINARY=0)
+endif()
+
 set(PROTO_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/../proto/src
 )
@@ -42,5 +46,6 @@ set_property(TARGET proto_lua PROPERTY DEBUG_POSTFIX)
 ADD_CUSTOM_COMMAND(
 	TARGET proto_lua
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l proto_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l proto_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )

@@ -1,6 +1,7 @@
 #! /usr/bin/python
 
 import argparse
+import sys
 from os.path import join, realpath, split, exists
 from re import match as re_match
 import os
@@ -28,6 +29,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='copy_create_proto_files',description='Helper script for google protobuf files')
     parser.add_argument('-s','--src', help='.proto source file')
     parser.add_argument('-d','--dest', help='.proto destination directory')
+
+    str(sys.argv)
 
     args = parser.parse_args()
     print(args.src)

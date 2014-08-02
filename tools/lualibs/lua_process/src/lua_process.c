@@ -24,11 +24,93 @@
     distribution.
 
 *********************************************************************/
-#include <windows.h>
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
 #include "lua_process.h"
+
+#if defined (PLATFORM_LINUX)
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct lua_process_def {
+    pid_t               pid_;
+    size_t              cmdlineLen_;
+    char*               cmdline_;
+} lua_process_def_t;
+
+int lua_process_api lua_process_exec(lua_State* L) {
+    static const int args_limit = 1024;
+    size_t cmdlinelen;
+    const char* cmdline = luaL_checklstring(L, 1, &cmdlinelen);
+    lua_process_def_t* udata= NULL;
+    char* args[args_limit];
+    char* cmdline_ptr;
+    int i = 0;
+
+    udata = lua_newuserdata(L, sizeof(lua_process_def_t));
+    luaL_getmetatable(L, "_lua_process_lib.proc");
+    lua_setmetatable(L, -2);
+    udata->cmdline_ = malloc(cmdlinelen+1);
+    memcpy(udata->cmdline_, cmdline, cmdlinelen);
+    udata->cmdline_[cmdlinelen] = 0;
+    udata->cmdlineLen_ = cmdlinelen;
+    udata->pid_ = fork();
+
+    if (udata->pid_ == 0) {
+        /** child runs the process and exits */
+        cmdline_ptr = udata->cmdline_;
+        do {
+            args[i++] = cmdline_ptr;
+            cmdline_ptr = strtok(cmdline_ptr, " ");
+        } while (i < (args_limit-1) && cmdline_ptr);
+        args[i] = 0;
+
+        execv(args[0], args+1);
+        exit(0);
+    }
+
+    /** parent returns */
+    return 1;
+}
+
+int lua_process_api lua_process_sleep(lua_State* L) {
+    int ms = luaL_checkint(L, 1);
+    sleep(ms/1000);
+    return 0;
+}
+
+int lua_process_api lua_process_gc(lua_State* L) {
+    lua_process_def_t* udata = luaL_checkudata(L, 1, "_lua_process_lib.proc");
+
+    if (udata->cmdline_) {
+        free(udata->cmdline_);
+        udata->cmdline_ = NULL;
+    }
+
+    return 0;
+}
+
+int lua_process_api lua_process_wait(lua_State* L) {
+    lua_process_def_t* udata = luaL_checkudata(L, 1, "_lua_process_lib.proc");
+    int wait = luaL_checkint(L, 2);
+    int status;
+    int ret = waitpid(udata->pid_, &status, wait == 0 ? WNOHANG : 0);
+
+    if (ret > 0) {
+        lua_pushinteger(L, status);
+    } else {
+        lua_pushnil(L);
+    }
+
+    return 1;
+}
+
+#elif defined (PLATFORM_WINDOWS)
+
+#include <windows.h>
 
 typedef struct lua_process_def {
     STARTUPINFO         startupInfo_;
@@ -118,8 +200,9 @@ int lua_process_api lua_process_wait(lua_State* L) {
     lua_pushnil(L);
     return 1;
 }
+#endif
 
- static const luaL_Reg lua_process_methods[] = {
+static const luaL_Reg lua_process_methods[] = {
     {"__gc", lua_process_gc},
     {"wait", lua_process_wait},
     {NULL, NULL}

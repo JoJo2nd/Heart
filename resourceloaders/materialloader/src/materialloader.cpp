@@ -48,13 +48,27 @@
 #   pragma warning(pop)
 #endif
 
-#if defined (material_builder_EXPORTS)
-#define DLL_EXPORT __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define MB_API __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define MB_API
+#   else
+#       define MB_API __attribute__((cdecl))
+#   endif
 #else
-#define DLL_EXPORT __declspec(dllimport)
+#   error
 #endif
 
-#define MB_API __cdecl
+#if defined (PLATFORM_WINDOWS)
+#   if defined (material_builder_EXPORTS)
+#       define DLL_EXPORT __declspec(dllexport)
+#   else
+#       define DLL_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define DLL_EXPORT
+#endif
 
 typedef std::vector< std::string > StrVectorType;
 
@@ -175,7 +189,7 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 
 #define luaL_errorthrow(L, fmt, ...) \
     luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_pushfstring(L, fmt, ##__VA_ARGS__); \
     lua_concat(L, 2); \
     throw std::exception();
 
@@ -337,13 +351,13 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         hUint pathlen=(hUint)strlen(basepathrel)+(hUint)strlen(xmlpath)+1;//+1 for NULL
         hChar* fullbasepath=(hChar*)hAlloca(pathlen);
         hChar* pathSep=NULL;
-        strcpy_s(fullbasepath, pathlen, xmlpath);
+        strncpy(fullbasepath, xmlpath, pathlen);
         pathSep=strrchr(fullbasepath, '/');
         if (pathSep) {
             *(pathSep+1)=0;
-            strcat_s(fullbasepath, pathlen, basepathrel);
+            strncat(fullbasepath, basepathrel, pathlen-strlen(xmlpath));
         } else {
-            strcpy_s(fullbasepath, pathlen, basepathrel);
+            strncpy(fullbasepath, basepathrel, pathlen-strlen(xmlpath));
         }
         boost::shared_array<hChar> ptr;
         std::ifstream incfile;
@@ -369,7 +383,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
     hXMLGetter xSampler = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("sampler");
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
-        Heart::proto::MaterialSampler* sampler=hNullptr;
+        Heart::proto::MaterialSampler* sampler=nullptr;
         if (xSampler.GetAttribute("name")) {
             sampler = findOrAddMaterialSampler(mat, xSampler.GetAttribute("name")->value());
         } else { // Error? can't process this!
@@ -410,10 +424,9 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
     }
 
     hXMLGetter xParameter = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("parameter");
-    for (; xParameter.ToNode(); xParameter = xParameter.NextSibling())
-    {
+    for (; xParameter.ToNode(); xParameter = xParameter.NextSibling()) {
         hParameterType ptype=ePTNone;
-        proto::MaterialParameter* param=hNullptr;
+        proto::MaterialParameter* param=nullptr;
         if (xParameter.GetAttribute("name")) {
             param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
         } else {
@@ -426,21 +439,21 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             const hChar* valstr=xParameter.GetValueString();
             if (ptype == ePTFloat) {
                 hFloat fd[16];
-                int count=sscanf_s(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
+                int count=sscanf(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
                     fd, fd+1, fd+2, fd+3, fd+4, fd+5, fd+6, fd+7, fd+8, fd+9, fd+10, fd+11, fd+12, fd+13, fd+14, fd+15);
                 for (int i=0; i<count; ++i) {
                     param->add_floatvalues(fd[i]);
                 }
             } else if (ptype == ePTInt) {
                 hInt id[16];
-                int count=sscanf_s(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
+                int count=sscanf(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
                     id, id+1, id+2, id+3, id+4, id+5, id+6, id+7, id+8, id+9, id+10, id+11, id+12, id+13, id+14, id+15);
                 for (int i=0; i<count; ++i) {
                     param->add_intvalues(id[i]);
                 }
             } else if (ptype == ePTColour) {
                 hFloat fd[4] = {1.f, 1.f, 1.f, 1.f};
-                int count=sscanf_s(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
+                int count=sscanf(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
                 if (count != 4) {
                     luaL_errorthrow(L, "Colour parsed have %d values, expected only 4", count);
                 }
@@ -458,7 +471,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
     hXMLGetter xGroup = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("group");
     for (; xGroup.ToNode(); xGroup = xGroup.NextSibling())
     {
-        Heart::proto::MaterialGroup* group=hNullptr;
+        Heart::proto::MaterialGroup* group=nullptr;
         if (xGroup.GetAttribute("name")) {
             group=findOrAddMaterialGroup(mat, xGroup.GetAttributeString("name","none"));
         } else {
@@ -468,7 +481,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         hXMLGetter xTech = xGroup.FirstChild("technique");
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
-            Heart::proto::MaterialTechnique* tech=hNullptr;
+            Heart::proto::MaterialTechnique* tech=nullptr;
             if (xTech.GetAttribute("name")) {
                 tech=findOrAddMaterialTechnique(group, xTech.GetAttributeString("name","none"));
             } else {

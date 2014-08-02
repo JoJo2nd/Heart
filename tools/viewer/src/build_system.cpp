@@ -29,6 +29,8 @@
 #include "lua_filesystem.h"
 #include "lua_process.h"
 #include "proto_lua.h"
+#include <thread>
+#include <atomic>
 
 namespace build {
 namespace {
@@ -102,7 +104,7 @@ void luaBuildThread(const DataBuild* build_input, Report* build_output) {
     };
     // push our version of print
     lua_pushglobaltable(L);
-    lua_pushlightuserdata(L, build_input->msgProc_);
+    lua_pushlightuserdata(L, (void*)build_input->msgProc_);
     lua_pushlightuserdata(L, build_input->userPtr_);
     luaL_setfuncs(L, printLib, 2);
 

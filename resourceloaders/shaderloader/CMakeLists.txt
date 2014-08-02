@@ -21,7 +21,7 @@ set(SB_LIBS
     "lua52"
     "crypto"
     "proto"
-    "glew32"
+    ${GLEW_LIBRARIES}
     ${SDL2_LIBRARY}
 )
 
@@ -54,8 +54,19 @@ endif()
 ADD_CUSTOM_COMMAND(
 	TARGET shader_builder
     POST_BUILD
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l d3dcompiler -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-    COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 )
+
+if (PLATFORM_WINDOWS)
+ADD_CUSTOM_COMMAND(
+    TARGET shader_builder
+    POST_BUILD 
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l d3dcompiler -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+    COMMAND python
+    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+)
+endif()

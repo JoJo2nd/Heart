@@ -27,7 +27,11 @@
 
 namespace Heart
 {
-#pragma message ("STUBBED OUT: hEntity")
+#if defined (HEART_PLAT_WINDOWS)
+#   pragma message ("STUBBED OUT: hEntity")
+#elif defined (HEART_PLAT_LINUX)
+#   message ("STUBBED OUT: hEntity")
+#endif
 #if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

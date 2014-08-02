@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions(-DWXUSINGDLL)
+if (PLATFORM_WINDOWS)
+	add_definitions(-DWXUSINGDLL)
+endif()
+if (PLATFORM_LINUX)
+	include(${wxWidgets_USE_FILE})
+endif()
+
+message("wxWidgets_DEFINITIONS ${wxWidgets_DEFINITIONS}")
+message("view cxx flags: ${CMAKE_CXX_FLAGS}")
+
 
 set(VIEWER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -93,11 +102,19 @@ else()
 endif()
 add_executable(viewer WIN32 ${ALL_SRC_FILES} ${VIEWER_PRECOMPILED_SRC_FILES})
 set_property(TARGET viewer PROPERTY DEBUG_POSTFIX)
-target_link_libraries(viewer crypto lua52 lua_filesystem lua_process proto_lua proto_full ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(viewer ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
 ADD_CUSTOM_COMMAND(
 	TARGET viewer
     POST_BUILD
-	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l viewer -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	COMMAND python
+	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l viewer -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+)
+
+if (PLATFORM_WINDOWS)
+ADD_CUSTOM_COMMAND(
+	TARGET viewer
+    POST_BUILD
 	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
 )
+endif()

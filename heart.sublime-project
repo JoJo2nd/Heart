@@ -20,7 +20,7 @@
             },
             "linux":
             {
-                "file_regex": "(\/.+?):(\\d+):\\d+:\\s*error:"
+                "file_regex": "(\/.+?):(\\d+):\\d+:\\s*?error:"
             }
         },
         {

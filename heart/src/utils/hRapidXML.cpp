@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #include "utils/hRapidXML.h"
+#include <exception>
 
 namespace rapidxml
 {
@@ -45,10 +46,10 @@ namespace rapidxml
     //! </pre>
     //! \param what Human readable description of the error.
     //! \param where Pointer to character data where error was detected.
-     void HEART_API parse_error_handler(const char *what, void *where)
+    void HEART_API parse_error_handler(const char *what, void *where)
     {
         hcPrintf( "XML Parse Error: %s", what );
-        throw std::exception( what );
+        throw std::exception();
     }
 }
 namespace Heart

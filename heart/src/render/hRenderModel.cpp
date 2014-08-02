@@ -36,7 +36,9 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 
 hBool hRenderModel::bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf) {
-#pragma message ("Fix binding instance stream on render model")
+#if defined (HEART_PLAT_WINDOWS)
+#   pragma message ("Fix binding instance stream on render model")
+#endif
 //     for (hUint lodIdx=0,lodCnt=levelCount_; lodIdx<lodCnt; ++lodIdx) {
 //         hGeomLODLevel* lod=&lodLevels_[lodIdx];
 //         for (hUint rndIdx=0,rndCnt=lodLevels_[lodIdx].renderObjects_.GetSize(); rndIdx<rndCnt; ++rndIdx) {
@@ -82,7 +84,7 @@ hBool hRenderModel::resourceUpdate(hStringID resourceid, hResurceEvent event) {
         destroyRenderCommands();
     }
 #else
-    hcPrintf("Stub "__FUNCTION__);
+    hStub();
 #endif
     return hTrue;
 }
@@ -104,7 +106,7 @@ void hRenderModel::listenForResourceEvents() {
     //update
     attemptResourceInsert(resmanager);
 #else
-    hcPrintf("Stub "__FUNCTION__);
+    hStub();
 #endif
 }
 
@@ -123,7 +125,7 @@ void hRenderModel::stopListeningForResourceEvents() {
         }
     }
 #else
-    hcPrintf("Stub "__FUNCTION__);
+    hStub();
 #endif
 }
 
@@ -156,7 +158,7 @@ hBool hRenderModel::attemptResourceInsert() {
     initialiseRenderCommands();
     resManager->insertResource(getResourceID(), this);
 #else
-    hcPrintf("Stub "__FUNCTION__);
+    hStub();
 #endif
     return hTrue;
 }

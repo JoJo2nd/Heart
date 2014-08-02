@@ -9,4 +9,3 @@
 
 #include "testbed_precompiled.h"
 #include <stdio.h>
-#include <tchar.h>

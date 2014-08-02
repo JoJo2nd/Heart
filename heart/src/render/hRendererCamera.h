@@ -42,6 +42,7 @@ namespace Heart
     class hTexture;
     class hRenderTargetView;
     class hDepthStencilView;
+    class hRenderSubmissionCtx;
     struct hRenderTechniqueInfo;
 
     struct hRenderViewportTargetSetup

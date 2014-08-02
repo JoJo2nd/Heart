@@ -26,7 +26,7 @@
 *********************************************************************/
 
 #include "nvtt/nvtt.h"
-#include "freeimage.h"
+#include "FreeImage.h"
 #include <boost/filesystem.hpp>
 #include <boost/smart_ptr.hpp>
 #include <fstream>
@@ -55,16 +55,27 @@ extern "C" {
 
 #include "resource_texture.pb.h"
 
-
-//using namespace Heart;
-
-#if defined (texture_builder_EXPORTS)
-#define DLL_EXPORT __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define TB_API __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define TB_API
+#   else
+#       define TB_API __attribute__((cdecl))
+#   endif
 #else
-#define DLL_EXPORT __declspec(dllimport)
+#   error
 #endif
 
-#define TB_API __cdecl
+#if defined (PLATFORM_WINDOWS)
+#   if defined (texture_builder_EXPORTS)
+#       define DLL_EXPORT __declspec(dllexport)
+#   else
+#       define DLL_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define DLL_EXPORT
+#endif
 
 namespace FreeImageFileIO
 {

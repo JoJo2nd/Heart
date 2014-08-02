@@ -37,7 +37,7 @@ source_group(source  FILES ${LUA_SRC_FILES})
 
 include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua52 SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
-target_link_libraries(lua52 ${PROFILE_LIBS})
+target_link_libraries(lua52 m ${PROFILE_LIBS})
 set_property(TARGET lua52 PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(

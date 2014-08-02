@@ -84,7 +84,6 @@ namespace Heart
 #endif
 
 #if defined (HEART_PLAT_WINDOWS)
-#   define hThreadLocal  __declspec(thread)
 #   define hRestrict     __restrict
 #elif defined (HEART_PLAT_LINUX)
 #   define hRestrict     __restrict__

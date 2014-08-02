@@ -337,7 +337,7 @@ namespace Heart
     };
 
     template <>
-    hForceInline bool hXMLGetter::GetValueEnum<bool>(hXMLEnumReamp* enums, bool defaultVal) const
+    hFORCEINLINE bool hXMLGetter::GetValueEnum<bool>(hXMLEnumReamp* enums, bool defaultVal) const
     {
         if (!node_)
             return defaultVal;

@@ -30,3 +30,9 @@
 /external/libogg/src/*.deps/
 /external/libogg/src/Makefile
 /external/libogg/stamp-h1
+/deploy/tools/lua
+/deploy/tools/viewer
+/deploy/tools/databuilder.lua
+/deploy/tools/wxutil.lua
+/external/nvidia-texture-tools/Makefile
+/external/nvidia-texture-tools/build

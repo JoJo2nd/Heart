@@ -4,7 +4,7 @@ project(HEART)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
   set(PLATFORM_WINDOWS true)
-  set(PROTOBUG_LUA_PLUGIN protoc-gen-lua.exe)
+  set(PROTOBUF_LUA_PLUGIN protoc-gen-lua.exe)
   add_definitions(-DPLATFORM_WINDOWS)
   set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 endif()
@@ -12,17 +12,18 @@ endif()
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(BUILD_PLATFORM "linux")
   set(PLATFORM_LINUX true)
-  set(PROTOBUG_LUA_PLUGIN protoc-gen-lua)
+  set(PROTOBUF_LUA_PLUGIN protoc-gen-lua)
   add_definitions(-DPLATFORM_LINUX)
+  add_definitions(-DGLEW_NO_GLU)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -msse -msse2")
-  # Disabled for vector math
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnarrowing")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+
   if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -stdlib=libc++ -std=c++11 -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -w -stdlib=libc++ -std=c++11 -fPIC")
     # work around for clang missing std headers...? 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/include/c++/4.8.1")
   else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -w -std=c++11")
   endif()
   if (SSE3_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
@@ -100,7 +101,7 @@ function(PROTOBUF_GENERATE_LUA_CPP_BINDINGS SRCS HDRS luaSRCS luaHDRS)
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.cc"
 			 "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.lua.h"
       COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/${PROTOBUG_LUA_PLUGIN}
+      ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --lua_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${ABS_ROOT} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL} --plugin=protoc-gen-lua=${EXTERNAL_SRC_ROOT}/protobuf/plugin/${BUILD_PLATFORM}/${PROTOBUF_LUA_PLUGIN}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ & Lua protocol buffer compiler on ${FIL}"
       VERBATIM )
@@ -141,7 +142,7 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	    COMMAND python ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" ${ABS_FIL} "-d" ${PROTO_IM_DIR}
+	    COMMAND python ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
 	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ lite protocol buffer compiler on ${FIL_WE}")
@@ -306,45 +307,9 @@ set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
 #SDL2
 add_definitions(-DHEART_USE_SDL2)
-if (WIN32)
+if (PLATFORM_WINDOWS)
   get_filename_component(SDL2_LIB_PATH ${SDL2_LIBRARY} DIRECTORY)
 endif()
-#	if (BUILD_64_BIT)
-#		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/x64/Release")
-#	else()
-#		set(SDL2_LIB_PATH "${SDL2_LIBPATH}/Win32/Release")
-#	endif()
-#	set(SDL2_LIBRARIES SDL2)
-
-#turn off auto link by boost, we manage this ourselves
-#add_definitions(-DBOOST_FILESYSTEM_NO_LIB)
-#if (DEFINED ENV{BOOST_ROOT})
-#	message("Boost Env Var found. Using boost path $ENV{BOOST_ROOT}")
-#else()
-#	message("Boost Env Var NOT found. Using boost path ${EXTERNAL_SRC_ROOT}/boost")
-#	set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${EXTERNAL_SRC_ROOT}/boost")
-#	set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${EXTERNAL_SRC_ROOT}/boost/stage/lib")
-#endif()
-
-# Add proto buffers
-# set(PROTOBUF_INCLUDE_DIR
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/include"
-# )
-# set(PROTOBUF_LIBRARY
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf-lite.lib"
-# )
-# set(PROTOBUF_LIBRARY_DEBUG
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf-lite.lib"
-# )
-# set(PROTOBUF_LIBRARY_FULL
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/release/libprotobuf.lib"
-# )
-# set(PROTOBUF_LIBRARY_FULL_DEBUG
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/lib/x64/debug/libprotobuf.lib"
-# )
-# set(PROTOBUF_PROTOC_EXECUTABLE
-    # "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/bin/protoc.exe"
-# )
 
 #project defines
 if (MSVC)
@@ -362,6 +327,7 @@ if (PLATFORM_WINDOWS)
   add_definitions(-DLUA_BUILD_AS_DLL)
 endif()
 
+add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")
 add_subdirectory ("external/lua")
@@ -391,6 +357,10 @@ add_subdirectory("tools/lualibs/lua_process")
 
 add_subdirectory("tools/proto")
 add_subdirectory("tools/proto_full")
-add_subdirectory("tools/memtrack")
+if (PLATFORM_WINDOWS)
+  add_subdirectory("tools/memtrack")
+endif()
 add_subdirectory("tools/viewer")
-add_subdirectory("tools/profiler")
+if (PLATFORM_WINDOWS)
+  add_subdirectory("tools/profiler")
+endif()

@@ -52,6 +52,14 @@ enum hFontStyling
 
 class hFontFormatting
 {
+    struct hStringInputBuffer
+    {
+        hUint32 bytes_;
+        const hChar* str_;
+    };
+
+    typedef hVector< hStringInputBuffer > InputArrayType;
+
 public:
     hFontFormatting()
         : flags_(0)
@@ -75,8 +83,8 @@ public:
     void setInputStringBuffer(const hChar* utf8, hUint32 byteLen)
     {
         inputUTF8Str_.resize(1);
-        inputUTF8Str_[0].bytes_ = byteLen;
-        inputUTF8Str_[0].str_ = utf8;
+        inputUTF8Str_[0u].bytes_ = byteLen;
+        inputUTF8Str_[0u].str_ = utf8;
     }
     void setInputStringBuffers(const hChar** utf8, hUint32* byteLen, hUint32 bufferCount)
     {
@@ -112,12 +120,6 @@ public:
     hUint32 getPrimitiveCount() const { return primCount_; }
 
 private:
-
-    struct hStringInputBuffer
-    {
-        hUint32 bytes_;
-        const hChar* str_;
-    };
 
     class hTextIterator
     {
@@ -239,11 +241,9 @@ private:
         hTextIterator lineStart_;
         hTextIterator lineEnd_;
     };
+    typedef hVector< hTextLine > LineArrayType;
 
     friend class hTextIterator;
-
-    typedef hVector< hTextLine > LineArrayType;
-    typedef hVector< hStringInputBuffer > InputArrayType;
 
     static hTextLine ProcessLine(const hFontFormatting::hTextIterator& start, hFontFormatting::hTextIterator* nextStart, hFloat width, hUint32 formatFlags, hFloat scale, hFont* font);
 

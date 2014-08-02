@@ -25,13 +25,27 @@
 
 #pragma once
 
-#if defined (proto_lua_EXPORTS)
-#   define proto_lua_dll_export __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define proto_lua_api __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define proto_lua_api
+#   else
+#       define proto_lua_api __attribute__((cdecl))
+#   endif
 #else
-#   define proto_lua_dll_export __declspec(dllimport)
+#   error
 #endif
 
-#define proto_lua_api __cdecl
+#if defined (PLATFORM_WINDOWS)
+#   if defined (texture_builder_EXPORTS)
+#       define proto_lua_dll_export __declspec(dllexport)
+#   else
+#       define proto_lua_dll_export __declspec(dllimport)
+#   endif
+#else
+#   define proto_lua_dll_export
+#endif
 
 #ifdef __cplusplus
 extern "C" {

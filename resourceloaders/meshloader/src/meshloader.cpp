@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
 #include "utils/hRapidXML.h"
@@ -52,13 +53,27 @@
 
 #include "Heart.h" //TODO: remove this include?
 
-#if defined (mesh_builder_EXPORTS)
-#define DLL_EXPORT __declspec(dllexport)
+#if defined PLATFORM_WINDOWS
+#   define MB_API __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define MB_API
+#   else
+#       define MB_API __attribute__((cdecl))
+#   endif
 #else
-#define DLL_EXPORT __declspec(dllimport)
+#   error
 #endif
 
-#define MB_API   __cdecl
+#if defined (PLATFORM_WINDOWS)
+#   if defined (mesh_builder_EXPORTS)
+#       define DLL_EXPORT __declspec(dllexport)
+#   else
+#       define DLL_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define DLL_EXPORT
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Enum Tables ///////////////////////////////////////////////////////////
@@ -107,7 +122,7 @@ int MB_API meshCompile(lua_State* L)
 
 #define luaL_errorthrow(L, fmt, ...) \
     luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, __VA_ARGS__); \
+    lua_pushfstring(L, fmt, ##__VA_ARGS__); \
     lua_concat(L, 2); \
     throw std::exception();
 
@@ -129,7 +144,7 @@ try {
 
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_errorthrow(L, "Couldn't open file %s", filepath);
+        luaL_errorthrow(L, "Couldn't open file %s", filepath.c_str());
     }
 
     openedfiles.push_back(filepath);

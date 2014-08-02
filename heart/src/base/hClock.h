@@ -38,12 +38,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    namespace hClock
-    {
+    namespace hClock {
         void initialise();
         hFloat elapsed();
-        hInt64 elapsedMS();
-        hUint32 deltams();
+        hUint64 elapsedMilli();
+        hUint64 elapsedNano();
+        hUint64 deltams();
         hFloat fdeltams();
         hFloat delta();
         hUint32 hours();
@@ -64,7 +64,7 @@ namespace Heart
             reset();
         }
         void    reset() {
-            begin_=hClock::elapsedMS();
+            begin_=hClock::elapsedMilli();
             pauseStack_=0;
             lastPause_=begin_;
             pauseTotal_=0;
@@ -73,19 +73,19 @@ namespace Heart
             if (val) {
                 ++pauseStack_;
                 if (pauseStack_==1) {
-                    lastPause_=hClock::elapsedMS();
+                    lastPause_=hClock::elapsedMilli();
                 }
             } else if (!val && pauseStack_ > 0) {
-                pauseTotal_+=hClock::elapsedMS()-lastPause_;
+                pauseTotal_+=hClock::elapsedMilli()-lastPause_;
             }
         }
         hBool   getPaused() const { return pauseStack_ != 0; }
         hInt64   elaspedPause() const { 
-            hInt64 current=hClock::elapsedMS()-lastPause_;
+            hInt64 current=hClock::elapsedMilli()-lastPause_;
             return getPaused() ? pauseTotal_+current : pauseTotal_;
         }
         hInt64   elapsedSec() const { return elapsedMilliSec()/1000; }
-        hInt64   elapsedMilliSec() const { return (hClock::elapsedMS()-begin_) - elaspedPause(); }
+        hInt64   elapsedMilliSec() const { return (hClock::elapsedMilli()-begin_) - elaspedPause(); }
 
     private:
 

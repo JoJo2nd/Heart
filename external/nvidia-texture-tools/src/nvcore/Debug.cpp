@@ -32,6 +32,8 @@
 #	if NV_CC_GNUC // defined(HAVE_CXXABI_H)
 #		include <cxxabi.h>
 #	endif
+#	include <sys/types.h>
+#	include <unistd.h>
 #endif
 
 #if NV_OS_DARWIN

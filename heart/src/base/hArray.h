@@ -92,12 +92,13 @@ namespace Heart
         _Ty values_[ ArraySize ];
     };
 
-    template< class _Ty, hSize_t _Granularity = 8 > 
+    template< class _Ty, hSize_t _Granularity = 8ull > 
     class  hVector
     {
     public: 
         typedef hVector< _Ty, _Granularity > SelfType;
         typedef _Ty* TypePtr;
+        typedef const _Ty constTy;
 
         hVector()
             : values_( NULL )
@@ -142,17 +143,17 @@ namespace Heart
 
         hFORCEINLINE _Ty& operator [] ( hSize_t i )
         {
-            hcAssert( i >= 0 && i < size_ );
+            hcAssert(i < size_);
             return values_[ i ];
         }
 
-        hFORCEINLINE const _Ty& operator [] ( hSize_t i ) const
+        hFORCEINLINE constTy& operator [] ( hSize_t i ) const
         {
-            hcAssert( i>= 0 && i < size_ );
+            hcAssert(i < size_);
             return values_[ i ];
         }
 
-        void reserve( hUint32 size )
+        void reserve(hUint32 size)
         {
             if ( size > reserve_ )
             {

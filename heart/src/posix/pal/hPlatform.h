@@ -25,3 +25,4 @@
 #pragma once
 
 #include "base/hHeartConfig.h"
+#include "base/hTypes.h"

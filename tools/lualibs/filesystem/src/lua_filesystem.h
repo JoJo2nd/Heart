@@ -31,6 +31,11 @@
 #define luaFILESYSTEM_H__
 
 #include <boost/smart_ptr.hpp>
+extern "C" {
+#   include "lua.h"
+#   include "lauxlib.h"
+#   include "lualib.h"
+}
 
 #ifdef _WINDLL
 #   define luaFILESYSTEM_SHARED_LIB
@@ -42,11 +47,11 @@
 #   else
 #       define luaFILESYSTEM_EXPORT __declspec(dllimport)
 #   endif
+#   define luaFILESYSTEM_API          __cdecl
 #else
 #   define luaFILESYSTEM_EXPORT extern
+#   define luaFILESYSTEM_API 
 #endif
-
-#define luaFILESYSTEM_API          __cdecl
 
 #ifdef __cplusplus
 extern "C" {
