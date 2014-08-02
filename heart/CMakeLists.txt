@@ -236,6 +236,7 @@ add_custom_command(
       DEPENDS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
       COMMENT "Generating hFunctor.h"
       VERBATIM )
+set_source_files_properties("${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)    
 
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
