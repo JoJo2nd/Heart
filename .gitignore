@@ -10,6 +10,7 @@
 /platform_win32/
 /platform_win64/
 /tools/viewer/src/lua/builder_script.inl
+/heart/src/events/hPublisher_gen.inl
 /cmake64
 /cmake32
 /*.sublime-workspace

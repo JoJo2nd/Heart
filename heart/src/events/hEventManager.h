@@ -78,7 +78,7 @@ namespace Heart
         hUint   signalBufferSize_;
     };
 
-#include "generated/hPubslisher_gen.h"
+#include "hPublisher_gen.inl"
 
 }
 #endif // EVENT_H__

@@ -34,7 +34,7 @@ def outputTxtHeader(outfile, filename):
     outfile.write("********************************************************************/\n");
     outfile.write("\n")
     outfile.write("template < typename t_Fn >\n")
-    outfile.write("class HEART_DLLEXPORT hPublisher;\n")
+    outfile.write("class hPublisher;\n")
     
 def outputTxtFooter(outfile, filename):
     pass
@@ -53,7 +53,7 @@ def outputPublisherClassDef(outfile, argcount):
         if i+1 % 10 == 0:
             outfile.write("\n    ")
     outfile.write(">\n")
-    outfile.write("class HEART_DLLEXPORT hPublisher< void(*)(")
+    outfile.write("class hPublisher< void(*)(")
     for i in range(0, argcount):
         if i > 0: outfile.write(", ")
         outfile.write(Template("t_P$itr").substitute(itr=i+1))
@@ -70,9 +70,9 @@ def outputPublisherClassDef(outfile, argcount):
         temp = Template("    typedef t_P$itr Param${itr}Type;\n")
         outfile.write(temp.substitute(itr=i+1))
     if argcount == 0:
-        outfile.write("    hFUNCTOR_TYPEDEF_NOEXPORT(void(*)(")
+        outfile.write("    hFUNCTOR_TYPEDEF(void(*)(")
     else:
-        outfile.write("    typename hFUNCTOR_TYPEDEF_NOEXPORT(void(*)(")
+        outfile.write("    hFUNCTOR_TYPEDEF(void(*)(")
     for i in range(0, argcount):
         if i > 0: outfile.write(", ")
         temp = Template("Param${itr}Type")
