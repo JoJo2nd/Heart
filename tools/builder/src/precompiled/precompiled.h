@@ -72,7 +72,6 @@ extern "C" {
 #include "wx/event.h"
 
 #include "boost/cstdint.hpp"
-#include "boost/regex.hpp"
 #include "boost/system/error_code.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/signals2.hpp"

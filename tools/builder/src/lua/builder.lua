@@ -19,10 +19,10 @@ local failure = 0
 local temp_data_path = data_path.."/.tmp" 
 
 if filesystem.isdirectory(temp_data_path) == false then
-    os.execute("mkdir \""..temp_data_path.."\"")
+    filesystem.makedirectories(temp_data_path)
 end
 if filesystem.isdirectory(output_data_path) == false then
-    os.execute("mkdir \""..output_data_path.."\"")
+    filesystem.makedirectories(output_data_path)
 end
 
 print(string.format("Build data path %s", data_path))
@@ -30,12 +30,12 @@ print(string.format("Build output path %s", output_data_path))
 print(string.format("Build tmp path %s", temp_data_path))
 print(string.format("Build core count %s", job_count))
 
-
 local function verbose_log(str)
-    if verbose then
+    if verbose == true then
         print("[LOG]:"..str)
     end
 end
+verbose_log("verbose log is on")
 
 local function deepcopy(t)
     if type(t) ~= 'table' then return t end
@@ -124,11 +124,14 @@ local function add_build_folder(folder_path, type_parameters, package)
                 end
             end
             for _, v in pairs(dir_files) do
+                verbose_log(string.format("Checking for file %s", v))
                 if filesystem.isfile(v) then
-                    local res_path = filesystem.canonical(v)
+                    verbose_log(string.format("File %s exists", v))
+                    local res_path = v
                     local res_id = string.gsub(filesystem.pathwithoutext(res_path), data_path, "")
                     if filesystem.wildcardpathmatch(full_wildcard, res_path) == true then
-                        if buildables[res_id] == nil then 
+                        verbose_log(string.format("File %s matches wildcard %s", v, full_wildcard))
+                        if buildables[res_id] == nil then
                             buildables[res_id] = {}
                             buildables[res_id].full_path = res_path
                             buildables[res_id].res_id = res_id

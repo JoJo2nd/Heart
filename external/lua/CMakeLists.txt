@@ -27,8 +27,8 @@ list(REMOVE_ITEM LUA_SRC_FILES "${LUA_SRC_DIR}/src/lua.c")
 list(REMOVE_ITEM LUA_SRC_FILES "${LUA_SRC_DIR}/src/luac.c")
 
 if (PLATFORM_LINUX)
-    # on linux 'tmpname' is dangerous, better use 'mkstemp'
-    add_definitions(-DLUA_USE_MKSTEMP)
+    add_definitions(-DLUA_USE_POSIX -DLUA_USE_DLOPEN)
+    set(LUA_LIBS m dl)
 endif()
 
 source_group(source  FILES ${LUA_SRC_FILES})
@@ -37,7 +37,7 @@ source_group(source  FILES ${LUA_SRC_FILES})
 
 include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua52 SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
-target_link_libraries(lua52 m ${PROFILE_LIBS})
+target_link_libraries(lua52 ${LUA_LIBS} ${PROFILE_LIBS})
 set_property(TARGET lua52 PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(

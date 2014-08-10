@@ -24,16 +24,17 @@
 *********************************************************************/
 
 #include "threading/hThreadLocalStorage.h"
+#include <pthread.h>
 
 namespace Heart {
 namespace TLS {    
 
 hSize_t createKey(hKeyDestructor destructor) {
-    hSize_t key;
+    pthread_key_t key;
     if (pthread_key_create(&key, destructor)) {
         return 0;
     }
-    return key;
+    return (hSize_t)key;
 }
 
 void deleteKey(hSize_t key) {

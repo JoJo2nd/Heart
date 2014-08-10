@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-#if (MSVC)
-#	add_definitions(-D_ITERATOR_DEBUG_LEVEL=2)
-#endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 
 set(LUA_FILESYSTEM_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -31,9 +29,9 @@ target_link_libraries(lua_filesystem lua52 ${Boost_LIBRARIES})
 set_target_properties(lua_filesystem PROPERTIES OUTPUT_NAME filesystem)
 set_property(TARGET lua_filesystem PROPERTY DEBUG_POSTFIX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET lua_filesystem
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l filesystem -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET lua_filesystem
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l filesystem -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)

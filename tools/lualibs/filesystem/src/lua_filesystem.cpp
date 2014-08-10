@@ -281,7 +281,7 @@ static int fs_readDirRecursive(lua_State* L) {
     boost::filesystem::path path = luaL_checkstring(L, 1);
 
     boost::system::error_code ec;
-    boost::filesystem::recursive_directory_iterator itr(path, ec);
+    boost::filesystem::recursive_directory_iterator itr(path, boost::filesystem::symlink_option::recurse, ec);
 
     if (ec) {
         lua_pushnil(L);

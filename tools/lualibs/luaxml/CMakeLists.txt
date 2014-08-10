@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+
 if (MSVC)
     # Lua is using float (not doubles, which is it's normal mode) so 
     # it generates alot of warnings, hide them for the time being.
@@ -36,10 +38,10 @@ set_property(TARGET lua_xml PROPERTY DEBUG_POSTFIX)
 
 #set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES LANGUAGE CXX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET lua_xml
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l LuaXML_lib -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#	COMMAND ROBOCOPY "${LUAXML_SRC_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}/lua" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET lua_xml
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l LuaXML_lib -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+##	COMMAND ROBOCOPY "${LUAXML_SRC_DIR}" "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}/lua" *.lua ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+#)

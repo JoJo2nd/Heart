@@ -28,7 +28,7 @@
 #include "precompiled.h"
 #include "common/type_database.h"
 
-
+#if 0
 void escapeRegex(std::string &regex)
 {
     boost::replace_all(regex, "\\", "\\\\");
@@ -59,6 +59,7 @@ bool wildcardMatch(const std::string &text, std::string wildcardPattern, bool ca
 
     return regex_match(text, pattern);
 }
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 //register types

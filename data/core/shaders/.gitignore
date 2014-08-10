@@ -1,2 +1,2 @@
-*_vs4.hlsl
-*_ps4.hlsl
+/vertex/*.hlsl
+/fragment/*.hlsl

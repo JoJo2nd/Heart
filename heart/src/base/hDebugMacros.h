@@ -3,6 +3,7 @@
 
 #if defined (PLATFORM_LINUX)
 #   include <signal.h>
+#   include <stdlib.h>
 #endif
 
 #define WARNING_NONE ( 0 )
@@ -47,9 +48,8 @@ typedef void (*hPrintfCallback)(const hChar*);
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, ##__VA_ARGS__ )
 #define hcWarning( lvl, cond, x, ... )				if ( lvl <= MAX_WARNING_LEVEL && cond ) { hcPrintf( "WARNING!: " x, ##__VA_ARGS__ ); }
 
- void HEART_API hcOutputStringRaw(const hChar* msg, ...);
- void HEART_API hcOutputString(const hChar* msg, ...);
- hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
+void HEART_API hcOutputString(const hChar* msg, ...);
+hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
 #if defined (PLATFORM_LINUX)
     void debug_break_now();

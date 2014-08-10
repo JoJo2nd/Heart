@@ -87,7 +87,7 @@ public:
         mountAccessMutex_.Lock();
         if (mountCount_ > 0) {
             hUint midx=findMountIndex(mount);
-            hcPrintf("Unmounting [%s] from %s:/", mounts_[midx].mountPath_, mounts_[midx].mountName_);
+            hcPrintf("Unmounting [%s] from /%s", mounts_[midx].mountPath_, mounts_[midx].mountName_);
             delete mounts_[midx].mountPath_; mounts_[midx].mountPath_ = nullptr;
             --mountCount_;
             mounts_[midx]=mounts_[mountCount_];
@@ -423,6 +423,10 @@ private:
         mm->mmap_ = mapped;
         mm->len_ = info.st_size;
         return mm;
+    }
+
+    void* hdMMapGetBase(hdMemoryMappedFile *mmap) {
+        return !mmap ? mmap->mmap_ : nullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////

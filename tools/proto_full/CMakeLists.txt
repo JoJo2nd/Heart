@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 ENABLE_PROFILE_IF_SET()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+
 if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings
     add_definitions(/wd"4267") # proto buffers spits out a lot of size_t to int conversion warnings
@@ -38,14 +40,15 @@ target_link_libraries(proto_full optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})
 set_property(TARGET proto_full PROPERTY DEBUG_POSTFIX)
 
 file(GLOB PROTO_LUA_SRC_FILES "${PROTO_SRC_DIR}/proto_lua*.cpp" "${PROTO_SRC_DIR}/proto_lua*.h")
+
 add_library(proto_lua SHARED ${PROTO_LUA_SRC_FILES} ${PROTO_SRC_FILES} ${LuaProtoHeaders} ${LuaProtoSources})
 target_link_libraries(proto_lua debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS} lua52 proto_full)
 target_link_libraries(proto_lua optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS} lua52 proto_full)
 set_property(TARGET proto_lua PROPERTY DEBUG_POSTFIX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET proto_lua
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l proto_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET proto_lua
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l proto_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)

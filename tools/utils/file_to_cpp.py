@@ -12,7 +12,6 @@ def main():
     
     with open(args.input, "rb") as f:
         data_len = stat(args.input).st_size
-        # TODO: check for DX10 header and skip?
         with open(args.output, "w") as w:
             w.write("/*******************************************************\n")
             w.write("  Auto-Generated file. Do not edit\n");
@@ -26,7 +25,7 @@ def main():
                 w.write(", ")
                 if (y+1) % 50 == 0:
                     w.write("\n")
-            w.write("};\n")
+            w.write("0x0};\n")
             w.write("} //extern \"C\"\n")
             
 if __name__ == '__main__':

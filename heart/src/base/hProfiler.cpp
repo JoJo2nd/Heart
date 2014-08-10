@@ -27,6 +27,7 @@
 
 #include "base/hProfiler.h"
 #include "base/hMemoryUtil.h"
+#include <stdlib.h>
 
 namespace Heart {
 	static hProfilerManager* g_ProfilerManager_;

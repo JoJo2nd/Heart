@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-if (MSVC)
-    #add_definitions(/wd"4244")
-    #add_definitions(/wd"4146")
-    #add_definitions(/wd"4305")
-endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 
 set(LUAPROCESS_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36,9 +32,9 @@ add_library(lua_process SHARED ${LUAPROCESS_SRC_FILES} ${LUAPROCESS_HDR_FILES})
 target_link_libraries(lua_process lua52)
 set_property(TARGET lua_process PROPERTY DEBUG_POSTFIX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET lua_process
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua_process -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET lua_process
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua_process -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)

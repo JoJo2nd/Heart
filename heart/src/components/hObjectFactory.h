@@ -73,8 +73,8 @@ namespace Heart
 #define hObjectBaseTypeInner(x) (##x)
 
 #define hRegisterObjectType(name, type, serialiser_type, ...) \
-    struct Heart::hObjectDefinition; \
-    extern hBool Heart::hObjectFactory::objectFactoryRegistar(Heart::hObjectDefinition*, const char*, ...); \
+    /*struct Heart::hObjectDefinition;*/ \
+    /*extern hBool Heart::hObjectFactory::objectFactoryRegistar(Heart::hObjectDefinition*, const char*, ...); */\
     static void* autogen_construct_##name () { return new type; } \
     static hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
     static hBool autogen_serialise_##name(void* type_ptr_raw, hObjectMarshall* msg_raw) { \

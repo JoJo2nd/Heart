@@ -47,7 +47,7 @@ struct Report
     std::string buildOutput;
 };
 
-typedef void (*BuildLogHandler)(const char* str, uint str_len, void* ptr);
+typedef void (*BuildLogHandler)(const char* str, unsigned int str_len, void* ptr);
 
 ErrorCodeEnum beginDataBuild(const std::string& build_path, const std::string& output_path, BuildLogHandler msg_handler, void* user_ptr);
 bool      isBuildingData();

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+
 set(MESH_BUILDER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -42,12 +44,13 @@ add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES})
 target_link_libraries(mesh_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto ${Boost_LIBRARIES})
 target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto ${Boost_LIBRARIES})
 
+set_target_properties(mesh_builder PROPERTIES PREFIX "")
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
 set_property(TARGET mesh_builder PROPERTY DEBUG_POSTFIX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET mesh_builder
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l mesh -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET mesh_builder
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l mesh -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)

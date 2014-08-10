@@ -10,5 +10,5 @@ buildsystem.add_files("textures/*_bc3.tga", "texture", {sRGB=false, format="bc3"
 buildsystem.add_files("textures/*_bc1.tga", "texture", {sRGB=false, format="bc1"})
 
 buildsystem.set_type_parameter("gpuprogram", "include_dirs", {"../../shader_common/include"})
-buildsystem.add_files("shaders/*_vs4.hlsl", "gpuprogram", {profile="vs4_0", entry="mainVP"})
-buildsystem.add_files("shaders/*_ps4.hlsl", "gpuprogram", {profile="ps4_0", entry="mainFP"})
+buildsystem.add_files("shaders/vertex/*.hlsl", "gpuprogram", {profile="vs4_0", entry="mainVP"})
+buildsystem.add_files("shaders/fragment/*.hlsl", "gpuprogram", {profile="ps4_0", entry="mainFP"})

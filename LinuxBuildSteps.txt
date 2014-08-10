@@ -10,6 +10,7 @@ Install steps initial:
 * [install llvm & clang]
 * >> wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
 * >> sudo apt-get install clang-3.4 lldb-3.4
+* Also install libc++-dev & libc++abi-dev
 * enable clang toolchain, 
 * >> sudo update-alternatives --config c++ [and select clang++]
 * >> sudo update-alternatives --config cc [and select clang++]
@@ -30,7 +31,7 @@ fi
 * >> cd $build_dir
 * download protobuf 2.5.0 and unzip somewhere
 * cd to protobuf source
-* >> ./configure --prefix=$HOME/dev/installs
+* >> ./configure --prefix=$HOME/dev/installs CC=clang CXX="clang++ -std=c++11 -stdlib=libc++ -lc++abi" CXXFLAGS="-O3"
 * >> make
 * >> make install
 * cd to protobuf/python directory
@@ -41,13 +42,14 @@ fi
 * download boost 1.53
 * unzip somewhere and cd to directory
 * >> ./bootstrap.sh --prefix=$HOME/dev/installs
-* >> ./b2 cxxflags="-fPIC" install
+* >> ./b2 install toolset=clang cxxflags="-stdlib=libc++ -fPIC" linkflags="-stdlib=libc++" --prefix=$HOME/dev/installs --without-iostreams
 * Download SDL2, unzip somewhere and cd to it
 * >> sudo apt-get install autoconf
 * >> sh autogen.sh
 * >> ./configure --prefix=$HOME/dev/installs
 * >> make
 * >> make install
+* >> sudo apt-get install ia32-libs-sdl
 * [install wxWidgets - package manager install - mint/ubuntu]
 * >> sudo apt-add-repository 'deb http://repos.codelite.org/wx3.0.1/ubuntu/ trusty universe'
 * >> sudo apt-get update
@@ -68,5 +70,5 @@ fi
 * cd $heart_repo
 * mkdir $build_dir
 * rm -rf *
-* cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64" -DCMAKE_PROGRAM_PATH="$HOME/dev/user/local/bin;$HOME/dev/installs/bin"
+* cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64" -DCMAKE_PROGRAM_PATH="$HOME/dev/usr/local/bin;$HOME/dev/installs/bin"
 * Profit

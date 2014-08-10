@@ -129,7 +129,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void* hDriveFile::getMemoryMappedBase() const {
-        return mmap_;
+        return hdMMapGetBase(mmap_);
     }
 
 }

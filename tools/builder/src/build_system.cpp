@@ -93,9 +93,9 @@ void luaBuildThread(const DataBuild* build_input, Report* build_output) {
 
     //open the default libraries (filesystem, lua_process, proto_lua)
     luaL_openlibs(L);
-    luaopen_filesystem(L);
-    luaopen_lua_process(L);
-    luaopen_proto_lua(L);
+    luaL_requiref(L, "filesystem", luaopen_filesystem, 1);
+    luaL_requiref(L, "lua_process", luaopen_lua_process, 1);
+    luaL_requiref(L, "proto_lua", luaopen_proto_lua, 1);
 
     //set the print function to call us...
     static const luaL_Reg printLib[] = {
@@ -119,9 +119,9 @@ void luaBuildThread(const DataBuild* build_input, Report* build_output) {
     assert(error == LUA_OK);
     if (error == LUA_OK) {
         if (error = lua_pcall(L, 0, LUA_MULTRET, 0)) {
-            const char* err_msg = lua_tostring(L, -1);
+            std::string err_msg = lua_tostring(L, -1);
             //comms::channelMessage(verbosity, "target channel", "msg format", [args])
-            printf(err_msg);
+            build_input->msgProc_(err_msg.c_str(), err_msg.length(), build_input->userPtr_);
         }
     }
 

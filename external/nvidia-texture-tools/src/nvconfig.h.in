@@ -9,7 +9,7 @@
 
 #cmakedefine HAVE_PNG
 #cmakedefine HAVE_JPEG
-#cmakedefine HAVE_TIFF
+//#cmakedefine HAVE_TIFF
 #cmakedefine HAVE_OPENEXR
 
 #cmakedefine HAVE_MAYA

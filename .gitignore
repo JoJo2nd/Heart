@@ -19,6 +19,7 @@
 /backup
 *.unity.cpp
 *.unity.c
+/*.user
 /external/libogg/Makefile
 /external/libogg/*.log
 /external/libogg/*.status
@@ -35,5 +36,6 @@
 /deploy/tools/viewer
 /deploy/tools/databuilder.lua
 /deploy/tools/wxutil.lua
+/deploy/tools/*.so
 /external/nvidia-texture-tools/Makefile
 /external/nvidia-texture-tools/build

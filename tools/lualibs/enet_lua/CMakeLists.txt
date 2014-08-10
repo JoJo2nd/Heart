@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-if (MSVC)
-    #add_definitions(/wd"4244")
-    #add_definitions(/wd"4146")
-    #add_definitions(/wd"4305")
-endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 
 set(ENET_LUA_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36,9 +32,9 @@ add_library(enet_lua SHARED ${ENET_LUA_SRC_FILES} ${ENET_LUA_HDR_FILES})
 target_link_libraries(enet_lua lua52 enet)
 set_property(TARGET enet_lua PROPERTY DEBUG_POSTFIX)
 
-ADD_CUSTOM_COMMAND(
-	TARGET enet_lua
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l enet_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET enet_lua
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l enet_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/game/${CMAKE_CFG_INTDIR}")
+
 set(TESTBED_SOURCE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -79,12 +81,12 @@ target_link_libraries(heart_testbed heart)
 
 message("${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py -l heart_testbed -s ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR} -d ${CMAKE_SOURCE_DIR}/deploy/game")
 
-ADD_CUSTOM_COMMAND(
-    TARGET heart_testbed
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-)
+#ADD_CUSTOM_COMMAND(
+#    TARGET heart_testbed
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
+#)
 if (MSVC)
     ADD_CUSTOM_COMMAND(
     	TARGET heart_testbed

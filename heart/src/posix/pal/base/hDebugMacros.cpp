@@ -35,27 +35,10 @@
 
 static hPrintfCallback g_printcallback = NULL;
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void HEART_API hcOutputString( const hChar* msg, ... )
-{
-	va_list marker;
-	va_start(marker, msg);
-	vprintf(msg, marker);
-	va_end(marker);
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-void HEART_API hcOutputStringRaw( const hChar* msg, ... )
-{
-	va_list marker;
-	va_start(marker, msg);
-	vprintf(msg, marker);
-	va_end(marker);
+static void HEART_API hcOutputStringFlush() {
+#if defined (PLATFORM_LINUX)
+    fflush(stdout);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -65,22 +48,39 @@ void HEART_API hcOutputStringRaw( const hChar* msg, ... )
 void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 {
     const hUint32 ks = 4;
-	hChar buffer[ ks*1024 ];
-	buffer[ (ks*1024)-1 ] = 0;
-	hUint32 len = vsnprintf(buffer, ks*1024, msg, vargs);
+    hChar buffer[ ks*1024 ];
+    buffer[ (ks*1024)-1 ] = 0;
+    hUint32 len = vsnprintf(buffer, ks*1024, msg, vargs);
 
-	if ( newline && buffer[ len - 1 ] != '\n' )
-	{
-		buffer[ len ] = '\n';
-		buffer[ len+1 ] =  0;
-	}
+    if ( newline && buffer[ len - 1 ] != '\n' )
+    {
+        buffer[ len ] = '\n';
+        buffer[ len+1 ] =  0;
+    }
 
 #ifdef HEART_DEBUG
-	OutputDebugString( buffer );
+    #ifdef HEART_PLAT_WINDOWS
+        OutputDebugString( buffer );
+    #endif
 #else
+#if defined (PLATFORM_LINUX)
+    printf(buffer);
+#endif
     if (g_printcallback)
         g_printcallback(buffer);
 #endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+void HEART_API hcOutputString( const hChar* msg, ... )
+{
+	va_list marker;
+	va_start(marker, msg);
+    hcOutputStringVA(msg, true, marker);
+	va_end(marker);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -105,10 +105,9 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
         buffer[ len+1 ] =  0;
     }
 
-#ifdef HEART_PLAT_WINDOWS
-#   ifdef HEART_DEBUG
-    OutputDebugString( buffer );
-#   endif // HEART_DEBUG
+    hcOutputString( buffer );
+    hcOutputStringFlush();
+#if 0
     if (!ignore) {
      ret = 1;//MessageBox(NULL, buffer, "ASSERT FAILED!", MB_ABORTRETRYIGNORE);
      if (ret == IDABORT) {
@@ -125,8 +124,9 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
     else {
         ret = 2; // ignore
     }
+#else
+    ret = 1;
 #endif
-
     va_end( marker );
 
     return ret;

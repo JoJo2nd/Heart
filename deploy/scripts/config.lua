@@ -1,4 +1,3 @@
-
 cvar("renderer.fullscreen", false)
 cvar("renderer.vsync", false)
 cvar("renderer.width", 1280)

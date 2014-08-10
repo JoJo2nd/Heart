@@ -39,8 +39,8 @@ namespace Heart
     struct  hInputAction
     {
         hStringID   actionName_;
-        hUint       deviceID_;
-        hInt16      value_;
+        hInt64      deviceID_;
+        hInt        value_;
         hUint       rising_ : 1; // aka button down
         hUint       falling_ : 1; // aka button up
         hUint       isRepeat_ : 1;

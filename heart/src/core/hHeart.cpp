@@ -113,7 +113,7 @@ namespace Heart {
         config_.Fullscreen_ = hConfigurationVariables::getCVarBool("renderer.fullscreen", false);
         config_.vsync_ = hConfigurationVariables::getCVarBool("renderer.vsync", false);
 
-        *deviceConfig_ = *deviceConfig;
+        deviceConfig_ = deviceConfig;
 
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
@@ -148,21 +148,22 @@ namespace Heart {
 
         //Run the start up script
         const hChar* script_name = hConfigurationVariables::getCVarStr("startup.script", nullptr);
-        if (hIFile* startup_script = fileMananger_->OpenFile(script_name, FILEMODE_READ))
-        {
-            hChar* script=nullptr;
-            if (startup_script->getIsMemMapped()) {
-                script=(hChar*)startup_script->getMemoryMappedBase();
-            } else {
-                script = (hChar*)hAlloca((hSize_t)startup_script->Length()+1);
-                startup_script->Read(script, (hUint)startup_script->Length());
+        if (script_name) {
+            if (hIFile* startup_script = fileMananger_->OpenFile(script_name, FILEMODE_READ)) {
+                hChar* script=nullptr;
+                if (startup_script->getIsMemMapped()) {
+                    script=(hChar*)startup_script->getMemoryMappedBase();
+                } else {
+                    script = (hChar*)hAlloca((hSize_t)startup_script->Length()+1);
+                    startup_script->Read(script, (hUint)startup_script->Length());
+                }
+                luaL_loadbuffer(luaVM_->GetMainState(), script, startup_script->Length(), script_name);
+                if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
+                    hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
+                    lua_pop(luaVM_->GetMainState(), 1);
+                }
+                fileMananger_->CloseFile(startup_script);
             }
-            luaL_loadbuffer(luaVM_->GetMainState(), script, startup_script->Length(), script_name);
-            if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
-                hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
-                lua_pop(luaVM_->GetMainState(), 1);
-            }
-            fileMananger_->CloseFile(startup_script);
         }
 
         //////////////////////////////////////////////////////////////////////////
@@ -407,10 +408,11 @@ Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks
 Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks)
 {
     Heart::hSysCall::hInitSystemDebugLibs();
+    Heart::hdDeviceConfig deviceConfig;
     heart_thread_prof_begin("profile_startup.prof");
 
     Heart::hHeartEngine* engine = 
-        new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, nullptr);
+        new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
 
     engine->firstLoaded_        = callbacks->firstLoaded_;
     engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;

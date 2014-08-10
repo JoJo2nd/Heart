@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef struct lua_process_def {
     pid_t               pid_;
@@ -48,7 +50,7 @@ int lua_process_api lua_process_exec(lua_State* L) {
     lua_process_def_t* udata= NULL;
     char* args[args_limit];
     char* cmdline_ptr;
-    int i = 0;
+    int i=0, prev_space=1, quote_count=0;
 
     udata = lua_newuserdata(L, sizeof(lua_process_def_t));
     luaL_getmetatable(L, "_lua_process_lib.proc");
@@ -57,18 +59,34 @@ int lua_process_api lua_process_exec(lua_State* L) {
     memcpy(udata->cmdline_, cmdline, cmdlinelen);
     udata->cmdline_[cmdlinelen] = 0;
     udata->cmdlineLen_ = cmdlinelen;
+
+    cmdline_ptr = udata->cmdline_;
+    prev_space = 1;
+    do {
+        if (!isspace(*cmdline_ptr)) {
+            if (prev_space) {
+                if (*cmdline_ptr == '"') {
+                    ++cmdline_ptr;
+                }
+                args[i++] = cmdline_ptr;
+                prev_space = 0;
+            }else if (*cmdline_ptr == '"') {
+                *cmdline_ptr = 0x0;
+                prev_space = 1;
+            }
+        } else {
+          prev_space = 1;
+          *cmdline_ptr = 0x0;
+        }
+        ++cmdline_ptr;
+    } while (i < (args_limit-1) && *cmdline_ptr);
+    args[i] = 0;
+
     udata->pid_ = fork();
 
     if (udata->pid_ == 0) {
         /** child runs the process and exits */
-        cmdline_ptr = udata->cmdline_;
-        do {
-            args[i++] = cmdline_ptr;
-            cmdline_ptr = strtok(cmdline_ptr, " ");
-        } while (i < (args_limit-1) && cmdline_ptr);
-        args[i] = 0;
-
-        execv(args[0], args+1);
+        execv(args[0], args);
         exit(0);
     }
 

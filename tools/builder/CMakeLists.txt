@@ -1,14 +1,19 @@
 cmake_minimum_required(VERSION 2.8)
 
-if (PLATFORM_WINDOWS)
-	add_definitions(-DWXUSINGDLL)
-endif()
-if (PLATFORM_LINUX)
-	include(${wxWidgets_USE_FILE})
-endif()
+#if (PLATFORM_WINDOWS)
+#	add_definitions(-DWXUSINGDLL)
+#endif()
+#if (PLATFORM_LINUX)
+#    message("wxWidgets use file: ${wxWidgets_USE_FILE}")
+#	 include(${wxWidgets_USE_FILE})
+#    if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+#        # workaround for clang __has_include(tr1/type_traits) returning true
+#        add_definitions(-DHAVE_TYPE_TRAITS=1)
+#    endif()
+#endif()
 
-message("wxWidgets_DEFINITIONS ${wxWidgets_DEFINITIONS}")
-message("view cxx flags: ${CMAKE_CXX_FLAGS}")
+#message("wxWidgets_DEFINITIONS=${wxWidgets_DEFINITIONS}")
+#message("wxWidgets_LIBRARIES=${wxWidgets_LIBRARIES}")
 
 
 set(VIEWER_SRC_DIR
@@ -88,6 +93,8 @@ if (MSVC)
 	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 endif()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+
 include_directories(${VIEWER_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 link_directories(
 	${LIBHEART_LIB_DIRS}
@@ -104,12 +111,12 @@ add_executable(viewer WIN32 ${ALL_SRC_FILES} ${VIEWER_PRECOMPILED_SRC_FILES})
 set_property(TARGET viewer PROPERTY DEBUG_POSTFIX)
 target_link_libraries(viewer ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
 
-ADD_CUSTOM_COMMAND(
-	TARGET viewer
-    POST_BUILD
-	COMMAND python
-	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l viewer -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#    TARGET viewer
+#    POST_BUILD
+#	COMMAND python
+#	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l viewer -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)
 
 if (PLATFORM_WINDOWS)
 ADD_CUSTOM_COMMAND(

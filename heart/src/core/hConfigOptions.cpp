@@ -50,7 +50,7 @@ void loadCVars(lua_State* L, hIFileSystem* file_system)
         file->Read(script, (hUint)file->Length());
     }
     if (int error = luaL_loadbuffer(lua_, script, file->Length(), "/script/config.lua") != LUA_OK) {
-        hcAssertFailMsg("config.lua Failed to compile, Error: %d", error);
+        hcAssertFailMsg("config.lua Failed to compile, Error: %d\nScript:%s", error, script);
     } else if (lua_pcall(lua_, 0, LUA_MULTRET, 0) != 0) {
         hcAssertFailMsg("config.lua Failed to run, Error: %s", lua_tostring(lua_, -1));
         lua_pop(lua_, 1);

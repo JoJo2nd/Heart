@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+
 set(SHADER_BUILDER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -33,6 +35,7 @@ add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
 target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
 
+set_target_properties(shader_builder PROPERTIES PREFIX "")
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
 set_property(TARGET shader_builder PROPERTY DEBUG_POSTFIX)
 
@@ -51,12 +54,12 @@ else()
 	set(PLATTYPE x64)
 endif()
 
-ADD_CUSTOM_COMMAND(
-	TARGET shader_builder
-    POST_BUILD
-    COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET shader_builder
+#    POST_BUILD
+#    COMMAND python
+#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#)
 
 if (PLATFORM_WINDOWS)
 ADD_CUSTOM_COMMAND(

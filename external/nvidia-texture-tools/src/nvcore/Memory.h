@@ -28,7 +28,7 @@ namespace nv
 
 // Override new/delete
 
-inline void * operator new (size_t size) throw()
+inline void * operator new (size_t size) throw(std::bad_alloc)
 {
 	return nv::mem::malloc(size); 
 }
@@ -38,7 +38,7 @@ inline void operator delete (void *p) throw()
 	nv::mem::free(p); 
 }
 
-inline void * operator new [] (size_t size) throw()
+inline void * operator new [] (size_t size) throw(std::bad_alloc)
 {
 	return nv::mem::malloc(size);
 }

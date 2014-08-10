@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 2.8.12.2)
+
 project(HEART)
+
+# Example of setting binary directories
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+#
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
@@ -15,17 +22,19 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua)
   add_definitions(-DPLATFORM_LINUX)
   add_definitions(-DGLEW_NO_GLU)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -msse -msse2")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -msse -msse2")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -msse -msse2") # add -v for verbose
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -msse -msse2") # add -v for verbose
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --verbose") # add --verbose for verbose
 
   if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -w -stdlib=libc++ -std=c++11 -fPIC")
+    message("Using Clang compiler")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++11 -stdlib=libc++ -lc++abi")
     # work around for clang missing std headers...? 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/include/c++/4.8.1")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/include/c++/4.8.1 -I/usr/include/x86_64-linux-gnu -I/usr/include/x86_64-linux-gnu/c++/4.8")
   else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -w -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++11")
   endif()
+
   if (SSE3_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
   endif()
@@ -217,9 +226,11 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_DEBUG OFF)
 
 find_package(Protobuf REQUIRED)
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system regex serialization)
+find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization)
 find_package(SDL2 REQUIRED)
-find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html media xrc gl qa richtext propgrid)
+# !!JM Disable viewer
+#find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html xrc qa richtext propgrid) # removed media & gl
+# !!JM Disable viewer end
 
 find_package(OpenGL REQUIRED)
 set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")
@@ -248,11 +259,6 @@ set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")
 #set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
-set(nvtt_INCLUDE_DIR CACHE PATH "Directory for nVidia Texture Tools includes")
-set(nvtt_LIB_DIR CACHE PATH "Directory for nVidia Texture Tools libraries")
-set(nvtt_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools binaries")
-set(nvtt_DEPENDENT_BIN_DIR CACHE PATH "Directory for nVidia Texture Tools external binaries")
-set(wxLua_BIN_DIR_ROOT CACHE PATH "Root directory for wxLua .dlls (Release and Debug)") 
 
 #Common var
 set(EXTERNAL_SRC_ROOT
@@ -328,6 +334,11 @@ if (PLATFORM_WINDOWS)
   add_definitions(-DLUA_BUILD_AS_DLL)
 endif()
 
+message("protoc path: ${PROTOBUF_PROTOC_EXECUTABLE}")
+message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
+message("protobuf lib: ${PROTOBUF_LIBRARY}")
+message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
+
 add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")
@@ -361,7 +372,11 @@ add_subdirectory("tools/proto_full")
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/memtrack")
 endif()
-add_subdirectory("tools/viewer")
+# !!JM Disable viewer
+#add_subdirectory("tools/builder")
+# !!JM Replace with builder
+add_subdirectory("tools/builder")
+# !!JM Disable viewer end
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")
 endif()
