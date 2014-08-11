@@ -33,7 +33,7 @@
 
 namespace Heart {
     void* hMalloc(hSize_t size, hSize_t alignment/*=HEART_MIN_ALLOC_ALIGNMENT*/) {
-        void* ptr = memalign(size, alignment);
+        void* ptr = malloc(size);//memalign(size, alignment);
         Heart::hMemTracking::TrackAlloc(""/*const hChar* tag*/, 0/*hSize_t line*/, nullptr/*void* heap*/, ptr, size, ""/*const hChar* heaptag*/);    
         return ptr;
     }

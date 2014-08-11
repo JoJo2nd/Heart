@@ -140,3 +140,7 @@ void HEART_API hcSetOutputStringCallback( hPrintfCallback cb )
 {
     g_printcallback = cb;
 }
+
+void debug_break_now() {
+    raise(SIGTRAP);
+}

@@ -99,5 +99,6 @@ namespace Heart {
         hUint32                     wndHeight_;
         hMutex                      exitMutex_;
         hConditionVariable          exitSignal_;
+        hBool                       hasFocus_;
     };
 }

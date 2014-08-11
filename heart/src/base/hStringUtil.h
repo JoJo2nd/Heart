@@ -42,7 +42,7 @@ namespace Heart
 
     inline void HEART_API hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
     {
-        hcAssert( (hUint32)hStrLen( src ) < destlen );
+        hcAssert( (hUint32)hStrLen( src ) <= destlen );
         strcpy( dest, src );
     }
 

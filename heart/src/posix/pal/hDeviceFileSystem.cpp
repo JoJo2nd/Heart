@@ -79,7 +79,7 @@ public:
             mounts_[mountCount_].mountPath_[mounts_[mountCount_].pathLen_-1]=0;
             --mounts_[mountCount_].pathLen_;
         }
-        hcPrintf("Mounting [%s] to %s:/", mounts_[mountCount_].mountPath_, mounts_[mountCount_].mountName_);
+        hcPrintf("Mounting [%s] to /%s", mounts_[mountCount_].mountPath_, mounts_[mountCount_].mountName_);
         ++mountCount_;
         mountAccessMutex_.Unlock();
     }
@@ -358,17 +358,20 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     void hdGetSystemPath(const hChar* path, hChar* outdir, hUint size) {
+        hcAssert(path && *path == '/');         // paths must be absolute
+        hcAssert(hStrChr(path, ':')==nullptr);  // we don't use the mount:/ style anymore
+        ++path;
         g_fileSystemInfo.lock();
         hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
-        const hChar* term=hStrChr(path, ':');
+        const hChar* term=hStrChr(path, '/');
         if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
             hUint os=(hUint)((hPtrdiff_t)term-(hPtrdiff_t)path);
             hStrNCopy(mnt, os+1, path);
             hUint mountlen=g_fileSystemInfo.getMount(mnt, outdir, size);
             if (mountlen==0) {
-                hStrCopy(outdir, size, path);
+                hStrCopy(outdir, size, path-1);
             } else {
-                hStrCopy(outdir+mountlen, size-mountlen, path+os+1);
+                hStrCopy(outdir+mountlen, size-mountlen, path+os);
             }
         } else {
             hStrCopy(outdir, size, path);
@@ -381,10 +384,14 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     hUint hdGetSystemPathSize(const hChar* path) {
+        hcAssert(path && *path == '/');         // paths must be absolute
+        hcAssert(hStrChr(path, ':')==nullptr);  // we don't use the mount:/ style anymore
+        ++path;
         g_fileSystemInfo.lock();
         hChar mnt[hdFileSystemMountInfo::s_maxMountLen+1];
         hUint ret=hStrLen(path);
-        const hChar* term=hStrChr(path, ':');
+        // look for /$mount_name$/
+        const hChar* term=hStrChr(path, '/');
         if (term && (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path) < hdFileSystemMountInfo::s_maxMountLen) {
             hStrNCopy(mnt, (hUint)((hPtrdiff_t)term-(hPtrdiff_t)path)+1, path);
             ret+=g_fileSystemInfo.getMountPathlength(mnt);

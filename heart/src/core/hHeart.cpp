@@ -32,11 +32,7 @@ distribution.
 #include "Heart.h"
 #include "lua/hLuaHeartLib.h"
 
-namespace Heart
-{
-
-    extern hProfilerManager* g_ProfilerManager_;
-
+namespace Heart {
     hChar           hHeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
 
@@ -77,8 +73,8 @@ namespace Heart
 
         hdMountPoint(processDir_, "proc");
         hdMountPoint(workingDir_, "cd");
-        hdMountPoint("cd:/../scripts/", "script");
-        hdMountPoint("cd:/../gamedata/", "data");
+        hdMountPoint("/cd/../scripts/", "script");
+        hdMountPoint("/cd/../gamedata/", "data");
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 
@@ -142,8 +138,6 @@ namespace Heart
             config_.vsync_);
         hResourceManager::initialise(fileMananger_, jobManager_);
         //!!JM todo: soundManager_->Initialise();
-
-        g_ProfilerManager_ = new hProfilerManager;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         // Initialise Engine scripting elements ///////////////////////////////////////////////////////////
@@ -276,7 +270,6 @@ namespace Heart
         jobManager_->shutdown();
 
         //delete GetGlobalHeap(), debugInfo_; GetGlobalHeap(), debugInfo_ = nullptr;
-        delete g_ProfilerManager_; g_ProfilerManager_ = nullptr;
         //delete debugMenuManager_; debugMenuManager_ = nullptr; !!JM
         delete luaVM_; luaVM_ = nullptr;
         //delete console_; console_ = nullptr; !!JM
@@ -456,7 +449,7 @@ hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* engine )
 
 void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* engine )
 {
-    Heart::hd_CloseSharedLib(engine->sharedLib_);
+    //Heart::hd_CloseSharedLib(engine->sharedLib_);
 
     delete engine;
 }

@@ -143,7 +143,7 @@ if (PLATFORM_WINDOWS)
         "${HEART_SOURCE_DIR}/src/win32/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
-		"${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"
@@ -162,6 +162,8 @@ if (PLATFORM_LINUX)
         "${HEART_SOURCE_DIR}/src/posix/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.cpp"
+        "${HEART_SOURCE_DIR}/src/posix/pal/opengl/*.h"
+        "${HEART_SOURCE_DIR}/src/posix/pal/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"        
     )
