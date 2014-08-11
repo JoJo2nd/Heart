@@ -33,6 +33,10 @@ fi
 * >> ./configure --prefix=$HOME/dev/installs
 * >> make
 * >> make install
+* cd to protobuf/python directory
+* >> sudo apt-get install python-setuptools
+* >> python setup.py build
+* >> python setup.py install
 * should now be in $HOME/dev/installs
 * download boost 1.53
 * unzip somewhere and cd to directory
@@ -54,6 +58,13 @@ fi
 * >> sudo apt-get install libx11-dev libxmu-dev libxi-dev libgl-dev
 * >> export GLEW_DEST=$HOME/dev/installs
 * >> make install
+* download and install Freeimage
+* install lua-protobuf 
+* >> git clone https://github.com/JoJo2nd/lua-protobuf
+* cd to install directory
+* >> sudo apt-get install python-setuptools
+* >> python setup.py build
+* >> python setup.py install
 * cd $heart_repo
 * mkdir $build_dir
 * rm -rf *

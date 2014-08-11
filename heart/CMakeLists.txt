@@ -229,7 +229,10 @@ if (UNITY_BUILD)
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
 endif()
 
-set(HEART_GEN_FILES ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor.h")
+set(HEART_GEN_FILES ${HEART_GEN_FILES} 
+    "${HEART_SOURCE_DIR}/src/base/hFunctor.h"
+    "${HEART_SOURCE_DIR}/src/events/hPublisher_gen.inl"
+    )
 add_custom_command(
       OUTPUT "${HEART_SOURCE_DIR}/src/base/hFunctor.h"
       WORKING_DIRECTORY "${HEART_SOURCE_DIR}/src/base/"
@@ -238,7 +241,16 @@ add_custom_command(
       DEPENDS "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py"
       COMMENT "Generating hFunctor.h"
       VERBATIM )
-set_source_files_properties("${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)    
+set_source_files_properties("${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)
+add_custom_command(
+      OUTPUT "${HEART_SOURCE_DIR}/src/events/hPublisher_gen.inl"
+      WORKING_DIRECTORY "${HEART_SOURCE_DIR}/src/events/"
+      COMMAND python
+      ARGS "${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" -i 10 -o "hPublisher_gen.inl"
+      DEPENDS "${HEART_SOURCE_DIR}/src/events/hEvent_gen.py"
+      COMMENT "Generating Events Code"
+      VERBATIM )
+set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPERTIES HEADER_FILE_ONLY TRUE)    
 
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 

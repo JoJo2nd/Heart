@@ -15,6 +15,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua)
   add_definitions(-DPLATFORM_LINUX)
   add_definitions(-DGLEW_NO_GLU)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -msse -msse2")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -msse -msse2")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
