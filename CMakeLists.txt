@@ -332,7 +332,8 @@ add_subdirectory ("external/enet")
 if (MSVC)
   add_subdirectory ("external/libprof")
 endif()
-add_subdirectory ("external/luadb")
+# !!JM Disabled. May reimplement in the future
+#add_subdirectory ("external/luadb")
 add_subdirectory ("heart")
 
 add_subdirectory ("testbed")
