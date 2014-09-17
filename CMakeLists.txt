@@ -210,27 +210,10 @@ elseif (FORCE_ENABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
 endif(FORCE_DISABLE_MEMORY_TRACKING)
 
-# Helper setup vars
-set(Boost_NO_SYSTEM_PATHS ON)
-set(BOOST_ROOT_HINT "C:/set/me/to/something/valid" CACHE PATH "Root path for boost 1.53.0")
-set(BOOST_LIBRARYDIR_HINT "C:/set/me/to/something/valid" CACHE PATH "Root library path for boost 1.53.0")
-set(BOOST_ROOT ${BOOST_ROOT_HINT})
-set(BOOST_LIBRARYDIR ${BOOST_LIBRARYDIR_HINT})
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/modules/")
 
-#Boost setup
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON) 
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_DEBUG OFF)
-
 find_package(Protobuf REQUIRED)
-find_package(Boost 1.53.0 REQUIRED COMPONENTS filesystem system serialization)
 find_package(SDL2 REQUIRED)
-# !!JM Disable viewer
-#find_package(wxWidgets REQUIRED COMPONENTS base core adv aui html xrc qa richtext propgrid) # removed media & gl
-# !!JM Disable viewer end
 
 find_package(OpenGL REQUIRED)
 set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")
@@ -258,7 +241,6 @@ endif(BUILD_64_BIT)
 set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")
-#set(wxWidgets_CUSTOM_SEARCH_DIR "C:/wxWidgets_sdk_folder/include" CACHE PATH "Directory for wxWidget librarys")
 
 #Common var
 set(EXTERNAL_SRC_ROOT

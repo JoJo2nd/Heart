@@ -41,9 +41,9 @@ source_group(source FILES ${LUADB_SRC_FILES})
 source_group(autogen FILES ${ProtoSources} ${ProtoHeaders})
 source_group(proto_files FILES ${PROTO_SRC_FILES})
 
-include_directories(${LUADB_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${LUADB_INCLUDE_DIRS})
 add_library(luadb SHARED ${LUADB_SRC_FILES} ${ProtoSources} ${ProtoHeaders} ${PROTO_SRC_FILES})
-target_link_libraries(luadb lua52 proto enet ${LDB_PLATFORM_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(luadb lua52 proto enet ${LDB_PLATFORM_LIBS})
 set_property(TARGET luadb PROPERTY DEBUG_POSTFIX)
 
 ADD_CUSTOM_COMMAND(

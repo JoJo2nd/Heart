@@ -29,11 +29,11 @@ set(SB_LIBS
 
 source_group(source  FILES ${SHADER_BUILDER_FILES})
 
-include_directories(${SHADER_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${SHADER_BUILDER_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
 add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
-target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
-target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${PLATFORM_LIBS})
 
 set_target_properties(shader_builder PROPERTIES PREFIX "")
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)

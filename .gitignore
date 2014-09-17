@@ -39,3 +39,4 @@
 /deploy/tools/*.so
 /external/nvidia-texture-tools/Makefile
 /external/nvidia-texture-tools/build
+/tools/builder/src/lua/*.inl

@@ -26,8 +26,6 @@
 *********************************************************************/
 
 #include "fontloader.h"
-#include <boost/smart_ptr.hpp>
-#include <boost/filesystem.hpp>
 #include <fstream>
 
 //////////////////////////////////////////////////////////////////////////

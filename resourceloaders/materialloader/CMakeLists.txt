@@ -23,11 +23,11 @@ if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()
 
-include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS})
 link_directories(${MATERIAL_BUILDER_LIB_DIRS})
 add_library(material_builder SHARED ${MATERIAL_BUILDER_SRC_FILES})
-target_link_libraries(material_builder debug lua52 crypto proto ${PROTOBUF_LIBRARY_DEBUG} ${Boost_LIBRARIES})
-target_link_libraries(material_builder optimized lua52 crypto proto ${PROTOBUF_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(material_builder debug lua52 crypto proto ${PROTOBUF_LIBRARY_DEBUG})
+target_link_libraries(material_builder optimized lua52 crypto proto ${PROTOBUF_LIBRARY})
 
 set_target_properties(material_builder PROPERTIES PREFIX "")
 set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)

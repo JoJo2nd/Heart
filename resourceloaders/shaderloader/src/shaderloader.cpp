@@ -30,8 +30,6 @@
 #include <map>
 #include <vector>
 #include <fstream>
-#include <boost/filesystem.hpp>
-#include <boost/smart_ptr.hpp>
 #if defined (PLATFORM_WINDOWS)
 #   include <d3d11.h>
 #   include <d3d11shader.h>

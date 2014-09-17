@@ -30,7 +30,6 @@
 #ifndef luaFILESYSTEM_H__
 #define luaFILESYSTEM_H__
 
-#include <boost/smart_ptr.hpp>
 extern "C" {
 #   include "lua.h"
 #   include "lauxlib.h"

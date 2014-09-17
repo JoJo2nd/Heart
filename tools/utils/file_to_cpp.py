@@ -16,7 +16,9 @@ def main():
             w.write("/*******************************************************\n")
             w.write("  Auto-Generated file. Do not edit\n");
             w.write("*******************************************************/\n\n");
+            w.write("#ifdef __cplusplus\n")
             w.write("extern \"C\" {\n")
+            w.write("#endif //__cplusplus\n")
             w.write("const size_t %s_data_len = %d;\n" % (args.dataname, data_len))
             w.write("const char %s_data[] = {\n" % args.dataname)
             for y in range(data_len):
@@ -26,7 +28,9 @@ def main():
                 if (y+1) % 50 == 0:
                     w.write("\n")
             w.write("0x0};\n")
+            w.write("#ifdef __cplusplus\n")
             w.write("} //extern \"C\"\n")
+            w.write("#endif //__cplusplus\n")
             
 if __name__ == '__main__':
     main()

@@ -32,14 +32,14 @@ else()
 	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
 endif()
 
-include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS})
 link_directories(
 	${TEXTURE_BUILDER_LIB_DIRS}
 	${nvtt_LIB_DIR}
 	${freeimage_LIB_DIR})
 add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto nvtt freeimage ${Boost_LIBRARIES})
-target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto nvtt freeimage ${Boost_LIBRARIES})
+target_link_libraries(texture_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto nvtt freeimage)
+target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto nvtt freeimage)
 
 set_target_properties(texture_builder PROPERTIES PREFIX "")
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)

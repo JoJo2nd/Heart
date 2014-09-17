@@ -27,8 +27,6 @@
 
 #include "nvtt/nvtt.h"
 #include "FreeImage.h"
-#include <boost/filesystem.hpp>
-#include <boost/smart_ptr.hpp>
 #include <fstream>
 #include <string>
 #include <stdio.h>

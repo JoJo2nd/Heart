@@ -26,8 +26,6 @@
 *********************************************************************/
 
 #include "cryptoBase64.h"
-#include <boost/smart_ptr.hpp>
-#include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
 #include <algorithm>

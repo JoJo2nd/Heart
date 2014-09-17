@@ -31,7 +31,6 @@
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 #include "osfuncs.h"
-#include <boost/filesystem.hpp>
 
 static int ldb_api ldb_print(lua_State* L) {
     int n = lua_gettop(L);  /* number of arguments */

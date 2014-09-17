@@ -38,11 +38,11 @@ endif()
 
 source_group(source  FILES ${MESH_BUILDER_SRC_FILES})
 
-include_directories(${MESH_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${MESH_BUILDER_INCLUDE_DIRS})
 link_directories(${MESH_BUILDER_LIB_DIRS})
 add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES})
-target_link_libraries(mesh_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto ${Boost_LIBRARIES})
-target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto ${Boost_LIBRARIES})
+target_link_libraries(mesh_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto)
+target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto)
 
 set_target_properties(mesh_builder PROPERTIES PREFIX "")
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)

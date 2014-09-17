@@ -31,7 +31,6 @@ extern "C" {
 #include "lauxlib.h"
 }
 #include "lua_filesystem.h"
-#include <boost/filesystem.hpp>
 
 #define nullptr (std::nullptr_t())
 

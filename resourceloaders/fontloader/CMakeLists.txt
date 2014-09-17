@@ -25,10 +25,10 @@ if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()
 
-include_directories(${FONT_BUILDER_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(${FONT_BUILDER_INCLUDE_DIRS})
 link_directories(${FONT_BUILDER_LIB_DIRS})
 add_library(font_builder SHARED ${FONT_BUILDER_SRC_FILES} ${FONT_BUILDER_HDR_FILES})
-target_link_libraries(font_builder lua52 crypto ${Boost_LIBRARIES} ${PLATFORM_LIBS})
+target_link_libraries(font_builder lua52 crypto ${PLATFORM_LIBS})
 
 set_target_properties(font_builder PROPERTIES PREFIX "")
 set_target_properties(font_builder PROPERTIES OUTPUT_NAME font)
