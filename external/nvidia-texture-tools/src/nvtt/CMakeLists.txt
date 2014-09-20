@@ -62,28 +62,28 @@ INSTALL(FILES nvtt.h DESTINATION include/nvtt)
 
 
 # test executables
-ADD_EXECUTABLE(nvcompress tools/compress.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvcompress nvcore nvmath nvimage nvtt)
+#ADD_EXECUTABLE(nvcompress tools/compress.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvcompress nvcore nvmath nvimage nvtt)
 
-ADD_EXECUTABLE(nvdecompress tools/decompress.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvdecompress nvcore nvmath nvimage)
+#ADD_EXECUTABLE(nvdecompress tools/decompress.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvdecompress nvcore nvmath nvimage)
 
-ADD_EXECUTABLE(nvddsinfo tools/ddsinfo.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvddsinfo nvcore nvmath nvimage)
+#ADD_EXECUTABLE(nvddsinfo tools/ddsinfo.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvddsinfo nvcore nvmath nvimage)
 
-ADD_EXECUTABLE(nvimgdiff tools/imgdiff.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvimgdiff nvcore nvmath nvimage)
+#ADD_EXECUTABLE(nvimgdiff tools/imgdiff.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvimgdiff nvcore nvmath nvimage)
 
-ADD_EXECUTABLE(nvassemble tools/assemble.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvassemble nvcore nvmath nvimage)
+#ADD_EXECUTABLE(nvassemble tools/assemble.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvassemble nvcore nvmath nvimage)
 
-ADD_EXECUTABLE(filtertest tests/filtertest.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(filtertest nvcore nvmath nvimage)
+#ADD_EXECUTABLE(filtertest tests/filtertest.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(filtertest nvcore nvmath nvimage)
 
-ADD_EXECUTABLE(nvzoom tools/resize.cpp tools/cmdline.h)
-TARGET_LINK_LIBRARIES(nvzoom nvcore nvmath nvimage)
+#ADD_EXECUTABLE(nvzoom tools/resize.cpp tools/cmdline.h)
+#TARGET_LINK_LIBRARIES(nvzoom nvcore nvmath nvimage)
 
-INSTALL(TARGETS nvcompress nvdecompress nvddsinfo nvimgdiff nvassemble nvzoom DESTINATION bin)
+#INSTALL(TARGETS nvcompress nvdecompress nvddsinfo nvimgdiff nvassemble nvzoom DESTINATION bin)
 
 # UI tools
 IF(QT4_FOUND AND NOT MSVC)

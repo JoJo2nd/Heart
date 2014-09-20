@@ -173,8 +173,8 @@ else()
 endif()
 
 #config vars
-set(CMAKE_USE_RELATIVE_PATHS OFF)
-set(CMAKE_DEBUG_POSTFIX "_d")
+#set(CMAKE_USE_RELATIVE_PATHS OFF)
+#set(CMAKE_DEBUG_POSTFIX "")
 
 #build options
 option(USE_XNAMATH "Use old XNA math libraries" OFF)
@@ -321,7 +321,6 @@ message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
 message("protobuf lib: ${PROTOBUF_LIBRARY}")
 message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
 
-add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")
 add_subdirectory ("external/lua")
@@ -329,6 +328,8 @@ add_subdirectory ("external/minizip")
 add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
+add_subdirectory ("external/nvidia-texture-tools")
+add_subdirectory ("external/physfs")
 if (MSVC)
   add_subdirectory ("external/libprof")
 endif()

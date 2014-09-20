@@ -38,5 +38,6 @@
 /deploy/tools/wxutil.lua
 /deploy/tools/*.so
 /external/nvidia-texture-tools/Makefile
+/external/nvidia-texture-tools/*.user
 /external/nvidia-texture-tools/build
 /tools/builder/src/lua/*.inl
