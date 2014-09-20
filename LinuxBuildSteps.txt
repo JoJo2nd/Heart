@@ -71,4 +71,6 @@ fi
 * mkdir $build_dir
 * rm -rf *
 * cmake -G "Unix Makefiles" ./../ -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/usr/local/lib;$HOME/dev/installs/lib;$HOME/dev/installs/lib64" -DCMAKE_PROGRAM_PATH="$HOME/dev/usr/local/bin;$HOME/dev/installs/bin"
+-- or --
+* cmake -G "Unix Makefiles" [path to source] -DCMAKE_INCLUDE_PATH="$HOME/dev/usr/local/include;$HOME/dev/installs/include;$HOME/dev/installs/include/SDL2" -DCMAKE_LIBRARY_PATH="$HOME/dev/installs/lib;$HOME/dev/installs/lib64" -DCMAKE_PROGRAM_PATH="$HOME/dev/installs/bin" -D_CMAKE_TOOLCHAIN_PREFIX=llvm- -DCMAKE_BUILD_TYPE=Debug/Release
 * Profit
