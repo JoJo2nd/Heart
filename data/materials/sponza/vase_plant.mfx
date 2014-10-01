@@ -1,4 +1,0 @@
-<material inherit="sponza_basic_trans.mfx">
-    <parameter name="albedoTexture" type="texture">SPONZA.VASE_PLANT</parameter>
-    <parameter name="normalTexture" type="texture">SPONZA.VASE_PLANT_SPEC</parameter>
-</material>

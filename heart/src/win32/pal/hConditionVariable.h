@@ -39,8 +39,11 @@ namespace Heart {
         ~hConditionVariable() {
 
         }
-        void wait(hMutex* mtx) {
-            SleepConditionVariableCS(&var_, &mtx->mutex_, INFINITE);
+        hBool tryWait(hMutex* mtx) {
+            return SleepConditionVariableCS(&var_, &mtx->mutex_, 0) != 0;
+        }
+        hBool wait(hMutex* mtx) {
+            return SleepConditionVariableCS(&var_, &mtx->mutex_, INFINITE) != 0;
         }
         /* Wake a single thread waiting on CV */
         void signal() {

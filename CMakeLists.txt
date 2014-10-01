@@ -8,6 +8,10 @@ project(HEART)
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 #
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
   set(PLATFORM_WINDOWS true)
@@ -266,6 +270,12 @@ set(ENET_INCLUDE_DIR
 set(LUA_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/lua/src"
 )
+set(MINFS_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/minfs/src"
+)
+set(PHYSFS_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/physfs"
+)
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
@@ -328,9 +338,10 @@ add_subdirectory ("external/minizip")
 add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
+add_subdirectory ("external/minfs")
 add_subdirectory ("external/nvidia-texture-tools")
-add_subdirectory ("external/physfs")
-if (MSVC)
+#add_subdirectory ("external/physfs")
+if (PLATFORM_WINDOWS)
   add_subdirectory ("external/libprof")
 endif()
 # !!JM Disabled. May reimplement in the future
@@ -354,7 +365,7 @@ add_subdirectory("tools/lualibs/lua_process")
 add_subdirectory("tools/proto")
 add_subdirectory("tools/proto_full")
 if (PLATFORM_WINDOWS)
-  add_subdirectory("tools/memtrack")
+  # add_subdirectory("tools/memtrack")
 endif()
 # !!JM Disable viewer
 #add_subdirectory("tools/builder")

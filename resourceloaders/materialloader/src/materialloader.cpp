@@ -42,6 +42,7 @@
 #endif
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/io/coded_stream.h"
+#include "../../minfs/src/minfs.h"
 #if defined (_MSC_VER)
 #   pragma warning(pop)
 #endif
@@ -263,7 +264,6 @@ int MB_API materialCompile(lua_State* L) {
 try {
     Heart::proto::MaterialResource materialresource;
     std::vector<std::string> openedfiles;
-    boost::system::error_code ec;
     std::string filepath;
     rapidxml::xml_document<> xmldoc;
     hUint filesize=0;
@@ -271,23 +271,20 @@ try {
     StrVectorType includes;
 
     filepath=lua_tostring(L, 1);
-    filesize=(hUint)boost::filesystem::file_size(filepath.c_str(), ec);
-    if (ec) {
-        luaL_errorthrow(L, "Unable to get file size for file %s", filepath.c_str());
-    }
+    filesize=(hUint)minfs_get_file_size(filepath.c_str());
 
-    boost::shared_array<hChar> xmlmem = boost::shared_array<hChar>(new hChar[filesize+1]);
+    std::vector<hChar> xmlmem(filesize+1);
     std::ifstream infile;
     infile.open(filepath);
     if (!infile.is_open()) {
         luaL_errorthrow(L, "Unable to open file %s", filepath.c_str());
     }
-    memset(xmlmem.get(), 0, filesize+1);
-    infile.read(xmlmem.get(), filesize);
+    memset(xmlmem.data(), 0, filesize+1);
+    infile.read(xmlmem.data(), filesize);
     infile.close();
     openedfiles.push_back(filepath);
     try {
-        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.data());
     } catch (...) {
         luaL_errorthrow(L, "Failed to parse material file");
     }
@@ -357,18 +354,17 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         } else {
             strncpy(fullbasepath, basepathrel, pathlen-strlen(xmlpath));
         }
-        boost::shared_array<hChar> ptr;
+        std::vector<hChar> ptr;
         std::ifstream incfile;
-        boost::system::error_code ec;
-        hUint incfilesize=(hUint)boost::filesystem::file_size(fullbasepath, ec);
+        hUint incfilesize=(hUint)minfs_get_file_size(fullbasepath);
         incfile.open(fullbasepath);
         if (incfile.is_open()) {
             rapidxml::xml_document<> xmldocbase;
-            ptr=boost::shared_array<hChar>(new hChar[incfilesize+1]);
-            memset(ptr.get(), 0, incfilesize);
-            incfile.read(ptr.get(), incfilesize);
+            ptr.resize(incfilesize+1);
+            memset(ptr.data(), 0, incfilesize);
+            incfile.read(ptr.data(), incfilesize);
             try {
-                xmldocbase.parse< rapidxml::parse_default >(ptr.get());
+                xmldocbase.parse< rapidxml::parse_default >(ptr.data());
             } catch (...){
                 return;
             }

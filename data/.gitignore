@@ -1,8 +1,0 @@
-/fonts/*.tga
-/fonts/*.cpp
-/fonts/*.fnt
-/mesh/*
-/textures/*
-/debug_font_data.c
-/texture_data_store.xml
-/.tmp/

@@ -26,22 +26,9 @@
 *********************************************************************/
 
 #include "fontloader.h"
+#include "minfs.h"
 #include <fstream>
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-#define FONT_MAGIC_NUM              hMAKE_FOURCC('h','F','N','T')
-#define FONT_STRING_MAX_LEN         (32)
-#define FONT_MAJOR_VERSION          (((hUint16)1))
-#define FONT_MINOR_VERSION          (((hUint16)0))
-#define FONT_VERSION                ((FONT_MAJOR_VERSION << 16)|FONT_MINOR_VERSION)
-
-//#define FONT_CPP_OUTPUT
-
-#define DLL_EXPORT
-#define FB_API
+#include <memory>
 
 #if 0
 //////////////////////////////////////////////////////////////////////////
@@ -96,14 +83,13 @@ Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* i
 
 int fontCompile(lua_State* L) {
     using namespace Heart;
-    using namespace boost;
+    
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
     luaL_checktype(L, 1, LUA_TTABLE);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
-    system::error_code ec;
     hFloat fontScale=1.f;// = hAtoF(params->GetBuildParameter("SCALE", "1"));
     const hChar* cheaderoutput=NULL;
     lua_getfield(L, 3, "scale");
@@ -130,21 +116,17 @@ int fontCompile(lua_State* L) {
     std::ifstream infile;
     rapidxml::xml_document<> xmldoc;
 
-    filesize=(hUint)filesystem::file_size(filepath, ec);
-    if (ec) {
-        luaL_error(L, "failed to read file size of file %s", filepath);
-        return 0;
-    }
+    filesize=(hUint)minfs_get_file_size(filepath);
     infile.open(filepath);
     if (!infile.is_open()) {
         luaL_error(L, "failed to open file %s", filepath);
         return 0;
     }
 
-    scoped_array<hChar> xmlmem(new hChar[filesize+1]);
+    std::shared_ptr<hChar> xmlmem(new hChar[filesize+1]);
     memset(xmlmem.get(), 0, filesize);
     infile.read(xmlmem.get(), filesize);
-    xmlmem[filesize] = 0;
+    xmlmem.get()[filesize] = 0;
 
     try{
         xmldoc.parse< rapidxml::parse_default >(xmlmem.get());

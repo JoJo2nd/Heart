@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/game/${CMAKE_CFG_INTDIR}")
+if (PLATFORM_LINUX)
+#    #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/game/${CMAKE_CFG_INTDIR}")
+endif()
 
 set(TESTBED_SOURCE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -79,18 +81,16 @@ add_executable(heart_testbed WIN32 ${TESTBED_HDR_FILES} ${TESTBED_SRC_FILES} ${T
 set_property(TARGET heart_testbed PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(heart_testbed heart)
 
-message("${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py -l heart_testbed -s ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR} -d ${CMAKE_SOURCE_DIR}/deploy/game")
-
-#ADD_CUSTOM_COMMAND(
-#    TARGET heart_testbed
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-#)
-if (MSVC)
+if (PLATFORM_WINDOWS)
+#    ADD_CUSTOM_COMMAND(
+#        TARGET heart_testbed
+#        POST_BUILD
+#        COMMAND python
+#        ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l heart_testbed -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
+#    )
     ADD_CUSTOM_COMMAND(
     	TARGET heart_testbed
         POST_BUILD
-    	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/deploy/game" -l d3dcompiler
+    	COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -s "$ENV{WindowsSDKDir}redist/d3d/${PLATTYPE}/" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}" -l d3dcompiler
     )
 endif()

@@ -96,7 +96,9 @@ if (MSVC)
 	add_definitions(-D_SCL_SECURE_NO_WARNINGS)
 endif()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+if (PLATFORM_LINUX)
+#  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+endif()
 
 include_directories(${BUILDER_INCLUDE_DIRS})
 link_directories(
@@ -112,15 +114,17 @@ else()
 endif()
 add_executable(builder ${ALL_SRC_FILES})
 set_property(TARGET builder PROPERTY DEBUG_POSTFIX)
-target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full)
-#target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_process proto_lua proto_full)
+#target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full)
+target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52)
 
-#ADD_CUSTOM_COMMAND(
-#    TARGET BUILDER
-#    POST_BUILD
-#	COMMAND python
-#	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l BUILDER -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
+if (PLATFORM_WINDOWS)
+#  ADD_CUSTOM_COMMAND(
+#      TARGET BUILDER
+#      POST_BUILD
+#  	COMMAND python
+#  	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l BUILDER -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#  )
+endif()
 
 if (PLATFORM_WINDOWS)
 #ADD_CUSTOM_COMMAND(

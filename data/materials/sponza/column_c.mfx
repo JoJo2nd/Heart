@@ -1,5 +1,0 @@
-<material inherit="sponza_basic.mfx">
-    <parameter name="albedoTexture" type="texture">SPONZA.SPONZA_COLUMN_C_DIFF</parameter>
-    <parameter name="normalTexture" type="texture">SPONZA.COLUMN_C_BUMP_NRM</parameter>
-    <parameter name="specTexture" type="texture">SPONZA.SPONZA_COLUMN_C_SPEC</parameter>
-</material>

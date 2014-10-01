@@ -41,7 +41,7 @@ namespace Heart {
         ~hConditionVariable() {
             pthread_cond_destroy(&var_);
         }
-        bool tryWait(hMutex* mtx) {
+        hBool tryWait(hMutex* mtx) {
             struct timespec ts;
             ts.tv_sec = 0;
             ts.tv_nsec = 0;

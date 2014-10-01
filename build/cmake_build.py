@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    heart_src_path = realpath(path_join(args.path,'../heart/src'))
+    heart_src_path = realpath(path_join(args.root,'../heart/src'))
     build_script_path = realpath(path_join(args.path,'../build'))
     heart_output_path = realpath(path_join(args.path,'../heart/src'))
 

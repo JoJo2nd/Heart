@@ -266,7 +266,7 @@ if (PLATFORM_WINDOWS)
     ADD_CUSTOM_COMMAND(
         TARGET heart
         POST_BUILD
-        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-#        COMMAND "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.bat" SDL2 "${SDL2_LIB_PATH}" "${CMAKE_SOURCE_DIR}/deploy/game"
+        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
     )
 endif()

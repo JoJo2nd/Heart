@@ -1,3 +1,0 @@
-<material inherit="fabric_a.mfx">
-    <parameter name="albedoTexture" type="texture">SPONZA.SPONZA_CURTAIN_DIFF</parameter>
-</material>

@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
-
 set(FONT_BUILDER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 set( FONT_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
     "${FONT_BUILDER_SRC_DIR}/include"
+    "${MINFS_INCLUDE_DIR}"
 )
 set( FONT_BUILDER_HDR_FILES 
     "${FONT_BUILDER_SRC_DIR}/include/fontloader.h"
@@ -28,7 +27,7 @@ endif()
 include_directories(${FONT_BUILDER_INCLUDE_DIRS})
 link_directories(${FONT_BUILDER_LIB_DIRS})
 add_library(font_builder SHARED ${FONT_BUILDER_SRC_FILES} ${FONT_BUILDER_HDR_FILES})
-target_link_libraries(font_builder lua52 crypto ${PLATFORM_LIBS})
+target_link_libraries(font_builder lua52 crypto minfs ${PLATFORM_LIBS})
 
 set_target_properties(font_builder PROPERTIES PREFIX "")
 set_target_properties(font_builder PROPERTIES OUTPUT_NAME font)

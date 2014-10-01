@@ -39,10 +39,3 @@ include_directories(${LUA_INCLUDE_DIRS})
 add_library(lua52 SHARED ${LUA_SRC_FILES} ${LUA_HDR_FILES})
 target_link_libraries(lua52 ${LUA_LIBS} ${PROFILE_LIBS})
 set_property(TARGET lua52 PROPERTY DEBUG_POSTFIX)
-
-ADD_CUSTOM_COMMAND(
-	TARGET lua52
-    POST_BUILD
-	COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/game"
-	COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua52 -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)

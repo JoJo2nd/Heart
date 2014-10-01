@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
-
 set(MATERIAL_BUILDER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 set( MATERIAL_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
+	${MINFS_INCLUDE_DIR}
     "${MATERIAL_BUILDER_SRC_DIR}/src"
 )
 file(GLOB MATERIAL_BUILDER_SRC_FILES 
@@ -26,8 +25,8 @@ endif()
 include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS})
 link_directories(${MATERIAL_BUILDER_LIB_DIRS})
 add_library(material_builder SHARED ${MATERIAL_BUILDER_SRC_FILES})
-target_link_libraries(material_builder debug lua52 crypto proto ${PROTOBUF_LIBRARY_DEBUG})
-target_link_libraries(material_builder optimized lua52 crypto proto ${PROTOBUF_LIBRARY})
+target_link_libraries(material_builder debug lua52 crypto proto minfs ${PROTOBUF_LIBRARY_DEBUG})
+target_link_libraries(material_builder optimized lua52 crypto proto minfs ${PROTOBUF_LIBRARY})
 
 set_target_properties(material_builder PROPERTIES PREFIX "")
 set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)

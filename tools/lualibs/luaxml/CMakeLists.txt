@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
-
 if (MSVC)
     # Lua is using float (not doubles, which is it's normal mode) so 
     # it generates alot of warnings, hide them for the time being.

@@ -45,9 +45,3 @@ include_directories(${LUADB_INCLUDE_DIRS})
 add_library(luadb SHARED ${LUADB_SRC_FILES} ${ProtoSources} ${ProtoHeaders} ${PROTO_SRC_FILES})
 target_link_libraries(luadb lua52 proto enet ${LDB_PLATFORM_LIBS})
 set_property(TARGET luadb PROPERTY DEBUG_POSTFIX)
-
-ADD_CUSTOM_COMMAND(
-	TARGET luadb
-    POST_BUILD
-    COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l luadb -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-)

@@ -1,217 +1,97 @@
 /********************************************************************
-
-    filename:   lua_filesystem.cpp  
-    
-    Copyright (c) 1:4:2013 James Moran
-    
-    This software is provided 'as-is', without any express or implied
-    warranty. In no event will the authors be held liable for any damages
-    arising from the use of this software.
-    
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-    
-    1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
-    
-    2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
-    
-    3. This notice may not be removed or altered from any source
-    distribution.
-
+    Written by James Moran
+    Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-extern "C" {
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
-}
 #include "lua_filesystem.h"
-
-#define nullptr (std::nullptr_t())
-
+#include "minfs.h"
+#include <string.h>
+#include <stdlib.h>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_modifiedDate(lua_State* L) {
-    luaL_checkstring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(lua_tostring(L, -1));
-    time_t t=boost::filesystem::last_write_time(filepath, ec);
-    if (!ec) {
-        lua_pushnumber(L, (lua_Number)t);
-    } else {
+    const char* filepath = luaL_checkstring(L, -1);
+    if (!minfs_path_exist(filepath)) {
         lua_pushnil(L);
+        return 1;
     }
+    lua_pushnumber(L, (lua_Number)minfs_get_file_mdate(filepath));
     return 1;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_fileSize(lua_State* L) {
-    luaL_checkstring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(lua_tostring(L, -1));
-    size_t t=boost::filesystem::file_size(filepath, ec);
-    if (!ec) {
-        lua_pushinteger(L, t);
-    } else {
-        lua_pushnil(L);
-    }
+    const char* filepath = luaL_checkstring(L, -1);
+    lua_pushnumber(L, (lua_Number)minfs_get_file_size(filepath));
     return 1;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_currentDate(lua_State* L) {
-    time_t t;
-    time(&t);
-    lua_pushnumber(L, (lua_Number)t);
+    lua_pushnumber(L, (lua_Number)minfs_get_current_file_time());
     return 1;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_exists(lua_State* L) {
-    luaL_checkstring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(lua_tostring(L, -1));
-    bool r=boost::filesystem::exists(filepath, ec);
-    if (!ec) {
-        lua_pushboolean(L, r);
-    } else {
-        lua_pushboolean(L, false);
-    }
+    const char* filepath = luaL_checkstring(L, -1);
+    lua_pushboolean(L, minfs_path_exist(filepath));
     return 1;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_isFile(lua_State* L) {
-    luaL_checkstring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(lua_tostring(L, -1));
-    bool r=boost::filesystem::is_regular_file(filepath, ec);
-    if (!ec) {
-        lua_pushboolean(L, r);
-    } else {
-        lua_pushboolean(L, false);
-    }
+    lua_pushboolean(L, minfs_is_file(luaL_checkstring(L, -1)));
     return 1;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_isDirectory(lua_State* L) {
-    luaL_checkstring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(lua_tostring(L, -1));
-    bool r=boost::filesystem::is_directory(filepath, ec);
-    if (!ec) {
-        lua_pushboolean(L, r);
-    } else {
-        lua_pushboolean(L, false);
-    }
+    lua_pushboolean(L, minfs_is_directory(luaL_checkstring(L, -1)));
     return 1;
 }
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+static int fs_isSymLink(lua_State* L) {
+    lua_pushboolean(L, minfs_is_sym_link(luaL_checkstring(L, -1)));
+    return 1;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_makeDirectories(lua_State* L) {
-    luaL_checkstring(L, -1);
-    std::string p=lua_tostring(L, -1);
-    boost::system::error_code ec;
-    boost::filesystem::path filepath(p);
-    bool r=boost::filesystem::create_directories(filepath, ec);
-    if (!ec) {
-        lua_pushboolean(L, r);
-    } else {
-        lua_pushboolean(L, false);
-    }
-    return 1;
+    minfs_create_directories(luaL_checkstring(L, -1));
+    return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_getCurrentPath(lua_State* L) {
-    boost::system::error_code ec;
-    boost::filesystem::path cd;
-    cd=boost::filesystem::current_path(ec);
-    if (ec) {
-        lua_pushnil(L);
-    } else {
-        std::string cdstr=cd.generic_string();
-        lua_pushstring(L, cdstr.c_str());
-    }
-    return 1;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-static int fs_absolute(lua_State* L) {
-    std::string ret;
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    if (lua_isstring(L, 2)) {
-        boost::filesystem::path base = luaL_checkstring(L, 2);
-        ret = boost::filesystem::absolute(path, base).generic_string();
-        lua_pushstring(L, ret.c_str());
-    } else {
-        ret = boost::filesystem::absolute(path).generic_string();
-        lua_pushstring(L, ret.c_str());
-    }
-    return 1;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-static int fs_canonical(lua_State* L) {
-    std::string ret;
-    boost::system::error_code ec;
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    if (lua_isstring(L, 2)) {
-        boost::filesystem::path base = luaL_checkstring(L, 2);
-        ret = boost::filesystem::canonical(path, base, ec).generic_string();
-        if (ec) {
-            lua_pushnil(L);
-        } else {
-            lua_pushstring(L, ret.c_str());
-        }
-    } else {
-        ret = boost::filesystem::canonical(path, ec).generic_string();
-        if (ec) {
-            lua_pushnil(L);
-        } else {
-            lua_pushstring(L, ret.c_str());
-        }
-    }
-    return 1;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-static int fs_genericPath(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    std::string ret = path.generic_string();
-    lua_pushstring(L, ret.c_str());
-    return 1;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-static int fs_nativePath(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    std::string ret = path.string();
-    lua_pushstring(L, ret.c_str());
+    luaL_Buffer currentpath;
+    size_t len = minfs_current_working_directory_len();
+    
+    luaL_buffinitsize(L, &currentpath, len);
+    len = minfs_current_working_directory(currentpath.b, len);
+    luaL_pushresultsize(&currentpath, len);
     return 1;
 }
 
@@ -219,9 +99,22 @@ static int fs_nativePath(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_fileWithExt(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    std::string ret = path.filename().generic_string();
-    lua_pushstring(L, ret.c_str());
+    size_t len, newlen;
+    const char* filepath = luaL_checklstring(L, 1, &len);
+    luaL_Buffer buffer;
+    luaL_buffinitsize(L, &buffer, len);
+
+    if (!minfs_is_file(filepath)) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    newlen = minfs_path_leaf(filepath, buffer.b, len);
+    if (FS_FAILED(newlen)) {
+        lua_pushnil(L);
+    } else {
+        luaL_pushresultsize(&buffer, newlen);
+    }
     return 1;
 }
 
@@ -229,9 +122,22 @@ static int fs_fileWithExt(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_pathWithoutExt(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    std::string ret = path.replace_extension().generic_string();
-    lua_pushstring(L, ret.c_str());
+    size_t len, newlen;
+    const char* filepath = luaL_checklstring(L, 1, &len);
+    luaL_Buffer buffer;
+    luaL_buffinitsize(L, &buffer, len);
+
+    if (!minfs_is_file(filepath)) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    newlen = minfs_path_without_ext(filepath, buffer.b, len);
+    if (FS_FAILED(newlen)) {
+        lua_pushnil(L);
+    } else {
+        luaL_pushresultsize(&buffer, newlen);
+    }
     return 1;
 }
 
@@ -239,65 +145,101 @@ static int fs_pathWithoutExt(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 static int fs_pathRoot(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    std::string ret = path.parent_path().generic_string();
-    lua_pushstring(L, ret.c_str());
+    size_t len, newlen;
+    const char* filepath = luaL_checklstring(L, 1, &len);
+    luaL_Buffer buffer;
+    luaL_buffinitsize(L, &buffer, len);
+
+    newlen = minfs_path_parent(filepath, buffer.b, len);
+    if (FS_FAILED(newlen)) {
+        lua_pushnil(L);
+    } else {
+        luaL_pushresultsize(&buffer, newlen);
+    }
     return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static int fs_readDir(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-    
-    boost::system::error_code ec;
-    boost::filesystem::directory_iterator itr(path, ec);
 
-    if (ec) {
-        lua_pushnil(L);
-        return 1;
-    }
+typedef struct readDirData {
+    lua_State* L;
+    int* tableindex;
+    int  stackindex;
+} readDirData_t;
+
+void readDirCallback(const char* origpath, const char* file, void* opaque) {
+    lua_State* L = ((readDirData_t*)opaque)->L;
+    int* tableindex = ((readDirData_t*)opaque)->tableindex;
+    luaL_Buffer buffer;
+    luaL_buffinit(L, &buffer);
+    luaL_addstring(&buffer, origpath);
+    luaL_addstring(&buffer, "/");
+    luaL_addstring(&buffer, file);
+    luaL_pushresult(&buffer);
+    lua_rawseti(L, -2, (*tableindex)++);
+}
+
+static int fs_readDir(lua_State* L) {
+    const char* filepath = luaL_checkstring(L, 1);
+    char guessstratch[512];
+    char* scratch;
+    int tableindex;
+    size_t scratchsize = sizeof(guessstratch);
+    readDirData_t cbdata = {L, &tableindex, 0};
 
     lua_newtable(L);
-    int tableindex = 1;
-    for (boost::filesystem::directory_iterator n; itr != n; itr.increment(ec)) {
-        if (ec) {
-            break; //just return what we got
+    tableindex = 1;
+    if (minfs_read_directory(filepath, guessstratch, sizeof(guessstratch), readDirCallback, &cbdata) == NO_MEM) {
+        // restart with new table & scratch data
+        for (scratch = lua_newuserdata(L, scratchsize); minfs_read_directory(filepath, scratch, scratchsize, readDirCallback, &cbdata) == NO_MEM; ) {
+            scratchsize *= 2;
+            lua_pop(L, 2);
         }
-        std::string entry = itr->path().generic_string();
-        lua_pushstring(L, entry.c_str());
-        lua_rawseti(L, -2, tableindex++);
+        // remove the scratch from the stack
+        lua_remove(L, -2);
     }
-
     return 1; // return table 
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static int fs_readDirRecursive(lua_State* L) {
-    boost::filesystem::path path = luaL_checkstring(L, 1);
-
-    boost::system::error_code ec;
-    boost::filesystem::recursive_directory_iterator itr(path, boost::filesystem::symlink_option::recurse, ec);
-
-    if (ec) {
-        lua_pushnil(L);
-        return 1;
+// the table being written is assumed to be at the top of the stack
+void fs_read_entries(lua_State* L, const char* origpath, int* tableindex) {
+    char* scratch = NULL;
+    size_t scratchsize = LUAL_BUFFERSIZE;
+    luaL_Buffer buffer;
+    MinFSDirectoryEntry_t* entries;
+    
+    for (scratch = lua_newuserdata(L, scratchsize); !(entries = minfs_read_directory_entries(lua_tostring(L, -1), scratch, scratchsize)); lua_pop(L, 1)) {
+        scratchsize *= 2;
     }
+    for (; entries; entries = entries->next) {
+        luaL_buffinit(L, &buffer);
+        luaL_addstring(&buffer, origpath);
+        luaL_addstring(&buffer, "/");
+        luaL_addstring(&buffer, entries->entryName);
+        luaL_pushresult(&buffer);
+        if (minfs_is_directory(lua_tostring(L, -1))) {
+            lua_pushvalue(L, -3); // the table is assumed to be at the top of the stack
+            fs_read_entries(L, lua_tostring(L, -2), tableindex);
+            lua_pop(L, 1);
+        }
+        lua_rawseti(L, -3, (*tableindex)++);
+    }
+
+    // remove the scratch from the stack
+    lua_pop(L, 1);
+}
+
+static int fs_readDirRecursive(lua_State* L) {
+    const char* filepath = luaL_checkstring(L, 1);
+    int tableindex = 0;
 
     lua_newtable(L);
-    int tableindex = 1;
-    for (boost::filesystem::recursive_directory_iterator n; itr != n; itr.increment(ec)) {
-        if (ec) {
-            break; //just return what we got
-        }
-        std::string entry = itr->path().generic_string();
-        lua_pushstring(L, entry.c_str());
-        lua_rawseti(L, -2, tableindex++);
-    }
-
+    fs_read_entries(L, filepath, &tableindex);
     return 1; // return table 
 }
 
@@ -580,7 +522,6 @@ static int fs_wildcardPathMatch(lua_State* L) {
     return 1;
 }
 
-extern "C" {
 //Lua entry point calls
 luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
     static const luaL_Reg filesystemlib[] = {
@@ -592,10 +533,6 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"isdirectory",fs_isDirectory},
         {"makedirectories",fs_makeDirectories},
         {"getcurrentpath",fs_getCurrentPath},
-        {"absolute",fs_absolute},
-        {"canonical",fs_canonical},
-        {"genericpath",fs_genericPath},
-        {"nativepath",fs_nativePath},
         {"filewithext", fs_fileWithExt},
         {"pathwithoutext", fs_pathWithoutExt},
         {"parentpath", fs_pathRoot},
@@ -609,4 +546,3 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
     //lua_setglobal(L, "filesystem");
     return 1;
 }
-};

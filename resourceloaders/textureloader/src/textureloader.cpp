@@ -52,6 +52,7 @@ extern "C" {
 #endif
 
 #include "resource_texture.pb.h"
+#include <memory>
 
 #if defined PLATFORM_WINDOWS
 #   define TB_API __cdecl

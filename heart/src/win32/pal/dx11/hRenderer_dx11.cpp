@@ -383,7 +383,7 @@ static hDX11System dx11;
         sd.BufferDesc.RefreshRate.Numerator = 60;
         sd.BufferDesc.RefreshRate.Denominator = 1;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        sd.OutputWindow = dx11.system_->GetSystemHandle()->hWnd_;
+        sd.OutputWindow = NULL;//dx11.system_->GetSystemHandle()->hWnd_;
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
         sd.Windowed = dx11.system_->getOwnWindow() ? !fullscreen : TRUE;
@@ -450,7 +450,7 @@ static hDX11System dx11;
     void destroy() {
         // !!JM todo: a better method may be to push a kill command and 
         // let the thread wind down normally
-        dx11.renderKill_.Signal();
+        dx11.renderKill_.signal();
         dx11.renderThread_.join();
 #ifdef HEART_DO_FRAMETIMES
         dx11.timerDisjoint_->Release();

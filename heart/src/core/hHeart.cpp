@@ -382,8 +382,6 @@ Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks
     Heart::hSysCall::hInitSystemDebugLibs();
     heart_thread_prof_begin("profile_startup.prof");
     Heart::hdDeviceConfig deviceConfig;
-    deviceConfig.instance_ = hInstance;
-    deviceConfig.hWnd_ = hWnd;
 
     Heart::hHeartEngine* engine = 
         new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);

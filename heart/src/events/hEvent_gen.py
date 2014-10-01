@@ -72,7 +72,7 @@ def outputPublisherClassDef(outfile, argcount):
     if argcount == 0:
         outfile.write("    hFUNCTOR_TYPEDEF(void(*)(")
     else:
-        outfile.write("    hFUNCTOR_TYPEDEF(void(*)(")
+        outfile.write("    hFUNCTOR_TYPEDEF_T(void(*)(")
     for i in range(0, argcount):
         if i > 0: outfile.write(", ")
         temp = Template("Param${itr}Type")

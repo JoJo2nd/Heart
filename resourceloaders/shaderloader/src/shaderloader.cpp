@@ -38,6 +38,7 @@
 #include "GL/glew.h"
 #include "SDL.h"
 #include "resource_shader.pb.h"
+#include "minfs.h"
 
 extern "C" {
 #include "lua.h"
@@ -152,8 +153,8 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
 uint initGLCompiler(std::string* out_errors);
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
-uint parseShaderSource(const boost::filesystem::path& shader_path, std::vector<boost::filesystem::path> in_include_paths, 
-std::string* out_source_string, std::map<boost::filesystem::path, std::string>* inc_ctx);
+uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths, 
+std::string* out_source_string, std::map<std::string, std::string>* inc_ctx);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -161,7 +162,7 @@ std::string* out_source_string, std::map<boost::filesystem::path, std::string>* 
 
 int SB_API shaderCompiler(lua_State* L) {
     using namespace Heart;
-    using namespace boost;
+
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
     luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
@@ -169,7 +170,8 @@ int SB_API shaderCompiler(lua_State* L) {
     luaL_checktype(L, 4, LUA_TSTRING);
 
 try {
-    system::error_code ec;
+    std::vector<char> scratchbuffer;
+    scratchbuffer.reserve(1024);
     proto::eShaderType progtype;
     const char* entry = nullptr;
     const char* profile = nullptr;
@@ -260,18 +262,19 @@ try {
     lua_pop(L, 1);
 
     const char* path=lua_tostring(L, 1);
-    std::vector<boost::filesystem::path> base_include_paths;
+    std::vector<std::string> base_include_paths;
 
     lua_getfield(L, 3, "include_dirs");
     if (lua_istable(L, -1)) {
-        auto source_root = filesystem::path(path).parent_path();
+        size_t pathlen=strlen(path)+1;
+        scratchbuffer.resize(strlen(path)+1);
+        minfs_path_parent(path, scratchbuffer.data(), pathlen);
+        std::string source_root = scratchbuffer.data();
         lua_pushnil(L);
         while (lua_next(L, -2) != 0) {
             /* uses 'key' (at index -2) and 'value' (at index -1) */
             if (lua_isstring(L, -1)) {
-                auto include_path = source_root / lua_tostring(L, -1);
-                auto include_path_str = include_path.generic_string();
-                base_include_paths.push_back(include_path);
+                base_include_paths.push_back(source_root + "/" + lua_tostring(L, -1));
             }
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
@@ -292,7 +295,7 @@ try {
 
     proto::ShaderResourceContainer resource_container;
     std::string full_shader_source;
-    std::map<boost::filesystem::path, std::string> parse_ctx;
+    std::map<std::string, std::string> parse_ctx;
     parseShaderSource(path, base_include_paths, &full_shader_source, &parse_ctx);
 
     ShaderCompiler* current_compiler = compilers;
@@ -355,7 +358,7 @@ try {
     lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
     int idx=1;
     for (auto i=parse_ctx.begin(), n=parse_ctx.end(); i!=n; ++i) {
-        lua_pushstring(L, i->first.generic_string().c_str());
+        lua_pushstring(L, i->first.c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
@@ -370,27 +373,26 @@ try {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-uint parseShaderSource(const boost::filesystem::path& shader_path, 
-std::vector<boost::filesystem::path> in_include_paths, 
+uint parseShaderSource(const std::string& shader_path, 
+std::vector<std::string> in_include_paths, 
 std::string* out_source_string,
-std::map<boost::filesystem::path, std::string>* inc_ctx) {
-    using namespace boost;
-
-    system::error_code ec;
+std::map<std::string, std::string>* inc_ctx) {
+    
+    std::vector<char> scratch;
+    scratch.reserve(1024);
     std::map<std::string, std::string> inc_map;
-    in_include_paths.insert(in_include_paths.begin(), filesystem::canonical(shader_path.parent_path()));
+    scratch.resize(shader_path.length()+1);
+    minfs_path_parent(shader_path.c_str(), scratch.data(), scratch.size());
+    in_include_paths.insert(in_include_paths.begin(), scratch.data());
     out_source_string->clear();
-    bool exist=filesystem::exists(shader_path, ec);
-    if (ec && !exist) {
+    bool exist=minfs_is_file(shader_path.c_str()) != 0;
+    if (!exist) {
         return -1;
     }
-    size_t filesize=filesystem::file_size(shader_path, ec);
-    if (ec) {
-        return -1;
-    }
+    size_t filesize=minfs_get_file_size(shader_path.c_str());
     char* buffer = new char[filesize+1];
     memset(buffer, 0, filesize+1);
-    FILE* f = fopen(shader_path.generic_string().c_str(), "rt");
+    FILE* f = fopen(shader_path.c_str(), "rt");
     fread(buffer, 1, filesize, f);
     fclose(f);
     *out_source_string = buffer;
@@ -406,18 +408,17 @@ std::map<boost::filesystem::path, std::string>* inc_ctx) {
         std::string inc_string;
         bool did_include=true;
         for (auto i=in_include_paths.begin(), n=in_include_paths.end(); i!=n; ++i) {
-            filesystem::path inc_file = *i / filesystem::path((*re_i)[1].str());
-            inc_file =filesystem::canonical(inc_file, ec);
-            if (ec) {
+            std::string inc_file = *i + "/" + (*re_i)[1].str();
+            if (minfs_is_file(inc_file.c_str()) == 0) {
                 continue;
             }
-            const auto inc_source_itr = inc_ctx->find(inc_file);
+            const auto inc_source_itr = inc_ctx->find((*re_i)[1].str());
             if (inc_source_itr != inc_ctx->end()) {
                 did_include = true;
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_source_itr->second));
             } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx) == 0) {
                 did_include = true;
-                inc_ctx->insert(std::pair<boost::filesystem::path, std::string>(inc_file, inc_string));
+                inc_ctx->insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
             }
         }

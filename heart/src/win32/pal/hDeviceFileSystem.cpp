@@ -25,7 +25,7 @@
 
 *********************************************************************/
 
-#include "pal/hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 #include "pal/hMutex.h"
 #include "base/hStringUtil.h"
 
@@ -167,8 +167,6 @@ private:
         DWORD creation = 0;
         DWORD flags = FILE_ATTRIBUTE_NORMAL;
         HANDLE fhandle;
-
-        hcAssert( pOut != hNullptr );
 
         if ( mode[ 0 ] == 'r' || mode[ 0 ] == 'R' )
         {
@@ -550,9 +548,9 @@ private:
         return mm;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+    void* hdMMapGetBase(hdMemoryMappedFile *mmap) {
+        return !mmap ? mmap->basePtr_ : nullptr;
+    }
 
     void hdUnmap(hdMemoryMappedFile* mmapview) {
         UnmapViewOfFile(mmapview->basePtr_);

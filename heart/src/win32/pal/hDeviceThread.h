@@ -36,11 +36,11 @@ namespace Heart
 {
 namespace Device
 {
-    hForceInline
+    hFORCEINLINE
     void* HEART_API GetCurrentThreadID() { return (void*)GetCurrentThreadId(); }
-    hForceInline
+    hFORCEINLINE
     void  HEART_API ThreadSleep( DWORD dwMilliseconds ) { Sleep( dwMilliseconds ); }
-    hForceInline
+    hFORCEINLINE
     void  HEART_API ThreadYield() { SwitchToThread(); }
 }
 

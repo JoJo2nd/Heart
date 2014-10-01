@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 ENABLE_PROFILE_IF_SET()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 
 if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings

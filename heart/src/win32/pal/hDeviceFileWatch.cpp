@@ -25,11 +25,11 @@
 
 *********************************************************************/
 
-#include "pal/hDeviceFilewatch.h"
+#include "base/hDeviceFilewatch.h"
 #include <winsock2.h>
 #include <windows.h>
 #include "base/hUTF8.h"
-#include "hDeviceFileSystem.h"
+#include "base/hDeviceFileSystem.h"
 #include "base/hStringUtil.h"
 #include "base/hMemory.h"
 

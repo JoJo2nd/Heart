@@ -8,15 +8,15 @@ local protobuf = require "proto_lua"
 
 local G = _G
 local buildables = {}
-local data_path = filesystem.canonical(in_data_path) 
-local output_data_path = filesystem.canonical(in_output_data_path)	 
+local data_path = string.gsub(in_data_path, "\\", "/");
+local output_data_path = string.gsub(in_output_data_path, "\\", "/");
 local job_count = in_cores or 3									 
 local verbose = in_verbose or true								 
 local current_jobs = 0
 local processes = {}
 local success = 0
 local failure = 0
-local temp_data_path = data_path.."/.tmp" 
+local temp_data_path = string.gsub(data_path.."/.tmp", "\\", "/");
 
 if filesystem.isdirectory(temp_data_path) == false then
     filesystem.makedirectories(temp_data_path)
@@ -30,9 +30,9 @@ print(string.format("Build output path %s", output_data_path))
 print(string.format("Build tmp path %s", temp_data_path))
 print(string.format("Build core count %s", job_count))
 
-local function verbose_log(str)
+local function verbose_log(str, ...)
     if verbose == true then
-        print("[LOG]:"..str)
+        print("[LOG]:"..string.format(str, ...))
     end
 end
 verbose_log("verbose log is on")
@@ -94,8 +94,8 @@ local function add_build_folder(folder_path, type_parameters, package)
         type                = type,
         --xpcall             = --xpcall
     }
-    folder_path = filesystem.canonical(folder_path)
-   
+    folder_path = folder_path
+    verbose_log("adding build folder %s", folder_path)
     local local_type_parameters = type_parameters or {}
     local local_package = package or ""
     local local_add_build_folder = function (local_folder_path)
@@ -113,10 +113,18 @@ local function add_build_folder(folder_path, type_parameters, package)
             local_type_parameters[res_type][parameter] = value
         end,
         add_files = function(wildcard, res_type, type_param_or)
+            verbose_log("add_files(%s, %s, %s)", wildcard, res_type, type_param_or)
             local full_wildcard = folder_path.."/"..wildcard
             local full_folder_path = filesystem.parentpath(full_wildcard)
             local dir_files = filesystem.readdir(full_folder_path)
-            if dir_files == nil then return end
+            if dir_files == nil then
+                verbose_log("filesystem.readdir(%s) returned nothing", full_folder_path)
+                return
+            end
+            verbose_log("filesystem.readdir(%s) returned %d", full_folder_path, #dir_files)
+            for _, v in pairs(dir_files) do
+                verbose_log("readdir returned %s", v)
+            end
             local new_parameters = deepcopy(local_type_parameters[res_type]) or {}
             if type(type_param_or) == "table" then
                 for k, v in pairs(type_param_or) do
@@ -124,13 +132,14 @@ local function add_build_folder(folder_path, type_parameters, package)
                 end
             end
             for _, v in pairs(dir_files) do
-                verbose_log(string.format("Checking for file %s", v))
+                verbose_log("Checking for file %s", v)
                 if filesystem.isfile(v) then
-                    verbose_log(string.format("File %s exists", v))
+                    verbose_log("File %s exists", v)
                     local res_path = v
                     local res_id = string.gsub(filesystem.pathwithoutext(res_path), data_path, "")
+                    verbose_log("res_id = %s, res_path = %s, wildcard = %s", res_id, res_path, full_wildcard)
                     if filesystem.wildcardpathmatch(full_wildcard, res_path) == true then
-                        verbose_log(string.format("File %s matches wildcard %s", v, full_wildcard))
+                        verbose_log("File %s matches wildcard %s", v, full_wildcard)
                         if buildables[res_id] == nil then
                             buildables[res_id] = {}
                             buildables[res_id].full_path = res_path
@@ -139,7 +148,7 @@ local function add_build_folder(folder_path, type_parameters, package)
                             buildables[res_id].res_type = res_type
                             buildables[res_id].parameters = new_parameters
                         else
-                            verbose_log(string.format("Skipped resource %s because it's already added", res_path))
+                            verbose_log("Skipped resource %s because it's already added", res_path)
                         end
                     end
                 end
@@ -147,7 +156,9 @@ local function add_build_folder(folder_path, type_parameters, package)
         end,
     }
     local build_script = folder_path.."/.build_script"
+    verbose_log("checking for build script %s", build_script)
     if filesystem.isfile(build_script) then
+        verbose_log("found build script %s", build_script)
         local build, errmsg = loadfile(build_script, "t", env)
         if build == nil then
             error("unable to run build script '"..build_script.."'. Error: "..errmsg)
@@ -205,11 +216,11 @@ function write_packages(buildable_resources)
             local path = filesystem.pathwithoutext(line)
             if buildable_resources[path] ~= nil then
                 packages[v.package].depends[buildable_resources[path].package] = buildable_resources[path].package
-                verbose_log(string.format("resource %s depends on %s", v.full_path, path))
+                verbose_log("resource %s depends on %s", v.full_path, path)
             end
         end
         dep_file:close()
-        verbose_log(string.format("adding resource %s to package %s", v.full_path, v.package))
+        verbose_log("adding resource %s to package %s", v.full_path, v.package)
     end
     
     -- Write out packages

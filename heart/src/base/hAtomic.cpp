@@ -74,6 +74,11 @@ namespace hAtomic {
         return val;
     }
 
+    hUint32 HEART_API AtomicGet(const hAtomicInt& i) {
+        LWMemoryBarrier();
+        return i.value_;
+    }
+
     hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount) {
         /*
          * 'cos I always forget how to do this. 

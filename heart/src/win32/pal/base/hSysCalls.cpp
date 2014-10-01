@@ -137,8 +137,7 @@ namespace hMemTracking
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-    static hForceInline void StackTraceToFile(FILE* f)
-    {
+    static hFORCEINLINE void StackTraceToFile(FILE* f) {
         static const hUint32 callstackLimit = 256;
         unsigned int   i;
         void         * stack[ 256 ];

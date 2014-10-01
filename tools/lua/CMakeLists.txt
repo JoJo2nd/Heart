@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
-
 if (MSVC)
     add_definitions(/wd"4244")
     add_definitions(/wd"4146")
@@ -50,5 +48,5 @@ ADD_CUSTOM_COMMAND(
 	#COMMAND python
 	#ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 	COMMAND python
-	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r .*\\.lua -s "${LUA_SA_SRC_DIR}/src/lua" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r .*\\.lua -s "${LUA_SA_SRC_DIR}/src/lua" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
 )

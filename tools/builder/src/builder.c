@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #if !defined(LUA_PROGNAME)
-#define LUA_PROGNAME		"lua"
+#define LUA_PROGNAME		"builder"
 #endif
 
 #if !defined(LUA_MAXINPUT)
@@ -111,24 +111,13 @@ static void laction (int i) {
 }
 
 
-static void print_usage (const char *badoption) {
-  luai_writestringerror("%s: ", progname);
-  if (badoption[1] == 'e' || badoption[1] == 'l')
-    luai_writestringerror("'%s' needs argument\n", badoption);
-  else
-    luai_writestringerror("unrecognized option '%s'\n", badoption);
-  luai_writestringerror(
-  "usage: %s [options] [script [args]]\n"
-  "Available options are:\n"
-  "  -e stat  execute string " LUA_QL("stat") "\n"
-  "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
-  "  -l name  require library " LUA_QL("name") "\n"
-  "  -v       show version information\n"
-  "  -E       ignore environment variables\n"
-  "  --       stop handling options\n"
-  "  -        stop handling options and execute stdin\n"
-  ,
-  progname);
+static void print_usage() {
+    printf("%s: ", progname);
+    printf(
+        "usage: %s [src data path] [dst data path]\n"
+        "Available options are:\n"
+        "none...yet",
+        progname);
 }
 
 
@@ -395,8 +384,25 @@ static int collectargs (char **argv, int *args) {
   }
   return 0;
 }
+/*
+static int getoption(const char* optionstr, const char* validoptions) {
+    int quoteflag=0;
+    int escapeflag=0;
+    int optionflag=0;
+    const char* s=optionstr;
 
+    for (;*s; ++s) {
+        if (isspace(*s)) {
+            continue;
+        }
+        if (*s == '-') {
+            optionflag=1;
+        }
+    }
 
+    return 0;
+}
+*/
 static int runargs (lua_State *L, char **argv, int n) {
   int i;
   for (i = 1; i < n; i++) {
@@ -483,20 +489,49 @@ static int pmain (lua_State *L) {
 
 
 int main (int argc, char **argv) {
-  int status, result;
+  int result;
   lua_State *L = luaL_newstate();  /* create state */
+  luaL_openlibs(L);  /* open libraries */
+
+  //really trivial args parsing
+  if (argc != 3) {
+      print_usage();
+      return EXIT_FAILURE;
+  }
+
   if (L == NULL) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
-  /* call 'pmain' in protected mode */
+
+  lua_pushstring(L, argv[1]);
+  lua_setglobal(L, "in_data_path");
+
+  lua_pushstring(L, argv[2]);
+  lua_setglobal(L, "in_output_data_path");
+
+  result = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "data builder script");
+  if (result == LUA_ERRSYNTAX) {
+      printf("syntax error in builder script");
+      return EXIT_FAILURE;
+  }
+  if (result != LUA_OK) {
+      printf("Memory error loading builder script");
+      return EXIT_FAILURE;
+  }
+  result = lua_pcall(L, 0, LUA_MULTRET, 0);
+  if (result == LUA_ERRRUN) {
+      printf("Runtime Error: %s", lua_tostring(L,-1));
+  }
+  /* call 'pmain' in protected mode 
   lua_pushcfunction(L, &pmain);
-  lua_pushinteger(L, argc);  /* 1st argument */
-  lua_pushlightuserdata(L, argv); /* 2nd argument */
+  lua_pushinteger(L, argc);  /* 1st argument *
+  lua_pushlightuserdata(L, argv); /* 2nd argument *
   status = lua_pcall(L, 2, 1, 0);
-  result = lua_toboolean(L, -1);  /* get result */
+  result = lua_toboolean(L, -1);  /* get result *
   finalreport(L, status);
   lua_close(L);
-  return (result && status == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+  */
+  return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

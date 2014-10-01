@@ -1,3 +1,0 @@
-<material inherit="sponza_basic_trans.mfx">
-    <parameter name="albedoTexture" type="texture">SPONZA.CHAIN_TEXTURE</parameter>
-</material>

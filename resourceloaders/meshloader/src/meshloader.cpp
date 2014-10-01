@@ -50,6 +50,7 @@
 #include "resource_mesh.pb.h"
 
 #include "Heart.h" //TODO: remove this include?
+#include "minfs.h"
 
 #if defined PLATFORM_WINDOWS
 #   define MB_API __cdecl
@@ -111,7 +112,7 @@ void GetMeshBounds(const hFloat* in, hUint inele, hUint verts, hFloat* min, hFlo
 int MB_API meshCompile(lua_State* L)
 {
     using namespace Heart;
-    using namespace boost;
+
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
     luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
@@ -129,15 +130,11 @@ try {
 
     std::string filepath=lua_tostring(L, 1);
     size_t filesize;
-    system::error_code ec;
     rapidxml::xml_document<> xmldoc;
-    shared_array<char> xmlmem;
+    std::vector<char> xmlmem;
     std::list< std::string > dependentres;
 
-    filesize=filesystem::file_size(filepath.c_str(), ec);
-    if (ec) {
-        luaL_errorthrow(L, "Failed to read % file size", filepath.c_str());
-    }
+    filesize=minfs_get_file_size(filepath.c_str());
     std::ifstream infile;
 
     infile.open(filepath);
@@ -147,13 +144,13 @@ try {
 
     openedfiles.push_back(filepath);
 
-    xmlmem = shared_array<char>(new char[filesize+1]);
-    infile.read(xmlmem.get(), filesize);
+    xmlmem.resize(filesize+1);
+    infile.read(xmlmem.data(), filesize);
     xmlmem[filesize] = 0;
     infile.close();
 
     try {
-        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
+        xmldoc.parse< rapidxml::parse_default >(xmlmem.data());
     } catch (...) {
         luaL_errorthrow(L, "XML parse failed");
     }
@@ -210,7 +207,6 @@ try {
 //////////////////////////////////////////////////////////////////////////
 
 void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* mesh, std::list< std::string >* depres) {
-    using namespace boost;
 
     Heart::hXMLGetter renderablenode = xLODData.FirstChild("renderable");
     for (; renderablenode.ToNode(); renderablenode=renderablenode.NextSibling()) {
@@ -231,14 +227,14 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* 
             const hChar* encodeddata=s.GetValueString();
             hUint encodeddatasize=s.GetValueStringLen();
             hUint decodeddatasize=cyBase64DecodeCalcRequiredSize(encodeddata, encodeddatasize);
-            auto decodeddata=shared_array<char>(new char[decodeddatasize]);
-            cyBase64Decode(encodeddata, encodeddatasize, decodeddata.get(), decodeddatasize);
+            std::vector<char> decodeddata(decodeddatasize);
+            cyBase64Decode(encodeddata, encodeddatasize, decodeddata.data(), decodeddatasize);
 
             if (Heart::hStrICmp(s.GetAttributeString("semantic"), "POSITION") == 0) {
-                GetMeshBounds((hFloat*)decodeddata.get(), format, streamcount, boundsMin, boundsMax);
+                GetMeshBounds((hFloat*)decodeddata.data(), format, streamcount, boundsMin, boundsMax);
             }
 
-            streambuf->set_streamdata(decodeddata.get(), decodeddatasize);
+            streambuf->set_streamdata(decodeddata.data(), decodeddatasize);
         }
 
         depres->push_back(renderablenode.GetAttributeString("material"));
@@ -248,11 +244,11 @@ void WriteLODRenderables(const Heart::hXMLGetter& xLODData, Heart::proto::Mesh* 
         if (indexnode.ToNode()) {
             hUint indexcount=indexnode.GetAttributeInt("count",0);
             hUint ibsize=cyBase64DecodeCalcRequiredSize(indexnode.GetValueString(), indexnode.GetValueStringLen());
-            scoped_ptr<char> indexData(new char[ibsize]);
-            cyBase64Decode(indexnode.GetValueString(), indexnode.GetValueStringLen(), indexData.get(), ibsize);
+            std::vector<char> indexData(ibsize);
+            cyBase64Decode(indexnode.GetValueString(), indexnode.GetValueStringLen(), indexData.data(), ibsize);
             
             renderablebuf->set_indexcount(indexcount);
-            renderablebuf->set_indexbuffer(indexData.get(), ibsize);
+            renderablebuf->set_indexbuffer(indexData.data(), ibsize);
             renderablebuf->set_primcount(indexcount/3);
         } else {
             renderablebuf->set_primcount(vtxcount/3);

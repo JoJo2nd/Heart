@@ -1,5 +1,0 @@
-<material inherit="sponza_basic.mfx">
-    <parameter name="albedoTexture" type="texture">SPONZA.VASE_ROUND</parameter>
-    <parameter name="normalTexture" type="texture">SPONZA.VASE_ROUND_BUMP_NRM</parameter>
-    <parameter name="specTexture" type="texture">SPONZA.VASE_ROUND_SPEC</parameter>
-</material>
