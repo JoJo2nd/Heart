@@ -273,8 +273,8 @@ set(LUA_INCLUDE_DIR
 set(MINFS_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/minfs/src"
 )
-set(PHYSFS_INCLUDE_DIR
-    "${EXTERNAL_SRC_ROOT}/physfs"
+set(GETOPT_PORT_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/getopt_port"
 )
 
 if (WIN32)
@@ -331,6 +331,7 @@ message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
 message("protobuf lib: ${PROTOBUF_LIBRARY}")
 message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
 
+add_subdirectory ("external/getopt_port")
 add_subdirectory ("external/zlib")
 add_subdirectory ("external/crypto")
 add_subdirectory ("external/lua")

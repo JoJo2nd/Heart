@@ -30,6 +30,7 @@ set( BUILDER_INCLUDE_DIRS
 	"${TOOLS_SRC_ROOT}/proto/src"
 	"${PROTOBUF_INCLUDE_DIR}"
 	"${GENERATED_PROTO_FULL_INC_DIRS}"
+	"${GETOPT_PORT_INCLUDE_DIR}"
 )
 
 file(GLOB BUILDER_SRC_FILES
@@ -115,7 +116,7 @@ endif()
 add_executable(builder ${ALL_SRC_FILES})
 set_property(TARGET builder PROPERTY DEBUG_POSTFIX)
 #target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full)
-target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52)
+target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 getopt_port)
 
 if (PLATFORM_WINDOWS)
 #  ADD_CUSTOM_COMMAND(

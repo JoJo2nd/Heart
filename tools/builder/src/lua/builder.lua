@@ -11,7 +11,7 @@ local buildables = {}
 local data_path = string.gsub(in_data_path, "\\", "/");
 local output_data_path = string.gsub(in_output_data_path, "\\", "/");
 local job_count = in_cores or 3									 
-local verbose = in_verbose or true								 
+local verbose = in_verbose								 
 local current_jobs = 0
 local processes = {}
 local success = 0
@@ -32,7 +32,7 @@ print(string.format("Build core count %s", job_count))
 
 local function verbose_log(str, ...)
     if verbose == true then
-        print("[LOG]:"..string.format(str, ...))
+        print(string.format(str, ...))
     end
 end
 verbose_log("verbose log is on")

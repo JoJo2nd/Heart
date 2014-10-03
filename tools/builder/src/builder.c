@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "getopt.h"
 #include "lua/builder_script.inl"
 
 #define lua_c
@@ -20,6 +21,7 @@ extern "C" {
 
 #include "lauxlib.h"
 #include "lualib.h"
+#include <ctype.h>
 #ifdef __cplusplus
 } //extern "C" {
 #endif //__cplusplus
@@ -489,49 +491,80 @@ static int pmain (lua_State *L) {
 
 
 int main (int argc, char **argv) {
-  int result;
-  lua_State *L = luaL_newstate();  /* create state */
-  luaL_openlibs(L);  /* open libraries */
+    int result = EXIT_SUCCESS;
+    int verbose = 0, corecount = 2;
+    int c;
+    char* srcpath = NULL, *destpath = NULL; // we leak these
+    const char argopts[] = "vj:s:d:";
+    lua_State *L = luaL_newstate();  /* create state */
+    luaL_openlibs(L);  /* open libraries */
 
-  //really trivial args parsing
-  if (argc != 3) {
-      print_usage();
-      return EXIT_FAILURE;
-  }
+    while ((c = gop_getopt(argc, argv, argopts)) != -1) {
+        switch(c) {
+        case 'v': verbose = 1; break;
+        case 's':
+            srcpath = malloc(strlen(optarg)+1);
+            if (!srcpath) return EXIT_FAILURE;
+            strcpy(srcpath, optarg);
+            break;
+        case 'd':
+            destpath = malloc(strlen(optarg)+1);
+            if (!destpath) return EXIT_FAILURE;
+            strcpy(destpath, optarg);
+            break;
+        case 'j':
+            corecount = atoi(optarg);
+            if (corecount == 0) {
+                fprintf (stderr, "Option -%c requires an valid numeric argument, '%s' is not valid.\n", optopt, optarg);
+                return EXIT_FAILURE;
+            }
+            break;
+        case '?':
+            if (strchr(argopts, optopt))
+                fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+            else if (isalpha(optopt))
+                fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+            else
+                fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+            result = EXIT_FAILURE;
+        case 'h':
+            print_usage();
+            return result;
+        }
+    }
 
-  if (L == NULL) {
-    l_message(argv[0], "cannot create state: not enough memory");
-    return EXIT_FAILURE;
-  }
 
-  lua_pushstring(L, argv[1]);
-  lua_setglobal(L, "in_data_path");
+    if (L == NULL) {
+        l_message(argv[0], "cannot create state: not enough memory");
+        return EXIT_FAILURE;
+    }
 
-  lua_pushstring(L, argv[2]);
-  lua_setglobal(L, "in_output_data_path");
+    lua_pushstring(L, srcpath);
+    lua_setglobal(L, "in_data_path");
 
-  result = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "data builder script");
-  if (result == LUA_ERRSYNTAX) {
-      printf("syntax error in builder script");
-      return EXIT_FAILURE;
-  }
-  if (result != LUA_OK) {
-      printf("Memory error loading builder script");
-      return EXIT_FAILURE;
-  }
-  result = lua_pcall(L, 0, LUA_MULTRET, 0);
-  if (result == LUA_ERRRUN) {
-      printf("Runtime Error: %s", lua_tostring(L,-1));
-  }
-  /* call 'pmain' in protected mode 
-  lua_pushcfunction(L, &pmain);
-  lua_pushinteger(L, argc);  /* 1st argument *
-  lua_pushlightuserdata(L, argv); /* 2nd argument *
-  status = lua_pcall(L, 2, 1, 0);
-  result = lua_toboolean(L, -1);  /* get result *
-  finalreport(L, status);
-  lua_close(L);
-  */
-  return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+    lua_pushstring(L, destpath);
+    lua_setglobal(L, "in_output_data_path");
+
+    lua_pushboolean(L, verbose);
+    lua_setglobal(L, "in_verbose");
+
+    lua_pushinteger(L, corecount);
+    lua_setglobal(L, "in_cores");
+
+    result = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "data builder script");
+    if (result == LUA_ERRSYNTAX) {
+        printf("syntax error in builder script");
+        return EXIT_FAILURE;
+    }
+    if (result != LUA_OK) {
+        printf("Memory error loading builder script");
+        return EXIT_FAILURE;
+    }
+    result = lua_pcall(L, 0, LUA_MULTRET, 0);
+    if (result == LUA_ERRRUN) {
+        printf("Runtime Error: %s", lua_tostring(L,-1));
+    }
+
+    return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
