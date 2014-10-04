@@ -188,7 +188,7 @@ by Lua can also return many results.
     //////////////////////////////////////////////////////////////////////////
 
 #ifndef HEART_LUA_SEARCHPATH
-#   define HEART_LUA_SEARCHPATH "script:/?;script:/?.lua"
+#   define HEART_LUA_SEARCHPATH "/script/?;/script/?.lua"
 #endif
 #ifndef HEART_LUA_READ_SIZE
 #   define HEART_LUA_READ_SIZE (4*1024)

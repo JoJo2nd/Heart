@@ -88,7 +88,7 @@ namespace
             //attempt to memory map the file
             pFile->mmap_=hdMMap(fh, 0, fsize, MMapMode_ReadOnly);
             if (pFile->mmap_) {
-                hcPrintf("Opened memory mapped file %s [%p]", filename, pFile->mmap_);
+                hcPrintf("Opened memory mapped file %s @ 0x%p", filename, hdMMapGetBase(pFile->mmap_));
                 hdFclose(pFile->fileHandle_);
             }
         }
@@ -109,7 +109,7 @@ namespace
         hDriveFile* f=static_cast<hDriveFile*>(pFile);
 
         if (f->mmap_) {
-            hcPrintf("Closed memory mapped file [%p]", f->mmap_);
+            hcPrintf("Closed memory mapped file @ 0x%p", hdMMapGetBase(f->mmap_));
             hdUnmap(f->mmap_);
             f->mmap_=hNullptr;
         } else {

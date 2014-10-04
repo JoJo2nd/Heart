@@ -99,7 +99,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
 
     void hResourcePackage::loadPackageDescription(void*, void*)
     {
-        hStrCopy(packagePath_, MAX_PACKAGE_NAME, "data:/");
+        hStrCopy(packagePath_, MAX_PACKAGE_NAME, "/data/");
         hStrCat (packagePath_, MAX_PACKAGE_NAME, packageName_.c_str());
         hStrCat (packagePath_, MAX_PACKAGE_NAME, ".pkg");
 

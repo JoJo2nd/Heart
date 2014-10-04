@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #include "pal/hDeviceThread.h"
+#include "threading/hThreadLocalStorage.h"
 
 namespace Heart
 {

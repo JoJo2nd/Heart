@@ -62,7 +62,7 @@ namespace Heart
         hUint32 ret;
         if (mmap_) {
             ret=(hUint32)hMin(size, size_-mmapPos_);
-            hMemCpy(pBuffer, (hByte*)(mmap_)+mmapPos_, ret);
+            hMemCpy(pBuffer, (hByte*)(hdMMapGetBase(mmap_))+mmapPos_, ret);
             Seek(size, SEEKOFFSET_CURRENT);
         } else {
             if ( hdFread(fileHandle_, pBuffer, size, &ret) != FILEERROR_NONE )

@@ -34,6 +34,7 @@
 #include "pal/hConditionVariable.h"
 #include "SDL.h"
 #include "SDL_syswm.h"
+#include <unordered_map>
 
 namespace Heart {
     class HeartConfig;
@@ -66,7 +67,8 @@ namespace Heart {
     {
     public:
         hdSystemWindow()
-            : impl_(nullptr)
+            : sdlWindow_(nullptr)
+            , systemHandle_(nullptr)
         {
         }
 
@@ -83,8 +85,11 @@ namespace Heart {
         hBool                   getOwnWindow() const { return hTrue; }
         void                    setSysEventHandler(hUint sysEventID, hSysEventHandler handler);
         void                    removeSysEventHandler(hUint sysEventID, hSysEventHandler handler);
+        SDL_Window*             getSDLWindow() const { return sdlWindow_; }
         
     private:
+
+        typedef std::unordered_map<hUint, hSysEventHandler> hSysEventHandlerMap;
 
         void bindSysEventHandlers();
         void sysEventQuit(hUint syseventid, const hSysEvent* sysevent);
@@ -93,7 +98,8 @@ namespace Heart {
 
         static hdSystemWindow*      s_instance;
 
-        struct hdSystemWindowImpl*  impl_;
+        SDL_Window*                 sdlWindow_;
+        hSysEventHandlerMap         sysEventHandlers_;
         ISystemHandle*              systemHandle_;
         hUint32                     wndWidth_;
         hUint32                     wndHeight_;

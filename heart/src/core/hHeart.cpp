@@ -57,14 +57,12 @@ namespace Heart {
     {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-#ifdef HEART_USE_SDL2
         hUint32 sdlFlags = 0;
         sdlFlags |= SDL_INIT_VIDEO;
         sdlFlags |= SDL_INIT_GAMECONTROLLER;
         sdlFlags |= SDL_INIT_HAPTIC;
         sdlFlags |= SDL_INIT_EVENTS;
         SDL_Init(sdlFlags);
-#endif
 
         hdGetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
         hdGetProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
@@ -73,8 +71,25 @@ namespace Heart {
 
         hdMountPoint(processDir_, "proc");
         hdMountPoint(workingDir_, "cd");
-        hdMountPoint("/cd/../scripts/", "script");
-        hdMountPoint("/cd/../gamedata/", "data");
+
+        {
+            char tmp[1024];
+            hcAssert(hdGetSystemPathSize("/proc/scripts") < 1024);
+            hdGetSystemPath("/proc/scripts", tmp, 1024);
+            hdMountPoint(tmp, "script");
+
+            hcAssert(hdGetSystemPathSize("/proc/data") < 1024);
+            hdGetSystemPath("/proc/data", tmp, 1024);
+            hdMountPoint(tmp, "data");
+
+            hcAssert(hdGetSystemPathSize("/proc/tmp") < 1024);
+            hdGetSystemPath("/proc/tmp", tmp, 1024);
+            hdMountPoint(tmp, "tmp");
+
+            hcAssert(hdGetSystemPathSize("/proc/save") < 1024);
+            hdGetSystemPath("/proc/save", tmp, 1024);
+            hdMountPoint(tmp, "save");
+        }
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 

@@ -9,19 +9,6 @@
 
 namespace Heart {
 
-typedef std::unordered_map<hUint, hSysEventHandler> hSysEventHandlerMap;
-
-struct hdSystemWindowImpl
-{
-    hdSystemWindowImpl()
-        : sdlWindow_(nullptr)
-    {
-    }
-
-    SDL_Window*                 sdlWindow_;
-    hSysEventHandlerMap         sysEventHandlers_;
-};
-
     hdSystemWindow* hdSystemWindow::s_instance = NULL;
 
     //////////////////////////////////////////////////////////////////////////
@@ -29,8 +16,6 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     hBool hdSystemWindow::Create( const hdDeviceConfig* deviceconfig ) {
-        impl_ = new hdSystemWindowImpl;
-        auto& sdlWindow_ = impl_->sdlWindow_;
         sdlWindow_ = SDL_CreateWindow(
             "HeartEngine", 
             SDL_WINDOWPOS_CENTERED,
@@ -62,9 +47,7 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::Destroy() {
-        SDL_DestroyWindow(impl_->sdlWindow_);
-        delete impl_;
-        impl_ = nullptr;
+        SDL_DestroyWindow(sdlWindow_);
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -79,7 +62,7 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::SetWindowTitle( const hChar* titleStr ) {
-        SDL_SetWindowTitle(impl_->sdlWindow_, titleStr);
+        SDL_SetWindowTitle(sdlWindow_, titleStr);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -87,7 +70,6 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::PumpMessages() {
-        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         SDL_Event sdl_event;
         auto invalidhandler = sysEventHandlers_.end();
         while(SDL_PollEvent(&sdl_event)) {
@@ -108,7 +90,6 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::setSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
-        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         hcAssert(sysEventHandlers_.find(sysEventID) == sysEventHandlers_.end());
         sysEventHandlers_.insert(hSysEventHandlerMap::value_type(sysEventID, handler));
     }
@@ -118,7 +99,6 @@ struct hdSystemWindowImpl
     //////////////////////////////////////////////////////////////////////////
 
     void hdSystemWindow::removeSysEventHandler(hUint sysEventID, hSysEventHandler handler) {
-        auto& sysEventHandlers_ = impl_->sysEventHandlers_;
         hcAssert((sysEventHandlers_.find(sysEventID) != sysEventHandlers_.end())
                 && (sysEventHandlers_.find(sysEventID)->second == handler));
         sysEventHandlers_.erase(sysEventID);

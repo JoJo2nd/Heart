@@ -143,8 +143,8 @@ if (PLATFORM_WINDOWS)
         "${HEART_SOURCE_DIR}/src/win32/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
-        "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.h"
-        "${HEART_SOURCE_DIR}/src/win32/pal/device/dx11/*.cpp"
+        "${HEART_SOURCE_DIR}/src/opengl/*.h"
+        "${HEART_SOURCE_DIR}/src/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"
     )
@@ -162,8 +162,8 @@ if (PLATFORM_LINUX)
         "${HEART_SOURCE_DIR}/src/posix/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.cpp"
-        "${HEART_SOURCE_DIR}/src/posix/pal/opengl/*.h"
-        "${HEART_SOURCE_DIR}/src/posix/pal/opengl/*.cpp"
+        "${HEART_SOURCE_DIR}/src/opengl/*.h"
+        "${HEART_SOURCE_DIR}/src/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"        
     )
@@ -227,6 +227,25 @@ if (UNITY_BUILD)
     set (HEART_SRC_FILES 
         ${HEART_SRC_FILES} ${HEART_UNITY_SRC})
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
+    set(REGEX1 ".+\\.(h|hpp|gitignore|py|lua|txt|inl)")
+    set(UNITY_ARGS "-d \"${HEART_SOURCE_DIR}/src\" -e \".+\\.(h|hpp|gitignore|py|lua|txt|inl)\" -e .+(.unity[\\d*].cpp) -e \".+([U|u]nity.cpp)\" -o \"${HEART_SOURCE_DIR}/src\" -n heart")
+    set(UNITY_ARGS "${UNITY_ARGS} -x unix -x posix")
+    message(${UNITY_ARGS})
+    add_custom_command(
+        OUTPUT ${HEART_UNITY_SRC}
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build"
+        COMMAND python 
+        ARGS c_cpp_unity_creator.py ${UNITY_ARGS}
+        DEPENDS ${HEART_NON_UNITY_FILES}
+        COMMENT "Updating Unity Build..."
+            # '-d', heart_src_path, 
+            # '-x', 'unix', 
+            # '-x', 'posix',
+            # '-e', '.+\.(h|hpp|gitignore|py|lua|txt|inl)',
+            # '-e', '.+(.unity[\d*].cpp)', 
+            # '-e', '.+([U|u]nity.cpp)', 
+            # '-o', heart_output_path, '-n', 'heart'])
+    )
 endif()
 
 set(HEART_GEN_FILES ${HEART_GEN_FILES} 

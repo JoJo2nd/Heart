@@ -27,6 +27,11 @@
 
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
+#include "core/hSystem.h"
+#include "pal/hDeviceThread.h"
+#include "GL/glew.h"
+#include "GL/gl.h"
+#include "SDL.h"
 
 namespace Heart {    
 
@@ -333,15 +338,55 @@ struct hDX11System {
 static hDX11System dx11;
 #endif
 
+namespace RenderPrivate {
+    SDL_Window*         window_;
+    SDL_GLContext       context_;
+    hThread             renderThread_;
+
+    SDL_GLContext       mtContext_;
+    hConditionVariable  rtComsSignal;
+    hMutex              rtMutex;
+}
+
+hUint32 renderThreadMain(void* param) {
+    using namespace RenderPrivate;
+
+    context_ = SDL_GL_CreateContext(window_);
+    SDL_GL_MakeCurrent(window_, context_);
+    glewExperimental = GL_TRUE;
+    GLenum result = glewInit();
+    if(result != GLEW_OK) {
+        hcPrintf("glewInit() error %d [%s]", result, glewGetErrorString(result));
+    }
+
+    rtComsSignal.signal();
+
+    int frame = 0;
+    for (;;) {
+        glClearColor(0.0, 0.0, ((frame/60)&1) ? 1.0f : 0.0f, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        SDL_GL_SwapWindow(window_);
+        ++frame;
+    }
+
+    return 0;
+}
+
 struct hShaderStage {
     // !!JM placeholder class
 };
 
-hUint32 renderThreadMain(void* param) {
-    return 0;
-}
-
 void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
+    using namespace RenderPrivate;
+
+    window_ = system->getSDLWindow();
+    renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
+
+    rtComsSignal.wait(&rtMutex);
+
+    mtContext_ = SDL_GL_CreateContext(window_);
+    SDL_GL_MakeCurrent(window_, mtContext_);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -349,6 +394,9 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 //////////////////////////////////////////////////////////////////////////
 
 void destroy() {
+    using namespace RenderPrivate;
+
+    SDL_GL_DeleteContext(context_);
 }
 
 
