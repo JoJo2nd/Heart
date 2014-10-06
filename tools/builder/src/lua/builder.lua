@@ -220,13 +220,15 @@ function write_packages(buildable_resources)
             end
         end
         dep_file:close()
-        verbose_log("adding resource %s to package %s", v.full_path, v.package)
+        verbose_log("adding resource %s to package %s header", v.full_path, v.package)
     end
     
     -- Write out packages
     for k, v in pairs(packages) do
+        verbose_log("Writing package %s", k)
         local pkg_header = protobuf.Heart.proto.PackageHeader.new()
         for i, dep in pairs(v.depends) do
+            verbose_log("Writing dependency %s", dep)
             -- TODO: fix this awful lua-protobuf-gen issue
             pkg_header:set_packagedependencies(pkg_header:size_packagedependencies()+1, dep)
         end
@@ -235,6 +237,8 @@ function write_packages(buildable_resources)
             local temp_file_name, output_file, dep_output_file = get_resource_filenames(res.package, res.full_path)
             local entry = pkg_header:add_entries()
             local filesize = filesystem.filesize(output_file)
+            verbose_log("Writing resource entry %s. Temp name:%s, output file:%s, dep file:%s, filesize:%d", 
+                res.full_path, temp_file_name, output_file, dep_output_file, filesize)
             entry:set_entryname(res.res_id)
             entry:set_entryoffset(offset)
             entry:set_entrysize(filesize)
@@ -242,14 +246,17 @@ function write_packages(buildable_resources)
             offset=offset+filesize
         end
         local codedoutputstream = protobuf.CodedOutputStream.new(output_data_path.."/"..k..".pkg")
+        verbose_log("Created coded output stream %s @ "..tostring(codedoutputstream), output_data_path.."/"..k..".pkg")
         local header_str, header_size = pkg_header:serialized()
         codedoutputstream:WriteVarint32(header_size) -- or #header_str
         codedoutputstream:WriteRaw(header_str)
+        verbose_log("Written header. Size:%d, Resources:%d", header_size, #v.resources)
         for i, res in pairs(v.resources) do
             local temp_file_name, output_file, dep_output_file = get_resource_filenames(res.package, res.full_path)
             local res = io.open(output_file, "rb")
             local data = res:read("*a")
             res:close()
+            verbose_log("Writing resource data %s of lenght %d", output_file, #data)
             codedoutputstream:WriteRaw(data)
         end
     end

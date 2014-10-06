@@ -368,11 +368,8 @@ add_subdirectory("tools/proto_full")
 if (PLATFORM_WINDOWS)
   # add_subdirectory("tools/memtrack")
 endif()
-# !!JM Disable viewer
-#add_subdirectory("tools/builder")
-# !!JM Replace with builder
 add_subdirectory("tools/builder")
-# !!JM Disable viewer end
+add_subdirectory("tools/pkginspector")
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")
 endif()

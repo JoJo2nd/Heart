@@ -287,7 +287,7 @@ try {
     };
     ShaderCompiler compilers[] = {
 #if defined (PLATFORM_WINDOWS)
-        {compileD3DShader, proto::eShaderRenderSystem_D3D11},
+//        {compileD3DShader, proto::eShaderRenderSystem_D3D11},
 #endif
         {compileGLShader , proto::eShaderRenderSystem_OpenGL},
         {nullptr, proto::eShaderRenderSystem_None}

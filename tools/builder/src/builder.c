@@ -386,25 +386,7 @@ static int collectargs (char **argv, int *args) {
   }
   return 0;
 }
-/*
-static int getoption(const char* optionstr, const char* validoptions) {
-    int quoteflag=0;
-    int escapeflag=0;
-    int optionflag=0;
-    const char* s=optionstr;
 
-    for (;*s; ++s) {
-        if (isspace(*s)) {
-            continue;
-        }
-        if (*s == '-') {
-            optionflag=1;
-        }
-    }
-
-    return 0;
-}
-*/
 static int runargs (lua_State *L, char **argv, int n) {
   int i;
   for (i = 1; i < n; i++) {
@@ -564,6 +546,9 @@ int main (int argc, char **argv) {
     if (result == LUA_ERRRUN) {
         printf("Runtime Error: %s", lua_tostring(L,-1));
     }
+
+    // Close the lua state or some files/etc wont' get flushed
+    lua_close(L);
 
     return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
