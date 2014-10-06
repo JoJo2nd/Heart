@@ -61,11 +61,9 @@ struct hdMemoryMappedFile {
 
     
     hdFileHandle* HEART_API hdFopen(const hChar* filename, const hChar* mode) {
-        g_fileSystemInfo.lock();
         hUint syspathlen=hdGetSystemPathSize(filename);
         hChar* syspath=(hChar*)hAlloca(syspathlen+1);
         hdGetSystemPath(filename, syspath, syspathlen+1);
-        g_fileSystemInfo.unlock();
         
         FILE* f = fopen(syspath, mode);
         if (!f){
@@ -197,11 +195,9 @@ struct hdMemoryMappedFile {
 
     
     void HEART_API hdCreateDirectory(const hChar* path) {
-        g_fileSystemInfo.lock();
         hUint syspathlen=hdGetSystemPathSize(path);
         hChar* syspath=(hChar*)hAlloca(syspathlen+1);
         hdGetSystemPath(path, syspath, syspathlen+1);
-        g_fileSystemInfo.unlock();
         mkdir(syspath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 

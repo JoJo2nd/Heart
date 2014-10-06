@@ -5,6 +5,8 @@
 
 #include "minfs.h"
 #include "minfs_common.h" 
+#include <unistd.h>
+#include <stdint.h>
 
 minfs_uint32_t utf8_codepoint(const char* uft8In, minfs_uint16_t* ucOut) {
     minfs_uint32_t ret = 0;
@@ -65,4 +67,80 @@ size_t uc2_to_utf8(minfs_uint16_t* uc_in, char* utf8_out, size_t buf_size) {
         utf8_out[ret] = 0;
     }
     return ret;
+}
+
+size_t minfs_path_parent(const char* filepath, char* out_cwd, size_t buf_size) {
+    char* mrk;
+    char* lastmrk = NULL;
+    size_t outsize;
+    size_t len = strlen(filepath);
+    while (mrk = strchr(filepath, '\\')) {
+        *mrk = '/';
+    }
+    lastmrk = strrchr(filepath, '/');
+    if (lastmrk == NULL && buf_size > len) {
+        strncpy(out_cwd, filepath, buf_size);
+        return len;
+    } else {
+        outsize = (uintptr_t)lastmrk - (uintptr_t)filepath;
+
+        if (buf_size > outsize) {
+            strncpy(out_cwd, filepath, outsize);
+            out_cwd[outsize]=0;
+            return outsize;
+        }
+    }
+    // no space to write
+    return NO_MEM;
+}
+
+size_t minfs_path_leaf(const char* in_filepath, char* out_cwd, size_t buf_size) {
+    char* mrk;
+    char* lastmrk = NULL;
+    UTF8_WRITABLE_STACK(in_filepath, filepath);
+    size_t outsize;
+    size_t len = strlen(filepath);
+    while (mrk = strchr(filepath, '\\')) {
+        *mrk = '/';
+        lastmrk = mrk;
+    }
+    if (lastmrk == NULL && buf_size > len) {
+        strncpy(out_cwd, filepath, buf_size);
+        return len;
+    } else {
+        outsize = len - ((uintptr_t)lastmrk - (uintptr_t)filepath);
+
+        if (buf_size > outsize) {
+            strncpy(lastmrk, out_cwd, outsize);
+            return outsize;
+        }
+    }
+    // no space to write
+    return NO_MEM;
+}
+
+size_t minfs_path_without_ext(const char* in_filepath, char* out_cwd, size_t buf_size) {
+    char* mrk;
+    char* lastmrk = NULL;
+    UTF8_WRITABLE_STACK(in_filepath, filepath);
+    size_t outsize;
+    size_t len = strlen(filepath);
+    while (mrk = strchr(filepath, '\\')) {
+        *mrk = '/';
+    }
+    lastmrk = strrchr(filepath, '.');
+    if (lastmrk == NULL && buf_size > len) {
+        strncpy(out_cwd, filepath, buf_size);
+        return len;
+    } else {
+        outsize = ((uintptr_t)lastmrk - (uintptr_t)filepath);
+
+        if (buf_size > outsize) {
+            strncpy(out_cwd, filepath, outsize);
+            out_cwd[outsize]=0;
+            return outsize;
+        }
+    }
+    // no space to write
+    return NO_MEM;
 }

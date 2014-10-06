@@ -116,80 +116,6 @@ size_t minfs_current_working_directory(char* out_cwd, size_t buf_size) {
     return uc2_to_utf8(tmpbuf, out_cwd, buf_size);
 }
 
-size_t minfs_path_parent(const char* filepath, char* out_cwd, size_t buf_size) {
-    char* mrk;
-    char* lastmrk = NULL;
-    size_t outsize;
-    size_t len = strlen(filepath);
-    while (mrk = strchr(filepath, '\\')) { 
-        *mrk = '/';
-    }
-    lastmrk = strrchr(filepath, '/');
-    if (lastmrk == NULL && buf_size > len) {
-        strncpy(out_cwd, filepath, buf_size);
-        return len;
-    } else {
-        outsize = (uintptr_t)lastmrk - (uintptr_t)filepath;
-
-        if (buf_size > outsize) {
-            strncpy(out_cwd, filepath, outsize);
-            out_cwd[outsize]=0;
-            return outsize;
-        }
-    }
-    // no space to write
-    return NO_MEM;
-}
-
-size_t minfs_path_leaf(const char* filepath, char* out_cwd, size_t buf_size) {
-    char* mrk;
-    char* lastmrk = NULL;
-    size_t outsize;
-    size_t len = strlen(filepath);
-    while (mrk = strchr(filepath, '\\')) { 
-        *mrk = '/';
-        lastmrk = mrk;
-    }
-    if (lastmrk == NULL && buf_size > len) {
-        strncpy(out_cwd, filepath, buf_size);
-        return len;
-    } else {
-        outsize = len - ((uintptr_t)lastmrk - (uintptr_t)filepath);
-
-        if (buf_size > outsize) {
-            strncpy(lastmrk, out_cwd, outsize);
-            return outsize;
-        }
-    }
-    // no space to write
-    return NO_MEM;
-}
-
-size_t minfs_path_without_ext(const char* filepath, char* out_cwd, size_t buf_size) {
-    char* mrk;
-    char* lastmrk = NULL;
-    size_t outsize;
-    size_t len = strlen(filepath);
-    while (mrk = strchr(filepath, '\\')) { 
-        *mrk = '/';
-    }
-    lastmrk = strrchr(filepath, '.');
-    if (lastmrk == NULL && buf_size > len) {
-        strncpy(out_cwd, filepath, buf_size);
-        return len;
-    } else {
-        outsize = ((uintptr_t)lastmrk - (uintptr_t)filepath);
-
-        if (buf_size > outsize) {
-            strncpy(out_cwd, filepath, outsize);
-            out_cwd[outsize]=0;
-            return outsize;
-        }
-    }
-    // no space to write
-    return NO_MEM;
-}
-
 int minfs_read_directory(const char* filepath, void* scratch, size_t scratchlen, minfs_read_dir_callback cb, void* opaque) {
     WIN32_FIND_DATAW found;
     HANDLE searchhandle;
@@ -242,11 +168,15 @@ MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* 
     do {
         if (wcscmp(found.cFileName, L".") && wcscmp(found.cFileName, L"..")){
             currententry = scratch;
+            if (scratchlen < sizeof(MinFSDirectoryEntry_t))
+                return NO_MEM;
             scratchlen -= sizeof(MinFSDirectoryEntry_t);
             foundlen = wcslen(found.cFileName);
             if(uc2_to_utf8(found.cFileName, (char*)currententry->entryName, scratchlen) != foundlen) {
                 return NULL;
             }
+            if (scratchlen < foundlen+1)
+                return NO_MEM;
             scratchlen -= foundlen+1;
             scratch = ((char*)scratch)+sizeof(MinFSDirectoryEntry_t)+foundlen;
             currententry->next = scratch;

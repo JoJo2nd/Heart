@@ -16,6 +16,13 @@ file(GLOB MINFS_SRC_FILES
     "${MINFS_SRC_DIR}/src/*.c"
 )
 
+if (PLATFORM_WINDOWS)
+        list(REMOVE_ITEM MINFS_SRC_FILES "${MINFS_SRC_DIR}/src/minfs_lunix.c")
+endif()
+if (PLATFORM_LINUX)
+        list(REMOVE_ITEM MINFS_SRC_FILES "${MINFS_SRC_DIR}/src/minfs_win.c")
+endif()
+
 source_group(include FILES ${MINFS_HDR_FILES})
 source_group(source  FILES ${MINFS_SRC_FILES})
 
