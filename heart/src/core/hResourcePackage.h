@@ -134,8 +134,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hResourcePackage : public hMapElement< hUint32, hResourcePackage >
-                           , public hIReferenceCounted
+    class hResourcePackage
     {
     public:
         hObjectType(Heart::hResourcePackage, Heart::proto::PackageHeader);
@@ -143,19 +142,15 @@ namespace Heart
         hResourcePackage();
         ~hResourcePackage();
 
-        void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName);
+        void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName);
         const hChar*            getPackageName() const { return packageName_.c_str(); }
         hUint32                 getPackageCRC() const { return packageName_.hash(); }
         void                    beginLoad() { packageState_=State_Load_PkgDesc; }
+        void                    unload();
         hBool                   update();
-        void                    beginUnload();
         hBool                   isInReadyState() const { return packageState_ == State_Ready; }
-        hBool                   isUnloading() const { return packageState_ > State_Ready; }
-        hBool                   unloaded() const { return packageState_ == State_Unloaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
-        hUint                   getLinkCount() const { return packageLinks_.size(); }
-        const hChar*            getLink(hUint i) const { return packageLinks_[i].c_str(); }
 
     private:
 
@@ -172,13 +167,10 @@ namespace Heart
 
         typedef hVector< hStringID > PkgLinkArray;
         typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
-        typedef std::deque<hUint32> hHotSwapQueue;
 
         // Jobs
         void  loadPackageDescription(void*, void*);
         void  loadResource(void* in, void* out);
-        void  resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent);
-        hBool onLinkEvent(hStringID res_id, hResurceEvent event_type, hStringID type_id, void* data_ptr);
 
         enum State
         {
@@ -192,12 +184,19 @@ namespace Heart
             State_Unloaded,
         };
 
+        enum class PkgState {
+            LoadPkgDesc,
+            LoadingResources,
+            RequestLinkedPkgs,
+            ResourceLinking,
+            Loaded,
+        };
+
         hStringID                   packageName_;
         hChar                       packagePath_[MAX_PACKAGE_NAME];
         State                       packageState_;
         hIFileSystem*               fileSystem_;
         hUint                       nextResourceToLoad_;
-        hUint                       nextResourceToUnload_;
         hUint                       totalResources_;
         hUint                       linkedResources_;
         hIFile*                     pkgFileHandle_;
@@ -207,10 +206,6 @@ namespace Heart
         ResourceJobArray            resourceJobArray_;
         hTimer                      timer_;
         hJobQueue*                  fileQueue_;
-        hJobQueue*                  workerQueue_;
-        hdFilewatchHandle           resourceFilewatch_;
-        hSemaphore                  hotSwapSignal_;
-        hBool                       hotSwapping_;
     };
 
 }

@@ -246,6 +246,7 @@ namespace Heart
             }
         }
 #endif
+        hStub();
         return hTrue;
     }
 

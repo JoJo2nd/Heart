@@ -33,16 +33,6 @@ namespace Heart
 {
 hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeader);
 
-#define hBuildResFilePath(outpath, packagePack, file) \
-    { \
-    hUint32 len = hStrLen(packagePack)+hStrLen(file)+2+6; \
-    outpath = (hChar*)hAlloca(len); \
-    hStrCopy(outpath, len, "data:/"); \
-    hStrCat(outpath, len, packagePack); \
-    hStrCat(outpath, len, "/"); \
-    hStrCat(outpath, len, file); \
-    }
-
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -50,29 +40,25 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     hResourcePackage::hResourcePackage()
         : packageState_(State_Unloaded)
         , totalResources_(0)
-        , hotSwapping_(hFalse)
     {
-        hotSwapSignal_.Create(0, 4096);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hResourcePackage::~hResourcePackage()
-    {
-        hotSwapSignal_.Destroy();
+    hResourcePackage::~hResourcePackage() {
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, hJobQueue* workerQueue, const hChar* packageName) {
+    void hResourcePackage::initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName) {
         fileSystem_ = filesystem;
         fileQueue_ = fileQueue;
-        workerQueue_ = workerQueue;
         packageName_ = hStringID(packageName);
+        hResourceManager::addResource(this, packageName_, autogen_destroy_package);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -145,20 +131,12 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             } break;
         case State_Load_WaitPkgDesc: {
                 if (fileQueue_->queueIdle()) {
-                    //Now that we know about the package add ourselves to the resource manager
-                    hResourceManager::resourceAddRef(packageName_);
-                    hResourceManager::addResourceNode(packageName_);
-                    for (hUint i=0, n=packageHeader_.entries_size(); i<n; ++i) {
-                        hStringID link_id(packageHeader_.entries(i).entryname().c_str());
-                        hResourceManager::addResourceLink(packageName_, &link_id, 1, 
-                            hFUNCTOR_BINDMEMBER(hNewResourceEventProc, hResourcePackage, onLinkEvent, this));
-                    }
                     //
                     packageState_=State_Load_DepPkgs;
                 }
             } break;
         case State_Load_DepPkgs: {
-                for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
+                for (hUint i=0, n=packageLinks_.size(); i<n; ++i) {
                     if (packageLinks_[i].length() > 0) { // !!JM todo: find out why this package name is empty
                         hResourceManager::loadPackage(packageLinks_[i].c_str());
                     }
@@ -177,61 +155,22 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                     resourceJobArray_[i].createdResource_=nullptr;
                     resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
                     loadResource(resourceJobArray_.data()+i, resourceJobArray_.data()+i);
-//                     loadjob->setInput(&resourceJobArray_[i]);
-//                     loadjob->setOutput(&resourceJobArray_[i]);
-//                     loadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadResource, this));
-//                     workerQueue_->pushJob(loadjob);
                 }
                 timer_.reset();
                 if (nextResourceToLoad_ == packageHeader_.entries_size()) {
-                    hotSwapping_ = hFalse;
-                    resourceFilewatch_ = hdBeginFilewatch(packagePath_, hdFilewatchEvents_FileModified|hdFilewatchEvents_AddRemove, hFUNCTOR_BINDMEMBER(hdFilewatchEventCallback, hResourcePackage, resourceDirChange, this));
                     packageState_=State_Ready;
                 }
             } break;
         case State_Unload_Resources: {
                 // mark ourselves as a non-root resource any more. Will allow the GC to work its magic
-                hResourceManager::resourceDecRef(packageName_);
                 hResourceManager::collectGarbage(0.f);
                 packageState_ = State_Unload_DepPkg;
-            } break;
-        case State_Unload_DepPkg: {
-                for (hUint i=0, n=packageLinks_.size(); i<n && !hotSwapping_; ++i) {
-                    hResourceManager::unloadPackage(packageLinks_[i].c_str());
-                }
-                hdEndFilewatch(resourceFilewatch_);
-                resourceFilewatch_=0;
-                packageState_ = State_Unloaded;
-            } break;
-        case State_Unloaded: {
-                if (hotSwapping_) {
-                    hotSwapping_=hFalse;
-                }
-            } break;
-        case State_Ready: {
-                if (hotSwapSignal_.poll()) {
-                    beginUnload();
-                    hotSwapping_=hTrue;
-                }
             } break;
         default:{
             } break;
         }
 
         return ret;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::beginUnload()
-    {
-        if (isInReadyState()) {
-            hotSwapping_=hFalse;
-            hcPrintf("Package %s Unload started", packageName_);
-            packageState_ = State_Unload_Resources;
-        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -249,22 +188,11 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         proto::MessageContainer data_container;
         data_container.ParseFromCodedStream(&resourcestream);
         jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourcePackage::onLinkEvent(hStringID res_id, hResurceEvent event_type, hStringID type_id, void* data_ptr) {
-        if (event_type == hResurceEvent::hResourceEvent_DBInsert) {
-            ++linkedResources_;
-        } else if (event_type == hResurceEvent::hResourceEvent_DBRemove) {
-            --linkedResources_;
-        }
-        if (linkedResources_ == totalResources_) {
-            hResourceManager::insertResourceContainer(packageName_, this, getTypeName());
-        }
-        return hTrue;
+        const auto* obj_def = hObjectFactory::getObjectDefinition(jobinfo->resourceType_);
+        hcAssertMsg(obj_def, "Unable to locate object definition for type \"%s\"", jobinfo->resourceType_.c_str());
+        hResourceManager::addResource(jobinfo->createdResource_, jobinfo->resourceID_, obj_def->destroy_);
+        hResourceManager::makeLink(this, jobinfo->createdResource_);
+        hResourceManager::unpinResource(jobinfo->createdResource_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -308,20 +236,4 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         return stateStr[packageState_];
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::resourceDirChange(const hChar* watchDirectory, const hChar* filepath, hdFilewatchEvents fileevent) {
-        hotSwapSignal_.Post();
-//         if (fileevent&(hdFilewatchEvents_Added|hdFilewatchEvents_Removed|hdFilewatchEvents_Rename)) {
-//             // These options require an entire reload of the package
-//             hcPrintf("Package %s needs Hot-Swapping", packageRoot_); // !! Not thread safe, but just testing
-//         } else if (fileevent&hdFilewatchEvents_Modified) {
-//             // This is simply a case of reloading a resource
-//             hcPrintf("Resource %s needs Hot-Swapping", filepath);
-//         }
-    }
-
-#undef hBuildResFilePath
 }

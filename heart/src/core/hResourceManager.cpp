@@ -26,6 +26,7 @@
 *********************************************************************/
 
 #include "core/hResourceManager.h"
+#include "threading/hMutexAutoScope.h"
 #include "base/hMap.h"
 #include "base/hStringID.h"
 #include "base/hProfiler.h"
@@ -35,39 +36,79 @@
 #include <unordered_map>
 #include <map>
 #include <stack>
+#include <algorithm>
 
 namespace Heart
 {
 namespace hResourceManager
 {
-namespace
+namespace Hidden
 {
-    typedef hMap< hUint32, hResourcePackage > hResourcePackageMap;
-    typedef std::unordered_map< hStringID, hResourceGraphNode >  hResourceTable;
-    typedef std::map< hStringID, hUint > hRootResourceSet;
+    enum class hResourceColour {
+        White,
+        Grey,
+        Black,
+    };
 
-namespace hGCState
-{
-    enum Type {
+    struct hCollectableResource {
+        void*               resource_;
+        hAtomicInt          rootCount_;
+        std::vector<void*>  links_;
+        hResourceColour     colour_;
+
+        hCollectableResource() {
+            hAtomic::AtomicSet(rootCount_, 1);
+        }
+
+        hUint32 addRef() {
+            return hAtomic::Increment(rootCount_);
+        }
+        hUint32 decRef() {
+            return hAtomic::Decrement(rootCount_);
+        }
+        void dispose() {
+            hAtomic::AtomicSet(rootCount_, 0);
+        }
+        hUint32 ref() const {
+            return hAtomic::AtomicGet(rootCount_);
+        }
+    };
+
+    struct hResourceGraphNode {
+        hResourceGraphNode()
+            : resourceData_(nullptr)
+            , colour_(hResourceColour::White)
+        {
+
+        }
+
+        hStringID          typeID_;
+        hResourceColour    colour_;
+        void*              resourceData_;
+        hResourceNodeLinks links_;
+    };
+
+    typedef std::unordered_map< void*, hCollectableResource >   hResourceTable;
+    typedef std::unordered_map< hStringID, void* >              hResourceNameToDataTable;
+    typedef std::vector< hResourcePackage* >                    hPackageArray;
+
+    enum class hGCState {
         GatherRoots,
         Mark,
         Sweep,
         Idle,
     };
-}
 
-    struct hResourceGarbageCollector
-    {
+    struct hResourceGarbageCollector {
         typedef std::stack< hResourceGraphNode* > hGCStack;
 
         hResourceGarbageCollector() 
             : state_(hGCState::Idle)
         {}
 
-        hGCState::Type              state_;
+        hGCState                    state_;
         hGCStack                    markStack_;
         hResourceTable::iterator    sweepItr_;
-        hRootResourceSet::iterator  rootItr_;
 
         void step(hFloat limit) {
 
@@ -78,17 +119,17 @@ namespace hGCState
     hJobManager*                jobManager_ = nullptr;
     hJobQueue                   fileReadJobQueue_;
     hJobQueue                   workerQueue_;
-    hResourcePackageMap         activePackages_;
 
     //
-    hMutex                     resourceDBMtx_;
-    hResourceNotifyTable        resourceNotify_;
-    hResourceTable              resourceDB_;
-    hRootResourceSet            rootResources_;
+    hMutex                      resourceDBMtx_;
+    hResourceNameToDataTable    resourceNameLookUp_;
+    hResourceTable              resources_;
+    hPackageArray               packages_;
 
     hResourceGarbageCollector   garbageCollector_;
 }
 
+using namespace Hidden;
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -105,14 +146,10 @@ hBool initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
 //////////////////////////////////////////////////////////////////////////
 
 void shutdown() {
-    while(activePackages_.GetSize() > 0) {
-        for (hResourcePackage* i=activePackages_.GetHead(); i!=hNullptr; i=i->GetNext()) {
-            if (i->isInReadyState()) {
-                i->beginUnload();
-            }
-        }
-        update();
+    for (auto i : packages_) {
+        //i.dis();
     }
+    garbageCollector_.step(0.f);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -121,21 +158,8 @@ void shutdown() {
 
 void update() {
     HEART_PROFILE_FUNC();
-    for (hResourcePackage* i=activePackages_.GetHead(); i!=hNullptr; ) {
+    for (auto i : packages_) {
         i->update();
-        if (i->unloaded()) {
-            if (i->GetRefCount()==0) {
-                hResourcePackage* next;
-                activePackages_.Erase(i, &next);
-                delete i; i = nullptr;
-                i=next;
-            } else {
-                //reload the package
-                i->beginLoad();
-            }
-        } else {
-            i=i->GetNext();
-        }
     }
 
     // Kick off any waiting jobs
@@ -148,15 +172,19 @@ void update() {
 //////////////////////////////////////////////////////////////////////////
 
 void loadPackage( const hChar* name ) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
     hUint32 pkcrc = hCRC32::StringCRC(name);
-    hResourcePackage* pkg=activePackages_.Find(pkcrc);
-    if (!pkg) {
-        pkg = new hResourcePackage;
-        pkg->initialise(filesystem_, &fileReadJobQueue_, &workerQueue_, name);
-        activePackages_.Insert(pkcrc, pkg);
-        pkg->beginLoad();
+    auto lp=std::find_if(packages_.begin(), packages_.end(), [=](const hResourcePackage* lhs) {
+        return lhs->getPackageCRC() == pkcrc;
+    });
+    if (lp == packages_.end()) {
+         hResourcePackage* pkg;
+         pkg = new hResourcePackage;
+         pkg->initialise(filesystem_, &fileReadJobQueue_, name);
+         pkg->beginLoad();
+         packages_.push_back(pkg);
     } else {
-        pkg->AddRef();
+        resources_[*lp].addRef();
     }
 }
 
@@ -165,9 +193,12 @@ void loadPackage( const hChar* name ) {
 //////////////////////////////////////////////////////////////////////////
 
 hBool getIsPackageLoaded( const hChar* name ) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
     hUint32 pkcrc = hCRC32::StringCRC(name);
-    hResourcePackage* pkg=activePackages_.Find(pkcrc);
-    return (pkg && pkg->isInReadyState()) ? hTrue : hFalse;
+    auto lp=std::find_if(packages_.begin(), packages_.end(), [=](const hResourcePackage* lhs) {
+        return lhs->getPackageCRC() == pkcrc;
+    });
+    return (lp != packages_.end() && (*lp)->isInReadyState()) ? hTrue : hFalse;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -176,15 +207,10 @@ hBool getIsPackageLoaded( const hChar* name ) {
 
 void unloadPackage(const hChar* name)
 {
-    hUint32 pkcrc = hCRC32::StringCRC(name);
-    hResourcePackage* pkg=activePackages_.Find(pkcrc);
-    hcAssertMsg(pkg, "Couldn't find package \"%s\" to unload", name);
-    if (pkg) {
-        pkg->DecRef();
-        if (pkg->GetRefCount() == 0) {
-            pkg->beginUnload();
-        }
-    }
+//     hUint32 pkcrc = hCRC32::StringCRC(name);
+//     auto pkg=activePackages_.find(pkcrc);
+//     hcAssertMsg(pkg != activePackages_.end(), "Couldn't find package \"%s\" to unload", name);
+//     pkg->second.defRef();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -193,25 +219,75 @@ void unloadPackage(const hChar* name)
 
 void printResourceInfo()
 {
-    hcPrintf("=== Loaded Package Info Start ===");
-    for (hResourcePackage* pack = activePackages_.GetHead(); pack; pack = pack->GetNext()) {
-        hcPrintf("Package %s -- State: %s -- RC %u", 
-            pack->getPackageName(), pack->getPackageStateString(), pack->GetRefCount());
-        pack->printResourceInfo();
-    }
-    hcPrintf("=== Loaded Package Info End ===");
+//     hcPrintf("=== Loaded Package Info Start ===");
+//     for (hResourcePackage* pack = activePackages_.GetHead(); pack; pack = pack->GetNext()) {
+//         hcPrintf("Package %s -- State: %s -- RC %u", 
+//             pack->getPackageName(), pack->getPackageStateString(), pack->GetRefCount());
+//         pack->printResourceInfo();
+//     }
+//     hcPrintf("=== Loaded Package Info End ===");
 }
 
+void    addResource(void* ptr, hStringID res_id, hObjectDestroyProc destructor) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    hcAssert(resources_.find(ptr) == resources_.end());
+    hCollectableResource gcr;
+    gcr.resource_ = ptr;
+    resources_.insert(hResourceTable::value_type(ptr, gcr));
+    resourceNameLookUp_.insert(hResourceNameToDataTable ::value_type(res_id, ptr));
+}
+
+void    makeLink(void* resource, void* other) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    hcAssert(resources_.find(resource) != resources_.end() && resources_.find(other) != resources_.end());
+    resources_[resource].links_.push_back(other);
+}
+
+void    removeLink(void* resource, void* other) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    hcAssert(resources_.find(resource) != resources_.end() && resources_.find(other) != resources_.end());
+    std::remove_if(resources_[resource].links_.begin(), resources_[resource].links_.end(), [=](void* lhs) {
+       return  lhs == other;
+    });
+}
+
+void*   pinResource(hStringID res_id) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    auto it = resourceNameLookUp_.find(res_id);
+    if (it == resourceNameLookUp_.end()) {
+        return nullptr;
+    }
+    resources_[it->second].addRef();
+    return it->second;
+}
+
+void*   weakResourceRef(hStringID res_id) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    auto it = resourceNameLookUp_.find(res_id);
+    if (it == resourceNameLookUp_.end()) {
+        return nullptr;
+    }
+    return it->second;
+}
+
+void    unpinResource(void* ptr) {
+    hMutexAutoScope sentry(&resourceDBMtx_);
+    auto it = resources_.find(ptr);
+    hcAssert(it != resources_.end());
+    hcAssert(it->second.ref() > 0);
+    it->second.decRef();
+}
+/*
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 void addResourceNode(hStringID res_id) {
-    if (resourceDB_.find(res_id) == resourceDB_.end()) {
+    if (resourceNameLookUp_.find(res_id) == resourceNameLookUp_.end()) {
         hResourceGraphNode new_node;
         new_node.colour_ = hResourceColour::Black; // protect if from the GC until the next cycle.
         new_node.resourceData_ = nullptr;
-        resourceDB_.insert(hResourceTable::value_type(res_id, new_node));
+        resourceNameLookUp_.insert(hResourceNameToDataTable::value_type(res_id, new_node));
     }
 }
 
@@ -235,12 +311,12 @@ void resourceAddRef(hStringID res_id) {
 void resourceDecRef(hStringID res_id) {
     auto found_item = rootResources_.find(res_id);
     hcAssert(found_item == rootResources_.end());
-        if (found_item != rootResources_.end()) {
-            --found_item->second;
-            if (found_item->second == 0) {
-                rootResources_.erase(found_item);
-            }
+    if (found_item != rootResources_.end()) {
+        --found_item->second;
+        if (found_item->second == 0) {
+            rootResources_.erase(found_item);
         }
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -248,15 +324,10 @@ void resourceDecRef(hStringID res_id) {
 //////////////////////////////////////////////////////////////////////////
 
 void insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id) {
-    hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
-    auto found_item = resourceDB_.find(res_id);
+    hcAssert(resourceNameLookUp_.find(res_id) != resourceNameLookUp_.end());
+    auto found_item = resourceNameLookUp_.find(res_id);
     found_item->second.typeID_ = type_id;
     found_item->second.resourceData_ = res_data;
-    //notify listeners it's here!
-    auto found_range = resourceNotify_.equal_range(res_id);
-    for (auto i=found_range.first; i!=found_range.second; ++i) {
-        i->second(res_id, hResourceEvent_DBInsert, type_id, res_data);
-    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -264,33 +335,19 @@ void insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id
 //////////////////////////////////////////////////////////////////////////
 
 void removeResourceContainer(hStringID res_id) {
-    hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
-    auto found_item = resourceDB_.find(res_id);
-    //notify listeners it's about to go!
-    auto found_range = resourceNotify_.equal_range(res_id);
-    for (auto i=found_range.first; i!=found_range.second; ++i) {
-        i->second(res_id, hResourceEvent_DBRemove, found_item->second.typeID_, nullptr);
-    }
-    found_item->second.resourceData_ = nullptr;
+    hcAssert(resourceNameLookUp_.find(res_id) != resourceNameLookUp_.end());
+    auto found_item = resourceNameLookUp_.find(res_id);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void addResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc) {
-    hcAssert(resourceDB_.find(res_id) != resourceDB_.end());
-    auto found_item = resourceDB_.find(res_id);
-#ifdef HEART_DEBUG
-    for (hUint i=0; i<num_links; ++i) {
-        for (const auto& link : found_item->second.links_) {
-            hcAssert(link != links[i]);
-        }
-    }
-#endif
+void addResourceLink(hStringID res_id, hStringID* links, hUint num_links) {
+    hcAssert(resourceNameLookUp_.find(res_id) != resourceNameLookUp_.end());
+    auto found_item = resourceNameLookUp_.find(res_id);
     for (hUint i=0; i<num_links; ++i) {
         found_item->second.links_.push_back(links[i]);
-        registerForResourceEvents(links[i], proc);
     }
 }
 
@@ -298,13 +355,12 @@ void addResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewRe
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void breakResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc) {
-    hcAssert(resourceDB_.find(res_id) == resourceDB_.end());
-    auto found_item = resourceDB_.find(res_id);
+void breakResourceLink(hStringID res_id, hStringID* links, hUint num_links) {
+    hcAssert(resourceNameLookUp_.find(res_id) == resourceNameLookUp_.end());
+    auto found_item = resourceNameLookUp_.find(res_id);
     for (hUint i=0; i<num_links; ++i) {
         for (auto link = found_item->second.links_.begin(), nlink=found_item->second.links_.end(); link!=nlink; ++link) {
             if (*link == links[i]) {
-                unregisterForResourceEvents(*link, proc); 
                 found_item->second.links_.erase(link);
                 break;
             }
@@ -316,42 +372,16 @@ void breakResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNew
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-    auto found_item = resourceDB_.find(res_id);
-    resourceNotify_.insert(hResourceNotifyTable::value_type(res_id, proc));
-    if (resourceDB_.find(res_id) != resourceDB_.end() && found_item->second.resourceData_) {
-        proc(res_id, hResourceEvent_DBInsert, found_item->second.typeID_, found_item->second.resourceData_);
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void unregisterForResourceEvents(hStringID res_id, hNewResourceEventProc proc) {
-    auto found_range = resourceNotify_.equal_range(res_id);
-    for (auto i=found_range.first; i!=found_range.second; ++i) {
-        if (i->second == proc) {
-            resourceNotify_.erase(i);
-            return;
-        }
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
 void* getResourcePtrType(hStringID res_id, hStringID* out_type_id) {
     hcAssert(out_type_id);
-    auto i = resourceDB_.find(res_id);
-    if (i == resourceDB_.end()) {
+    auto i = resourceNameLookUp_.find(res_id);
+    if (i == resourceNameLookUp_.end()) {
         return nullptr;
     }
     *out_type_id = i->second.typeID_;
     return i->second.resourceData_;
 }
-
+*/
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

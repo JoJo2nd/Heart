@@ -31,6 +31,7 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "core/hIFileSystem.h"
+#include "components/hObjectFactory.h"
 #include "threading/hJobManager.h"
 #include <unordered_map>
 #include <vector>
@@ -38,30 +39,6 @@
 namespace Heart
 {
     typedef std::vector< hStringID > hResourceNodeLinks;
-
-    namespace hResourceColour
-    {
-        enum Type {
-            White,
-            Grey,
-            Black,
-        };
-    }
-
-    struct hResourceGraphNode
-    {
-        hResourceGraphNode()
-            : resourceData_(nullptr)
-            , colour_(hResourceColour::White)
-        {
-
-        }
-
-        void*                   resourceData_;
-        hStringID               typeID_;
-        hResourceNodeLinks      links_;
-        hResourceColour::Type   colour_;
-    };
 
     enum hResurceEvent 
     {
@@ -120,15 +97,12 @@ namespace hResourceManager
     void    printResourceInfo();
     // Will start garbage cycle if one is not started, runs cycle for step seconds
     void    collectGarbage(hFloat step);
-    void    addResourceNode(hStringID res_id);
-    void    resourceAddRef(hStringID res_id);
-    void    resourceDecRef(hStringID res_id);
-    void    insertResourceContainer(hStringID res_id, void* res_data, hStringID type_id);
-    void    removeResourceContainer(hStringID res_id);
-    void    addResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc);
-    void    breakResourceLink(hStringID res_id, hStringID* links, hUint num_links, hNewResourceEventProc proc);
-    void    registerForResourceEvents(hStringID res_id, hNewResourceEventProc proc);
-    void    unregisterForResourceEvents(hStringID res_id, hNewResourceEventProc proc);
+    void    addResource(void* ptr, hStringID res_id, hObjectDestroyProc destructor);
+    void    makeLink(void* resource, void* other);
+    void    removeLink(void* resource, void* other);
+    void*   pinResource(hStringID res_id);
+    void*   weakResourceRef(hStringID res_id);
+    void    unpinResource(void* ptr);
     void    loadPackage(const hChar* name);
     void    unloadPackage(const hChar* name);
     hBool   getIsPackageLoaded(const hChar* name);

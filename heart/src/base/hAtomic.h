@@ -51,8 +51,8 @@ namespace hAtomic
 
 #ifdef HEART_PLAT_WINDOWS
 
- void HEART_API Increment( hAtomicInt& i );
- void HEART_API Decrement( hAtomicInt& i );
+ hUint32 HEART_API Increment( hAtomicInt& i );
+ hUint32 HEART_API Decrement( hAtomicInt& i );
  hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
  hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
  hUint32 HEART_API AtomicGet(const hAtomicInt& i);
@@ -63,8 +63,8 @@ namespace hAtomic
 
 #elif defined HEART_PLAT_LINUX
 
- void HEART_API Increment( hAtomicInt& i );
- void HEART_API Decrement( hAtomicInt& i );
+ hUint32 HEART_API Increment( hAtomicInt& i );
+ hUint32 HEART_API Decrement( hAtomicInt& i );
  hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
  hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
  hUint32 HEART_API AtomicGet(const hAtomicInt& i);

@@ -42,6 +42,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     typedef void* (*hObjectConstructProc)();
+    typedef void (*hObjectDestroyProc)(void*);
     typedef hObjectMarshall* (*hObjectCreateSerialiserProc)();
     typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*);
     typedef hBool (*hObjectDeserialiseProc)(void*, hObjectMarshall*);
@@ -50,6 +51,7 @@ namespace Heart
     {
         hStringID                       entityName_;
         hObjectConstructProc            construct_;
+        hObjectDestroyProc              destroy_;
         hObjectCreateSerialiserProc     constructMarshall_;
         hObjectSerialiseProc            serialise_;
         hObjectDeserialiseProc          deserialise_;
@@ -58,6 +60,7 @@ namespace Heart
     };
 
 #define hObjectType(name, serialiser_type) \
+    static hBool auto_object_registered;\
     static hStringID getTypeNameStatic() { \
         static hStringID typeName(#name); \
         return typeName; \
@@ -73,9 +76,8 @@ namespace Heart
 #define hObjectBaseTypeInner(x) (##x)
 
 #define hRegisterObjectType(name, type, serialiser_type, ...) \
-    /*struct Heart::hObjectDefinition;*/ \
-    /*extern hBool Heart::hObjectFactory::objectFactoryRegistar(Heart::hObjectDefinition*, const char*, ...); */\
     static void* autogen_construct_##name () { return new type; } \
+    static void autogen_destroy_##name(void* d) { delete ((type*)d); } \
     static hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
     static hBool autogen_serialise_##name(void* type_ptr_raw, hObjectMarshall* msg_raw) { \
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
@@ -90,11 +92,12 @@ namespace Heart
     static hObjectDefinition autogen_entity_definition_##name = { \
         type::getTypeNameStatic(), \
         autogen_construct_##name, \
+        autogen_destroy_##name, \
         autogen_create_serialiser_##name, \
         autogen_serialise_##name, \
         autogen_deserialise_##name, \
     };\
-    static hBool auto_object_registered_##name = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
+    hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

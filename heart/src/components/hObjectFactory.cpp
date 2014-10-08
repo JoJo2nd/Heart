@@ -48,7 +48,7 @@ namespace
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-const hObjectDefinition* getEntityDefinition(hStringID name) {
+const hObjectDefinition* getObjectDefinition(hStringID name) {
     const auto definition = objectDefTable_->find(name);
     if (definition == objectDefTable_->end()) {
         return hNullptr;

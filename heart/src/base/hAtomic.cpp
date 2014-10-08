@@ -37,14 +37,14 @@
 namespace Heart {
 namespace hAtomic {
 #if defined (PLATFORM_WINDOWS)
-    void HEART_API Increment( hAtomicInt& i ) {
+    hUint32 HEART_API Increment( hAtomicInt& i ) {
         hcAssert( ((hUint32)&i.value_ % 16) == 0 );
-        InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
+        return InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
     }
 
-    void HEART_API Decrement( hAtomicInt& i ) {
+    hUint32 HEART_API Decrement( hAtomicInt& i ) {
         hcAssert( ((hUint32)&i.value_ % 16) == 0 );
-        InterlockedDecrementAcquire( (volatile LONG*)&i.value_ );
+        return InterlockedDecrementAcquire( (volatile LONG*)&i.value_ );
     }
 
     hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal ) {
@@ -61,17 +61,7 @@ namespace hAtomic {
     }
 
     hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val ) {
-        /*
-         * 'cos I always forget how to do this. 
-         **/
-        hUint32 old;
-        do 
-        {
-            old = i.value_;
-        } while (CompareAndSwap(i, old, val ) != old);
-
-        //return the value we set
-        return val;
+        return InterlockedExchangeAcquire((volatile LONG*)&i.value_, val);
     }
 
     hUint32 HEART_API AtomicGet(const hAtomicInt& i) {
@@ -80,39 +70,16 @@ namespace hAtomic {
     }
 
     hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount) {
-        /*
-         * 'cos I always forget how to do this. 
-         **/
-        hUint32 old, newv;
-        do 
-        {
-            old = i.value_;
-            newv = old+amount;
-        } while (CompareAndSwap(i, old, newv ) != old);
-
-        //return the value we set
-        return newv;
+        return InterlockedAddAcquire((volatile LONG*)&i.value_, amount);
     }
 
-    hUint32 HEART_API AtomicAddWithPrev( hAtomicInt& i, hUint32 amount, hUint32* prev ) {
-        hUint32 old, newv;
-        do 
-        {
-            old = i.value_;
-            newv = old+amount;
-        } while (CompareAndSwap(i, old, newv ) != old);
-
-        //return the value we set, and the prev value of i
-        *prev = old;
-        return newv;
-    }
 #elif defined (PLATFORM_LINUX)
     void HEART_API Increment( hAtomicInt& i ) {
-        ++i;
+        return ++i;
     }
 
     void HEART_API Decrement( hAtomicInt& i ) {
-        --i;
+        return --i;
     }
 
     hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal ) {
@@ -137,13 +104,7 @@ namespace hAtomic {
     }
 
     hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount) {
-        i.fetch_add(amount);
-        return i.load();
-    }
-
-    hUint32 HEART_API AtomicAddWithPrev( hAtomicInt& i, hUint32 amount, hUint32* prev ) {
-        *prev = i.fetch_add(amount);
-        return *prev;
+        return i.fetch_add(amount);
     }
 #else 
     #error ("Unknown platform")

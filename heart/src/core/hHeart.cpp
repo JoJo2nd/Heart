@@ -197,6 +197,10 @@ namespace Heart {
         //////////////////////////////////////////////////////////////////////////
         engineState_ = hHeartState_LoadingCore;
 
+        // Temp workaround for dead stripping of these types
+        hcPrintf("Auto-registered type %s=%d", hShaderProgram::getTypeNameStatic().c_str(), hShaderProgram::auto_object_registered);
+        hcPrintf("Auto-registered type %s=%d", hMaterial::getTypeNameStatic().c_str(), hMaterial::auto_object_registered);
+
         hMemTracking::TrackPushMarker("After_Engine_Init");
     }
 
