@@ -145,10 +145,10 @@ namespace Heart
         void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName);
         const hChar*            getPackageName() const { return packageName_.c_str(); }
         hUint32                 getPackageCRC() const { return packageName_.hash(); }
-        void                    beginLoad() { packageState_=State_Load_PkgDesc; }
+        void                    beginLoad() {}
         void                    unload();
         hBool                   update();
-        hBool                   isInReadyState() const { return packageState_ == State_Ready; }
+        hBool                   isInReadyState() const { return packageState_ == PkgState::Loaded; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
 
@@ -156,13 +156,14 @@ namespace Heart
 
         static const hUint32    MAX_PACKAGE_NAME = 128;
 
-        struct hResourceLoadJobInputOutput
-        {
-            hByte*              resMemStart_;
-            hByte*              resMemEnd_;
-            void*               createdResource_;
-            hStringID           resourceID_;
-            hStringID           resourceType_;
+        struct hResourceLoadJobInputOutput {
+            const hObjectDefinition* objectDef_;
+            hByte*                   resMemStart_;
+            hByte*                   resMemEnd_;
+            void*                    createdResource_;
+            hStringID                resourceID_;
+            hStringID                resourceType_;
+            hBool                    linked_;
         };
 
         typedef hVector< hStringID > PkgLinkArray;
@@ -170,31 +171,20 @@ namespace Heart
 
         // Jobs
         void  loadPackageDescription(void*, void*);
-        void  loadResource(void* in, void* out);
-
-        enum State
-        {
-            State_Load_PkgDesc,
-            State_Load_WaitPkgDesc,
-            State_Load_DepPkgs,
-            State_Kick_ResourceLoads,
-            State_Ready,
-            State_Unload_Resources,
-            State_Unload_DepPkg,
-            State_Unloaded,
-        };
 
         enum class PkgState {
+            Null,
             LoadPkgDesc,
-            LoadingResources,
+            FileReadWait,
             RequestLinkedPkgs,
+            LoadingResources,
             ResourceLinking,
             Loaded,
         };
 
         hStringID                   packageName_;
         hChar                       packagePath_[MAX_PACKAGE_NAME];
-        State                       packageState_;
+        PkgState                    packageState_;
         hIFileSystem*               fileSystem_;
         hUint                       nextResourceToLoad_;
         hUint                       totalResources_;

@@ -46,6 +46,7 @@ namespace Heart
     typedef hObjectMarshall* (*hObjectCreateSerialiserProc)();
     typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*);
     typedef hBool (*hObjectDeserialiseProc)(void*, hObjectMarshall*);
+    typedef hBool (*hObjectLinkProc)(void*);
 
     struct hObjectDefinition 
     {
@@ -55,6 +56,7 @@ namespace Heart
         hObjectCreateSerialiserProc     constructMarshall_;
         hObjectSerialiseProc            serialise_;
         hObjectDeserialiseProc          deserialise_;
+        hObjectLinkProc                 link_;
         hStringID                       serialiserName_;
         std::vector<hStringID>          baseTypes_;
     };
@@ -69,7 +71,8 @@ namespace Heart
         return getTypeNameStatic(); \
     } \
     hBool serialiseObject(serialiser_type*) const; \
-    hBool deserialiseObject(serialiser_type*) 
+    hBool deserialiseObject(serialiser_type*); \
+    hBool linkObject()
 
 #define hObjectBaseType(x) hObjectBaseTypeInner(#x)
 
@@ -89,6 +92,10 @@ namespace Heart
         serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
         return type_ptr->deserialiseObject(msg); \
     } \
+    static hBool autogen_link_##name(void* type_ptr_raw) {\
+        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
+        return type_ptr->linkObject(); \
+    }\
     static hObjectDefinition autogen_entity_definition_##name = { \
         type::getTypeNameStatic(), \
         autogen_construct_##name, \
@@ -96,6 +103,7 @@ namespace Heart
         autogen_create_serialiser_##name, \
         autogen_serialise_##name, \
         autogen_deserialise_##name, \
+        autogen_link_##name, \
     };\
     hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
 

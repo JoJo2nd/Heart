@@ -214,9 +214,9 @@ function write_packages(buildable_resources)
         dep_file = io.open(dep_output_file, "r")
         for line in dep_file:lines() do
             local path = filesystem.pathwithoutext(line)
-            if buildable_resources[path] ~= nil then
-                packages[v.package].depends[buildable_resources[path].package] = buildable_resources[path].package
-                verbose_log("resource %s depends on %s", v.full_path, path)
+            if buildable_resources[line] ~= nil then
+                packages[v.package].depends[buildable_resources[line].package] = buildable_resources[line].package
+                verbose_log("resource %s requires %s to link", v.full_path, line)
             end
         end
         dep_file:close()

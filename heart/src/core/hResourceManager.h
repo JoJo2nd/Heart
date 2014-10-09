@@ -91,6 +91,8 @@ namespace Heart
 
 namespace hResourceManager
 {
+    typedef void* hPackageLoadRequest;
+
     hBool   initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager);
     void    update();
     void    shutdown();

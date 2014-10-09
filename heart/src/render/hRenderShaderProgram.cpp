@@ -99,4 +99,8 @@ namespace Heart
         return hTrue;
 #endif
     }
+
+    hBool hShaderProgram::linkObject() {
+        return hTrue;
+    }
 }

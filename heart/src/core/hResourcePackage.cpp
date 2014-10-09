@@ -38,7 +38,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     //////////////////////////////////////////////////////////////////////////
 
     hResourcePackage::hResourcePackage()
-        : packageState_(State_Unloaded)
+        : packageState_(PkgState::Null)
         , totalResources_(0)
     {
     }
@@ -59,6 +59,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         fileQueue_ = fileQueue;
         packageName_ = hStringID(packageName);
         hResourceManager::addResource(this, packageName_, autogen_destroy_package);
+        packageState_=PkgState::LoadPkgDesc;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,11 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     hBool hResourcePackage::deserialiseObject(Heart::proto::PackageHeader* ) {
         hcAssertMsg(false, "Not expected to call this function");
         return hFalse;
+    }
+
+    hBool hResourcePackage::linkObject() {
+        hcAssertMsg(false, "Not expected to call this function");
+        return hTrue;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -119,80 +125,80 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     hBool hResourcePackage::update() {
         hBool ret = hFalse;
         switch(packageState_) {
-        case State_Load_PkgDesc: {
+        case PkgState::LoadPkgDesc: {
                 hJob* descreadjob=new hJob;
                 descreadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadPackageDescription, this));
                 descreadjob->setWorkerMask(1);
                 fileQueue_->pushJob(descreadjob);
                 //the resource manager will kick the queue
-                packageState_=State_Load_WaitPkgDesc;
+                packageState_=PkgState::FileReadWait;
                 nextResourceToLoad_ = 0;
                 linkedResources_ = 0;
             } break;
-        case State_Load_WaitPkgDesc: {
+        case PkgState::FileReadWait: {
                 if (fileQueue_->queueIdle()) {
                     //
-                    packageState_=State_Load_DepPkgs;
+                    packageState_=PkgState::RequestLinkedPkgs;
                 }
             } break;
-        case State_Load_DepPkgs: {
+        case PkgState::RequestLinkedPkgs: {
                 for (hUint i=0, n=packageLinks_.size(); i<n; ++i) {
                     if (packageLinks_[i].length() > 0) { // !!JM todo: find out why this package name is empty
                         hResourceManager::loadPackage(packageLinks_[i].c_str());
                     }
                 }
-                packageState_ = State_Kick_ResourceLoads; 
+                packageState_ = PkgState::LoadingResources;
             } break;
-        case State_Kick_ResourceLoads: {
-                hStub();
-                hcAssert(pkgFileHandle_->getIsMemMapped());
-                hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
-                hFloat start_time = hClock::elapsed();
-                for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
-                    //hJob* loadjob=new hJob;
-                    resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
-                    resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
-                    resourceJobArray_[i].createdResource_=nullptr;
-                    resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
-                    loadResource(resourceJobArray_.data()+i, resourceJobArray_.data()+i);
+        case PkgState::LoadingResources: {
+            hcAssert(pkgFileHandle_->getIsMemMapped());
+            hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
+            hFloat start_time = hClock::elapsed();
+            for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
+                //hJob* loadjob=new hJob;
+                hResourceLoadJobInputOutput* jobinfo=resourceJobArray_.data()+i;
+                resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
+                resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
+                resourceJobArray_[i].createdResource_=nullptr;
+                resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
+                resourceJobArray_[i].linked_=false;
+
+                proto::ResourceHeader resheader;
+                google::protobuf::io::ArrayInputStream resourcefilestream(jobinfo->resMemStart_, (hInt)((hPtrdiff_t)jobinfo->resMemEnd_-(hPtrdiff_t)jobinfo->resMemStart_));
+                google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
+
+                proto::MessageContainer data_container;
+                data_container.ParseFromCodedStream(&resourcestream);
+                jobinfo->objectDef_ = hObjectFactory::getObjectDefinition(jobinfo->resourceType_);
+                hcAssertMsg(jobinfo->objectDef_, "Unable to locate object definition for type \"%s\"", jobinfo->resourceType_.c_str());
+                jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
+                //loadResource(resourceJobArray_.data()+i, resourceJobArray_.data()+i);
+            }
+            timer_.reset();
+            if (nextResourceToLoad_ == packageHeader_.entries_size()) {
+                fileSystem_->CloseFile(pkgFileHandle_);
+                packageState_=PkgState::ResourceLinking;
+            }
+        } break;
+        case PkgState::ResourceLinking:{
+            hUint32 linked = 0;
+            for (auto& res : resourceJobArray_) {
+                if (!res.linked_ && res.objectDef_->link_(res.createdResource_)) {
+                    res.linked_ = true;
+                    hResourceManager::addResource(res.createdResource_, res.resourceID_, res.objectDef_->destroy_);
+                    hResourceManager::makeLink(this, res.createdResource_);
+                    hResourceManager::unpinResource(res.createdResource_);
                 }
-                timer_.reset();
-                if (nextResourceToLoad_ == packageHeader_.entries_size()) {
-                    packageState_=State_Ready;
+                if (res.linked_) {
+                    ++linked;
                 }
-            } break;
-        case State_Unload_Resources: {
-                // mark ourselves as a non-root resource any more. Will allow the GC to work its magic
-                hResourceManager::collectGarbage(0.f);
-                packageState_ = State_Unload_DepPkg;
-            } break;
+            }
+            packageState_ = linked == resourceJobArray_.size() ? PkgState::Loaded : PkgState::ResourceLinking;
+        } break;
         default:{
-            } break;
+        } break;
         }
 
         return ret;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::loadResource(void* in, void* out) {
-        hcAssert(in==out);
-        hResourceLoadJobInputOutput* jobinfo=(hResourceLoadJobInputOutput*)in;
-
-        proto::ResourceHeader resheader;
-        google::protobuf::io::ArrayInputStream resourcefilestream(jobinfo->resMemStart_, (hInt)((hPtrdiff_t)jobinfo->resMemEnd_-(hPtrdiff_t)jobinfo->resMemStart_));
-        google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
-
-        proto::MessageContainer data_container;
-        data_container.ParseFromCodedStream(&resourcestream);
-        jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
-        const auto* obj_def = hObjectFactory::getObjectDefinition(jobinfo->resourceType_);
-        hcAssertMsg(obj_def, "Unable to locate object definition for type \"%s\"", jobinfo->resourceType_.c_str());
-        hResourceManager::addResource(jobinfo->createdResource_, jobinfo->resourceID_, obj_def->destroy_);
-        hResourceManager::makeLink(this, jobinfo->createdResource_);
-        hResourceManager::unpinResource(jobinfo->createdResource_);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -218,6 +224,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
 
     const hChar* hResourcePackage::getPackageStateString() const
     {
+        /*
         static const hChar* stateStr [] = {
             "State_Load_PkgDesc",
             "State_Load_WaitPkgDesc",
@@ -232,8 +239,8 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             "State_Wait_Unload_Resources",
             "State_Unload_DepPkg",
             "State_Unloaded",
-        };
-        return stateStr[packageState_];
+        };*/
+        return "null";
     }
 
 }

@@ -250,6 +250,9 @@ namespace Heart
         return hTrue;
     }
 
+    hBool hMaterial::linkObject() {
+        return hTrue;
+    }
     
     hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits)
     {
