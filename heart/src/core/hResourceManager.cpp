@@ -34,7 +34,9 @@ namespace Hidden
         std::vector<void*>  links_;
         hResourceColour     colour_;
 
-        hCollectableResource() {
+        hCollectableResource() 
+            : resource_(nullptr)
+            , colour_(hResourceColour::Black) {
             hAtomic::AtomicSet(rootCount_, 1);
         }
 
@@ -224,9 +226,10 @@ void    makeLink(void* resource, void* other) {
 void    removeLink(void* resource, void* other) {
     hMutexAutoScope sentry(&resourceDBMtx_);
     hcAssert(resources_.find(resource) != resources_.end() && resources_.find(other) != resources_.end());
-    std::remove_if(resources_[resource].links_.begin(), resources_[resource].links_.end(), [=](void* lhs) {
+    auto pend = std::remove_if(resources_[resource].links_.begin(), resources_[resource].links_.end(), [=](void* lhs) {
        return  lhs == other;
     });
+    resources_[resource].links_.erase(pend);
 }
 
 void*   pinResource(hStringID res_id) {

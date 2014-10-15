@@ -110,10 +110,9 @@ void  hFontRenderCache::initialise() {
 hGlyphBMNode* hFontRenderCache::cacheInsert(hGlyphBMNode* pnode, hUint16 width, hUint16 height) {
     if (!pnode)
         return nullptr;
-    hGlyphBMNode* newnode = nullptr;
     if (pnode->child[0] || pnode->child[1]) {
         //this pnode is occupied, try inserting to a child
-        newnode = cacheInsert(pnode->child[0], width, height);
+        hGlyphBMNode* newnode = cacheInsert(pnode->child[0], width, height);
         if (!newnode)
             newnode = cacheInsert(pnode->child[1], width, height);
         return newnode;

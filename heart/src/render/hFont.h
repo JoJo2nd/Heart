@@ -103,7 +103,9 @@ namespace Heart {
 
     public:
         hFontRenderCache()
-        {}
+            : root_(nullptr){
+
+        }
 
         void  initialise();
         // return true when the texture needs to be flushed (that is, it's out of space)
