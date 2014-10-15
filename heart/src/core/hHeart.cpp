@@ -53,8 +53,7 @@ namespace Heart {
         , mainUpdate_(hNullptr)
         , mainRender_(hNullptr)
         , shutdownUpdate_(hNullptr)
-        , onShutdown_(hNullptr)
-    {
+        , onShutdown_(hNullptr) {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
 
         hUint32 sdlFlags = 0;
@@ -63,6 +62,8 @@ namespace Heart {
         sdlFlags |= SDL_INIT_HAPTIC;
         sdlFlags |= SDL_INIT_EVENTS;
         SDL_Init(sdlFlags);
+
+        hInitFreetype2();
 
         hdGetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
         hdGetProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
@@ -200,6 +201,7 @@ namespace Heart {
         // Temp workaround for dead stripping of these types
         hcPrintf("Auto-registered type %s=%d", hShaderProgram::getTypeNameStatic().c_str(), hShaderProgram::auto_object_registered);
         hcPrintf("Auto-registered type %s=%d", hMaterial::getTypeNameStatic().c_str(), hMaterial::auto_object_registered);
+        hcPrintf("Auto-registered type %s=%d", hTTFFontFace::getTypeNameStatic().c_str(), hTTFFontFace::auto_object_registered);
 
         hMemTracking::TrackPushMarker("After_Engine_Init");
     }
@@ -208,8 +210,7 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hHeartEngine::DoUpdate()
-    {
+    void hHeartEngine::DoUpdate() {
 #ifdef HEART_DO_PROFILE
         g_ProfilerManager_->BeginFrame();
 #endif
@@ -237,8 +238,8 @@ namespace Heart {
             }
             //!!JM todo: GetSoundManager()->Update();
             // !!JM culled client side work
-            //if (mainUpdate_ && runnableState)
-            //    (*mainUpdate_)( this );
+            if (mainUpdate_ && runnableState)
+                (*mainUpdate_)( this );
             GetVM()->Update();
             //before calling Update dispatch the last frames messages
             GetMainEventPublisher()->updateDispatch();
@@ -276,8 +277,7 @@ namespace Heart {
         //debugMenuManager_->EndFrameUpdate(); !!JM
     }
 
-    hHeartEngine::~hHeartEngine()
-    {
+    hHeartEngine::~hHeartEngine() {
         hMemTracking::TrackPopMarker();
 
         //debugMenuManager_->Destroy(); !!JM
@@ -305,6 +305,8 @@ namespace Heart {
 
         // Delete all global objects allocated by libprotobuf.
         google::protobuf::ShutdownProtobufLibrary();
+
+        hDestroyFreetype2();
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////

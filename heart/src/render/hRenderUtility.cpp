@@ -40,7 +40,6 @@
 extern const float g_debugfontHeight;
 extern const unsigned int g_debugpageCount;
 extern const unsigned int g_debugglyphCount;
-extern const Heart::hFontCharacter g_debugglyphs[];
 extern const size_t low_res_fnt_width;
 extern const size_t low_res_fnt_height;
 extern const size_t low_res_fnt_pitch;

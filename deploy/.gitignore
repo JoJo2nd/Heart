@@ -3,3 +3,5 @@
 /viewer/
 /profiler/
 /gamedata/
+*.sln
+*.suo

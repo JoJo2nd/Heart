@@ -25,58 +25,59 @@
 
 *********************************************************************/
 
-#include "fontloader.h"
 #include "minfs.h"
+#include "resource_font.pb.h"
 #include <fstream>
 #include <memory>
 
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+};
 
-DLL_EXPORT 
-void HEART_API HeartGetBuilderVersion(hUint32* verMajor, hUint32* verMinor) {
-    *verMajor = 0;
-    *verMinor = 9;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-Heart::hResourceClassBase* HEART_API HeartBinLoader( Heart::hISerialiseStream* inStream, Heart::hIDataParameterSet*, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* )
-{
-    using namespace Heart;
-    FontHeader header = {0};
-
-    hFont* font = new memalloc->resourcePakHeap_, hFont)(memalloc->resourcePakHeap_;
-
-    inStream->Read(&header, sizeof(header));
-
-    font->SetFontHeight((hUint32)header.fontHeight);
-    font->SetFontWidth(0);
-    font->SetPageCount(header.pageCount);
-    font->SetPageResourceID(header.pageResID);
-    font->SetMaterialResourceID(header.materialResID);
-    font->SetFontCharacterLimit(header.glyphCount);
-
-    // A pre-fetch on the inStream of 32K could really speed things up?
-    // Should be explicit call on the stream however.
-
-    for (hUint32 i = 0; i < header.glyphCount; ++i)
-    {
-        hFontCharacter ch;
-        inStream->Read(&ch, sizeof(ch));
-        font->AddFontCharacter(&ch);
-    }
-
-    font->SortCharacters();
-
-    return font;
-}
+#if defined (_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#else
+#   pragma error ("Unknown platform")
 #endif
+#include "google/protobuf/io/zero_copy_stream_impl.h"
+#include "google/protobuf/io/coded_stream.h"
+
+#if defined (_MSC_VER)
+#   pragma warning(pop)
+#endif
+
+#if defined PLATFORM_WINDOWS
+#   define FB_API __cdecl
+#elif PLATFORM_LINUX
+#   if BUILD_64_BIT
+#       define FB_API
+#   else
+#       define FB_API __attribute__((cdecl))
+#   endif
+#else
+#   error
+#endif
+
+#if defined (PLATFORM_WINDOWS)
+#   if defined (font_builder_EXPORTS)
+#       define DLL_EXPORT __declspec(dllexport)
+#   else
+#       define DLL_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define DLL_EXPORT
+#endif
+
+#define luaL_errorthrow(L, fmt, ...) \
+    luaL_where(L, 1); \
+    lua_pushfstring(L, fmt, ##__VA_ARGS__ ); \
+    lua_concat(L, 2); \
+    throw std::exception();
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -85,202 +86,59 @@ int fontCompile(lua_State* L) {
     using namespace Heart;
     
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LUA_TSTRING);
     luaL_checktype(L, 2, LUA_TTABLE);
     luaL_checktype(L, 3, LUA_TTABLE);
     luaL_checktype(L, 4, LUA_TSTRING);
 
-    hFloat fontScale=1.f;// = hAtoF(params->GetBuildParameter("SCALE", "1"));
-    const hChar* cheaderoutput=NULL;
-    lua_getfield(L, 3, "scale");
-    if (lua_isnumber(L, -1)) {
-        fontScale=(hFloat)lua_tonumber(L, -1);
-    }
-    lua_pop(L, 1);
-    lua_getfield(L, 3, "headeroutput");
-    if (lua_isstring(L, -1)) {
-        cheaderoutput=lua_tostring(L, -1);
-    }
-    lua_pop(L, 1);
+try {
+    std::vector<char> scratchbuffer;
+    scratchbuffer.reserve(1024*10);
+    const char* ttf_path=lua_tostring(L, 1);
+    size_t filesize=minfs_get_file_size(ttf_path);
+    scratchbuffer.resize(filesize+1);
+    FILE* f = fopen(ttf_path, "rt");
+    fread(scratchbuffer.data(), 1, filesize, f);
+    fclose(f);
+    scratchbuffer[filesize] = 0;
 
-    lua_rawgeti(L, 1, 1);
-    if (!lua_isstring(L, -1)) {
-        luaL_error(L, "input file is not a string");
-        return 0;
-    }
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, -2);
-    lua_call(L, 1, 1);
-    const hChar* filepath=lua_tostring(L, -1);
-    hUint filesize;
-    std::ifstream infile;
-    rapidxml::xml_document<> xmldoc;
+    proto::TTFResource resource_container;
+    resource_container.set_ttfdata(scratchbuffer.data(), filesize);
 
-    filesize=(hUint)minfs_get_file_size(filepath);
-    infile.open(filepath);
-    if (!infile.is_open()) {
-        luaL_error(L, "failed to open file %s", filepath);
-        return 0;
+    //write the resource
+    const char* outputpath=lua_tostring(L, 4);
+    std::ofstream output;
+    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
+    if (!output.is_open()) {
+        luaL_errorthrow(L, "Unable to open output file %s", outputpath);
     }
 
-    std::shared_ptr<hChar> xmlmem(new hChar[filesize+1]);
-    memset(xmlmem.get(), 0, filesize);
-    infile.read(xmlmem.get(), filesize);
-    xmlmem.get()[filesize] = 0;
-
-    try{
-        xmldoc.parse< rapidxml::parse_default >(xmlmem.get());
-    } catch (rapidxml::parse_error e) {
-        luaL_error(L, "Error parsing XML file - %s", e.what());
-        return 0;
-    } catch (...) {
-        luaL_error(L, "Error parsing XML file: Unknown error");
-        return 0;
-    }
-#if 0
-    header.resHeader.resourceType = FONT_MAGIC_NUM;
-    header.version = FONT_VERSION;
-
-    hXMLGetter common = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("common");
-
-    hFloat pageWidth  = common.GetAttributeFloat("scaleW");
-    hFloat pageHeight = common.GetAttributeFloat("scaleH");
-    header.fontHeight = common.GetAttributeFloat("lineHeight")*fontScale;
-    header.pageCount  = common.GetAttributeInt("pages");
-
-    hXMLGetter pages = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("pages");
-    hXMLGetter page = pages.FirstChild("page");
-    const hChar* pageResName = page.GetAttributeString("file", "NONE.NONE");
-    hResourceID resLink = hResourceManager::BuildResourceID(pageResName);//TODO:
-    header.pageResID = resLink;
-    resLink = hResourceManager::BuildResourceID(hXMLGetter(&xmldoc).FirstChild("font").FirstChild("material").GetAttributeString("resource", "NONE.NONE"));
-    header.materialResID = resLink;
-
-    hXMLGetter glyphs = hXMLGetter(&xmldoc).FirstChild("font").FirstChild("chars");
-    hUint32 characterCount = glyphs.GetAttributeInt("count");
-    header.glyphCount = characterCount;
-
-    std::ofstream outfile;
-    lua_getglobal(L, "buildpathresolve");
-    lua_pushvalue(L, 4);
-    lua_call(L, 1, 1);
-    const hChar* outputpath=lua_tostring(L, -1);
-    outfile.open(outputpath, std::ios_base::out|std::ios_base::binary);
-    if (!outfile.is_open()) {
-        luaL_error(L, "Failed to open output file %s", outputpath);
-        return 0;
-    }
-    outfile.write((char*)&header, sizeof(header));
-
-    std::ofstream headerfile;
-    if (cheaderoutput) {
-        lua_getglobal(L, "buildpathresolve");
-        lua_pushstring(L, cheaderoutput);
-        lua_call(L, 1, 1);
-        const hChar* headerfilepath=lua_tostring(L, -1);
-        headerfile.open(headerfilepath);
-        cheaderoutput = headerfile.is_open() ? cheaderoutput : NULL;
-        lua_pop(L, 1);
-    }
-    if (cheaderoutput) {
-        headerfile << "/////\n";
-        headerfile << "// FontHeader\n";
-        headerfile << "const float g_debugfontHeight = " << header.fontHeight << ";\n";
-        headerfile << "const unsigned int g_debugpageCount = " << header.pageCount << ";\n";
-        headerfile << "const unsigned int g_debugglyphCount = " << header.glyphCount << ";\n";
-        headerfile << "\nconst Heart::hFontCharacter g_debugglyphs[] = {\n";
-    }
-
-    for (hXMLGetter glyph = glyphs.FirstChild("char"); glyph.ToNode(); glyph = glyph.NextSibling())
+    google::protobuf::io::OstreamOutputStream filestream(&output);
+    google::protobuf::io::CodedOutputStream outputstream(&filestream);
     {
-        hFontCharacter newchar = {0};
-        newchar.page_       = glyph.GetAttributeInt("page", 0);
-        newchar.unicode_    = glyph.GetAttributeInt("id", -1);
-        newchar.x_          = glyph.GetAttributeFloat("x", 0.f);
-        newchar.y_          = glyph.GetAttributeFloat("y", 0.f);
-        newchar.height_     = glyph.GetAttributeFloat("height", 0.f);
-        newchar.width_      = glyph.GetAttributeFloat("width", 0.f);
-        newchar.xOffset_    = glyph.GetAttributeFloat("xoffset", 0.f);
-        newchar.yOffset_    = glyph.GetAttributeFloat("yoffset", 0.f);
-        newchar.xAdvan_     = glyph.GetAttributeFloat("xadvance", 0.f);
-
-        newchar.UV1_ = hCPUVec2(newchar.x_/pageWidth, ((newchar.y_+newchar.height_)/pageHeight));//top left
-        newchar.UV2_ = hCPUVec2((newchar.x_+newchar.width_)/pageWidth, (newchar.y_/pageHeight));//bottom right
-
-        newchar.height_ *= fontScale;
-        newchar.width_ *= fontScale;
-        newchar.yOffset_ *= fontScale;
-        newchar.xOffset_ *= fontScale;
-        newchar.xAdvan_ *= fontScale;
-
-        if (cheaderoutput) {
-            hChar tmpbuf[1024];
-            sprintf_s(tmpbuf, 1024, "{%u, %u, %ff, %ff, %ff, %ff, %ff, %ff, %ff, Heart::hCPUVec2(%ff, %ff), Heart::hCPUVec2(%ff, %ff)},\n",
-                newchar.page_, newchar.unicode_, newchar.x_, newchar.y_,
-                newchar.height_, newchar.width_, newchar.xOffset_, newchar.yOffset_, 
-                newchar.xAdvan_, newchar.UV1_.x, newchar.UV1_.y, newchar.UV2_.x, newchar.UV2_.y);
-            headerfile.write(tmpbuf, strlen(tmpbuf));
-        }
-
-        outfile.write((char*)&newchar, sizeof(hFontCharacter));
+        google::protobuf::io::OstreamOutputStream filestream(&output);
+        google::protobuf::io::CodedOutputStream outputstream(&filestream);
+        Heart::proto::MessageContainer msgContainer;
+        msgContainer.set_type_name(resource_container.GetTypeName());
+        msgContainer.set_messagedata(resource_container.SerializeAsString());
+        msgContainer.SerializePartialToCodedStream(&outputstream);
     }
+    output.close();
 
-    if (cheaderoutput) {
-        headerfile << "}; //const hFontCharacter g_debugglyphs[]\n";
-        headerfile.close();
-    }
+    // push table of files files that where included (always empty for ttf fonts)
+    lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
 
-    // link the dependent resource
-    lua_newtable(L);
-    lua_pushstring(L, pageResName);
-    lua_rawseti(L, -2, 1);
     return 1;
-#endif
-    return 0;
+} catch (std::exception e) {
+    return lua_error(L);
 }
-
-#if 0
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-hBool HEART_API HeartPackageLink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-    hFont* fnt = static_cast< hFont* >(resource);
-    return fnt->Link(engine->GetResourceManager());
 }
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void HEART_API HeartPackageUnlink( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-DLL_EXPORT
-void HEART_API HeartPackageUnload( Heart::hResourceClassBase* resource, Heart::hResourceMemAlloc* memalloc, Heart::hHeartEngine* engine )
-{
-    using namespace Heart;
-
-    hFont* font = static_cast<hFont*>(resource);
-    delete memalloc->resourcePakHeap_, font;
-}
-#endif
 
 extern "C" {
 //Lua entry point calls
 DLL_EXPORT int FB_API luaopen_font(lua_State *L) {
     static const luaL_Reg fontlib[] = {
-        {"compile"      , fontCompile},
+        {"build"      , fontCompile},
         {NULL, NULL}
     };
     luaL_newlib(L, fontlib);

@@ -55,6 +55,7 @@
 #include "resource_texture.pb.h"
 #include "resource_material_fx.pb.h"
 #include "resource_mesh.pb.h"
+#include "resource_font.pb.h"
 
 #if defined (HEART_PLAT_WINDOWS)
 #   pragma warning(pop)

@@ -1,28 +1,6 @@
 /********************************************************************
-
-    filename: 	hFont.h	
-    
-    Copyright (c) 31:3:2012 James Moran
-    
-    This software is provided 'as-is', without any express or implied
-    warranty. In no event will the authors be held liable for any damages
-    arising from the use of this software.
-    
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-    
-    1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
-    
-    2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
-    
-    3. This notice may not be removed or altered from any source
-    distribution.
-
+    Written by James Moran
+    Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 #ifndef __HRFONT_H__
 #define __HRFONT_H__
@@ -32,26 +10,15 @@
 #include "base/hStringID.h"
 #include "base/hRendererConstants.h"
 #include "components/hObjectFactory.h"
+#include "ft2build.h"
+#include FT_FREETYPE_H
+#include <memory>
+#include <unordered_map>
 
-class FontBuilder;
+struct FT_LibraryRec_;
 
-namespace Heart
-{
-    class hTexture;
-    class hRenderSubmissionCtx;
-    class hMaterialInstance;
-    class hMaterial;
-    class hFont;
-
-    struct hFontStyle
-    {
-        hUint32			Alignment_;
-        hColour			Colour_;
-        hUint32			Order_;
-        hFloat          scale_;
-        hFont*          font_;
-    };
-
+namespace Heart {
+#if 0
     enum 
     {
         FONT_ALIGN_VCENTRE	= 1,//	along y axis
@@ -62,105 +29,88 @@ namespace Heart
         FONT_ALIGN_HCENTRE	= 1 << 5, // alogn x axis
         FONT_ALIGN_FLIP	    = 1 << 6, // alogn x axis
     };
+#endif
+    
+    void        hInitFreetype2();
+    FT_Library* hGetFreetype2Library();
+    void        hDestroyFreetype2();
 
-namespace Private
-{
-    struct hFontLine
-    {
-        hUint32					LineX_;
-        hUint32					LineY_;
-        hFloat					Width_;
-        const hChar*			pStart_;
-        const hChar*			pEnd_;
-    };
-}
+    typedef FT_Glyph_Metrics hFontGlyphMetrics;
+    typedef FT_GlyphSlot hFontGlyph;
+    typedef hUint64 hGlyphHash;
 
-#pragma pack(push, 1)
-
-    // explicitly pad to 32 bytes
-    // would be nice to get this under 32 bytes, might be possible if
-    // units are pixel based, then could pack into elements into bytes.
-    // I doubt many characters are more than 256 units wide or hight
-    // in which case the possible min size is 28 bytes + page ID which could
-    // be packed into ~3 bits.
-    struct hFontCharacter
-    {
-        hUint32                 page_;      //4;
-        hUint32                 unicode_;   //8;Decoded from UTF-8, where -1 is invalid
-        hFloat                  x_;         //12;
-        hFloat                  y_;         //16;
-        hFloat                  height_;    //20;
-        hFloat                  width_;     //24;
-        hFloat                  xOffset_;   //28;
-        hFloat                  yOffset_;   //32;
-        hFloat                  xAdvan_;    //36;
-        hFloat                  UV1_[2];    //(8)44;
-        hFloat                  UV2_[2];    //(8)52;
-        hByte                   pad_[12];   //(12)64;
+    struct hGlyphBMNode {
+        hGlyphBMNode() {
+            child[0]=nullptr;
+            child[1]=nullptr;
+        }
+        hGlyphBMNode*       child[2]; //left, right children
+        hUint16             x, y, w, h;  // image quad
     };
 
-#pragma pack(pop)
-
-    typedef hUint64 hFontLookup;
-
-    struct hFontVex
-    {
-        hFloat      pos_[3];
-        hColour     colour_;
-        hFloat      uv_[2];
+    struct hCachedGlyph {
+        hFontGlyphMetrics   metrics_;
+        hGlyphBMNode*       atlas_;
+        hFloat              uv_[4]; //top, left, bottom, right
     };
 
-    class  hFont
-    {
+    class  hTTFFontFace {
     public:
-        hObjectType(Heart::hFont, Heart::proto::Placeholder); /*TODO*/
+        hObjectType(Heart::hTTFFontFace, Heart::proto::TTFResource);
 
-        hFont() 
-            : nTexturePages_(0)
-            , texturePageResID_(0)
-            , texturePages_(0)
-            , fontMaterial_(NULL)
-            , fontMaterialInstance_(NULL)
-            , fontWidth_(0)
-            , fontHeight_(0)
-            , nMaxFontCharacters_(0)
-            , nFontCharacters_(0)
-            , fontCharacters_(NULL)
-            , fontLookupSteps_(0)
-            , fontLookup_(NULL)
-        {}
-        virtual	~hFont();
+        hTTFFontFace()
+            : TTFSize_(0){
 
-        void                    SetFontHeight(hUint32 val) { fontHeight_ = val; }
-        hUint32				    GetFontHeight() const { return fontHeight_; }
-        void                    SetFontWidth(hUint32 val) { fontWidth_ = val; }
-        hUint32				    GetFontWidth() const { return fontWidth_; }
-        void                    SetPageCount(hUint32 val) { nTexturePages_ = val; }
-        void                    SetPageResourceID(hStringID val) { texturePageResID_ = val; }
-        void                    SetMaterialResourceID(hStringID val) { fontMaterialID_ = val; }
-        void                    SetFontCharacterLimit(hUint32 nChars);
-        void                    AddFontCharacter(const hFontCharacter* fchar);
-        void                    SortCharacters();
-        hBool                   Link();
-        const hFontCharacter*   GetFontCharacter( hUint32 charcode ) const;
+        }
+        ~hTTFFontFace();
+
+        void setPixelSize(hUint size);
+        // The returned hFontGlyph is only until the next call to getGlyph
+        const hFontGlyph getGlyph(hUint32 charcode);
+        hGlyphHash getGlyphHash(hUint32 charcode);
 
     private:
 
-        hUint32                     nTexturePages_;
-        hStringID                   texturePageResID_;
-        hTexture*                   texturePages_;
-        hStringID                   fontMaterialID_;
-        hMaterial*                  fontMaterial_;
-        hMaterialInstance*          fontMaterialInstance_;
-        hUint32                     fontWidth_;
-        hUint32                     fontHeight_;
-        hUint32                     nMaxFontCharacters_;
-        hUint32						nFontCharacters_;
-        hFontCharacter*	            fontCharacters_;
-        hUint32                     fontLookupSteps_;
-        hFontLookup*                fontLookup_;
+        hSize_t                  TTFSize_;
+        std::unique_ptr<hByte[]> TTFData_;
+        hUint32                  dataHash_;
+        hGlyphHash               hashBase_;
+        FT_Face                  face_;
+        hUint                    fontSize_;
     };
 
+    class hFontRenderCache {
+        typedef std::unordered_map<hGlyphHash, hCachedGlyph> GlyphHashTable;
+
+        std::unique_ptr<char>       textureCache_;
+        std::vector<hGlyphBMNode>   atlasNodes_;
+        GlyphHashTable              cachedGlyphs_;
+        hGlyphBMNode*               root_;
+        hUint                       textureDim_;
+        hUint                       pad_;
+        hUint                       nodeReserve_;
+        hUint                       allocated_;
+        hUint16                     freelist_;
+
+        hGlyphBMNode* cacheInsert(hGlyphBMNode* node, hUint16 width, hUint16 height);
+        hGlyphBMNode* allocateNode() {
+            if (allocated_ >= nodeReserve_) {
+                return nullptr;
+            }
+            atlasNodes_.push_back(hGlyphBMNode());
+            return atlasNodes_.data() + allocated_++;
+        }
+
+    public:
+        hFontRenderCache()
+        {}
+
+        void  initialise();
+        // return true when the texture needs to be flushed (that is, it's out of space)
+        const hCachedGlyph* getCachedGlyphBitmap(hTTFFontFace* face, hUint32 charcode);
+        const char* getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight);
+        void  flush();
+    };
 }
 
 #endif //__HRFONT_H__

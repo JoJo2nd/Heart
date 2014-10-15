@@ -228,9 +228,11 @@ function write_packages(buildable_resources)
         verbose_log("Writing package %s", k)
         local pkg_header = protobuf.Heart.proto.PackageHeader.new()
         for i, dep in pairs(v.depends) do
-            verbose_log("Writing dependency %s", dep)
-            -- TODO: fix this awful lua-protobuf-gen issue
-            pkg_header:set_packagedependencies(pkg_header:size_packagedependencies()+1, dep)
+            if k ~= dep then
+                verbose_log("Writing dependency %s", dep)
+                -- TODO: fix this awful lua-protobuf-gen issue
+                pkg_header:set_packagedependencies(pkg_header:size_packagedependencies(), dep)
+            end
         end
         local offset = 0
         for i, res in pairs(v.resources) do
@@ -253,6 +255,7 @@ function write_packages(buildable_resources)
         verbose_log("Written header. Size:%d, Resources:%d", header_size, #v.resources)
         for i, res in pairs(v.resources) do
             local temp_file_name, output_file, dep_output_file = get_resource_filenames(res.package, res.full_path)
+            verbose_log("Reading resource file %s", output_file)
             local res = io.open(output_file, "rb")
             local data = res:read("*a")
             res:close()

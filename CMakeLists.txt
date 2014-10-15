@@ -218,6 +218,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/modu
 
 find_package(Protobuf REQUIRED)
 find_package(SDL2 REQUIRED)
+find_package(Freetype REQUIRED)
 
 find_package(OpenGL REQUIRED)
 set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")

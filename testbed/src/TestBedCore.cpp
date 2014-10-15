@@ -1,28 +1,6 @@
 /********************************************************************
-
-    filename:   TestBedCore.cpp  
-    
-    Copyright (c) 26:12:2012 James Moran
-    
-    This software is provided 'as-is', without any express or implied
-    warranty. In no event will the authors be held liable for any damages
-    arising from the use of this software.
-    
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-    
-    1. The origin of this software must not be misrepresented; you must not
-    claim that you wrote the original software. If you use this software
-    in a product, an acknowledgment in the product documentation would be
-    appreciated but is not required.
-    
-    2. Altered source versions must be plainly marked as such, and must not be
-    misrepresented as being the original software.
-    
-    3. This notice may not be removed or altered from any source
-    distribution.
-
+    Written by James Moran
+    Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
 #include "testbed_precompiled.h"
@@ -40,7 +18,7 @@
 // #include "ComplexMesh1.h"
 // #include "ComplexMesh2.h"
 // #include "DebugPrimsTest.h"
- #include "Sibenik.h"
+#include "Sibenik.h"
 // #include "ComputeTest.h"
 // #include "TexturedPlane.h"
 // #include "LoadTextureTest.h"
@@ -129,6 +107,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
         lua_pop(L, 1);// pop heart module table
 
         Heart::hResourceManager::loadPackage("core");
+        Heart::hResourceManager::loadPackage("fonts");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,27 +197,191 @@ DEFINE_HEART_UNIT_TEST(Base64);
 #endif        
     }
 
+//
+// Structures from Direct3D 9
+//
+struct D3D_PixelFormat // DDPIXELFORMAT
+{
+int dwSize;
+int dwFlags;
+int dwFourCC;
+int dwRGBBitCount;
+int dwRBitMask, dwGBitMask, dwBBitMask;
+int dwRGBAlphaBitMask;
+};
+
+struct D3D_Caps2
+{
+int dwCaps1;
+int dwCaps2;
+int Reserved[2];
+};
+
+struct D3D_SurfaceDesc2
+{
+int dwSize;
+int dwFlags;
+int dwHeight;
+int dwWidth;
+int dwPitchOrLinearSize;
+int dwDepth;
+int dwMipMapCount;
+int dwReserved1[11];
+D3D_PixelFormat ddpfPixelFormat;
+D3D_Caps2 ddsCaps;
+int dwReserved2;
+};
+
+// Enums
+
+#define FOURCC(a, b, c, d) \
+((unsigned int)((unsigned int)(a) ) | \
+((unsigned int)(b) << 8) | \
+((unsigned int)(c) << 16) | \
+((unsigned int)(d) << 24))
+
+typedef enum
+{
+DDS_COMPRESS_NONE = 0,
+DDS_COMPRESS_BC1, /* DXT1 */
+DDS_COMPRESS_BC2, /* DXT3 */
+DDS_COMPRESS_BC3, /* DXT5 */
+DDS_COMPRESS_BC3N, /* DXT5n */
+DDS_COMPRESS_BC4, /* ATI1 */
+DDS_COMPRESS_BC5, /* ATI2 */
+DDS_COMPRESS_AEXP, /* DXT5 */
+DDS_COMPRESS_YCOCG, /* DXT5 */
+DDS_COMPRESS_YCOCGS, /* DXT5 */
+DDS_COMPRESS_MAX
+} DDS_COMPRESSION_TYPE;
+
+typedef enum
+{
+DDS_SAVE_SELECTED_LAYER = 0,
+DDS_SAVE_CUBEMAP,
+DDS_SAVE_VOLUMEMAP,
+DDS_SAVE_MAX
+} DDS_SAVE_TYPE;
+
+typedef enum
+{
+DDS_FORMAT_DEFAULT = 0,
+DDS_FORMAT_RGB8,
+DDS_FORMAT_RGBA8,
+DDS_FORMAT_BGR8,
+DDS_FORMAT_ABGR8,
+DDS_FORMAT_R5G6B5,
+DDS_FORMAT_RGBA4,
+DDS_FORMAT_RGB5A1,
+DDS_FORMAT_RGB10A2,
+DDS_FORMAT_R3G3B2,
+DDS_FORMAT_A8,
+DDS_FORMAT_L8,
+DDS_FORMAT_L8A8,
+DDS_FORMAT_AEXP,
+DDS_FORMAT_YCOCG,
+DDS_FORMAT_MAX
+} DDS_FORMAT_TYPE;
+
+typedef enum
+{
+DDS_COLOR_DEFAULT = 0,
+DDS_COLOR_DISTANCE,
+DDS_COLOR_LUMINANCE,
+DDS_COLOR_INSET_BBOX,
+DDS_COLOR_MAX
+} DDS_COLOR_TYPE;
+
+typedef enum
+{
+DDS_MIPMAP_DEFAULT = 0,
+DDS_MIPMAP_NEAREST,
+DDS_MIPMAP_BOX,
+DDS_MIPMAP_BILINEAR,
+DDS_MIPMAP_BICUBIC,
+DDS_MIPMAP_LANCZOS,
+DDS_MIPMAP_MAX
+} DDS_MIPMAP_TYPE;
+
+#define DDS_HEADERSIZE 128
+
+#define DDSD_CAPS 0x00000001
+#define DDSD_HEIGHT 0x00000002
+#define DDSD_WIDTH 0x00000004
+#define DDSD_PITCH 0x00000008
+#define DDSD_PIXELFORMAT 0x00001000
+#define DDSD_MIPMAPCOUNT 0x00020000
+#define DDSD_LINEARSIZE 0x00080000
+#define DDSD_DEPTH 0x00800000
+
+#define DDPF_ALPHAPIXELS 0x00000001
+#define DDPF_ALPHA 0x00000002
+#define DDPF_FOURCC 0x00000004
+#define DDPF_PALETTEINDEXED8 0x00000020
+#define DDPF_RGB 0x00000040
+#define DDPF_LUMINANCE 0x00020000
+
+#define DDSCAPS_COMPLEX 0x00000008
+#define DDSCAPS_TEXTURE 0x00001000
+#define DDSCAPS_MIPMAP 0x00400000
+
+#define DDSCAPS2_CUBEMAP 0x00000200
+#define DDSCAPS2_CUBEMAP_POSITIVEX 0x00000400
+#define DDSCAPS2_CUBEMAP_NEGATIVEX 0x00000800
+#define DDSCAPS2_CUBEMAP_POSITIVEY 0x00001000
+#define DDSCAPS2_CUBEMAP_NEGATIVEY 0x00002000
+#define DDSCAPS2_CUBEMAP_POSITIVEZ 0x00004000
+#define DDSCAPS2_CUBEMAP_NEGATIVEZ 0x00008000
+#define DDSCAPS2_VOLUME 0x00200000    
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
+        hcPrintf("Stub.");
         if (!currentTest_ && !exiting_) {
-#if HEART_USE_SDL2
-            hcPrintf("Stub.");
-#else
-            currentTest_ = factory_->CreateUnitTest(unitTests_[currentTestIdx_].testName_);
-#endif
+            
+        }
+        static auto font_cache = Heart::hFontRenderCache();
+        static Heart::hTTFFontFace* font = nullptr;
+        static Heart::hTTFFontFace* font2 = nullptr;
+        if (!font && Heart::hResourceManager::getIsPackageLoaded("fonts")) {
+            font = Heart::hResourceManager::weakResource<Heart::hTTFFontFace>(Heart::hStringID("/fonts/cour"));
+            font2 = Heart::hResourceManager::weakResource<Heart::hTTFFontFace>(Heart::hStringID("/fonts/comic"));
+            font_cache.initialise();
+            static const char string[] = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm\\,./;'#[]|<>?:@~{}1234657890-=!\"£$%%^&*)_+";
+            static const char dds_header [] = 
+            {0x44,0x44,0x53,0x20,0x7C,0x00,0x00,0x00,0x07,0x10,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x08,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+            static const int fontsize [] = { 96, 11, 48, 12, 24, 36 };
+            Heart::hTTFFontFace* fonts[] = {font, font2};
+            for (auto f=0; f<2; ++f) {
+                for (auto fs=0; fs<hStaticArraySize(fontsize); ++fs){
+                    fonts[f]->setPixelSize(fontsize[fs]);
+                    for (auto i=0u; i<sizeof(string); ++i) {
+                        static int page = 0;
+                        if (!font_cache.getCachedGlyphBitmap(fonts[f], string[i])) {
+                            ++page;
+                            font_cache.flush();
+                        }
+                        char buffer[256];
+                        hUint w, h;
+                        auto* td = font_cache.getTextureData(&w, &h);
+                        sprintf(buffer, "test_font_cache_ouput_v%d.dds", page);
+                        auto* f = fopen(buffer, "wb");
+                        fwrite(dds_header, 1, sizeof(dds_header), f);
+                        fwrite(td, 1, w*h, f);
+                        fclose(f);
+                    }
+                }
+            }
+        }
+        static hBool dotest = hTrue;
+        if (font && dotest) {
+            dotest = hFalse;
         }
         if (currentTest_) {
-#if HEART_USE_SDL2
-            hcPrintf("Stub.");
-#else
-            if (pad->GetButton(HEART_PAD_BACK).raisingEdge_ || kb->GetButton(VK_F6).raisingEdge_) {
-                currentTest_->forceExitTest();
-            }
-#endif
             currentTest_->RunUnitTest();
             if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
                 delete currentTest_; currentTest_ = nullptr;

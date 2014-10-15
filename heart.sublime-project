@@ -1,41 +1,54 @@
 {
+	"build_systems":
+	[
+		{
+			"cmd":
+			[
+				"win_build.bat",
+				"C:\\dev\\cmake\\x64\\heart\\heart.sln",
+				"Debug",
+				"x64"
+			],
+			"name": "Build \"Heart Debug x64\"",
+			"selector": "source.c++",
+			"windows":
+			{
+				"file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
+			},
+			"working_dir": "$project_path/build"
+		},
+		{
+			"cmd":
+			[
+				"win_debug.bat",
+				"$project_path/bin/Debug/heart_testbed_d.exe"
+			],
+			"name": "Debug \"Heart x64\"",
+			"selector": "source.c++",
+			"working_dir": "$project_path/build"
+		}
+	],
 	"folders":
 	[
 		{
+			"folder_exclude_patterns":
+			[
+				"deploy/tools",
+				"deploy/gamedata",
+				"deploy/viewer",
+				"deploy/game*.*",
+				"deploy/game/gamedata",
+				"cmake64",
+				"cmake32",
+                "lib",
+                "bin",
+			],
 			"follow_symlinks": true,
-			"path": ".",
-			"folder_exclude_patterns": ["deploy/tools", "deploy/gamedata", "deploy/viewer", "deploy/game*.*", "deploy/game/gamedata", "cmake64", "cmake32"]
+			"path": "."
+		},
+		{
+			"follow_symlinks": true,
+			"path": "C:\\dev\\cmake\\x64\\heart\\tools\\proto\\pb_lite"
 		}
-	],
-	"build_systems":
-	[
-        {
-        	"name": "Heart x64",
-            "cmd": ["python", "cmake_build.py", "-p", "$project_path/cmake64", "-r", "$project_path"],
-            "selector": "source.c++",
-            "working_dir": "$project_path/build",
-            "windows":
-            {
-            	"file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
-            },
-            "linux":
-            {
-                "file_regex": "(\/.+?):(\\d+):\\d+:\\s*?error:"
-            }
-        },
-        {
-            "name": "Heart x32",
-            "cmd": ["python", "cmake_build.py", "-p", "$project_path/cmake32", "-r", "$project_path"],
-            "selector": "source.c++",
-            "working_dir": "$project_path/build",
-            "windows":
-            {
-                "file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
-            },
-            "linux":
-            {
-                "file_regex": "(\/.+?):(\\d+):\\d+:"
-            }
-        }
-    ]
+	]
 }

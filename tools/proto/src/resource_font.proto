@@ -1,0 +1,7 @@
+import "resource_common.proto";
+
+package Heart.proto;
+
+message TTFResource {
+    optional bytes ttfData = 1;
+}

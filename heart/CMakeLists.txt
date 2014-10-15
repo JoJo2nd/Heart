@@ -25,6 +25,7 @@ set( HEART_INCLUDE_DIRS
     "${GENERATED_PROTO_INC_DIRS}"
     "${SDL2_INCLUDE_DIR}"
     "${GLEW_INCLUDE_DIRS}"
+    "${FREETYPE_INCLUDE_DIRS}"
 )
 
 set(HEART_LIB_DIRS)
@@ -274,7 +275,7 @@ set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPE
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
-        zlib crypto lua52 minizip libogg libvorbis proto enet ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY})
+        zlib crypto lua52 minizip libogg libvorbis proto enet ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})

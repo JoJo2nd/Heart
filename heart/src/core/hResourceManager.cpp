@@ -173,9 +173,9 @@ void update() {
 
 void loadPackage( const hChar* name ) {
     hMutexAutoScope sentry(&resourceDBMtx_);
-    hUint32 pkcrc = hCRC32::StringCRC(name);
+    auto pkcrc = hStringID(name);
     auto lp=std::find_if(packages_.begin(), packages_.end(), [=](const hResourcePackage* lhs) {
-        return lhs->getPackageCRC() == pkcrc;
+        return lhs->getPackageCRC() == pkcrc.hash();
     });
     if (lp == packages_.end()) {
          hResourcePackage* pkg;
@@ -194,9 +194,9 @@ void loadPackage( const hChar* name ) {
 
 hBool getIsPackageLoaded( const hChar* name ) {
     hMutexAutoScope sentry(&resourceDBMtx_);
-    hUint32 pkcrc = hCRC32::StringCRC(name);
+    auto pkcrc = hStringID(name);
     auto lp=std::find_if(packages_.begin(), packages_.end(), [=](const hResourcePackage* lhs) {
-        return lhs->getPackageCRC() == pkcrc;
+        return lhs->getPackageCRC() == pkcrc.hash();
     });
     return (lp != packages_.end() && (*lp)->isInReadyState()) ? hTrue : hFalse;
 }

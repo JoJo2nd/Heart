@@ -154,13 +154,12 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
             hFloat start_time = hClock::elapsed();
             for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
-                //hJob* loadjob=new hJob;
                 hResourceLoadJobInputOutput* jobinfo=resourceJobArray_.data()+i;
-                resourceJobArray_[i].resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
-                resourceJobArray_[i].resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
-                resourceJobArray_[i].createdResource_=nullptr;
-                resourceJobArray_[i].resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
-                resourceJobArray_[i].linked_=false;
+                jobinfo->resMemStart_= file_base+packageHeader_.entries(i).entryoffset();
+                jobinfo->resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
+                jobinfo->createdResource_=nullptr;
+                jobinfo->resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
+                jobinfo->linked_=false;
 
                 proto::ResourceHeader resheader;
                 google::protobuf::io::ArrayInputStream resourcefilestream(jobinfo->resMemStart_, (hInt)((hPtrdiff_t)jobinfo->resMemEnd_-(hPtrdiff_t)jobinfo->resMemStart_));
@@ -168,10 +167,9 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
 
                 proto::MessageContainer data_container;
                 data_container.ParseFromCodedStream(&resourcestream);
-                jobinfo->objectDef_ = hObjectFactory::getObjectDefinition(jobinfo->resourceType_);
-                hcAssertMsg(jobinfo->objectDef_, "Unable to locate object definition for type \"%s\"", jobinfo->resourceType_.c_str());
                 jobinfo->createdResource_ = hObjectFactory::deserialiseObject(&data_container, &jobinfo->resourceType_);
-                //loadResource(resourceJobArray_.data()+i, resourceJobArray_.data()+i);
+                jobinfo->objectDef_ = hObjectFactory::getObjectDefinition(jobinfo->resourceType_);
+                hcAssertMsg(jobinfo->objectDef_, "Unable to locate object definition for type %s", jobinfo->resourceType_.c_str());
             }
             timer_.reset();
             if (nextResourceToLoad_ == packageHeader_.entries_size()) {

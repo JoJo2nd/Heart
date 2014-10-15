@@ -110,13 +110,13 @@ namespace hResourceManager
     hBool   getIsPackageLoaded(const hChar* name);
     void*   getResourcePtrType(hStringID res_id, hStringID* out_type_id);
     template< typename t_ty>
-    t_ty* getResourceForHandle(hStringID res_id) {
+    t_ty* weakResource(hStringID res_id) {
         hStringID type_id;
-        void* ptr = getResourcePtrType(res_id, &type_id);
-        if (type_id == t_ty::getTypeNameStatic()) {
+        void* ptr = weakResourceRef(res_id);
+        //if (type_id == t_ty::getTypeNameStatic()) {
             return (t_ty*)ptr;
-        }
-        return nullptr;
+        //}
+        //return nullptr;
     }
 }
 

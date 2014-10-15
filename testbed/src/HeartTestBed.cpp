@@ -1,10 +1,6 @@
 /********************************************************************
-	created:	2008/10/08
-	created:	8:10:2008   20:07
-	filename: 	HeartTestBed.cpp
-	author:		James
-	
-	purpose:	
+    Written by James Moran
+    Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
 #include "testbed_precompiled.h"

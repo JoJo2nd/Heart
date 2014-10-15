@@ -37,6 +37,7 @@
 #include "resource_texture.pb.h"
 #include "resource_material_fx.pb.h"
 #include "resource_mesh.pb.h"
+#include "resource_font.pb.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(pop)
@@ -500,3 +501,5 @@ DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResourceContainer);
 //resource_texture.proto
 DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureMip);
 DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureResource);
+//resource_font.proto
+DEFINE_AND_REGISTER_TYPE(Heart::proto, TTFResource);
