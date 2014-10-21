@@ -2,6 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
+#pragma once
 
 #if (_MSC_VER >= 1500) || defined (__clang__) || defined (__GNUC__)
 #   include <type_traits>

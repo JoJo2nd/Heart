@@ -44,7 +44,7 @@ namespace Heart
 
         hMutexAutoScope sentry(&s_writeMutex);
         //do the search again, as between the serach and the lock, the value may have been added.
-        hStringIDEntry* preventry = hNullptr;
+        hStringIDEntry* preventry = nullptr;
         entry = s_hashTable+key;
         do {
             if (entry->strHash_ == fullhash && hStrCmp(str, entry->strValue_) == 0) {
@@ -60,7 +60,7 @@ namespace Heart
         hStringIDEntry* newentry = entry ? entry : new hStringIDEntry();
         newentry->byteLen_ = len;
         newentry->charLen_ = len;
-        newentry->next_ = hNullptr;
+        newentry->next_ = nullptr;
         newentry->strHash_ = fullhash;
         newentry->strValue_ = new hChar[newentry->byteLen_+1];
         hStrCopy(newentry->strValue_, (hUint)newentry->byteLen_+1, str);

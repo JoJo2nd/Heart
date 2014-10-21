@@ -2,14 +2,11 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
-#ifndef ATOMIC_H__
-#define ATOMIC_H__
+#pragma once
 
 #include <atomic>
 
-namespace Heart
-{
+namespace Heart {
 #if defined (PLATFORM_WINDOWS)
     HEART_ALIGNMENT_BEGIN(16)
     struct  hAtomicInt
@@ -24,8 +21,7 @@ namespace Heart
 #   error ("Unknown Platform")
 #endif
 
-namespace hAtomic
-{
+namespace hAtomic {
 
 #ifdef HEART_PLAT_WINDOWS
 
@@ -56,5 +52,3 @@ namespace hAtomic
 #endif
 }
 }
-
-#endif // ATOMIC_H__

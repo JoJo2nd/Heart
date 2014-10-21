@@ -2,10 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
-#ifndef _HEART_H__
-#define _HEART_H__
-
+#pragma once
 /*
     Test these by including them first
     They need to be able to be included singularly
@@ -171,6 +168,7 @@ extern "C" {
 #include "render/hFont.h"
 //#include "hMesh.h"
 #include "render/hRenderUtility.h"
+#include "render/hRenderCallDesc.h"
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -211,5 +209,3 @@ extern "C" {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 #include "core/hHeart.h"
-
-#endif // _HEART_H__

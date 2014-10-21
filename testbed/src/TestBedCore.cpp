@@ -108,6 +108,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
 
         Heart::hResourceManager::loadPackage("core");
         Heart::hResourceManager::loadPackage("fonts");
+        Heart::hResourceManager::loadPackage("textures");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,7 +242,18 @@ DEFINE_HEART_UNIT_TEST(Base64);
             }
         }
         static hBool dotest = hTrue;
-        if (font && dotest) {
+        if (dotest && Heart::hResourceManager::getIsPackageLoaded("core")) {
+            Heart::hShaderProgram* vpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/vertex/console"));
+            Heart::hShaderProgram* fpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/fragment/console"));
+            Heart::hRenderer::hRenderCallDesc rcd;
+
+            rcd.setUniformBuffer(Heart::hStringID("ViewportConstants"), nullptr);
+            rcd.setUniformBuffer(Heart::hStringID("InstanceConstants"), nullptr);
+            rcd.vertex_ = vpr->getShader();
+            rcd.fragment_ = fpr->getShader();
+
+            auto* rc = Heart::hRenderer::createRenderCall(rcd);
+
             dotest = hFalse;
         }
         if (currentTest_) {

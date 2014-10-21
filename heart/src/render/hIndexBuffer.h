@@ -12,7 +12,7 @@
 
 namespace Heart {
 namespace hRenderer {
-class hIndexBuffer;
+struct hIndexBuffer;
 
 hUint getIndexCount(const hIndexBuffer* ib);
 hIndexBufferType getIndexBufferType(const hIndexBuffer* ib);

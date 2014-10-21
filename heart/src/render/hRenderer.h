@@ -3,8 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#ifndef hrRenderer_h__
-#define hrRenderer_h__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hFunctor.h"
@@ -19,13 +18,12 @@
 #include "render/hRenderStateBlock.h"
 #include "render/hRenderSubmissionContext.h"
 #include "render/hRendererCamera.h"
+#include "render/hTextureFormat.h"
 
 namespace Heart {
 
 class hShaderProgram;
-class hShaderStage;
-class hIndexBuffer;
-class hVertexBuffer;
+
 
 #define HEART_DEBUG_CAMERA_ID (13)
 #define HEART_DEBUGUI_CAMERA_ID (14)
@@ -42,29 +40,45 @@ namespace hRenderer {
     static const hUint32    s_resoruceUpdateLimit = 1024;
     static const hUint32    s_scratchBufferCount = 5;
 
+    struct hCmdList;
+    struct hRenderCall;
+    struct hRenderCallDesc;
+    struct hMipDesc;
+    struct hTexture1D;
+    struct hTexture2D;
+    struct hTexture3D;
+    struct hShaderStage;
+    struct hIndexBuffer;
+    struct hVertexBuffer;
+    struct hUniformBuffer;
+
     void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
     void					destroy();
-    hFORCEINLINE hFloat                  getRatio() { return 1.f; }
+    hFORCEINLINE hFloat     getRatio() { return 1.f; }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     const hRenderFrameStats* getRenderStats();
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    hRenderSubmissionCtx* createRenderSubmissionCtx();
-    void                  destroyRenderSubmissionCtx( hRenderSubmissionCtx* ctx );
-    /*
-        pimpl methods
-    */
+    
     hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
     hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, Heart::hShaderType type);
-    void  createTexture(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags, hTexture** outTex);
-    void  createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags, hIndexBuffer** outIB);
-    void  createVertexBuffer(const void* initData, hUint32 nElements, hInputLayoutDesc* desc, hUint32 desccount, hUint32 flags, hVertexBuffer** outVB);
+    void  destroyShader(hShaderProgram* prog);
+
+    hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
+    void  destroyTexture2D(hTexture2D* t);
+
+    hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags);
+    void  destroyIndexBuffer(hIndexBuffer* ib);
+
+    hVertexBuffer*  createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+    void  destroyVertexBuffer(hVertexBuffer* vb);
+
+    hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
+    void destroyUniformBuffer(hUniformBuffer* ub);
+
+    hRenderCall* createRenderCall(const hRenderCallDesc& rcd); 
     //void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
     //void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
     //void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
@@ -75,10 +89,7 @@ namespace hRenderer {
     //hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
     //void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
 //private:  
-    void  destroyShader(hShaderProgram* prog);
-    void  destroyTexture(hTexture* pOut);
-    void  destroyIndexBuffer(hIndexBuffer* pOut);
-    void  destroyVertexBuffer(hVertexBuffer* pOut);
+
     //void  destroyShaderResourceView(hShaderResourceView* srv);  
     //void  destroyRenderTargetView(hRenderTargetView* view);
     //void  destroyDepthStencilView(hDepthStencilView* view);
@@ -89,12 +100,15 @@ namespace hRenderer {
     //void  destroyConstantBlock(hRenderBuffer* block);
 //public:
     void* allocTempRenderMemory( hUint32 size );
+
+    void beginCmdList(hCmdList* cmd);
+    void endCmdList(hCmdList* cmd);
+
     /*
-        end new engine design methods
+        Methods to be called between beginCmdList & endCmdList
     */
-    void BeginRenderFrame();
-    void EndRenderFrame();
-    void rendererFrameSubmit();
+
+    void rendererFrameSubmit(hCmdList* cmdlists, hUint count);
     hFloat getLastGPUTime();
     hBool isRenderThread();
 
@@ -144,4 +158,4 @@ namespace hRenderer {
     // hRenderFrameStats   stats_;
 }
 }
-#endif // hrRenderer_h__
+

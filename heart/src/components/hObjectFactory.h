@@ -5,15 +5,11 @@
 
 #pragma once
 
-#ifndef HOBJECTFACTORY_H__
-#define HOBJECTFACTORY_H__
-
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "base/hProtobuf.h"
 
-namespace Heart
-{
+namespace Heart {
     typedef ::google::protobuf::MessageLite hObjectMarshall;
 
     //////////////////////////////////////////////////////////////////////////
@@ -89,8 +85,7 @@ namespace Heart
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
     
-namespace hObjectFactory
-{
+namespace hObjectFactory {
     const hObjectDefinition*        getObjectDefinition(hStringID name);
     void*                           createObject(hStringID name);
     hObjectMarshall*                createObjectMarshallFromTypeName(hStringID name);
@@ -108,4 +103,3 @@ namespace hObjectFactory
 }
 
 }
-#endif // HOBJECTFACTORY_H__

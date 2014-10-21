@@ -13,7 +13,7 @@
 namespace Heart {
 namespace hRenderer {
     class hShaderReflection;
-    class hShaderStage;
+    struct hShaderStage;
 
     /*
         Shader Stage interface
@@ -29,15 +29,20 @@ namespace hRenderer {
 }
 
 class  hShaderProgram {
+    hRenderer::hShaderStage*   shader_;
+
 public:
     hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
 
-    hShaderProgram() {}
+    hShaderProgram() 
+    : shader_(nullptr){
+
+    }
     ~hShaderProgram() {
     }
 
-    /*
-        Placeholder class !!JM
-    */
+    hRenderer::hShaderStage* getShader() const {
+        return shader_;
+    }
 };    
 }

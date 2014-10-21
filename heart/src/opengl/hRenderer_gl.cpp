@@ -5,316 +5,28 @@
 
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
+#include "base/hMemory.h"
 #include "core/hSystem.h"
 #include "pal/hDeviceThread.h"
-#include "GL/glew.h"
-#include "GL/gl.h"
-#include "SDL.h"
+#include "threading/hThreadLocalStorage.h"
+#include "render/hIndexBufferFlags.h"
+#include "render/hVertexBufferFlags.h"
+#include "render/hRenderCallDesc.h"
+#include "render/hMipDesc.h"
+#include "render/hTextureFormat.h"
+#include "render/hUniformBufferFlags.h"
+#include "render/hRenderCallDesc.h"
+#include "opengl/hRendererOpCodes_gl.h"
+#include "cryptoMurmurHash.h"
+#include <GL/glew.h>    
+#include <GL/gl.h>
+#include <SDL.h>
 
 namespace Heart {    
 
-#if 0
-
-#define COMMON_CONST_BLOCK() "           \
-    cbuffer ViewportConstants            \
-    {                                    \
-    float4x4 g_View					;    \
-    float4x4 g_ViewInverse			;    \
-    float4x4 g_ViewInverseTranspose ;    \
-    float4x4 g_Projection			;    \
-    float4x4 g_ProjectionInverse	;    \
-    float4x4 g_ViewProjection       ;    \
-    float4x4 g_ViewProjectionInverse;    \
-    float4   g_viewportSize         ;    \
-    };                                   \
-    cbuffer InstanceConstants            \
-    {                                    \
-        float4x4 g_World;                \
-    };                                   \
-    "
-
-    static const hChar* s_shaderProfileNames[] = {
-        "vs_4_0",   //eShaderProfile_vs4_0,
-        "vs_4_1",   //eShaderProfile_vs4_1,
-        "vs_5_0",   //eShaderProfile_vs5_0,
-                    //
-        "ps_4_0",   //eShaderProfile_ps4_0,
-        "ps_4_1",   //eShaderProfile_ps4_1,
-        "ps_5_0",   //eShaderProfile_ps5_0,
-                    //
-        "gs_4_0",   //eShaderProfile_gs4_0,
-        "gs_4_1",   //eShaderProfile_gs4_1,
-        "gs_5_0",   //eShaderProfile_gs5_0,
-                    //
-        "cs_4_0",   //eShaderProfile_cs4_0,
-        "cs_4_1",   //eShaderProfile_cs4_1,
-        "cs_5_0",   //eShaderProfile_cs5_0,
-                    //
-        "hs_5_0",   //eShaderProfile_hs5_0,
-        "ds_5_0",   //eShaderProfile_ds5_0,
-    };
-
-    static const hChar s_debugVertex[] ={
-    COMMON_CONST_BLOCK()
-    "                                                                     \n\
-    struct VSInput                                                        \n\
-    {                                                                     \n\
-        float3 position : POSITION;                                       \n\
-    };                                                                    \n\
-                                                                          \n\
-    void mainVP( VSInput input, out float4 position : SV_POSITION )       \n\
-    {                                                                     \n\
-        position = float4(input.position.xyz,1);                          \n\
-        position = mul(mul(g_ViewProjection, g_World), position);         \n\
-    }                                                                     \n\
-                                                                          \n\
-    float4 mainFP() : SV_Target0                                          \n\
-    {                                                                     \n\
-        return float4(1,1,1,1);                                           \n\
-    }                                                                     \n\
-    "
-    };
-
-    static const hChar s_debugWSVertexCol[] ={
-        COMMON_CONST_BLOCK()
-        "                                                                     \n\
-        struct VSInput                                                        \n\
-        {                                                                     \n\
-            float4 position : POSITION;                                       \n\
-            float4 colour : COLOR0;                                           \n\
-        };                                                                    \n\
-        struct PSInput { \n\
-            float4 colour : TEXCOORD0; \n\
-        }; \n\
-        \n\
-        PSInput mainVP( VSInput input, out float4 position : SV_POSITION )       \n\
-        {\n\
-        PSInput output=(PSInput)0;\n\
-        position = float4(input.position.xyz,1);                              \n\
-        position = mul(mul(g_ViewProjection,  g_World), position);            \n\
-        output.colour = input.colour;                                                \n\
-        return output; \n\
-        }                                                                     \n\
-        \n\
-        float4 mainFP(PSInput input) : SV_Target0                                          \n\
-        {                                                                     \n\
-        return input.colour;                                           \n\
-        }                                                                     \n\
-        "
-    };
-
-    static const hChar s_debugVertexLit[] ={
-    COMMON_CONST_BLOCK()
-    "                                                                     \n\
-    struct VSInput                                                        \n\
-    {                                                                     \n\
-        float3 position : POSITION;                                       \n\
-        float3 normal   : NORMAL;                                         \n\
-    };                                                                    \n\
-                                                                          \n\
-    struct PSInput {                                                      \n\
-        float3 normal : TEXCOORD0;                                        \n\
-    };                                                                    \n\
-                                                                          \n\
-    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )    \n\
-    {                                                                     \n\
-        PSInput output=(PSInput)0;                                        \n\
-        position = float4(input.position.xyz,1);                          \n\
-        position = mul(mul(g_ViewProjection,  g_World), position);         \n\
-        output.normal = mul((float3x3)g_World, input.normal);             \n\
-        return output;                                                    \n\
-    }                                                                     \n\
-                                                                          \n\
-    float4 mainFP(PSInput input) : SV_Target0                               \n\
-    {                                                                       \n\
-        float NdotL=dot(normalize(input.normal),-normalize(g_View[2].xyz)); \n\
-        return float4(NdotL,NdotL,NdotL,1);                                 \n\
-    }                                                                       \n\
-    "
-    };
-
-    static const hChar s_debugInstVertex[] ={
-        COMMON_CONST_BLOCK()
-        "                                                                    \n\
-        struct VSInput                                                       \n\
-        {                                                                    \n\
-            float3 position : POSITION;                                      \n\
-            float4 mmtx0 : INSTANCE0;                                        \n\
-            float4 mmtx1 : INSTANCE1;                                        \n\
-            float4 mmtx2 : INSTANCE2;                                        \n\
-            float4 mmtx3 : INSTANCE3;                                        \n\
-            float4 colour : INSTANCE4;                                       \n\
-        };                                                                   \n\
-                                                                             \n\
-        struct PSInput {                                                     \n\
-            float4 colour;                                                   \n\
-        };                                                                   \n\
-                                                                             \n\
-        PSInput mainVP( VSInput input, out float4 position : SV_POSITION )   \n\
-        {                                                                    \n\
-            PSInput output={0};                                              \n\
-            position = float4(input.position.xyz,1);                         \n\
-            position = mul(g_ViewProjection, position);                      \n\
-            output.colour=input.colour;                                      \n\
-            return output;                                                   \n\
-        }                                                                    \n\
-                                                                             \n\
-        float4 mainFP(PSInput input) : SV_Target0                            \n\
-        {                                                                    \n\
-            return input.colour;                                             \n\
-        }                                                                    \n\
-    "
-    };
-
-    static const hChar s_debugConsole[] = {
-    COMMON_CONST_BLOCK()
-    "                                                                       \n\
-    struct VSInput                                                          \n\
-    {                                                                       \n\
-        float3 position : POSITION;                                         \n\
-        float4 colour   : COLOR0;                                           \n\
-    };                                                                      \n\
-                                                                            \n\
-    struct PSInput {                                                        \n\
-        float4 colour   : COLOR0;                                           \n\
-    };                                                                      \n\
-                                                                            \n\
-    PSInput mainVP( VSInput input, out float4 position : SV_POSITION )      \n\
-    {                                                                       \n\
-        PSInput output = (PSInput)0;                                        \n\
-        output.colour = input.colour;                                       \n\
-                                                                            \n\
-        position = float4(input.position.xyz,1);                            \n\
-        position.xy *= g_viewportSize.xy;                                   \n\
-        position = mul( mul(g_ViewProjection,g_World), position );          \n\
-                                                                            \n\
-        return output;                                                      \n\
-    }                                                                       \n\
-                                                                            \n\
-    float4 mainFP( PSInput input ) : SV_Target0                             \n\
-    {                                                                       \n\
-        return input.colour;                                                \n\
-    }                                                                       \n\
-    "
-    };
-
-    const hChar s_debugFont[] = {
-        COMMON_CONST_BLOCK()
-        "                                                              \n\
-                                                                       \n\
-        Texture2D   g_texture;                               \n\
-        SamplerState g_sampler= sampler_state{};                     \n\
-                                                                       \n\
-        struct VSInput                                                 \n\
-        {                                                              \n\
-            float3 position : POSITION;                                \n\
-            float4 colour 	: COLOR0;                                  \n\
-            float2 uv 		: TEXCOORD0;                               \n\
-        };                                                             \n\
-                                                                       \n\
-        struct PSInput                                                 \n\
-        {                                                              \n\
-            float4 position : SV_POSITION;                             \n\
-            float4 colour 	: COLOR0;                                  \n\
-            float2 uv 		: TEXCOORD0;                               \n\
-        };                                                             \n\
-                                                                       \n\
-        PSInput mainVP( VSInput input )                                \n\
-        {                                                              \n\
-            PSInput output;                                            \n\
-            float4 pos = float4(input.position.xyz,1);                 \n\
-            output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
-            output.colour = input.colour;	                           \n\
-            output.uv = input.uv;                                      \n\
-            return output;                                             \n\
-        }                                                                     \n\
-                                                                              \n\
-        float4 mainFP( PSInput input ) : SV_TARGET0                           \n\
-        {                                                                     \n\
-            float a   = g_texture.Sample(g_sampler, input.uv).a; \n\
-            return float4(input.colour.rgb,a); \n\
-        } \n\
-        "
-    };
-
-    const hChar s_debugTexture[] = {
-        COMMON_CONST_BLOCK()
-        "                                                              \n\
-        Texture2D   g_texture;                                         \n\
-        SamplerState g_sampler= sampler_state{};                       \n\
-                                                                       \n\
-        struct VSInput                                                 \n\
-        {                                                              \n\
-            float3 position : POSITION;                                \n\
-            float4 colour   : COLOR0; \n\
-            float2 uv 		: TEXCOORD0;                               \n\
-        };                                                             \n\
-                                                                       \n\
-        struct PSInput                                                 \n\
-        {                                                              \n\
-            float4 position : SV_POSITION;                             \n\
-            float2 uv 		: TEXCOORD0;                               \n\
-            float4 colour   : TEXCOORD1; \n\
-        };                                                             \n\
-                                                                       \n\
-        PSInput mainVP( VSInput input )                                \n\
-        {                                                              \n\
-            PSInput output;                                            \n\
-            float4 pos = float4(input.position.xyz,1);                 \n\
-            output.position = mul(mul(g_ViewProjection,g_World), pos); \n\
-            output.uv = input.uv;                                      \n\
-            output.colour = input.colour; \n\
-            return output;                                             \n\
-        }                                                              \n\
-                                                                       \n\
-        float4 mainFP( PSInput input ) : SV_TARGET0                    \n\
-        {                                                              \n\
-            float4 c = g_texture.Sample(g_sampler, input.uv).rgba;     \n\
-            return c.rgba*input.colour.rgba;                 \n\
-        }                                                              \n\
-        "
-    };
-
-    static const hChar* s_debugSrcs[eDebugShaderMax] = {
-        s_debugVertex,
-        s_debugVertex,
-        s_debugConsole,
-        s_debugConsole,
-        s_debugFont,
-        s_debugFont,
-        s_debugVertexLit,
-        s_debugVertexLit,
-        s_debugTexture, 
-        s_debugTexture,
-        s_debugWSVertexCol,
-        s_debugWSVertexCol,
-    };
-#endif
 class hSystem;
 
 namespace hRenderer {
-#if 0
-struct hDX11System {
-    hSystem*                  system_;
-    hUint64                   frameCounter_;
-    hUint32                   width_;
-    hUint32                   height_;
-    IDXGISwapChain*           mainSwapChain_;
-    ID3D11Device*             d3d11Device_;
-    ID3D11DeviceContext*      mainDeviceCtx_;
-    D3D_FEATURE_LEVEL         featureLevel_;
-    ID3D11RenderTargetView*   renderTargetView_;
-    ID3D11Query*              timerDisjoint_;
-    ID3D11Query*              timerFrameStart_;
-    ID3D11Query*              timerFrameEnd_;
-    //hDeviceResizeCallback     resizeCallback_; !!JM todo
-    ID3D11Texture2D*          backBuffer;
-    hThread                   renderThread_;
-    hMutex                    renderMtx_;
-    hConditionVariable        renderKill_;
-};
-static hDX11System dx11;
-#endif
 
 namespace RenderPrivate {
     SDL_Window*         window_;
@@ -324,13 +36,49 @@ namespace RenderPrivate {
     SDL_GLContext       mtContext_;
     hConditionVariable  rtComsSignal;
     hMutex              rtMutex;
+
+    hSize_t             tlsContext_;
+}
+
+// !!JM TODO: Improve these, they are placeholder & rtmp_free may be unnessary (i.e. we always free at frame end) 
+static void* rtmp_malloc(hSize_t size) {
+    return hMalloc(size);
+}
+
+static void rtmp_free(void* ptr) {
+    hFree(ptr);
+}
+
+static void hglEnsureTLSContext() {
+    using namespace RenderPrivate;
+    SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
+    if (!ctx) {
+        ctx = SDL_GL_CreateContext(window_);
+        TLS::setKeyValue(tlsContext_, ctx);
+        SDL_GL_MakeCurrent(window_, ctx);
+    }
+}
+
+static SDL_GLContext hglTLSMakeCurrent() {
+    using namespace RenderPrivate;
+    hglEnsureTLSContext();
+    return (SDL_GLContext)TLS::getKeyValue(tlsContext_);
+}
+
+static void hglReleaseTLSContext() {
+    using namespace RenderPrivate;
+
+    SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
+    if (ctx) {
+        SDL_GL_DeleteContext(ctx);
+        TLS::setKeyValue(tlsContext_, nullptr);
+    }
 }
 
 hUint32 renderThreadMain(void* param) {
     using namespace RenderPrivate;
 
-    context_ = SDL_GL_CreateContext(window_);
-    SDL_GL_MakeCurrent(window_, context_);
+    context_ = hglTLSMakeCurrent();
     glewExperimental = GL_TRUE;
     GLenum result = glewInit();
     if(result != GLEW_OK) {
@@ -351,20 +99,28 @@ hUint32 renderThreadMain(void* param) {
     return 0;
 }
 
-struct hShaderStage {
-    // !!JM placeholder class
-};
-
 void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
     using namespace RenderPrivate;
+
+    tlsContext_ = TLS::createKey([](void* ctx) {
+        SDL_GL_DeleteContext(ctx);
+    });
 
     window_ = system->getSDLWindow();
     renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
 
     rtComsSignal.wait(&rtMutex);
 
-    mtContext_ = SDL_GL_CreateContext(window_);
-    SDL_GL_MakeCurrent(window_, mtContext_);
+    mtContext_ = hglTLSMakeCurrent();
+
+    //check for required extentions
+    // !!JM TODO: handle failure better than just asserting...
+    if (!GLEW_EXT_texture_compression_s3tc) {
+        hcAssertFailMsg("GL_EXT_texture_compression_s3tc is required but not found.");
+    }
+    if (!GL_EXT_texture_sRGB) {
+        hcAssertFailMsg("GL_EXT_texture_sRGB is required but not found.");    
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -374,90 +130,305 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 void destroy() {
     using namespace RenderPrivate;
 
-    SDL_GL_DeleteContext(context_);
+
+    hglReleaseTLSContext();
+    context_=nullptr;
 }
 
+GLuint hglProfileToType(hShaderProfile profile) {
+    switch (profile) {
+    case eShaderProfile_vs4_0: return GL_VERTEX_SHADER;
+    case eShaderProfile_vs4_1: return GL_VERTEX_SHADER;
+    case eShaderProfile_vs5_0: return GL_VERTEX_SHADER;
+    case eShaderProfile_ps4_0: return GL_FRAGMENT_SHADER;
+    case eShaderProfile_ps4_1: return GL_FRAGMENT_SHADER;
+    case eShaderProfile_ps5_0: return GL_FRAGMENT_SHADER;
+    case eShaderProfile_gs4_0: return GL_GEOMETRY_SHADER;
+    case eShaderProfile_gs4_1: return GL_GEOMETRY_SHADER;
+    case eShaderProfile_gs5_0: return GL_GEOMETRY_SHADER;
+    case eShaderProfile_cs4_0: //return ;
+    case eShaderProfile_cs4_1: //return ;
+    case eShaderProfile_cs5_0: //return ;
+    case eShaderProfile_hs5_0: //return ;
+    case eShaderProfile_ds5_0: //return ;
+    default: return GL_INVALID_VALUE;
+    }
+}
+
+struct hShaderStage {
+    GLuint  shaderObj_;
+};
 
 hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type) {
     return nullptr;
 }
 
 hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile) {
-    return nullptr;
+    hglEnsureTLSContext();
+    auto gls = glCreateShader(hglProfileToType(profile));
+    if (!gls)
+        return nullptr;
+    auto gllen = (GLint)len;
+    glShaderSource(gls, 1, &shaderProg, &gllen);
+    glCompileShader(gls);
+    // to check...but should we defer this until as late as possible i.e. RenderCall create time ???
+    GLint status;
+    glGetShaderiv(gls, GL_COMPILE_STATUS, &status);
+    hcAssert(status == GL_TRUE);
+    
+
+    auto* s = new hShaderStage();
+    s->shaderObj_ = gls;
+    return s;
 }
 
-#if 0
-DXGI_FORMAT toDXGIFormat(hTextureFormat format, hBool* compressed) {
-    DXGI_FORMAT fmt = DXGI_FORMAT_FORCE_UINT;
-
-    hBool compressedFormat=hFalse;
-    switch ( format )
-    {
-    case eTextureFormat_Unknown: fmt = DXGI_FORMAT_UNKNOWN; break;
-    case eTextureFormat_RGBA32_typeless: fmt = DXGI_FORMAT_R32G32B32A32_TYPELESS; break;
-    case eTextureFormat_RGBA32_float: fmt = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
-    case eTextureFormat_RGBA32_uint: fmt = DXGI_FORMAT_R32G32B32A32_UINT; break;
-    case eTextureFormat_RGBA32_sint: fmt = DXGI_FORMAT_R32G32B32A32_SINT; break;
-    case eTextureFormat_RGB32_typeless: fmt = DXGI_FORMAT_R32G32B32_TYPELESS; break;
-    case eTextureFormat_RGB32_float: fmt = DXGI_FORMAT_R32G32B32_FLOAT; break;
-    case eTextureFormat_RGB32_uint: fmt = DXGI_FORMAT_R32G32B32_UINT; break;
-    case eTextureFormat_RGB32_sint: fmt = DXGI_FORMAT_R32G32B32_SINT; break;
-    case eTextureFormat_RGBA16_typeless: fmt = DXGI_FORMAT_R16G16B16A16_TYPELESS; break;
-    case eTextureFormat_RGBA16_float: fmt = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
-    case eTextureFormat_RGBA16_unorm: fmt = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-    case eTextureFormat_RGBA16_uint: fmt = DXGI_FORMAT_R16G16B16A16_UINT; break;
-    case eTextureFormat_RGBA16_snorm: fmt = DXGI_FORMAT_R16G16B16A16_SNORM; break;
-    case eTextureFormat_RGBA16_sint: fmt = DXGI_FORMAT_R16G16B16A16_SINT; break;
-    case eTextureFormat_RG32_typeless: fmt = DXGI_FORMAT_R32G32_TYPELESS; break;
-    case eTextureFormat_RG32_float: fmt = DXGI_FORMAT_R32G32_FLOAT; break;
-    case eTextureFormat_RG32_uint: fmt = DXGI_FORMAT_R32G32_UINT; break;
-    case eTextureFormat_RG32_sint: fmt = DXGI_FORMAT_R32G32_SINT; break;
-    case eTextureFormat_RG16_typeless: fmt = DXGI_FORMAT_R16G16_TYPELESS; break;
-    case eTextureFormat_RG16_float: fmt = DXGI_FORMAT_R16G16_FLOAT; break;
-    case eTextureFormat_RG16_uint: fmt = DXGI_FORMAT_R16G16_UINT; break;
-    case eTextureFormat_RG16_sint: fmt = DXGI_FORMAT_R16G16_SINT; break;
-    case eTextureFormat_R32_typeless: fmt = DXGI_FORMAT_R32_TYPELESS; break;
-    case eTextureFormat_R32_float: fmt = DXGI_FORMAT_R32_FLOAT; break;
-    case eTextureFormat_R32_uint: fmt = DXGI_FORMAT_R32_UINT; break;
-    case eTextureFormat_R32_sint: fmt = DXGI_FORMAT_R32_SINT; break;
-    case eTextureFormat_R16_typeless: fmt = DXGI_FORMAT_R16_TYPELESS; break;
-    case eTextureFormat_R16_float: fmt = DXGI_FORMAT_R16_FLOAT; break;
-    case eTextureFormat_R16_uint: fmt = DXGI_FORMAT_R16_UINT; break;
-    case eTextureFormat_R16_sint: fmt = DXGI_FORMAT_R16_SINT; break;
-    case eTextureFormat_RGB10A2_typeless: fmt = DXGI_FORMAT_R10G10B10A2_TYPELESS; break;
-    case eTextureFormat_RGB10A2_unorm: fmt = DXGI_FORMAT_R10G10B10A2_UNORM; break;
-    case eTextureFormat_RGB10A2_uint: fmt = DXGI_FORMAT_R10G10B10A2_UINT; break;
-    case eTextureFormat_RGBA8_unorm: fmt = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-    case eTextureFormat_RGBA8_typeless: fmt = DXGI_FORMAT_R8G8B8A8_TYPELESS; break;
-    case eTextureFormat_D32_float: fmt = DXGI_FORMAT_D32_FLOAT; break;
-    case eTextureFormat_D24S8_float: fmt = DXGI_FORMAT_D24_UNORM_S8_UINT; break;
-    case eTextureFormat_R8_unorm: fmt = DXGI_FORMAT_A8_UNORM; break;
-
-    case eTextureFormat_RGBA8_sRGB_unorm:   fmt = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-    case eTextureFormat_BC3_unorm:          fmt = DXGI_FORMAT_BC3_UNORM; compressedFormat = hTrue; break;
-    case eTextureFormat_BC2_unorm:          fmt = DXGI_FORMAT_BC2_UNORM; compressedFormat = hTrue; break;
-    case eTextureFormat_BC1_unorm:          fmt = DXGI_FORMAT_BC1_UNORM; compressedFormat = hTrue; break; 
-    case eTextureFormat_BC3_sRGB_unorm:     fmt = DXGI_FORMAT_BC3_UNORM_SRGB; compressedFormat = hTrue; break;
-    case eTextureFormat_BC2_sRGB_unorm:     fmt = DXGI_FORMAT_BC2_UNORM_SRGB; compressedFormat = hTrue; break;
-    case eTextureFormat_BC1_sRGB_unorm:     fmt = DXGI_FORMAT_BC1_UNORM_SRGB; compressedFormat = hTrue; break;
-    }
-    if(compressed) {
-        *compressed=compressedFormat;
-    }
-    hcAssert(fmt!=DXGI_FORMAT_FORCE_UINT);
-    return fmt;
+void destroyShader(hShaderStage* shader) {
+    //deletes are deferred, render thread will do it
+    auto fn = [=]() {
+        glDeleteShader(shader->shaderObj_);
+        delete shader;
+    };
 }
-#endif
 
-static hShaderProfile getProfileFromString(const hChar* str) {
-#if 0
-    for (hUint i=0; i<hStaticArraySize(s_shaderProfileNames); ++i) {
-        if (hStrICmp(s_shaderProfileNames[i],str) == 0) {
-            return (hShaderProfile)i;
+struct hIndexBuffer {
+    GLuint  name_;
+    hUint32 indices;
+    hUint32 createFlags_;
+};
+
+hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flags) {
+    hglEnsureTLSContext();
+    GLuint bname;
+    glGenBuffers(1, &bname);
+    if (!bname) {
+        return nullptr;
+    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bname);
+    GLuint size = nIndices * (flags & (hUint32)hIndexBufferFlags::DwordIndices ? 4 : 2);
+    glBufferData(GL_ARRAY_BUFFER, size, data, flags & (hUint32)hIndexBufferFlags::DynamicBuffer);
+    auto* ib = new hIndexBuffer();
+    ib->name_ = bname;
+    ib->indices = nIndices;
+    ib->createFlags_ = flags;
+    return ib;
+}
+
+void destroyIndexBuffer(hIndexBuffer* ib) {
+    //deletes are deferred, render thread will do it
+    auto fn = [=]() {
+        glDeleteShader(ib->name_);
+        delete ib;
+    };
+}
+
+struct hVertexBuffer {
+    GLuint  name_;
+    hUint32 elementCount_;
+    hUint32 elementSize_;
+    hUint32 createFlags_;
+};
+
+hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
+    hglEnsureTLSContext();
+    GLuint bname;
+    glGenBuffers(1, &bname);
+    if (!bname) {
+        return nullptr;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, bname);
+    GLuint size = elementsize * elementcount;
+    glBufferData(GL_ARRAY_BUFFER, size, data, flags & (hUint32)hVertexBufferFlags::DynamicBuffer);
+    auto* vb = new hVertexBuffer();
+    vb->name_ = bname;
+    vb->elementCount_ = elementcount;
+    vb->elementSize_ = elementsize;
+    vb->createFlags_ = flags;
+    return vb;
+}
+
+void  destroyVertexBuffer(hVertexBuffer* vb) {
+    //deletes are deferred, render thread will do it
+    auto fn = [=]() {
+        glDeleteShader(vb->name_);
+        delete vb;
+    };
+}
+
+struct hTexture2D {
+    GLuint  name_;
+    GLenum  target_;
+    GLuint  internalFormat_;
+    GLuint  format_;
+};
+
+hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
+    GLuint tname;
+    glGenTextures(1, &tname);
+    glActiveTexture(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS-1);
+    glBindTexture(GL_TEXTURE_2D, tname);
+
+    GLuint fmt = GL_INVALID_VALUE;
+    GLuint intfmt = GL_INVALID_VALUE;
+    GLuint type = GL_INVALID_VALUE;
+    hBool compressed = false;
+    switch(format) {
+    case hTextureFormat::RGBA8_unorm:      intfmt=GL_RGBA;                                fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    case hTextureFormat::RGBA8_sRGB_unorm: intfmt=GL_SRGB8_ALPHA8;                        fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    case hTextureFormat::BC1_unorm:        intfmt=GL_COMPRESSED_RGB_S3TC_DXT1_EXT;        fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC2_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC3_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC4_unorm:        intfmt=GL_COMPRESSED_RED_RGTC1;                fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC5_unorm:        intfmt=GL_COMPRESSED_RG_RGTC2;                 fmt=GL_RG;   type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC1_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC2_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    case hTextureFormat::BC3_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    default: hcAssertFailMsg("Can't handle texture format"); return nullptr;
+    }
+
+    if (compressed) {
+        for (auto i=0u; i<levels; ++i) {
+            glCompressedTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, initdata[i].size, initdata[i].data);
+        }
+    } else {
+        for (auto i=0u; i<levels; ++i) {
+            glTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, fmt, type, initdata[i].data);
         }
     }
-#endif
-    return eShaderProfile_Max;
+
+    auto* t = new hTexture2D();
+    t->name_ = tname;
+    t->target_ = GL_TEXTURE_2D;
+    t->internalFormat_ = intfmt;
+    t->format_ = fmt;
+    return t;
+}
+
+void  destroyTexture2D(hTexture2D* t) {
+    auto fn = [=]() {
+        glDeleteTextures(1, &t->name_);
+        delete t;
+    };
+}
+
+struct hUniformBuffer {
+    GLuint  name_;
+    hUint   size_;
+    hUint32 createFlags_;
+};
+
+hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
+    GLuint ubname;
+    glGenBuffers(1, &ubname);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubname);
+    glBufferData(GL_UNIFORM_BUFFER, size, initdata, (flags & (hUint32)hUniformBufferFlags::Dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+
+    auto* ub = new hUniformBuffer();
+    ub->name_=ubname;
+    ub->size_=size;
+    ub->createFlags_=flags;
+    return ub;
+}
+
+void destroyUniformBuffer(hUniformBuffer* ub) {
+    auto fn = [=]() {
+        glDeleteBuffers(1, &ub->name_);
+        delete ub;
+    };
+}
+
+struct hRenderCall {
+    hRenderCall() 
+        : size_(0)
+        , opCodes_(nullptr) {
+    }
+    GLuint program_;
+    hUint size_;
+    void* opCodes_;
+};
+
+hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
+    auto* rc = new hRenderCall();
+    GLint p;
+
+    rc->program_=glCreateProgram();
+    glAttachShader(rc->program_, rcd.vertex_->shaderObj_);
+    glAttachShader(rc->program_, rcd.fragment_->shaderObj_);
+    glLinkProgram(rc->program_);
+
+    glGetProgramiv(rc->program_, GL_LINK_STATUS, &p);
+    hcAssert(p==GL_TRUE);
+
+    auto ublimit = 0;
+    auto ubtotal = 0;
+    glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &ublimit);
+    glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCKS, &ubtotal);
+    auto* ubary = (GLchar**)hAlloca(ubtotal*sizeof(GLchar*));
+    auto* ubnames = (hChar*)hAlloca(ubtotal*ublimit);
+    auto* ubhashes = (hUint32*)hAlloca(ubtotal*sizeof(hUint32));
+
+    for (auto i=0,n=ubtotal; i<n; ++i) {
+        auto olen = 0;
+        ubary[i] = ubnames+(i*ublimit);
+        glGetActiveUniformBlockName(rc->program_, i, ublimit, &olen, ubary[i]);
+        cyMurmurHash3_x86_32(ubary[i], olen, hGetMurmurHashSeed(), ubhashes+i);
+    }
+
+    auto alimit = 0;
+    auto atotal = 0;
+    glGetProgramiv(rc->program_, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &alimit);
+    glGetProgramiv(rc->program_, GL_ACTIVE_ATTRIBUTES, &atotal);
+    auto* aary = (GLchar**)hAlloca(atotal*sizeof(GLchar*));
+    auto* anames = (hChar*)hAlloca(atotal*alimit);
+    auto* atypes = (GLenum*)hAlloca(atotal*sizeof(GLenum));
+    auto* asizes = (GLint*)hAlloca(atotal*sizeof(GLint));
+    auto* ahashes = (hUint32*)hAlloca(atotal*sizeof(hUint32));
+
+    for (auto i=0,n=atotal; i<n; ++i) {
+        auto olen = 0;
+        aary[i] = anames+(i*alimit);
+        glGetActiveAttrib(rc->program_, i, alimit, &olen, asizes+i, atypes+i, aary[i]);
+        cyMurmurHash3_x86_32(aary[i], olen, hGetMurmurHashSeed(), ahashes+i);
+    }
+
+    auto ulimit = 0;
+    auto utotal = 0;
+    glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &ulimit);
+    glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORMS, &utotal);
+    auto* uary = (GLchar**)hAlloca(utotal*sizeof(GLchar*));
+    auto* unames = (hChar*)hAlloca(utotal*ulimit);
+    auto* utypes = (GLenum*)hAlloca(utotal*sizeof(GLenum));
+    auto* usizes = (GLint*)hAlloca(utotal*sizeof(GLint));
+    auto* uhashes = (hUint32*)hAlloca(utotal*sizeof(hUint32));
+
+    for (auto i=0,n=utotal; i<n; ++i) {
+        auto olen = 0;
+        uary[i] = unames+(i*ulimit);
+        glGetActiveUniform(rc->program_, i, ulimit, &olen, usizes+i, utypes+i, uary[i]);
+        cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
+    }
+
+    /*
+    totaluniforms = 0u;
+    for (const auto& i : rcd.samplerStates_) {
+        if (i.name_.is_default()) break;
+        unames[totaluniforms++]=i.name_.c_str();
+    }
+    for (const auto& i : rcd.textureSlots_) {
+        if (i.name_.is_default()) break;
+        unames[totaluniforms++]=i.name_.c_str();
+    }
+    for (const auto& i : rcd.uniformBuffers_) {
+        if (i.name_.is_default()) break;
+        unames[totaluniforms++]=i.name_.c_str();
+    }
+    glGetUniformIndices(rc->program_, totaluniforms, unames, uindices);
+    */
+
+    //calculate the size of op codes required
+    hGLRCHeader header = {0};
+    //header
+
+    return rc;
 }
 
 void swapBuffers() {

@@ -13,7 +13,7 @@
 			"selector": "source.c++",
 			"windows":
 			{
-				"file_regex": "\\d+>(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
+				"file_regex": "\\d+>\\s*(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
 			},
 			"working_dir": "$project_path/build"
 		},
@@ -40,8 +40,8 @@
 				"deploy/game/gamedata",
 				"cmake64",
 				"cmake32",
-                "lib",
-                "bin",
+				"lib",
+				"bin"
 			],
 			"follow_symlinks": true,
 			"path": "."
@@ -49,6 +49,16 @@
 		{
 			"follow_symlinks": true,
 			"path": "C:\\dev\\cmake\\x64\\heart\\tools\\proto\\pb_lite"
+		},
+		{
+			"folder_exclude_patterns":
+			[
+				"lib",
+				"doc",
+				"bin",
+			],
+			"follow_symlinks": true,
+			"path": "C:\\dev\\glew-1.10.0"
 		}
 	]
 }

@@ -2,11 +2,8 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
-
 #pragma once
-#ifndef __hPROTOBUF_H__
-#define __hPROTOBUF_H__
+
 
 //////////////////////////////////////////////////////////////////////////
 /// Proto buffer classes /////////////////////////////////////////////////
@@ -42,6 +39,4 @@
 #   pragma warning(pop)
 #elif defined (HEART_PLAT_LINUX)
 #else
-#endif
-
 #endif

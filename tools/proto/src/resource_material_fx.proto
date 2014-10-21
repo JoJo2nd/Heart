@@ -16,39 +16,39 @@ message SamplerState {
 }
 
 message BlendState {
-	optional bool   blendEnable = 1;			//  RENDER_STATE_VALUE    
-	optional renderstate.BlendOp srcBlend = 2;				//  RENDER_STATE_VALUE    
-	optional renderstate.BlendOp destBlend = 3;				//  RENDER_STATE_VALUE    
-	optional renderstate.BlendFunction blendOp = 4;				//  RENDER_STATE_VALUE    
-	optional renderstate.BlendOp srcBlendAlpha = 5;			//  RENDER_STATE_VALUE    
-	optional renderstate.BlendOp destBlendAlpha = 6;		    //  RENDER_STATE_VALUE    
-	optional renderstate.BlendFunction blendOpAlpha = 7;			//  RENDER_STATE_VALUE    
+	optional bool   blendEnable = 1;			    
+	optional renderstate.BlendOp srcBlend = 2;				    
+	optional renderstate.BlendOp destBlend = 3;				    
+	optional renderstate.BlendFunction blendOp = 4;				    
+	optional renderstate.BlendOp srcBlendAlpha = 5;			    
+	optional renderstate.BlendOp destBlendAlpha = 6;		        
+	optional renderstate.BlendFunction blendOpAlpha = 7;			    
 	optional uint32 renderTargetWriteMask = 8;	//  hUint32               
 }
 
 message DepthStencilState {
-    optional bool depthEnable = 1;          // RENDER_STATE_VALUE
-    optional uint32 depthWriteMask = 2;	      // RENDER_STATE_VALUE
-    optional renderstate.FunctionCompare depthFunc = 3;			  // RENDER_STATE_VALUE
-    optional bool stencilEnable = 4;		  // RENDER_STATE_VALUE
+    optional bool depthEnable = 1;          
+    optional uint32 depthWriteMask = 2;	      
+    optional renderstate.FunctionCompare depthFunc = 3;			  
+    optional bool stencilEnable = 4;		  
     optional uint32 stencilReadMask = 5;	  // hUint32           
     optional uint32 stencilWriteMask = 6;	  // hUint32           
-    optional renderstate.StencilOp stencilFailOp = 7;		  // RENDER_STATE_VALUE
-    optional renderstate.StencilOp stencilDepthFailOp = 8;   // RENDER_STATE_VALUE
-    optional renderstate.StencilOp stencilPassOp = 9;		  // RENDER_STATE_VALUE
-    optional renderstate.FunctionCompare stencilFunc = 10;		  // RENDER_STATE_VALUE
+    optional renderstate.StencilOp stencilFailOp = 7;		  
+    optional renderstate.StencilOp stencilDepthFailOp = 8;   
+    optional renderstate.StencilOp stencilPassOp = 9;		  
+    optional renderstate.FunctionCompare stencilFunc = 10;		  
     optional uint32 stencilRef = 11;		  // hUint32           
 }
 
 message RasterizerState {
-    optional renderstate.FillMode fillMode = 1;                  // RENDER_STATE_VALUE
-    optional renderstate.CullMode cullMode = 2;                  // RENDER_STATE_VALUE
-    optional uint32 frontCounterClockwise = 3;     // RENDER_STATE_VALUE
-    optional uint32 depthBias = 4;                 // hInt32            
-    optional float depthBiasClamp = 5;            // hFloat            
-    optional float slopeScaledDepthBias = 6;      // hFloat            
-    optional uint32 depthClipEnable = 7;           // RENDER_STATE_VALUE
-    optional uint32 scissorEnable = 8;             // RENDER_STATE_VALUE
+    optional renderstate.FillMode fillMode = 1;                  
+    optional renderstate.CullMode cullMode = 2;                  
+    optional uint32 frontCounterClockwise = 3;     
+    optional uint32 depthBias = 4;                       
+    optional float depthBiasClamp = 5;             
+    optional float slopeScaledDepthBias = 6;      
+    optional uint32 depthClipEnable = 7;           
+    optional uint32 scissorEnable = 8;             
 }
 
 message MaterialPass {

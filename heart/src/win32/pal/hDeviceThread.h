@@ -2,8 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#ifndef THREAD_H__
-#define THREAD_H__
+#pragma once
 
 #include <winsock2.h>
 #include <windows.h>
@@ -56,4 +55,3 @@ namespace Device
         hUint32							returnCode_;
     };
 }
-#endif // THREAD_H__
