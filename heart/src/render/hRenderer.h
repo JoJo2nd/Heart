@@ -79,26 +79,7 @@ namespace hRenderer {
     void destroyUniformBuffer(hUniformBuffer* ub);
 
     hRenderCall* createRenderCall(const hRenderCallDesc& rcd); 
-    //void  createShaderResourceView(hTexture* tex, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-    //void  createShaderResourceView(hRenderBuffer* cb, const hShaderResourceViewDesc& desc, hShaderResourceView** outsrv);
-    //void  createRenderTargetView(hTexture* tex, const hRenderTargetViewDesc& rtvd, hRenderTargetView** outrtv);
-    //void  createDepthStencilView(hTexture* tex, const hDepthStencilViewDesc& dsvd, hDepthStencilView** outdsv);
-    //hBlendState*        createBlendState( const hBlendStateDesc& desc );
-    //hRasterizerState*   createRasterizerState( const hRasterizerStateDesc& desc );
-    //hDepthStencilState* createDepthStencilState( const hDepthStencilStateDesc& desc );
-    //hSamplerState*      createSamplerState( const hSamplerStateDesc& desc );
-    //void  createBuffer(hUint size, void* data, hUint flags, hUint stride, hRenderBuffer** outcb);
-//private:  
 
-    //void  destroyShaderResourceView(hShaderResourceView* srv);  
-    //void  destroyRenderTargetView(hRenderTargetView* view);
-    //void  destroyDepthStencilView(hDepthStencilView* view);
-    //void  destroyBlendState( hBlendState* state );
-    //void  destoryRasterizerState( hRasterizerState* state );
-    //void  destroyDepthStencilState( hDepthStencilState* state );
-    //void  destroySamplerState( hSamplerState* state );
-    //void  destroyConstantBlock(hRenderBuffer* block);
-//public:
     void* allocTempRenderMemory( hUint32 size );
 
     void beginCmdList(hCmdList* cmd);
@@ -112,50 +93,6 @@ namespace hRenderer {
     hFloat getLastGPUTime();
     hBool isRenderThread();
 
-    // typedef hMap< hUint32, hBlendState >         BlendStateMapType;
-    // typedef hMap< hUint32, hRasterizerState >    RasterizerStateMapType;
-    // typedef hMap< hUint32, hDepthStencilState >  DepthStencilStateMapType;
-    // typedef hMap< hUint32, hSamplerState >       SamplerStateMapType;
-
-    // //
-    // void                                                    CollectAndSortDrawCalls();
-    // void                                                    SubmitDrawCallsMT();
-    // void                                                    SubmitDrawCallsST();
-    // void                                                    createDebugShadersInternal();
-
-    // static hRenderer*    instance_;
-
-    // // Init params
-    // hSystem*												system_;
-    // hUint32 												width_;
-    // hUint32 												height_; 
-    // hUint32 												bpp_;
-    // hFloat													shaderVersion_;
-    // hBool													fullscreen_;
-    // hBool													vsync_;
-    // hFloat                                                  gpuTime_;
-
-    // hMutex                   resourceMutex_;
-    // BlendStateMapType        blendStates_;
-    // RasterizerStateMapType   rasterizerStates_;
-    // DepthStencilStateMapType depthStencilStates_;
-    // SamplerStateMapType      samplerStateMap_;
-
-    // hRendererCamera         renderCameras_[HEART_MAX_RENDER_CAMERAS];
-    // void*                   renderStateCache_; // todo: remove
-    // hRenderSubmissionCtx    mainSubmissionCtx_;
-
-    // hTexture*               backBuffer_;
-
-    // hUint32                                                 scratchBufferSize_;
-    // hByte                                                   drawDataScratchBuffer_[DEFAULT_SCRATCH_BUFFER_SIZE];
-    // hAtomicInt                                              scratchPtrOffset_;
-    // hAtomicInt                                              drawCallBlockIdx_;
-    // hArray< hDrawCall, MAX_DCBLOCKS >                       drawCallBlocks_;
-    // hAtomicInt                                              drawResourceUpdateCalls_;
-
-    // hTimer              frameTimer_;
-    // hRenderFrameStats   stats_;
 }
 }
 

@@ -27,6 +27,7 @@ namespace hRenderer {
         hVertexInputType type_;
         hUint16          offset_;
         hBool            normalised_;
+        hUint16          stride_;
     };
 
 }    

@@ -246,7 +246,14 @@ DEFINE_HEART_UNIT_TEST(Base64);
             Heart::hShaderProgram* vpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/vertex/console"));
             Heart::hShaderProgram* fpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/fragment/console"));
             Heart::hRenderer::hRenderCallDesc rcd;
+            Heart::hRenderer::hVertexBufferLayout vl[] = {
+                {Heart::hStringID("in_position"), 3, Heart::hRenderer::hVertexInputType::Float,  0, hTrue, 28},
+                {Heart::hStringID("in_colour")  , 4, Heart::hRenderer::hVertexInputType::Float, 12, hTrue, 28},
+            };
 
+            rcd.setVertexBufferLayout(vl, hStaticArraySize(vl));
+            rcd.setSampler(Heart::hStringID("g_prevFrame"), Heart::hRenderer::hRenderCallDesc::hSamplerStateDesc());
+            rcd.setTextureSlot(Heart::hStringID("g_prevFrame"), (const Heart::hRenderer::hTexture2D*)nullptr);
             rcd.setUniformBuffer(Heart::hStringID("ViewportConstants"), nullptr);
             rcd.setUniformBuffer(Heart::hStringID("InstanceConstants"), nullptr);
             rcd.vertex_ = vpr->getShader();

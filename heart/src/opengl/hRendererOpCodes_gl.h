@@ -37,6 +37,16 @@ struct hGLRCHeader {
     hUint8 samplerCount_;
     hUint8 uniBufferCount_;
     hUint8 textureCount_;
+    hUint8 vtxAttCount_;
+
+    hGLRCHeader() 
+        : flags(0)
+        , samplerCount_(0)
+        , uniBufferCount_(0)
+        , textureCount_(0)
+        , vtxAttCount_(0) {
+
+    }
 };
 
 struct hGLBlend {
@@ -65,7 +75,14 @@ struct hGLDepthBais {
     hFloat  depthBiasClamp_;
     hFloat  slopeScaledDepthBias_;
     hUint32 depthClipEnable_;
-    hUint32 scissorEnable_;
+};
+
+struct hGLVtxAttrib {
+    GLuint  index_;
+    GLint   size_;
+    GLenum  type_;
+    GLsizei stride_;
+    void*   pointer_;
 };
 
 }
