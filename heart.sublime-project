@@ -48,7 +48,7 @@
 		},
 		{
 			"follow_symlinks": true,
-			"path": "C:\\dev\\cmake\\x64\\heart\\tools\\proto\\pb_lite"
+			"path": "D:\\dev\\heart_build\\tools\\proto\\pb_lite"
 		},
 		{
 			"folder_exclude_patterns":
@@ -58,7 +58,32 @@
 				"bin",
 			],
 			"follow_symlinks": true,
-			"path": "C:\\dev\\glew-1.10.0"
+			"path": "D:\\dev\\glew-1.11.0"
 		}
-	]
+	],
+	"settings":
+	{
+	    "sublimeclang_options":
+	    [
+	    	"-fms-extensions",
+	    	"-Wno-deprecated-declarations",
+	    	"-Wno-attributes",
+	    	"-Wno-unused-value",
+	    	"-Wno-extra-tokens",
+	    	"-Wno-unused-command-line-argument",
+	    	"-Wno-microsoft",
+	    	"-Wno-constant-logical-operand",
+	    	"-msse3 -msse4.1 -msse4.2",
+	    	"-DPLATFORM_WINDOWS",
+	    	"-DBUILD_64_BIT",
+	    	"-I${env:VS120COMNTOOLS}/../../VC/include",
+	    	"-IC:/Program Files (x86)/Windows Kits/8.1/Include/shared",
+	    	"-IC:/Program Files (x86)/Windows Kits/8.1/Include/um",
+	        "-I${project_path}/heart/src",
+	        "-I${project_path}/external/crypto/src",
+	        "-I${project_path}/external/zlib/include",
+	        "-I${project_path}/external/lua/src",
+	        "-I${project_path}/external/minfs/src",
+	    ]
+	}
 }

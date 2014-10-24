@@ -65,10 +65,10 @@ ADD_MSVC_PRECOMPILED_HEADER(
 	TESTBED_PRECOMPILED_SRC_FILES
 )
 
-if (NOT DEFINED ENV{WindowsSDKDir} AND MSVC)
-	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
-	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
-endif()
+#if (NOT DEFINED ENV{WindowsSDKDir} AND MSVC)
+#	#d3dcompiler need this dll deployed with it, it is not standard so copy it from WindowsSDKDir
+#	message(FATAL_ERROR "\"WindowsSDKDir\" Environment variable not set..unable to continue build")
+#endif()
 if (NOT ${BUILD_64_BIT} MATCHES 1)
 	set(PLATTYPE x86)
 else()

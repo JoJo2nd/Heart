@@ -231,22 +231,14 @@ if (UNITY_BUILD)
     set(REGEX1 ".+\\.(h|hpp|gitignore|py|lua|txt|inl)")
     set(UNITY_ARGS "-d \"${HEART_SOURCE_DIR}/src\" -e \".+\\.(h|hpp|gitignore|py|lua|txt|inl)\" -e .+(.unity[\\d*].cpp) -e \".+([U|u]nity.cpp)\" -o \"${HEART_SOURCE_DIR}/src\" -n heart")
     set(UNITY_ARGS "${UNITY_ARGS} -x unix -x posix")
-    message(${UNITY_ARGS})
+    message(${HEART_UNITY_SRC} ${UNITY_ARGS})
     add_custom_command(
-        OUTPUT ${HEART_UNITY_SRC}
+        TARGET ${HEART_UNITY_SRC}
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build"
         COMMAND python 
         ARGS c_cpp_unity_creator.py ${UNITY_ARGS}
         DEPENDS ${HEART_NON_UNITY_FILES}
-        COMMENT "Updating Unity Build..."
-            # '-d', heart_src_path, 
-            # '-x', 'unix', 
-            # '-x', 'posix',
-            # '-e', '.+\.(h|hpp|gitignore|py|lua|txt|inl)',
-            # '-e', '.+(.unity[\d*].cpp)', 
-            # '-e', '.+([U|u]nity.cpp)', 
-            # '-o', heart_output_path, '-n', 'heart'])
-    )
+        COMMENT "Updating Unity Build...")
 endif()
 
 set(HEART_GEN_FILES ${HEART_GEN_FILES} 
