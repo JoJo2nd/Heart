@@ -277,6 +277,9 @@ set(MINFS_INCLUDE_DIR
 set(GETOPT_PORT_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/getopt_port"
 )
+set(CRYPTO_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/crypto/src"
+)
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...

@@ -39,6 +39,7 @@ typedef char                cyChar;
 #define CY_OK           (0)
 
 #define CY_MD5_LEN      (16)
+#define CY_MD5_STR_LEN  ((CY_MD5_LEN*2)+1)
 
 #define cyMin( x, y ) (( x < y ) ? x : y)
 #define cyMax( x, y ) (( x > y ) ? x : y)

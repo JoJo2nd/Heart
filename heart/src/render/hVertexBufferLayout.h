@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include "base/hTypes.h"
+#include "base/hStringID.h"
+
 namespace Heart {
 namespace hRenderer {
 

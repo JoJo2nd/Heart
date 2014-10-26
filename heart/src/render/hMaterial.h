@@ -14,6 +14,7 @@
 #include "core/hResource.h"
 #include "render/hRenderStateBlock.h"
 #include "render/hMaterialTypes.h"
+#include "render/hRenderCallDesc.h"
 #include "base/hProtobuf.h"
 #include "components/hObjectFactory.h"
 
@@ -48,11 +49,21 @@ namespace Heart
 
     class  hMaterial
     {
+        struct hPassKey {
+            
+        };
+
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
 
         hMaterial() {}
         ~hMaterial() {}
+
+        hUint                               getGroupCount() const;
+        hStringID                           getGroupName(hUint index) const;
+        hUint                               getTechniqueCount(hStringID group) const;
+        hStringID                           getTechniqueName(hStringID group, hUint index) const;
+        const hRenderer::hRenderCallDesc&   getPass(hStringID group, hStringID tech, hUint pass);
 #if 0
         hRenderMaterialManager* GetManager() const { return manager_; }
         void                    SetManager(hRenderMaterialManager* val) { manager_ = val; }

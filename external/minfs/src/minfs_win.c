@@ -6,6 +6,7 @@
 #include "minfs.h"
 #include "minfs_common.h"
 #include <windows.h>
+#include <Shlwapi.h>
 #include <malloc.h>
 
 static HANDLE open_file_handle_read_only(const char* filepath) {
@@ -104,6 +105,43 @@ int minfs_create_directories(const char* filepath) {
     return OK;
 }
 
+size_t minfs_canonical_path(const char* filepath, char* outpath, size_t buf_size) {
+    BOOL ret;
+    size_t rlen = 0;
+    wchar_t* mrk, *prevmrk;
+    wchar_t* uc2filepath;
+    wchar_t canonical[MAX_PATH+1];
+    UTF8_TO_UC2_STACK(filepath, uc2filepath);
+    while (mrk = wcschr(uc2filepath, '/')) { 
+        *mrk = '\\';
+    }
+    ret = PathCanonicalizeW(canonical, uc2filepath);
+    while (mrk = wcschr(canonical, '\\')) { 
+        *mrk = '/';
+    }
+    //strip any double slashes
+    rlen = wcslen(canonical);
+    mrk = canonical;
+    prevmrk = NULL;
+    while (*mrk) { 
+        if (*mrk == '/' && prevmrk && *prevmrk == '/') {
+            memmove(prevmrk, mrk, (rlen+1)*sizeof(wchar_t));
+        }
+        prevmrk = mrk;
+        ++mrk;
+        --rlen;
+    }
+    //strip any trailing slashes
+    if (ret == TRUE) {
+        rlen = uc2_to_utf8(canonical, outpath, buf_size);
+        if (canonical[rlen-1] == '/') {
+            canonical[rlen-1] = 0;
+            rlen--;
+        }
+    }
+    return rlen;
+}
+
 minfs_uint32_t minfs_current_working_directory_len() {
     return GetCurrentDirectoryW(0, NULL);
 }
@@ -150,6 +188,7 @@ size_t minfs_path_leaf(const char* filepath, char* out_cwd, size_t buf_size) {
         *mrk = '/';
         lastmrk = mrk;
     }
+    lastmrk = strchr(filepath, '/');
     if (lastmrk == NULL && buf_size > len) {
         strncpy(out_cwd, filepath, buf_size);
         return len;
@@ -157,7 +196,7 @@ size_t minfs_path_leaf(const char* filepath, char* out_cwd, size_t buf_size) {
         outsize = len - ((uintptr_t)lastmrk - (uintptr_t)filepath);
 
         if (buf_size > outsize) {
-            strncpy(lastmrk, out_cwd, outsize);
+            strncpy(out_cwd, lastmrk+1, outsize);
             return outsize;
         }
     }
@@ -224,7 +263,7 @@ MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* 
     HANDLE searchhandle;
     size_t foundlen;
     wchar_t* uc2filepath;
-    MinFSDirectoryEntry_t* currententry, *first;
+    MinFSDirectoryEntry_t* currententry = NULL, *first = NULL;
     UTF8_TO_UC2_STACK_PAD(filepath, uc2filepath, 3);
     wcscat(uc2filepath, L"/*");
 
@@ -234,6 +273,8 @@ MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* 
         return NULL;
     }
 
+    --scratchlen;
+
     first = scratch;
     first->entryName[0] = 0;
     first->entryNameLen = 0;
@@ -242,18 +283,25 @@ MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* 
     do {
         if (wcscmp(found.cFileName, L".") && wcscmp(found.cFileName, L"..")){
             currententry = scratch;
+            if (scratchlen < sizeof(MinFSDirectoryEntry_t)) {
+                FindClose( searchhandle );
+                return NULL;
+            }
             scratchlen -= sizeof(MinFSDirectoryEntry_t);
             foundlen = wcslen(found.cFileName);
             if(uc2_to_utf8(found.cFileName, (char*)currententry->entryName, scratchlen) != foundlen) {
+                FindClose( searchhandle );
                 return NULL;
             }
             scratchlen -= foundlen+1;
             scratch = ((char*)scratch)+sizeof(MinFSDirectoryEntry_t)+foundlen;
             currententry->next = scratch;
+            currententry->entryNameLen = foundlen;
         }
     } while ( FindNextFileW( searchhandle, &found ) );
 
     FindClose( searchhandle );
-    currententry->next = NULL;
+    if (currententry)
+        currententry->next = NULL;
     return first;
 }

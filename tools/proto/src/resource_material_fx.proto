@@ -3,6 +3,13 @@ import "resource_renderstate.proto";
 
 package Heart.proto;
 
+enum MaterialParameterType {
+    matparam_none    = 0;
+    matparam_float   = 1;
+    matparam_int     = 2;
+    matparam_texture = 3;
+}
+
 message SamplerState {
     optional renderstate.SamplerState filter = 1;
     optional renderstate.SamplerBorder addressU = 2;

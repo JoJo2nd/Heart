@@ -10,7 +10,7 @@
 #define UTF8_TO_UC2_STACK(utf8, uc) UTF8_TO_UC2_STACK_PAD(utf8, uc, 0)
 
 #define UTF8_TO_UC2_STACK_PAD(utf8, uc, pad) \
-    uc = (wchar_t*))alloca((strlen(utf8)+1+pad)*sizeof(minfs_uint16_t)); \
+    uc = (wchar_t*)alloca((strlen(utf8)+1+pad)*sizeof(minfs_uint16_t)); \
     utf8_to_uc2(utf8, uc, (strlen(utf8)+1+pad)*sizeof(minfs_uint16_t));    
 
 minfs_uint32_t utf8_codepoint(const char* uft8In, minfs_uint16_t* ucOut);

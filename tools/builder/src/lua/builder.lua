@@ -10,13 +10,37 @@ local G = _G
 local buildables = {}
 local data_path = string.gsub(in_data_path, "\\", "/");
 local output_data_path = string.gsub(in_output_data_path, "\\", "/");
-local job_count = in_cores or 3									 
-local verbose = in_verbose								 
+local job_count = in_cores or 3                                  
+local verbose = in_verbose                               
 local current_jobs = 0
 local processes = {}
 local success = 0
+local cached = 0
 local failure = 0
 local temp_data_path = string.gsub(data_path.."/.tmp", "\\", "/");
+local cache_data_path = string.gsub(data_path.."/.cache", "\\", "/");
+
+local function verbose_log(str, ...)
+    if verbose == true then
+        print(string.format(str, ...))
+    end
+end
+local function error_log(str, ...)
+    -- 31 for red
+    red = "\x1B[31m"
+    reset = "\x1B[0m"
+    str = string.format(str, ...)
+    print(red..str..reset)
+end
+local function log(str, ...)
+    print(string.format(str, ...))
+end
+
+
+data_path = filesystem.canonical(data_path);
+output_data_path = filesystem.canonical(output_data_path);
+temp_data_path = filesystem.canonical(temp_data_path);
+cache_data_path = filesystem.canonical(cache_data_path);
 
 if filesystem.isdirectory(temp_data_path) == false then
     filesystem.makedirectories(temp_data_path)
@@ -24,17 +48,16 @@ end
 if filesystem.isdirectory(output_data_path) == false then
     filesystem.makedirectories(output_data_path)
 end
-
-print(string.format("Build data path %s", data_path))
-print(string.format("Build output path %s", output_data_path))
-print(string.format("Build tmp path %s", temp_data_path))
-print(string.format("Build core count %s", job_count))
-
-local function verbose_log(str, ...)
-    if verbose == true then
-        print(string.format(str, ...))
-    end
+if filesystem.isdirectory(cache_data_path) == false then
+    filesystem.makedirectories(cache_data_path)
 end
+
+log("Build data path %s", data_path)
+log("Build output path %s", output_data_path)
+log("Build tmp path %s", temp_data_path)
+log("Build cache path %s", cache_data_path)
+log("Build core count %s", job_count)
+
 verbose_log("verbose log is on")
 
 local function deepcopy(t)
@@ -51,7 +74,7 @@ local function deepcopy(t)
     return res
 end
 
-local function totablestring(t)
+local function totablestring_old(t)
     local s = "{\n"
     for k, v in pairs(t) do
         if type(v) == "string" then
@@ -62,6 +85,28 @@ local function totablestring(t)
         else
             s = s.."\t[\""..k.."\"]= "..tostring(v)..",\n"
         end
+    end
+    s = s.."}\n"
+    return s
+end
+
+local function totablestring(t)
+    local e = {}
+    for k, v in pairs(t) do
+        if type(v) == "string" then
+            table.insert(e, "\t[\""..k.."\"]= \""..v.."\",\n");
+        elseif type(v) == "table" then
+            local ts = totablestring(v)
+            table.insert(e,"\t[\""..k.."\"]= "..ts..",\n")
+        else
+            table.insert(e, "\t[\""..k.."\"]= "..tostring(v)..",\n")
+        end
+    end
+
+    table.sort(e)
+    local s = "{\n"
+    for k, v in pairs(e) do
+        s = s..v
     end
     s = s.."}\n"
     return s
@@ -81,7 +126,7 @@ local function add_build_folder(folder_path, type_parameters, package)
         next                = next,
         pairs               = pairs,
         --pcall              = --pcall
-        print               = print,
+        print               = log,
         rawequal            = rawequal,
         rawget              = rawget,
         rawlen              = rawlen,
@@ -100,7 +145,8 @@ local function add_build_folder(folder_path, type_parameters, package)
     local local_package = package or ""
     local local_add_build_folder = function (local_folder_path)
         local ltp = deepcopy(local_type_parameters)
-        add_build_folder(folder_path.."/"..local_folder_path, ltp, local_package)
+        verbose_log("add_build_folder(%s) called", local_folder_path)
+        add_build_folder(string.format("%s/%s",folder_path,local_folder_path), ltp, local_package)
     end
     env.buildsystem = {
         add_build_folder = local_add_build_folder,
@@ -114,7 +160,7 @@ local function add_build_folder(folder_path, type_parameters, package)
         end,
         add_files = function(wildcard, res_type, type_param_or)
             verbose_log("add_files(%s, %s, %s)", wildcard, res_type, type_param_or)
-            local full_wildcard = folder_path.."/"..wildcard
+            local full_wildcard = string.format("%s/%s",folder_path, wildcard)
             local full_folder_path = filesystem.parentpath(full_wildcard)
             local dir_files = filesystem.readdir(full_folder_path)
             if dir_files == nil then
@@ -155,8 +201,8 @@ local function add_build_folder(folder_path, type_parameters, package)
             end
         end,
     }
-    local build_script = folder_path.."/.build_script"
-    verbose_log("checking for build script %s", build_script)
+    local build_script = string.format("%s/%s",folder_path,".build_script")
+    verbose_log("checking for build script %s in %s", build_script, folder_path)
     if filesystem.isfile(build_script) then
         verbose_log("found build script %s", build_script)
         local build, errmsg = loadfile(build_script, "t", env)
@@ -186,11 +232,16 @@ end
 local wait_for_free_job_slot = function(job_limit)
     while current_jobs > job_limit do
         for proc, pid in pairs(processes) do
-            exit_code = pid:wait(0)
+            exit_code = pid.p:wait(0)
             if exit_code ~= nil then
                 if exit_code ~= 0 then
+                    local f=io.open(pid.l, "r")
+                    local e = f:read('*a')
+                    f:close()
+                    error_log(e)
                     failure = failure+1
                 else
+                    os.remove(pid.l)
                     success = success+1
                 end
                 processes[proc] = nil
@@ -225,7 +276,7 @@ function write_packages(buildable_resources)
     
     -- Write out packages
     for k, v in pairs(packages) do
-        verbose_log("Writing package %s", k)
+        log("Writing package %s", k)
         local pkg_header = protobuf.Heart.proto.PackageHeader.new()
         for i, dep in pairs(v.depends) do
             if k ~= dep then
@@ -247,8 +298,8 @@ function write_packages(buildable_resources)
             entry:set_entrytype(res.res_type)
             offset=offset+filesize
         end
-        local codedoutputstream = protobuf.CodedOutputStream.new(output_data_path.."/"..k..".pkg")
-        verbose_log("Created coded output stream %s @ "..tostring(codedoutputstream), output_data_path.."/"..k..".pkg")
+        local codedoutputstream = protobuf.CodedOutputStream.new(string.format("%s/%s.pkg",output_data_path,k))
+        verbose_log("Created coded output stream %s @ "..tostring(codedoutputstream), string.format("%s/%s.pkg",output_data_path,k))
         local header_str, header_size = pkg_header:serialized()
         codedoutputstream:WriteVarint32(header_size) -- or #header_str
         codedoutputstream:WriteRaw(header_str)
@@ -267,45 +318,115 @@ end
 
 --- Exec
 
+local global_file_hash_lookup = {}
+for k, v in pairs(filesystem.readdir('.')) do
+    local filename = filesystem.filewithext(v)
+    if filename then
+        if string.find(filename, ".dll") or string.find(filename, ".so") or string.find(filename, ".lua") then
+            global_file_hash_lookup[filesystem.pathwithoutext(filename)] = filesystem.fileMD5(filename);
+        end
+    end
+end
+
+for k, v in pairs(filesystem.readdirrecursive(data_path)) do
+    if (filesystem.isfile(v)) then
+        global_file_hash_lookup[v] = filesystem.fileMD5(v);
+    end
+end
+
+for k, v in pairs(global_file_hash_lookup) do verbose_log("%s=%s", k, v) end
+
 add_build_folder(data_path)
 
 for k, v in pairs(buildables) do
     local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, v.full_path)
+    local error_log_filename = output_file..'.log'
     tmp_file = io.open(temp_file_name, "w")
     local paramstr = totablestring(v.parameters)
     local build_script = string.gsub([[
---print("Build - $inputfile")
+local errorlog = io.open("$errorlog", "w")
+local function error_print (str,...)
+    errorlog:write(string.format(str, ...))
+end
+print = error_print
+print("Building - $inputfile\n")
 
+local filesystem = require "filesystem"
 local builder = require "$buildername"
 local parameters =  $params
 local inputfiles = builder.build("$inputfile", {}, parameters, "$tempoutputfile")
 local depfile = io.open("$depoutputfile", "w")
+-- Write out builder dll/so
+depfile:write("$buildername".."?$hash".."\n")
+-- Write out this lua file
+p = filesystem.canonical("$buildscript")
+if (filesystem.isfile(p)) then
+    depfile:write(p.."?"..filesystem.fileMD5(p).."\n")
+end
+--Write out any deps
 for i, v in ipairs(inputfiles) do
-    depfile:write(string.gsub(v, "$buildpath", "").."\n")
+    p = filesystem.canonical(v)
+    if (filesystem.isfile(p)) then
+        depfile:write(p.."?"..filesystem.fileMD5(v).."\n")
+    else
+        depfile:write(v.."\n")
+    end
 end
 depfile:close()
     ]], "$(%w+)", {
         params = paramstr, 
+        buildscript=temp_file_name,
         buildername=v.res_type, 
         inputfile=v.full_path, 
         tempoutputfile=output_file, 
+        errorlog=error_log_filename,
         depoutputfile=dep_output_file,
         buildpath=data_path,
+        hash=global_file_hash_lookup[v.res_type]
     })
     
     tmp_file:write(build_script)
+    tmp_file:flush()
     tmp_file:close()
-    local exe = "lua"
-    wait_for_free_job_slot(job_count)
-    current_jobs = current_jobs + 1
-    print(string.format("Building Resource - [%s]%s", v.package, string.gsub(k, data_path, "")))
-    processes[k] = process.exec(string.format("%s \"%s\"", exe, temp_file_name))
+    -- update the script hash now to detect any new/changed parameters
+    global_file_hash_lookup[temp_file_name]=filesystem.fileMD5(temp_file_name)
+    local dobuild = function () 
+        local exe = "lua"
+        wait_for_free_job_slot(job_count)
+        current_jobs = current_jobs + 1
+        log("Building Resource - [%s]%s", v.package, string.gsub(k, data_path, ""))
+        processes[k] = {p=process.exec(string.format("%s \"%s\"", exe, temp_file_name)), l=error_log_filename, d=depoutputfile}
+    end
+    -- check the cache
+    needsbuild = true
+    dep_file = io.open(dep_output_file, "r")
+    if dep_file then
+        needsbuild = false
+        for line in dep_file:lines() do
+            local path, hash = string.match(line, '(.*)?(.*)')
+            if global_file_hash_lookup[path] ~= hash then
+                -- something is out of date, build
+                verbose_log("%s=%s doesn't match %s on line %s", path, global_file_hash_lookup[path], hash, line)
+                needsbuild = true
+            end
+        end
+        
+    end
+    if needsbuild == true then
+        dobuild()
+    else
+        cached = cached+1
+        log("Using Cached Resource - [%s]%s", v.package, string.gsub(k, data_path, ""))
+    end
+
 end
 
 --Wait for it all to be done
 wait_for_free_job_slot(0)
 
-print(string.format("Build complete: %d Successfully Completed, %d Failures", success, failure))
+log("Build complete: %d Successfully Completed, %d Cached, %d Failures", success, cached, failure)
 
 -- Output packages
 write_packages(buildables)
+
+log("Finished Writing Packages.")

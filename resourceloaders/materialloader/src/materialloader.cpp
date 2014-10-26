@@ -8,8 +8,15 @@
 #include <string>
 #include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
-#include "Heart.h" // TODO: remove this somehow
 #include "utils/hRapidXML.h"
+#include "minfs.h"
+#include "resource_material_fx.pb.h"
+
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+};
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -20,7 +27,6 @@
 #endif
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/io/coded_stream.h"
-#include "../../minfs/src/minfs.h"
 #if defined (_MSC_VER)
 #   pragma warning(pop)
 #endif
@@ -55,11 +61,10 @@ typedef std::vector< std::string > StrVectorType;
 
 Heart::hXMLEnumReamp g_parameterTypes[] =
 {
-    {"float",   Heart::ePTFloat },
-    {"int",     Heart::ePTInt   },
-    {"colour",  Heart::ePTColour},
-    {"texture", Heart::ePTTexture},
-    {"none",    Heart::ePTNone  },
+    {"float",   Heart::proto::matparam_float  },
+    {"int",     Heart::proto::matparam_int    },
+    {"texture", Heart::proto::matparam_texture},
+    {"none",    Heart::proto::matparam_none   },
 };
 
 
@@ -397,7 +402,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
 
     hXMLGetter xParameter = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("parameter");
     for (; xParameter.ToNode(); xParameter = xParameter.NextSibling()) {
-        hParameterType ptype=ePTNone;
+        proto::MaterialParameterType ptype=proto::matparam_none;
         proto::MaterialParameter* param=nullptr;
         if (xParameter.GetAttribute("name")) {
             param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
@@ -405,36 +410,25 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             luaL_errorthrow(L, "Can't find name for parameter in material");
         }
         if (xParameter.GetAttribute("type")) {
-            ptype = xParameter.GetAttributeEnum("type", g_parameterTypes, ePTNone );
+            ptype = xParameter.GetAttributeEnum("type", g_parameterTypes, proto::matparam_none );
         }
         if (xParameter.GetValueString()) {
             const hChar* valstr=xParameter.GetValueString();
-            if (ptype == ePTFloat) {
+            if (ptype == Heart::proto::matparam_float) {
                 hFloat fd[16];
                 int count=sscanf(valstr, " %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f , %f ",
                     fd, fd+1, fd+2, fd+3, fd+4, fd+5, fd+6, fd+7, fd+8, fd+9, fd+10, fd+11, fd+12, fd+13, fd+14, fd+15);
                 for (int i=0; i<count; ++i) {
                     param->add_floatvalues(fd[i]);
                 }
-            } else if (ptype == ePTInt) {
+            } else if (ptype == Heart::proto::matparam_int) {
                 hInt id[16];
                 int count=sscanf(valstr, " %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d , %d ",
                     id, id+1, id+2, id+3, id+4, id+5, id+6, id+7, id+8, id+9, id+10, id+11, id+12, id+13, id+14, id+15);
                 for (int i=0; i<count; ++i) {
                     param->add_intvalues(id[i]);
                 }
-            } else if (ptype == ePTColour) {
-                hFloat fd[4] = {1.f, 1.f, 1.f, 1.f};
-                int count=sscanf(valstr, " %f , %f , %f , %f ", fd, fd+1, fd+2, fd+3);
-                if (count != 4) {
-                    luaL_errorthrow(L, "Colour parsed have %d values, expected only 4", count);
-                }
-                auto colour=param->add_colourvalues();
-                colour->set_red((hUint)(fd[0]*255.f+.5f));
-                colour->set_green((hUint)(fd[1]*255.f+.5f));
-                colour->set_blue((hUint)(fd[2]*255.f+.5f));
-                colour->set_alpha((hUint)(fd[3]*255.f+.5f));
-            } else if (ptype == ePTTexture) {
+            } else if (ptype == Heart::proto::matparam_texture) {
                 param->set_resourceid(valstr);
             }
         }

@@ -461,7 +461,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     header.scissor = rcd.rasterizer_.scissorEnable_ > 0;
     header.depthBais = rcd.rasterizer_.depthBias_ != 0;
 
-    auto blendoptogl = [](proto::renderstate::BlendOp a) {
+    auto blendoptogl = [](proto::renderstate::BlendOp a) -> GLenum {
         switch(a) {
         case proto::renderstate::BlendZero             : return GL_ZERO;
         case proto::renderstate::BlendOne              : return GL_ONE;
@@ -477,7 +477,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         hcAssertFailMsg("unknown blend op value");
         return GL_INVALID_VALUE;
     };
-    auto blendfunctogl = [](proto::renderstate::BlendFunction a) {
+    auto blendfunctogl = [](proto::renderstate::BlendFunction a) -> GLenum {
         switch(a) {
         case proto::renderstate::Add : return GL_FUNC_ADD;
         case proto::renderstate::Sub : return GL_FUNC_SUBTRACT;
@@ -508,7 +508,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         rc->size_ = ns;
     }
 
-    auto comparetogl = [](proto::renderstate::FunctionCompare a) {
+    auto comparetogl = [](proto::renderstate::FunctionCompare a) -> GLenum {
         switch(a) {
         case proto::renderstate::CompareNever       : return GL_NEVER;
         case proto::renderstate::CompareLess        : return GL_LESS;
@@ -543,7 +543,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         rc->size_=ns;
     }
 
-    auto stenciloptogl =[](proto::renderstate::StencilOp a) {
+    auto stenciloptogl =[](proto::renderstate::StencilOp a) -> GLenum {
         switch(a) {
         case proto::renderstate::StencilKeep   : return GL_KEEP;
         case proto::renderstate::StencilZero   : return GL_ZERO;
@@ -574,7 +574,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     
     // sampler states
-    auto filtertogl = [] (proto::renderstate::SamplerState a) {
+    auto filtertogl = [] (proto::renderstate::SamplerState a) -> GLint {
         switch(a) {
         case proto::renderstate::point       : return GL_NEAREST;
         case proto::renderstate::linear      : return GL_LINEAR;
@@ -582,7 +582,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         return GL_INVALID_VALUE;
     };
-    auto minfiltertogl = [] (proto::renderstate::SamplerState a) {
+    auto minfiltertogl = [] (proto::renderstate::SamplerState a) -> GLint {
         switch(a) {
         case proto::renderstate::point       : return GL_NEAREST_MIPMAP_NEAREST;
         case proto::renderstate::linear      : return GL_LINEAR_MIPMAP_LINEAR;
@@ -590,7 +590,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         return GL_INVALID_VALUE;
     };
-    auto bordertogl = [](proto::renderstate::SamplerBorder a) {
+    auto bordertogl = [](proto::renderstate::SamplerBorder a) -> GLint {
         switch(a) {
         case proto::renderstate::wrap  : return GL_REPEAT;
         case proto::renderstate::mirror: return GL_MIRRORED_REPEAT;
@@ -602,25 +602,26 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     if (header.samplerCount_) {
         auto ns = (hUint32)(rc->size_+(sizeof(GLuint)*header.samplerCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* samplers = (GLuint*)(rc->opCodes_+rc->size_);
+        auto* samplers = (hGLSampler*)(rc->opCodes_+rc->size_);
         auto* wsamplers = samplers;
-        glGenSamplers(header.samplerCount_, samplers);
         for (auto i=0u, n=hRenderCallDesc::samplerStateMax_; i<n && !rcd.samplerStates_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.samplerStates_[i].name_);
             if (si != ~0u) {
+                wsamplers->index_ = si;
+                glGenSamplers(1, &wsamplers->samplerObj_);
                 auto minfilter = minfiltertogl(rcd.samplerStates_[i].sampler_.filter_);
                 auto filter = filtertogl(rcd.samplerStates_[i].sampler_.filter_);
                 auto wraps = bordertogl(rcd.samplerStates_[i].sampler_.addressU_);
                 auto wrapt = bordertogl(rcd.samplerStates_[i].sampler_.addressV_);
                 auto wrapr = bordertogl(rcd.samplerStates_[i].sampler_.addressW_);
-                glSamplerParameteriv(*wsamplers, GL_TEXTURE_WRAP_S, &wraps);
-                glSamplerParameteriv(*wsamplers, GL_TEXTURE_WRAP_T, &wrapt);
-                glSamplerParameteriv(*wsamplers, GL_TEXTURE_WRAP_R, &wrapr);
-                glSamplerParameteriv(*wsamplers, GL_TEXTURE_MIN_FILTER, &minfilter);
-                glSamplerParameteriv(*wsamplers, GL_TEXTURE_MAG_FILTER, &filter);
-                glSamplerParameterfv(*wsamplers, GL_TEXTURE_MIN_LOD, &rcd.samplerStates_[i].sampler_.minLOD_);
-                glSamplerParameterfv(*wsamplers, GL_TEXTURE_MAX_LOD, &rcd.samplerStates_[i].sampler_.maxLOD_);
-                glSamplerParameterfv(*wsamplers, GL_TEXTURE_BORDER_COLOR, (hFloat*)&rcd.samplerStates_[i].sampler_.borderColour_);
+                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_S, &wraps);
+                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_T, &wrapt);
+                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_R, &wrapr);
+                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_MIN_FILTER, &minfilter);
+                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_MAG_FILTER, &filter);
+                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_MIN_LOD, &rcd.samplerStates_[i].sampler_.minLOD_);
+                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_MAX_LOD, &rcd.samplerStates_[i].sampler_.maxLOD_);
+                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_BORDER_COLOR, (hFloat*)&rcd.samplerStates_[i].sampler_.borderColour_);
                 ++wsamplers;
             }
         }
@@ -631,14 +632,15 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     if (header.textureCount_) {
         auto ns = (hUint32)(rc->size_+(sizeof(void*)*header.textureCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto** textures = (const hTexture2D**)(rc->opCodes_+rc->size_);
-        auto** wtextures = textures;
+        auto* textures = (hGLTexture2D*)(rc->opCodes_+rc->size_);
+        auto* wtextures = textures;
         for (auto i=0u, n=hRenderCallDesc::textureSlotMax_; i<n && !rcd.textureSlots_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.textureSlots_[i].name_);
             if (si != ~0u) {
                 // only support 2D textures atm, need to support more
                 hcAssert(rcd.textureSlots_[i].texType_ == 2);
-                *wtextures = rcd.textureSlots_[i].t2D_; 
+                wtextures->index_ = si;
+                wtextures->tex_ = rcd.textureSlots_[i].t2D_; 
                 ++wtextures;
             }
         }
@@ -649,12 +651,13 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     if (header.uniBufferCount_) {
         auto ns = (hUint32)(rc->size_+(sizeof(void*)*header.uniBufferCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto** buffers = (const hUniformBuffer**)(rc->opCodes_+rc->size_);
-        auto** wbuffers = buffers;
+        auto* buffers = (hGLUniformBuffer*)(rc->opCodes_+rc->size_);
+        auto* wbuffers = buffers;
         for (auto i=0u, n=hRenderCallDesc::uniformBufferMax_; i<n && !rcd.uniformBuffers_[i].name_.is_default(); ++i) {
             auto si = getunibufindex(rcd.uniformBuffers_[i].name_);
             if (si != ~0u) {
-                *wbuffers = rcd.uniformBuffers_[i].ub_; 
+                wbuffers->index_ = si; 
+                wbuffers->ub_ = rcd.uniformBuffers_[i].ub_; 
                 ++wbuffers;
             }
         }
@@ -675,7 +678,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     // vertex attributes
     {
-        auto inputtypetogl = [](Heart::hRenderer::hVertexInputType a) {
+        auto inputtypetogl = [](Heart::hRenderer::hVertexInputType a) -> GLenum {
             switch(a) {
             case hVertexInputType::Byte        : return GL_BYTE;
             case hVertexInputType::UByte       : return GL_UNSIGNED_BYTE;

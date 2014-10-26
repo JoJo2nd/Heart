@@ -8,6 +8,7 @@
 #include "lauxlib.h"
 #include "lua_filesystem.h"
 #include "minfs.h"
+#include "cryptoMD5.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -63,6 +64,17 @@ static int fs_isFile(lua_State* L) {
 //////////////////////////////////////////////////////////////////////////
 static int fs_isDirectory(lua_State* L) {
     lua_pushboolean(L, minfs_is_directory(luaL_checkstring(L, -1)));
+    return 1;
+}
+
+static int fs_canonical(lua_State* L) {
+    const char* filepath = luaL_checkstring(L, -1);
+    luaL_Buffer canonpath;
+    size_t len = 1024;
+    
+    luaL_buffinitsize(L, &canonpath, len);
+    len = minfs_canonical_path(filepath, canonpath.b, len);
+    luaL_pushresultsize(&canonpath, len);
     return 1;
 }
 
@@ -159,6 +171,52 @@ static int fs_pathRoot(lua_State* L) {
     return 1;
 }
 
+static int fs_fileMD5(lua_State* L) {
+    size_t len;
+    const char* filepath = luaL_checklstring(L, 1, &len);
+    cyMD5_CTX md5;
+    minfs_uint64_t fsize;
+    void* data;
+    FILE* f;
+    unsigned char digest[CY_MD5_LEN];
+    char md5str[CY_MD5_STR_LEN];
+
+    if (!minfs_is_file(filepath)) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    fsize = minfs_get_file_size(filepath);
+    data = lua_newuserdata(L, fsize);
+
+    f = fopen(filepath, "rb");
+    fread(data, 1, fsize, f);
+    fclose(f);
+    cyMD5Init(&md5);
+    cyMD5Update(&md5, data, (cyUint)fsize);
+    cyMD5Final(&md5, digest);
+    cyMD5DigestToString(digest, md5str);
+
+    lua_pushlstring(L, md5str, CY_MD5_STR_LEN-1);
+    return 1;
+}
+
+static int fs_stringMD5(lua_State* L) {
+    size_t len;
+    const char* string = luaL_checklstring(L, 1, &len);
+    cyMD5_CTX md5;
+    unsigned char digest[CY_MD5_LEN];
+    char md5str[CY_MD5_STR_LEN];
+
+    cyMD5Init(&md5);
+    cyMD5Update(&md5, string, (cyUint)len);
+    cyMD5Final(&md5, digest);
+    cyMD5DigestToString(digest, md5str);
+
+    lua_pushlstring(L, md5str, CY_MD5_STR_LEN-1);
+    return 1;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -213,25 +271,27 @@ void fs_read_entries(lua_State* L, const char* origpath, int* tableindex) {
     luaL_Buffer buffer;
     MinFSDirectoryEntry_t* entries;
     
-    for (scratch = lua_newuserdata(L, scratchsize); !(entries = minfs_read_directory_entries(lua_tostring(L, -1), scratch, scratchsize)); lua_pop(L, 1)) {
+    scratch = realloc(scratch, scratchsize);
+    while(!(entries = minfs_read_directory_entries(origpath, scratch, scratchsize))) {
+        scratch = realloc(scratch, scratchsize*2);
         scratchsize *= 2;
     }
-    for (; entries; entries = entries->next) {
+
+    for (; entries && entries->entryNameLen != 0; entries = entries->next) {
         luaL_buffinit(L, &buffer);
         luaL_addstring(&buffer, origpath);
         luaL_addstring(&buffer, "/");
         luaL_addstring(&buffer, entries->entryName);
         luaL_pushresult(&buffer);
         if (minfs_is_directory(lua_tostring(L, -1))) {
-            lua_pushvalue(L, -3); // the table is assumed to be at the top of the stack
+            lua_pushvalue(L, -2); // the table is assumed to be at the top of the stack
             fs_read_entries(L, lua_tostring(L, -2), tableindex);
             lua_pop(L, 1);
         }
-        lua_rawseti(L, -3, (*tableindex)++);
+        lua_rawseti(L, -2, (*tableindex)++);
     }
 
-    // remove the scratch from the stack
-    lua_pop(L, 1);
+    free(scratch);
 }
 
 static int fs_readDirRecursive(lua_State* L) {
@@ -531,6 +591,7 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"exists",fs_exists},
         {"isfile",fs_isFile},
         {"isdirectory",fs_isDirectory},
+        {"canonical", fs_canonical},
         {"makedirectories",fs_makeDirectories},
         {"getcurrentpath",fs_getCurrentPath},
         {"filewithext", fs_fileWithExt},
@@ -539,6 +600,8 @@ luaFILESYSTEM_EXPORT int luaFILESYSTEM_API luaopen_filesystem(lua_State *L) {
         {"readdir", fs_readDir},
         {"readdirrecursive", fs_readDirRecursive},
         {"wildcardpathmatch", fs_wildcardPathMatch},
+        {"fileMD5", fs_fileMD5},
+        {"stringMD5", fs_stringMD5},
         {NULL, NULL}
     };
 

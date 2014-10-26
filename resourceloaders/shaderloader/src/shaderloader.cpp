@@ -68,6 +68,9 @@ typedef std::regex_iterator<std::string::iterator> sre_iterator;
     luaL_where(L, 1); \
     lua_pushfstring(L, fmt, ##__VA_ARGS__ ); \
     lua_concat(L, 2); \
+    lua_getglobal(L, "print"); \
+    lua_pushvalue(L, -2); \
+    lua_pcall(L, 1, 0, 0); \
     throw std::exception();
 
 
@@ -132,7 +135,7 @@ uint initGLCompiler(std::string* out_errors);
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
 uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths, 
-std::string* out_source_string, std::map<std::string, std::string>* inc_ctx);
+std::string* out_source_string, std::map<std::string, std::string>* inc_ctx, std::vector<std::string>*);
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -274,7 +277,8 @@ try {
     proto::ShaderResourceContainer resource_container;
     std::string full_shader_source;
     std::map<std::string, std::string> parse_ctx;
-    parseShaderSource(path, base_include_paths, &full_shader_source, &parse_ctx);
+    std::vector<std::string> included_files;
+    parseShaderSource(path, base_include_paths, &full_shader_source, &parse_ctx, &included_files);
 
     ShaderCompiler* current_compiler = compilers;
     while (current_compiler->func_){
@@ -335,8 +339,8 @@ try {
 
     lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
     int idx=1;
-    for (auto i=parse_ctx.begin(), n=parse_ctx.end(); i!=n; ++i) {
-        lua_pushstring(L, i->first.c_str());
+    for (const auto& i : included_files) {
+        lua_pushstring(L, i.c_str());
         lua_rawseti(L, -2, idx);
         ++idx;
     }
@@ -354,7 +358,8 @@ try {
 uint parseShaderSource(const std::string& shader_path, 
 std::vector<std::string> in_include_paths, 
 std::string* out_source_string,
-std::map<std::string, std::string>* inc_ctx) {
+std::map<std::string, std::string>* inc_ctx,
+std::vector<std::string>* inc_files) {
     
     std::vector<char> scratch;
     scratch.reserve(1024);
@@ -390,11 +395,12 @@ std::map<std::string, std::string>* inc_ctx) {
             if (minfs_is_file(inc_file.c_str()) == 0) {
                 continue;
             }
+            inc_files->push_back(inc_file);
             const auto inc_source_itr = inc_ctx->find((*re_i)[1].str());
             if (inc_source_itr != inc_ctx->end()) {
                 did_include = true;
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_source_itr->second));
-            } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx) == 0) {
+            } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx, inc_files) == 0) {
                 did_include = true;
                 inc_ctx->insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));

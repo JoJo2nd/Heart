@@ -11,6 +11,9 @@
 namespace Heart {
 namespace hRenderer {
 
+struct hUniformBuffer;
+struct hTexture2D;
+
 enum class Op : hUint8 {
     NoOp = 0,
     SetRC,
@@ -83,6 +86,21 @@ struct hGLVtxAttrib {
     GLenum  type_;
     GLsizei stride_;
     void*   pointer_;
+};
+
+struct hGLSampler {
+    GLint  index_;
+    GLuint samplerObj_;
+};
+
+struct hGLTexture2D {
+    GLint       index_;
+    const hTexture2D* tex_;
+};
+
+struct hGLUniformBuffer {
+    GLint           index_;
+    const hUniformBuffer* ub_;
 };
 
 }

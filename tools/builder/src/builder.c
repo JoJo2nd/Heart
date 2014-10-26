@@ -548,6 +548,7 @@ int main (int argc, char **argv) {
     }
 
     // Close the lua state or some files/etc wont' get flushed
+    lua_gc(L, LUA_GCCOLLECT, 0);
     lua_close(L);
 
     return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;

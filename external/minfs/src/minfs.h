@@ -40,6 +40,7 @@ typedef struct MinFSDirectoryEntry {
 minfs_uint64_t minfs_get_current_file_time();
 minfs_uint64_t minfs_get_file_mdate(const char* filepath);
 minfs_uint64_t minfs_get_file_size(const char* filepath);
+size_t minfs_canonical_path(const char* filepath, char* outpath, size_t buf_size);
 int minfs_path_exist(const char* filepath);
 int minfs_is_file(const char* filepath);
 int minfs_is_directory(const char* filepath);
