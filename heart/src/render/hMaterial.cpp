@@ -8,8 +8,11 @@
 #include "hRenderShaderProgram.h"
 #include "hTexture.h"
 
-namespace Heart
-{
+#include <algorithm>
+
+namespace Heart {
+
+
     hRegisterObjectType(material, Heart::hMaterial, Heart::proto::MaterialResource);
 
     //////////////////////////////////////////////////////////////////////////
@@ -23,6 +26,118 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     hBool hMaterial::deserialiseObject(Heart::proto::MaterialResource* obj) {
+        totalPasses_=obj->totalpasses();
+        rcDescs_.reset(new hRenderer::hRenderCallDesc[totalPasses_]);
+        groupNames_.reserve(obj->totalgroups());
+        techniqueNames_.reserve(obj->totaltechniques());
+
+        for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
+            const proto::MaterialGroup& groupdef=obj->groups(gi);
+            auto groupname = hStringID(groupdef.groupname().c_str());
+            groupNames_.push_back(groupname);
+            for (hUint ti=0, tn=groupdef.technique_size(); ti<tn; ++ti) {
+                const proto::MaterialTechnique& techdef=groupdef.technique(ti);
+                auto techname = hStringID(techdef.techniquename().c_str());
+                if (std::find(techniqueNames_.begin(), techniqueNames_.end(), techname) == techniqueNames_.end()) {
+                    techniqueNames_.push_back(techname);
+                }
+                for (hUint pi=0, pn=techdef.passes_size(); pi<pn; ++pi){
+                    auto key = hPassKey(groupname, techname, pi);
+                    const proto::MaterialPass& passdef=techdef.passes(pi);
+                    hRenderer::hRenderCallDesc rcd;
+                    if (passdef.has_blend()) {
+                        const proto::BlendState& blenddef=passdef.blend();
+                        if (blenddef.has_blendenable()) {
+                            rcd.blend_.blendEnable_=blenddef.blendenable();
+                        }
+                        if (blenddef.has_srcblend()) {
+                            rcd.blend_.srcBlend_=blenddef.srcblend();
+                        }
+                        if (blenddef.has_destblend()) {
+                            rcd.blend_.destBlend_=blenddef.destblend();
+                        }
+                        if (blenddef.has_blendop()) {
+                            rcd.blend_.blendOp_=blenddef.blendop();
+                        }
+                        if (blenddef.has_srcblendalpha()) {
+                            rcd.blend_.srcBlendAlpha_=blenddef.srcblendalpha();
+                        }
+                        if (blenddef.has_destblendalpha()) {
+                            rcd.blend_.destBlendAlpha_=blenddef.destblendalpha();
+                        }
+                        if (blenddef.has_blendopalpha()) {
+                            rcd.blend_.blendOpAlpha_=blenddef.blendopalpha();
+                        }
+                        if (blenddef.has_rendertargetwritemask()) {
+                            rcd.blend_.renderTargetWriteMask_=blenddef.rendertargetwritemask();
+                        }
+                    }
+                    if (passdef.has_depthstencil()) {
+                        const proto::DepthStencilState& depthdef=passdef.depthstencil();
+                        if (depthdef.has_depthenable()) {
+                            rcd.depthStencil_.depthEnable_ = depthdef.depthenable();
+                        }
+                        if (depthdef.has_depthwritemask()) {
+                            rcd.depthStencil_.depthWriteMask_=depthdef.depthwritemask();
+                        }
+                        if (depthdef.has_depthfunc()) {
+                            rcd.depthStencil_.depthFunc_=depthdef.depthfunc();
+                        }
+                        if (depthdef.has_stencilenable()) {
+                            rcd.depthStencil_.stencilEnable_=depthdef.stencilenable();
+                        }
+                        if (depthdef.has_stencilreadmask()) {
+                            rcd.depthStencil_.stencilReadMask_=depthdef.stencilreadmask();
+                        }
+                        if (depthdef.has_stencilwritemask()) {
+                            rcd.depthStencil_.stencilWriteMask_=depthdef.stencilwritemask();
+                        }
+                        if (depthdef.has_stencilfailop()) {
+                            rcd.depthStencil_.stencilFailOp_=depthdef.stencilfailop();
+                        }
+                        if (depthdef.has_stencildepthfailop()) {
+                            rcd.depthStencil_.stencilDepthFailOp_=depthdef.stencildepthfailop();
+                        }
+                        if (depthdef.has_stencilpassop()) {
+                            rcd.depthStencil_.stencilPassOp_=depthdef.stencilpassop();
+                        }
+                        if (depthdef.has_stencilfunc()) {
+                            rcd.depthStencil_.stencilFunc_=depthdef.stencilfunc();
+                        }
+                        if (depthdef.has_stencilref()) {
+                            rcd.depthStencil_.stencilRef_=depthdef.stencilref();
+                        }
+                    }
+                    if (passdef.has_rasterizer()) {
+                        const proto::RasterizerState& rasterdef=passdef.rasterizer();
+                        if (rasterdef.has_fillmode()) {
+                            rcd.rasterizer_.fillMode_=rasterdef.fillmode();
+                        }
+                        if (rasterdef.has_cullmode()) {
+                            rcd.rasterizer_.cullMode_=rasterdef.cullmode();
+                        }
+                        if (rasterdef.has_frontcounterclockwise()) {
+                            rcd.rasterizer_.frontCounterClockwise_=rasterdef.frontcounterclockwise();
+                        }
+                        if (rasterdef.has_depthbias()) {
+                            rcd.rasterizer_.depthBias_=rasterdef.depthbias();
+                        }
+                        if (rasterdef.has_depthbiasclamp()) {
+                            rcd.rasterizer_.depthBiasClamp_=rasterdef.depthbiasclamp();
+                        }
+                        if (rasterdef.has_slopescaleddepthbias()) {
+                            rcd.rasterizer_.slopeScaledDepthBias_=rasterdef.slopescaleddepthbias();
+                        }
+                        if (rasterdef.has_depthclipenable()) {
+                            rcd.rasterizer_.depthClipEnable_=rasterdef.depthclipenable();
+                        }
+                        if (rasterdef.has_scissorenable()) {
+                            rcd.rasterizer_.scissorEnable_=rasterdef.scissorenable();
+                        }
+                    }
+                }
+            }
+        }
 #if 0
         for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
             const proto::MaterialGroup& groupdef=obj->groups(gi);
@@ -229,6 +344,11 @@ namespace Heart
     }
 
     hBool hMaterial::linkObject() {
+        // !!JM TODO:
+        // foreach pass in all passes
+        //   ri = hRenderer::createReflectionInfo(all shaders) 
+        //   query(ri)
+        // buildDefaultUniformBlocks()
         return hTrue;
     }
     

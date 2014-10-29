@@ -3,8 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#ifndef HIMATERIAL_H__
-#define HIMATERIAL_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hArray.h"
@@ -18,8 +17,12 @@
 #include "base/hProtobuf.h"
 #include "components/hObjectFactory.h"
 
-namespace Heart
-{
+#include "cryptoMurmurHash.h"
+
+#include <unordered_map>
+#include <memory>
+
+namespace Heart {
     
     class hRenderState;
     class hTexture;
@@ -28,6 +31,27 @@ namespace Heart
     class hRenderMaterialManager;
     class hRenderSubmissionCtx;
 
+    struct hPassKey {
+        hPassKey(hStringID g, hStringID t, hUint p) 
+            : group_(g), tech_(t), pass_(p) {}
+        hStringID group_;
+        hStringID tech_;
+        hUint     pass_;
+    };
+}
+namespace std {
+    template<>
+    struct hash<Heart::hPassKey> {
+        size_t operator () (const Heart::hPassKey& rhs) const { 
+            hUint32 r;
+            hUint32 a[3] = {rhs.group_.hash(), rhs.tech_.hash(), rhs.pass_};
+            cyMurmurHash3_x86_32(a, sizeof(a), hGetMurmurHashSeed(), &r);
+            return r;
+        }
+    };
+
+}
+namespace Heart {
     
     hUint32 HEART_API hFloatToFixed(hFloat input, hUint32 totalbits, hUint32 fixedpointbits);
 
@@ -49,9 +73,13 @@ namespace Heart
 
     class  hMaterial
     {
-        struct hPassKey {
-            
-        };
+        typedef std::unordered_map<hPassKey, hRenderer::hRenderCallDesc*> hPassHashTable;
+
+        hPassHashTable                              passTable_;
+        std::unique_ptr<hRenderer::hRenderCallDesc> rcDescs_;
+        std::vector<hStringID>                      groupNames_;
+        std::vector<hStringID>                      techniqueNames_;
+        hUint                                       totalPasses_;
 
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
@@ -148,5 +176,3 @@ namespace Heart
 #endif
     };
 }
-
-#endif // HIMATERIAL_H__

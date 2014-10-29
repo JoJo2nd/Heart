@@ -214,13 +214,20 @@ Heart::proto::MaterialGroup* findOrAddMaterialGroup(Heart::proto::MaterialResour
     return r;
 }
 
-Heart::proto::MaterialTechnique* findOrAddMaterialTechnique(Heart::proto::MaterialGroup* group, const hChar* name) {
+Heart::proto::MaterialTechnique* findMaterialTechnique(Heart::proto::MaterialGroup* group, const hChar* name) {
     for (hUint i=0, n=group->technique_size(); i<n; ++i) {
         if (Heart::hStrCmp(group->technique(i).techniquename().c_str(), name) == 0) {
             return group->mutable_technique()->Mutable(i);
         }
     }
-    auto r = group->add_technique();
+    return nullptr;
+}
+
+Heart::proto::MaterialTechnique* findOrAddMaterialTechnique(Heart::proto::MaterialGroup* group, const hChar* name) {
+    auto r = findMaterialTechnique(group, name);
+    if (r)
+        return r;
+    r = group->add_technique();
     r->set_techniquename(name);
     return r;
 }
@@ -443,11 +450,15 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         } else {
             luaL_errorthrow(L, "Material group is missing name");
         }
-
+        mat->set_totalgroups(mat->totalgroups()+1);
         hXMLGetter xTech = xGroup.FirstChild("technique");
         for (; xTech.ToNode(); xTech = xTech.NextSibling())
         {
             Heart::proto::MaterialTechnique* tech=nullptr;
+            if (!findMaterialTechnique(group, xTech.GetAttributeString("name","none"))) {
+                mat->set_totaltechniques(mat->totaltechniques()+1);
+            }
+
             if (xTech.GetAttribute("name")) {
                 tech=findOrAddMaterialTechnique(group, xTech.GetAttributeString("name","none"));
             } else {
@@ -464,7 +475,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             for (hUint passIdx=0; xPass.ToNode(); xPass = xPass.NextSibling(), ++passIdx)
             {
                 Heart::proto::MaterialPass* pass=findOrAddMaterialPass(tech, passIdx);
-
+                mat->set_totalpasses(mat->totalpasses()+1);
                 if (xPass.FirstChild("blendenable").ToNode()) {
                     pass->mutable_blend()->set_blendenable(xPass.FirstChild("blendenable").GetValueEnum(g_trueFalseEnum, false));
                 }

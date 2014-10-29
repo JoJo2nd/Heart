@@ -99,4 +99,7 @@ message MaterialResource {
 	repeated MaterialSampler samplers = 1;
 	repeated MaterialParameter parameters = 2;
 	repeated MaterialGroup groups = 3;
+    optional int32 totalGroups = 4;
+    optional int32 totalTechniques = 5;
+    optional int32 totalPasses = 6;
 }
