@@ -18,6 +18,10 @@ file(GLOB MINFS_SRC_FILES
 
 if (PLATFORM_WINDOWS)
     set(MINFS_LIBS Shlwapi)
+    list(REMOVE_ITEM MINFS_SRC_FILES "${MINFS_SRC_DIR}/src/minfs_linux.c")
+endif()
+if (PLATFORM_LINUX)
+    list(REMOVE_ITEM MINFS_SRC_FILES "${MINFS_SRC_DIR}/src/minfs_win.c")
 endif()
 
 source_group(include FILES ${MINFS_HDR_FILES})

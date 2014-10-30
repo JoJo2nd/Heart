@@ -60,7 +60,13 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 #endif
 
 #ifdef HEART_64BIT
-#   define hcBreak __debugbreak()
+#   if defined(PLATFORM_WINDOWS)
+#       define hcBreak __debugbreak()
+#   elif defined (PLATFORM_LINUX)
+#       define hcBreak debug_break_now()
+#   else
+#       define hcBreak "Define this!"
+#   endif
 #else
 #   if defined(PLATFORM_WINDOWS)
 #       define hcBreak __asm { int 3 }
