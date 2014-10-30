@@ -10,7 +10,6 @@
 #include "render/hVertexBuffer.h"
 #include "math/hMathUtil.h"
 #include "hRenderer.h"
-#include "hMaterialTypes.h"
 #include "hMaterial.h"
 #include "hTexture.h"
 #include "base/hProfiler.h"

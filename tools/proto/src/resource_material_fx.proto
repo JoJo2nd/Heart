@@ -102,4 +102,6 @@ message MaterialResource {
     optional int32 totalGroups = 4;
     optional int32 totalTechniques = 5;
     optional int32 totalPasses = 6;
+    optional int32 totalSamplers = 7;
+    optional int32 totalParameters = 8;
 }

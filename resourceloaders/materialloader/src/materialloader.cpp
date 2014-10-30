@@ -367,6 +367,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
     hXMLGetter xSampler = hXMLGetter(&xmldoc).FirstChild("material").FirstChild("sampler");
     for (; xSampler.ToNode(); xSampler = xSampler.NextSibling())
     {
+        mat->set_totalsamplers(mat->totalsamplers()+1);
         Heart::proto::MaterialSampler* sampler=nullptr;
         if (xSampler.GetAttribute("name")) {
             sampler = findOrAddMaterialSampler(mat, xSampler.GetAttribute("name")->value());
@@ -411,6 +412,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
     for (; xParameter.ToNode(); xParameter = xParameter.NextSibling()) {
         proto::MaterialParameterType ptype=proto::matparam_none;
         proto::MaterialParameter* param=nullptr;
+        mat->set_totalparameters(mat->totalparameters()+1);
         if (xParameter.GetAttribute("name")) {
             param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
         } else {

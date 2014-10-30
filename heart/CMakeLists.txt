@@ -59,8 +59,9 @@ set( HEART_SRC_FILES
 	"${HEART_SOURCE_DIR}/src/HeartBase.h"
 )
 file(GLOB HEART_UNITY_SRC
-    "${HEART_SOURCE_DIR}/src/*.cpp"
+    "${HEART_SOURCE_DIR}/src/heart.unity.cpp"
 )
+set(HEART_UNITY_TARGET "${HEART_SOURCE_DIR}/src/unity.target")
 file(GLOB HEART_BASE_FILES 
     "${HEART_SOURCE_DIR}/src/base/*.h"
     "${HEART_SOURCE_DIR}/src/base/*.cpp"
@@ -226,20 +227,21 @@ source_group(utils FILES ${HEART_UTILS_FILES})
 if (UNITY_BUILD)
     message("Heart unity build.")
     set (HEART_SRC_FILES 
-        ${HEART_SRC_FILES} ${HEART_UNITY_SRC})
+        ${HEART_SRC_FILES} ${HEART_UNITY_SRC} ${HEART_UNITY_TARGET})
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
     set(REGEX1 ".+\\.(h|hpp|gitignore|py|lua|txt|inl)")
     set(UNITY_ARGS "-d \"${HEART_SOURCE_DIR}/src\" -e \".+\\.(h|hpp|gitignore|py|lua|txt|inl)\" -e .+(.unity[\\d*].cpp) -e \".+([U|u]nity.cpp)\" -o \"${HEART_SOURCE_DIR}/src\" -n heart")
     set(UNITY_ARGS "${UNITY_ARGS} -x unix -x posix")
     message(${HEART_UNITY_SRC} ${UNITY_ARGS})
     add_custom_command(
-        TARGET ${HEART_UNITY_SRC}
+        OUTPUT "${HEART_SOURCE_DIR}/src/unity.target"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build"
         COMMAND python 
         ARGS c_cpp_unity_creator.py ${UNITY_ARGS}
         DEPENDS ${HEART_NON_UNITY_FILES}
         COMMENT "Updating Unity Build...")
 endif()
+set_source_files_properties(${HEART_UNITY_TARGET} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 set(HEART_GEN_FILES ${HEART_GEN_FILES} 
     "${HEART_SOURCE_DIR}/src/base/hFunctor.h"

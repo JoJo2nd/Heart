@@ -159,7 +159,6 @@ extern "C" {
 #include "math/hViewFrustum.h"
 #include "render/hTexture.h"
 #include "render/hRenderShaderProgram.h"
-#include "render/hMaterialTypes.h"
 #include "render/hMaterial.h"
 #include "render/hRenderSubmissionContext.h"
 #include "render/hRendererCamera.h"

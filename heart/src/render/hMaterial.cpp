@@ -30,6 +30,7 @@ namespace Heart {
         rcDescs_.reset(new hRenderer::hRenderCallDesc[totalPasses_]);
         groupNames_.reserve(obj->totalgroups());
         techniqueNames_.reserve(obj->totaltechniques());
+        samplerStates_.resize(obj->totalsamplers());
 
         for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
             const proto::MaterialGroup& groupdef=obj->groups(gi);
@@ -138,208 +139,75 @@ namespace Heart {
                 }
             }
         }
-#if 0
-        for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
-            const proto::MaterialGroup& groupdef=obj->groups(gi);
-            hMaterialGroup* group=addGroup(groupdef.groupname().c_str());
-            group->techCountHint(groupdef.technique_size());
-            for (hUint ti=0, tn=groupdef.technique_size(); ti<tn; ++ti) {
-                const proto::MaterialTechnique& techdef=groupdef.technique(ti);
-                hMaterialTechnique* tech=group->addTechnique(techdef.techniquename().c_str());
-                tech->SetLayer(techdef.layer());
-                tech->SetSort(techdef.transparent());
-                tech->SetPasses(techdef.passes_size());
-                for (hUint pi=0, pn=techdef.passes_size(); pi<pn; ++pi) {
-                    const proto::MaterialPass& passdef=techdef.passes(pi);
-                    hMaterialTechniquePass* pass=tech->appendPass();
-                    hBlendStateDesc blenddesc;
-                    hDepthStencilStateDesc depthdesc;
-                    hRasterizerStateDesc rasterdesc;
-                    if (passdef.has_pixel()) {
-                        pass->setProgramID(ShaderType_FRAGMENTPROG, hStringID(passdef.pixel().c_str()));
-                    }
-                    if (passdef.has_vertex()) {
-                        pass->setProgramID(ShaderType_VERTEXPROG, hStringID(passdef.vertex().c_str()));
-                    }
-                    if (passdef.has_geometry()) {
-                        pass->setProgramID(ShaderType_GEOMETRYPROG, hStringID(passdef.geometry().c_str()));
-                    }
-                    if (passdef.has_domain()) {
-                        pass->setProgramID(ShaderType_DOMAINPROG, hStringID(passdef.domain().c_str()));
-                    }
-                    if (passdef.has_hull()) {
-                        pass->setProgramID(ShaderType_HULLPROG, hStringID(passdef.hull().c_str()));
-                    }
-                    if (passdef.has_compute()) {
-                        pass->setProgramID(ShaderType_COMPUTEPROG, hStringID(passdef.compute().c_str()));
-                    }
-                    if (passdef.has_blend()) {
-                        const proto::BlendState& blenddef=passdef.blend();
-                        if (blenddef.has_blendenable()) {
-                            blenddesc.blendEnable_=(RENDER_STATE_VALUE)blenddef.blendenable();
-                        }
-                        if (blenddef.has_srcblend()) {
-                            blenddesc.srcBlend_=(RENDER_STATE_VALUE)blenddef.srcblend();
-                        }
-                        if (blenddef.has_destblend()) {
-                            blenddesc.destBlend_=(RENDER_STATE_VALUE)blenddef.destblend();
-                        }
-                        if (blenddef.has_blendop()) {
-                            blenddesc.blendOp_=(RENDER_STATE_VALUE)blenddef.blendop();
-                        }
-                        if (blenddef.has_srcblendalpha()) {
-                            blenddesc.srcBlendAlpha_=(RENDER_STATE_VALUE)blenddef.srcblendalpha();
-                        }
-                        if (blenddef.has_destblendalpha()) {
-                            blenddesc.destBlendAlpha_=(RENDER_STATE_VALUE)blenddef.destblendalpha();
-                        }
-                        if (blenddef.has_blendopalpha()) {
-                            blenddesc.blendOpAlpha_=(RENDER_STATE_VALUE)blenddef.blendopalpha();
-                        }
-                        if (blenddef.has_rendertargetwritemask()) {
-                            blenddesc.renderTargetWriteMask_=blenddef.rendertargetwritemask();
-                        }
-                    }
-                    hBlendState* bs=hRenderer::get()->createBlendState(blenddesc);
-                    pass->bindBlendState(bs);
-                    bs->DecRef();
-                    if (passdef.has_depthstencil()) {
-                        const proto::DepthStencilState& depthdef=passdef.depthstencil();
-                        if (depthdef.has_depthenable()) {
-                            depthdesc.depthEnable_ = (RENDER_STATE_VALUE)depthdef.depthenable();
-                        }
-                        if (depthdef.has_depthwritemask()) {
-                            depthdesc.depthWriteMask_=(RENDER_STATE_VALUE)depthdef.depthwritemask();
-                        }
-                        if (depthdef.has_depthfunc()) {
-                            depthdesc.depthFunc_=(RENDER_STATE_VALUE)depthdef.depthfunc();
-                        }
-                        if (depthdef.has_stencilenable()) {
-                            depthdesc.stencilEnable_=(RENDER_STATE_VALUE)depthdef.stencilenable();
-                        }
-                        if (depthdef.has_stencilreadmask()) {
-                            depthdesc.stencilReadMask_=depthdef.stencilreadmask();
-                        }
-                        if (depthdef.has_stencilwritemask()) {
-                            depthdesc.stencilWriteMask_=depthdef.stencilwritemask();
-                        }
-                        if (depthdef.has_stencilfailop()) {
-                            depthdesc.stencilFailOp_=(RENDER_STATE_VALUE)depthdef.stencilfailop();
-                        }
-                        if (depthdef.has_stencildepthfailop()) {
-                            depthdesc.stencilDepthFailOp_=(RENDER_STATE_VALUE)depthdef.stencildepthfailop();
-                        }
-                        if (depthdef.has_stencilpassop()) {
-                            depthdesc.stencilPassOp_=(RENDER_STATE_VALUE)depthdef.stencilpassop();
-                        }
-                        if (depthdef.has_stencilfunc()) {
-                            depthdesc.stencilFunc_=(RENDER_STATE_VALUE)depthdef.stencilfunc();
-                        }
-                        if (depthdef.has_stencilref()) {
-                            depthdesc.stencilRef_=depthdef.stencilref();
-                        }
-                    }
-                    hDepthStencilState* ds=hRenderer::get()->createDepthStencilState(depthdesc);
-                    pass->bindDepthStencilState(ds);
-                    ds->DecRef();
-                    if (passdef.has_rasterizer()) {
-                        const proto::RasterizerState& rasterdef=passdef.rasterizer();
-                        if (rasterdef.has_fillmode()) {
-                            rasterdesc.fillMode_=(RENDER_STATE_VALUE)rasterdef.fillmode();
-                        }
-                        if (rasterdef.has_cullmode()) {
-                            rasterdesc.cullMode_=(RENDER_STATE_VALUE)rasterdef.cullmode();
-                        }
-                        if (rasterdef.has_frontcounterclockwise()) {
-                            rasterdesc.frontCounterClockwise_=(RENDER_STATE_VALUE)rasterdef.frontcounterclockwise();
-                        }
-                        if (rasterdef.has_depthbias()) {
-                            rasterdesc.depthBias_=(RENDER_STATE_VALUE)rasterdef.depthbias();
-                        }
-                        if (rasterdef.has_depthbiasclamp()) {
-                            rasterdesc.depthBiasClamp_=rasterdef.depthbiasclamp();
-                        }
-                        if (rasterdef.has_slopescaleddepthbias()) {
-                            rasterdesc.slopeScaledDepthBias_=rasterdef.slopescaleddepthbias();
-                        }
-                        if (rasterdef.has_depthclipenable()) {
-                            rasterdesc.depthClipEnable_=(RENDER_STATE_VALUE)rasterdef.depthclipenable();
-                        }
-                        if (rasterdef.has_scissorenable()) {
-                            rasterdesc.scissorEnable_=(RENDER_STATE_VALUE)rasterdef.scissorenable();
-                        }
-                    }
-                    hRasterizerState* rs=hRenderer::get()->createRasterizerState(rasterdesc);
-                    pass->bindRasterizerState(rs);
-                    rs->DecRef();
-                }
-            }
-        }
         //Read samplers
-        for (hUint32 is=0, ns=obj->samplers_size(); is<ns; ++is)
-        {
+        for (hUint32 is=0, ns=obj->samplers_size(); is<ns; ++is) {
+            auto& sd = samplerStates_[is];
             const proto::MaterialSampler& matsamplerdef=obj->samplers(is);
-
-            hSamplerParameter sampler;
-            hSamplerStateDesc samplerdesc;
-            hSamplerState* ss;
 
             if (matsamplerdef.has_samplerstate()) {
                 const proto::SamplerState& samplerdef=matsamplerdef.samplerstate();
                 if (samplerdef.has_filter()) {
-                    samplerdesc.filter_=(hSAMPLER_STATE_VALUE)samplerdef.filter();
+                    sd.filter_=samplerdef.filter();
                 }
                 if (samplerdef.has_addressu()) {
-                    samplerdesc.addressU_=(hSAMPLER_STATE_VALUE)samplerdef.addressu();
+                    sd.addressU_=samplerdef.addressu();
                 }
                 if (samplerdef.has_addressv()) {
-                    samplerdesc.addressV_=(hSAMPLER_STATE_VALUE)samplerdef.addressv();
+                    sd.addressV_=samplerdef.addressv();
                 }
                 if (samplerdef.has_addressw()) {
-                    samplerdesc.addressW_=(hSAMPLER_STATE_VALUE)samplerdef.addressw();
+                    sd.addressW_=samplerdef.addressw();
                 }
                 if (samplerdef.has_miplodbias()) {
-                    samplerdesc.mipLODBias_=samplerdef.miplodbias();
+                    sd.mipLODBias_=samplerdef.miplodbias();
                 }
                 if (samplerdef.has_maxanisotropy()) {
-                    samplerdesc.maxAnisotropy_=samplerdef.maxanisotropy();
+                    sd.maxAnisotropy_=samplerdef.maxanisotropy();
                 }
                 if (samplerdef.has_bordercolour()) {
                     const proto::Colour& colour=samplerdef.bordercolour();
                     hFloat alpha=colour.has_alpha() ? (colour.alpha()/255.f) : 1.f;
-                    samplerdesc.borderColour_=hColour((colour.red()/255.f), (colour.green()/255.f), (colour.blue()/255.f), alpha);
+                    sd.borderColour_=hColour((colour.red()/255.f), (colour.green()/255.f), (colour.blue()/255.f), alpha);
                 }
                 if (samplerdef.has_minlod()) {
-                    samplerdesc.minLOD_=samplerdef.minlod();
+                    sd.minLOD_=samplerdef.minlod();
                 }
                 if (samplerdef.has_maxlod()) {
-                    samplerdesc.maxLOD_=samplerdef.maxlod();
+                    sd.maxLOD_=samplerdef.maxlod();
                 }
             }
-            ss = nullptr;//createSamplerState(samplerdesc);
-
-            hStrCopy(sampler.name_, sampler.name_.GetMaxSize(), matsamplerdef.samplername().c_str());
-            sampler.paramID_=hCRC32::StringCRC(sampler.name_);
-            sampler.samplerState_=ss;
-            addSamplerParameter(sampler);
         }
         //Read parameters
+        hUint paramdatasize=0;
         for (hUint pi=0, pn=obj->parameters_size(); pi<pn; ++pi) {
             const proto::MaterialParameter& paramdef=obj->parameters(pi);
+            if (paramdef.floatvalues_size()) paramdatasize += sizeof(hFloat)*paramdef.floatvalues_size();
+            else if (paramdef.intvalues_size()) paramdatasize += sizeof(hInt)*paramdef.intvalues_size();
+        }
+        if (!paramdatasize) 
+            return hTrue;
+
+        parameters_.reserve(obj->parameters_size());
+        defaultParamData_.reset(new hByte[paramdatasize]);
+        auto* dptr = defaultParamData_.get();
+        for (hUint pi=0, pn=obj->parameters_size(); pi<pn; ++pi) {
+            const proto::MaterialParameter& paramdef=obj->parameters(pi);
+            auto floatcount = paramdef.floatvalues_size();
+            auto intcount = paramdef.intvalues_size();
             if (paramdef.has_resourceid()) {
-                addDefaultParameterValue(paramdef.paramname().c_str(), hStringID(paramdef.resourceid().c_str()));
-            } else if (paramdef.floatvalues_size()) {
-                addDefaultParameterValue(paramdef.paramname().c_str(), paramdef.floatvalues().data(), paramdef.floatvalues_size());
-            } else if (paramdef.intvalues_size()) {
-                addDefaultParameterValue(paramdef.paramname().c_str(), (const hInt32*)paramdef.intvalues().data(), paramdef.intvalues_size());
-            } else if (paramdef.colourvalues_size()) {
-                proto::Colour c=paramdef.colourvalues(0);
-                hColour colour(c.red()/255.f, c.green()/255.f, c.blue()/255.f, c.has_alpha() ? c.alpha()/255.f : 1.f);
-                addDefaultParameterValue(paramdef.paramname().c_str(), colour);
+                parameters_.emplace_back(hStringID(paramdef.resourceid().c_str()));
+            } else if (floatcount) {
+                auto bytesize = sizeof(hFloat)*floatcount;
+                hMemCpy(dptr, paramdef.floatvalues().data(), bytesize);
+                parameters_.emplace_back((hFloat*)dptr, floatcount);
+                dptr+=bytesize;
+            } else if (intcount) {
+                auto bytesize = sizeof(hInt)*intcount;
+                hMemCpy(dptr, paramdef.intvalues().data(), bytesize);
+                parameters_.emplace_back((hInt*)dptr, intcount);
+                dptr+=bytesize;
             }
         }
-#endif
-        hStub();
         return hTrue;
     }
 
