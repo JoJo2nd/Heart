@@ -37,7 +37,6 @@ target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${
 
 set_target_properties(shader_builder PROPERTIES PREFIX "")
 set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
-set_property(TARGET shader_builder PROPERTY DEBUG_POSTFIX)
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors

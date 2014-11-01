@@ -44,7 +44,6 @@ target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto
 
 set_target_properties(texture_builder PROPERTIES PREFIX "")
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)
-set_property(TARGET texture_builder PROPERTY DEBUG_POSTFIX)
 
 #ADD_CUSTOM_COMMAND(
 #	TARGET texture_builder

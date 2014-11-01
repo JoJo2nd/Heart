@@ -280,6 +280,9 @@ set(GETOPT_PORT_INCLUDE_DIR
 set(CRYPTO_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/crypto/src"
 )
+set(PROTO_SRC_DIR
+    "${TOOLS_SRC_ROOT}/proto/src"
+)
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
@@ -373,6 +376,7 @@ if (PLATFORM_WINDOWS)
   # add_subdirectory("tools/memtrack")
 endif()
 add_subdirectory("tools/builder")
+add_subdirectory("tools/pbscan")
 add_subdirectory("tools/pkginspector")
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")

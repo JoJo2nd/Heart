@@ -45,7 +45,6 @@ target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto pr
 
 set_target_properties(mesh_builder PROPERTIES PREFIX "")
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
-set_property(TARGET mesh_builder PROPERTY DEBUG_POSTFIX)
 
 #ADD_CUSTOM_COMMAND(
 #	TARGET mesh_builder

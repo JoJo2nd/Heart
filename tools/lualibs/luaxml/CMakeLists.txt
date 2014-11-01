@@ -32,7 +32,6 @@ include_directories(${LUAXML_INCLUDE_DIRS})
 add_library(lua_xml SHARED  ${LUAXML_SRC_FILES} ${LUAXML_LUA_FILES})
 target_link_libraries(lua_xml lua52)
 set_target_properties(lua_xml PROPERTIES OUTPUT_NAME LuaXML_lib)
-set_property(TARGET lua_xml PROPERTY DEBUG_POSTFIX)
 
 #set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES LANGUAGE CXX)
 

@@ -114,7 +114,6 @@ else()
 	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
 endif()
 add_executable(builder ${ALL_SRC_FILES})
-set_property(TARGET builder PROPERTY DEBUG_POSTFIX)
 #target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full)
 target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 getopt_port)
 

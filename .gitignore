@@ -42,3 +42,4 @@
 /platform_win64/
 /tools/builder/src/lua/*.inl
 /tools/viewer/src/lua/builder_script.inl
+tools/pkginspector/src/type_database.*

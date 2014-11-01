@@ -28,7 +28,6 @@ endif()
 include_directories(${LUAPROCESS_INCLUDE_DIRS})
 add_library(lua_process SHARED ${LUAPROCESS_SRC_FILES} ${LUAPROCESS_HDR_FILES})
 target_link_libraries(lua_process lua52)
-set_property(TARGET lua_process PROPERTY DEBUG_POSTFIX)
 
 #ADD_CUSTOM_COMMAND(
 #	TARGET lua_process

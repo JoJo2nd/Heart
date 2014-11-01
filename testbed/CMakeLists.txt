@@ -78,7 +78,6 @@ endif()
 include_directories(${TESTBED_INCLUDE_DIRS})
 link_directories(${LIBHEART_LIB_DIRS})
 add_executable(heart_testbed WIN32 ${TESTBED_HDR_FILES} ${TESTBED_SRC_FILES} ${TESTBED_PRECOMPILED_SRC_FILES})
-set_property(TARGET heart_testbed PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(heart_testbed heart)
 
 if (PLATFORM_WINDOWS)

@@ -28,7 +28,6 @@ endif()
 include_directories(${ENET_LUA_INCLUDE_DIRS})
 add_library(enet_lua SHARED ${ENET_LUA_SRC_FILES} ${ENET_LUA_HDR_FILES})
 target_link_libraries(enet_lua lua52 enet)
-set_property(TARGET enet_lua PROPERTY DEBUG_POSTFIX)
 
 #ADD_CUSTOM_COMMAND(
 #	TARGET enet_lua

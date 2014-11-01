@@ -30,7 +30,6 @@ target_link_libraries(material_builder optimized lua52 crypto proto minfs ${PROT
 
 set_target_properties(material_builder PROPERTIES PREFIX "")
 set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)
-set_property(TARGET material_builder PROPERTY DEBUG_POSTFIX)
 
 #ADD_CUSTOM_COMMAND(
 #	TARGET material_builder

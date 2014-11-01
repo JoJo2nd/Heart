@@ -28,16 +28,8 @@
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/message.h"
 #include "google/protobuf/descriptor.h"
-
-// See Note at bottom of file...
 #include "package.pb.h"
-#include "debug_server_common.pb.h"
 #include "resource_common.pb.h"
-#include "resource_shader.pb.h"
-#include "resource_texture.pb.h"
-#include "resource_material_fx.pb.h"
-#include "resource_mesh.pb.h"
-#include "resource_font.pb.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(pop)
@@ -467,39 +459,39 @@ int main (int argc, char **argv) {
 // (say by always loading types.(so|dll) and dynamically reflect unknown message types.
 //////////////////////////////////////////////////////////////////////////
 //register types
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ServiceRegister);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ServiceUnregister);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ConsoleLogUpdate);
-//package.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, PackageEntry);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, PackageHeader);
-//resource_common.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MessageContainer);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, Colour);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ResourceSection);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ResourceHeader);
-//resource_material_fx.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, SamplerState);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, BlendState);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, DepthStencilState);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, RasterizerState);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialPass);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialTechnique);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialGroup);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialParameter);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialResource);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialSampler);
-//resource_mesh.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, VertexStream);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, Renderable);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, Mesh);
-//resource_shader.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderIncludeSource);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderInputStream);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResource);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResourceContainer);
-//resource_texture.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureMip);
-DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureResource);
-//resource_font.proto
-DEFINE_AND_REGISTER_TYPE(Heart::proto, TTFResource);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ServiceRegister);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ServiceUnregister);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ConsoleLogUpdate);
+// //package.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, PackageEntry);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, PackageHeader);
+// //resource_common.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MessageContainer);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, Colour);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ResourceSection);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ResourceHeader);
+// //resource_material_fx.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, SamplerState);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, BlendState);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, DepthStencilState);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, RasterizerState);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialPass);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialTechnique);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialGroup);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialParameter);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialResource);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, MaterialSampler);
+// //resource_mesh.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, VertexStream);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, Renderable);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, Mesh);
+// //resource_shader.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderIncludeSource);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderInputStream);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResource);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, ShaderResourceContainer);
+// //resource_texture.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureMip);
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, TextureResource);
+// //resource_font.proto
+// DEFINE_AND_REGISTER_TYPE(Heart::proto, TTFResource);
