@@ -724,8 +724,10 @@ struct hProgramReflectionInfo {
     hProgramReflectionInfo() 
         : prog(0) {}
 
-    GLuint       prog;
-    hParamHash   paramTable;
+    GLuint                          prog;
+    std::unique_ptr<hChar[]>        ubNames;
+    std::vector<hUniformBlockInfo>  uniformBlocks;
+    hParamHash                      paramTable;
 };
 
 static ShaderParamType mapGLParamType(GLenum t) {
@@ -816,8 +818,13 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
     refinfo = new hProgramReflectionInfo();
     auto namelimit = 0;
     auto unicount = 0;
+    auto uniblocknamelimit = 0;
+    auto uniblockcount = 0;
     glGetProgramiv(p, GL_ACTIVE_UNIFORM_MAX_LENGTH, &namelimit);
     glGetProgramiv(p, GL_ACTIVE_UNIFORMS, &unicount);
+    glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCKS, &uniblockcount);
+    glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &uniblocknamelimit);
+    refinfo->ubNames.reset(new hChar[uniblockcount*uniblocknamelimit]);
     hChar* uniname = (hChar*)hAlloca(namelimit);
     hUint32* hashes = (hUint32*)hAlloca(unicount*sizeof(hUint32));
     for (auto i=0,n=unicount; i<n; ++i) {
@@ -836,6 +843,17 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         refinfo->paramTable[hashes[i]] = info;
     }
 
+    refinfo->uniformBlocks.reserve(uniblockcount);
+    for (auto i=0,n=uniblockcount; i<n; ++i) {
+        hUniformBlockInfo info;
+        info.index = i;
+        info.name = refinfo->ubNames.get()+(i*uniblocknamelimit);
+        glGetActiveUniformBlockName(p, i, uniblocknamelimit, nullptr, refinfo->ubNames.get()+(i*uniblocknamelimit));
+        glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
+        refinfo->uniformBlocks.push_back(info);
+    }
+
+    refinfo->prog = p;
     return refinfo;
 
 createProgramReflectionInfo_fatal:
@@ -857,6 +875,17 @@ hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name) 
     if (f != p->paramTable.end())
         r = f->second;
     return r;
+}
+
+hUint getUniformatBlockCount(hProgramReflectionInfo* p) {
+    return (hUint)p->uniformBlocks.size();
+}
+
+hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i) {
+    hUniformBlockInfo info = { nullptr, -1, 0 };
+    if (i > p->uniformBlocks.size())
+        return info;
+    return p->uniformBlocks[i];
 }
 
 void swapBuffers() {

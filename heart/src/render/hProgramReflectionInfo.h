@@ -43,10 +43,18 @@ struct hShaderParamInfo {
     hUint           count;
 };
 
+struct hUniformBlockInfo {
+    const hChar*    name;
+    hUint           index;
+    hInt            size;
+};
+
 hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);
 void destroyProgramReflectionInfo(hProgramReflectionInfo* p);
 
-hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name);
+hShaderParamInfo  getParameterInfo(hProgramReflectionInfo* p, const hChar* name);
+hUint             getUniformatBlockCount(hProgramReflectionInfo* p);
+hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i);
 
 }
 }

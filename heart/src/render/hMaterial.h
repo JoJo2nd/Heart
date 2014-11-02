@@ -23,13 +23,9 @@
 #include <memory>
 
 namespace Heart {
-    
-    class hRenderState;
-    class hTexture;
-    class hMaterial;
-    class hMaterialInstance;
-    class hRenderMaterialManager;
-    class hRenderSubmissionCtx;
+namespace hRenderer {
+    struct hProgramReflectionInfo;
+}
 
     struct hPassKey {
         hPassKey(hStringID g, hStringID t, hUint p) 
@@ -37,6 +33,10 @@ namespace Heart {
         hStringID group_;
         hStringID tech_;
         hUint     pass_;
+
+        hBool operator == (const hPassKey& rhs) const {
+            return group_ == rhs.group_ && tech_ == rhs.tech_ && pass_ == rhs.pass_;
+        }
     };
 }
 namespace std {
@@ -73,7 +73,19 @@ namespace Heart {
 
     class  hMaterial
     {
-        typedef std::unordered_map<hPassKey, hRenderer::hRenderCallDesc*> hPassHashTable;
+        struct hPassDesc {
+            hPassDesc() 
+                : rcd(nullptr)
+                , progIDs(nullptr)
+                , reflection(nullptr) {
+
+            }
+
+            hRenderer::hRenderCallDesc*         rcd;
+            hStringID*                          progIDs;
+            hRenderer::hProgramReflectionInfo*  reflection;
+        };
+        typedef std::unordered_map<hPassKey, hPassDesc> hPassHashTable;
 
         static const hUint maxShaderCount = 5;
 
