@@ -2,15 +2,16 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
+#include "base/hTypes.h"
+#include "utils/hBase64.h"
+#include "base/hClock.h"
+#include "UnitTestFactory.h"
 
-#pragma once
+namespace Heart {
+class hHeartEngine;
+}
 
-#ifndef BASE64TEST_H__
-#define BASE64TEST_H__
-
-class Base64 : public IUnitTest
-{
-    DECLARE_HEART_UNIT_TEST();
+class Base64 : public IUnitTest {
 public:
     Base64( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine )
@@ -19,8 +20,7 @@ public:
     }
     ~Base64() {}
 
-    virtual hUint32 RunUnitTest()
-    {
+    virtual hUint32 RunUnitTest() override {
         if (doTest_)
         {
             hUint data1[201];
@@ -98,4 +98,4 @@ private:
     Heart::hTimer  timer_;
 };
 
-#endif // BASE64TEST_H__
+DEFINE_HEART_UNIT_TEST(Base64);

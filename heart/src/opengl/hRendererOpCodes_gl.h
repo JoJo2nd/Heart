@@ -16,9 +16,12 @@ struct hTexture2D;
 
 enum class Op : hUint8 {
     NoOp = 0,
-    SetRC,
-    SetVtxAttrib,
+    Clear,
+    RenderCall,
+    Swap,
 };
+
+static hUint OpCodeSize = 1; // 1 byte
 
 struct hGLRCHeader {
     union {
@@ -101,6 +104,11 @@ struct hGLTexture2D {
 struct hGLUniformBuffer {
     GLint           index_;
     const hUniformBuffer* ub_;
+};
+
+struct hGLClear {
+    hColour colour;
+    hFloat  depth;
 };
 
 }

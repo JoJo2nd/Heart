@@ -82,8 +82,18 @@ namespace hRenderer {
 
     void* allocTempRenderMemory( hUint32 size );
 
-    void beginCmdList(hCmdList* cmd);
-    void endCmdList(hCmdList* cmd);
+    hCmdList* createCmdList();
+    void      destroyCmdList(hCmdList* cl);
+    void      clearCmdList(hCmdList* cl);
+    void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i);
+    void      detachCmdLists(hCmdList* i);
+    hCmdList* nextCmdList(hCmdList* i);
+
+
+    void clear(hCmdList* cl, hColour colour, hFloat depth);
+    void swapBuffers(hCmdList* cl);
+
+    void submitFrame(hCmdList* cmds);
 
     /*
         Methods to be called between beginCmdList & endCmdList

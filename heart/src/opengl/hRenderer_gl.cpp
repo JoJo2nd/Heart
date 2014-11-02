@@ -10,6 +10,7 @@
 #include "core/hSystem.h"
 #include "pal/hDeviceThread.h"
 #include "threading/hThreadLocalStorage.h"
+#include "pal/hSemaphore.h"
 #include "render/hIndexBufferFlags.h"
 #include "render/hVertexBufferFlags.h"
 #include "render/hRenderCallDesc.h"
@@ -32,6 +33,41 @@ class hSystem;
 
 namespace hRenderer {
 
+struct hCmdList {
+    static const hUint MinCmdBlockSize = 64*1024;
+    hCmdList() {
+        prev = next = this;
+        cmds = (hByte*)hMalloc(MinCmdBlockSize);
+        cmdsSize = 0;
+        cmdsReserve = MinCmdBlockSize;
+    }
+    ~hCmdList() {
+        hFree(cmds);
+        cmds = nullptr;
+    }
+    hByte* allocCmdMem(Op opcode, hUint s) {
+        auto needed = s+OpCodeSize;
+        if ((cmdsReserve - cmdsSize) < needed) {
+            hRealloc(cmds, cmdsReserve+MinCmdBlockSize);
+            cmdsReserve += MinCmdBlockSize;
+        }
+        hByte* r=cmds+cmdsSize;
+        cmdsSize+=needed;
+        *((Op*)r) = opcode;
+        return (r+OpCodeSize);
+    }
+    void clear() {
+        cmdsSize = 0;
+    }
+
+    hCmdList* prev, *next;
+    hByte* cmds;
+    hUint  cmdsSize;
+    hUint  cmdsReserve;
+
+
+};
+
 namespace RenderPrivate {
     SDL_Window*         window_;
     SDL_GLContext       context_;
@@ -42,6 +78,12 @@ namespace RenderPrivate {
     hMutex              rtMutex;
 
     hSize_t             tlsContext_;
+
+    hCmdList*           rtCmdLists_[2];
+    hSemaphore          rtFrameSubmitSema;
+    hSemaphore          rtFrameCompleteSema;
+    hMutex              rtFrameMtx;
+    hUint               rtFrameIdx;
 }
 
 // !!JM TODO: Improve these, they are placeholder & rtmp_free may be unnessary (i.e. we always free at frame end) 
@@ -93,10 +135,39 @@ hUint32 renderThreadMain(void* param) {
 
     int frame = 0;
     for (;;) {
-        glClearColor(0.0, 0.0, ((frame/60)&1) ? 1.0f : 0.0f, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        rtFrameSubmitSema.Wait();
+        rtFrameMtx.Lock();
+        hCmdList* fcmds = rtCmdLists_[rtFrameIdx];
+        hCmdList* cmds = rtCmdLists_[rtFrameIdx];
+        rtCmdLists_[rtFrameIdx] = nullptr;
+        rtFrameIdx=(rtFrameIdx+1)&0x1;
+        rtFrameMtx.Unlock();
 
-        SDL_GL_SwapWindow(window_);
+        while (cmds) {
+            cmds = cmds->next;
+            for (hByte* cmdptr = cmds->cmds, *n=cmds->cmds+cmds->cmdsSize; cmdptr<n; ) {
+                Op opcode = *((hRenderer::Op*)cmdptr); 
+                cmdptr+=OpCodeSize;
+                switch (opcode) {
+                case Op::NoOp: break;
+                case Op::Clear: {
+                    hGLClear* c=(hGLClear*)cmdptr;
+                    glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
+                    glClear(GL_COLOR_BUFFER_BIT);
+                    cmdptr+=sizeof(hGLClear);
+                } break;
+                case Op::RenderCall: break;
+                case Op::Swap: {
+                    SDL_GL_SwapWindow(window_);
+                } break;
+                }
+            }
+
+            if (cmds == fcmds)
+                break;
+        }
+
+        rtFrameCompleteSema.Post();
         ++frame;
     }
 
@@ -109,6 +180,10 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     tlsContext_ = TLS::createKey([](void* ctx) {
         SDL_GL_DeleteContext(ctx);
     });
+
+    rtFrameSubmitSema.Create(0, 1);
+    rtFrameCompleteSema.Create(1, 1);
+    rtFrameIdx = 0;
 
     window_ = system->getSDLWindow();
     renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
@@ -181,6 +256,12 @@ hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len,
     // to check...but should we defer this until as late as possible i.e. RenderCall create time ???
     GLint status;
     glGetShaderiv(gls, GL_COMPILE_STATUS, &status);
+    if (status != GL_TRUE) {
+        char slog[4096];
+        glGetShaderInfoLog(gls, sizeof(slog), nullptr, slog);
+        hcPrintf("Compile error: %s", slog);
+    }
+
     hcAssert(status == GL_TRUE);
     
 
@@ -269,6 +350,7 @@ struct hTexture2D {
 };
 
 hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
+    hglEnsureTLSContext();
     GLuint tname;
     glGenTextures(1, &tname);
     glActiveTexture(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS-1);
@@ -357,6 +439,7 @@ struct hRenderCall {
 };
 
 hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
+    hglEnsureTLSContext();
     auto* rc = new hRenderCall();
     GLint p;
 
@@ -798,6 +881,7 @@ static ShaderParamType mapGLParamType(GLenum t) {
 };
 
 hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain) {
+    hglEnsureTLSContext();
     hcAssertMsg(vertex && pixel, "vertex and pixel shaders are required.");
     hProgramReflectionInfo* refinfo=nullptr;
     auto p=glCreateProgram();
@@ -888,7 +972,55 @@ hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i) {
     return p->uniformBlocks[i];
 }
 
-void swapBuffers() {
+hCmdList* createCmdList() {
+    return new hCmdList();
+}
+
+void      destroyCmdList(hCmdList*) {
+
+}
+
+void      clearCmdList(hCmdList* cl) {
+    cl->clear();
+}
+
+void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i) {
+    i->next = before->next;
+    i->prev = after->prev;
+    before->next = i;
+    after->prev = i;
+}
+
+void      detachCmdLists(hCmdList* i) {
+    i->next->prev = i->prev;
+    i->prev->next = i->next;
+    i->next = i;
+    i->prev = i;
+}
+
+hCmdList* nextCmdList(hCmdList* i) {
+    return i->next;
+}
+
+void clear(hCmdList* cl, hColour colour, hFloat depth) {
+    auto* cmd = (hGLClear*)cl->allocCmdMem(Op::Clear, sizeof(hGLClear));
+    cmd->colour = colour;
+    cmd->depth = depth;
+}
+
+void swapBuffers(hCmdList* cl) {
+    cl->allocCmdMem(Op::Swap, 0);
+}
+
+void submitFrame(hCmdList* cl) {
+    using namespace RenderPrivate;
+
+    rtFrameCompleteSema.Wait();
+    rtFrameMtx.Lock();
+    hcAssert(rtCmdLists_[rtFrameIdx] == nullptr);
+    rtCmdLists_[rtFrameIdx] = cl;
+    rtFrameMtx.Unlock();
+    rtFrameSubmitSema.Post();
 }
    
 }

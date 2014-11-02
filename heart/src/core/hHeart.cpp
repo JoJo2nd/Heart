@@ -231,8 +231,8 @@ namespace Heart {
             // debugServer_->printDebugInfo((hFloat)GetRenderer()->GetWidth(), (hFloat)GetRenderer()->GetHeight()); !!JM
 
             // !!JM culled client side work
-            //if (mainRender_ && runnableState)
-            //    (*mainRender_)( this );
+            if (mainRender_ && runnableState)
+                (*mainRender_)( this );
 
             // GetRenderer()->rendererFrameSubmit(); !!JM
             /*

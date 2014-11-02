@@ -27,6 +27,9 @@ void hRenderCallDesc::clearDescription() {
     for (auto& u : uniformBuffers_) {
         u.name_ = hStringID();
     }
+    for (auto& v : vertexLayout_) {
+        v.bindPoint_ = hStringID();
+    }
     blend_ = hBlendStateDesc();
     depthStencil_ = hDepthStencilStateDesc();
     rasterizer_ = hRasterizerStateDesc();

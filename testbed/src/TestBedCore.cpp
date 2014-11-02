@@ -4,54 +4,13 @@
 *********************************************************************/
 
 #include "testbed_precompiled.h"
- #include "TestBedCore.h"
- #include <time.h>
-// #include "CreateTextureTest.h"
-// #include "MapTest.h"
-// #include "ListTest.h"
-// #include "ResourceLoadTest.h"
-// #include "JobManagerTest.h"
-// #include "ModelRenderTest.h"
-// #include "EventTest.h"
- #include "Base64Test.h"
-// #include "InstanceRenderTest.h"
-// #include "ComplexMesh1.h"
-// #include "ComplexMesh2.h"
-// #include "DebugPrimsTest.h"
-#include "Sibenik.h"
-// #include "ComputeTest.h"
-// #include "TexturedPlane.h"
-// #include "LoadTextureTest.h"
-// #include "ComputeBlur.h"
+#include "TestBedCore.h" 
 
-//DEFINE_HEART_UNIT_TEST(ListTest);
-//DEFINE_HEART_UNIT_TEST(MapTest);
-DEFINE_HEART_UNIT_TEST(Base64);
+#include <time.h>
 
 #define LUA_GET_TESTBED(L) \
     TestBedCore* testbed = (TestBedCore*)lua_topointer(L, lua_upvalueindex(1)); \
     if (!testbed) luaL_error(L, "Unable to grab unit test pointer" ); \
-
-    UnitTestCreator TestBedCore::unitTests_[] =
-    {
-        REGISTER_UNIT_TEST(Sibenik)
-        REGISTER_UNIT_TEST(Base64)
-        /*REGISTER_UNIT_TEST(ModelRenderTest)
-        //REGISTER_UNIT_TEST(ComputeBlur)
-        REGISTER_UNIT_TEST(TexturedPlane)
-        REGISTER_UNIT_TEST(LoadTextureTest)
-        REGISTER_UNIT_TEST(ListTest)
-        REGISTER_UNIT_TEST(MapTest)
-        REGISTER_UNIT_TEST(JobManagerTest)
-        REGISTER_UNIT_TEST(ResourceLoadTest)
-        REGISTER_UNIT_TEST(EventTest)
-        REGISTER_UNIT_TEST(InstanceRenderTest)
-        REGISTER_UNIT_TEST(ComplexMesh1)
-        REGISTER_UNIT_TEST(ComplexMesh2)
-        REGISTER_UNIT_TEST(DebugPrimsTest)
-        REGISTER_UNIT_TEST(Sibenik)
-        REGISTER_UNIT_TEST(ComputeTest)*/
-    };
 
     void consoleStateEvent(hFloat secs) 
     {
@@ -89,96 +48,37 @@ DEFINE_HEART_UNIT_TEST(Base64);
         hcPrintf( "cmd line: %s\n", pCmdLine );
         hcPrintf( "Engine Created OK @ 0x%08X", pEngine );
 
-        factory_ = new UnitTestFactory(pEngine, unitTests_, (hUint)hStaticArraySize(unitTests_));
+        factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
-        static const luaL_Reg funcs[] = {
-            {"printtests", luaPrintTests},
-            {NULL, NULL}
-        };
+        // static const luaL_Reg funcs[] = {
+        //     {"printtests", luaPrintTests},
+        //     {NULL, NULL}
+        // };
 
-        lua_State* L = engine_->GetVM()->GetMainState();
-        lua_newtable(L);
-        lua_pushvalue(L,-1);//add twice to avoid set _G[unittest] & get _G[unittest]
-        lua_setglobal(L, "unittest");
-        //global table "unittest" already on stack
-        lua_pushlightuserdata(L, this);
-        luaL_setfuncs(L,funcs,1);
-        lua_pop(L, 1);// pop heart module table
+        // lua_State* L = engine_->GetVM()->GetMainState();
+        // lua_newtable(L);
+        // lua_pushvalue(L,-1);//add twice to avoid set _G[unittest] & get _G[unittest]
+        // lua_setglobal(L, "unittest");
+        // //global table "unittest" already on stack
+        // lua_pushlightuserdata(L, this);
+        // luaL_setfuncs(L,funcs,1);
+        // lua_pop(L, 1);// pop heart module table
 
-        Heart::hResourceManager::loadPackage("core");
-        Heart::hResourceManager::loadPackage("fonts");
-        Heart::hResourceManager::loadPackage("textures");
+        REGISTER_UNIT_TEST(*factory_, SingleTri);
+        REGISTER_UNIT_TEST(*factory_, Base64);
+
+        // Heart::hResourceManager::loadPackage("core");
+        // Heart::hResourceManager::loadPackage("fonts");
+        // Heart::hResourceManager::loadPackage("textures");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void TestBedCore::createRenderResources()
-    {
-#if 0
-        using namespace Heart;
-        hRenderer* renderer = engine_->GetRenderer();
-        hRendererCamera* camera = renderer->GetRenderCamera(0);
-        hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
-        hUint32 w = renderer->GetWidth();
-        hUint32 h = renderer->GetHeight();
-        hFloat aspect = (hFloat)w/(hFloat)h;
-        hRenderViewportTargetSetup rtDesc={0};
-        hTexture* bb=matMgr->getGlobalTexture("back_buffer");
-        hTexture* db=matMgr->getGlobalTexture("depth_buffer");
-        hRenderTargetView* rtv=NULL;
-        hDepthStencilView* dsv=NULL;
-        hRenderTargetViewDesc rtvd;
-        hDepthStencilViewDesc dsvd;
-        hZeroMem(&rtvd, sizeof(rtvd));
-        hZeroMem(&dsvd, sizeof(dsvd));
-        camera->setClearScreenFlag(hTrue);
-        rtvd.format_=bb->getTextureFormat();
-        rtvd.resourceType_=bb->getRenderType();
-        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
-        rtvd.tex2D_.topMip_=0;
-        rtvd.tex2D_.mipLevels_=~0;
-        dsvd.format_=eTextureFormat_D32_float;//db->getTextureFormat();
-        dsvd.resourceType_=db->getRenderType();
-        hcAssert(db->getRenderType()==eRenderResourceType_Tex2D);
-        dsvd.tex2D_.topMip_=0;
-        dsvd.tex2D_.mipLevels_=~0;
-        renderer->createRenderTargetView(bb, rtvd, &rtv);
-        renderer->createDepthStencilView(db, dsvd, &dsv);
-        rtDesc.nTargets_=1;
-        rtDesc.targetTex_=bb;
-        rtDesc.targets_[0]=rtv;
-        rtDesc.depth_=dsv;;
-
-        hRelativeViewport vp;
-        vp.x=0.f;
-        vp.y=0.f;
-        vp.w=1.f;
-        vp.h=1.f;
-
-        hVec3 camPos_ = Heart::hVec3(0.f, 0.f, 0.f);
-        hVec3 camDir_ = Heart::hVec3(0.f, 0.f, 1.f);
-        hVec3 camUp_  = Heart::hVec3(0.f, 1.f, 0.f);
-
-        Heart::hMatrix vm = Heart::hMatrix::lookAt(Heart::hPoint3(camPos_), Heart::hPoint3(camPos_+camDir_), camUp_);
-
-        camera->bindRenderTargetSetup(rtDesc);
-        camera->SetFieldOfView(45.f);
-        camera->SetProjectionParams( aspect, 0.1f, 1000.f);
-        camera->SetViewMatrix(vm);
-        camera->setViewport(vp);
-        camera->SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
-
-        // The camera hold refs to this
-        rtv->DecRef();
-        dsv->DecRef();
-
-        createdDummyTarget_=hTrue;
-#else
+    void TestBedCore::createRenderResources() {
         hStub();
-#endif
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -186,16 +86,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     //////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::destroyRenderResources() {
-#if 0
-        using namespace Heart;
-        hRenderer* renderer = engine_->GetRenderer();
-        hRendererCamera* camera = renderer->GetRenderCamera(0);
-
-        camera->releaseRenderTargetSetup();
-        createdDummyTarget_=hFalse;
-#else
-        hStub();
-#endif        
+        hStub();      
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -206,8 +97,8 @@ DEFINE_HEART_UNIT_TEST(Base64);
     {
         hcPrintf("Stub.");
         if (!currentTest_ && !exiting_) {
-            
-        }
+            currentTest_ = factory_->createUnitTest(currentTestIdx_);
+        }/*
         static auto font_cache = Heart::hFontRenderCache();
         static Heart::hTTFFontFace* font = nullptr;
         static Heart::hTTFFontFace* font2 = nullptr;
@@ -216,7 +107,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
             font2 = Heart::hResourceManager::weakResource<Heart::hTTFFontFace>(Heart::hStringID("/fonts/comic"));
             font_cache.initialise();
             static const char string[] = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm\\,./;'#[]|<>?:@~{}1234657890-=!\"£$%%^&*)_+";
-            static const char dds_header [] = 
+            static const hByte dds_header [] = 
             {0x44,0x44,0x53,0x20,0x7C,0x00,0x00,0x00,0x07,0x10,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x08,0x00,0x00,0x00,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
             static const int fontsize [] = { 96, 11, 48, 12, 24, 36 };
             Heart::hTTFFontFace* fonts[] = {font, font2};
@@ -243,31 +134,31 @@ DEFINE_HEART_UNIT_TEST(Base64);
         }
         static hBool dotest = hTrue;
         if (dotest && Heart::hResourceManager::getIsPackageLoaded("core")) {
-            Heart::hShaderProgram* vpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/vertex/console"));
-            Heart::hShaderProgram* fpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/fragment/console"));
-            Heart::hRenderer::hRenderCallDesc rcd;
-            Heart::hRenderer::hVertexBufferLayout vl[] = {
-                {Heart::hStringID("in_position"), 3, Heart::hRenderer::hVertexInputType::Float,  0, hTrue, 28},
-                {Heart::hStringID("in_colour")  , 4, Heart::hRenderer::hVertexInputType::Float, 12, hTrue, 28},
-            };
+            // Heart::hShaderProgram* vpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/vertex/console"));
+            // Heart::hShaderProgram* fpr = Heart::hResourceManager::weakResource<Heart::hShaderProgram>(Heart::hStringID("/core/shaders/fragment/console"));
+            // Heart::hRenderer::hRenderCallDesc rcd;
+            // Heart::hRenderer::hVertexBufferLayout vl[] = {
+            //     {Heart::hStringID("in_position"), 3, Heart::hRenderer::hVertexInputType::Float,  0, hTrue, 28},
+            //     {Heart::hStringID("in_colour")  , 4, Heart::hRenderer::hVertexInputType::Float, 12, hTrue, 28},
+            // };
 
-            rcd.setVertexBufferLayout(vl, hStaticArraySize(vl));
-            rcd.setSampler(Heart::hStringID("g_prevFrame"), Heart::hRenderer::hRenderCallDesc::hSamplerStateDesc());
-            rcd.setTextureSlot(Heart::hStringID("g_prevFrame"), (const Heart::hRenderer::hTexture2D*)nullptr);
-            rcd.setUniformBuffer(Heart::hStringID("ViewportConstants"), nullptr);
-            rcd.setUniformBuffer(Heart::hStringID("InstanceConstants"), nullptr);
-            rcd.vertex_ = vpr->getShader();
-            rcd.fragment_ = fpr->getShader();
+            // rcd.setVertexBufferLayout(vl, hStaticArraySize(vl));
+            // rcd.setSampler(Heart::hStringID("g_prevFrame"), Heart::hRenderer::hRenderCallDesc::hSamplerStateDesc());
+            // rcd.setTextureSlot(Heart::hStringID("g_prevFrame"), (const Heart::hRenderer::hTexture2D*)nullptr);
+            // rcd.setUniformBuffer(Heart::hStringID("ViewportConstants"), nullptr);
+            // rcd.setUniformBuffer(Heart::hStringID("InstanceConstants"), nullptr);
+            // rcd.vertex_ = vpr->getShader();
+            // rcd.fragment_ = fpr->getShader();
 
-            auto* rc = Heart::hRenderer::createRenderCall(rcd);
+            // auto* rc = Heart::hRenderer::createRenderCall(rcd);
 
             dotest = hFalse;
-        }
+        }*/
         if (currentTest_) {
             currentTest_->RunUnitTest();
             if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
                 delete currentTest_; currentTest_ = nullptr;
-                currentTestIdx_=(currentTestIdx_+1)%hStaticArraySize(unitTests_);
+                currentTestIdx_=(currentTestIdx_+1)%factory_->getTestCount();
             }
         }
     }
@@ -277,29 +168,16 @@ DEFINE_HEART_UNIT_TEST(Base64);
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine ) {
-#if 0
-        if ( currentTest_ && currentTest_->GetCanRender() ) {
-            if (createdDummyTarget_) {
-                createdDummyTarget_=hFalse;
-            }
+        if (currentTest_ && currentTest_->GetCanRender()) {
             currentTest_->RenderUnitTest();
-        } else {
-            if (!createdDummyTarget_) {
-                createRenderResources();
-            }
-            pEngine->GetRenderer()->beginCameraRender(pEngine->GetRenderer()->GetMainSubmissionCtx(), 0);
         }
-#else
-        hStub();
-#endif
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    bool TestBedCore::EngineShutdownRequest( Heart::hHeartEngine* pEngine )
-    {
+    bool TestBedCore::EngineShutdownRequest( Heart::hHeartEngine* pEngine ) {
         // Wait for current test to finish before OK-ing the exit
         exiting_=hTrue;
         if ( currentTest_ ) {
@@ -313,8 +191,7 @@ DEFINE_HEART_UNIT_TEST(Base64);
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void TestBedCore::EngineShutdown( Heart::hHeartEngine* pEngine )
-    {
+    void TestBedCore::EngineShutdown( Heart::hHeartEngine* pEngine ) {
         if (currentTest_) {
             delete currentTest_; currentTest_ = nullptr;
         }
@@ -329,10 +206,10 @@ DEFINE_HEART_UNIT_TEST(Base64);
     {
         LUA_GET_TESTBED(L);
 
-        for (hUint32 i = 0; i < hStaticArraySize(testbed->unitTests_); ++i)
-        {
-            hcPrintf(testbed->unitTests_[i].testName_);
-        }
+        // for (hUint32 i = 0; i < hStaticArraySize(testbed->unitTests_); ++i)
+        // {
+        //     hcPrintf(testbed->unitTests_[i].testName_);
+        // }
 
         return 0;
     }

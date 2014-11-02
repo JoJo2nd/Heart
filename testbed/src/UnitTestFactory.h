@@ -4,9 +4,12 @@
 *********************************************************************/
 #pragma once
 
-#ifndef UNITTESTFACTORY_H__
-#define UNITTESTFACTORY_H__
+#include "base/hTypes.h"
+#include <vector>
 
+namespace Heart {
+class hHeartEngine;
+}
 
 #define UNIT_TEST_EXIT_CODE_RUNNING (1)
 #define UNIT_TEST_EXIT_CODE_OK      (0)
@@ -45,46 +48,42 @@
         hBool               canRender_;
     };
 
-#define DECLARE_HEART_UNIT_TEST() public:\
-    static const hChar* s_className_;\
-    static IUnitTest* FactoryCreator(Heart::hHeartEngine*);\
-
 #define DEFINE_HEART_UNIT_TEST(klass)\
-    const hChar* klass::s_className_ = #klass ;\
-    IUnitTest* klass::FactoryCreator(Heart::hHeartEngine* engine)\
-    {\
-        hcPrintf("Starting Test %s", s_className_);\
+    IUnitTest* autogen_FactoryCreator__##klass (Heart::hHeartEngine* engine) {\
         return new klass(engine);\
     }\
 
-#define REGISTER_UNIT_TEST(klass)\
-    {klass::s_className_, &klass::FactoryCreator},
+#define DEFINE_HEART_UNIT_TEST_INLINE(klass) hFORCEINLINE DEFINE_HEART_UNIT_TEST(klass)
+
+#define REGISTER_UNIT_TEST(factory, klass) \
+    extern IUnitTest* autogen_FactoryCreator__##klass (Heart::hHeartEngine* engine); \
+    (factory).registerUnitTest(#klass, &autogen_FactoryCreator__##klass )
 
     typedef IUnitTest* (*UnitTestCreateFunc)(Heart::hHeartEngine*);
 
-    struct UnitTestCreator
-    {
+    struct UnitTestCreator {
         const hChar*        testName_;
         UnitTestCreateFunc  func_;
     };
 
-    class UnitTestFactory 
-    {
+    class UnitTestFactory {
     public:
-        UnitTestFactory(Heart::hHeartEngine* engine, UnitTestCreator* creators, hUint32 creatorCount)
-            : creatorArray_(creators)
-            , creatorCount_(creatorCount)
-            , engine_(engine)
-        {
+        UnitTestFactory(Heart::hHeartEngine* engine)
+            : engine_(engine) {
             
         }
 
-        IUnitTest* CreateUnitTest(const hChar* testName);
+        void        registerUnitTest(const hChar* name, IUnitTest* (*)(Heart::hHeartEngine*));
+        IUnitTest*  createUnitTest(hUint testindex);
+        hSize_t     getTestCount() const { return tests_.size(); }
 
     private:
 
-        const hUint32           creatorCount_;
-        const UnitTestCreator*  creatorArray_;
-        Heart::hHeartEngine*     engine_;
+        struct UTest {
+            IUnitTest* (*func)(Heart::hHeartEngine*);
+            const hChar* name;
+        };
+
+        std::vector<UTest>   tests_;
+        Heart::hHeartEngine* engine_;
     };
-#endif // UNITTESTFACTORY_H__

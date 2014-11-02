@@ -7,24 +7,18 @@
 #include "UnitTestFactory.h"
 
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
+void UnitTestFactory::registerUnitTest(const hChar* name, IUnitTest* (*fn)(Heart::hHeartEngine*)) {
+    UTest  t = {fn, name};
+    tests_.push_back(t);
+}
 
-IUnitTest* UnitTestFactory::CreateUnitTest( const hChar* testName )
-{   
-    if (!testName)
-    {
-        return NULL;
-    }
-
-    for (hUint32 i = 0; i < creatorCount_; ++i)
-    {
-        if (Heart::hStrICmp(testName, creatorArray_[i].testName_) == 0)
-        {
-            return creatorArray_[i].func_(engine_);
+IUnitTest* UnitTestFactory::createUnitTest(hUint testidx) {
+    for (const auto& i : tests_) {
+        if (testidx == 0) {
+            return i.func(engine_);
         }
+        --testidx;
     }
 
-    return NULL;
+    return nullptr;
 }

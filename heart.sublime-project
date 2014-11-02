@@ -110,6 +110,8 @@
 	        "-I${project_path}/external/sce_vectormath/include",
 	        "-I${project_path}/external/tinyxml2",
 	        "-I${project_path}/external/zlib/include",
+	        "-I${project_path}/heart/testbed/src",
+	        "-I${project_path}/heart/resourceloaders/**"
 	    ]
 	}
 }
