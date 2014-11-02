@@ -402,6 +402,8 @@ int main (int argc, char **argv) {
         print_usage();
     }
 
+    types::initialiseTypes();
+
     FILE* output = nullptr;
     FILE* error = nullptr;
     Pkg package;

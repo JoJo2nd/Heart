@@ -75,6 +75,8 @@ namespace Heart {
     {
         typedef std::unordered_map<hPassKey, hRenderer::hRenderCallDesc*> hPassHashTable;
 
+        static const hUint maxShaderCount = 5;
+
         hPassHashTable                                              passTable_;
         std::unique_ptr<hRenderer::hRenderCallDesc[]>               rcDescs_;
         std::unique_ptr<hByte[]>                                    defaultParamData_;
@@ -83,6 +85,7 @@ namespace Heart {
         std::vector<hRenderer::hRenderCallDesc::hSamplerStateDesc>  samplerStates_;
         std::vector<hMaterialParamValue>                            parameters_;
         hUint                                                       totalPasses_;
+        std::unique_ptr<hStringID[]>                                passProgIDs_;
 
     public:
         hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);

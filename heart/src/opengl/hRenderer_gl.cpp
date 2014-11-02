@@ -6,6 +6,7 @@
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
 #include "base/hMemory.h"
+#include "base/hStringUtil.h"
 #include "core/hSystem.h"
 #include "pal/hDeviceThread.h"
 #include "threading/hThreadLocalStorage.h"
@@ -16,11 +17,14 @@
 #include "render/hTextureFormat.h"
 #include "render/hUniformBufferFlags.h"
 #include "render/hRenderCallDesc.h"
+#include "render/hProgramReflectionInfo.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include <GL/glew.h>    
 #include <GL/gl.h>
 #include <SDL.h>
+#include <memory>
+#include <unordered_map>
 
 namespace Heart {    
 
@@ -712,6 +716,147 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     }
 
     return rc;
+}
+
+struct hProgramReflectionInfo {
+    typedef std::unordered_map<hUint32, hShaderParamInfo> hParamHash;
+
+    hProgramReflectionInfo() 
+        : prog(0) {}
+
+    GLuint       prog;
+    hParamHash   paramTable;
+};
+
+static ShaderParamType mapGLParamType(GLenum t) {
+    switch(t) {
+    case GL_FLOAT: return ShaderParamType::Float;
+    case GL_FLOAT_VEC2: return ShaderParamType::Float2;
+    case GL_FLOAT_VEC3: return ShaderParamType::Float3;
+    case GL_FLOAT_VEC4: return ShaderParamType::Float4;
+    case GL_INT: return ShaderParamType::Unknown;
+    case GL_INT_VEC2: return ShaderParamType::Unknown;
+    case GL_INT_VEC3: return ShaderParamType::Unknown;
+    case GL_INT_VEC4: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_VEC2: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_VEC3: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_VEC4: return ShaderParamType::Unknown;
+    case GL_BOOL: return ShaderParamType::Unknown;
+    case GL_BOOL_VEC2: return ShaderParamType::Unknown;
+    case GL_BOOL_VEC3: return ShaderParamType::Unknown;
+    case GL_BOOL_VEC4: return ShaderParamType::Unknown;
+    case GL_FLOAT_MAT2: return ShaderParamType::Float22;
+    case GL_FLOAT_MAT3: return ShaderParamType::Float33;
+    case GL_FLOAT_MAT4: return ShaderParamType::Float44;
+    case GL_FLOAT_MAT2x3: return ShaderParamType::Float23;
+    case GL_FLOAT_MAT2x4: return ShaderParamType::Float24;
+    case GL_FLOAT_MAT3x2: return ShaderParamType::Float32;
+    case GL_FLOAT_MAT3x4: return ShaderParamType::Float34;
+    case GL_FLOAT_MAT4x2: return ShaderParamType::Float42;
+    case GL_FLOAT_MAT4x3: return ShaderParamType::Float43;
+    case GL_SAMPLER_1D: return ShaderParamType::Sampler1D;
+    case GL_SAMPLER_2D: return ShaderParamType::Sampler2D;
+    case GL_SAMPLER_3D: return ShaderParamType::Sampler3D;
+    case GL_SAMPLER_CUBE: return ShaderParamType::Unknown;
+    case GL_SAMPLER_1D_SHADOW: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_SHADOW: return ShaderParamType::Unknown;
+    case GL_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    case GL_SAMPLER_1D_ARRAY_SHADOW: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_ARRAY_SHADOW: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    case GL_SAMPLER_CUBE_SHADOW: return ShaderParamType::Unknown;
+    case GL_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    case GL_SAMPLER_2D_RECT_SHADOW: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_1D: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_2D: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_3D: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_CUBE: return ShaderParamType::SamplerCube;
+    case GL_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    case GL_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_1D: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_2D: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_3D: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_CUBE: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    case GL_UNSIGNED_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    }
+    return ShaderParamType::Unknown;
+};
+
+hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain) {
+    hcAssertMsg(vertex && pixel, "vertex and pixel shaders are required.");
+    hProgramReflectionInfo* refinfo=nullptr;
+    auto p=glCreateProgram();
+    auto status=0;
+    glAttachShader(p, vertex->shaderObj_);
+    glAttachShader(p, pixel->shaderObj_);
+    if (geom)
+        glAttachShader(p, geom->shaderObj_);
+    if (hull)
+        glAttachShader(p, hull->shaderObj_);
+    if (domain)
+        glAttachShader(p, domain->shaderObj_);
+    glLinkProgram(p);
+    glGetProgramiv(p, GL_LINK_STATUS, &status);
+    if (status!=GL_TRUE)
+        goto createProgramReflectionInfo_fatal;
+
+    refinfo = new hProgramReflectionInfo();
+    auto namelimit = 0;
+    auto unicount = 0;
+    glGetProgramiv(p, GL_ACTIVE_UNIFORM_MAX_LENGTH, &namelimit);
+    glGetProgramiv(p, GL_ACTIVE_UNIFORMS, &unicount);
+    hChar* uniname = (hChar*)hAlloca(namelimit);
+    hUint32* hashes = (hUint32*)hAlloca(unicount*sizeof(hUint32));
+    for (auto i=0,n=unicount; i<n; ++i) {
+        GLsizei olen = 0;
+        GLenum type = 0;
+        GLint size = 0;
+        glGetActiveUniform(p, i, namelimit, &olen, &size, &type, uniname);
+        auto i2 = (GLuint)i;
+        auto blockindex = 0;
+        auto blockoffset = 0;
+        glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_BLOCK_INDEX, &blockindex);
+        glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_OFFSET, &blockoffset);
+        auto hash = 0u;
+        cyMurmurHash3_x86_32(uniname, olen, hGetMurmurHashSeed(), hashes+i);
+        hShaderParamInfo info = { blockindex, blockoffset, mapGLParamType(type), size };
+        refinfo->paramTable[hashes[i]] = info;
+    }
+
+    return refinfo;
+
+createProgramReflectionInfo_fatal:
+    if (p)
+        glDeleteShader(p);
+    delete refinfo;
+    return nullptr;
+}
+
+void destroyProgramReflectionInfo(hProgramReflectionInfo* p) {
+
+}
+
+hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name) {
+    hShaderParamInfo r = {-1, -1, ShaderParamType::Unknown, 0};
+    auto hash = 0u;
+    cyMurmurHash3_x86_32(name, hStrLen(name), hGetMurmurHashSeed(), &hash);
+    auto f = p->paramTable.find(hash);
+    if (f != p->paramTable.end())
+        r = f->second;
+    return r;
 }
 
 void swapBuffers() {

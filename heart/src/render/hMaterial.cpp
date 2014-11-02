@@ -28,15 +28,17 @@ namespace Heart {
     hBool hMaterial::deserialiseObject(Heart::proto::MaterialResource* obj) {
         totalPasses_=obj->totalpasses();
         rcDescs_.reset(new hRenderer::hRenderCallDesc[totalPasses_]);
+        passProgIDs_.reset(new hStringID[totalPasses_*maxShaderCount]);
         groupNames_.reserve(obj->totalgroups());
         techniqueNames_.reserve(obj->totaltechniques());
         samplerStates_.resize(obj->totalsamplers());
 
+        auto currentpass = 0u;
         for (hUint gi=0, gn=obj->groups_size(); gi<gn; ++gi) {
             const proto::MaterialGroup& groupdef=obj->groups(gi);
             auto groupname = hStringID(groupdef.groupname().c_str());
             groupNames_.push_back(groupname);
-            for (hUint ti=0, tn=groupdef.technique_size(); ti<tn; ++ti) {
+            for (hUint ti=0, tn=groupdef.technique_size(); ti<tn; ++ti, ++currentpass) {
                 const proto::MaterialTechnique& techdef=groupdef.technique(ti);
                 auto techname = hStringID(techdef.techniquename().c_str());
                 if (std::find(techniqueNames_.begin(), techniqueNames_.end(), techname) == techniqueNames_.end()) {
@@ -135,6 +137,23 @@ namespace Heart {
                         if (rasterdef.has_scissorenable()) {
                             rcd.rasterizer_.scissorEnable_=rasterdef.scissorenable();
                         }
+                    }
+
+                    hStringID* programIDs = passProgIDs_.get() + (maxShaderCount*currentpass);
+                    if (passdef.has_vertex()) {
+                        programIDs[0] = hStringID(passdef.vertex().c_str());
+                    }
+                    if (passdef.has_pixel()) {
+                        programIDs[1] = hStringID(passdef.pixel().c_str());
+                    }
+                    if (passdef.has_geometry()) {
+                        programIDs[2] = hStringID(passdef.geometry().c_str());
+                    }
+                    if (passdef.has_hull()) {
+                        programIDs[3] = hStringID(passdef.hull().c_str());
+                    }
+                    if (passdef.has_domain()) {
+                        programIDs[4] = hStringID(passdef.domain().c_str());
                     }
                 }
             }
