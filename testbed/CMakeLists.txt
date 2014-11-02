@@ -17,7 +17,7 @@ set( TESTBED_INCLUDE_DIRS
 ENABLE_PROFILE_IF_SET()
 
 set( TESTBED_HDR_FILES
-	"${TESTBED_SOURCE_DIR}/include/Base64Test.h"
+	"${TESTBED_SOURCE_DIR}/src/Base64Test.h"
 #    "${TESTBED_SOURCE_DIR}/include/ComplexMesh1.h"
 #    "${TESTBED_SOURCE_DIR}/include/ComplexMesh2.h"
 #    "${TESTBED_SOURCE_DIR}/include/ComputeBlur.h"
@@ -32,10 +32,10 @@ set( TESTBED_HDR_FILES
 #    "${TESTBED_SOURCE_DIR}/include/ModelRenderTest.h"
 #    "${TESTBED_SOURCE_DIR}/include/ResourceLoadTest.h"
 #    "${TESTBED_SOURCE_DIR}/include/Sibenik.h"
-    "${TESTBED_SOURCE_DIR}/include/TestBedCore.h"
-    "${TESTBED_SOURCE_DIR}/include/TestUtils.h"
+    "${TESTBED_SOURCE_DIR}/src/TestBedCore.h"
+    "${TESTBED_SOURCE_DIR}/src/TestUtils.h"
 #    "${TESTBED_SOURCE_DIR}/include/TexturedPlane.h"
-    "${TESTBED_SOURCE_DIR}/include/UnitTestFactory.h"
+    "${TESTBED_SOURCE_DIR}/src/UnitTestFactory.h"
 #	"${TESTBED_SOURCE_DIR}/include/LoadTextureTest.h"
 )
 set( TESTBED_SRC_FILES
