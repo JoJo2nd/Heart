@@ -20,6 +20,7 @@ using namespace Heart;
 
 const hChar vertSrc[] = 
 "\
+#version 330\n\
 layout(location=0) in vec3 in_position;\n\
 layout(location=1) in vec4 in_colour;\n\
 out vec4 inout_colour;\n\
@@ -31,6 +32,7 @@ void main() {\n\
 ";
 const hChar fragSrc[] = 
 "\
+#version 330\n\
 in vec4 inout_colour;\n\
 out vec4 fragColour;\n\
 void main() {\n\
