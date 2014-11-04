@@ -13,12 +13,14 @@ namespace hRenderer {
 
 struct hUniformBuffer;
 struct hTexture2D;
+struct hRenderCall;
 
 enum class Op : hUint8 {
     NoOp = 0,
     Clear,
     RenderCall,
     Swap,
+	Draw,
 };
 
 static hUint OpCodeSize = 1; // 1 byte
@@ -109,6 +111,12 @@ struct hGLUniformBuffer {
 struct hGLClear {
     hColour colour;
     hFloat  depth;
+};
+
+struct hGLDraw {
+	hRenderCall* rc;
+	GLenum		 primType;
+	hUint		 count;
 };
 
 }

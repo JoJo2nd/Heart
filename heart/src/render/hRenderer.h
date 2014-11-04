@@ -19,6 +19,7 @@
 #include "render/hRenderSubmissionContext.h"
 #include "render/hRendererCamera.h"
 #include "render/hTextureFormat.h"
+#include "render/hRenderPrim.h"
 
 namespace Heart {
 
@@ -34,11 +35,6 @@ hFUNCTOR_TYPEDEF(void (*)(hRenderSubmissionCtx*), hCustomRenderCallback);
 class hSystem;
 
 namespace hRenderer {
-
-    static const hUint32	DEFAULT_SCRATCH_BUFFER_SIZE = 1024*1024*8;
-    static const hUint32    MAX_DCBLOCKS = (64*1024);
-    static const hUint32    s_resoruceUpdateLimit = 1024;
-    static const hUint32    s_scratchBufferCount = 5;
 
     struct hCmdList;
     struct hRenderCall;
@@ -91,6 +87,7 @@ namespace hRenderer {
 
 
     void clear(hCmdList* cl, hColour colour, hFloat depth);
+	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims);
     void swapBuffers(hCmdList* cl);
 
     void submitFrame(hCmdList* cmds);

@@ -10,6 +10,7 @@
 #include "render/hRenderCallDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
+#include "render/hRenderPrim.h"
 #include "UnitTestFactory.h"
 
 namespace Heart {
@@ -78,6 +79,7 @@ public:
 
         cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(1.f, 0.f, 0.f, 1.f), 1.f);
+		hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1);
         hRenderer::swapBuffers(cl);
 
         SetCanRender(hTrue);

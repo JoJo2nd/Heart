@@ -19,6 +19,7 @@
 #include "render/hUniformBufferFlags.h"
 #include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
+#include "render/hRenderPrim.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include <GL/glew.h>    
@@ -160,6 +161,10 @@ hUint32 renderThreadMain(void* param) {
                 case Op::Swap: {
                     SDL_GL_SwapWindow(window_);
                 } break;
+				case Op::Draw: {
+					hGLDraw* c=(hGLDraw*)cmdptr;
+					cmdptr += sizeof(hGLDraw);
+				} break;
                 }
             }
 
@@ -235,6 +240,14 @@ GLuint hglProfileToType(hShaderProfile profile) {
     case eShaderProfile_ds5_0: //return ;
     default: return GL_INVALID_VALUE;
     }
+}
+
+static GLenum hglToPrimType(Primative pt) {
+	switch (pt) {
+	case Primative::Triangles: return GL_TRIANGLES;
+	case Primative::TriangleStrip: return GL_TRIANGLE_STRIP;
+	default: return GL_INVALID_VALUE;
+	}
 }
 
 struct hShaderStage {
@@ -717,7 +730,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     //textures
     if (header.textureCount_) {
-        auto ns = (hUint32)(rc->size_+(sizeof(void*)*header.textureCount_));
+        auto ns = (hUint32)(rc->size_+(sizeof(hGLTexture2D)*header.textureCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         auto* textures = (hGLTexture2D*)(rc->opCodes_+rc->size_);
         auto* wtextures = textures;
@@ -736,7 +749,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     // uniform buffers
     if (header.uniBufferCount_) {
-        auto ns = (hUint32)(rc->size_+(sizeof(void*)*header.uniBufferCount_));
+        auto ns = (hUint32)(rc->size_+(sizeof(hGLUniformBuffer)*header.uniBufferCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         auto* buffers = (hGLUniformBuffer*)(rc->opCodes_+rc->size_);
         auto* wbuffers = buffers;
@@ -1006,6 +1019,13 @@ void clear(hCmdList* cl, hColour colour, hFloat depth) {
     auto* cmd = (hGLClear*)cl->allocCmdMem(Op::Clear, sizeof(hGLClear));
     cmd->colour = colour;
     cmd->depth = depth;
+}
+
+void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims) {
+	auto* cmd = (hGLDraw*)cl->allocCmdMem(Op::Draw, sizeof(hGLDraw));
+	cmd->rc = rc;
+	cmd->primType = hglToPrimType(pt);
+	cmd->count = prims;
 }
 
 void swapBuffers(hCmdList* cl) {
