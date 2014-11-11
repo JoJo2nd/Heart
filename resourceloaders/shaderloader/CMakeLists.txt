@@ -72,3 +72,12 @@ ADD_CUSTOM_COMMAND(
     ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
 )
 endif()
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET shader_builder
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/gpuprogram.so" gpuprogram.so
+    )
+endif()

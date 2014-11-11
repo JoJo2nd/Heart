@@ -43,10 +43,14 @@ file(GLOB PROTO_LUA_SRC_FILES "${PROTO_SRC_DIR}/proto_lua*.cpp" "${PROTO_SRC_DIR
 add_library(proto_lua SHARED ${PROTO_LUA_SRC_FILES} ${PROTO_SRC_FILES} ${LuaProtoHeaders} ${LuaProtoSources})
 target_link_libraries(proto_lua debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS} lua52 proto_full)
 target_link_libraries(proto_lua optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS} lua52 proto_full)
+set_target_properties(proto_lua PROPERTIES PREFIX "")
 
-#ADD_CUSTOM_COMMAND(
-#	TARGET proto_lua
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l proto_lua -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET proto_lua
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/proto_lua.so" proto_lua.so
+    )
+endif()

@@ -6,6 +6,7 @@
 #include "cryptoBase64.h"
 #include <string>
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <fstream>
 #include <stdio.h>

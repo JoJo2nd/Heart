@@ -25,12 +25,15 @@ endif()
 set(nvtt_BIN_DIR "${EXTERNAL_SRC_ROOT}nvidia-texture-tools/gnuwin32/bin")
 set(nvtt_DEPENDENT_BIN_DIR "${EXTERNAL_SRC_ROOT}nvidia-texture-tools/gnuwin32/bin")
 
-if (BUILD_64_BIT)
-	set(freeimage_LIB_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x64" )
-	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x64")
-else()
-	set(freeimage_LIB_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86" )
-	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
+if(PLATFORM_WINDOWS)
+	if (BUILD_64_BIT)
+		set(freeimage_LIB_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x64" )
+		set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x64")
+	else()
+		set(freeimage_LIB_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86" )
+		set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
+	endif()
+	set(FreeImage_LIBRARIES freeimage)
 endif()
 
 include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS})
@@ -39,20 +42,21 @@ link_directories(
 	${nvtt_LIB_DIR}
 	${freeimage_LIB_DIR})
 add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto nvtt freeimage ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto nvtt freeimage ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+target_link_libraries(texture_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
 
 set_target_properties(texture_builder PROPERTIES PREFIX "")
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)
 
-#ADD_CUSTOM_COMMAND(
-#	TARGET texture_builder
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l texture -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
-
-#message("${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r "(.*\\.(dll))$ -s "${freeimage_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET texture_builder
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/texture.so" texture.so
+    )
+endif()
 
 if (PLATFORM_WINDOWS)
 	ADD_CUSTOM_COMMAND(

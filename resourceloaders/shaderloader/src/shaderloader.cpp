@@ -497,7 +497,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
 
     shader_source->insert(0, "#define HEART_IS_HLSL 1\n");
 
-    printf("D3D Source: \n%s\n", shader_source->c_str());
+    //printf("D3D Source: \n%s\n", shader_source->c_str());
 
     HRESULT hr = D3DCompile( 
         shader_source->c_str(), 
@@ -623,14 +623,14 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         }
     }
 
-    printf("input struct name: %s\n", input_struct_name.c_str());
-    printf("output struct name: %s\n", output_struct_name.c_str());
+    //printf("input struct name: %s\n", input_struct_name.c_str());
+    //printf("output struct name: %s\n", output_struct_name.c_str());
 
     //read in the parameters for input (seperate function later...?)
     //std::string tmp_str("struct\\s*?");
     //std::regex in_struct_regex(tmp_str+input_struct_name+)
 
-    printf("OpenGL Source: \n%s\n", shader_source->c_str());
+    //printf("OpenGL Source: \n%s\n", shader_source->c_str());
 
     GLint params = -1;
     GLuint shader_obj = glCreateShader(shader_type);

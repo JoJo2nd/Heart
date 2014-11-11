@@ -909,8 +909,11 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         glAttachShader(p, domain->shaderObj_);
     glLinkProgram(p);
     glGetProgramiv(p, GL_LINK_STATUS, &status);
-    if (status!=GL_TRUE)
-        goto createProgramReflectionInfo_fatal;
+    if (status!=GL_TRUE) {
+        glDeleteShader(p);
+        delete refinfo;
+        return nullptr;
+    }
 
     refinfo = new hProgramReflectionInfo();
     auto namelimit = 0;
@@ -936,7 +939,7 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_OFFSET, &blockoffset);
         auto hash = 0u;
         cyMurmurHash3_x86_32(uniname, olen, hGetMurmurHashSeed(), hashes+i);
-        hShaderParamInfo info = { blockindex, blockoffset, mapGLParamType(type), size };
+        hShaderParamInfo info = { (hUint)blockindex, (hUint)blockoffset, mapGLParamType(type), (hUint)size };
         refinfo->paramTable[hashes[i]] = info;
     }
 
@@ -952,12 +955,6 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
 
     refinfo->prog = p;
     return refinfo;
-
-createProgramReflectionInfo_fatal:
-    if (p)
-        glDeleteShader(p);
-    delete refinfo;
-    return nullptr;
 }
 
 void destroyProgramReflectionInfo(hProgramReflectionInfo* p) {
@@ -965,7 +962,7 @@ void destroyProgramReflectionInfo(hProgramReflectionInfo* p) {
 }
 
 hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name) {
-    hShaderParamInfo r = {-1, -1, ShaderParamType::Unknown, 0};
+    hShaderParamInfo r = {~0u, ~0u, ShaderParamType::Unknown, 0ul};
     auto hash = 0u;
     cyMurmurHash3_x86_32(name, hStrLen(name), hGetMurmurHashSeed(), &hash);
     auto f = p->paramTable.find(hash);
@@ -979,7 +976,7 @@ hUint getUniformatBlockCount(hProgramReflectionInfo* p) {
 }
 
 hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i) {
-    hUniformBlockInfo info = { nullptr, -1, 0 };
+    hUniformBlockInfo info = { nullptr, ~0u, 0 };
     if (i > p->uniformBlocks.size())
         return info;
     return p->uniformBlocks[i];

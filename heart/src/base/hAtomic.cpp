@@ -52,11 +52,11 @@ namespace hAtomic {
     }
 
 #elif defined (PLATFORM_LINUX)
-    void HEART_API Increment( hAtomicInt& i ) {
+    hUint32 HEART_API Increment( hAtomicInt& i ) {
         return ++i;
     }
 
-    void HEART_API Decrement( hAtomicInt& i ) {
+    hUint32 HEART_API Decrement( hAtomicInt& i ) {
         return --i;
     }
 

@@ -267,7 +267,7 @@ static int fs_readDir(lua_State* L) {
 // the table being written is assumed to be at the top of the stack
 void fs_read_entries(lua_State* L, const char* origpath, int* tableindex) {
     char* scratch = NULL;
-    size_t scratchsize = LUAL_BUFFERSIZE;
+    size_t scratchsize = 4096/*LUAL_BUFFERSIZE*/;
     luaL_Buffer buffer;
     MinFSDirectoryEntry_t* entries;
     

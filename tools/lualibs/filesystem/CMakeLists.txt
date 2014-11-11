@@ -30,13 +30,15 @@ endif()
 include_directories(${LUA_FILESYSTEM_INCLUDE_DIRS})
 add_library(lua_filesystem SHARED ${LUA_FILESYSTEM_SRC_FILES} ${LUA_FILESYSTEM_HDR_FILES} ${LUA_BUIDLER_FILES})
 target_link_libraries(lua_filesystem lua52 minfs crypto)
+set_target_properties(lua_filesystem PROPERTIES PREFIX "")
 set_target_properties(lua_filesystem PROPERTIES OUTPUT_NAME filesystem)
 
-if (PLATFORM_WINDOWS)
-#	ADD_CUSTOM_COMMAND(
-#		TARGET lua_filesystem
-#	    POST_BUILD
-#	    COMMAND python
-#	    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l filesystem -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#	)
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET lua_filesystem
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/filesystem.so" filesystem.so
+    )
 endif()

@@ -34,8 +34,8 @@ namespace Hidden
         std::vector<void*>  links_;
         hResourceColour     colour_;
 
-        hCollectableResource() 
-            : resource_(nullptr)
+        hCollectableResource(void* resource) 
+            : resource_(resource)
             , colour_(hResourceColour::Black) {
             hAtomic::AtomicSet(rootCount_, 1);
         }
@@ -164,7 +164,7 @@ void loadPackage( const hChar* name ) {
          pkg->beginLoad();
          packages_.push_back(pkg);
     } else {
-        resources_[*lp].addRef();
+        resources_.find(*lp)->second.addRef();
     }
 }
 
@@ -211,25 +211,25 @@ void printResourceInfo()
 void    addResource(void* ptr, hStringID res_id, hObjectDestroyProc destructor) {
     hMutexAutoScope sentry(&resourceDBMtx_);
     hcAssert(resources_.find(ptr) == resources_.end());
-    hCollectableResource gcr;
-    gcr.resource_ = ptr;
-    resources_.insert(hResourceTable::value_type(ptr, gcr));
+    resources_.emplace(std::piecewise_construct, std::forward_as_tuple(ptr), std::forward_as_tuple(ptr));
     resourceNameLookUp_.insert(hResourceNameToDataTable ::value_type(res_id, ptr));
 }
 
 void    makeLink(void* resource, void* other) {
     hMutexAutoScope sentry(&resourceDBMtx_);
     hcAssert(resources_.find(resource) != resources_.end() && resources_.find(other) != resources_.end());
-    resources_[resource].links_.push_back(other);
+    resources_.find(resource)->second.links_.push_back(other);
 }
 
 void    removeLink(void* resource, void* other) {
     hMutexAutoScope sentry(&resourceDBMtx_);
-    hcAssert(resources_.find(resource) != resources_.end() && resources_.find(other) != resources_.end());
-    auto pend = std::remove_if(resources_[resource].links_.begin(), resources_[resource].links_.end(), [=](void* lhs) {
+    auto it = resources_.find(resource);
+    auto& itres = it->second;
+    hcAssert(it != resources_.end() && resources_.find(other) != resources_.end());
+    auto pend = std::remove_if(itres.links_.begin(), itres.links_.end(), [=](void* lhs) {
        return  lhs == other;
     });
-    resources_[resource].links_.erase(pend);
+    itres.links_.erase(pend);
 }
 
 void*   pinResource(hStringID res_id) {
@@ -238,7 +238,7 @@ void*   pinResource(hStringID res_id) {
     if (it == resourceNameLookUp_.end()) {
         return nullptr;
     }
-    resources_[it->second].addRef();
+    resources_.find(it->second)->second.addRef();
     return it->second;
 }
 

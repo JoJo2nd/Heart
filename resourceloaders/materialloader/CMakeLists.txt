@@ -31,9 +31,12 @@ target_link_libraries(material_builder optimized lua52 crypto proto minfs ${PROT
 set_target_properties(material_builder PROPERTIES PREFIX "")
 set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)
 
-#ADD_CUSTOM_COMMAND(
-#	TARGET material_builder
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l material -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET material_builder
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/material.so" material.so
+    )
+endif()

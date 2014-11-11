@@ -67,7 +67,7 @@ typedef std::vector<hUint> hIntArray;
 class hdSystemWindow;
 
 struct hActionManagerImpl {
-    static const hUint hInvalidBinding = ~0;
+    const hUint hInvalidBinding = ~0;
 
     hdSystemWindow*         systemWindow_;
     hKeyNameIDMapping       keyNameToIDMappings_;

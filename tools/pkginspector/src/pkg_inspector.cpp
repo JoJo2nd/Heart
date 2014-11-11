@@ -183,7 +183,7 @@ void printTypeArray(const t_ty& val, const std::string& fieldname, FILE* output,
 template< typename t_ty>
 void printRepeatedType(const t_ty& rep_vals, const std::string& fieldname, FILE* output, int tabcount) {
     for (int i=0, n=rep_vals.size(); i<n; ++i) {
-        TypePrinter<t_ty::value_type, true>::print(rep_vals.Get(i), fieldname, output, tabcount, i);
+        TypePrinter<typename t_ty::value_type, true>::print(rep_vals.Get(i), fieldname, output, tabcount, i);
     }
 }
 

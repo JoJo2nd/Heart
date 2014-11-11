@@ -10,7 +10,7 @@
 namespace Heart {
 
 enum class hMaterialParamType {
-    None,
+    NoneType,
     Resource,
     Float,
     Int,
@@ -24,7 +24,7 @@ class hMaterialParamValue {
 
 public:
     hMaterialParamValue() 
-        : type_(hMaterialParamType::None), data_(nullptr), dataCount_(0) {}
+        : type_(hMaterialParamType::NoneType), data_(nullptr), dataCount_(0) {}
     hMaterialParamValue(hFloat* f, hUint count) 
         : type_(hMaterialParamType::Float), data_(f), dataCount_(count) {}
     hMaterialParamValue(hInt* i, hUint count) 

@@ -2,9 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
-#ifndef RESOURCE_H__
-#define RESOURCE_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hStringID.h"
@@ -119,6 +117,7 @@ namespace Heart
     };
 #endif
 
+#if 0
     class hResourceHandle
     {
     public:
@@ -223,4 +222,5 @@ namespace Heart
     #define HEART_RESOURCE_DATA_FIXUP( type, x, y ) /*y = (type*)((hByte*)x + (hUint32)y);*/
 #endif
 
-#endif // RESOURCE_H__
+#endif
+}

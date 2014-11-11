@@ -46,9 +46,12 @@ target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto pr
 set_target_properties(mesh_builder PROPERTIES PREFIX "")
 set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
 
-#ADD_CUSTOM_COMMAND(
-#	TARGET mesh_builder
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l mesh -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET shader_builder
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/mesh.so" mesh.so
+    )
+endif()

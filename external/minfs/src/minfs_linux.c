@@ -12,6 +12,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <alloca.h>
+#include <limits.h>
+#include <stdlib.h>
 
 minfs_uint64_t minfs_get_current_file_time() {
     time_t t;
@@ -56,7 +58,7 @@ int minfs_is_sym_link(const char* filepath) {
      struct stat s;
      if (stat(filepath, &s) != 0)
          return 0;
-     return S_ISSLNK(s.st_mode) ? 1 : 0;
+     return S_ISLNK(s.st_mode) ? 1 : 0;
 }
 
 int minfs_create_directories(const char* in_filepath) {
@@ -143,5 +145,18 @@ MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* 
             currententry->next = scratch;
         }
     }
-    return NULL;
+    if (currententry)
+        currententry->next = NULL;
+    return first;
+}
+
+size_t minfs_canonical_path(const char* filepath, char* outpath, size_t buf_size) {
+    char* canonpath = realpath(filepath, NULL);
+    size_t len = strlen(canonpath);
+    if (buf_size < len) {
+        return 0;
+    }
+    strcpy(outpath, canonpath);
+    free(canonpath);
+    return len;
 }

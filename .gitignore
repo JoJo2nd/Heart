@@ -37,6 +37,7 @@
 /external/nvidia-texture-tools/Makefile
 /GamedataSource/
 /heart/src/events/hPublisher_gen.inl
+/int/
 /lib/
 /platform_win32/
 /platform_win64/

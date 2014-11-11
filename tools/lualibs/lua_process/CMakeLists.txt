@@ -28,10 +28,14 @@ endif()
 include_directories(${LUAPROCESS_INCLUDE_DIRS})
 add_library(lua_process SHARED ${LUAPROCESS_SRC_FILES} ${LUAPROCESS_HDR_FILES})
 target_link_libraries(lua_process lua52)
+set_target_properties(lua_process PROPERTIES PREFIX "")
 
-#ADD_CUSTOM_COMMAND(
-#	TARGET lua_process
-#    POST_BUILD
-#    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua_process -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#)
+if (PLATFORM_LINUX)
+    ADD_CUSTOM_COMMAND(
+        TARGET lua_process
+        POST_BUILD
+        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+        COMMAND "ln"
+        ARGS -fs "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lua_process.so" lua_process.so
+    )
+endif()
