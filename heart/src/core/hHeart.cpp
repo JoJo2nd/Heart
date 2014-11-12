@@ -53,20 +53,20 @@ namespace Heart {
 
         {
             char tmp[1024];
-            hcAssert(hdGetSystemPathSize("/proc/scripts") < 1024);
-            hdGetSystemPath("/proc/scripts", tmp, 1024);
+            hcAssert(hdGetSystemPathSize("/cd/scripts") < 1024);
+            hdGetSystemPath("/cd/scripts", tmp, 1024);
             hdMountPoint(tmp, "script");
 
-            hcAssert(hdGetSystemPathSize("/proc/data") < 1024);
-            hdGetSystemPath("/proc/data", tmp, 1024);
+            hcAssert(hdGetSystemPathSize("/cd/data") < 1024);
+            hdGetSystemPath("/cd/data", tmp, 1024);
             hdMountPoint(tmp, "data");
 
-            hcAssert(hdGetSystemPathSize("/proc/tmp") < 1024);
-            hdGetSystemPath("/proc/tmp", tmp, 1024);
+            hcAssert(hdGetSystemPathSize("/cd/tmp") < 1024);
+            hdGetSystemPath("/cd/tmp", tmp, 1024);
             hdMountPoint(tmp, "tmp");
 
-            hcAssert(hdGetSystemPathSize("/proc/save") < 1024);
-            hdGetSystemPath("/proc/save", tmp, 1024);
+            hcAssert(hdGetSystemPathSize("/cd/save") < 1024);
+            hdGetSystemPath("/cd/save", tmp, 1024);
             hdMountPoint(tmp, "save");
         }
 

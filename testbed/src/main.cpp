@@ -146,10 +146,9 @@ int main(int argc, char **argv) {
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks);
 
-    //while (hHeartDoMainUpdate(engine) != hErrorCode) {}
+    while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
-    //hHeartShutdownEngine(engine);
-
+    hHeartShutdownEngine(engine);
     return 0;
 }
 

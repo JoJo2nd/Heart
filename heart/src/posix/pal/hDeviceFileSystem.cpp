@@ -236,7 +236,7 @@ struct hdMemoryMappedFile {
     }
 
     void* hdMMapGetBase(hdMemoryMappedFile *mmap) {
-        return !mmap ? mmap->mmap_ : nullptr;
+        return mmap ? mmap->mmap_ : nullptr;
     }
 
     //////////////////////////////////////////////////////////////////////////
