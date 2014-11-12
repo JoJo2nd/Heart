@@ -65,11 +65,11 @@ int minfs_create_directories(const char* in_filepath) {
     struct stat s;
     char* mrk;
     UTF8_WRITABLE_STACK(in_filepath, filepath);
-    while (mrk = strchr(filepath, L'\\')) {
+    while ((mrk = strchr(filepath, L'\\'))) {
         *mrk = '/';
     }
     mrk = filepath;
-    while (mrk = strchr(mrk, '/')) {
+    while ((mrk = strchr(mrk, '/'))) {
         *mrk = 0;
         if (stat(filepath, &s) != 0) {
             mkdir(filepath, S_IRWXU);
