@@ -193,7 +193,9 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     window_ = system->getSDLWindow();
     renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
 
+    rtMutex.Lock();
     rtComsSignal.wait(&rtMutex);
+    rtMutex.Unlock();
 
     mtContext_ = hglTLSMakeCurrent();
 

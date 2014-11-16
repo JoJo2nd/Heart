@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "base/hTypes.h"
 #if defined (PLATFORM_LINUX)
 #   include <signal.h>
 #   include <stdlib.h>
@@ -55,15 +56,11 @@ typedef void (*hPrintfCallback)(const hChar*);
 void HEART_API hcOutputString(const hChar* msg, ...);
 hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
-#if defined (PLATFORM_LINUX)
-    void debug_break_now();
-#endif
-
 #ifdef HEART_64BIT
 #   if defined(PLATFORM_WINDOWS)
 #       define hcBreak __debugbreak()
 #   elif defined (PLATFORM_LINUX)
-#       define hcBreak debug_break_now()
+#       define hcBreak raise(SIGTRAP)
 #   else
 #       define hcBreak "Define this!"
 #   endif
@@ -71,7 +68,7 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 #   if defined(PLATFORM_WINDOWS)
 #       define hcBreak __asm { int 3 }
 #   elif defined (PLATFORM_LINUX)
-#       define hcBreak debug_break_now()
+#       define hcBreak raise(SIGTRAP)
 #   else
 #       define hcBreak "Define this!"
 #   endif

@@ -7,6 +7,10 @@
 #ifndef HCONDITIONVARIABLE_H__
 #define HCONDITIONVARIABLE_H__
 
+#include "base/hTypes.h"
+#include "pal/hMutex.h"
+#include <pthread.h>
+
 namespace Heart {
     class hConditionVariable {
     public:

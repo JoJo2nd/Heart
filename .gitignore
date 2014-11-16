@@ -14,6 +14,8 @@
 /cmake64
 /cmake_build/
 /data/
+/data
+/deploy/data
 /deploy/game
 /deploy/tools/*.so
 /deploy/tools/databuilder.lua

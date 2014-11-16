@@ -14,7 +14,9 @@ namespace Heart
     public:
 
         bool Create( hUint32 initCount, hUint32 maxCount ) {
-            return sem_init(&sema_, initCount, maxCount) == 0;
+            auto ret = sem_init(&sema_, 0, initCount);
+            hcAssert(ret == 0);
+            return ret == 0;
         }
         void Wait() {
             sem_wait(&sema_);

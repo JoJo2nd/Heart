@@ -4,29 +4,25 @@
 		{
 			"cmd":
 			[
-				"win_build.bat",
-				"C:\\dev\\cmake\\x64\\heart\\heart.sln",
-				"Debug",
-				"x64"
+				"make",
 			],
-			"name": "Build \"Heart Debug x64\"",
+			"name": "Build \"Heart All x64\"",
 			"selector": "source.c++",
-			"windows":
-			{
-				"file_regex": "\\d+>\\s*(?:\\.\\.[\\|/])*(.*)\\((\\d+)\\)"
-			},
-			"working_dir": "$project_path/build"
+			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
+			"working_dir": "$project_path/int/build"
 		},
+
 		{
 			"cmd":
 			[
-				"win_debug.bat",
-				"$project_path/bin/Debug/heart_testbed_d.exe"
+				"make",
+				"clean"
 			],
-			"name": "Debug \"Heart x64\"",
+			"name": "Build \"Heart Clean\"",
 			"selector": "source.c++",
-			"working_dir": "$project_path/build"
-		}
+			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
+			"working_dir": "$project_path/int/build"
+		},
 	],
 	"folders":
 	[
@@ -41,25 +37,11 @@
 				"cmake64",
 				"cmake32",
 				"lib",
-				"bin"
+				"bin",
 			],
 			"follow_symlinks": true,
 			"path": "."
 		},
-		{
-			"follow_symlinks": true,
-			"path": "c:\\dev\\cmake\\x64\\heart\\tools\\proto\\pb_lite"
-		},
-		{
-			"folder_exclude_patterns":
-			[
-				"lib",
-				"doc",
-				"bin",
-			],
-			"follow_symlinks": true,
-			"path": "C:\\dev\\glew-1.10.0"
-		}
 	],
 	"settings":
 	{
@@ -72,9 +54,9 @@
 	    	"-DPLATFORM_LINUX",
 	    	"-DBUILD_64_BIT",
 	    	"-stdlib=libc++",
-	    	"-I/home/james/code/heart_build/tools/proto/pb_lite",
 	    	"-I/usr/include/freetype2",
 	    	"-I/usr/include/SDL2",
+	    	"-I${project_path}/int/build/tools/proto/pb_lite",
 	        "-I${project_path}/heart/src",
 	        "-I${project_path}/heart/src/posix",
 	        "-I${project_path}/heart/src/linux",

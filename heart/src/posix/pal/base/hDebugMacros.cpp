@@ -5,6 +5,7 @@
 
 #include "pal/hPlatform.h"
 #include "base/hTypes.h"
+#include <stdio.h>
 #include <stdarg.h>
 
 //////////////////////////////////////////////////////////////////////////
@@ -25,27 +26,26 @@ static void HEART_API hcOutputStringFlush() {
 
 void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 {
-    const hUint32 ks = 4;
-    hChar buffer[ ks*1024 ];
-    buffer[ (ks*1024)-1 ] = 0;
-    hUint32 len = vsnprintf(buffer, ks*1024, msg, vargs);
-
-    if ( newline && buffer[ len - 1 ] != '\n' )
-    {
-        buffer[ len ] = '\n';
-        buffer[ len+1 ] =  0;
-    }
-
 #ifdef HEART_DEBUG
     #ifdef HEART_PLAT_WINDOWS
+        const hUint32 ks = 4;
+        hChar buffer[ ks*1024 ];
+        buffer[ (ks*1024)-1 ] = 0;
+        hUint32 len = vsnprintf(buffer, ks*1024, msg, vargs);
+
+        if ( newline && buffer[ len - 1 ] != '\n' )
+        {
+            buffer[ len ] = '\n';
+            buffer[ len+1 ] =  0;
+        }
         OutputDebugString( buffer );
     #endif
 #else
-#if defined (PLATFORM_LINUX)
-    printf(buffer);
-#endif
-    if (g_printcallback)
-        g_printcallback(buffer);
+    #if defined (PLATFORM_LINUX)
+        vprintf(msg, vargs);
+    #endif
+    // if (g_printcallback)
+    //     g_printcallback(buffer);
 #endif
 }
 
@@ -84,7 +84,6 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
     }
 
     hcOutputString( buffer );
-    hcOutputStringFlush();
 #if 0
     if (!ignore) {
      ret = 1;//MessageBox(NULL, buffer, "ASSERT FAILED!", MB_ABORTRETRYIGNORE);

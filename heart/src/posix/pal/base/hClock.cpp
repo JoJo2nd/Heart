@@ -12,7 +12,7 @@ namespace hClock {
 namespace {
 	struct timespec clockRes_;
 	struct timespec timeStart_;
-	hUint64 clockDiv_; // divider to get to milliseconds
+#define hNanosecondToMillisecond (1000000) // divider to get to milliseconds
 	hUint64 tick_;
 	hUint64 lastTick_;
 }
@@ -30,7 +30,7 @@ namespace {
 	//////////////////////////////////////////////////////////////////////////
 
 	hUint64 elapsedMilli()	{
-		return elapsedNano() / clockDiv_;
+		return elapsedNano() / hNanosecondToMillisecond;
 	}
 
 	hUint64 elapsedNano() {
@@ -44,7 +44,7 @@ namespace {
 	//////////////////////////////////////////////////////////////////////////
 
 	hUint64			deltams() {
-		return tick_/clockDiv_;
+		return tick_/hNanosecondToMillisecond;
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ namespace {
 	//////////////////////////////////////////////////////////////////////////
 
 	hFloat			fdeltams() {
-		return tick_ / (hFloat)clockDiv_;
+		return tick_ / (hFloat)hNanosecondToMillisecond;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ namespace {
 	//////////////////////////////////////////////////////////////////////////
 
 	hFloat			delta()	{
-		return (tick_ / clockDiv_) / 1000.f;
+		return (tick_ / hNanosecondToMillisecond) / 1000.f;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -108,7 +108,6 @@ namespace {
 		rc = clock_getres(CLOCK_MONOTONIC, &clockRes_);
 		hcAssert(!rc); // !!JM todo: handle other cases
 		clock_gettime(CLOCK_MONOTONIC, &timeStart_);
-		clockDiv_ = clockRes_.tv_nsec / 1000000;
 		lastTick_ = elapsedNano();
 	}
 
