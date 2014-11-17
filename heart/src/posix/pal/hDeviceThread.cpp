@@ -36,6 +36,7 @@ namespace Heart {
         pthread_attr_setschedpolicy(&attr, SCHED_RR);
         pthread_attr_setschedparam(&attr, &sp);
         pthread_create(&thread_, &attr, hThread::staticFunc, this);
+        pthread_setname_np(thread_, threadName_);
 
         pthread_attr_destroy(&attr);
     }

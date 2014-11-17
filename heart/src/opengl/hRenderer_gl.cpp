@@ -34,6 +34,56 @@ class hSystem;
 
 namespace hRenderer {
 
+struct hRenderCall {
+    enum Flag : hUint8 {
+        VAOBound = 0x80,
+    };
+
+    hRenderCall() 
+        : size_(0)
+        , opCodes_(nullptr) 
+        , flags(0) {
+    }
+    hGLRCHeader header_;
+    GLuint program_;
+    GLuint vao;
+    hVertexBuffer* vtxBuf_;
+    hUint size_;
+    hByte* opCodes_;
+    GLuint* samplers_;
+    hUint8  flags;
+};
+
+struct hIndexBuffer {
+    GLuint  name_;
+    hUint32 indices;
+    hUint32 createFlags_;
+};
+
+struct hVertexBuffer {
+    GLuint  name_;
+    hUint32 elementCount_;
+    hUint32 elementSize_;
+    hUint32 createFlags_;
+};
+
+struct hUniformBuffer {
+    GLuint  name_;
+    hUint   size_;
+    hUint32 createFlags_;
+};
+
+struct hTextureBase {
+    GLuint  name_;
+    GLenum  target_;
+    GLuint  internalFormat_;
+    GLuint  format_;
+};
+
+struct hTexture2D : hTextureBase {
+
+};
+
 struct hCmdList {
     static const hUint MinCmdBlockSize = 64*1024;
     hCmdList() {
@@ -157,14 +207,112 @@ hUint32 renderThreadMain(void* param) {
                     glClear(GL_COLOR_BUFFER_BIT);
                     cmdptr+=sizeof(hGLClear);
                 } break;
-                case Op::RenderCall: break;
+                case Op::Draw: {
+#define hGetArgs(x) (x*)args; args+=sizeof(x)
+#define hGetArgsN(x,c) (x*)args; args+=(sizeof(x)*(c))
+                    hGLDraw* c=(hGLDraw*)cmdptr;
+                    hRenderCall* rc = c->rc;
+                    hByte* args=rc->opCodes_;
+                    if (rc->header_.blend) {
+                        auto* blend = hGetArgs(hGLBlend);
+                        if (rc->header_.seperateAlpha) {
+                            auto* alpha = hGetArgs(hGLBlend);
+                            glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
+                            glBlendEquationSeparate(blend->func, alpha->func);
+                        } else {
+                            glBlendFunc(blend->src, blend->dest);
+                            glBlendEquation(blend->func);
+                        }
+                    } else {
+                        glDisable(GL_BLEND);
+                    }
+
+                    if (rc->header_.depth) {
+                        auto* depth=hGetArgs(hGLDepth);
+                        glEnable(GL_DEPTH_TEST);
+                        glDepthFunc(depth->func);
+                        glDepthMask(depth->mask);
+                    } else {
+                        glDisable(GL_DEPTH_TEST);
+                    }
+                    //depth bais
+                    if (rc->header_.depthBais) {
+                        auto* depthbais = hGetArgs(hGLDepthBais);
+                        //depthbais->depthBias_ = rcd.rasterizer_.depthBias_;
+                        //depthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
+                        //depthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
+                        //depthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
+                    }
+                    //stencil
+                    if (rc->header_.stencil) {
+                        auto* stencil = hGetArgs(hGLStencil);
+                        //stencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
+                        //stencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
+                        //stencil->ref_ = rcd.depthStencil_.stencilRef_;
+                        //stencil->failOp_ = stenciloptogl(rcd.depthStencil_.stencilFailOp_);
+                        //stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
+                        //stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
+                        //stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
+                    } else {
+                        glDisable(GL_STENCIL_TEST);
+                    }
+                    //sampler states
+                    if (rc->header_.samplerCount_) {
+                        auto* samplers=hGetArgsN(hGLSampler, rc->header_.samplerCount_);
+                        for (hUint8 i=0, n=rc->header_.samplerCount_; i<n; ++i) {
+                             glBindSampler(samplers[i].index, samplers[i].samplerObj);
+                        }
+                    }
+                    //textures
+                    if (rc->header_.textureCount_) {
+                        auto* textures = hGetArgsN(hGLTexture2D,rc->header_.textureCount_);
+                        for (hUint8 i=0, n=rc->header_.textureCount_; i<n; ++i) {
+                            glActiveTexture(textures[i].index_);
+                            glBindTexture(textures[i].tex_->target_, textures[i].tex_->name_);
+                        }  
+                    }
+                    // uniform buffers
+                    if (rc->header_.uniBufferCount_) {
+                        auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
+                        for (hUint8 i=0, n=rc->header_.uniBufferCount_; i<n; ++i) {
+                            glBindBuffer(ubs[i].index_, ubs[i].ub_->name_);
+                        }
+                    }
+
+                    // index
+                    if (rc->header_.index) {
+                        auto* ib = hGetArgs(hIndexBuffer);
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->name_);
+                    }
+
+                    // vertex buffer
+                    glBindBuffer(GL_VERTEX_ARRAY, rc->vtxBuf_->name_);
+
+                    if (!(rc->flags & hRenderCall::VAOBound)) {
+                        auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
+                        glGenVertexArrays(1, &rc->vao);
+                        glBindVertexArray(rc->vao);
+
+                        for (hUint8 i=0, n=rc->header_.vtxAttCount_; i<n; ++i) {
+                            glEnableVertexAttribArray(va[i].index_);
+                            glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, GL_FALSE, va[i].stride_, va[i].pointer_);
+                        }
+
+                        rc->flags |= hRenderCall::VAOBound;
+                    } else {
+                        glBindVertexArray(rc->vao);
+                    }
+
+                    glDrawArrays(c->primType, 0, c->count);
+
+                    cmdptr+=sizeof(hGLDraw);
+                    break;
+#undef hGetArgs
+#undef hGetArgsN
+                }
                 case Op::Swap: {
                     SDL_GL_SwapWindow(window_);
                 } break;
-				case Op::Draw: {
-					hGLDraw* c=(hGLDraw*)cmdptr;
-					cmdptr += sizeof(hGLDraw);
-				} break;
                 }
             }
 
@@ -209,6 +357,11 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     }
     if (!GLEW_EXT_texture_sRGB) {
         hcAssertFailMsg("GL_EXT_texture_sRGB is required but not found.");    
+    }
+    if (GL_KHR_debug) {
+        glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, void* userParam) {
+            hcPrintf("OpenGL Debug Message: %s", message);
+        }, nullptr);
     }
 }
 
@@ -293,12 +446,6 @@ void destroyShader(hShaderStage* shader) {
     };
 }
 
-struct hIndexBuffer {
-    GLuint  name_;
-    hUint32 indices;
-    hUint32 createFlags_;
-};
-
 hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flags) {
     hglEnsureTLSContext();
     GLuint bname;
@@ -323,13 +470,6 @@ void destroyIndexBuffer(hIndexBuffer* ib) {
         delete ib;
     };
 }
-
-struct hVertexBuffer {
-    GLuint  name_;
-    hUint32 elementCount_;
-    hUint32 elementSize_;
-    hUint32 createFlags_;
-};
 
 hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
     hglEnsureTLSContext();
@@ -356,13 +496,6 @@ void  destroyVertexBuffer(hVertexBuffer* vb) {
         delete vb;
     };
 }
-
-struct hTexture2D {
-    GLuint  name_;
-    GLenum  target_;
-    GLuint  internalFormat_;
-    GLuint  format_;
-};
 
 hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
     hglEnsureTLSContext();
@@ -414,12 +547,6 @@ void  destroyTexture2D(hTexture2D* t) {
     };
 }
 
-struct hUniformBuffer {
-    GLuint  name_;
-    hUint   size_;
-    hUint32 createFlags_;
-};
-
 hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
     GLuint ubname;
     glGenBuffers(1, &ubname);
@@ -439,19 +566,6 @@ void destroyUniformBuffer(hUniformBuffer* ub) {
         delete ub;
     };
 }
-
-struct hRenderCall {
-    hRenderCall() 
-        : size_(0)
-        , opCodes_(nullptr) {
-    }
-    hGLRCHeader header_;
-    GLuint program_;
-    hVertexBuffer* vtxBuf_;
-    hUint size_;
-    hByte* opCodes_;
-    GLuint* samplers_;
-};
 
 hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     hglEnsureTLSContext();
@@ -594,9 +708,9 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLBlend));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         auto* glblend = (hGLBlend*)(rc->opCodes_+rc->size_);
-        glblend->func_ = blendfunctogl(rcd.blend_.blendOp_);
-        glblend->src_ = blendoptogl(rcd.blend_.srcBlend_);
-        glblend->dest_ = blendoptogl(rcd.blend_.destBlend_);
+        glblend->func = blendfunctogl(rcd.blend_.blendOp_);
+        glblend->src = blendoptogl(rcd.blend_.srcBlend_);
+        glblend->dest = blendoptogl(rcd.blend_.destBlend_);
         rc->size_ = ns;
     }
     // seperate alpha blend state
@@ -604,9 +718,9 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLBlend));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         auto* glblend = (hGLBlend*)(rc->opCodes_+rc->size_);
-        glblend->func_ = blendfunctogl(rcd.blend_.blendOpAlpha_);
-        glblend->src_ = blendoptogl(rcd.blend_.srcBlendAlpha_);
-        glblend->dest_ = blendoptogl(rcd.blend_.destBlendAlpha_);
+        glblend->func = blendfunctogl(rcd.blend_.blendOpAlpha_);
+        glblend->src = blendoptogl(rcd.blend_.srcBlendAlpha_);
+        glblend->dest = blendoptogl(rcd.blend_.destBlendAlpha_);
         rc->size_ = ns;
     }
 
@@ -629,8 +743,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLDepth));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         auto* gldepth = (hGLDepth*)(rc->opCodes_+rc->size_);
-        gldepth->func_ = comparetogl(rcd.depthStencil_.depthFunc_);
-        gldepth->mask_ = rcd.depthStencil_.depthWriteMask_;
+        gldepth->func = comparetogl(rcd.depthStencil_.depthFunc_);
+        gldepth->mask = rcd.depthStencil_.depthWriteMask_;
         rc->size_=ns;
     }
     //depth bais
@@ -709,21 +823,21 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         for (auto i=0u, n=hRenderCallDesc::samplerStateMax_; i<n && !rcd.samplerStates_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.samplerStates_[i].name_);
             if (si != ~0u) {
-                wsamplers->index_ = si;
-                glGenSamplers(1, &wsamplers->samplerObj_);
+                wsamplers->index = si;
+                glGenSamplers(1, &wsamplers->samplerObj);
                 auto minfilter = minfiltertogl(rcd.samplerStates_[i].sampler_.filter_);
                 auto filter = filtertogl(rcd.samplerStates_[i].sampler_.filter_);
                 auto wraps = bordertogl(rcd.samplerStates_[i].sampler_.addressU_);
                 auto wrapt = bordertogl(rcd.samplerStates_[i].sampler_.addressV_);
                 auto wrapr = bordertogl(rcd.samplerStates_[i].sampler_.addressW_);
-                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_S, &wraps);
-                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_T, &wrapt);
-                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_WRAP_R, &wrapr);
-                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_MIN_FILTER, &minfilter);
-                glSamplerParameteriv(wsamplers->samplerObj_, GL_TEXTURE_MAG_FILTER, &filter);
-                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_MIN_LOD, &rcd.samplerStates_[i].sampler_.minLOD_);
-                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_MAX_LOD, &rcd.samplerStates_[i].sampler_.maxLOD_);
-                glSamplerParameterfv(wsamplers->samplerObj_, GL_TEXTURE_BORDER_COLOR, (hFloat*)&rcd.samplerStates_[i].sampler_.borderColour_);
+                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_S, &wraps);
+                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_T, &wrapt);
+                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_R, &wrapr);
+                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_MIN_FILTER, &minfilter);
+                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_MAG_FILTER, &filter);
+                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_MIN_LOD, &rcd.samplerStates_[i].sampler_.minLOD_);
+                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_MAX_LOD, &rcd.samplerStates_[i].sampler_.maxLOD_);
+                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_BORDER_COLOR, (hFloat*)&rcd.samplerStates_[i].sampler_.borderColour_);
                 ++wsamplers;
             }
         }

@@ -53,7 +53,7 @@ namespace Device
 
     private:
 
-        static const int THREAD_NAME_SIZE = 32;
+        static const int THREAD_NAME_SIZE = 128;
         static void* staticFunc(void* param);
 
         hChar							threadName_[THREAD_NAME_SIZE];

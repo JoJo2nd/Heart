@@ -5,6 +5,7 @@
 			"cmd":
 			[
 				"make",
+				"-j10"
 			],
 			"name": "Build \"Heart All x64\"",
 			"selector": "source.c++",

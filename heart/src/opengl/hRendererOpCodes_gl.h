@@ -18,7 +18,6 @@ struct hRenderCall;
 enum class Op : hUint8 {
     NoOp = 0,
     Clear,
-    RenderCall,
     Swap,
 	Draw,
 };
@@ -58,14 +57,14 @@ struct hGLRCHeader {
 };
 
 struct hGLBlend {
-    GLenum func_;
-    GLenum src_;
-    GLenum dest_;
+    GLenum func;
+    GLenum src;
+    GLenum dest;
 };
 
 struct hGLDepth {
-    GLenum  func_;
-    hUint32 mask_;
+    GLenum  func;
+    hUint32 mask;
 };
 
 struct hGLStencil {
@@ -94,8 +93,8 @@ struct hGLVtxAttrib {
 };
 
 struct hGLSampler {
-    GLint  index_;
-    GLuint samplerObj_;
+    GLint  index;
+    GLuint samplerObj;
 };
 
 struct hGLTexture2D {

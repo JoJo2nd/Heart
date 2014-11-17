@@ -100,4 +100,4 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...);
 
 #endif
 
-#define hStub() hcPrintf("STUBBED OUT %s", __FUNCTION__)
+#define hStub() /*hcPrintf("STUBBED OUT %s", __FUNCTION__)*/

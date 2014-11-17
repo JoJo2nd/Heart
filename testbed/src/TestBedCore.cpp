@@ -95,7 +95,6 @@
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        hcPrintf("Stub.");
         if (!currentTest_ && !exiting_) {
             currentTest_ = factory_->createUnitTest(currentTestIdx_);
         }/*
