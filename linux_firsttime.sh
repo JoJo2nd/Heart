@@ -1,3 +1,7 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 if [ -d ./int/ ]; then
   rm -rf ./int/*
 else
@@ -17,22 +21,42 @@ sudo apt-get -y install libglew-dev
 sudo apt-get -y install libfreeimage-dev
 
 # get and build protobuf
-# wget https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.bz2
+sudo apt-get -y install dh-autoreconf
 
-if [ -d ./int/lua-protobuf]; then
-    rm -rf ./int/lua-protobuf/*
-    rmdir ./int/lua-protobuf
-if
+if [ ! -d ./int/usr ]; then
+    mkdir ./int/usr
+fi
+
+pushd ./int
+wget https://protobuf.googlecode.com/files/protobuf-2.5.0.tar.bz2
+tar -xvjpf protobuf-2.5.0.tar.bz2
+pushd ./protobuf-2.5.0
+./autogen.sh
+./configure --prefix="$DIR/int/usr" CC=clang CXX="clang++ -std=c++11 -stdlib=libc++" CXXFLAGS="-O3"
+make -j8
+make install
+popd
+rm protobuf-2.5.0.tar.bz2
+popd
+
 git clone https://github.com/JoJo2nd/lua-protobuf ./int/lua-protobuf
 pushd ./int/lua-protobuf
 wget https://bootstrap.pypa.io/ez_setup.py -O - | python - --user
 python setup.py install
 popd
-#sudo apt-get -y install protobuf-compiler
-#sudo apt-get -y install libprotobuf-dev
-#sudo apt-get -y install libprotoc-dev
-if [ ! -d ./int/cmake]; then
-    mkdir ./int/cmake
-if
+
+if [ ! -d ./int/cmake_debug ]; then
+    mkdir ./int/cmake_debug
+fi
 # create cmake directory
-pushd ./int/cmake
+pushd ./int/cmake_debug
+cmake -G "Unix Makefiles" ../../ -DCMAKE_INCLUDE_PATH="$DIR/int/usr/include" -DCMAKE_LIBRARY_PATH="$DIR/int/usr/lib" -DCMAKE_PROGRAM_PATH="$DIR/int/usr/bin" -DCMAKE_BUILD_TYPE=Debug
+make -j8
+popd
+
+if [ ! -d ./int/cmake_release ]; then
+    mkdir ./int/cmake_release
+fi
+pushd ./int/cmake_release
+cmake -G "Unix Makefiles" ../../ -DCMAKE_INCLUDE_PATH="$DIR/int/usr/include" -DCMAKE_LIBRARY_PATH="$DIR/int/usr/lib" -DCMAKE_PROGRAM_PATH="$DIR/int/usr/bin" -DCMAKE_BUILD_TYPE=Release
+popd
