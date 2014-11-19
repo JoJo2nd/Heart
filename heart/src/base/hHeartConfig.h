@@ -56,7 +56,7 @@
 #endif
 
 #ifdef HEART_DEBUG
-#   if !defined (HEART_TRACK_MEMORY_ALLOCS) && !defined (HEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS)
+#   if !defined (HEART_TRACK_MEMORY_ALLOCS) && !defined (HEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS) && defined (HEART_PLAT_WINDOWS)
 #       define HEART_TRACK_MEMORY_ALLOCS
 #   endif
 #endif

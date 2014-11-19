@@ -40,9 +40,13 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
         }
         OutputDebugString( buffer );
     #endif
-#else
+
     #if defined (PLATFORM_LINUX)
-        vprintf(msg, vargs);
+        hUint32 len = vprintf(msg, vargs);
+        if (msg[len-1] != '\n' ) {
+            putchar('\n');
+        }
+        hcOutputStringFlush();     
     #endif
     // if (g_printcallback)
     //     g_printcallback(buffer);

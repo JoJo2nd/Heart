@@ -18,7 +18,6 @@
 
 #if defined (PLATFORM_LINUX)
 #   define __noop(...)
-#   define HEART_DO_ASSERTS
 #endif
 
 typedef void (*hPrintfCallback)(const hChar*);

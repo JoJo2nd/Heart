@@ -34,6 +34,38 @@ class hSystem;
 
 namespace hRenderer {
 
+struct hGLErrorSentry {
+    const hChar* file;
+    hSize_t line;
+
+    hGLErrorSentry(const hChar* f, hSize_t l) 
+        : file(f), line(l){
+        glGetError(); // clear the error
+    }
+
+    ~hGLErrorSentry() {
+        auto ec = glGetError();
+        if (ec != GL_NO_ERROR) {
+            const char* errorstr = "Unknown Error";
+            switch (ec) {
+            case GL_INVALID_ENUM: errorstr = "Invalid Enum"; break;
+            case GL_INVALID_VALUE: errorstr = "Invalid Value"; break;
+            case GL_INVALID_OPERATION: errorstr = "Invalid Operation"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: errorstr = "Invalid Framebuffer operation"; break;
+            case GL_OUT_OF_MEMORY: errorstr = "Out of Memory"; break;
+            default: break;
+            }
+            hcPrintf("%s:%d: OpenGL Error %s", file, line, errorstr);
+        }
+    }
+};
+
+#ifdef HEART_DEBUG
+#   define hGLErrorScope() Heart::hRenderer::hGLErrorSentry gl_error_sentry__blah_blah__(__FILE__, __LINE__)
+#else
+#   define hGLErrorScope()
+#endif
+
 struct hRenderCall {
     enum Flag : hUint8 {
         VAOBound = 0x80,
@@ -202,17 +234,24 @@ hUint32 renderThreadMain(void* param) {
                 switch (opcode) {
                 case Op::NoOp: break;
                 case Op::Clear: {
+                    hGLErrorScope();
                     hGLClear* c=(hGLClear*)cmdptr;
                     glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
                     glClear(GL_COLOR_BUFFER_BIT);
                     cmdptr+=sizeof(hGLClear);
                 } break;
                 case Op::Draw: {
+                    hGLErrorScope();
 #define hGetArgs(x) (x*)args; args+=sizeof(x)
 #define hGetArgsN(x,c) (x*)args; args+=(sizeof(x)*(c))
                     hGLDraw* c=(hGLDraw*)cmdptr;
                     hRenderCall* rc = c->rc;
                     hByte* args=rc->opCodes_;
+                    cmdptr+=sizeof(hGLDraw);
+                    static hUint once = 0;
+                    if (once >= 1) break;
+                    ++once;
+
                     if (rc->header_.blend) {
                         auto* blend = hGetArgs(hGLBlend);
                         if (rc->header_.seperateAlpha) {
@@ -286,31 +325,35 @@ hUint32 renderThreadMain(void* param) {
                     }
 
                     // vertex buffer
-                    glBindBuffer(GL_VERTEX_ARRAY, rc->vtxBuf_->name_);
-
                     if (!(rc->flags & hRenderCall::VAOBound)) {
+                        hGLErrorScope();
                         auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
                         glGenVertexArrays(1, &rc->vao);
                         glBindVertexArray(rc->vao);
 
                         for (hUint8 i=0, n=rc->header_.vtxAttCount_; i<n; ++i) {
+                            hGLErrorScope();
+                            glBindBuffer(GL_VERTEX_ARRAY, rc->vtxBuf_->name_);
                             glEnableVertexAttribArray(va[i].index_);
-                            glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, GL_FALSE, va[i].stride_, va[i].pointer_);
+                            glVertexAttribPointer(va[i].index_, va[i].size_, GL_FLOAT/*va[i].type_*/, GL_FALSE, va[i].stride_, va[i].pointer_);
                         }
 
                         rc->flags |= hRenderCall::VAOBound;
                     } else {
+                        hGLErrorScope();
                         glBindVertexArray(rc->vao);
                     }
 
-                    glDrawArrays(c->primType, 0, c->count);
-
-                    cmdptr+=sizeof(hGLDraw);
+                    {
+                        hGLErrorScope();
+                        glDrawArrays(c->primType, 0, c->count);
+                    }
                     break;
 #undef hGetArgs
 #undef hGetArgsN
                 }
                 case Op::Swap: {
+                    hGLErrorScope();
                     SDL_GL_SwapWindow(window_);
                 } break;
                 }
@@ -415,6 +458,7 @@ hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderTyp
 
 hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile) {
     hglEnsureTLSContext();
+    hGLErrorScope();
     auto gls = glCreateShader(hglProfileToType(profile));
     if (!gls)
         return nullptr;
@@ -448,6 +492,7 @@ void destroyShader(hShaderStage* shader) {
 
 hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flags) {
     hglEnsureTLSContext();
+    hGLErrorScope();
     GLuint bname;
     glGenBuffers(1, &bname);
     if (!bname) {
@@ -455,7 +500,7 @@ hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flag
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bname);
     GLuint size = nIndices * (flags & (hUint32)hIndexBufferFlags::DwordIndices ? 4 : 2);
-    glBufferData(GL_ARRAY_BUFFER, size, data, flags & (hUint32)hIndexBufferFlags::DynamicBuffer);
+    glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hIndexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     auto* ib = new hIndexBuffer();
     ib->name_ = bname;
     ib->indices = nIndices;
@@ -473,6 +518,7 @@ void destroyIndexBuffer(hIndexBuffer* ib) {
 
 hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
     hglEnsureTLSContext();
+    hGLErrorScope();
     GLuint bname;
     glGenBuffers(1, &bname);
     if (!bname) {
@@ -480,7 +526,7 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
     }
     glBindBuffer(GL_ARRAY_BUFFER, bname);
     GLuint size = elementsize * elementcount;
-    glBufferData(GL_ARRAY_BUFFER, size, data, flags & (hUint32)hVertexBufferFlags::DynamicBuffer);
+    glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hVertexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     auto* vb = new hVertexBuffer();
     vb->name_ = bname;
     vb->elementCount_ = elementcount;
@@ -499,6 +545,7 @@ void  destroyVertexBuffer(hVertexBuffer* vb) {
 
 hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
     hglEnsureTLSContext();
+    hGLErrorScope();
     GLuint tname;
     glGenTextures(1, &tname);
     glActiveTexture(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS-1);
@@ -590,19 +637,19 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCKS, &ubtotal);
     auto* ubary = (GLchar**)hAlloca(ubtotal*sizeof(GLchar*));
     auto* ubnames = (hChar*)hAlloca(ubtotal*ublimit);
-    auto* ubhashes = (hUint32*)hAlloca(ubtotal*sizeof(hUint32));
+    //auto* ubhashes = (hUint32*)hAlloca(ubtotal*sizeof(hUint32));
 
     for (auto i=0,n=ubtotal; i<n; ++i) {
         auto olen = 0;
         ubary[i] = ubnames+(i*ublimit);
         glGetActiveUniformBlockName(rc->program_, i, ublimit, &olen, ubary[i]);
-        cyMurmurHash3_x86_32(ubary[i], olen, hGetMurmurHashSeed(), ubhashes+i);
+        //cyMurmurHash3_x86_32(ubary[i], olen, hGetMurmurHashSeed(), ubhashes+i);
     }
     header.uniBufferCount_ = ubtotal;
 
     auto getunibufindex = [&](const hStringID& id) -> hUint {
         for (auto i=0, n=ubtotal; i<n; ++i) {
-            if (ubhashes[i]==id.hash()) return i;
+            if (hStrCmp(ubary[i], id.c_str())==0) return i;
         }
         return ~0u;
     };
@@ -615,19 +662,19 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto* anames = (hChar*)hAlloca(atotal*alimit);
     auto* atypes = (GLenum*)hAlloca(atotal*sizeof(GLenum));
     auto* asizes = (GLint*)hAlloca(atotal*sizeof(GLint));
-    auto* ahashes = (hUint32*)hAlloca(atotal*sizeof(hUint32));
+    //auto* ahashes = (hUint32*)hAlloca(atotal*sizeof(hUint32));
 
     for (auto i=0,n=atotal; i<n; ++i) {
         auto olen = 0;
         aary[i] = anames+(i*alimit);
         glGetActiveAttrib(rc->program_, i, alimit, &olen, asizes+i, atypes+i, aary[i]);
-        cyMurmurHash3_x86_32(aary[i], olen, hGetMurmurHashSeed(), ahashes+i);
+        //cyMurmurHash3_x86_32(aary[i], olen, hGetMurmurHashSeed(), ahashes+i);
     }
     header.vtxAttCount_ = atotal;
 
     auto getattribindex = [&](const hStringID& id) -> hUint {
         for (auto i=0, n=atotal; i<n; ++i) {
-            if (ahashes[i]==id.hash()) return i;
+            if (hStrCmp(aary[i], id.c_str())==0) return i;
         }
         return ~0u;
     };
@@ -640,13 +687,13 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto* unames = (hChar*)hAlloca(utotal*ulimit);
     auto* utypes = (GLenum*)hAlloca(utotal*sizeof(GLenum));
     auto* usizes = (GLint*)hAlloca(utotal*sizeof(GLint));
-    auto* uhashes = (hUint32*)hAlloca(utotal*sizeof(hUint32));
+    //auto* uhashes = (hUint32*)hAlloca(utotal*sizeof(hUint32));
 
     for (auto i=0,n=utotal; i<n; ++i) {
         auto olen = 0;
         uary[i] = unames+(i*ulimit);
         glGetActiveUniform(rc->program_, i, ulimit, &olen, usizes+i, utypes+i, uary[i]);
-        cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
+        //cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
         // !!JM TODO: more types handled?
         if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
             ++header.samplerCount_;
@@ -656,7 +703,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     auto getuniformindex = [&](const hStringID& id) -> hUint {
         for (auto i=0, n=utotal; i<n; ++i) {
-            if (uhashes[i]==id.hash()) return i;
+            if (hStrCmp(uary[i], id.c_str())==0) return i;
         }
         return ~0u;
     };

@@ -16,6 +16,9 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
 
     hBool hdSystemWindow::Create( const hdDeviceConfig* deviceconfig ) {
+#ifdef HEART_DEBUG
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
         sdlWindow_ = SDL_CreateWindow(
             "HeartEngine", 
             SDL_WINDOWPOS_CENTERED,
