@@ -223,6 +223,15 @@ static void hglReleaseTLSContext() {
     }
 }
 
+static void hGLSyncFlush() {
+	GLsync fenceId = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 ); 
+	GLenum result = GL_TIMEOUT_EXPIRED; 
+	while(result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) { 
+		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
+		result = glClientWaitSync(fenceId, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
+	}
+}
+
 static void renderDoFrame() {
 	using namespace RenderPrivate;
 
@@ -521,7 +530,7 @@ hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len,
 
     hcAssert(status == GL_TRUE);
     
-
+	hGLSyncFlush();
     auto* s = new hShaderStage();
     s->shaderObj_ = gls;
     return s;
@@ -546,6 +555,7 @@ hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flag
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bname);
     GLuint size = nIndices * (flags & (hUint32)hIndexBufferFlags::DwordIndices ? 4 : 2);
     glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hIndexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+	hGLSyncFlush();
     auto* ib = new hIndexBuffer();
     ib->name = bname;
     ib->indices = nIndices;
@@ -572,6 +582,7 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
     glBindBuffer(GL_ARRAY_BUFFER, bname);
     GLuint size = elementsize * elementcount;
     glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hVertexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+	hGLSyncFlush();
     auto* vb = new hVertexBuffer();
     vb->name = bname;
     vb->elementCount_ = elementcount;
@@ -623,7 +634,7 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
             glTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, fmt, type, initdata[i].data);
         }
     }
-
+	hGLSyncFlush();
     auto* t = new hTexture2D();
     t->name = tname;
     t->target_ = GL_TEXTURE_2D;
@@ -644,7 +655,7 @@ hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 fl
     glGenBuffers(1, &ubname);
     glBindBuffer(GL_UNIFORM_BUFFER, ubname);
     glBufferData(GL_UNIFORM_BUFFER, size, initdata, (flags & (hUint32)hUniformBufferFlags::Dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-
+	hGLSyncFlush();
     auto* ub = new hUniformBuffer();
     ub->name=ubname;
     ub->size_=size;
@@ -1019,7 +1030,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         rc->size_=ns;
     }
-
+	hGLSyncFlush();
     return rc;
 }
 
@@ -1161,7 +1172,7 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
         refinfo->uniformBlocks.push_back(info);
     }
-
+	hGLSyncFlush();
     refinfo->prog = p;
     return refinfo;
 }

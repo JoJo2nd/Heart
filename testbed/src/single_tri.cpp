@@ -74,11 +74,10 @@ public:
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.setVertexBufferLayout(lo, 2);
-
         rc = hRenderer::createRenderCall(rcd);
 
         cl = hRenderer::createCmdList();
-        hRenderer::clear(cl, hColour(1.f, 0.f, 0.f, 1.f), 1.f);
+        hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
 		hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1);
         hRenderer::swapBuffers(cl);
 
