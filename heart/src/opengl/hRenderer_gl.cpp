@@ -66,6 +66,12 @@ struct hGLErrorSentry {
 #   define hGLErrorScope()
 #endif
 
+#ifdef HEART_PLAT_LINUX
+    typedef void* hGLDebugCallback_t;
+#elif defined HEART_PLAT_WINDOWS
+    typedef const void* hGLDebugCallback_t;
+#endif
+
 struct hRenderCall {
     enum Flag : hUint8 {
         VAOBound = 0x80,
@@ -200,7 +206,7 @@ static void hglEnsureTLSContext() {
         TLS::setKeyValue(tlsContext_, ctx);
         SDL_GL_MakeCurrent(window_, ctx);
 		if (GL_ARB_debug_output) {
-			glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+			glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, hGLDebugCallback_t userParam) {
 				hcPrintf("OpenGL Debug Message: %s", message);
 			}, nullptr);
 		}
@@ -432,7 +438,7 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 	}
 
 	if (GL_ARB_debug_output) {
-		glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+		glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, hGLDebugCallback_t userParam) {
 			hcPrintf("OpenGL Debug Message: %s", message);
 		}, nullptr);
 	}
