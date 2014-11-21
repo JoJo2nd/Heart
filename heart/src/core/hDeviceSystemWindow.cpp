@@ -124,6 +124,7 @@ namespace Heart {
 
     void hdSystemWindow::sysEventQuit(hUint syseventid, const hSysEvent* sysevent) {
         signalExit();
+		exit(0);
     }
 
     //////////////////////////////////////////////////////////////////////////

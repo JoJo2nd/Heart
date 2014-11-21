@@ -8,3 +8,4 @@ cvar("startup.script", "/script/startup.lua")
 cvar("debug.server.port", 5682)
 
 cvar("gl.ext.disabled", "")
+cvar("gl.multithreaded", 0)

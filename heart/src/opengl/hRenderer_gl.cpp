@@ -163,7 +163,7 @@ struct hCmdList {
 };
 
 namespace RenderPrivate {
-	hBool				multiThreadedRenderer = true;
+	hBool				multiThreadedRenderer = false;
     SDL_Window*         window_;
     SDL_GLContext       context_;
     hThread             renderThread_;
@@ -200,7 +200,7 @@ static void hglEnsureTLSContext() {
         TLS::setKeyValue(tlsContext_, ctx);
         SDL_GL_MakeCurrent(window_, ctx);
 		if (GL_ARB_debug_output) {
-			glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+			glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
 				hcPrintf("OpenGL Debug Message: %s", message);
 			}, nullptr);
 		}
@@ -397,6 +397,8 @@ hUint32 renderThreadMain(void* param) {
 void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
     using namespace RenderPrivate;
 
+	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("gl.multithreaded", 0);
+
     tlsContext_ = TLS::createKey([](void* ctx) {
         SDL_GL_DeleteContext(ctx);
     });
@@ -421,7 +423,7 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 	}
 
 	if (GL_ARB_debug_output) {
-		glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+		glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
 			hcPrintf("OpenGL Debug Message: %s", message);
 		}, nullptr);
 	}
@@ -483,10 +485,10 @@ GLuint hglProfileToType(hShaderProfile profile) {
     }
 }
 
-static GLenum hglToPrimType(Primative pt) {
+static GLenum hglToPrimType(Primative pt, hUint* count) {
 	switch (pt) {
-	case Primative::Triangles: return GL_TRIANGLES;
-	case Primative::TriangleStrip: return GL_TRIANGLE_STRIP;
+	case Primative::Triangles: (*count) *= 3; return GL_TRIANGLES;
+	case Primative::TriangleStrip: (*count) += 2; return GL_TRIANGLE_STRIP;
 	default: return GL_INVALID_VALUE;
 	}
 }
@@ -705,19 +707,20 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto* anames = (hChar*)hAlloca(atotal*alimit);
     auto* atypes = (GLenum*)hAlloca(atotal*sizeof(GLenum));
     auto* asizes = (GLint*)hAlloca(atotal*sizeof(GLint));
-    //auto* ahashes = (hUint32*)hAlloca(atotal*sizeof(hUint32));
+    auto* aloc = (hUint32*)hAlloca(atotal*sizeof(hUint32));
 
     for (auto i=0,n=atotal; i<n; ++i) {
         auto olen = 0;
         aary[i] = anames+(i*alimit);
         glGetActiveAttrib(rc->program_, i, alimit, &olen, asizes+i, atypes+i, aary[i]);
+		aloc[i] = glGetAttribLocation(rc->program_, aary[i]);
         //cyMurmurHash3_x86_32(aary[i], olen, hGetMurmurHashSeed(), ahashes+i);
     }
     header.vtxAttCount_ = atotal;
 
     auto getattribindex = [&](const hStringID& id) -> hUint {
         for (auto i=0, n=atotal; i<n; ++i) {
-            if (hStrCmp(aary[i], id.c_str())==0) return i;
+            if (hStrCmp(aary[i], id.c_str())==0) return aloc[i];
         }
         return ~0u;
     };
@@ -1006,12 +1009,12 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         for (auto i=0u, n=hRenderCallDesc::vertexLayoutMax_; i<n && !rcd.vertexLayout_[i].bindPoint_.is_default(); ++i) {
             auto bindpoint = getattribindex(rcd.vertexLayout_[i].bindPoint_);
             if (bindpoint != ~0u) {
-                attribs->index_=bindpoint;
-                attribs->size_=rcd.vertexLayout_[i].elementCount_;
-                attribs->type_=inputtypetogl(rcd.vertexLayout_[i].type_);
-                attribs->pointer_=(void*)rcd.vertexLayout_[i].offset_;
-                attribs->stride_=rcd.vertexLayout_[i].stride_;
-                ++attribs;
+				hcAssertMsg(bindpoint < header.vtxAttCount_, "Vertex input index is too high");
+                attribs[bindpoint].index_=bindpoint;
+                attribs[bindpoint].size_=rcd.vertexLayout_[i].elementCount_;
+                attribs[bindpoint].type_=inputtypetogl(rcd.vertexLayout_[i].type_);
+                attribs[bindpoint].pointer_=(void*)rcd.vertexLayout_[i].offset_;
+                attribs[bindpoint].stride_=rcd.vertexLayout_[i].stride_;
             }
         }
         rc->size_=ns;
@@ -1227,8 +1230,8 @@ void clear(hCmdList* cl, hColour colour, hFloat depth) {
 void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims) {
 	auto* cmd = (hGLDraw*)cl->allocCmdMem(Op::Draw, sizeof(hGLDraw));
 	cmd->rc = rc;
-	cmd->primType = hglToPrimType(pt);
 	cmd->count = prims;
+	cmd->primType = hglToPrimType(pt, &cmd->count);
 }
 
 void swapBuffers(hCmdList* cl) {

@@ -26,7 +26,7 @@ layout(location=0) in vec3 in_position;\n\
 layout(location=1) in vec4 in_colour;\n\
 out vec4 inout_colour;\n\
 void main() {\n\
-    inout_colour = in_colour;\n\
+    inout_colour = /*vec4(0, 1, 0, 1);*/in_colour;\n\
     gl_Position.xyz = in_position.xyz;\n\
     gl_Position.w = 1;\n\
 }\n\
@@ -57,12 +57,12 @@ public:
         hFloat verts[] = {
             //pos            //colour
              0.f,  .5f, 0.f, /**/ 1.f, 0.f, 0.f, 1.f,
-             .5f, -.5f, 0.f, /**/ 1.f, 0.f, 0.f, 1.f,
-            -.5f, -.5f, 0.f, /**/ 1.f, 0.f, 0.f, 1.f,
+             .5f, -.5f, 0.f, /**/ 0.f, 1.f, 0.f, 1.f,
+            -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,  0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, 12, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
         vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", eShaderProfile_vs4_0);
