@@ -19,6 +19,7 @@ namespace Heart {
 #ifdef HEART_DEBUG
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
+		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
         sdlWindow_ = SDL_CreateWindow(
             "HeartEngine", 
             SDL_WINDOWPOS_CENTERED,

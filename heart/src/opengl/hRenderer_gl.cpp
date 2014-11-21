@@ -40,7 +40,7 @@ struct hGLErrorSentry {
 
     hGLErrorSentry(const hChar* f, hSize_t l) 
         : file(f), line(l){
-        glGetError(); // clear the error
+        //glGetError(); // clear the error if needed
     }
 
     ~hGLErrorSentry() {
@@ -86,27 +86,38 @@ struct hRenderCall {
     hUint8  flags;
 };
 
-struct hIndexBuffer {
-    GLuint  name_;
+struct hGLObjectBase {
+	hGLObjectBase() 
+		: flags(0) {
+
+	}
+
+	enum class Flag : hUint8 {
+		RenderThreadBound = 0x80, // Set on successful 
+		ValidName		  = 0x40,
+	};
+
+	GLuint  name;
+	hUint32 flags;
+};
+
+struct hIndexBuffer : hGLObjectBase {
     hUint32 indices;
     hUint32 createFlags_;
 };
 
-struct hVertexBuffer {
-    GLuint  name_;
+struct hVertexBuffer : hGLObjectBase {
     hUint32 elementCount_;
     hUint32 elementSize_;
     hUint32 createFlags_;
 };
 
-struct hUniformBuffer {
-    GLuint  name_;
+struct hUniformBuffer : hGLObjectBase {
     hUint   size_;
     hUint32 createFlags_;
 };
 
-struct hTextureBase {
-    GLuint  name_;
+struct hTextureBase : hGLObjectBase {
     GLenum  target_;
     GLuint  internalFormat_;
     GLuint  format_;
@@ -152,11 +163,12 @@ struct hCmdList {
 };
 
 namespace RenderPrivate {
+	hBool				multiThreadedRenderer = true;
     SDL_Window*         window_;
     SDL_GLContext       context_;
     hThread             renderThread_;
 
-    SDL_GLContext       mtContext_;
+	SDL_GLContext       mtContext_ = nullptr;
     hConditionVariable  rtComsSignal;
     hMutex              rtMutex;
 
@@ -181,10 +193,17 @@ static void rtmp_free(void* ptr) {
 static void hglEnsureTLSContext() {
     using namespace RenderPrivate;
     SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
-    if (!ctx) {
+	if (!ctx && multiThreadedRenderer) {
+		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+		SDL_GL_MakeCurrent(window_, mtContext_);
         ctx = SDL_GL_CreateContext(window_);
         TLS::setKeyValue(tlsContext_, ctx);
         SDL_GL_MakeCurrent(window_, ctx);
+		if (GL_ARB_debug_output) {
+			glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+				hcPrintf("OpenGL Debug Message: %s", message);
+			}, nullptr);
+		}
     }
 }
 
@@ -198,172 +217,177 @@ static void hglReleaseTLSContext() {
     using namespace RenderPrivate;
 
     SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
-    if (ctx) {
+	if (ctx) {
         SDL_GL_DeleteContext(ctx);
         TLS::setKeyValue(tlsContext_, nullptr);
     }
+}
+
+static void renderDoFrame() {
+	using namespace RenderPrivate;
+
+	rtFrameSubmitSema.Wait();
+	rtFrameMtx.Lock();
+	hCmdList* fcmds = rtCmdLists_[rtFrameIdx];
+	hCmdList* cmds = rtCmdLists_[rtFrameIdx];
+	rtCmdLists_[rtFrameIdx] = nullptr;
+	rtFrameIdx = (rtFrameIdx + 1) & 0x1;
+	rtFrameMtx.Unlock();
+
+	while (cmds) {
+		cmds = cmds->next;
+		for (hByte* cmdptr = cmds->cmds, *n = cmds->cmds + cmds->cmdsSize; cmdptr < n;) {
+			Op opcode = *((hRenderer::Op*)cmdptr);
+			cmdptr += OpCodeSize;
+			switch (opcode) {
+			case Op::NoOp: break;
+			case Op::Clear: {
+				hGLErrorScope();
+				hGLClear* c = (hGLClear*)cmdptr;
+				glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
+				glClear(GL_COLOR_BUFFER_BIT);
+				cmdptr += sizeof(hGLClear);
+			} break;
+			case Op::Draw: {
+				hGLErrorScope();
+#define hGetArgs(x) (x*)args; args+=sizeof(x)
+#define hGetArgsN(x,c) (x*)args; args+=(sizeof(x)*(c))
+				hGLDraw* c = (hGLDraw*)cmdptr;
+				hRenderCall* rc = c->rc;
+				hByte* args = rc->opCodes_;
+				cmdptr += sizeof(hGLDraw);
+
+				if (rc->header_.blend) {
+					auto* blend = hGetArgs(hGLBlend);
+					if (rc->header_.seperateAlpha) {
+						auto* alpha = hGetArgs(hGLBlend);
+						glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
+						glBlendEquationSeparate(blend->func, alpha->func);
+					}
+					else {
+						glBlendFunc(blend->src, blend->dest);
+						glBlendEquation(blend->func);
+					}
+				}
+				else {
+					glDisable(GL_BLEND);
+				}
+
+				if (rc->header_.depth) {
+					auto* depth = hGetArgs(hGLDepth);
+					glEnable(GL_DEPTH_TEST);
+					glDepthFunc(depth->func);
+					glDepthMask(depth->mask == ~0u);
+				}
+				else {
+					glDisable(GL_DEPTH_TEST);
+				}
+				//depth bais
+				if (rc->header_.depthBais) {
+					auto* depthbais = hGetArgs(hGLDepthBais);
+					//depthbais->depthBias_ = rcd.rasterizer_.depthBias_;
+					//depthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
+					//depthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
+					//depthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
+				}
+				//stencil
+				if (rc->header_.stencil) {
+					auto* stencil = hGetArgs(hGLStencil);
+					//stencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
+					//stencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
+					//stencil->ref_ = rcd.depthStencil_.stencilRef_;
+					//stencil->failOp_ = stenciloptogl(rcd.depthStencil_.stencilFailOp_);
+					//stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
+					//stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
+					//stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
+				}
+				else {
+					glDisable(GL_STENCIL_TEST);
+				}
+				//sampler states
+				if (rc->header_.samplerCount_) {
+					auto* samplers = hGetArgsN(hGLSampler, rc->header_.samplerCount_);
+					for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
+						glBindSampler(samplers[i].index, samplers[i].samplerObj);
+					}
+				}
+				//textures
+				if (rc->header_.textureCount_) {
+					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_);
+					for (hUint8 i = 0, n = rc->header_.textureCount_; i < n; ++i) {
+						glActiveTexture(textures[i].index_);
+						glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
+					}
+				}
+				// uniform buffers
+				if (rc->header_.uniBufferCount_) {
+					auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
+					for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
+						glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
+					}
+				}
+
+				glUseProgram(rc->program_);
+
+				// index
+				if (rc->header_.index) {
+					auto* ib = hGetArgs(hIndexBuffer);
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->name);
+				}
+
+				// vertex buffer
+				if (!(rc->flags & hRenderCall::VAOBound)) {
+					hGLErrorScope();
+					auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
+					glGenVertexArrays(1, &rc->vao);
+					glBindVertexArray(rc->vao);
+
+					for (hUint8 i = 0, n = rc->header_.vtxAttCount_; i < n; ++i) {
+						hGLErrorScope();
+						glBindBuffer(GL_ARRAY_BUFFER, rc->vtxBuf_->name);
+						glEnableVertexAttribArray(va[i].index_);
+						glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, GL_FALSE, va[i].stride_, va[i].pointer_);
+					}
+
+					rc->flags |= hRenderCall::VAOBound;
+				}
+				else {
+					hGLErrorScope();
+					glBindVertexArray(rc->vao);
+				}
+
+					{
+						hGLErrorScope();
+						glDrawArrays(c->primType, 0, c->count);
+					}
+				break;
+#undef hGetArgs
+#undef hGetArgsN
+			}
+			case Op::Swap: {
+				hGLErrorScope();
+				SDL_GL_SwapWindow(window_);
+			} break;
+			}
+		}
+
+		if (cmds == fcmds)
+			break;
+	}
+
+	rtFrameCompleteSema.Post();
 }
 
 hUint32 renderThreadMain(void* param) {
     using namespace RenderPrivate;
 
     context_ = hglTLSMakeCurrent();
-    glewExperimental = GL_TRUE;
-    GLenum result = glewInit();
-    if(result != GLEW_OK) {
-        hcPrintf("glewInit() error %d [%s]", result, glewGetErrorString(result));
-    }
 
     rtComsSignal.signal();
 
     int frame = 0;
     for (;;) {
-        rtFrameSubmitSema.Wait();
-        rtFrameMtx.Lock();
-        hCmdList* fcmds = rtCmdLists_[rtFrameIdx];
-        hCmdList* cmds = rtCmdLists_[rtFrameIdx];
-        rtCmdLists_[rtFrameIdx] = nullptr;
-        rtFrameIdx=(rtFrameIdx+1)&0x1;
-        rtFrameMtx.Unlock();
-
-        while (cmds) {
-            cmds = cmds->next;
-            for (hByte* cmdptr = cmds->cmds, *n=cmds->cmds+cmds->cmdsSize; cmdptr<n; ) {
-                Op opcode = *((hRenderer::Op*)cmdptr); 
-                cmdptr+=OpCodeSize;
-                switch (opcode) {
-                case Op::NoOp: break;
-                case Op::Clear: {
-                    hGLErrorScope();
-                    hGLClear* c=(hGLClear*)cmdptr;
-                    glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
-                    glClear(GL_COLOR_BUFFER_BIT);
-                    cmdptr+=sizeof(hGLClear);
-                } break;
-                case Op::Draw: {
-                    hGLErrorScope();
-#define hGetArgs(x) (x*)args; args+=sizeof(x)
-#define hGetArgsN(x,c) (x*)args; args+=(sizeof(x)*(c))
-                    hGLDraw* c=(hGLDraw*)cmdptr;
-                    hRenderCall* rc = c->rc;
-                    hByte* args=rc->opCodes_;
-                    cmdptr+=sizeof(hGLDraw);
-                    static hUint once = 0;
-                    if (once >= 1) break;
-                    ++once;
-
-                    if (rc->header_.blend) {
-                        auto* blend = hGetArgs(hGLBlend);
-                        if (rc->header_.seperateAlpha) {
-                            auto* alpha = hGetArgs(hGLBlend);
-                            glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
-                            glBlendEquationSeparate(blend->func, alpha->func);
-                        } else {
-                            glBlendFunc(blend->src, blend->dest);
-                            glBlendEquation(blend->func);
-                        }
-                    } else {
-                        glDisable(GL_BLEND);
-                    }
-
-                    if (rc->header_.depth) {
-                        auto* depth=hGetArgs(hGLDepth);
-                        glEnable(GL_DEPTH_TEST);
-                        glDepthFunc(depth->func);
-                        glDepthMask(depth->mask);
-                    } else {
-                        glDisable(GL_DEPTH_TEST);
-                    }
-                    //depth bais
-                    if (rc->header_.depthBais) {
-                        auto* depthbais = hGetArgs(hGLDepthBais);
-                        //depthbais->depthBias_ = rcd.rasterizer_.depthBias_;
-                        //depthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
-                        //depthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
-                        //depthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
-                    }
-                    //stencil
-                    if (rc->header_.stencil) {
-                        auto* stencil = hGetArgs(hGLStencil);
-                        //stencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
-                        //stencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
-                        //stencil->ref_ = rcd.depthStencil_.stencilRef_;
-                        //stencil->failOp_ = stenciloptogl(rcd.depthStencil_.stencilFailOp_);
-                        //stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
-                        //stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
-                        //stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
-                    } else {
-                        glDisable(GL_STENCIL_TEST);
-                    }
-                    //sampler states
-                    if (rc->header_.samplerCount_) {
-                        auto* samplers=hGetArgsN(hGLSampler, rc->header_.samplerCount_);
-                        for (hUint8 i=0, n=rc->header_.samplerCount_; i<n; ++i) {
-                             glBindSampler(samplers[i].index, samplers[i].samplerObj);
-                        }
-                    }
-                    //textures
-                    if (rc->header_.textureCount_) {
-                        auto* textures = hGetArgsN(hGLTexture2D,rc->header_.textureCount_);
-                        for (hUint8 i=0, n=rc->header_.textureCount_; i<n; ++i) {
-                            glActiveTexture(textures[i].index_);
-                            glBindTexture(textures[i].tex_->target_, textures[i].tex_->name_);
-                        }  
-                    }
-                    // uniform buffers
-                    if (rc->header_.uniBufferCount_) {
-                        auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
-                        for (hUint8 i=0, n=rc->header_.uniBufferCount_; i<n; ++i) {
-                            glBindBuffer(ubs[i].index_, ubs[i].ub_->name_);
-                        }
-                    }
-
-                    // index
-                    if (rc->header_.index) {
-                        auto* ib = hGetArgs(hIndexBuffer);
-                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->name_);
-                    }
-
-                    // vertex buffer
-                    if (!(rc->flags & hRenderCall::VAOBound)) {
-                        hGLErrorScope();
-                        auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
-                        glGenVertexArrays(1, &rc->vao);
-                        glBindVertexArray(rc->vao);
-
-                        for (hUint8 i=0, n=rc->header_.vtxAttCount_; i<n; ++i) {
-                            hGLErrorScope();
-                            glBindBuffer(GL_VERTEX_ARRAY, rc->vtxBuf_->name_);
-                            glEnableVertexAttribArray(va[i].index_);
-                            glVertexAttribPointer(va[i].index_, va[i].size_, GL_FLOAT/*va[i].type_*/, GL_FALSE, va[i].stride_, va[i].pointer_);
-                        }
-
-                        rc->flags |= hRenderCall::VAOBound;
-                    } else {
-                        hGLErrorScope();
-                        glBindVertexArray(rc->vao);
-                    }
-
-                    {
-                        hGLErrorScope();
-                        glDrawArrays(c->primType, 0, c->count);
-                    }
-                    break;
-#undef hGetArgs
-#undef hGetArgsN
-                }
-                case Op::Swap: {
-                    hGLErrorScope();
-                    SDL_GL_SwapWindow(window_);
-                } break;
-                }
-            }
-
-            if (cmds == fcmds)
-                break;
-        }
-
-        rtFrameCompleteSema.Post();
+		renderDoFrame();
         ++frame;
     }
 
@@ -382,14 +406,38 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     rtFrameIdx = 0;
 
     window_ = system->getSDLWindow();
-    renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
 
-    rtMutex.Lock();
-    rtComsSignal.wait(&rtMutex);
-    rtMutex.Unlock();
+	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+	
+	mtContext_ = SDL_GL_CreateContext(window_);
+	if (multiThreadedRenderer == false) {
+		TLS::setKeyValue(tlsContext_, mtContext_);
+	}
 
-    mtContext_ = hglTLSMakeCurrent();
+	glewExperimental = GL_TRUE;
+	GLenum result = glewInit();
+	if (result != GLEW_OK) {
+		hcPrintf("glewInit() error %d [%s]", result, glewGetErrorString(result));
+	}
 
+	if (GL_ARB_debug_output) {
+		glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+			hcPrintf("OpenGL Debug Message: %s", message);
+		}, nullptr);
+	}
+
+	if (multiThreadedRenderer == true) {
+		SDL_GL_MakeCurrent(window_, nullptr);
+
+		renderThread_.create("OpenGL Render Thread", hThread::PRIORITY_NORMAL, hFUNCTOR_BINDSTATIC(hThreadFunc, renderThreadMain), nullptr);
+
+		rtMutex.Lock();
+		rtComsSignal.wait(&rtMutex);
+		rtMutex.Unlock();
+
+		hglTLSMakeCurrent();
+	}
+	
     //check for required extentions
     // !!JM TODO: handle failure better than just asserting...
     if (!GLEW_VERSION_3_3) {
@@ -400,11 +448,6 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     }
     if (!GLEW_EXT_texture_sRGB) {
         hcAssertFailMsg("GL_EXT_texture_sRGB is required but not found.");    
-    }
-    if (GL_KHR_debug) {
-        glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, void* userParam) {
-            hcPrintf("OpenGL Debug Message: %s", message);
-        }, nullptr);
     }
 }
 
@@ -502,7 +545,7 @@ hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flag
     GLuint size = nIndices * (flags & (hUint32)hIndexBufferFlags::DwordIndices ? 4 : 2);
     glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hIndexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     auto* ib = new hIndexBuffer();
-    ib->name_ = bname;
+    ib->name = bname;
     ib->indices = nIndices;
     ib->createFlags_ = flags;
     return ib;
@@ -511,7 +554,7 @@ hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flag
 void destroyIndexBuffer(hIndexBuffer* ib) {
     //deletes are deferred, render thread will do it
     auto fn = [=]() {
-        glDeleteShader(ib->name_);
+        glDeleteShader(ib->name);
         delete ib;
     };
 }
@@ -528,7 +571,7 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
     GLuint size = elementsize * elementcount;
     glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hVertexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     auto* vb = new hVertexBuffer();
-    vb->name_ = bname;
+    vb->name = bname;
     vb->elementCount_ = elementcount;
     vb->elementSize_ = elementsize;
     vb->createFlags_ = flags;
@@ -538,7 +581,7 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
 void  destroyVertexBuffer(hVertexBuffer* vb) {
     //deletes are deferred, render thread will do it
     auto fn = [=]() {
-        glDeleteShader(vb->name_);
+        glDeleteShader(vb->name);
         delete vb;
     };
 }
@@ -580,7 +623,7 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
     }
 
     auto* t = new hTexture2D();
-    t->name_ = tname;
+    t->name = tname;
     t->target_ = GL_TEXTURE_2D;
     t->internalFormat_ = intfmt;
     t->format_ = fmt;
@@ -589,7 +632,7 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
 
 void  destroyTexture2D(hTexture2D* t) {
     auto fn = [=]() {
-        glDeleteTextures(1, &t->name_);
+        glDeleteTextures(1, &t->name);
         delete t;
     };
 }
@@ -601,7 +644,7 @@ hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 fl
     glBufferData(GL_UNIFORM_BUFFER, size, initdata, (flags & (hUint32)hUniformBufferFlags::Dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
     auto* ub = new hUniformBuffer();
-    ub->name_=ubname;
+    ub->name=ubname;
     ub->size_=size;
     ub->createFlags_=flags;
     return ub;
@@ -609,7 +652,7 @@ hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 fl
 
 void destroyUniformBuffer(hUniformBuffer* ub) {
     auto fn = [=]() {
-        glDeleteBuffers(1, &ub->name_);
+        glDeleteBuffers(1, &ub->name);
         delete ub;
     };
 }
@@ -1201,6 +1244,10 @@ void submitFrame(hCmdList* cl) {
     rtCmdLists_[rtFrameIdx] = cl;
     rtFrameMtx.Unlock();
     rtFrameSubmitSema.Post();
+
+	if (multiThreadedRenderer == false) {
+		renderDoFrame();
+	}
 }
    
 }
