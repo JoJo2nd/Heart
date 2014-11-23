@@ -78,6 +78,11 @@ file(GLOB HEART_CORE_FILES
     "${HEART_SOURCE_DIR}/src/core/*.h"
     "${HEART_SOURCE_DIR}/src/core/*.cpp"
 )
+file(GLOB HEART_LFDS_FILES 
+    "${HEART_SOURCE_DIR}/src/lfds/*.h"
+    "${HEART_SOURCE_DIR}/src/lfds/*.c"
+    "${HEART_SOURCE_DIR}/src/lfds/*.cpp"
+)
 file(GLOB HEART_COMPUTE_FILES 
     "${HEART_SOURCE_DIR}/src/compute/*.h"
     "${HEART_SOURCE_DIR}/src/compute/*.cpp"
@@ -179,6 +184,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_COMPONENTS_FILES}
     ${HEART_COMPUTE_FILES}
     ${HEART_CORE_FILES}
+    ${HEART_LFDS_FILES}
     ${HEART_DEBUG_FILES}
     ${HEART_DEVICE_MATH_FILES}
     ${HEART_EVENTS_FILES}
@@ -210,6 +216,7 @@ source_group(base FILES ${HEART_BASE_FILES})
 source_group(components FILES ${HEART_COMPONENTS_FILES})
 source_group(compute FILES ${HEART_COMPUTE_FILES})
 source_group(core FILES ${HEART_CORE_FILES})
+source_group(lfds FILES ${HEART_LFDS_FILES})
 source_group(debug FILES ${HEART_DEBUG_FILES})
 source_group(events FILES ${HEART_EVENTS_FILES})
 source_group(input FILES ${HEART_INPUT_FILES})

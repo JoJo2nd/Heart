@@ -1258,6 +1258,10 @@ void swapBuffers(hCmdList* cl) {
 void submitFrame(hCmdList* cl) {
     using namespace RenderPrivate;
 
+    // it might be enought to do this only here. 
+    // No newly created resources can get to the render thread than via here.
+    hGLSyncFlush();
+
     rtFrameCompleteSema.Wait();
     rtFrameMtx.Lock();
     hcAssert(rtCmdLists_[rtFrameIdx] == nullptr);
