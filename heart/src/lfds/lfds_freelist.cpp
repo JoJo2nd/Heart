@@ -80,6 +80,73 @@ int lfds_freelist_new( struct lfds_freelist_state **fs, lfds_atom_t number_eleme
   return( rv );
 }
 
+lfds_atom_t lfds_freelist_internal_new_element( struct lfds_freelist_state *fs, struct lfds_freelist_element **fe )
+{
+  lfds_atom_t
+    rv = 0;
+
+  assert( fs != NULL );
+  assert( fe != NULL );
+
+  /* TRD : basically, does what you'd expect;
+           allocates an element
+           calls the user init function
+           if anything fails, cleans up,
+           sets *fe to NULL
+           and returns 0
+  */
+
+  *fe = (struct lfds_freelist_element *) lfds_liblfds_aligned_malloc( sizeof(struct lfds_freelist_element), LFDS_ALIGN_DOUBLE_POINTER );
+
+  if( *fe != NULL )
+  {
+    if( fs->user_data_init_function == NULL )
+    {
+      (*fe)->user_data = NULL;
+      rv = 1;
+    }
+
+    if( fs->user_data_init_function != NULL )
+    {
+      rv = fs->user_data_init_function( &(*fe)->user_data, fs->user_state );
+
+      if( rv == 0 )
+      {
+        lfds_liblfds_aligned_free( *fe );
+        *fe = NULL;
+      }
+    }
+  }
+
+  if( rv == 1 )
+    lfds_abstraction_increment( (lfds_atom_t *) &fs->element_count );
+
+  return( rv );
+}
+
+lfds_atom_t lfds_freelist_new_elements(struct lfds_freelist_state *fs, lfds_atom_t number_elements)
+{
+	struct lfds_freelist_element
+		*fe;
+
+	lfds_atom_t
+		loop,
+		count = 0;
+
+	assert(fs != NULL);
+	// TRD : number_elements can be any value in its range
+	// TRD : user_data_init_function can be NULL
+
+	for (loop = 0; loop < number_elements; loop++)
+		if (lfds_freelist_internal_new_element(fs, &fe))
+		{
+			lfds_freelist_push(fs, fe);
+			count++;
+		}
+
+	return(count);
+}
+
 /****************************************************************************/
 #pragma warning( disable : 4100 )
 
@@ -265,9 +332,9 @@ void lfds_freelist_internal_validate( struct lfds_freelist_state *fs, struct lfd
       if( fe_fast != NULL )
         fe_fast = fe_fast->next[LFDS_FREELIST_POINTER];
     }
-    while( fe_slow != NULL and fe_fast != fe_slow );
+    while( fe_slow != NULL && fe_fast != fe_slow );
 
-  if( fe_fast != NULL and fe_slow != NULL and fe_fast == fe_slow )
+  if( fe_fast != NULL && fe_slow != NULL && fe_fast == fe_slow )
     *lfds_freelist_validity = LFDS_VALIDITY_INVALID_LOOP;
 
   /* TRD : now check for expected number of elements
@@ -275,7 +342,7 @@ void lfds_freelist_internal_validate( struct lfds_freelist_state *fs, struct lfd
            we know we don't have a loop from our earlier check
   */
 
-  if( *lfds_freelist_validity == LFDS_VALIDITY_VALID and vi != NULL )
+  if( *lfds_freelist_validity == LFDS_VALIDITY_VALID && vi != NULL )
   {
     fe = (struct lfds_freelist_element *) fs->top[LFDS_FREELIST_POINTER];
 

@@ -14,6 +14,7 @@ namespace hRenderer {
 struct hUniformBuffer;
 struct hTexture2D;
 struct hRenderCall;
+struct hRenderFence;
 
 enum class Op : hUint8 {
     NoOp = 0,
@@ -21,12 +22,17 @@ enum class Op : hUint8 {
     Swap,
 	Draw,
     Jump,
+	Fence,
 };
 
 static hUint OpCodeSize = 1; // 1 byte
 
 struct hGLJump {
     void* next;
+};
+
+struct hGLFence {
+	hRenderFence* fence;
 };
 
 struct hGLRCHeader {

@@ -23,6 +23,7 @@
 #include "render/hRenderPrim.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
+#include "lfds/lfds.h"
 #include <GL/glew.h>    
 #include <GL/gl.h>
 #include <SDL.h>
@@ -74,6 +75,11 @@ struct hGLErrorSentry {
 #elif defined HEART_PLAT_WINDOWS
     typedef const void* hGLDebugCallback_t;
 #endif
+
+struct hRenderFence {
+	lfds_freelist_element* element;
+	GLsync     sync;
+};
 
 struct hRenderCall {
     enum Flag : hUint8 {
@@ -181,6 +187,9 @@ struct hCmdList {
 };
 
 namespace RenderPrivate {
+
+	static const hUint  FRAME_COUNT = 3;
+
 	hBool				multiThreadedRenderer = false;
     SDL_Window*         window_;
     SDL_GLContext       context_;
@@ -192,17 +201,22 @@ namespace RenderPrivate {
 
     hSize_t             tlsContext_;
 
-    hCmdList*           rtCmdLists_[2];
-    hSemaphore          rtFrameSubmitSema;
-    hSemaphore          rtFrameCompleteSema;
+    hCmdList*           rtCmdLists_[FRAME_COUNT];
     hMutex              rtFrameMtx;
     hUint               rtFrameIdx;
+
+	lfds_freelist_state* fenceFreeList;
+	hSize_t				 fenceCount;
+	hRenderFence*		 fences;
 
     hMutex              memAccess;
     hUint               memIndex;
     hUint               renderScratchMemSize;
-    hByte*              renderScratchMem[2];
-    hUint               renderScratchAllocd[2];
+    hByte*              renderScratchMem[FRAME_COUNT];
+    hSize_t             renderScratchAllocd[FRAME_COUNT];
+
+	hUint				fenceIndex;
+	hRenderFence*		frameFences[FRAME_COUNT];
 }
 
 // !!JM TODO: Improve these (make lock-free?), they are placeholder
@@ -214,6 +228,13 @@ static void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
     renderScratchAllocd[memIndex] += size;
     hcAssertMsg(renderScratchAllocd[memIndex] < renderScratchMemSize, "Renderer ran out of scratch memory. This is fatal");
     return r;
+}
+
+static void rtmp_frameend() {
+	using namespace RenderPrivate;
+	hMutexAutoScope sentry(&memAccess);
+	renderScratchAllocd[memIndex] = 0;
+	memIndex = (memIndex+1)%FRAME_COUNT;
 }
 
 static void hglEnsureTLSContext() {
@@ -261,12 +282,16 @@ static void hGLSyncFlush() {
 static void renderDoFrame() {
 	using namespace RenderPrivate;
 
-	rtFrameSubmitSema.Wait();
+	//rtFrameSubmitSema.Wait();
+	hCmdList* fcmds = nullptr;
+	hCmdList* cmds = nullptr;
 	rtFrameMtx.Lock();
-	hCmdList* fcmds = rtCmdLists_[rtFrameIdx];
-	hCmdList* cmds = rtCmdLists_[rtFrameIdx];
-	rtCmdLists_[rtFrameIdx] = nullptr;
-	rtFrameIdx = (rtFrameIdx + 1) & 0x1;
+	if (rtCmdLists_[rtFrameIdx]) {
+		fcmds = rtCmdLists_[rtFrameIdx];
+		cmds = rtCmdLists_[rtFrameIdx];
+		rtCmdLists_[rtFrameIdx] = nullptr;		
+	}
+	rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
 	rtFrameMtx.Unlock();
 
 	while (cmds) {
@@ -282,6 +307,12 @@ static void renderDoFrame() {
 				glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
 				glClear(GL_COLOR_BUFFER_BIT);
 				cmdptr += sizeof(hGLClear);
+			} break;
+			case Op::Fence: {
+				hGLErrorScope();
+				hGLFence* c = (hGLFence*)cmdptr;
+				cmdptr += sizeof(hGLFence);
+				c->fence->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 			} break;
 			case Op::Draw: {
 				hGLErrorScope();
@@ -410,7 +441,8 @@ static void renderDoFrame() {
 			break;
 	}
 
-	rtFrameCompleteSema.Post();
+
+	//rtFrameCompleteSema.Post();
 }
 
 hUint32 renderThreadMain(void* param) {
@@ -434,6 +466,23 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 
 	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("gl.multithreaded", 0);
     renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
+	fenceCount = hConfigurationVariables::getCVarUint("renderer.fencecount", 256);
+	fences = new hRenderFence[fenceCount];
+
+	for (hUint i=0; i<fenceCount; ++i) {
+		fences[i].sync = nullptr;
+	}
+	lfds_freelist_new(&fenceFreeList, fenceCount, [&](void** user_data, void* user_state) -> int {
+		static hUint initFaces = 0;
+		*user_data = fences+initFaces;
+		++initFaces;
+		return 1;
+	}, nullptr);
+	
+	fenceIndex = 0;
+	for (auto& i:frameFences) {
+		i = nullptr;
+	}
 
     for (auto& mem : renderScratchMem) {
         mem = (hByte*)hMalloc(renderScratchMemSize);
@@ -443,8 +492,6 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
         SDL_GL_DeleteContext(ctx);
     });
 
-    rtFrameSubmitSema.Create(0, 1);
-    rtFrameCompleteSema.Create(1, 1);
     rtFrameIdx = 0;
 
     window_ = system->getSDLWindow();
@@ -1261,6 +1308,40 @@ void clear(hCmdList* cl, hColour colour, hFloat depth) {
     cmd->depth = depth;
 }
 
+hRenderFence* fence(hCmdList* cl) {
+	using namespace RenderPrivate;
+
+	lfds_freelist_element* e;
+	hRenderFence* f;
+	lfds_freelist_use(fenceFreeList);
+	lfds_freelist_pop(fenceFreeList, &e);
+	hcAssertMsg(e, "Ran out of fences. This is fatal.");
+	lfds_freelist_get_user_data_from_element(e, (void**)&f);
+
+	f->element = e;
+	auto* cmd = (hGLFence*)cl->allocCmdMem(Op::Fence, sizeof(hGLFence));
+	cmd->fence = f;
+	return f;
+}
+
+void wait(hRenderFence* fence) {
+	using namespace RenderPrivate;
+	hglEnsureTLSContext();
+	while (fence->sync == nullptr) {
+		hAtomic::LWMemoryBarrier();
+	}
+	hcAssert(glIsSync(fence->sync));
+	GLenum result = GL_TIMEOUT_EXPIRED;
+	while (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
+		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
+		result = glClientWaitSync(fence->sync, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
+	}
+
+	glDeleteSync(fence->sync);
+	fence->sync = nullptr;
+	lfds_freelist_push(fenceFreeList, fence->element);
+}
+
 void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims) {
 	auto* cmd = (hGLDraw*)cl->allocCmdMem(Op::Draw, sizeof(hGLDraw));
 	cmd->rc = rc;
@@ -1274,19 +1355,29 @@ void swapBuffers(hCmdList* cl) {
 
 void submitFrame(hCmdList* cl) {
     using namespace RenderPrivate;
+	auto writeindex = fenceIndex;
+	// wait for prev frame to finish
+	if (frameFences[fenceIndex]) {
+		wait(frameFences[fenceIndex]);
+		frameFences[fenceIndex] = nullptr;
+	}
 
-    // it might be enought to do this only here. 
-    // No newly created resources can get to the render thread than via here.
-    hGLSyncFlush();
+	hCmdList* ncl=cl->prev;
 
-    rtFrameCompleteSema.Wait();
-    rtFrameMtx.Lock();
-    hcAssert(rtCmdLists_[rtFrameIdx] == nullptr);
-    rtCmdLists_[rtFrameIdx] = cl;
-    rtFrameMtx.Unlock();
-    rtFrameSubmitSema.Post();
+	hcAssert(frameFences[fenceIndex] == nullptr);
+	frameFences[fenceIndex] = fence(ncl);
+	fenceIndex = (fenceIndex+1)%FRAME_COUNT;
 
-    // Flip render scrach buffer
+	// Push next frame
+	//rtFrameCompleteSema.Wait();
+	rtFrameMtx.Lock();
+	hcAssert(rtCmdLists_[writeindex] == nullptr);
+	rtCmdLists_[writeindex] = cl;
+	rtFrameMtx.Unlock();
+	//rtFrameSubmitSema.Post();
+
+	// Reset & Flip render scratch buffer
+	rtmp_frameend();
 
 	if (multiThreadedRenderer == false) {
 		renderDoFrame();

@@ -47,6 +47,7 @@ namespace hRenderer {
     struct hIndexBuffer;
     struct hVertexBuffer;
     struct hUniformBuffer;
+	struct hRenderFence;
 
     void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
     void					destroy();
@@ -86,6 +87,8 @@ namespace hRenderer {
 
     void clear(hCmdList* cl, hColour colour, hFloat depth);
 	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims);
+	hRenderFence* fence(hCmdList* cl);
+	void wait(hRenderFence* fence);
     void swapBuffers(hCmdList* cl);
 
     void submitFrame(hCmdList* cmds);

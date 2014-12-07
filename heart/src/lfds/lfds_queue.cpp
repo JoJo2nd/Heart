@@ -295,7 +295,7 @@ void lfds_queue_internal_queue( struct lfds_queue_state *qs, struct lfds_queue_e
 
     LFDS_BARRIER_LOAD;
 
-    if( qs->enqueue[LFDS_QUEUE_POINTER] == enqueue[LFDS_QUEUE_POINTER] and qs->enqueue[LFDS_QUEUE_COUNTER] == enqueue[LFDS_QUEUE_COUNTER] )
+    if( qs->enqueue[LFDS_QUEUE_POINTER] == enqueue[LFDS_QUEUE_POINTER] && qs->enqueue[LFDS_QUEUE_COUNTER] == enqueue[LFDS_QUEUE_COUNTER] )
     {
       if( next[LFDS_QUEUE_POINTER] == NULL )
       {
@@ -361,12 +361,12 @@ int lfds_queue_dequeue( struct lfds_queue_state *qs, void **user_data )
 
     LFDS_BARRIER_LOAD;
 
-    if( dequeue[LFDS_QUEUE_POINTER] == qs->dequeue[LFDS_QUEUE_POINTER] and dequeue[LFDS_QUEUE_COUNTER] == qs->dequeue[LFDS_QUEUE_COUNTER] )
+    if( dequeue[LFDS_QUEUE_POINTER] == qs->dequeue[LFDS_QUEUE_POINTER] && dequeue[LFDS_QUEUE_COUNTER] == qs->dequeue[LFDS_QUEUE_COUNTER] )
     {
-      if( enqueue[LFDS_QUEUE_POINTER] == dequeue[LFDS_QUEUE_POINTER] and next[LFDS_QUEUE_POINTER] == NULL )
+      if( enqueue[LFDS_QUEUE_POINTER] == dequeue[LFDS_QUEUE_POINTER] && next[LFDS_QUEUE_POINTER] == NULL )
         state = LFDS_QUEUE_STATE_EMPTY;
 
-      if( enqueue[LFDS_QUEUE_POINTER] == dequeue[LFDS_QUEUE_POINTER] and next[LFDS_QUEUE_POINTER] != NULL )
+      if( enqueue[LFDS_QUEUE_POINTER] == dequeue[LFDS_QUEUE_POINTER] && next[LFDS_QUEUE_POINTER] != NULL )
         state = LFDS_QUEUE_STATE_ENQUEUE_OUT_OF_PLACE;
 
       if( enqueue[LFDS_QUEUE_POINTER] != dequeue[LFDS_QUEUE_POINTER] )
