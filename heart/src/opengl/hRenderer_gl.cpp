@@ -10,6 +10,7 @@
 #include "core/hSystem.h"
 #include "pal/hDeviceThread.h"
 #include "threading/hThreadLocalStorage.h"
+#include "threading/hMutexAutoScope.h"
 #include "pal/hSemaphore.h"
 #include "render/hIndexBufferFlags.h"
 #include "render/hVertexBufferFlags.h"
@@ -33,6 +34,8 @@ namespace Heart {
 class hSystem;
 
 namespace hRenderer {
+
+static void* rtmp_malloc(hSize_t size, hUint alignment=16);
 
 struct hGLErrorSentry {
     const hChar* file;
@@ -134,37 +137,46 @@ struct hTexture2D : hTextureBase {
 };
 
 struct hCmdList {
-    static const hUint MinCmdBlockSize = 64*1024;
+    static const hUint MinCmdBlockSize = 4*1024;
     hCmdList() {
         prev = next = this;
-        cmds = (hByte*)hMalloc(MinCmdBlockSize);
-        cmdsSize = 0;
-        cmdsReserve = MinCmdBlockSize;
-    }
-    ~hCmdList() {
-        hFree(cmds);
         cmds = nullptr;
+        nextcmd = nullptr;
+        cmdsSize = 0;
+        cmdsReserve = 0;
     }
+
     hByte* allocCmdMem(Op opcode, hUint s) {
         auto needed = s+OpCodeSize;
+
         if ((cmdsReserve - cmdsSize) < needed) {
-            hRealloc(cmds, cmdsReserve+MinCmdBlockSize);
-            cmdsReserve += MinCmdBlockSize;
+            hByte* memnext=(hByte*)rtmp_malloc(MinCmdBlockSize);
+            if (nextcmd != nullptr) {
+                // need to write a jump
+                auto j=nextcmd+cmdsSize;
+                cmdsSize+=sizeof(hGLJump)+OpCodeSize;
+                *((Op*)j) = Op::Jump;
+                ((hGLJump*)(j+OpCodeSize))->next = memnext;
+            }
+            nextcmd = memnext;
+            // note remaining space but leave enough for another jump cmd
+            cmdsReserve += MinCmdBlockSize-(sizeof(hGLJump)+OpCodeSize);
+            if (!cmds) {
+                cmds = nextcmd;
+            }
         }
-        hByte* r=cmds+cmdsSize;
-        cmdsSize+=needed;
+
+        hByte* r=nextcmd;
+        cmdsSize+=needed; nextcmd+=needed;
+
         *((Op*)r) = opcode;
         return (r+OpCodeSize);
     }
-    void clear() {
-        cmdsSize = 0;
-    }
 
     hCmdList* prev, *next;
-    hByte* cmds;
+    hByte* cmds, *nextcmd;
     hUint  cmdsSize;
     hUint  cmdsReserve;
-
 
 };
 
@@ -185,15 +197,23 @@ namespace RenderPrivate {
     hSemaphore          rtFrameCompleteSema;
     hMutex              rtFrameMtx;
     hUint               rtFrameIdx;
+
+    hMutex              memAccess;
+    hUint               memIndex;
+    hUint               renderScratchMemSize;
+    hByte*              renderScratchMem[2];
+    hUint               renderScratchAllocd[2];
 }
 
-// !!JM TODO: Improve these, they are placeholder & rtmp_free may be unnessary (i.e. we always free at frame end) 
-static void* rtmp_malloc(hSize_t size) {
-    return hMalloc(size);
-}
-
-static void rtmp_free(void* ptr) {
-    hFree(ptr);
+// !!JM TODO: Improve these (make lock-free?), they are placeholder
+static void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
+    using namespace RenderPrivate;
+    hMutexAutoScope sentry(&memAccess);
+    renderScratchAllocd[memIndex] = hAlign(renderScratchAllocd[memIndex], alignment);
+    void* r = renderScratchMem[memIndex] + renderScratchAllocd[memIndex];
+    renderScratchAllocd[memIndex] += size;
+    hcAssertMsg(renderScratchAllocd[memIndex] < renderScratchMemSize, "Renderer ran out of scratch memory. This is fatal");
+    return r;
 }
 
 static void hglEnsureTLSContext() {
@@ -413,6 +433,11 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     using namespace RenderPrivate;
 
 	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("gl.multithreaded", 0);
+    renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
+
+    for (auto& mem : renderScratchMem) {
+        mem = (hByte*)hMalloc(renderScratchMemSize);
+    }
 
     tlsContext_ = TLS::createKey([](void* ctx) {
         SDL_GL_DeleteContext(ctx);
@@ -1209,15 +1234,7 @@ hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i) {
 }
 
 hCmdList* createCmdList() {
-    return new hCmdList();
-}
-
-void      destroyCmdList(hCmdList*) {
-
-}
-
-void      clearCmdList(hCmdList* cl) {
-    cl->clear();
+    return new (rtmp_malloc(sizeof(hCmdList))) hCmdList();
 }
 
 void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i) {
@@ -1268,6 +1285,8 @@ void submitFrame(hCmdList* cl) {
     rtCmdLists_[rtFrameIdx] = cl;
     rtFrameMtx.Unlock();
     rtFrameSubmitSema.Post();
+
+    // Flip render scrach buffer
 
 	if (multiThreadedRenderer == false) {
 		renderDoFrame();

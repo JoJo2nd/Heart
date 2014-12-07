@@ -4,8 +4,7 @@
 		{
 			"cmd":
 			[
-				"make",
-				"-j10"
+				"make"
 			],
 			"name": "Build \"Heart All x64\"",
 			"selector": "source.c++",
@@ -58,7 +57,7 @@
 	    	"-I/usr/include/freetype2",
 	    	"-I/usr/include/SDL2",
 	    	"-I${project_path}/int/build/tools/proto/pb_lite",
-	        "-I${project_path}/heart/src",
+	        "-I${project_path}/heart/src/**",
 	        "-I${project_path}/heart/src/posix",
 	        "-I${project_path}/heart/src/linux",
 	        "-I${project_path}/heart/src/openal",

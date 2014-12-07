@@ -20,9 +20,14 @@ enum class Op : hUint8 {
     Clear,
     Swap,
 	Draw,
+    Jump,
 };
 
 static hUint OpCodeSize = 1; // 1 byte
+
+struct hGLJump {
+    void* next;
+};
 
 struct hGLRCHeader {
     union {

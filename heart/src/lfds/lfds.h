@@ -185,3 +185,24 @@ void *lfds_freelist_get_user_data_from_element( struct lfds_freelist_element *fe
 void lfds_freelist_set_user_data_in_element( struct lfds_freelist_element *fe, void *user_data );
 
 void lfds_freelist_query( struct lfds_freelist_state *fs, enum lfds_freelist_query_type query_type, void *query_input, void *query_output );
+
+/***** lfds_queue *****/
+
+/***** enums *****/
+enum lfds_queue_query_type {
+	LFDS_QUEUE_QUERY_ELEMENT_COUNT,
+};
+
+/***** incomplete types *****/
+struct lfds_queue_state;
+
+/***** public prototypes *****/
+int lfds_queue_new( struct lfds_queue_state **sq, lfds_atom_t number_elements );
+void lfds_queue_use( struct lfds_queue_state *qs );
+void lfds_queue_delete( struct lfds_queue_state *qs, void (*user_data_delete_function)(void *user_data, void *user_state), void *user_state );
+
+int lfds_queue_enqueue( struct lfds_queue_state *qs, void *user_data );
+int lfds_queue_guaranteed_enqueue( struct lfds_queue_state *qs, void *user_data );
+int lfds_queue_dequeue( struct lfds_queue_state *qs, void **user_data );
+
+void lfds_queue_query( struct lfds_queue_state *qs, enum lfds_queue_query_type query_type, void *query_input, void *query_output );

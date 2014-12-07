@@ -79,8 +79,6 @@ namespace hRenderer {
     void* allocTempRenderMemory( hUint32 size );
 
     hCmdList* createCmdList();
-    void      destroyCmdList(hCmdList* cl);
-    void      clearCmdList(hCmdList* cl);
     void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i);
     void      detachCmdLists(hCmdList* i);
     hCmdList* nextCmdList(hCmdList* i);
