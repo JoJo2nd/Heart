@@ -103,7 +103,8 @@ struct hRenderCall {
 
 struct hGLObjectBase {
 	hGLObjectBase() 
-		: flags(0) {
+		: persistantMapping(nullptr)
+		, flags(0) {
 
 	}
 
@@ -112,6 +113,7 @@ struct hGLObjectBase {
 		ValidName		  = 0x40,
 	};
 
+	void*   persistantMapping;
 	GLuint  name;
 	hUint32 flags;
 };
@@ -130,6 +132,8 @@ struct hVertexBuffer : hGLObjectBase {
 struct hUniformBuffer : hGLObjectBase {
     hUint   size_;
     hUint32 createFlags_;
+	hUint	mappedOffset_;
+	hUint	mappedSize_;
 };
 
 struct hTextureBase : hGLObjectBase {
@@ -282,7 +286,6 @@ static void hGLSyncFlush() {
 static void renderDoFrame() {
 	using namespace RenderPrivate;
 
-	//rtFrameSubmitSema.Wait();
 	hCmdList* fcmds = nullptr;
 	hCmdList* cmds = nullptr;
 	rtFrameMtx.Lock();
@@ -313,6 +316,12 @@ static void renderDoFrame() {
 				hGLFence* c = (hGLFence*)cmdptr;
 				cmdptr += sizeof(hGLFence);
 				c->fence->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+			} break;
+			case Op::UniBufferFlush: {
+				auto* c = (hGLUniBufferFlush*)cmdptr;
+				cmdptr += sizeof(hGLUniBufferFlush);
+				c->ub->mappedOffset_ = c->offset;
+				c->ub->mappedSize_ = c->size;
 			} break;
 			case Op::Draw: {
 				hGLErrorScope();
@@ -389,7 +398,8 @@ static void renderDoFrame() {
 				if (rc->header_.uniBufferCount_) {
 					auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
 					for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
-						glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
+						glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
+						//glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
 					}
 				}
 
@@ -422,10 +432,10 @@ static void renderDoFrame() {
 					glBindVertexArray(rc->vao);
 				}
 
-					{
-						hGLErrorScope();
-						glDrawArrays(c->primType, 0, c->count);
-					}
+				{
+					hGLErrorScope();
+					glDrawArrays(c->primType, 0, c->count);
+				}
 				break;
 #undef hGetArgs
 #undef hGetArgsN
@@ -440,9 +450,6 @@ static void renderDoFrame() {
 		if (cmds == fcmds)
 			break;
 	}
-
-
-	//rtFrameCompleteSema.Post();
 }
 
 hUint32 renderThreadMain(void* param) {
@@ -653,19 +660,39 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
     hglEnsureTLSContext();
     hGLErrorScope();
     GLuint bname;
+	GLenum gl_flags;
+	hBool dynamic = (flags & (hUint32)hUniformBufferFlags::Dynamic) == (hUint32)hUniformBufferFlags::Dynamic;
+	void* mapped_ptr = nullptr;
+	if (dynamic) {
+		gl_flags = GL_MAP_WRITE_BIT |
+			GL_MAP_COHERENT_BIT |
+			GL_MAP_PERSISTENT_BIT;
+	}
+	else {
+		gl_flags = GL_STATIC_DRAW;
+	}
+
     glGenBuffers(1, &bname);
     if (!bname) {
         return nullptr;
     }
     glBindBuffer(GL_ARRAY_BUFFER, bname);
     GLuint size = elementsize * elementcount;
-    glBufferData(GL_ARRAY_BUFFER, size, data, (flags & (hUint32)hVertexBufferFlags::DynamicBuffer) ?  GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+
+	if (dynamic) {
+		glBufferStorage(GL_ARRAY_BUFFER, size, data, gl_flags);
+		mapped_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, gl_flags);
+	} else {
+		glBufferData(GL_ARRAY_BUFFER, size, data, gl_flags);
+	}
 	hGLSyncFlush();
+
     auto* vb = new hVertexBuffer();
     vb->name = bname;
     vb->elementCount_ = elementcount;
     vb->elementSize_ = elementsize;
     vb->createFlags_ = flags;
+	vb->persistantMapping = mapped_ptr;
     return vb;
 }
 
@@ -729,16 +756,42 @@ void  destroyTexture2D(hTexture2D* t) {
 }
 
 hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
+	hglEnsureTLSContext();
+	hGLErrorScope();
     GLuint ubname;
+	GLenum gl_flags;
+	hBool dynamic = (flags & (hUint32)hUniformBufferFlags::Dynamic) == (hUint32)hUniformBufferFlags::Dynamic;
+	void* mapped_ptr = nullptr;
+	if (dynamic) {
+		gl_flags =	GL_MAP_WRITE_BIT |
+					GL_MAP_COHERENT_BIT |
+					GL_MAP_PERSISTENT_BIT;
+	} else {
+		gl_flags = GL_STATIC_DRAW;
+	}
+
     glGenBuffers(1, &ubname);
     glBindBuffer(GL_UNIFORM_BUFFER, ubname);
-    glBufferData(GL_UNIFORM_BUFFER, size, initdata, (flags & (hUint32)hUniformBufferFlags::Dynamic) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+	if (dynamic) {
+		glBufferStorage(GL_UNIFORM_BUFFER, size, initdata, gl_flags);
+		mapped_ptr = glMapBufferRange(GL_UNIFORM_BUFFER, 0, size, gl_flags);
+	} else {
+		glBufferData(GL_UNIFORM_BUFFER, size, initdata, gl_flags);
+	}
 	hGLSyncFlush();
     auto* ub = new hUniformBuffer();
     ub->name=ubname;
     ub->size_=size;
     ub->createFlags_=flags;
+	ub->persistantMapping = mapped_ptr;
+	ub->mappedOffset_=0;
+	ub->mappedSize_=size;
     return ub;
+}
+
+void* getMappingPtr(hUniformBuffer* ub) {
+	hcAssertMsg(ub && ub->persistantMapping, "Buffer is not dynamic!");
+	return ub->persistantMapping;
 }
 
 void destroyUniformBuffer(hUniformBuffer* ub) {
@@ -1347,6 +1400,13 @@ void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims) {
 	cmd->rc = rc;
 	cmd->count = prims;
 	cmd->primType = hglToPrimType(pt, &cmd->count);
+}
+
+void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
+	auto* cmd = (hGLUniBufferFlush*)cl->allocCmdMem(Op::UniBufferFlush, sizeof(hGLUniBufferFlush));
+	cmd->ub = ub;
+	cmd->offset = offset;
+	cmd->size = size;
 }
 
 void swapBuffers(hCmdList* cl) {

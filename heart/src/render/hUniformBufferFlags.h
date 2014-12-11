@@ -8,7 +8,7 @@
 namespace Heart {
 namespace hRenderer {
     enum class hUniformBufferFlags {
-        Dynamic,
+        Dynamic = 0x8000000,
     };
 }
 }

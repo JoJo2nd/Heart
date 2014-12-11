@@ -67,12 +67,15 @@ namespace hRenderer {
     void  destroyTexture2D(hTexture2D* t);
 
     hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags);
+	void* getMappingPtr(hVertexBuffer* vb);
     void  destroyIndexBuffer(hIndexBuffer* ib);
 
     hVertexBuffer*  createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+	void* getMappingPtr(hVertexBuffer* vb);
     void  destroyVertexBuffer(hVertexBuffer* vb);
 
     hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
+	void* getMappingPtr(hUniformBuffer* ub);
     void destroyUniformBuffer(hUniformBuffer* ub);
 
     hRenderCall* createRenderCall(const hRenderCallDesc& rcd); 
@@ -87,6 +90,7 @@ namespace hRenderer {
 
     void clear(hCmdList* cl, hColour colour, hFloat depth);
 	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims);
+	void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
 	hRenderFence* fence(hCmdList* cl);
 	void wait(hRenderFence* fence);
     void swapBuffers(hCmdList* cl);

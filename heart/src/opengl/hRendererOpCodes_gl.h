@@ -23,6 +23,7 @@ enum class Op : hUint8 {
 	Draw,
     Jump,
 	Fence,
+	UniBufferFlush,
 };
 
 static hUint OpCodeSize = 1; // 1 byte
@@ -127,6 +128,12 @@ struct hGLDraw {
 	hRenderCall* rc;
 	GLenum		 primType;
 	hUint		 count;
+};
+
+struct hGLUniBufferFlush {
+	hUniformBuffer* ub;
+	hUint			offset;
+	hUint			size;
 };
 
 }
