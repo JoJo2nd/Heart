@@ -107,14 +107,17 @@ namespace Heart
 
 //#define hStaticArraySize( x ) (sizeof(x)/sizeof(x[0]))
 //Improved SizeofArray
-#   ifdef HEART_Cx11
+#   ifndef HEART_PLAT_WINDOWS
     template <typename t_ty, hSize_t n> 
     constexpr hSize_t hArraySize(const t_ty (&)[n]) { return n; }
+    #define hStaticArraySize(x) hArraySize(x)
+    #define hStaticArraySizeConstExpr(x) hArraySize(x)
 #else
     template < typename t_ty, hSize_t n >
     hSize_t hArraySize(const t_ty (&)[n]) { return n; }
+    #define hStaticArraySize(x) hArraySize(x)
+    #define hStaticArraySizeConstExpr(x) (sizeof(x)/sizeof(x[0]))
 #   endif
-#define hStaticArraySize(x) hArraySize(x)
 
 #define HEART_PRIVATE_COPY(x) private: x(const x&); x& operator = (const x&)
 

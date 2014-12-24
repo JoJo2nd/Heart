@@ -58,10 +58,12 @@ void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture1D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t1D_=tex;
+            t.texType_ = 1;
             return;
         } else if (t.name_.is_default()) {
             t.name_=name;
             t.t1D_=tex;
+            t.texType_ = 1;
             return;
         }
     }
@@ -73,10 +75,12 @@ void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture2D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t2D_=tex;
+            t.texType_ = 2;
             return;
         } else if (t.name_.is_default()) {
             t.name_=name;
             t.t2D_=tex;
+            t.texType_ = 2;
             return;
         }
     }
@@ -88,10 +92,12 @@ void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture3D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t3D_=tex;
+            t.texType_ = 3;
             return;
         } else if (t.name_.is_default()) {
             t.name_=name;
             t.t3D_=tex;
+            t.texType_ = 3;
             return;
         }
     }

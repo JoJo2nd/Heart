@@ -77,9 +77,8 @@ namespace hResourceManager
     void    printResourceInfo();
     // Will start garbage cycle if one is not started, runs cycle for step seconds
     void    collectGarbage(hFloat step);
-    void    addResource(void* ptr, hStringID res_id, hObjectDestroyProc destructor);
-    void    makeLink(void* resource, void* other);
-    void    removeLink(void* resource, void* other);
+    void    addResource(void* ptr, hStringID package_id, hStringID res_id, hStringID type_id, hObjectDestroyProc destructor);
+    void    removeResource(hStringID res_id);
     void*   pinResource(hStringID res_id);
     void*   weakResourceRef(hStringID res_id);
     void    unpinResource(void* ptr);
@@ -90,11 +89,11 @@ namespace hResourceManager
     template< typename t_ty>
     t_ty* weakResource(hStringID res_id) {
         hStringID type_id;
-        void* ptr = weakResourceRef(res_id);
-        //if (type_id == t_ty::getTypeNameStatic()) {
+        void* ptr = getResourcePtrType(res_id, &type_id);
+        if (ptr && type_id == t_ty::getTypeNameStatic()) {
             return (t_ty*)ptr;
-        //}
-        //return nullptr;
+        }
+        return nullptr;
     }
 }
 

@@ -97,14 +97,14 @@ namespace hRenderer {
         struct hSamplerStateDesc {
             hSamplerStateDesc() {
                 filter_        = proto::renderstate::point;
-                addressU_      = proto::renderstate::clamp;
-                addressV_      = proto::renderstate::clamp;
-                addressW_      = proto::renderstate::clamp;
+                addressU_      = proto::renderstate::wrap;
+                addressV_      = proto::renderstate::wrap;
+                addressW_      = proto::renderstate::wrap;
                 mipLODBias_    = 0;
                 maxAnisotropy_ = 16;
                 borderColour_  = WHITE;
-                minLOD_        = -FLT_MAX;
-                maxLOD_        = FLT_MAX;
+                minLOD_        = -1000;
+                maxLOD_        = 1000;
             }
 
             proto::renderstate::SamplerState  filter_;

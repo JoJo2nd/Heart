@@ -58,7 +58,6 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         fileSystem_ = filesystem;
         fileQueue_ = fileQueue;
         packageName_ = hStringID(packageName);
-        hResourceManager::addResource(this, packageName_, autogen_destroy_package);
         packageState_=PkgState::LoadPkgDesc;
     }
 
@@ -118,9 +117,14 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         resourceJobArray_.resize(totalResources_);
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+
+    void hResourcePackage::unload() {
+        hcAssert(isInReadyState());//TODO: Allow canceling?
+        for (const auto& i:resourceJobArray_) {
+            hResourceManager::removeResource(i.resourceID_);
+        }
+        packageState_ = PkgState::Unloaded;
+    }
 
     hBool hResourcePackage::update() {
         hBool ret = hFalse;
@@ -182,9 +186,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             for (auto& res : resourceJobArray_) {
                 if (!res.linked_ && res.objectDef_->link_(res.createdResource_)) {
                     res.linked_ = true;
-                    hResourceManager::addResource(res.createdResource_, res.resourceID_, res.objectDef_->destroy_);
-                    hResourceManager::makeLink(this, res.createdResource_);
-                    hResourceManager::unpinResource(res.createdResource_);
+                    hResourceManager::addResource(res.createdResource_, packageName_, res.resourceID_, res.resourceType_, res.objectDef_->destroy_);
                 }
                 if (res.linked_) {
                     ++linked;
@@ -192,6 +194,14 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             }
             packageState_ = linked == resourceJobArray_.size() ? PkgState::Loaded : PkgState::ResourceLinking;
         } break;
+        case PkgState::Destroying: {
+            for (auto& res : resourceJobArray_) {
+                res.objectDef_->destroy_(res.createdResource_);
+                res.createdResource_ = nullptr;
+            }
+            resourceJobArray_.clear();
+            packageState_ = PkgState::Destroyed;
+        }
         default:{
         } break;
         }
@@ -240,5 +250,4 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         };*/
         return "null";
     }
-
 }

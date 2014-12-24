@@ -140,7 +140,7 @@ namespace Heart
         hActionManager*     getActionManager()      { return actionManager_; }
         hSystemConsole*     GetConsole()            { return console_; }
         hLuaStateManager*   GetVM()                 { return luaVM_; }
-        hJobManager*        GetJobManager()         { return jobManager_; }
+        hJobManager*        GetJobManager()         { return jobManager; }
         hSoundManager*      GetSoundManager()       { return soundManager_; }
 
         static const hChar* VersionString();
@@ -174,7 +174,7 @@ namespace Heart
         hActionManager*                 actionManager_;
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;
-        hJobManager*                    jobManager_;
+        hJobManager*                    jobManager;
 
         //Debug 
         hDebugMenuManager*              debugMenuManager_;

@@ -49,9 +49,15 @@ namespace Heart {
     };
 
     struct hCachedGlyph {
-        hFontGlyphMetrics   metrics_;
+        //hFontGlyphMetrics   metrics_;
         hGlyphBMNode*       atlas_;
         hFloat              uv_[4]; //top, left, bottom, right
+        hFloat              width;
+        hFloat              height;
+        hFloat              left;
+        hFloat              top;
+        hFloat              advanceX;
+        hFloat              advanceY;
     };
 
     class  hTTFFontFace {

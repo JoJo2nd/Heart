@@ -29,6 +29,7 @@
 #include <SDL.h>
 #include <memory>
 #include <unordered_map>
+#include <functional>
 
 namespace Heart {    
 
@@ -97,7 +98,7 @@ struct hRenderCall {
     hVertexBuffer* vtxBuf_;
     hUint size_;
     hByte* opCodes_;
-    GLuint* samplers_;
+    hGLSampler* samplers_;
     hUint8  flags;
 };
 
@@ -190,6 +191,39 @@ struct hCmdList {
 
 };
 
+struct hRenderDestructBase {
+    hRenderDestructBase()  {
+        next = prev = this;
+    }
+    virtual ~hRenderDestructBase() {
+    }
+
+    hRenderDestructBase* next, *prev;
+
+    static void linkCmdLists(hRenderDestructBase* before, hRenderDestructBase* after, hRenderDestructBase* i) {
+        i->next = before->next;
+        i->prev = after->prev;
+        before->next = i;
+        after->prev = i;
+    }
+
+    static void detachCmdLists(hRenderDestructBase* i) {
+        i->next->prev = i->prev;
+        i->prev->next = i->next;
+        i->next = i;
+        i->prev = i;
+    }
+};
+
+template<typename t_ty>
+struct hRenderDestruct : public hRenderDestructBase {
+    hRenderDestruct(t_ty& t) : proc(t) {}
+    ~hRenderDestruct() {
+        proc();
+    }
+    t_ty proc;
+};
+
 namespace RenderPrivate {
 
 	static const hUint  FRAME_COUNT = 3;
@@ -213,6 +247,8 @@ namespace RenderPrivate {
 	hSize_t				 fenceCount;
 	hRenderFence*		 fences;
 
+    lfds_queue_state*   destructionQueue;
+
     hMutex              memAccess;
     hUint               memIndex;
     hUint               renderScratchMemSize;
@@ -221,6 +257,13 @@ namespace RenderPrivate {
 
 	hUint				fenceIndex;
 	hRenderFence*		frameFences[FRAME_COUNT];
+    hRenderDestructBase	pendingDeletes[FRAME_COUNT];
+
+    struct GLCaps {
+        hInt MaxTextureUnits;
+        hInt UniformBufferOffsetAlignment;
+        hBool ImmutableTextureStorage;
+    } Caps;
 }
 
 // !!JM TODO: Improve these (make lock-free?), they are placeholder
@@ -239,6 +282,24 @@ static void rtmp_frameend() {
 	hMutexAutoScope sentry(&memAccess);
 	renderScratchAllocd[memIndex] = 0;
 	memIndex = (memIndex+1)%FRAME_COUNT;
+}
+
+template < typename t_ty >
+static void enqueueRenderResourceDelete(t_ty& fn) {
+    using namespace RenderPrivate;
+    auto* r = new hRenderDestruct<t_ty>(fn);
+    lfds_queue_use(destructionQueue);
+    while (lfds_queue_enqueue(destructionQueue, r) == 0) {
+        Device::ThreadYield();
+    }
+}
+
+static hRenderDestructBase* dequeueRenderResourceDelete() {
+    using namespace RenderPrivate;
+    lfds_queue_use(destructionQueue);
+    hRenderDestructBase* ret = nullptr;
+    lfds_queue_dequeue(destructionQueue, (void**)&ret);
+    return ret;
 }
 
 static void hglEnsureTLSContext() {
@@ -286,6 +347,11 @@ static void hGLSyncFlush() {
 static void renderDoFrame() {
 	using namespace RenderPrivate;
 
+    //catch last deletes, if any
+    while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
+        hRenderDestructBase::linkCmdLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
+    }
+
 	hCmdList* fcmds = nullptr;
 	hCmdList* cmds = nullptr;
 	rtFrameMtx.Lock();
@@ -297,7 +363,17 @@ static void renderDoFrame() {
 	rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
 	rtFrameMtx.Unlock();
 
+    // do pending deletes
+    for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
+        n = i->next;
+        delete i;
+    }
+    pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
+
 	while (cmds) {
+        while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
+            hRenderDestructBase::linkCmdLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
+        }
 		cmds = cmds->next;
 		for (hByte* cmdptr = cmds->cmds, *n = cmds->cmds + cmds->cmdsSize; cmdptr < n;) {
 			Op opcode = *((hRenderer::Op*)cmdptr);
@@ -316,6 +392,7 @@ static void renderDoFrame() {
 				hGLFence* c = (hGLFence*)cmdptr;
 				cmdptr += sizeof(hGLFence);
 				c->fence->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+                hAtomic::LWMemoryBarrier();
 			} break;
 			case Op::UniBufferFlush: {
 				auto* c = (hGLUniBufferFlush*)cmdptr;
@@ -379,10 +456,13 @@ static void renderDoFrame() {
 				else {
 					glDisable(GL_STENCIL_TEST);
 				}
+                glUseProgram(rc->program_);
+
 				//sampler states
 				if (rc->header_.samplerCount_) {
 					auto* samplers = hGetArgsN(hGLSampler, rc->header_.samplerCount_);
 					for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
+                        glUniform1i(samplers[i].index, samplers[i].index);
 						glBindSampler(samplers[i].index, samplers[i].samplerObj);
 					}
 				}
@@ -390,8 +470,8 @@ static void renderDoFrame() {
 				if (rc->header_.textureCount_) {
 					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_);
 					for (hUint8 i = 0, n = rc->header_.textureCount_; i < n; ++i) {
-						glActiveTexture(textures[i].index_);
-						glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
+						glActiveTexture(GL_TEXTURE0+textures[i].index_);
+                        glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
 					}
 				}
 				// uniform buffers
@@ -402,8 +482,6 @@ static void renderDoFrame() {
 						//glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
 					}
 				}
-
-				glUseProgram(rc->program_);
 
 				// index
 				if (rc->header_.index) {
@@ -474,6 +552,8 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("gl.multithreaded", 0);
     renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
 	fenceCount = hConfigurationVariables::getCVarUint("renderer.fencecount", 256);
+    auto destruction_queue_size = hConfigurationVariables::getCVarUint("renderer.destroyqueuesize", 256);
+
 	fences = new hRenderFence[fenceCount];
 
 	for (hUint i=0; i<fenceCount; ++i) {
@@ -490,6 +570,8 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 	for (auto& i:frameFences) {
 		i = nullptr;
 	}
+
+    lfds_queue_new(&destructionQueue, destruction_queue_size);
 
     for (auto& mem : renderScratchMem) {
         mem = (hByte*)hMalloc(renderScratchMemSize);
@@ -545,6 +627,15 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     if (!GLEW_EXT_texture_sRGB) {
         hcAssertFailMsg("GL_EXT_texture_sRGB is required but not found.");    
     }
+
+    if ((GLEW_ARB_texture_storage && GLEW_ARB_texture_storage_multisample) || GLEW_VERSION_4_3) {
+        Caps.ImmutableTextureStorage = hTrue;
+    } else {
+        Caps.ImmutableTextureStorage = hFalse;
+    }
+
+    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &Caps.MaxTextureUnits);
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &Caps.UniformBufferOffsetAlignment);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -623,10 +714,10 @@ hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len,
 
 void destroyShader(hShaderStage* shader) {
     //deletes are deferred, render thread will do it
-    auto fn = [=]() {
+    enqueueRenderResourceDelete([=]() {
         glDeleteShader(shader->shaderObj_);
         delete shader;
-    };
+    });
 }
 
 hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flags) {
@@ -650,10 +741,10 @@ hIndexBuffer* createIndexBuffer(const void* data, hUint32 nIndices, hUint32 flag
 
 void destroyIndexBuffer(hIndexBuffer* ib) {
     //deletes are deferred, render thread will do it
-    auto fn = [=]() {
-        glDeleteShader(ib->name);
+    enqueueRenderResourceDelete([=]() {
+        glDeleteBuffers(1, &ib->name);
         delete ib;
-    };
+    });
 }
 
 hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
@@ -698,26 +789,23 @@ hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint3
 
 void  destroyVertexBuffer(hVertexBuffer* vb) {
     //deletes are deferred, render thread will do it
-    auto fn = [=]() {
-        glDeleteShader(vb->name);
+    enqueueRenderResourceDelete([=]() {
+        glDeleteBuffers(1, &vb->name);
         delete vb;
-    };
+    });
 }
 
 hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
     hglEnsureTLSContext();
     hGLErrorScope();
     GLuint tname;
-    glGenTextures(1, &tname);
-    glActiveTexture(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS-1);
-    glBindTexture(GL_TEXTURE_2D, tname);
-
     GLuint fmt = GL_INVALID_VALUE;
     GLuint intfmt = GL_INVALID_VALUE;
     GLuint type = GL_INVALID_VALUE;
     hBool compressed = false;
     switch(format) {
-    case hTextureFormat::RGBA8_unorm:      intfmt=GL_RGBA;                                fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    case hTextureFormat::R8_unorm:         intfmt=GL_R8;                                  fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    case hTextureFormat::RGBA8_unorm:      intfmt=GL_RGBA8;                               fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
     case hTextureFormat::RGBA8_sRGB_unorm: intfmt=GL_SRGB8_ALPHA8;                        fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
     case hTextureFormat::BC1_unorm:        intfmt=GL_COMPRESSED_RGB_S3TC_DXT1_EXT;        fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
     case hTextureFormat::BC2_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
@@ -730,15 +818,36 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
     default: hcAssertFailMsg("Can't handle texture format"); return nullptr;
     }
 
+    glActiveTexture(GL_TEXTURE0 + (RenderPrivate::Caps.MaxTextureUnits - 1));
+    glGenTextures(1, &tname);
+    glBindTexture(GL_TEXTURE_2D, tname);
+
+    if (RenderPrivate::Caps.ImmutableTextureStorage) {
+        glTexStorage2D(GL_TEXTURE_2D, levels, intfmt, initdata[0].width, initdata[0].height);
+    }
+
     if (compressed) {
+        if (RenderPrivate::Caps.ImmutableTextureStorage) {
+            (GL_TEXTURE_2D, levels, intfmt, initdata[0].width, initdata[0].height);
+        }
         for (auto i=0u; i<levels; ++i) {
-            glCompressedTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, initdata[i].size, initdata[i].data);
+            if (RenderPrivate::Caps.ImmutableTextureStorage) {
+                glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, initdata[i].width, initdata[i].height, fmt, initdata[i].size, initdata[i].data);
+            } else {
+                glCompressedTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, initdata[i].size, initdata[i].data);
+            }
         }
     } else {
         for (auto i=0u; i<levels; ++i) {
-            glTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, fmt, type, initdata[i].data);
+            if (RenderPrivate::Caps.ImmutableTextureStorage) {
+                glTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, initdata[i].width, initdata[i].height, fmt, type, initdata[i].data);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, fmt, type, initdata[i].data);
+            }
         }
     }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 	hGLSyncFlush();
     auto* t = new hTexture2D();
     t->name = tname;
@@ -749,10 +858,10 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
 }
 
 void  destroyTexture2D(hTexture2D* t) {
-    auto fn = [=]() {
+    enqueueRenderResourceDelete([=]() {
         glDeleteTextures(1, &t->name);
         delete t;
-    };
+    });
 }
 
 hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
@@ -795,10 +904,10 @@ void* getMappingPtr(hUniformBuffer* ub) {
 }
 
 void destroyUniformBuffer(hUniformBuffer* ub) {
-    auto fn = [=]() {
+    enqueueRenderResourceDelete([=]() {
         glDeleteBuffers(1, &ub->name);
         delete ub;
-    };
+    });
 }
 
 hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
@@ -875,15 +984,19 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto* unames = (hChar*)hAlloca(utotal*ulimit);
     auto* utypes = (GLenum*)hAlloca(utotal*sizeof(GLenum));
     auto* usizes = (GLint*)hAlloca(utotal*sizeof(GLint));
+    auto* uloc = (hUint32*)hAlloca(atotal*sizeof(hUint32));
     //auto* uhashes = (hUint32*)hAlloca(utotal*sizeof(hUint32));
 
+    glUseProgram(rc->program_);
     for (auto i=0,n=utotal; i<n; ++i) {
         auto olen = 0;
         uary[i] = unames+(i*ulimit);
         glGetActiveUniform(rc->program_, i, ulimit, &olen, usizes+i, utypes+i, uary[i]);
+        uloc[i] = glGetUniformLocation(rc->program_, uary[i]);
         //cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
         // !!JM TODO: more types handled?
         if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+            glUniform1i(uloc[i], uloc[i]);
             ++header.samplerCount_;
             ++header.textureCount_;
         }
@@ -891,7 +1004,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     auto getuniformindex = [&](const hStringID& id) -> hUint {
         for (auto i=0, n=utotal; i<n; ++i) {
-            if (hStrCmp(uary[i], id.c_str())==0) return i;
+            if (hStrCmp(uary[i], id.c_str())==0) return uloc[i];
         }
         return ~0u;
     };
@@ -1051,10 +1164,10 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         return GL_INVALID_VALUE;
     };
     if (header.samplerCount_) {
-        auto ns = (hUint32)(rc->size_+(sizeof(GLuint)*header.samplerCount_));
+        auto ns = (hUint32)(rc->size_+(sizeof(hGLSampler)*header.samplerCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* samplers = (hGLSampler*)(rc->opCodes_+rc->size_);
-        auto* wsamplers = samplers;
+        rc->samplers_ = (hGLSampler*)(rc->opCodes_+rc->size_);
+        auto* wsamplers = rc->samplers_;
         for (auto i=0u, n=hRenderCallDesc::samplerStateMax_; i<n && !rcd.samplerStates_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.samplerStates_[i].name_);
             if (si != ~0u) {
@@ -1163,6 +1276,17 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     }
 	hGLSyncFlush();
     return rc;
+}
+
+void destroyRenderCall(hRenderCall* rc) {
+    enqueueRenderResourceDelete([=]{
+        glDeleteProgram(rc->program_);
+        for (hUint i=0,n=rc->header_.samplerCount_; i<n; ++i) {
+            glDeleteSamplers(1, &rc->samplers_[i].samplerObj);
+        }
+        delete rc->opCodes_;
+        delete rc;
+    });
 }
 
 struct hProgramReflectionInfo {
@@ -1301,6 +1425,7 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         info.name = refinfo->ubNames.get()+(i*uniblocknamelimit);
         glGetActiveUniformBlockName(p, i, uniblocknamelimit, nullptr, refinfo->ubNames.get()+(i*uniblocknamelimit));
         glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
+        info.dynamicSize = hAlign(info.size, RenderPrivate::Caps.UniformBufferOffsetAlignment);
         refinfo->uniformBlocks.push_back(info);
     }
 	hGLSyncFlush();
@@ -1309,7 +1434,10 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
 }
 
 void destroyProgramReflectionInfo(hProgramReflectionInfo* p) {
-
+    enqueueRenderResourceDelete([=](){
+        glDeleteProgram(p->prog);
+        delete p;
+    });
 }
 
 hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name) {

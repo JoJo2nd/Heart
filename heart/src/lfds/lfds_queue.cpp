@@ -242,23 +242,23 @@ int lfds_queue_enqueue( struct lfds_queue_state *qs, void *user_data )
 
 
 /****************************************************************************/
-int lfds_queue_guaranteed_enqueue( struct lfds_queue_state *qs, void *user_data )
-{
-  LFDS_ALIGN(LFDS_ALIGN_DOUBLE_POINTER) struct lfds_queue_element
-    *qe[LFDS_QUEUE_PAC_SIZE];
-
-  assert( qs != NULL );
-  // TRD : user_data can be NULL
-
-  lfds_queue_internal_guaranteed_new_element_from_freelist( qs, qe, user_data );
-
-  if( qe[LFDS_QUEUE_POINTER] == NULL )
-    return( 0 );
-
-  lfds_queue_internal_queue( qs, qe );
-
-  return( 1 );
-}
+// int lfds_queue_guaranteed_enqueue( struct lfds_queue_state *qs, void *user_data )
+// {
+//   LFDS_ALIGN(LFDS_ALIGN_DOUBLE_POINTER) struct lfds_queue_element
+//     *qe[LFDS_QUEUE_PAC_SIZE];
+// 
+//   assert( qs != NULL );
+//   // TRD : user_data can be NULL
+// 
+//   lfds_queue_internal_guaranteed_new_element_from_freelist( qs, qe, user_data );
+// 
+//   if( qe[LFDS_QUEUE_POINTER] == NULL )
+//     return( 0 );
+// 
+//   lfds_queue_internal_queue( qs, qe );
+// 
+//   return( 1 );
+// }
 
 
 
@@ -403,4 +403,24 @@ int lfds_queue_dequeue( struct lfds_queue_state *qs, void **user_data )
     lfds_freelist_push( qs->fs, dequeue[LFDS_QUEUE_POINTER]->fe );
 
   return( rv );
+}
+
+/****************************************************************************/
+void lfds_queue_internal_init_element(struct lfds_queue_state *qs, struct lfds_queue_element *qe[LFDS_QUEUE_PAC_SIZE], struct lfds_freelist_element *fe, void *user_data)
+{
+    assert(qs != NULL);
+    assert(qe != NULL);
+    assert(fe != NULL);
+    // TRD : user_data can be any value in its range
+
+    lfds_freelist_get_user_data_from_element(fe, (void **)&qe[LFDS_QUEUE_POINTER]);
+    qe[LFDS_QUEUE_COUNTER] = (struct lfds_queue_element *) lfds_abstraction_increment((lfds_atom_t *)&qs->aba_counter);
+
+    qe[LFDS_QUEUE_POINTER]->next[LFDS_QUEUE_POINTER] = NULL;
+    qe[LFDS_QUEUE_POINTER]->next[LFDS_QUEUE_COUNTER] = (struct lfds_queue_element *) lfds_abstraction_increment((lfds_atom_t *)&qs->aba_counter);
+
+    qe[LFDS_QUEUE_POINTER]->fe = fe;
+    qe[LFDS_QUEUE_POINTER]->user_data = user_data;
+
+    return;
 }

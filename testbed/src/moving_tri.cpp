@@ -90,7 +90,7 @@ public:
 		for (hUint i=0, n=hRenderer::getUniformatBlockCount(refInfo); i<n; ++i) {
 			auto param_info = hRenderer::getUniformatBlockInfo(refInfo, i);
 			if (hStrCmp(param_info.name,"TimerBlock") == 0) {
-				paramBlockSize = hMax(param_info.size, 256);
+				paramBlockSize = param_info.dynamicSize;
 			}
 		}
 		ub = hRenderer::createUniformBuffer(nullptr, paramBlockSize*3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
@@ -113,13 +113,20 @@ public:
 
         SetCanRender(hTrue);
     }
-    ~MovingTri() {}
+    ~MovingTri() {
+        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyUniformBuffer(ub);
+        hRenderer::destroyProgramReflectionInfo(refInfo);
+        hRenderer::destroyVertexBuffer(vb);
+        hRenderer::destroyShader(frag);
+        hRenderer::destroyShader(vert);
+    }
 
     virtual hUint32 RunUnitTest() override {
 
-        // if (timer_.elapsedSec() > 30 || getForceExitFlag()) {
-        //     SetExitCode(UNIT_TEST_EXIT_CODE_OK);
-        // }
+        if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
+            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+        }
 
         return 0;
     }

@@ -65,6 +65,7 @@
         // luaL_setfuncs(L,funcs,1);
         // lua_pop(L, 1);// pop heart module table
 
+        REGISTER_UNIT_TEST(*factory_, TextureFont);
 		REGISTER_UNIT_TEST(*factory_, MovingTri);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, Base64);

@@ -47,6 +47,7 @@ struct hUniformBlockInfo {
     const hChar*    name;
     hUint           index;
     hInt            size;
+    hInt            dynamicSize;
 };
 
 hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);

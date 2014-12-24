@@ -86,7 +86,7 @@ namespace Heart {
         // Create engine classes /////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
         mainPublisherCtx_ = new hPublisherContext;
-        jobManager_ = new hJobManager;
+        jobManager = new hJobManager;
         actionManager_ = new hActionManager;
         system_ = new hSystem;
         fileMananger_ = new hDriveFileSystem;
@@ -117,7 +117,7 @@ namespace Heart {
         debugServer_->initialise(hConfigurationVariables::getCVarInt("debug.server.port", 8335));
         mainPublisherCtx_->initialise(1024*1024);
         system_->Create(config_, deviceConfig_);
-        jobManager_->initialise();
+        jobManager->initialise();
         actionManager_->initialise(system_);
         hClock::initialise();
         config_.Width_ = system_->getWindowWidth();
@@ -130,7 +130,7 @@ namespace Heart {
             config_.MinShaderVersion_,
             config_.Fullscreen_,
             config_.vsync_);
-        hResourceManager::initialise(fileMananger_, jobManager_);
+        hResourceManager::initialise(fileMananger_, jobManager);
         //!!JM todo: soundManager_->Initialise();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,7 +266,7 @@ namespace Heart {
         luaVM_->Destroy();
         hRenderer::destroy();
         debugServer_->destroy();
-        jobManager_->shutdown();
+        jobManager->shutdown();
 
         //delete GetGlobalHeap(), debugInfo_; GetGlobalHeap(), debugInfo_ = nullptr;
         //delete debugMenuManager_; debugMenuManager_ = nullptr; !!JM
@@ -275,7 +275,7 @@ namespace Heart {
         //!!JM todo: delete soundManager_; soundManager_ = nullptr;
         delete actionManager_; actionManager_ = nullptr;
         delete fileMananger_; fileMananger_ = nullptr;
-        delete jobManager_; jobManager_ = nullptr;
+        delete jobManager; jobManager = nullptr;
         delete mainPublisherCtx_; mainPublisherCtx_ = nullptr;
         delete system_; system_ = nullptr;
         delete debugServer_; debugServer_ = nullptr;

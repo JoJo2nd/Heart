@@ -20,20 +20,20 @@ namespace Heart
         {
             hcAssertMsg(hAtomic::AtomicGet(reference_) == 0, "Object instance deleted before all references were released (address=0x%p ref=%u)", this, hAtomic::AtomicGet(reference_));
         }
-        void			AddRef()
+        hUint32 AddRef()
         {
-            hAtomic::Increment( reference_ );
+            return hAtomic::Increment( reference_ );
         }
-        void			DecRef()
+        hUint32 DecRef()
         { 
             hcAssert(hAtomic::AtomicGet(reference_) > 0); 
-            hAtomic::Decrement( reference_ ); 
-            if ( hAtomic::AtomicGet(reference_) == 0 ) 
-            { 
+            auto rc = hAtomic::Decrement( reference_ );
+            if ( rc == 0 ) { 
                 OnZeroRef(); 
             } 
+            return rc;
         }
-        hUint32			GetRefCount() const { return hAtomic::AtomicGet(reference_); }
+        hUint32 GetRefCount() const { return hAtomic::AtomicGet(reference_); }
         
     protected:
         

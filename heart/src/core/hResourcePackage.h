@@ -112,7 +112,7 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hResourcePackage
+    class hResourcePackage : public hIReferenceCounted
     {
     public:
         hObjectType(Heart::hResourcePackage, Heart::proto::PackageHeader);
@@ -123,10 +123,13 @@ namespace Heart
         void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName);
         const hChar*            getPackageName() const { return packageName_.c_str(); }
         hUint32                 getPackageCRC() const { return packageName_.hash(); }
-        void                    beginLoad() {}
+        const hStringID&        getPackageID() const { return packageName_; }
         void                    unload();
+        void                    beginPackageDestroy() { hcAssert(isUnloaded()); packageState_ = PkgState::Destroying; }
         hBool                   update();
         hBool                   isInReadyState() const { return packageState_ == PkgState::Loaded; }
+        hBool                   isUnloaded() const { return packageState_ == PkgState::Unloaded; }
+        hBool                   isDestroyed() const { return packageState_ == PkgState::Destroyed; }
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
 
@@ -158,6 +161,9 @@ namespace Heart
             LoadingResources,
             ResourceLinking,
             Loaded,
+            Unloaded,
+            Destroying,
+            Destroyed,
         };
 
         hStringID                   packageName_;

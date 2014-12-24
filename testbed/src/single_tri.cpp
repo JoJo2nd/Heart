@@ -80,13 +80,18 @@ public:
 
         SetCanRender(hTrue);
     }
-    ~SingleTri() {}
+    ~SingleTri() {
+        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyVertexBuffer(vb);
+        hRenderer::destroyShader(frag);
+        hRenderer::destroyShader(vert);
+    }
 
     virtual hUint32 RunUnitTest() override {
 
-        // if (timer_.elapsedSec() > 30 || getForceExitFlag()) {
-        //     SetExitCode(UNIT_TEST_EXIT_CODE_OK);
-        // }
+        if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
+            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+        }
 
         return 0;
     }

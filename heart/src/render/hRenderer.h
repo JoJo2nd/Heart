@@ -61,7 +61,7 @@ namespace hRenderer {
     
     hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
     hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, Heart::hShaderType type);
-    void  destroyShader(hShaderProgram* prog);
+    void  destroyShader(hShaderStage* prog);
 
     hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
     void  destroyTexture2D(hTexture2D* t);
@@ -78,7 +78,8 @@ namespace hRenderer {
 	void* getMappingPtr(hUniformBuffer* ub);
     void destroyUniformBuffer(hUniformBuffer* ub);
 
-    hRenderCall* createRenderCall(const hRenderCallDesc& rcd); 
+    hRenderCall* createRenderCall(const hRenderCallDesc& rcd);
+    void destroyRenderCall(hRenderCall* rc);
 
     void* allocTempRenderMemory( hUint32 size );
 

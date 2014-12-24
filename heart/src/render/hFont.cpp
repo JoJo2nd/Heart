@@ -177,9 +177,18 @@ const hCachedGlyph* hFontRenderCache::getCachedGlyphBitmap(hTTFFontFace* face, h
             }
         }
         hCachedGlyph cg;
-        cg.metrics_ = ttfglyph->metrics;
+        //cg.metrics_ = ttfglyph->metrics;
+        cg.width = (hFloat)ttfglyph->bitmap.width;
+        cg.height = (hFloat)ttfglyph->bitmap.rows;
         cg.atlas_ = entry;
-        // !!JM TODO: store UVs
+        cg.left = (hFloat)ttfglyph->bitmap_left;
+        cg.top = (hFloat)ttfglyph->bitmap_top;
+        cg.advanceX = (hFloat)(ttfglyph->advance.x >> 6);
+        cg.advanceY = (hFloat)(ttfglyph->advance.y >> 6);
+        cg.uv_[0] = (entry->x+pad_)/(hFloat)textureDim_;
+        cg.uv_[1] = (entry->y+pad_)/(hFloat)textureDim_;
+        cg.uv_[2] = (entry->x+pad_+(entry->w-(pad_*2))) / (hFloat)textureDim_;
+        cg.uv_[3] = (entry->y+pad_+(entry->h-(pad_*2))) / (hFloat)textureDim_;
         cachedGlyphs_.insert(GlyphHashTable::value_type(gh, cg));
         it = cachedGlyphs_.find(gh);
     }
@@ -196,7 +205,9 @@ void  hFontRenderCache::flush() {
     root_->y=0;
     root_->w=textureDim_;
     root_->h=textureDim_;
-    hZeroMem(textureCache_.get(), textureDim_*textureDim_);
+#ifdef HEART_DEBUG
+    hMemSet(textureCache_.get(), 0x0, textureDim_*textureDim_);
+#endif
 }
 
 const char* hFontRenderCache::getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight) {
