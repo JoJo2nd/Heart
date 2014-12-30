@@ -48,6 +48,7 @@ namespace Heart {
             : sdlWindow_(nullptr)
             , systemHandle_(nullptr)
         {
+            hAtomic::AtomicSet(exitSignal_, 0);
         }
 
         hBool                   Create( const hdDeviceConfig* config );
@@ -56,8 +57,8 @@ namespace Heart {
         void                    Update();
         void                    PumpMessages();
         void                    Destroy();
-        void                    signalExit() { exitSignal_.broadcast(); }
-        hBool                   exitSignaled() { return exitSignal_.tryWait(&exitMutex_); }
+        void                    signalExit() { hAtomic::AtomicSet(exitSignal_, 1); }
+        hBool                   exitSignaled() { return hAtomic::AtomicGet(exitSignal_) != 0; }
         hUint32                 getWindowWidth() const { return wndWidth_; }
         hUint32                 getWindowHeight() const { return wndHeight_; }
         hBool                   getOwnWindow() const { return hTrue; }
@@ -82,7 +83,7 @@ namespace Heart {
         hUint32                     wndWidth_;
         hUint32                     wndHeight_;
         hMutex                      exitMutex_;
-        hConditionVariable          exitSignal_;
+        hAtomicInt                  exitSignal_;
         hBool                       hasFocus_;
     };
 }

@@ -1,48 +1,35 @@
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions(-DWXUSINGDLL)
-
 set(MEMTRACK_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set( MEMTRACK_INCLUDE_DIRS
     "${MEMTRACK_SRC_DIR}/include"
-	"${EXTERNAL_SRC_ROOT}/lua/src"
-    "${EXTERNAL_SRC_ROOT}/crypto/include"
-    "${ENET_INCLUDE_DIR}"
-    ${LIBHEART_INCLUDES}
-)
-
-file(GLOB MEMTRACK_HDR_FILES 
-    "${MEMTRACK_SRC_DIR}/src/*.h"
+    "${GETOPT_PORT_INCLUDE_DIR}"
+    "${MEMTRACKERLIB_SRC_DIR}"
 )
 
 file(GLOB MEMTRACK_SRC_FILES
+    "${MEMTRACK_SRC_DIR}/src/*.h"
+    "${MEMTRACK_SRC_DIR}/src/*.c"
     "${MEMTRACK_SRC_DIR}/src/*.cpp"
 )
-ADD_MSVC_PRECOMPILED_HEADER(
-	"${MEMTRACK_SRC_DIR}/src/precompiled.h" 
-	"${MEMTRACK_SRC_DIR}/src/precompiled.cpp" 
-	MEMTRACK_PRECOMPILED_SRC_FILES
-)
 
-source_group(include FILES ${MEMTRACK_HDR_FILES})
 source_group(source  FILES ${MEMTRACK_SRC_FILES})
-source_group(precompiled FILES ${MEMTRACK_PRECOMPILED_SRC_FILES})
 
-if (MSVC)
+if (PLATFORM_WINDOWS)
 	add_definitions(/WX) # Warnings as errors
+    set(PLATFORM_LIBS dbghelp)
 endif()
 
-include_directories(${MEMTRACK_INCLUDE_DIRS} ${wxWidgets_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-add_executable(mem_track WIN32 ${MEMTRACK_SRC_FILES} ${MEMTRACK_HDR_FILES} ${MEMTRACK_PRECOMPILED_SRC_FILES})
-set_property(TARGET mem_track PROPERTY DEBUG_POSTFIX _d)
-target_link_libraries(mem_track enet crypto proto dbghelp ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES})
+include_directories(${MEMTRACK_INCLUDE_DIRS})
+add_executable(mem_track ${MEMTRACK_SRC_FILES} ${MEMTRACK_HDR_FILES})
+target_link_libraries(mem_track crypto getopt_port ${PLATFORM_LIBS})
 
-ADD_CUSTOM_COMMAND(
-	TARGET mem_track
-    POST_BUILD
-	COMMAND ROBOCOPY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.exe ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-)
+#ADD_CUSTOM_COMMAND(
+#	TARGET mem_track
+#    POST_BUILD
+#	COMMAND ROBOCOPY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.exe ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+#	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
+#)

@@ -289,6 +289,9 @@ set(CRYPTO_INCLUDE_DIR
 set(PROTO_SRC_DIR
     "${TOOLS_SRC_ROOT}/proto/src"
 )
+set(MEMTRACKERLIB_SRC_DIR
+    "${TOOLS_SRC_ROOT}/memtrackerlib/src"
+)
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
@@ -378,9 +381,8 @@ add_subdirectory("tools/lualibs/lua_process")
 
 add_subdirectory("tools/proto")
 add_subdirectory("tools/proto_full")
-if (PLATFORM_WINDOWS)
-  # add_subdirectory("tools/memtrack")
-endif()
+add_subdirectory("tools/memtrack")
+add_subdirectory("tools/memtrackerlib")
 add_subdirectory("tools/builder")
 add_subdirectory("tools/pbscan")
 add_subdirectory("tools/pkginspector")

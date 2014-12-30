@@ -22,3 +22,14 @@ IUnitTest* UnitTestFactory::createUnitTest(hUint testidx) {
 
     return nullptr;
 }
+
+const char* UnitTestFactory::getUnitTestName(hUint testindex) {
+    for (const auto& i : tests_) {
+        if (testindex == 0) {
+            return i.name;
+        }
+        --testindex;
+    }
+
+    return nullptr;
+}

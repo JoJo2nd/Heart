@@ -4,19 +4,17 @@
 *********************************************************************/
 #pragma once
 
-#ifndef CALLSTACK_H__
-#define CALLSTACK_H__
-
+#include "memtracktypes.h"
+#include <vector>
+#include <string>
 #include <map>
 
-struct Callstack
-{
+struct Callstack {
     typedef std::vector<uint64>             BacktraceType;
     typedef std::map<uint64, std::string>   SymbolMapType;
 
     Callstack() 
-        : line_(0)
-    {
+        : line_(0) {
     }
 
     void            initilaise(const char* source, uint line);
@@ -33,5 +31,3 @@ struct Callstack
 
     static SymbolMapType    s_symbolMap;
 };
-
-#endif // CALLSTACK_H__

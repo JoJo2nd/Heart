@@ -2,9 +2,8 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
-#include "precompiled.h"
 #include "memlogmarker.h"
+#include <assert.h>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -17,16 +16,7 @@ void MemLogMarker::insertMemAlloc(const AllocRecord& allocr)
     allocs_.push_back(allocr);
 
     AllocMapType::iterator foundalloc = heapView_.find(allocr);
-    if (foundalloc != heapView_.end()){
-        wxString msg;
-        msg.Printf("Warning: allocation 0x%llX has been allocated twice, this suggests that the Free() was done but not tracked\n"
-            "Original allocation was made from %s(%u)\n"
-            "Second allocation was made from %s(%u)\n", 
-            allocr.address_, foundalloc->backtrace_.sourcePath_.c_str(), foundalloc->backtrace_.line_,
-            allocr.backtrace_.sourcePath_.c_str(), allocr.backtrace_.line_);
-        wxMessageDialog mb(NULL, msg);
-        mb.ShowModal();
-    }
+    assert(foundalloc != heapView_.end());
     heapView_.insert(allocr);
 }
 

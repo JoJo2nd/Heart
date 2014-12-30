@@ -2,296 +2,130 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
+#pragma once
 
-#include "precompiled.h"
-#include "memtrack.h"
+#include "memlog.h"
+#include "ioaccess.h"
+#include "getopt.h"
+#include "memtracker.h"
 
-IMPLEMENT_APP(MemTrackApp);
-
-wxDEFINE_EVENT(uiEVT_SERVER_THREAD_UPDATE, wxThreadEvent);
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-bool MemTrackApp::OnInit()
-{
-    wxInitAllImageHandlers();
-
-    MemTrackMainFrame* frame = new MemTrackMainFrame();
-    frame->Show();
-    SetTopWindow(frame);
-
-    return true;
+static void print_usage() {
+    printf("mem_track: ");
+    printf(
+        "Usage: mem_track [options] filepath1 \n"
+        "Available options are:\n"
+        "\tlist-markers           - list all heap markers in file\n"
+        "\toutput, o              - output to file. Without this option stdout is used.\n"
+        );
 }
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(MemTrackMainFrame, wxFrame)
-    EVT_MENU(wxID_OPEN, MemTrackMainFrame::evtOpen)
-    EVT_TOGGLEBUTTON(uiID_CONNECT_CHANGE, MemTrackMainFrame::evtConnectChange)
-    EVT_CLOSE(MemTrackMainFrame::evtClose)  
-END_EVENT_TABLE()
+enum class Option : int { // ensure these match options above
+    optOutputToFile = 0,
+    optListMarkers,
+    optListAllLeaks,
+    optMarker,
+    optLeakCheck,
+};
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
+const char options[] = { "o:m:l" };
+static struct option long_options[] = {
+    { "list-markers", no_argument, 0, 'z' },
+    { "output", required_argument, 0, 'o' },
+    { "list-all-leaks", no_argument, 0, 'a' },
+    { "marker", required_argument, 0, 'm' },
+    { "leak-check", required_argument, 0, 'l' },
+    { 0, 0, 0, 0 }
+};
 
-void MemTrackMainFrame::initFrame()
-{
-    Bind(uiEVT_SERVER_THREAD_UPDATE, &MemTrackMainFrame::evtServerThreadUpdate, this, wxID_ANY);
+struct Options {
+    Options()
+        : listMarkers(false) 
+        , listAllLeaks(false) {
+    }
+    std::string inputFile;
+    std::string outputFile_;
+    std::vector<std::string> markers;
+    bool        listMarkers : 1;
+    bool        listAllLeaks : 1;
+    bool        leakCheck : 1;
+};
 
-    wxMenuBar* menubar = new wxMenuBar();
+bool getOptions(int argc, char **argv, Options* out_opts) {
+    int c;
+    for (;;) {
+        /* getopt_long stores the option index here. */
+        Option opt;
+        int option_index = 0;
 
-    wxMenu* filemenu = new wxMenu();
-    filemenu->Append(wxID_OPEN, "&Open");
-//     filemenu->Append(wxID_SAVE, "&Save");
-//     filemenu->Append(wxID_SAVEAS, "Save &As");
-//     filemenu->Append(uiID_IMPORT, "&Import Memory Log");
+        c = gop_getopt_long(argc, argv, options, long_options, &option_index);
 
-    menubar->Append(filemenu, "&File");
+        /* Detect the end of the options. */
+        if (c == -1)
+            break;
 
-    SetMenuBar(menubar);
-
-    wxNotebook* notebook = new wxNotebook(this, wxID_ANY);
-
-    leakListPage_ = new MemLeakPage(notebook, wxID_ANY);
-    makerTreePage_= new MemMarkerPage(notebook, wxID_ANY);
-
-    notebook->InsertPage(0, leakListPage_, "Leaks");
-    notebook->InsertPage(1, makerTreePage_, "Markers");
-
-    wxToolBar* toolbar=CreateToolBar(/*wxTB_HORZ_TEXT*/);
-//     wxBoxSizer* toolbarsizer=new wxBoxSizer(wxHORIZONTAL);
-//     toolbarsizer->Add(new wxStaticText(toolbar, wxID_ANY, "Server IP Address"));
-//     toolbarsizer->Add(new wxTextCtrl(toolbar, wxID_ANY));
-//     toolbarsizer->Add(new wxStaticText(toolbar, wxID_ANY, "Server Port"));
-//     toolbarsizer->Add(new wxTextCtrl(toolbar, wxID_ANY));
-//     toolbarsizer->Add(new wxToggleButton(toolbar, wxID_ANY, "Connect/Disconnect"));
-//     toolbarsizer->Add(new wxStaticText(toolbar, wxID_ANY, "Disconnected"));
-
-    serverIP_=new wxTextCtrl(toolbar, wxID_ANY);
-    portNum_=new wxTextCtrl(toolbar, wxID_ANY, "1000", wxDefaultPosition, wxDefaultSize, 0, wxIntegerValidator<short>());
-    connectToggle_=new wxToggleButton(toolbar, uiID_CONNECT_CHANGE, "Connect/Disconnect");
-    connectionStateText_=new wxStaticText(toolbar, wxID_ANY, wxEmptyString);
-
-    toolbar->AddControl(new wxStaticText(toolbar, wxID_ANY, "Server IP Address :"));
-    toolbar->AddControl(serverIP_, "Server IP Address");
-    toolbar->AddControl(new wxStaticText(toolbar, wxID_ANY, "Server IP Port :"));
-    toolbar->AddControl(portNum_, "Server IP Port");
-    toolbar->AddControl(connectToggle_);
-    toolbar->AddControl(connectionStateText_);
-    toolbar->Realize();
-    
-    networkThread_ = new GameClientThread(this, &dispatchQueue_, &serverConnectQueue_);
-
-    //Heart::proto::ServiceRegister msg;
-    //msg.set_sevicename("console.log");
-
-    /*client_=enet_host_create(nullptr, 1, 1, 0, 0);
-
-    ENetAddress hostaddress={0};
-    //enet_address_set_host(&hostaddress, "192.168.1.201");
-    enet_address_set_host(&hostaddress, "James-PC");
-    hostaddress.port=8335;
-
-    peer_=enet_host_connect(client_, &hostaddress, 1, 0);
-
-    ENetEvent event;
-    while(enet_host_service(client_, &event, 0)>=0) {
-        switch(event.type) {
-        case ENET_EVENT_TYPE_NONE: break;
-        case ENET_EVENT_TYPE_CONNECT: {
-            uint address=event.peer->address.host;
-            //hcPrintf("Connection from %u.%u.%u.%u : %u", (address&0xFF00000000)>>24, (address&0xFF000000)>>16, (address&&0xFF00)>>8, (address&0xFF), enetevent.peer->address.port);
-            //peers_.push_back(enetevent.peer);
-        } break;
-        case ENET_EVENT_TYPE_DISCONNECT: {
-            uint address=event.peer->address.host;
-            //hcPrintf("Disconnect from %u.%u.%u.%u : %u", (address&0xFF00000000)>>24, (address&0xFF000000)>>16, (address&&0xFF00)>>8, (address&0xFF), enetevent.peer->address.port);
-        } break;
-        case ENET_EVENT_TYPE_RECEIVE: {
-
-        } break;
-        default: break;
+        switch (c) {
+        case 0: opt = (Option)option_index; break;
+        case 'z': opt = Option::optListMarkers; break;
+        case 'o': opt = Option::optOutputToFile; break;
+        case 'a': opt = Option::optListAllLeaks; break;
+        case 'm': opt = Option::optMarker; break;
+        case 'l': opt = Option::optLeakCheck; break;
+        case '?':
+            /* getopt_long already printed an error message. */
+        default:
+            return false;
         }
-    }*/
-}
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MemTrackMainFrame::evtClose( wxCloseEvent& evt )
-{
-    ServerConnectMessage msg = {0};
-    msg.exit_=true;
-    serverConnectQueue_.Post(msg);
-    networkThread_->Wait(wxTHREAD_WAIT_DEFAULT);
-    evt.Skip();
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MemTrackMainFrame::evtOpen(wxCommandEvent& evt)
-{
-    wxFileDialog fileopen(this, 
-        "Open MemLog file", "", "",
-        "Text files (*.txt)|*.txt", 
-        wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-
-    if (fileopen.ShowModal() == wxID_CANCEL) return;
-
-    wxWindowDisabler disableAll;
-    wxBusyInfo wait("Opening Log, Please wait...");
-
-    memLog_.clear();
-    Callstack::clearSymbolMap();
-    parseMemLog(fileopen.GetPath().c_str(), &memLog_, &parserFileAccess_);
-
-    leakListPage_->updateMemLeaks(&memLog_);
-    makerTreePage_->updateMarkerTree(&memLog_);
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MemTrackMainFrame::evtConnectChange(wxCommandEvent& evt) {
-    ServerConnectMessage msg = {0};
-    msg.connect_=connectToggle_->GetValue();
-
-    if (msg.connect_) {
-        enet_address_set_host(&msg.address_, serverIP_->GetValue().c_str());
-        long port;
-        if (portNum_->GetValue().ToLong(&port)) {
-            msg.address_.port=(short)port;
+        switch (opt)
+        {
+        case Option::optListMarkers: out_opts->listMarkers = true; break;
+        case Option::optOutputToFile: out_opts->outputFile_ = optarg; break;
+        case Option::optListAllLeaks: out_opts->listAllLeaks = true; break;
+        case Option::optMarker: out_opts->markers.push_back(optarg); break;
+        case Option::optLeakCheck: out_opts->leakCheck = true; break;
+        default:
+            break;
         }
     }
-    serverConnectQueue_.Post(msg);
-}
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void MemTrackMainFrame::evtServerThreadUpdate(wxThreadEvent& evt) {
-    ConnectionStateUpdate update=evt.GetPayload<ConnectionStateUpdate>();
-    connectionStateText_->SetLabelText(update.getReadableStateMsg());
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-wxThread::ExitCode GameClientThread::Entry() {
-    ServerConnectMessage cntmsg;
-    bool complete=false;
-    ENetHost*       client_=nullptr;
-    ENetPeer*       peer_=nullptr;
-    ENetAddress     hostaddress_={0};
-    bool            attemptConnection_=false;
-    bool            disconnecting=false;
-    enet_initialize();
-    client_=enet_host_create(nullptr, 1, 1, 0, 0);
-
-    while (!complete) {
-        disconnecting=false;
-        wxThreadEvent* wxevent=new wxThreadEvent(uiEVT_SERVER_THREAD_UPDATE);
-        wxevent->SetPayload(ConnectionStateUpdate("Disconnected"));
-        wxQueueEvent(msgHandler_, wxevent);
-
-        connectionQueue_->Receive(cntmsg);
-        attemptConnection_=cntmsg.connect_;
-        if (cntmsg.exit_) {
-            complete=true;
-            attemptConnection_=false;
-        }
-
-        while (attemptConnection_ || peer_) {
-            if (!peer_) {
-                peer_=enet_host_connect(client_, &cntmsg.address_, 1, 0);
-                wxevent=new wxThreadEvent(uiEVT_SERVER_THREAD_UPDATE);
-                wxevent->SetPayload(ConnectionStateUpdate("Connecting"));
-                wxQueueEvent(msgHandler_, wxevent);
-            }
-
-            if (!peer_) {
-                wxSleep(1);
-            } else {
-                ENetEvent event;
-                if (enet_host_service(client_, &event, 0)>=0) {
-                    switch(event.type) {
-                    case ENET_EVENT_TYPE_NONE: break;
-                    case ENET_EVENT_TYPE_CONNECT: {
-                        uint address=event.peer->address.host;
-                        //hcPrintf("Connection from %u.%u.%u.%u : %u", (address&0xFF00000000)>>24, (address&0xFF000000)>>16, (address&&0xFF00)>>8, (address&0xFF), enetevent.peer->address.port);
-                        //peers_.push_back(enetevent.peer);
-                        wxevent=new wxThreadEvent(uiEVT_SERVER_THREAD_UPDATE);
-                        wxevent->SetPayload(ConnectionStateUpdate("Connected"));
-                        wxQueueEvent(msgHandler_, wxevent);
-                    } break;
-                    case ENET_EVENT_TYPE_DISCONNECT: {
-                        uint address=event.peer->address.host;
-                        //connection failed/is gone. break out and try again...
-                        if (peer_) {
-                            peer_=nullptr;
-                            wxevent=new wxThreadEvent(uiEVT_SERVER_THREAD_UPDATE);
-                            wxevent->SetPayload(ConnectionStateUpdate("Disconnected"));
-                            wxQueueEvent(msgHandler_, wxevent);
-                        }
-                        //hcPrintf("Disconnect from %u.%u.%u.%u : %u", (address&0xFF00000000)>>24, (address&0xFF000000)>>16, (address&&0xFF00)>>8, (address&0xFF), enetevent.peer->address.port);
-                    } break;
-                    case ENET_EVENT_TYPE_RECEIVE: {
-
-                    } break;
-                    default: break;
-                    }
-                }
-            }
-            connectionQueue_->ReceiveTimeout(1, cntmsg);
-            attemptConnection_=cntmsg.connect_;
-            if (cntmsg.exit_) {
-                complete=true;
-                attemptConnection_=false;
-            }
-            if (peer_ && !attemptConnection_ && !disconnecting) {
-                enet_peer_disconnect(peer_, 0);
-                wxevent=new wxThreadEvent(uiEVT_SERVER_THREAD_UPDATE);
-                wxevent->SetPayload(ConnectionStateUpdate("Disconnecting"));
-                wxQueueEvent(msgHandler_, wxevent);
-                disconnecting=true;
-            }
-        }
-        
+    /* For any remaining command line arguments (not options) take the first, ignore the rest */
+    if (optind < argc) {
+        out_opts->inputFile = argv[optind];
+        return true;
     }
 
-    enet_host_destroy(client_);
-    enet_deinitialize();
+    return false;
+}
+
+int main(int argc, char* argv[]) {
+    Options options;
+    if (!getOptions(argc, argv, &options)) {
+        print_usage();
+    }
+    FILE* perr = stderr;
+    FILE* pout = stdout;
+
+    MemLog* mem_log;
+    IODevice io;
+    if (parseMemLog(options.inputFile.c_str(), &mem_log, &io) != 0) {
+        fprintf(perr, "Error reading memory trace %s\n", options.inputFile.c_str());
+        return 1;
+    }
+
+    if (options.listMarkers) {
+        mem_log->listAllMarkers(pout);
+    }
+    if (options.listAllLeaks) {
+        mem_log->writeAllLeaks(pout, 0, ~0ull);
+    } else if(options.leakCheck) {
+        mt_uint64 f,l;
+        if (!mem_log->getMarkers(pout, options.markers, &f, &l)) {
+            fprintf(perr, "Error : couldn't find at least 2 markers in trace\n");
+            return 1;
+        }
+        mem_log->writeAllLeaks(pout, f, l);
+    }
+
     return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void GameClientThread::prepareGameNetworkMessage(::google::protobuf::MessageLite* msglite, const char* commandName, hBool reliable) {
-    hUint flags = 0;
-    flags |= reliable ? ENET_PACKET_FLAG_RELIABLE : 0;
-    hUint datasize=msglite->ByteSize();
-    std::string msgstr=msglite->SerializeAsString();
-    ENetPacket* packet=enet_packet_create(hNullptr, datasize+Heart::hNetPacketHeader::s_packetHeaderByteSize, flags);
-    Heart::hNetPacketHeader* hdr=(Heart::hNetPacketHeader*)packet->data;
-    hdr->type_ =Heart::hNetPacketHeader::eCommand;
-    hdr->seqID_=commandCounter_;
-    hdr->nameID_=cyStringCRC32(commandName);
-    memcpy(((hByte*)packet->data)+Heart::hNetPacketHeader::s_packetHeaderByteSize, msgstr.c_str(), datasize);
-
-    dispatchQueue_->Post(packet);
-
-    ++commandCounter_;
 }

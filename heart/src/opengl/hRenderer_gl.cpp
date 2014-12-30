@@ -12,6 +12,7 @@
 #include "threading/hThreadLocalStorage.h"
 #include "threading/hMutexAutoScope.h"
 #include "pal/hSemaphore.h"
+#include "render/hRenderer.h"
 #include "render/hIndexBufferFlags.h"
 #include "render/hVertexBufferFlags.h"
 #include "render/hRenderCallDesc.h"
@@ -188,7 +189,6 @@ struct hCmdList {
     hByte* cmds, *nextcmd;
     hUint  cmdsSize;
     hUint  cmdsReserve;
-
 };
 
 struct hRenderDestructBase {
@@ -200,14 +200,14 @@ struct hRenderDestructBase {
 
     hRenderDestructBase* next, *prev;
 
-    static void linkCmdLists(hRenderDestructBase* before, hRenderDestructBase* after, hRenderDestructBase* i) {
+    static void linkLists(hRenderDestructBase* before, hRenderDestructBase* after, hRenderDestructBase* i) {
         i->next = before->next;
         i->prev = after->prev;
         before->next = i;
         after->prev = i;
     }
 
-    static void detachCmdLists(hRenderDestructBase* i) {
+    static void detachLists(hRenderDestructBase* i) {
         i->next->prev = i->prev;
         i->prev->next = i->next;
         i->next = i;
@@ -227,6 +227,7 @@ struct hRenderDestruct : public hRenderDestructBase {
 namespace RenderPrivate {
 
 	static const hUint  FRAME_COUNT = 3;
+    static const hUint  RMEM_COUNT = FRAME_COUNT+1;
 
 	hBool				multiThreadedRenderer = false;
     SDL_Window*         window_;
@@ -238,23 +239,22 @@ namespace RenderPrivate {
     hMutex              rtMutex;
 
     hSize_t             tlsContext_;
-
-    hCmdList*           rtCmdLists_[FRAME_COUNT];
-    hMutex              rtFrameMtx;
     hUint               rtFrameIdx;
 
 	lfds_freelist_state* fenceFreeList;
 	hSize_t				 fenceCount;
 	hRenderFence*		 fences;
 
+    lfds_queue_state*   cmdListQueue;
     lfds_queue_state*   destructionQueue;
 
     hMutex              memAccess;
     hUint               memIndex;
     hUint               renderScratchMemSize;
-    hByte*              renderScratchMem[FRAME_COUNT];
-    hSize_t             renderScratchAllocd[FRAME_COUNT];
+    hByte*              renderScratchMem[RMEM_COUNT];
+    hSize_t             renderScratchAllocd[RMEM_COUNT];
 
+    hUint               renderCommandThreshold;
 	hUint				fenceIndex;
 	hRenderFence*		frameFences[FRAME_COUNT];
     hRenderDestructBase	pendingDeletes[FRAME_COUNT];
@@ -265,6 +265,8 @@ namespace RenderPrivate {
         hBool ImmutableTextureStorage;
     } Caps;
 }
+
+using namespace RenderPrivate;
 
 // !!JM TODO: Improve these (make lock-free?), they are placeholder
 static void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
@@ -281,7 +283,7 @@ static void rtmp_frameend() {
 	using namespace RenderPrivate;
 	hMutexAutoScope sentry(&memAccess);
 	renderScratchAllocd[memIndex] = 0;
-	memIndex = (memIndex+1)%FRAME_COUNT;
+	memIndex = (memIndex+1)%RMEM_COUNT;
 }
 
 template < typename t_ty >
@@ -345,37 +347,26 @@ static void hGLSyncFlush() {
 }
 
 static void renderDoFrame() {
-	using namespace RenderPrivate;
-
-    //catch last deletes, if any
-    while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
-        hRenderDestructBase::linkCmdLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
-    }
-
-	hCmdList* fcmds = nullptr;
-	hCmdList* cmds = nullptr;
-	rtFrameMtx.Lock();
-	if (rtCmdLists_[rtFrameIdx]) {
-		fcmds = rtCmdLists_[rtFrameIdx];
-		cmds = rtCmdLists_[rtFrameIdx];
-		rtCmdLists_[rtFrameIdx] = nullptr;		
-	}
-	rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
-	rtFrameMtx.Unlock();
-
-    // do pending deletes
-    for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
-        n = i->next;
-        delete i;
-    }
-    pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
-
-	while (cmds) {
+    hCmdList* cmds = nullptr, *fcmds = nullptr, *ncmds = nullptr;
+    hByte* cmdptr = nullptr, *cmdend = nullptr;
+	while (1) {
         while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
-            hRenderDestructBase::linkCmdLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
+            hRenderDestructBase::linkLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
         }
-		cmds = cmds->next;
-		for (hByte* cmdptr = cmds->cmds, *n = cmds->cmds + cmds->cmdsSize; cmdptr < n;) {
+        
+        if (!cmds) {
+            lfds_queue_use(cmdListQueue);
+            lfds_queue_dequeue(cmdListQueue, (void**)&ncmds);
+            if (ncmds) {
+                fcmds = cmds = ncmds;
+                cmdptr = cmds->cmds;
+                cmdend = cmds->cmds + cmds->cmdsSize;
+            } else {
+                Device::ThreadYield();
+            }
+        }
+
+		for (hUint i=0; cmdptr < cmdend /*&& i < renderCommandThreshold*/; ++i) {
 			Op opcode = *((hRenderer::Op*)cmdptr);
 			cmdptr += OpCodeSize;
 			switch (opcode) {
@@ -391,7 +382,9 @@ static void renderDoFrame() {
 				hGLErrorScope();
 				hGLFence* c = (hGLFence*)cmdptr;
 				cmdptr += sizeof(hGLFence);
-				c->fence->sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+                auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+                glFlush();
+				c->fence->sync = f;
                 hAtomic::LWMemoryBarrier();
 			} break;
 			case Op::UniBufferFlush: {
@@ -522,11 +515,25 @@ static void renderDoFrame() {
 				hGLErrorScope();
 				SDL_GL_SwapWindow(window_);
 			} break;
+            case Op::EndFrame: {
+                rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
+                // do pending deletes
+                for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
+                    n = i->next;
+                    delete i;
+                }
+                pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
+            } break;
 			}
 		}
 
-		if (cmds == fcmds)
-			break;
+        if (cmdptr >= cmdend && cmds) {
+            cmds = cmds->next;
+        }
+
+		if (cmds == fcmds) {
+			cmds = fcmds = nullptr;
+        }
 	}
 }
 
@@ -553,6 +560,8 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
     renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
 	fenceCount = hConfigurationVariables::getCVarUint("renderer.fencecount", 256);
     auto destruction_queue_size = hConfigurationVariables::getCVarUint("renderer.destroyqueuesize", 256);
+    auto cmd_queue_size = hConfigurationVariables::getCVarUint("renderer.cmdlistqueuesize", 256);
+    renderCommandThreshold = hConfigurationVariables::getCVarUint("renderer.commandthreshold", 32);
 
 	fences = new hRenderFence[fenceCount];
 
@@ -571,6 +580,7 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 		i = nullptr;
 	}
 
+    lfds_queue_new(&cmdListQueue, cmd_queue_size);
     lfds_queue_new(&destructionQueue, destruction_queue_size);
 
     for (auto& mem : renderScratchMem) {
@@ -1490,8 +1500,6 @@ void clear(hCmdList* cl, hColour colour, hFloat depth) {
 }
 
 hRenderFence* fence(hCmdList* cl) {
-	using namespace RenderPrivate;
-
 	lfds_freelist_element* e;
 	hRenderFence* f;
 	lfds_freelist_use(fenceFreeList);
@@ -1509,7 +1517,7 @@ void wait(hRenderFence* fence) {
 	using namespace RenderPrivate;
 	hglEnsureTLSContext();
 	while (fence->sync == nullptr) {
-		hAtomic::LWMemoryBarrier();
+		Device::ThreadYield();
 	}
 	hcAssert(glIsSync(fence->sync));
 	GLenum result = GL_TIMEOUT_EXPIRED;
@@ -1520,6 +1528,7 @@ void wait(hRenderFence* fence) {
 
 	glDeleteSync(fence->sync);
 	fence->sync = nullptr;
+    hAtomic::LWMemoryBarrier();
 	lfds_freelist_push(fenceFreeList, fence->element);
 }
 
@@ -1556,21 +1565,31 @@ void submitFrame(hCmdList* cl) {
 	frameFences[fenceIndex] = fence(ncl);
 	fenceIndex = (fenceIndex+1)%FRAME_COUNT;
 
-	// Push next frame
-	//rtFrameCompleteSema.Wait();
-	rtFrameMtx.Lock();
-	hcAssert(rtCmdLists_[writeindex] == nullptr);
-	rtCmdLists_[writeindex] = cl;
-	rtFrameMtx.Unlock();
-	//rtFrameSubmitSema.Post();
+    ncl->allocCmdMem(Op::EndFrame, 0);
 
-	// Reset & Flip render scratch buffer
-	rtmp_frameend();
+    flush(cl);
 
-	if (multiThreadedRenderer == false) {
-		renderDoFrame();
-	}
+    // Reset & Flip render scratch buffer
+    rtmp_frameend();
+
+    if (multiThreadedRenderer == false) {
+        renderDoFrame();
+    }
 }
-   
+
+void flush(hCmdList* cl) {
+    lfds_queue_use(cmdListQueue);
+    while (lfds_queue_enqueue(cmdListQueue, cl) == 0) {
+        Device::ThreadYield();
+    }
+}
+
+void finish() {
+    auto* cl = createCmdList();
+    auto* f = fence(cl);
+    flush(cl);
+    wait(f);
+}
+
 }
 }

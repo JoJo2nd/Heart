@@ -77,7 +77,7 @@ public:
             doTest_=hFalse;
         }
 
-        if (timer_.elapsedSec() > 30 || getForceExitFlag()) {
+        {
             SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
 

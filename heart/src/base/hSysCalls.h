@@ -11,15 +11,19 @@ namespace Heart
 namespace hSysCall {
     hUint64 HEART_API GetProcessorSpeed();
     void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize);
+#if 0
     void HEART_API hInitSystemDebugLibs();
+#endif
 }
 
 namespace hMemTracking {
+#if 0
     void HEART_API InitMemTracking();
     void HEART_API TrackAlloc(const hChar* tag, hSize_t line, void* heap, void* ptr, hSize_t size, const hChar* heaptag);
     void HEART_API TrackFree(void* heap, void* ptr, const hChar* heaptag);
     void HEART_API TrackPushMarker(const hChar* heaptag);
     void HEART_API TrackPopMarker();
+#endif
 }
 
 }

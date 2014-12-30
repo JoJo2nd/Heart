@@ -94,6 +94,8 @@ namespace hRenderer {
 	void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
 	hRenderFence* fence(hCmdList* cl);
 	void wait(hRenderFence* fence);
+    void flush(hCmdList* cl);
+    void finish();
     void swapBuffers(hCmdList* cl);
 
     void submitFrame(hCmdList* cmds);

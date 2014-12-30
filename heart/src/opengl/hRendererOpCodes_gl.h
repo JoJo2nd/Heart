@@ -24,9 +24,10 @@ enum class Op : hUint8 {
     Jump,
 	Fence,
 	UniBufferFlush,
+    EndFrame,
 };
 
-static hUint OpCodeSize = 1; // 1 byte
+static hUint OpCodeSize = 8; // required for cmd alignment
 
 struct hGLJump {
     void* next;

@@ -2,52 +2,58 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
 #pragma once
 
-#ifndef MEMLOG_H__
-#define MEMLOG_H__
-
+#include "memtracker.h"
 #include "memlogmarker.h"
+#include "ioaccess.h"
+#include <vector>
+#include <memory>
+#include <unordered_map>
 
-struct Callstack;
-class IODevice;
+class PlatformDebugSymbols {
+public:
+    PlatformDebugSymbols();
+    virtual ~PlatformDebugSymbols();
+
+    void        loadSymbolInfo(mt_uint64 base_address, mt_uint64 len, const char* sympath);
+    const char* getSymbolFromAddress(mt_uint64 addr);
+private:
+    typedef std::unordered_map<mt_uint64, std::string> AddressTable;
+
+    struct LoadedModule {
+        mt_uint64 oldBase, newBase;
+        mt_uint64 len;
+    };
+    std::vector<LoadedModule> loadedModules;
+    AddressTable addressTable;
+};
 
 class MemLog
 {
 public:
+    MemLog(InputStream* in_trace_file);
+    ~MemLog();
 
-    typedef std::vector<AllocRecord>    AllocVectorType;
-    typedef std::vector<MemLogMarker*>   MarkerStackType;
-
-    MemLog() {}
-    ~MemLog() {}
-
-    void clear();
-    void setBaseAddresses(uint64 oldbase, uint64 newbase) {
-        oldBaseAddress_=oldbase;
-        newBaseAddress_=newbase;
-    }
-    void pushMemoryMarker(const char* name);
-    void popMemoryMarker();
-    void logMemoryAlloc(uint64 address, uint64 size, const char* heap, const Callstack& backtrace);
-    void logMemoryFree(uint64 address, const char* heap, const Callstack& backtrace);
-    void getAllMemoryLeaks(AllocVectorType* leaksArray);
-    MarkerStackType::const_iterator getFirstMarker() const { return rootList_.begin(); }
-    MarkerStackType::const_iterator getLastMarker() const { return rootList_.end(); }
+    void listAllMarkers(FILE* output);
+    bool getMarkers(FILE* output, const std::vector<std::string>& marker_list, mt_uint64* first, mt_uint64* last);
+    void writeAllLeaks(FILE* output, mt_uint64 first_marker, mt_uint64 last_marker);
 
 private:
 
-    typedef std::list<MemLogMarker>     MarkerListType;
+    struct MemEvent {
+        mt_trace_chunk_t  eventChunk;
+        void*             memory;
+    };
 
-    uint64          oldBaseAddress_;
-    uint64          newBaseAddress_;
-    MarkerStackType rootList_;
-    MarkerListType  markerList_;
-    MarkerStackType markerStack_;
-    uint64          nextID_;
+    typedef std::vector<MemEvent>       MemEventArray;
+
+    InputStream* traceSource;
+    mt_trace_header_t* header;
+    const char* exePath;
+    mt_trace_chunk_t* firstChunk;
+    std::unique_ptr<PlatformDebugSymbols>   debugSymbols;
+    MemEventArray events;
 };
 
-int parseMemLog(const char* filepath, MemLog* log, IODevice* ioaccess);
-
-#endif // MEMLOG_H__
+int parseMemLog(const char* filepath, MemLog** log, IODevice* ioaccess);

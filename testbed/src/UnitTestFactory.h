@@ -75,6 +75,7 @@ class hHeartEngine;
 
         void        registerUnitTest(const hChar* name, IUnitTest* (*)(Heart::hHeartEngine*));
         IUnitTest*  createUnitTest(hUint testindex);
+        const char* getUnitTestName(hUint testindex);
         hSize_t     getTestCount() const { return tests_.size(); }
 
     private:

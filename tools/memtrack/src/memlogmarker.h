@@ -4,9 +4,6 @@
 *********************************************************************/
 #pragma once
 
-#ifndef MEMLOGMARKER_H__
-#define MEMLOGMARKER_H__
-
 #include "records.h"
 #include <vector>
 #include <set>
@@ -36,8 +33,8 @@ public:
     void            setParent(MemLogMarker* parent) { parent_=parent; }
     MemLogMarker*   getParent() const;
     void            clearChildren() { children_.clear(); }
-    uint            getChildCount() { return children_.size(); }
-    MemLogMarker*   getChild(uint idx) const { return children_[idx]; }
+    size_t          getChildCount() { return children_.size(); }
+    MemLogMarker*   getChild(size_t idx) const { return children_[idx]; }
     void            getAliveAllocsInclusive(AllocVectorType* aliveOut) const;
     void            getAliveAllocsExclusive(AllocVectorType* aliveOut) const;
     bool            ownAllocOrParentsDo(const FreeRecord& freer);
@@ -54,5 +51,3 @@ private:
     ChildVectorType     children_;
     uint64              firstAllocID_;
 };
-
-#endif // MEMLOGMARKER_H__

@@ -59,6 +59,7 @@ namespace hSysCall
 
 namespace hMemTracking
 {
+#if 0
     struct hMemTrackingHeader
     {
         hUint64   baseAddress_;
@@ -74,7 +75,7 @@ namespace
     static FILE*                    g_file = NULL;
     static hUintptr_t               g_symbols[g_maxSymbols];
 }
-
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -82,6 +83,7 @@ namespace
 //////////////////////////////////////////////////////////////////////////
 namespace hSysCall
 {
+#if 0
 namespace
 {
     static hBool                    g_doneInit=hFalse;
@@ -96,11 +98,12 @@ namespace
             g_doneInit=hFalse;
         }
     }
+#endif
 }
 
 namespace hMemTracking
 {
-
+#if 0
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -223,6 +226,6 @@ namespace hMemTracking
         }
 #endif
     }
-
+#endif
 }
 }

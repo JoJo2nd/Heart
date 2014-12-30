@@ -3,12 +3,9 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-/************************************************************************/
-/*    Engine Init                                                         */
-/************************************************************************/
-
 #include "Heart.h"
 #include "lua/hLuaHeartLib.h"
+#include "memtracker.h"
 
 namespace Heart {
     hChar           hHeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
@@ -182,7 +179,7 @@ namespace Heart {
         hcPrintf("Auto-registered type %s=%d", hTTFFontFace::getTypeNameStatic().c_str(), hTTFFontFace::auto_object_registered);
         hcPrintf("Auto-registered type %s=%d", hTextureResource::getTypeNameStatic().c_str(), hTextureResource::auto_object_registered);
 
-        hMemTracking::TrackPushMarker("After_Engine_Init");
+        mem_track_marker("AfterEngineInit");
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -212,6 +209,7 @@ namespace Heart {
                     //GetJobManager()->Destory(); // Should this be here?
                     // if (onShutdown_ && runnableState) onShutdown_(this); !!JM 
                     engineState_ = hHeartState_ShuttingDown;
+                    _exit(0);
                     return;
                 }
             }
@@ -257,7 +255,7 @@ namespace Heart {
     }
 
     hHeartEngine::~hHeartEngine() {
-        hMemTracking::TrackPopMarker();
+        mem_track_marker("PreEngineShutdown");//hMemTracking::TrackPopMarker();
 
         //debugMenuManager_->Destroy(); !!JM
         //console_->destroy(); !!JM
@@ -379,7 +377,7 @@ namespace Heart {
 #if defined (HEART_PLAT_WINDOWS)
 Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
 {
-    Heart::hSysCall::hInitSystemDebugLibs();
+    //Heart::hSysCall::hInitSystemDebugLibs();
     heart_thread_prof_begin("profile_startup.prof");
     Heart::hdDeviceConfig deviceConfig;
 

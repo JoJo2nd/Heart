@@ -6,6 +6,7 @@
 #include "testbed_precompiled.h"
 #include "TestBedCore.h"
 #include "resource_texture.pb.h"
+#include "memtracker.h"
 
 TestBedCore g_TestCore;
 
@@ -53,6 +54,8 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.onShutdown_ = HeartAppOnShutdown;
 
     while (strstr(lpCmdLine, "-debug")) {}
+
+    mem_track_load_symbols();
 
     Heart::proto::TextureResource texturemsg;
     //auto meta = texturemsg.GetMetadata();
