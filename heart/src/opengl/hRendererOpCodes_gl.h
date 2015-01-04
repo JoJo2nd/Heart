@@ -5,6 +5,7 @@
 #pragma once
 
 #include "base/hTypes.h"
+#include "base/hColour.h"
 #include <GL/glew.h>
 #include <GL/gl.h>
 
@@ -103,11 +104,6 @@ struct hGLVtxAttrib {
     GLenum  type_;
     GLsizei stride_;
     void*   pointer_;
-};
-
-struct hGLSampler {
-    GLint  index;
-    GLuint samplerObj;
 };
 
 struct hGLTexture2D {

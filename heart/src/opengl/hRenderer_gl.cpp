@@ -2,7 +2,6 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
 #include "base/hMemory.h"
@@ -22,6 +21,8 @@
 #include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderPrim.h"
+#include "opengl/GLCaps.h"
+#include "opengl/GLTypes.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include "lfds/lfds.h"
@@ -37,193 +38,6 @@ namespace Heart {
 class hSystem;
 
 namespace hRenderer {
-
-static void* rtmp_malloc(hSize_t size, hUint alignment=16);
-
-struct hGLErrorSentry {
-    const hChar* file;
-    hSize_t line;
-
-    hGLErrorSentry(const hChar* f, hSize_t l) 
-        : file(f), line(l){
-        //glGetError(); // clear the error if needed
-    }
-
-    ~hGLErrorSentry() {
-        auto ec = glGetError();
-        if (ec != GL_NO_ERROR) {
-            const char* errorstr = "Unknown Error";
-            switch (ec) {
-            case GL_INVALID_ENUM: errorstr = "Invalid Enum"; break;
-            case GL_INVALID_VALUE: errorstr = "Invalid Value"; break;
-            case GL_INVALID_OPERATION: errorstr = "Invalid Operation"; break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION: errorstr = "Invalid Framebuffer operation"; break;
-            case GL_OUT_OF_MEMORY: errorstr = "Out of Memory"; break;
-            default: break;
-            }
-            hcPrintf("%s:%d: OpenGL Error %s", file, line, errorstr);
-        }
-    }
-};
-
-#ifdef HEART_DEBUG
-#   define hGLErrorScope() Heart::hRenderer::hGLErrorSentry gl_error_sentry__blah_blah__(__FILE__, __LINE__)
-#else
-#   define hGLErrorScope()
-#endif
-
-#ifdef HEART_PLAT_LINUX
-    typedef void* hGLDebugCallback_t;
-#elif defined HEART_PLAT_WINDOWS
-    typedef const void* hGLDebugCallback_t;
-#endif
-
-struct hRenderFence {
-	lfds_freelist_element* element;
-	GLsync     sync;
-};
-
-struct hRenderCall {
-    enum Flag : hUint8 {
-        VAOBound = 0x80,
-    };
-
-    hRenderCall() 
-        : size_(0)
-        , opCodes_(nullptr) 
-        , flags(0) {
-    }
-    hGLRCHeader header_;
-    GLuint program_;
-    GLuint vao;
-    hVertexBuffer* vtxBuf_;
-    hUint size_;
-    hByte* opCodes_;
-    hGLSampler* samplers_;
-    hUint8  flags;
-};
-
-struct hGLObjectBase {
-	hGLObjectBase() 
-		: persistantMapping(nullptr)
-		, flags(0) {
-
-	}
-
-	enum class Flag : hUint8 {
-		RenderThreadBound = 0x80, // Set on successful 
-		ValidName		  = 0x40,
-	};
-
-	void*   persistantMapping;
-	GLuint  name;
-	hUint32 flags;
-};
-
-struct hIndexBuffer : hGLObjectBase {
-    hUint32 indices;
-    hUint32 createFlags_;
-};
-
-struct hVertexBuffer : hGLObjectBase {
-    hUint32 elementCount_;
-    hUint32 elementSize_;
-    hUint32 createFlags_;
-};
-
-struct hUniformBuffer : hGLObjectBase {
-    hUint   size_;
-    hUint32 createFlags_;
-	hUint	mappedOffset_;
-	hUint	mappedSize_;
-};
-
-struct hTextureBase : hGLObjectBase {
-    GLenum  target_;
-    GLuint  internalFormat_;
-    GLuint  format_;
-};
-
-struct hTexture2D : hTextureBase {
-
-};
-
-struct hCmdList {
-    static const hUint MinCmdBlockSize = 4*1024;
-    hCmdList() {
-        prev = next = this;
-        cmds = nullptr;
-        nextcmd = nullptr;
-        cmdsSize = 0;
-        cmdsReserve = 0;
-    }
-
-    hByte* allocCmdMem(Op opcode, hUint s) {
-        auto needed = s+OpCodeSize;
-
-        if ((cmdsReserve - cmdsSize) < needed) {
-            hByte* memnext=(hByte*)rtmp_malloc(MinCmdBlockSize);
-            if (nextcmd != nullptr) {
-                // need to write a jump
-                auto j=nextcmd+cmdsSize;
-                cmdsSize+=sizeof(hGLJump)+OpCodeSize;
-                *((Op*)j) = Op::Jump;
-                ((hGLJump*)(j+OpCodeSize))->next = memnext;
-            }
-            nextcmd = memnext;
-            // note remaining space but leave enough for another jump cmd
-            cmdsReserve += MinCmdBlockSize-(sizeof(hGLJump)+OpCodeSize);
-            if (!cmds) {
-                cmds = nextcmd;
-            }
-        }
-
-        hByte* r=nextcmd;
-        cmdsSize+=needed; nextcmd+=needed;
-
-        *((Op*)r) = opcode;
-        return (r+OpCodeSize);
-    }
-
-    hCmdList* prev, *next;
-    hByte* cmds, *nextcmd;
-    hUint  cmdsSize;
-    hUint  cmdsReserve;
-};
-
-struct hRenderDestructBase {
-    hRenderDestructBase()  {
-        next = prev = this;
-    }
-    virtual ~hRenderDestructBase() {
-    }
-
-    hRenderDestructBase* next, *prev;
-
-    static void linkLists(hRenderDestructBase* before, hRenderDestructBase* after, hRenderDestructBase* i) {
-        i->next = before->next;
-        i->prev = after->prev;
-        before->next = i;
-        after->prev = i;
-    }
-
-    static void detachLists(hRenderDestructBase* i) {
-        i->next->prev = i->prev;
-        i->prev->next = i->next;
-        i->next = i;
-        i->prev = i;
-    }
-};
-
-template<typename t_ty>
-struct hRenderDestruct : public hRenderDestructBase {
-    hRenderDestruct(t_ty& t) : proc(t) {}
-    ~hRenderDestruct() {
-        proc();
-    }
-    t_ty proc;
-};
-
 namespace RenderPrivate {
 
 	static const hUint  FRAME_COUNT = 3;
@@ -259,18 +73,24 @@ namespace RenderPrivate {
 	hRenderFence*		frameFences[FRAME_COUNT];
     hRenderDestructBase	pendingDeletes[FRAME_COUNT];
 
-    struct GLCaps {
-        hInt MaxTextureUnits;
-        hInt UniformBufferOffsetAlignment;
-        hBool ImmutableTextureStorage;
-    } Caps;
+    GLCaps Caps;
+    struct {
+        hVertexBuffer* (*impl_createVertexBuffer)(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+        void(*impl_destroyVertexBuffer)(hVertexBuffer*);
+        hUniformBuffer* (*impl_createUniformBuffer)(const void* initdata, hUint size, hUint32 flags);
+        void (*impl_flushUniformBuffer)(hUniformBuffer* ub);
+        void(*impl_destroyUniformBuffer)(hUniformBuffer* ub);
+        hSize_t(*impl_getSamplerObjectSize)();
+        void(*impl_genSamplerObjectInplace)(const hRenderCallDesc::hSamplerStateDesc& desc, hGLSampler* out, hSize_t osize);
+        void(*impl_destroySamplerObjectInplace)(hGLSampler* data);
+        void(*impl_bindSamplerObject)(hInt index, hGLSampler* so);
+    } ft;
 }
 
 using namespace RenderPrivate;
 
 // !!JM TODO: Improve these (make lock-free?), they are placeholder
-static void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
-    using namespace RenderPrivate;
+void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
     hMutexAutoScope sentry(&memAccess);
     renderScratchAllocd[memIndex] = hAlign(renderScratchAllocd[memIndex], alignment);
     void* r = renderScratchMem[memIndex] + renderScratchAllocd[memIndex];
@@ -279,16 +99,21 @@ static void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
     return r;
 }
 
-static void rtmp_frameend() {
-	using namespace RenderPrivate;
+void rtmp_frameend() {
 	hMutexAutoScope sentry(&memAccess);
 	renderScratchAllocd[memIndex] = 0;
 	memIndex = (memIndex+1)%RMEM_COUNT;
 }
 
+hRenderDestructBase* dequeueRenderResourceDelete() {
+    lfds_queue_use(destructionQueue);
+    hRenderDestructBase* ret = nullptr;
+    lfds_queue_dequeue(destructionQueue, (void**)&ret);
+    return ret;
+}
+
 template < typename t_ty >
 static void enqueueRenderResourceDelete(t_ty& fn) {
-    using namespace RenderPrivate;
     auto* r = new hRenderDestruct<t_ty>(fn);
     lfds_queue_use(destructionQueue);
     while (lfds_queue_enqueue(destructionQueue, r) == 0) {
@@ -296,16 +121,7 @@ static void enqueueRenderResourceDelete(t_ty& fn) {
     }
 }
 
-static hRenderDestructBase* dequeueRenderResourceDelete() {
-    using namespace RenderPrivate;
-    lfds_queue_use(destructionQueue);
-    hRenderDestructBase* ret = nullptr;
-    lfds_queue_dequeue(destructionQueue, (void**)&ret);
-    return ret;
-}
-
-static void hglEnsureTLSContext() {
-    using namespace RenderPrivate;
+void hglEnsureTLSContext() {
     SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
 	if (!ctx && multiThreadedRenderer) {
 		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
@@ -321,15 +137,12 @@ static void hglEnsureTLSContext() {
     }
 }
 
-static SDL_GLContext hglTLSMakeCurrent() {
-    using namespace RenderPrivate;
+SDL_GLContext hglTLSMakeCurrent() {
     hglEnsureTLSContext();
     return (SDL_GLContext)TLS::getKeyValue(tlsContext_);
 }
 
-static void hglReleaseTLSContext() {
-    using namespace RenderPrivate;
-
+void hglReleaseTLSContext() {
     SDL_GLContext ctx = (SDL_GLContext)TLS::getKeyValue(tlsContext_);
 	if (ctx) {
         SDL_GL_DeleteContext(ctx);
@@ -337,7 +150,7 @@ static void hglReleaseTLSContext() {
     }
 }
 
-static void hGLSyncFlush() {
+void hGLSyncFlush() {
 	GLsync fenceId = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 ); 
 	GLenum result = GL_TIMEOUT_EXPIRED; 
 	while(result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) { 
@@ -349,6 +162,7 @@ static void hGLSyncFlush() {
 static void renderDoFrame() {
     hCmdList* cmds = nullptr, *fcmds = nullptr, *ncmds = nullptr;
     hByte* cmdptr = nullptr, *cmdend = nullptr;
+    auto sizeof_sampler = ft.impl_getSamplerObjectSize();
 	while (1) {
         while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
             hRenderDestructBase::linkLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
@@ -392,11 +206,15 @@ static void renderDoFrame() {
 				cmdptr += sizeof(hGLUniBufferFlush);
 				c->ub->mappedOffset_ = c->offset;
 				c->ub->mappedSize_ = c->size;
+                if (ft.impl_flushUniformBuffer) {
+                    ft.impl_flushUniformBuffer(c->ub);
+                }
 			} break;
 			case Op::Draw: {
 				hGLErrorScope();
 #define hGetArgs(x) (x*)args; args+=sizeof(x)
-#define hGetArgsN(x,c) (x*)args; args+=(sizeof(x)*(c))
+#define hGetArgsS(x,c,s) (x*)args; args+=((s)*(c))
+#define hGetArgsN(x,c) hGetArgsS(x, c, sizeof(x))
 				hGLDraw* c = (hGLDraw*)cmdptr;
 				hRenderCall* rc = c->rc;
 				hByte* args = rc->opCodes_;
@@ -451,14 +269,16 @@ static void renderDoFrame() {
 				}
                 glUseProgram(rc->program_);
 
-				//sampler states
-				if (rc->header_.samplerCount_) {
-					auto* samplers = hGetArgsN(hGLSampler, rc->header_.samplerCount_);
-					for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
-                        glUniform1i(samplers[i].index, samplers[i].index);
-						glBindSampler(samplers[i].index, samplers[i].samplerObj);
-					}
-				}
+                //sampler states
+                if (rc->header_.samplerCount_) {
+                    auto* samplers = hGetArgsS(hGLSampler, rc->header_.samplerCount_, sizeof_sampler);
+                    for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
+                        auto* sampler = (hGLSampler*)(((hByte*)samplers) + sizeof_sampler);
+                        glUniform1i(sampler->index, sampler->index);
+                        ft.impl_bindSamplerObject(sampler->index, sampler);//glBindSampler(samplers[i].index, samplers[i].samplerObj);
+                    }
+                }
+
 				//textures
 				if (rc->header_.textureCount_) {
 					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_);
@@ -467,6 +287,7 @@ static void renderDoFrame() {
                         glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
 					}
 				}
+
 				// uniform buffers
 				if (rc->header_.uniBufferCount_) {
 					auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
@@ -509,6 +330,7 @@ static void renderDoFrame() {
 				}
 				break;
 #undef hGetArgs
+#undef hGetArgsS
 #undef hGetArgsN
 			}
 			case Op::Swap: {
@@ -538,8 +360,6 @@ static void renderDoFrame() {
 }
 
 hUint32 renderThreadMain(void* param) {
-    using namespace RenderPrivate;
-
     context_ = hglTLSMakeCurrent();
 
     rtComsSignal.signal();
@@ -554,9 +374,8 @@ hUint32 renderThreadMain(void* param) {
 }
 
 void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
-    using namespace RenderPrivate;
 
-	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("gl.multithreaded", 0);
+	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("renderer.gl.multithreaded", 1);
     renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
 	fenceCount = hConfigurationVariables::getCVarUint("renderer.fencecount", 256);
     auto destruction_queue_size = hConfigurationVariables::getCVarUint("renderer.destroyqueuesize", 256);
@@ -614,6 +433,30 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 		}, nullptr);
 	}
 
+    //check for extensions
+    initialiseOpenGLCaps(&Caps);
+    hZeroMem(&ft, sizeof(ft));
+    if (Caps.BufferStorage) {
+        ft.impl_createVertexBuffer = Caps.BufferStorageProc.createVertexBuffer;
+        ft.impl_destroyVertexBuffer = Caps.BufferStorageProc.destroyVertexBuffer;
+        ft.impl_createUniformBuffer = Caps.BufferStorageProc.createUniformBuffer;
+        ft.impl_destroyUniformBuffer = Caps.BufferStorageProc.destroyUniformBuffer;
+    } else {
+        ft.impl_createVertexBuffer = GLExt::Fallback::createVertexBuffer;
+        ft.impl_destroyVertexBuffer = GLExt::Fallback::destroyVertexBuffer;
+        ft.impl_createUniformBuffer = GLExt::Fallback::createUniformBuffer;
+        ft.impl_flushUniformBuffer = GLExt::Fallback::flushUniformBuffer;
+        ft.impl_destroyUniformBuffer = GLExt::Fallback::destroyUniformBuffer;
+    }
+    if (Caps.SamplerObjects) {
+        ft.impl_getSamplerObjectSize = Caps.SamplerObjectsProc.getSamplerObjectSize;
+        ft.impl_genSamplerObjectInplace = Caps.SamplerObjectsProc.genSamplerObjectInplace;
+        ft.impl_destroySamplerObjectInplace = Caps.SamplerObjectsProc.destroySamplerObjectInplace;
+        ft.impl_bindSamplerObject = Caps.SamplerObjectsProc.bindSamplerObject;
+    } else {
+        hcAssertFailMsg("TODO: Fallback for SamplerObjects");
+    }
+
 	if (multiThreadedRenderer == true) {
 		SDL_GL_MakeCurrent(window_, nullptr);
 
@@ -625,27 +468,6 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 
 		hglTLSMakeCurrent();
 	}
-	
-    //check for required extentions
-    // !!JM TODO: handle failure better than just asserting...
-    if (!GLEW_VERSION_3_3) {
-        hcAssertFailMsg("OpenGL 3.3 is required but not supported.");
-    }
-    if (!GLEW_EXT_texture_compression_s3tc) {
-        hcAssertFailMsg("GL_EXT_texture_compression_s3tc is required but not found.");
-    }
-    if (!GLEW_EXT_texture_sRGB) {
-        hcAssertFailMsg("GL_EXT_texture_sRGB is required but not found.");    
-    }
-
-    if ((GLEW_ARB_texture_storage && GLEW_ARB_texture_storage_multisample) || GLEW_VERSION_4_3) {
-        Caps.ImmutableTextureStorage = hTrue;
-    } else {
-        Caps.ImmutableTextureStorage = hFalse;
-    }
-
-    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &Caps.MaxTextureUnits);
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &Caps.UniformBufferOffsetAlignment);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -653,9 +475,6 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 //////////////////////////////////////////////////////////////////////////
 
 void destroy() {
-    using namespace RenderPrivate;
-
-
     hglReleaseTLSContext();
     context_=nullptr;
 }
@@ -687,10 +506,6 @@ static GLenum hglToPrimType(Primative pt, hUint* count) {
 	default: return GL_INVALID_VALUE;
 	}
 }
-
-struct hShaderStage {
-    GLuint  shaderObj_;
-};
 
 hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, hShaderType type) {
     return nullptr;
@@ -758,50 +573,13 @@ void destroyIndexBuffer(hIndexBuffer* ib) {
 }
 
 hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
-    hglEnsureTLSContext();
-    hGLErrorScope();
-    GLuint bname;
-	GLenum gl_flags;
-	hBool dynamic = (flags & (hUint32)hUniformBufferFlags::Dynamic) == (hUint32)hUniformBufferFlags::Dynamic;
-	void* mapped_ptr = nullptr;
-	if (dynamic) {
-		gl_flags = GL_MAP_WRITE_BIT |
-			GL_MAP_COHERENT_BIT |
-			GL_MAP_PERSISTENT_BIT;
-	}
-	else {
-		gl_flags = GL_STATIC_DRAW;
-	}
-
-    glGenBuffers(1, &bname);
-    if (!bname) {
-        return nullptr;
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, bname);
-    GLuint size = elementsize * elementcount;
-
-	if (dynamic) {
-		glBufferStorage(GL_ARRAY_BUFFER, size, data, gl_flags);
-		mapped_ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, size, gl_flags);
-	} else {
-		glBufferData(GL_ARRAY_BUFFER, size, data, gl_flags);
-	}
-	hGLSyncFlush();
-
-    auto* vb = new hVertexBuffer();
-    vb->name = bname;
-    vb->elementCount_ = elementcount;
-    vb->elementSize_ = elementsize;
-    vb->createFlags_ = flags;
-	vb->persistantMapping = mapped_ptr;
-    return vb;
+    return ft.impl_createVertexBuffer(data, elementsize, elementcount, flags);
 }
 
 void  destroyVertexBuffer(hVertexBuffer* vb) {
     //deletes are deferred, render thread will do it
     enqueueRenderResourceDelete([=]() {
-        glDeleteBuffers(1, &vb->name);
-        delete vb;
+        ft.impl_destroyVertexBuffer(vb);
     });
 }
 
@@ -832,26 +610,15 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
     glGenTextures(1, &tname);
     glBindTexture(GL_TEXTURE_2D, tname);
 
-    if (RenderPrivate::Caps.ImmutableTextureStorage) {
-        glTexStorage2D(GL_TEXTURE_2D, levels, intfmt, initdata[0].width, initdata[0].height);
-    }
-
-    if (compressed) {
-        if (RenderPrivate::Caps.ImmutableTextureStorage) {
-            (GL_TEXTURE_2D, levels, intfmt, initdata[0].width, initdata[0].height);
-        }
-        for (auto i=0u; i<levels; ++i) {
-            if (RenderPrivate::Caps.ImmutableTextureStorage) {
-                glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, initdata[i].width, initdata[i].height, fmt, initdata[i].size, initdata[i].data);
-            } else {
+    if (Caps.ImmutableTextureStorage) {
+        Caps.ImmutableTextureStorageProc.create2D(levels, compressed, intfmt, fmt, type, initdata);
+    } else {
+        if (compressed) {
+            for (auto i=0u; i<levels; ++i) {
                 glCompressedTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, initdata[i].size, initdata[i].data);
             }
-        }
-    } else {
-        for (auto i=0u; i<levels; ++i) {
-            if (RenderPrivate::Caps.ImmutableTextureStorage) {
-                glTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, initdata[i].width, initdata[i].height, fmt, type, initdata[i].data);
-            } else {
+        } else {
+            for (auto i=0u; i<levels; ++i) {
                 glTexImage2D(GL_TEXTURE_2D, i, intfmt, initdata[i].width, initdata[i].height, 0, fmt, type, initdata[i].data);
             }
         }
@@ -875,37 +642,7 @@ void  destroyTexture2D(hTexture2D* t) {
 }
 
 hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
-	hglEnsureTLSContext();
-	hGLErrorScope();
-    GLuint ubname;
-	GLenum gl_flags;
-	hBool dynamic = (flags & (hUint32)hUniformBufferFlags::Dynamic) == (hUint32)hUniformBufferFlags::Dynamic;
-	void* mapped_ptr = nullptr;
-	if (dynamic) {
-		gl_flags =	GL_MAP_WRITE_BIT |
-					GL_MAP_COHERENT_BIT |
-					GL_MAP_PERSISTENT_BIT;
-	} else {
-		gl_flags = GL_STATIC_DRAW;
-	}
-
-    glGenBuffers(1, &ubname);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubname);
-	if (dynamic) {
-		glBufferStorage(GL_UNIFORM_BUFFER, size, initdata, gl_flags);
-		mapped_ptr = glMapBufferRange(GL_UNIFORM_BUFFER, 0, size, gl_flags);
-	} else {
-		glBufferData(GL_UNIFORM_BUFFER, size, initdata, gl_flags);
-	}
-	hGLSyncFlush();
-    auto* ub = new hUniformBuffer();
-    ub->name=ubname;
-    ub->size_=size;
-    ub->createFlags_=flags;
-	ub->persistantMapping = mapped_ptr;
-	ub->mappedOffset_=0;
-	ub->mappedSize_=size;
-    return ub;
+    return ft.impl_createUniformBuffer(initdata, size, flags);
 }
 
 void* getMappingPtr(hUniformBuffer* ub) {
@@ -915,8 +652,7 @@ void* getMappingPtr(hUniformBuffer* ub) {
 
 void destroyUniformBuffer(hUniformBuffer* ub) {
     enqueueRenderResourceDelete([=]() {
-        glDeleteBuffers(1, &ub->name);
-        delete ub;
+        ft.impl_destroyUniformBuffer(ub);
     });
 }
 
@@ -1148,33 +884,9 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     
     // sampler states
-    auto filtertogl = [] (proto::renderstate::SamplerState a) -> GLint {
-        switch(a) {
-        case proto::renderstate::point       : return GL_NEAREST;
-        case proto::renderstate::linear      : return GL_LINEAR;
-        case proto::renderstate::anisotropic : return GL_LINEAR;
-        }
-        return GL_INVALID_VALUE;
-    };
-    auto minfiltertogl = [] (proto::renderstate::SamplerState a) -> GLint {
-        switch(a) {
-        case proto::renderstate::point       : return GL_NEAREST_MIPMAP_NEAREST;
-        case proto::renderstate::linear      : return GL_LINEAR_MIPMAP_LINEAR;
-        case proto::renderstate::anisotropic : return GL_LINEAR_MIPMAP_LINEAR;
-        }
-        return GL_INVALID_VALUE;
-    };
-    auto bordertogl = [](proto::renderstate::SamplerBorder a) -> GLint {
-        switch(a) {
-        case proto::renderstate::wrap  : return GL_REPEAT;
-        case proto::renderstate::mirror: return GL_MIRRORED_REPEAT;
-        case proto::renderstate::clamp : return GL_CLAMP_TO_EDGE;
-        case proto::renderstate::border: return GL_CLAMP_TO_BORDER;
-        }
-        return GL_INVALID_VALUE;
-    };
     if (header.samplerCount_) {
-        auto ns = (hUint32)(rc->size_+(sizeof(hGLSampler)*header.samplerCount_));
+        auto sizeof_sampler = ft.impl_getSamplerObjectSize();
+        auto ns = (hUint32)(rc->size_+(sizeof_sampler*header.samplerCount_));
         rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
         rc->samplers_ = (hGLSampler*)(rc->opCodes_+rc->size_);
         auto* wsamplers = rc->samplers_;
@@ -1182,21 +894,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
             auto si = getuniformindex(rcd.samplerStates_[i].name_);
             if (si != ~0u) {
                 wsamplers->index = si;
-                glGenSamplers(1, &wsamplers->samplerObj);
-                auto minfilter = minfiltertogl(rcd.samplerStates_[i].sampler_.filter_);
-                auto filter = filtertogl(rcd.samplerStates_[i].sampler_.filter_);
-                auto wraps = bordertogl(rcd.samplerStates_[i].sampler_.addressU_);
-                auto wrapt = bordertogl(rcd.samplerStates_[i].sampler_.addressV_);
-                auto wrapr = bordertogl(rcd.samplerStates_[i].sampler_.addressW_);
-                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_S, &wraps);
-                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_T, &wrapt);
-                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_WRAP_R, &wrapr);
-                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_MIN_FILTER, &minfilter);
-                glSamplerParameteriv(wsamplers->samplerObj, GL_TEXTURE_MAG_FILTER, &filter);
-                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_MIN_LOD, &rcd.samplerStates_[i].sampler_.minLOD_);
-                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_MAX_LOD, &rcd.samplerStates_[i].sampler_.maxLOD_);
-                glSamplerParameterfv(wsamplers->samplerObj, GL_TEXTURE_BORDER_COLOR, (hFloat*)&rcd.samplerStates_[i].sampler_.borderColour_);
-                ++wsamplers;
+                ft.impl_genSamplerObjectInplace(rcd.samplerStates_[i].sampler_, wsamplers, sizeof_sampler);
+                wsamplers = (hGLSampler*)(((hByte*)wsamplers)+sizeof_sampler);
             }
         }
         rc->size_=ns;    
@@ -1291,8 +990,9 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 void destroyRenderCall(hRenderCall* rc) {
     enqueueRenderResourceDelete([=]{
         glDeleteProgram(rc->program_);
+        auto sizeof_sampler = ft.impl_getSamplerObjectSize();
         for (hUint i=0,n=rc->header_.samplerCount_; i<n; ++i) {
-            glDeleteSamplers(1, &rc->samplers_[i].samplerObj);
+            ft.impl_destroySamplerObjectInplace((hGLSampler*)(((hByte*)rc->samplers_)+(sizeof_sampler*i)));//glDeleteSamplers(1, &rc->samplers_[i].samplerObj);
         }
         delete rc->opCodes_;
         delete rc;
@@ -1514,7 +1214,6 @@ hRenderFence* fence(hCmdList* cl) {
 }
 
 void wait(hRenderFence* fence) {
-	using namespace RenderPrivate;
 	hglEnsureTLSContext();
 	while (fence->sync == nullptr) {
 		Device::ThreadYield();
@@ -1551,7 +1250,6 @@ void swapBuffers(hCmdList* cl) {
 }
 
 void submitFrame(hCmdList* cl) {
-    using namespace RenderPrivate;
 	auto writeindex = fenceIndex;
 	// wait for prev frame to finish
 	if (frameFences[fenceIndex]) {

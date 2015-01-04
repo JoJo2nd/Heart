@@ -540,8 +540,8 @@ uint initGLCompiler(std::string* out_errors){
     }
  
     // Request opengl 3.3 context.
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+//     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+//     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
  
     mainwindow = SDL_CreateWindow("OpenGL Shader Compiler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
     if (!mainwindow) {
@@ -603,7 +603,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
 
     shader_source->insert(0, "#define HEART_IS_GLSL 1\n");
 
-    define_str = "#version 330\n";
+    //define_str = "#version 330\n";
     shader_source->insert(0, define_str);
 
     // parse the gl shader looking for input & output
