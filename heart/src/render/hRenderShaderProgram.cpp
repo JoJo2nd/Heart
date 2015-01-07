@@ -28,12 +28,6 @@ namespace Heart
             if (sres.rendersystem() == proto::eShaderRenderSystem_OpenGL) { 
                 hShaderProfile type = eShaderProfile_vs4_0;
                 switch(sres.type()) {
-                case proto::eShaderType_Vertex      : type = eShaderProfile_vs4_0; break;    
-                case proto::eShaderType_Pixel       : type = eShaderProfile_ps4_0; break;
-                case proto::eShaderType_Geometry    : type = eShaderProfile_gs4_0; break;
-                case proto::eShaderType_Hull        : type = eShaderProfile_hs5_0; break;
-                case proto::eShaderType_Domain      : type = eShaderProfile_ds5_0; break;
-                case proto::eShaderType_Compute     : type = eShaderProfile_cs4_0; break;
                 case proto::eShaderType_vs4_0       : type = eShaderProfile_vs4_0; break; 
                 case proto::eShaderType_vs4_1       : type = eShaderProfile_vs4_1; break; 
                 case proto::eShaderType_vs5_0       : type = eShaderProfile_vs5_0; break; 

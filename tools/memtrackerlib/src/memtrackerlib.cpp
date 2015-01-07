@@ -4,23 +4,48 @@
 *********************************************************************/
 #include "memtracker.h"
 #include <stdio.h>
-#include <windows.h>
-#include <dbghelp.h>
 #include <assert.h>
 #include <vector>
+#if defined (PLATFORM_WINDOWS)
+#   include <windows.h>
+#   include <dbghelp.h>
+#elif defined (PLATFORM_LINUX)
+#   include <execinfo.h>
+#   include <pthread.h>
+#   include <atomic>
+#else
+#   error //no platform
+#endif
 
-static DWORD TlsKey;
+#if defined (PLATFORM_WINDOWS)
+    static DWORD TlsKey;
+    static _RTL_CRITICAL_SECTION s_critSection;
+    static volatile mt_int64 s_globalEventCounter;
+#   define AtomicInc(x) InterlockedIncrementAcquire64((&x))
+
+#elif defined (PLATFORM_LINUX)
+    static pthread_key_t TlsKey;
+    static std::atomic_ullong s_globalEventCounter;
+
+#   define TlsGetValue(x) pthread_getspecific(x)
+#   define TlsSetValue(x,y) pthread_setspecific(x,y)
+#   define AtomicInc(x) (mt_uint64)(x++)
+
+#endif
+
 static bool s_headerWritten;
 static FILE* s_MemTrace;
-static _RTL_CRITICAL_SECTION s_critSection;
-volatile mt_int64 s_globalEventCounter;
 static mt_uint64 s_threadIDCounter;
 
 static const mt_uint32 s_localBufferSize = 4096;
 static const mt_uint32 s_callstackBase = 0; //3;
+static const mt_uint32 callstackLimit = 256;
 
 struct MemTrackerCtx {
+#if defined (PLATFORM_WINDOWS)
     _RTL_CRITICAL_SECTION* critSection;
+#elif defined (PLATFORM_LINUX)
+#endif
     FILE*       memTrace;
     mt_uint64   threadID;
     mt_uint32   unflushedCount;
@@ -28,7 +53,9 @@ struct MemTrackerCtx {
 };
 
 void mt_flush_thread_buffer(MemTrackerCtx* ctx) {
+#if defined (PLATFORM_WINDOWS)
     EnterCriticalSection(ctx->critSection);
+#endif
     if (!s_headerWritten) {
         char moduleFilename[512] = {0};
         mt_trace_header_t header;
@@ -41,9 +68,11 @@ void mt_flush_thread_buffer(MemTrackerCtx* ctx) {
     }
     fwrite(ctx->localBuffer, 1, ctx->unflushedCount, ctx->memTrace);
     ctx->unflushedCount = 0;
+#if defined (PLATFORM_WINDOWS)
     LeaveCriticalSection(ctx->critSection);
+#endif
 }
-
+#if defined (PLATFORM_WINDOWS)
 BOOL WINAPI DllMain(void* _HDllHandle, unsigned int _Reason, void * _Reserved) {
     switch(_Reason) {
     case DLL_PROCESS_ATTACH: {
@@ -77,10 +106,13 @@ BOOL WINAPI DllMain(void* _HDllHandle, unsigned int _Reason, void * _Reserved) {
 
     return TRUE;
 }
+#endif
 
 mt_dll_export void mt_api mem_track_alloc(void* ptr, size_t size, const char* tag) {
-    static const mt_uint32 callstackLimit = 256;
-    void* stack[256];
+#if defined (PLATFORM_LINUX)
+    return;
+#endif
+    void* stack[callstackLimit];
     mt_uint32 frames;
     mt_trace_chunk_t cnk_header;
     mt_trace_backtrace_t cnk_bt;
@@ -91,10 +123,15 @@ mt_dll_export void mt_api mem_track_alloc(void* ptr, size_t size, const char* ta
     }
 
     cnk_header.chunkID = mt_chunk_id_memory_alloc_event;
-    cnk_header.eventID = InterlockedIncrementAcquire64(&s_globalEventCounter);
+    cnk_header.eventID = AtomicInc(s_globalEventCounter);
     cnk_header.threadID = ctx->threadID;
-    frames = CaptureStackBackTrace(s_callstackBase, 256, stack, NULL);
-
+#if defined (PLATFORM_WINDOWS)
+    frames = CaptureStackBackTrace(s_callstackBase, callstackLimit, stack, NULL);
+#elif defined (PLATFORM_LINUX)
+    frames = backtrace(stack, callstackLimit);
+#else
+#   error // no platform
+#endif
     auto tag_len = tag ? strlen(tag) : 0;
     if (tag_len > 32) {
         tag_len = 32;
@@ -128,8 +165,10 @@ mt_dll_export void mt_api mem_track_alloc(void* ptr, size_t size, const char* ta
 }
 
 mt_dll_export void mt_api mem_track_free(void* ptr) {
-    static const mt_uint32 callstackLimit = 256;
-    void* stack[256];
+#if defined (PLATFORM_LINUX)
+    return;
+#endif
+    void* stack[callstackLimit];
     mt_uint32 frames;
     mt_trace_chunk_t cnk_header;
     mt_trace_backtrace_t cnk_bt;
@@ -140,9 +179,15 @@ mt_dll_export void mt_api mem_track_free(void* ptr) {
     }
 
     cnk_header.chunkID = mt_chunk_id_memory_free_event;
-    cnk_header.eventID = InterlockedIncrementAcquire64(&s_globalEventCounter);
+    cnk_header.eventID = AtomicInc(s_globalEventCounter);
     cnk_header.threadID = ctx->threadID;
-    frames = CaptureStackBackTrace(s_callstackBase, 256, stack, NULL);
+#if defined (PLATFORM_WINDOWS)
+    frames = CaptureStackBackTrace(s_callstackBase, callstackLimit, stack, NULL);
+#elif defined (PLATFORM_LINUX)
+    frames = backtrace(stack, callstackLimit);
+#else
+#   error // no platform
+#endif
 
     cnk_bt.address = (mt_uint64)ptr;
     cnk_bt.size = 0;
@@ -171,6 +216,9 @@ mt_dll_export void mt_api mem_track_free(void* ptr) {
 }
 
 mt_dll_export void mt_api mem_track_marker(const char* tag) {
+#if defined (PLATFORM_LINUX)
+    return;
+#endif
     mt_trace_chunk_t cnk_header;
     MemTrackerCtx* ctx = (MemTrackerCtx*)::TlsGetValue(TlsKey);
     // null is possible when setting up thread structures.
@@ -183,7 +231,7 @@ mt_dll_export void mt_api mem_track_marker(const char* tag) {
         tag_len = 32;
     }
     cnk_header.chunkID = mt_chunk_id_marker_event;
-    cnk_header.eventID = InterlockedIncrementAcquire64(&s_globalEventCounter);
+    cnk_header.eventID = AtomicInc(s_globalEventCounter);
     cnk_header.threadID = ctx->threadID;
     cnk_header.chunkLen = tag_len + 1;
 
@@ -199,15 +247,16 @@ mt_dll_export void mt_api mem_track_marker(const char* tag) {
     b[tag_len] = 0;
     ctx->unflushedCount += (mt_uint32)total_len;
 }
-
+#if defined (PLATFORM_WINDOWS)
 BOOL mt_module_callback(_In_ PCSTR ModuleName, _In_ DWORD64 BaseOfDll, _In_opt_ PVOID UserContext) {
     std::vector<DWORD64>* bases = (std::vector<DWORD64>*)UserContext;
     bases->push_back(BaseOfDll);
     return TRUE;
 }
-
+#endif
 mt_dll_export void mt_api mem_track_load_symbols() {
     MemTrackerCtx* ctx = (MemTrackerCtx*)::TlsGetValue(TlsKey);
+#if defined (PLATFORM_WINDOWS)
     //SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_ALLOW_ABSOLUTE_SYMBOLS | SYMOPT_UNDNAME | SYMOPT_DEBUG | SYMOPT_LOAD_LINES);
     SymInitialize(GetCurrentProcess(), nullptr, TRUE);
     std::vector<DWORD64> bases;
@@ -232,7 +281,7 @@ mt_dll_export void mt_api mem_track_load_symbols() {
         cnk_syms.pathLen = (mt_uint32)strlen(minfo.LoadedImageName);
         
         cnk_header.chunkID = mt_chunk_id_win32_sym_event;
-        cnk_header.eventID = InterlockedIncrementAcquire64(&s_globalEventCounter);
+        cnk_header.eventID = AtomicInc(s_globalEventCounter);
         cnk_header.threadID = ctx->threadID;
         cnk_header.chunkLen = sizeof(mt_trace_win32_symbols) + cnk_syms.nameLen + cnk_syms.pathLen + 2; //+2 for null terms
         
@@ -248,4 +297,5 @@ mt_dll_export void mt_api mem_track_load_symbols() {
         memcpy(b, minfo.LoadedImageName, cnk_syms.pathLen); b += cnk_syms.pathLen; *b = 0; ++b;
         ctx->unflushedCount += (mt_uint32)total_len;
     }
+#endif
 }

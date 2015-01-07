@@ -4,6 +4,8 @@
 *********************************************************************/
 #pragma  once
 
+#include <stddef.h>
+
 #if defined PLATFORM_WINDOWS
 #   define mt_api __cdecl
 #elif PLATFORM_LINUX
@@ -47,6 +49,8 @@ enum mt_chunk_id {
 
 #if defined (PLATFORM_WINDOWS)
 #   pragma pack (push, 1)
+#elif defined (PLATFORM_LINUX)
+#   pragma pack(1)
 #else
 #   error
 #endif
@@ -80,6 +84,8 @@ typedef struct mt_trace_win32_symbols {
 
 #if defined (PLATFORM_WINDOWS)
 #   pragma pack (pop)
+#elif defined (PLATFORM_LINUX)
+#   pragma options align=reset
 #else
 #   error
 #endif

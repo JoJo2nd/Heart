@@ -401,9 +401,7 @@ Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks
     return engine;
 }
 #elif defined (HEART_PLAT_LINUX)
-Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks)
-{
-    Heart::hSysCall::hInitSystemDebugLibs();
+Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks) {
     Heart::hdDeviceConfig deviceConfig;
     heart_thread_prof_begin("profile_startup.prof");
 

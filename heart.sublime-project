@@ -6,10 +6,10 @@
 			[
 				"make"
 			],
-			"name": "Build \"Heart All x64\"",
+			"name": "Build \"Heart Debug x64\"",
 			"selector": "source.c++",
 			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
-			"working_dir": "$project_path/int/build"
+			"working_dir": "$project_path/int/cmake_debug"
 		},
 
 		{
@@ -18,10 +18,33 @@
 				"make",
 				"clean"
 			],
-			"name": "Build \"Heart Clean\"",
+			"name": "Build \"Heart Debug Clean\"",
 			"selector": "source.c++",
 			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
-			"working_dir": "$project_path/int/build"
+			"working_dir": "$project_path/int/cmake_debug"
+		},
+
+		{
+			"cmd":
+			[
+				"make"
+			],
+			"name": "Build \"Heart Release x64\"",
+			"selector": "source.c++",
+			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
+			"working_dir": "$project_path/int/cmake_release"
+		},
+
+		{
+			"cmd":
+			[
+				"make",
+				"clean"
+			],
+			"name": "Build \"Heart Release Clean\"",
+			"selector": "source.c++",
+			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
+			"working_dir": "$project_path/int/cmake_release"
 		},
 	],
 	"folders":

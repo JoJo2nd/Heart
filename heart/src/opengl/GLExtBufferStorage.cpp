@@ -6,7 +6,7 @@
 #include "render/hUniformBufferFlags.h"
 #include "opengl/GLTypes.h"
 #include <GL/glew.h>
-#include <GL/GL.h>
+#include <GL/gl.h>
 
 namespace GLExt {
 namespace BufferStorage {

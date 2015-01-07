@@ -12,7 +12,6 @@
 namespace Heart {
     void* hMalloc(hSize_t size, hSize_t alignment/*=HEART_MIN_ALLOC_ALIGNMENT*/) {
         void* ptr = malloc(size);//memalign(size, alignment);
-        Heart::hMemTracking::TrackAlloc(""/*const hChar* tag*/, 0/*hSize_t line*/, nullptr/*void* heap*/, ptr, size, ""/*const hChar* heaptag*/);    
         return ptr;
     }
     void* hRealloc(void* mem, hSize_t size, hSize_t alignment/*=HEART_MIN_ALLOC_ALIGNMENT*/) {
@@ -26,9 +25,6 @@ namespace Heart {
         return ptr;
     }
     void  hFree(void* mem) {
-        if (mem) {
-            Heart::hMemTracking::TrackFree(nullptr, mem, "");
-        }
         free(mem);
     }
 }

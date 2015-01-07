@@ -539,10 +539,6 @@ uint initGLCompiler(std::string* out_errors){
         return -1; /* Or die on error */
     }
  
-    // Request opengl 3.3 context.
-//     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-//     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
- 
     mainwindow = SDL_CreateWindow("OpenGL Shader Compiler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
     if (!mainwindow) {
         return -2;
@@ -565,34 +561,38 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     if (initGLCompiler(out_errors) != 0) {
         *out_errors = "Failed to initialise OpenGL";
     }
-    static const GLuint OpenGL_shaderProfiles[] = {
-        GL_VERTEX_SHADER    , //eShaderType_Vertex          = 0;
-        GL_FRAGMENT_SHADER  , //eShaderType_Pixel           = 1;
-        GL_GEOMETRY_SHADER  , //eShaderType_Geometery       = 2;
-        GL_INVALID_ENUM     , //eShaderType_Hull            = 3;
-        GL_INVALID_ENUM     , //eShaderType_Domain          = 4;
-        GL_INVALID_ENUM     , //eShaderType_Compute         = 5;
-        GL_VERTEX_SHADER    , //eShaderType_vs4_0           = 6;
-        GL_VERTEX_SHADER    , //eShaderType_vs4_1           = 7;
-        GL_VERTEX_SHADER    , //eShaderType_vs5_0           = 8;
-        GL_FRAGMENT_SHADER  , //eShaderType_ps4_0           = 9;
-        GL_FRAGMENT_SHADER  , //eShaderType_ps4_1           = 10;
-        GL_FRAGMENT_SHADER  , //eShaderType_ps5_0           = 11;
-        GL_GEOMETRY_SHADER  , //eShaderType_gs4_0           = 12;
-        GL_GEOMETRY_SHADER  , //eShaderType_gs4_1           = 13;
-        GL_GEOMETRY_SHADER  , //eShaderType_gs5_0           = 14;
-        GL_INVALID_ENUM     , //eShaderType_cs4_0           = 15;
-        GL_INVALID_ENUM     , //eShaderType_cs4_1           = 16;
-        GL_INVALID_ENUM     , //eShaderType_cs5_0           = 17;
-        GL_INVALID_ENUM     , //eShaderType_hs5_0           = 18;
-        GL_INVALID_ENUM     , //eShaderType_ds5_0           = 19;
+    struct GLSLProfile {
+        GLuint type;
+        const char* profileStr;
+    };
+    static const GLSLProfile OpenGL_shaderProfiles[] = {
+        { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_Vertex          = 0;
+        { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_Pixel           = 1;
+        { GL_GEOMETRY_SHADER, "#version 140" }, //eShaderType_Geometery       = 2;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_Hull            = 3;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_Domain          = 4;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_Compute         = 5;
+        { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs4_0           = 6;
+        { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs4_1           = 7;
+        { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs5_0           = 8;
+        { GL_FRAGMENT_SHADER, "#version 140"  }, //eShaderType_ps4_0           = 9;
+        { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_ps4_1           = 10;
+        { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_ps5_0           = 11;
+        { GL_GEOMETRY_SHADER, "#version 140" }, //eShaderType_gs4_0           = 12;
+        { GL_GEOMETRY_SHADER, "#version 140" }, //eShaderType_gs4_1           = 13;
+        { GL_GEOMETRY_SHADER, "#version 140" }, //eShaderType_gs5_0           = 14;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_cs4_0           = 15;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_cs4_1           = 16;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_cs5_0           = 17;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_hs5_0           = 18;
+        { GL_INVALID_ENUM,    "#version 140" }, //eShaderType_ds5_0           = 19;
     };
 
     // no binaries for GL
     *bin_blob = nullptr;
     *bin_blob_len = 0;
 
-    GLuint shader_type = OpenGL_shaderProfiles[shader_params.profile_];
+    GLuint shader_type = OpenGL_shaderProfiles[shader_params.profile_].type;
 
     std::string define_str;
     for (size_t i=0, n=shader_params.macros_.size(); i<n; ++i) {
@@ -603,7 +603,8 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
 
     shader_source->insert(0, "#define HEART_IS_GLSL 1\n");
 
-    //define_str = "#version 330\n";
+    define_str = OpenGL_shaderProfiles[shader_params.profile_].profileStr;
+    define_str += "\n";
     shader_source->insert(0, define_str);
 
     // parse the gl shader looking for input & output
@@ -648,6 +649,8 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         char log[8*1024] = {0};
         glGetShaderInfoLog (shader_obj, sizeof(log)-1, &actual_length, log);
         *out_errors = log;
+        *out_errors += "\nShader Source:\n";
+        *out_errors += *shader_source;
         return -1;
     }
     glDeleteShader(shader_obj);
