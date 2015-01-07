@@ -575,7 +575,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs4_0           = 6;
         { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs4_1           = 7;
         { GL_VERTEX_SHADER,   "#version 140" }, //eShaderType_vs5_0           = 8;
-        { GL_FRAGMENT_SHADER, "#version 140"  }, //eShaderType_ps4_0           = 9;
+        { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_ps4_0           = 9;
         { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_ps4_1           = 10;
         { GL_FRAGMENT_SHADER, "#version 140" }, //eShaderType_ps5_0           = 11;
         { GL_GEOMETRY_SHADER, "#version 140" }, //eShaderType_gs4_0           = 12;

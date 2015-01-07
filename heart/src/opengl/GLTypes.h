@@ -52,6 +52,10 @@ namespace hRenderer {
 #endif
 
     struct hRenderFence {
+        hRenderFence() 
+            : element(nullptr)
+            , sync(nullptr) {
+        }
         lfds_freelist_element* element;
         GLsync     sync;
     };

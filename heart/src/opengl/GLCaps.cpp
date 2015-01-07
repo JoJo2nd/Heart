@@ -53,14 +53,14 @@ hInt initialiseOpenGLCaps(GLCaps* out_caps) {
         out_caps->SamplerObjectsProc.destroySamplerObjectInplace = GLExt::SamplerObjects::destroySamplerObjectInplace;
     }
     //GL_NV_fence is not ok, it doesn't support multiple context
-    out_caps->FenceSync = (GLEW_ARB_sync || GLEW_VERSION_3_2);
-    if (out_caps->FenceSync) {
-            out_caps->FenceSyncProc.FenceSync = glFenceSync;
-            out_caps->FenceSyncProc.IsSync = glIsSync;
-            out_caps->FenceSyncProc.DeleteSync = glDeleteSync;
-            out_caps->FenceSyncProc.ClientWaitSync = glClientWaitSync;
-            out_caps->FenceSyncProc.WaitSync = glWaitSync;
-    }
+//     out_caps->FenceSync = (GLEW_ARB_sync || GLEW_VERSION_3_2);
+//     if (out_caps->FenceSync) {
+//             out_caps->FenceSyncProc.FenceSync = glFenceSync;
+//             out_caps->FenceSyncProc.IsSync = glIsSync;
+//             out_caps->FenceSyncProc.DeleteSync = glDeleteSync;
+//             out_caps->FenceSyncProc.ClientWaitSync = glClientWaitSync;
+//             out_caps->FenceSyncProc.WaitSync = glWaitSync;
+//     }
 
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &out_caps->MaxTextureUnits);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &out_caps->UniformBufferOffsetAlignment);

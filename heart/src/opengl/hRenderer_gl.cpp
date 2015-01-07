@@ -384,12 +384,9 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 
 	fences = new hRenderFence[fenceCount];
 
-	for (hUint i=0; i<fenceCount; ++i) {
-		fences[i].sync = nullptr;
-	}
 	lfds_freelist_new(&fenceFreeList, fenceCount, [](void** user_data, void* user_state) -> int {
 		static hUint initFaces = 0;
-		auto* fences = (hRenderFence*)user_data;
+		auto* fences = (hRenderFence*)user_state;
 		*user_data = fences+initFaces;
 		++initFaces;
 		return 1;
