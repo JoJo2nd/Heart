@@ -83,6 +83,7 @@ namespace Heart {
 
             hRenderer::hRenderCallDesc*         rcd;
             hStringID*                          progIDs;
+            hShaderProfile*                     progProfiles;
             hRenderer::hProgramReflectionInfo*  reflection;
         };
         typedef std::unordered_map<hPassKey, hPassDesc> hPassHashTable;

@@ -82,8 +82,8 @@ public:
             {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
-        vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", eShaderProfile_vs4_0);
-        frag = hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", eShaderProfile_ps4_0);
+        vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
+        frag = hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
 		refInfo = hRenderer::createProgramReflectionInfo(vert, frag, nullptr, nullptr, nullptr);

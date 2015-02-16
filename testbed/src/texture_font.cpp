@@ -138,8 +138,8 @@ public:
         fnt_cache_mips.height = ch;
         fnt_cache_mips.size = cw*ch;
 
-        vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", eShaderProfile_vs4_0);
-        frag = hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", eShaderProfile_ps4_0);
+        vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
+        frag = hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*5, element_count, 0);
         t2d  = hRenderer::createTexture2D(1, &fnt_cache_mips, hTextureFormat::R8_unorm, 0);
 
@@ -163,7 +163,7 @@ public:
              0.f, 1.f, 0.f, /*uv*/1.f, 0.f,
              0.f, 0.f, 0.f, /*uv*/1.f, 1.f,
         };
-        vertatlas = hRenderer::compileShaderStageFromSource(vert2Src, hStrLen(vert2Src), "main", eShaderProfile_vs4_0);
+        vertatlas = hRenderer::compileShaderStageFromSource(vert2Src, hStrLen(vert2Src), "main", hShaderProfile::ES2_vs);
         vbatlas = hRenderer::createVertexBuffer(altas_verts, sizeof(hFloat)*5, 6, 0);
 
         hUint8 test_tex_data[] = {

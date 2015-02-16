@@ -15,6 +15,7 @@
 #endif
 #include "GL/glew.h"
 #include "SDL.h"
+#include "resource_common.pb.h"
 #include "resource_shader.pb.h"
 #include "minfs.h"
 
@@ -78,35 +79,11 @@ typedef std::regex_iterator<std::string::iterator> sre_iterator;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-const char* shaderProfiles[] = {
-    "vertex"   ,  //eShaderType_Vertex		= 0;
-    "pixel"    , //eShaderType_Pixel		= 1;
-    "geometry" ,     //eShaderType_Geometery	= 2;
-    "hull"     ,//eShaderType_Hull		= 3;
-    "domain"   ,  //eShaderType_Domain		= 4;
-    "compute"  ,   //eShaderType_Compute		= 5;
-    "vs4_0"    , //eShaderType_vs4_0 = 6;
-    "vs4_1"    , //eShaderType_vs4_1 = 7;
-    "vs5_0"    , //eShaderType_vs5_0 = 8;
-    "ps4_0"    , //eShaderType_ps4_0 = 9;
-    "ps4_1"    , //eShaderType_ps4_1 = 10;
-    "ps5_0"    , //eShaderType_ps5_0 = 11;
-    "gs4_0"    , //eShaderType_gs4_0 = 12;
-    "gs4_1"    , //eShaderType_gs4_1 = 13;
-    "gs5_0"    , //eShaderType_gs5_0 = 14;
-    "cs4_0"    , //eShaderType_cs4_0 = 15;
-    "cs4_1"    , //eShaderType_cs4_1 = 16;
-    "cs5_0"    , //eShaderType_cs5_0 = 17;
-    "hs5_0"    , //eShaderType_hs5_0 = 18;
-    "ds5_0"    , //eShaderType_ds5_0 = 19;
-};
-
-
-struct ShaderDefine 
+struct ShaderDefine
 {
     ShaderDefine()
     {}
-    ShaderDefine(const char* define, const char* value) 
+    ShaderDefine(const char* define, const char* value)
         : define_(define), value_(value)
     {}
     std::string define_;
@@ -128,14 +105,50 @@ typedef uint (*CompilerFunc)(std::string*, const ShaderCompileParams&, std::stri
 //////////////////////////////////////////////////////////////////////////
 #if defined (PLATFORM_WINDOWS)
 size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflection* reflect, Heart::proto::ShaderResource* shaderresource);
-uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
-std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
+uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params,
+    std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
 #endif
 uint initGLCompiler(std::string* out_errors);
-uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
-std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
-uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths, 
-std::string* out_source_string, std::map<std::string, std::string>* inc_ctx, std::vector<std::string>*);
+uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params,
+    std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
+uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths,
+    std::string* out_source_string, std::map<std::string, std::string>* inc_ctx, std::vector<std::string>*);
+
+struct ShaderProfile {
+    const char* profileName;
+    std::vector<const char*> defineString;
+    Heart::proto::eShaderType type;
+    CompilerFunc func_;
+    Heart::proto::eShaderRenderSystem system_;
+} shaderProfiles[] = {
+    { "XXXXXXX",      { "HEART_INVALID"                 , "HEART_XXX" },   Heart::proto::eShaderType_ES2_vs    , nullptr ,         Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "ES2_vs",       { "HEART_COMPILE_VERTEX_PROG"     , "HEART_ES2" },   Heart::proto::eShaderType_ES2_vs    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "ES2_ps",       { "HEART_COMPILE_FRAGMENT_PROG"   , "HEART_ES2" },   Heart::proto::eShaderType_ES2_ps    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "WebGL_vs",     { "HEART_COMPILE_VERTEX_PROG"     , "HEART_WebGL" }, Heart::proto::eShaderType_WebGL_vs  , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "WebGL_ps",     { "HEART_COMPILE_FRAGMENT_PROG"   , "HEART_WebGL" }, Heart::proto::eShaderType_WebGL_ps  , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "ES3_vs",       { "HEART_COMPILE_VERTEX_PROG"     , "HEART_ES3" },   Heart::proto::eShaderType_ES3_vs    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "ES3_ps",       { "HEART_COMPILE_FRAGMENT_PROG"   , "HEART_ES3" },   Heart::proto::eShaderType_ES3_ps    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL10_vs",      { "HEART_COMPILE_VERTEX_PROG"     , "HEART_FL10" },  Heart::proto::eShaderType_FL10_vs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL10_ps",      { "HEART_COMPILE_FRAGMENT_PROG"   , "HEART_FL10" },  Heart::proto::eShaderType_FL10_ps   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL10_gs",      { "HEART_COMPILE_GEOMETRY_PROG"   , "HEART_FL10" },  Heart::proto::eShaderType_FL10_gs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL10_cs",      { "HEART_COMPILE_COMPUTE_PROG"    , "HEART_FL10" },  Heart::proto::eShaderType_FL10_cs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_vs",      { "HEART_COMPILE_VERTEX_PROG"     , "HEART_FL11" },  Heart::proto::eShaderType_FL11_vs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_ps",      { "HEART_COMPILE_FRAGMENT_PROG"   , "HEART_FL11" },  Heart::proto::eShaderType_FL11_ps   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_gs",      { "HEART_COMPILE_GEOMETRY_PROG"   , "HEART_FL11" },  Heart::proto::eShaderType_FL11_gs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_cs",      { "HEART_COMPILE_COMPUTE_PROG"    , "HEART_FL11" },  Heart::proto::eShaderType_FL11_cs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_hs",      { "HEART_COMPILE_HULL_PROG"       , "HEART_FL11" },  Heart::proto::eShaderType_FL11_hs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "FL11_ds",      { "HEART_COMPILE_DOMAIN_PROG"     , "HEART_FL11" },  Heart::proto::eShaderType_FL11_ds   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+};
+
+ShaderProfile getShaderProfile(lua_State* L, const char* profile) {
+    for (const auto& i : shaderProfiles) {
+        if (strcmp(i.profileName, profile) == 0) {
+            return i;
+        }
+    }
+    luaL_errorthrow(L, "profiles %s not supported!", profile);
+    return shaderProfiles[0];
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -152,18 +165,31 @@ int SB_API shaderCompiler(lua_State* L) {
 
 try {
     std::vector<char> scratchbuffer;
+    std::vector<ShaderProfile> profilesToCompile;
     scratchbuffer.reserve(1024);
-    proto::eShaderType progtype;
     const char* entry = nullptr;
     const char* profile = nullptr;
-    lua_getfield(L, 3, "entry");
-    if (!lua_isstring(L, -1)) {
-        luaL_errorthrow(L, "entry parameter is not a string or missing");
-    }
     entry=lua_tostring(L, -1);
     lua_pop(L, 1);
-    lua_getfield(L, 3, "profile");
-    progtype = (proto::eShaderType)luaL_checkoption(L, -1, "vs4_0", shaderProfiles);
+
+    lua_getfield(L, 3, "profiles");
+    if (lua_istable(L, -1)) {
+        luaL_errorthrow(L, "profiles is an unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
+    }
+    uint i = 0;
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
+        /* uses 'key' (at index -2) and 'value' (at index -1) */
+        if (!lua_isstring(L, -2) && !lua_isstring(L, -1)) {
+            luaL_errorthrow(L, "profiles table entry unexpected type(got [%s]=%s; expected [%s]=%s)",
+                lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
+            break;
+        }
+        profilesToCompile.push_back(getShaderProfile(L, lua_tostring(L, -1)));
+        /* removes 'value'; keeps 'key' for next iteration */
+        lua_pop(L, 1);
+        ++i;
+    }
     lua_pop(L, 1);
 
     ShaderCompileParams shader_compile_params;
@@ -195,35 +221,9 @@ try {
         hasdefines=true;
     }
 
-    const char* progTypeMacros[] = {
-        "HEART_COMPILE_VERTEX_PROG"  ,    // "vertex"    
-        "HEART_COMPILE_FRAGMENT_PROG",    // "pixel"     
-        "HEART_COMPILE_GEOMETRY_PROG",    // "geometery" 
-        "HEART_COMPILE_HULL_PROG"    ,    // "hull"      
-        "HEART_COMPILE_DOMAIN_PROG"  ,    // "domain"    
-        "HEART_COMPILE_COMPUTE_PROG" ,    // "compute"   
-        "HEART_COMPILE_VERTEX_PROG"  ,    // "vs4_0"     
-        "HEART_COMPILE_VERTEX_PROG"  ,    // "vs4_1"     
-        "HEART_COMPILE_VERTEX_PROG"  ,    // "vs5_0"     
-        "HEART_COMPILE_FRAGMENT_PROG",    // "ps4_0"     
-        "HEART_COMPILE_FRAGMENT_PROG",    // "ps4_1"     
-        "HEART_COMPILE_FRAGMENT_PROG",    // "ps5_0"     
-        "HEART_COMPILE_GEOMETRY_PROG",    // "gs4_0"     
-        "HEART_COMPILE_GEOMETRY_PROG",    // "gs4_1"     
-        "HEART_COMPILE_GEOMETRY_PROG",    // "gs5_0"     
-        "HEART_COMPILE_COMPUTE_PROG" ,    // "cs4_0"     
-        "HEART_COMPILE_COMPUTE_PROG" ,    // "cs4_1"     
-        "HEART_COMPILE_COMPUTE_PROG" ,    // "cs5_0"     
-        "HEART_COMPILE_HULL_PROG"    ,    // "hs5_0"     
-        "HEART_COMPILE_DOMIAN_PROG"  ,    // "ds5_0"     
-    };
-
     shader_compile_params.entry_ = entry;
     shader_compile_params.compileFlags_ = compileFlags;
-    shader_compile_params.profile_ = progtype;
     shader_compile_params.macros_.emplace_back("HEART_ENGINE", "1");
-    shader_compile_params.macros_.emplace_back(progTypeMacros[progtype], "1");
-
     if (hasdefines) {
         uint i=0;
         lua_pushnil(L);
@@ -262,60 +262,35 @@ try {
         }
     }
 
-    struct ShaderCompiler {
-        CompilerFunc func_;
-        proto::eShaderRenderSystem system_;
-    };
-    ShaderCompiler compilers[] = {
-#if defined (PLATFORM_WINDOWS)
-//        {compileD3DShader, proto::eShaderRenderSystem_D3D11},
-#endif
-        {compileGLShader , proto::eShaderRenderSystem_OpenGL},
-        {nullptr, proto::eShaderRenderSystem_None}
-    };
-
     proto::ShaderResourceContainer resource_container;
     std::string full_shader_source;
     std::map<std::string, std::string> parse_ctx;
     std::vector<std::string> included_files;
     parseShaderSource(path, base_include_paths, &full_shader_source, &parse_ctx, &included_files);
 
-    ShaderCompiler* current_compiler = compilers;
-    while (current_compiler->func_){
+    for (const auto& i : profilesToCompile) {
         Heart::proto::ShaderResource* shaderresource = resource_container.add_shaderresources();
         std::string full_result_source = full_shader_source;
         std::string error_string;
         void* bin_blob;
         size_t bin_blob_len;
-        if (current_compiler->func_(&full_result_source, shader_compile_params, &error_string, &bin_blob, &bin_blob_len) != 0) {
+        auto local_shader_compile_params = shader_compile_params;
+        for (const auto& d : i.defineString) {
+            local_shader_compile_params.macros_.emplace_back(d, "1");
+        }
+        if (i.func_(&full_result_source, shader_compile_params, &error_string, &bin_blob, &bin_blob_len) != 0) {
             luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", error_string.c_str());
         }
 
-        shaderresource->set_rendersystem(current_compiler->system_);
+        shaderresource->set_rendersystem(i.system_);
         shaderresource->set_entry(entry);
-        shaderresource->set_profile(progtype);
+        shaderresource->set_profile(i.type);
         if (bin_blob) {
             shaderresource->set_compiledprogram(bin_blob, bin_blob_len);
         }
-        shaderresource->set_type(progtype);
+        shaderresource->set_type(i.type);
         shaderresource->set_source(full_result_source);
-
-        ++current_compiler;
     }
-
-    // ID3D11ShaderReflection* reflect;
-    // hr = D3DReflect(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflect);
-    // if (FAILED( hr )) {
-    //     luaL_errorthrow(L, "Couldn't create reflection information.");
-    // }
-
-    // D3D11_SHADER_DESC desc;
-    // reflect->GetDesc( &desc );
-    // if (progtype == proto::eShaderType_Vertex) {
-    //     if (parseVertexInputFormat(desc, reflect, &shaderresource) == 0) {
-    //         luaL_errorthrow(L, "Failed to parse vertex input format from shader");
-    //     }
-    // }
 
     //write the resource
     const char* outputpath=lua_tostring(L, 4);

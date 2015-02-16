@@ -273,15 +273,15 @@ static void renderDoFrame() {
                 if (rc->header_.samplerCount_) {
                     auto* samplers = hGetArgsS(hGLSampler, rc->header_.samplerCount_, sizeof_sampler);
                     for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
-                        auto* sampler = (hGLSampler*)(((hByte*)samplers) + sizeof_sampler);
+                        auto* sampler = (hGLSampler*)(((hByte*)samplers) + (i*sizeof_sampler));
                         glUniform1i(sampler->index, sampler->index);
-                        ft.impl_bindSamplerObject(sampler->index, sampler);//glBindSampler(samplers[i].index, samplers[i].samplerObj);
+                        ft.impl_bindSamplerObject(sampler->index, sampler);
                     }
                 }
 
 				//textures
 				if (rc->header_.textureCount_) {
-					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_);
+					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_); 
 					for (hUint8 i = 0, n = rc->header_.textureCount_; i < n; ++i) {
 						glActiveTexture(GL_TEXTURE0+textures[i].index_);
                         glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
@@ -479,22 +479,16 @@ void destroy() {
 
 GLuint hglProfileToType(hShaderProfile profile) {
     switch (profile) {
-    case eShaderProfile_vs4_0: return GL_VERTEX_SHADER;
-    case eShaderProfile_vs4_1: return GL_VERTEX_SHADER;
-    case eShaderProfile_vs5_0: return GL_VERTEX_SHADER;
-    case eShaderProfile_ps4_0: return GL_FRAGMENT_SHADER;
-    case eShaderProfile_ps4_1: return GL_FRAGMENT_SHADER;
-    case eShaderProfile_ps5_0: return GL_FRAGMENT_SHADER;
-    case eShaderProfile_gs4_0: return GL_GEOMETRY_SHADER;
-    case eShaderProfile_gs4_1: return GL_GEOMETRY_SHADER;
-    case eShaderProfile_gs5_0: return GL_GEOMETRY_SHADER;
-    case eShaderProfile_cs4_0: //return ;
-    case eShaderProfile_cs4_1: //return ;
-    case eShaderProfile_cs5_0: //return ;
-    case eShaderProfile_hs5_0: //return ;
-    case eShaderProfile_ds5_0: //return ;
+    case hShaderProfile::ES2_vs: return GL_VERTEX_SHADER;
+    case hShaderProfile::ES2_ps: return GL_FRAGMENT_SHADER;
+    case hShaderProfile::WebGL_vs: return GL_VERTEX_SHADER;
+    case hShaderProfile::WebGL_ps: return GL_FRAGMENT_SHADER;
     default: return GL_INVALID_VALUE;
     }
+}
+
+bool isProfileSupported(hShaderProfile profile) {
+    return hglProfileToType(profile) != GL_INVALID_VALUE;
 }
 
 static GLenum hglToPrimType(Primative pt, hUint* count) {

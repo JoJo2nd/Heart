@@ -17,9 +17,8 @@
 #include "threading/hThreadLocalStorage.h"
 #include "base/hUTF8.h"
 
-namespace Heart
-{
-
+namespace Heart {
+#if 0
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -633,5 +632,81 @@ namespace Heart
         static hDebugDrawRenderer debugDrawRenderer;
         return &debugDrawRenderer;
     }
+#endif
+namespace hDebugOSD {
+namespace Private {
+    struct hDebugTextString {
+        hColour colour;
+        hVec3   position;
+        hUint   txtBufOffset;
+    };
 
+    struct hOSDContext {
+        hMutex sentry;
+        std::vector<hDebugTextString> txtPrims;
+        std::vector<hChar> txtBuffer;
+        hTTFFontFace* fontFace;
+        hFontRenderCache fontCache;
+        hRenderer::hVertexBuffer* dynVtxBuffer;
+        hRenderer::hRenderCall* rc;
+
+        bool initialise() {
+            hRenderer::hVertexBufferLayout lo[] = {
+                { hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,                  0, hFalse, sizeof(hFloat) * 7 },
+                { hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 3, hFalse, sizeof(hFloat) * 7 },
+            };
+            dynVtxBuffer = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat)*7, 3, 0);
+
+            auto* debug_font = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/debug_font_shader"));
+            hRenderer::hRenderCallDesc rcd;
+            rcd.vertex_ = debug_font->getShader(hShaderProfile::ES2_vs);
+            rcd.fragment_ = debug_font->getShader(hShaderProfile::ES2_ps);
+            rcd.vertexBuffer_ = dynVtxBuffer;
+            //rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
+            rcd.setVertexBufferLayout(lo, 2);
+            rc = hRenderer::createRenderCall(rcd);
+        }
+    };
+    
+    hOSDContext* osdCtx = nullptr;
+}
+using namespace Private;
+
+    void initialise() {
+        if (!osdCtx) {
+            osdCtx = new hOSDContext();
+        }
+    }
+
+    void begin() {
+        osdCtx->sentry.Lock();
+    }
+
+    void drawText(const hVec3& screenpos, const hColour& colour, const hChar* buffer, ...) {
+        hDebugTextString txt;
+        hUint c = 0;
+        txt.colour = colour;
+        txt.position = screenpos;
+        txt.txtBufOffset = (hUint)osdCtx->txtBuffer.size();
+        while (buffer[c]) {
+            osdCtx->txtBuffer.push_back(buffer[c]);
+            ++c;
+        }
+        osdCtx->txtBuffer.push_back(0);
+        osdCtx->txtPrims.push_back(txt);
+    }
+
+    //void drawTexturedQuad(const hVec3& screenpos, hFloat width, hFloat height, hShaderResourceView* texturesrv);
+
+    void end() {
+        osdCtx->sentry.Unlock();
+    }
+
+    void renderOnScreenDisplay(hRenderer::hCmdList* cl) {
+        hMutexAutoScope sentry(&osdCtx->sentry);
+        for(const auto& txtPrim : osdCtx->txtPrims) {
+            //cl->
+        }
+    }
+}
 }

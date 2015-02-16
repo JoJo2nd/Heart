@@ -50,7 +50,7 @@ void    genSamplerObjectInplace(const hRenderCallDesc::hSamplerStateDesc& desc, 
     };
 
 
-    ExtSamplerObject* s = (ExtSamplerObject*)out;
+    auto* s = (ExtSamplerObject*)out;
     glGenSamplers(1, &s->samplerObj);
     auto minfilter = minfiltertogl(desc.filter_);
     auto filter = filtertogl(desc.filter_);
@@ -68,12 +68,12 @@ void    genSamplerObjectInplace(const hRenderCallDesc::hSamplerStateDesc& desc, 
 }
 
 void    destroySamplerObjectInplace(hGLSampler* data) {
-    ExtSamplerObject* s = (ExtSamplerObject*)data;
+    auto* s = (ExtSamplerObject*)data;
     glDeleteSamplers(1, &s->samplerObj);
 }
 
 void    bindSamplerObject(hInt index, hGLSampler* so) {
-    ExtSamplerObject* s = (ExtSamplerObject*)so;
+    auto* s = (ExtSamplerObject*)so;
     glBindSampler(index, s->samplerObj);
 }
 

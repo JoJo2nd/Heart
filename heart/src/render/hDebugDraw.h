@@ -4,9 +4,6 @@
 *********************************************************************/
 #pragma once
 
-#ifndef HDEBUGDRAW_H__
-#define HDEBUGDRAW_H__
-
 #include "base/hArray.h"
 #include "base/hRendererConstants.h"
 #include "base/hTypes.h" 
@@ -14,8 +11,11 @@
 #include "pal/hMutex.h"
 #include <vector>
 
-namespace Heart
-{
+namespace Heart {
+namespace hRenderer {
+    struct hCmdList;
+}
+#if 0
     class hFont;
     class hDebugDrawRenderer;
 
@@ -155,6 +155,13 @@ namespace Heart
 
         hBool               resourcesCreated_;
     };
-}
 
-#endif // HDEBUGDRAW_H__
+#endif
+namespace hDebugOSD {
+    void begin();
+    void drawText(const hVec3& screenpos, const hColour& colour, const hChar* buffer, ...);
+    //void drawTexturedQuad(const hVec3& screenpos, hFloat width, hFloat height, hShaderResourceView* texturesrv);
+    void end();
+    void renderOnScreenDisplay(hRenderer::hCmdList* cl);
+}
+}

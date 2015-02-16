@@ -57,10 +57,12 @@ using namespace Hidden;
 hBool initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
     filesystem = pFileSystem;
     jobManager = jobmanager;
+    loadPackage("system");
     return hTrue;
 }
 
 void shutdown() {
+    unloadPackage("system");
     for (auto i : packages) {
         //i.dis();
     }

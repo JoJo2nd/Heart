@@ -46,15 +46,12 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     void hNetHost::printDebugInfo(hFloat screenwidth, hFloat screenheight) {
-        hChar debugstring[128];
         hVec3 screenpos((screenwidth/2.f)-250.f, (screenheight/2.f)-32.f, 0.f);
         hColour textcolour(1.f, 1.f, 1.f, 1.f);
-        hDebugDraw* dd=hDebugDraw::it();
 
-        dd->begin();
-        hStrPrintf(debugstring, (hUint)hStaticArraySize(debugstring), "Server IP[%s:%u]", ipstring_, address_.port);
-        dd->drawText(screenpos, debugstring, textcolour);
-        dd->end();
+        hDebugOSD::begin();
+        hDebugOSD::drawText(screenpos, textcolour, "Server IP[%s:%u]", ipstring_, address_.port);
+        hDebugOSD::end();
     }
 
     //////////////////////////////////////////////////////////////////////////

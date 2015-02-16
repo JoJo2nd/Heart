@@ -246,13 +246,13 @@ namespace Heart {
                 hUint linkedprogs = 0;
                 if (!p.progIDs[0].is_default() && !p.rcd->vertex_) {
                     auto res = hResourceManager::weakResource<hShaderProgram>(p.progIDs[0]);
-                    p.rcd->vertex_ = res->getShader();
+                    p.rcd->vertex_ = res->getShader(p.progProfiles[0]);
                     linkedprogs |= (p.rcd->vertex_ != nullptr);
                 } else 
                     linkedprogs |= 1;
                 if (!p.progIDs[1].is_default() && !p.rcd->fragment_) {
-                    auto res = hResourceManager::weakResource<hShaderProgram>(p.progIDs[0]);
-                    p.rcd->fragment_ = res->getShader();
+                    auto res = hResourceManager::weakResource<hShaderProgram>(p.progIDs[1]);
+                    p.rcd->fragment_ = res->getShader(p.progProfiles[1]);
                     linkedprogs |= (p.rcd->fragment_ != nullptr) << 1;
                 }
                 /*if (!p.progIDs[0].is_default() && !p.rcd->vertex_) {
