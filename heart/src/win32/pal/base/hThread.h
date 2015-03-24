@@ -23,9 +23,13 @@ namespace Device
 
     hFUNCTOR_TYPEDEF(hUint32(*)(void*), hThreadFunc);
 
-    class hThread
+    class HEART_CLASS_EXPORT hThread
     {
     public:
+        hThread();
+        hThread(const hThread& rhs) = delete;
+        hThread& operator == (const hThread& rhs) = delete;
+        ~hThread();
 
         enum Priority
         {
@@ -48,7 +52,7 @@ namespace Device
         static unsigned long WINAPI staticFunc( LPVOID pParam );
 
         hChar							threadName_[THREAD_NAME_SIZE];
-        hThreadFunc		                threadFunc_;
+        hThreadFunc*                    threadFunc_;
         void*							pThreadParam_;	
         HANDLE							ThreadHand_;
         hInt32							priority_;

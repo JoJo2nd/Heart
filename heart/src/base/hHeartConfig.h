@@ -3,8 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#ifndef _HHEARTCONFIG_H__
-#define _HHEARTCONFIG_H__
+#pragma once
 
 #if defined (_DEBUG) || defined (DEBUG)
 #   ifndef HEART_DEBUG
@@ -119,4 +118,16 @@
 #   define hgetenv getenv
 #endif
 
-#endif // _HHEARTCONFIG_H__
+
+#ifdef HEART_PLAT_WINDOWS
+#   if HEART_SHARED_LIB_EXPORTS
+#       define HEART_EXPORT extern "C" __declspec(dllexport)
+#       define HEART_CLASS_EXPORT __declspec(dllexport)
+#   else
+#       define HEART_EXPORT extern "C" __declspec(dllimport)
+#       define HEART_CLASS_EXPORT __declspec(dllimport)
+#   endif
+#else
+#   define HEART_EXPORT extern "C"
+#   define HEART_CLASS_EXPORT
+#endif

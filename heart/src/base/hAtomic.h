@@ -23,32 +23,15 @@ namespace Heart {
 
 namespace hAtomic {
 
-#ifdef HEART_PLAT_WINDOWS
+HEART_EXPORT hUint32 HEART_API Increment( hAtomicInt& i );
+HEART_EXPORT hUint32 HEART_API Decrement( hAtomicInt& i );
+HEART_EXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
+HEART_EXPORT hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
+HEART_EXPORT hUint32 HEART_API AtomicGet(const hAtomicInt& i);
+HEART_EXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
+HEART_EXPORT hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
+HEART_EXPORT void HEART_API LWMemoryBarrier();
+HEART_EXPORT void HEART_API HWMemoryBarrier();
 
- hUint32 HEART_API Increment( hAtomicInt& i );
- hUint32 HEART_API Decrement( hAtomicInt& i );
- hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
- hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
- hUint32 HEART_API AtomicGet(const hAtomicInt& i);
- hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
- hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
- void HEART_API LWMemoryBarrier();
- void HEART_API HWMemoryBarrier();
-
-#elif defined HEART_PLAT_LINUX
-
- hUint32 HEART_API Increment( hAtomicInt& i );
- hUint32 HEART_API Decrement( hAtomicInt& i );
- hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal );
- hUint32 HEART_API AtomicSet(hAtomicInt& i, hUint32 val);
- hUint32 HEART_API AtomicGet(const hAtomicInt& i);
- hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount);
- hUint32 HEART_API AtomicAddWithPrev(hAtomicInt& i, hUint32 amount, hUint32* prev);
- void HEART_API LWMemoryBarrier();
- void HEART_API HWMemoryBarrier();
-
-#else 
-    #error ("platform not supported")
-#endif
 }
 }

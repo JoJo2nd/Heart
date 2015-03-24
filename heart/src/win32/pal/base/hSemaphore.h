@@ -8,7 +8,7 @@
 
 namespace Heart
 {
-    class hSemaphore
+    class HEART_CLASS_EXPORT hSemaphore
     {
     public:
         bool Create( hUint32 initCount, hUint32 maxCount ) {

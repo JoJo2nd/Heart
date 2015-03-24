@@ -3,7 +3,9 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "pal/hPlatform.h"
+#include "base/hHeartConfig.h"
+#include "base/hTypes.h"
+#include <windows.h>
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -17,7 +19,7 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void HEART_API hcOutputString( const hChar* msg, ... )
+HEART_EXPORT void HEART_API hcOutputString( const hChar* msg, ... )
 {
 	va_list marker;
 	va_start( marker, msg );
@@ -72,7 +74,7 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
+HEART_EXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
 {
     va_list marker;
     va_start( marker, msg );
@@ -121,7 +123,7 @@ hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ...)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void HEART_API hcSetOutputStringCallback( hPrintfCallback cb )
+HEART_EXPORT void HEART_API hcSetOutputStringCallback( hPrintfCallback cb )
 {
     g_printcallback = cb;
 }

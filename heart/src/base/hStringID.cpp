@@ -5,27 +5,26 @@
 
 #include "base/hStringID.h"
 #include "base/hStringUtil.h"
-#include "threading/hMutexAutoScope.h"
-#include "pal/hMutex.h"
-#include "cryptoMurmurHash.h"
+#include "base/hMutexAutoScope.h"
+#include "base/hMutex.h"
 
 namespace Heart
 {
 
     hStringID::hStringIDEntry hStringID::s_hashTable[hStringID::s_hashTableBucketSize];
     hUint hStringID::s_hashTableCount;
-    hStringID::hStringIDEntry hStringID::s_default;
 
     static hMutex s_writeMutex;
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+    hStringID::hStringIDEntry* hStringID::get_default_id() {
+        static hStringID::hStringIDEntry s_default;
+        return &s_default;
+    }
 
     hStringID::hStringIDEntry* hStringID::get_string_id(const hChar* str) {
         hUint len = hStrLen(str);
         if (len == 0) {
-            return &s_default;
+            return get_default_id();
         }
         hUint32 fullhash;
         cyMurmurHash3_x86_32(str, len, hGetMurmurHashSeed(), &fullhash);

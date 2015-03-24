@@ -66,6 +66,7 @@
         // luaL_setfuncs(L,funcs,1);
         // lua_pop(L, 1);// pop heart module table
 
+        REGISTER_UNIT_TEST(*factory_, ShaderInput);
         REGISTER_UNIT_TEST(*factory_, TextureFont);
 		REGISTER_UNIT_TEST(*factory_, MovingTri);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
@@ -98,6 +99,10 @@
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
+        if (!Heart::hResourceManager::getIsPackageLoaded("system")) {
+            return;
+        }
+
         if (!currentTest_ && !exiting_) {
             Heart::hRenderer::finish();
             mem_track_marker(factory_->getUnitTestName(currentTestIdx_));

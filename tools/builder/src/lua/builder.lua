@@ -8,6 +8,7 @@ local protobuf = require "proto_lua"
 
 local G = _G
 local buildables = {}
+local global_builder_version = "0.1.0"
 local data_path = string.gsub(in_data_path, "\\", "/");
 local output_data_path = string.gsub(in_output_data_path, "\\", "/");
 local job_count = in_cores or 3                                  
@@ -27,8 +28,8 @@ local function verbose_log(str, ...)
 end
 local function error_log(str, ...)
     -- 31 for red
-    red = "\x1B[31m"
-    reset = "\x1B[0m"
+    red = "" --"\x1B[31m"
+    reset = "" --"\x1B[0m"
     str = string.format(str, ...)
     print(red..str..reset)
 end
@@ -236,12 +237,16 @@ local wait_for_free_job_slot = function(job_limit)
             if exit_code ~= nil then
                 if exit_code ~= 0 then
                     local f=io.open(pid.l, "r")
-                    local e = f:read('*a')
-                    f:close()
-                    error_log(e)
+                    if f then
+	                    local e = f:read('*a')
+	                    f:close()
+	                    error_log(e)
+	                else
+	                	error_log("Failed to open log %s", pid.l)
+	                end
                     failure = failure+1
                 else
-                    os.remove(pid.l)
+                    --os.remove(pid.l)
                     success = success+1
                 end
                 processes[proc] = nil
@@ -323,7 +328,8 @@ for k, v in pairs(filesystem.readdir('.')) do
     local filename = filesystem.filewithext(v)
     if filename then
         if string.find(filename, ".dll") or string.find(filename, ".so") or string.find(filename, ".lua") then
-            global_file_hash_lookup[filesystem.pathwithoutext(filename)] = filesystem.fileMD5(filename);
+            -- global_file_hash_lookup[filesystem.pathwithoutext(filename)] = filesystem.fileMD5(filename);
+
         end
     end
 end
@@ -339,44 +345,95 @@ for k, v in pairs(global_file_hash_lookup) do verbose_log("%s=%s", k, v) end
 add_build_folder(data_path)
 
 for k, v in pairs(buildables) do
-    local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, v.full_path)
+	local temp_file_name, output_file, dep_output_file = get_resource_filenames(v.package, v.full_path)
     local error_log_filename = output_file..'.log'
     tmp_file = io.open(temp_file_name, "w")
     local paramstr = totablestring(v.parameters)
+	local in_deps_string = "prev_params = {}\nprev_files = {}"
+	dep_file = io.open(dep_output_file, "r")
+    if dep_file then
+       in_deps_string = dep_file:read('*a');
+       dep_file:close(); 
+    end
+
     local build_script = string.gsub([[
 local errorlog = io.open("$errorlog", "w")
 local function error_print (str,...)
-    errorlog:write(string.format(str, ...))
+    errorlog:write(string.format(str.."\n", ...))
 end
 print = error_print
-print("Building - $inputfile\n")
+local safe_build = function ()
+    print("Building - $inputfile")
 
-local filesystem = require "filesystem"
-local builder = require "$buildername"
-local parameters =  $params
-local inputfiles = builder.build("$inputfile", {}, parameters, "$tempoutputfile")
-local depfile = io.open("$depoutputfile", "w")
--- Write out builder dll/so
-depfile:write("$buildername".."?$hash".."\n")
--- Write out this lua file
-p = filesystem.canonical("$buildscript")
-if (filesystem.isfile(p)) then
-    depfile:write(p.."?"..filesystem.fileMD5(p).."\n")
-end
---Write out any deps
-for i, v in ipairs(inputfiles) do
-    p = filesystem.canonical(v)
-    if (filesystem.isfile(p)) then
-        depfile:write(p.."?"..filesystem.fileMD5(v).."\n")
-    else
-        depfile:write(v.."\n")
+    local filesystem = require "filesystem"
+    local builder = require "$buildername"
+    local parameters =  $params
+    parameters.version = builder.version()
+    parameters.builderversion = "$builderversion"
+    $deps
+
+    local do_build = function()
+        print("Building...")
+    	local inputfiles = builder.build("$inputfile", {}, parameters, "$tempoutputfile")
+
+        print("Recording deps...")
+    	local depfile = io.open("$depoutputfile", "w")
+
+    	depfile:write("prev_params = {\n")
+    	for k, v in pairs(parameters) do
+    		depfile:write(string.format("[\"%s\"]=\"%s\", \n", k, v))
+    	end
+    	depfile:write("}\n")
+
+    	depfile:write("prev_files = {\n")
+    	for i, v in ipairs(inputfiles) do
+    	    p = filesystem.canonical(v)
+    	    if (filesystem.isfile(p)) then
+    			depfile:write(string.format("[\"%s\"]=\"%s\", \n", v, filesystem.fileMD5(v)))
+    		end
+    	end
+    	depfile:write("}\n")
+        print("...deps recorded.")
+    	depfile:close()
     end
+
+    for k, v in pairs(prev_params) do
+    	if prev_params[k] ~= tostring(parameters[k]) then
+            print(string.format("parameter %s doesn't match (%s~=%s)", k, prev_params[k], parameters[k]))
+    		do_build()
+    		return
+    	end
+    end
+
+    for k, v in pairs(parameters) do
+    	if prev_params[k] ~= tostring(parameters[k]) then
+            print(string.format("parameter %s doesn't match (%s~=%s)", k, prev_params[k], parameters[k]))
+    		do_build()
+    		return
+    	end
+    end
+
+    for k, v in pairs(prev_files) do
+    	if v ~= filesystem.fileMD5(k) then
+            print(string.format("file %s has been updated", k))
+    		do_build()
+    		return
+    	end
+    end
+
+    print("Used cached data.")
 end
-depfile:close()
+ok, err_msg = pcall(safe_build)
+if not ok then 
+    print(err_msg)
+    os.exit(false)
+end
     ]], "$(%w+)", {
-        params = paramstr, 
+        params = paramstr,
+        builderversion = global_builder_version, 
         buildscript=temp_file_name,
-        buildername=v.res_type, 
+        buildername=v.res_type,
+        deps=in_deps_string, 
         inputfile=v.full_path, 
         tempoutputfile=output_file, 
         errorlog=error_log_filename,
@@ -388,8 +445,7 @@ depfile:close()
     tmp_file:write(build_script)
     tmp_file:flush()
     tmp_file:close()
-    -- update the script hash now to detect any new/changed parameters
-    global_file_hash_lookup[temp_file_name]=filesystem.fileMD5(temp_file_name)
+
     local dobuild = function () 
         local exe = "lua"
         wait_for_free_job_slot(job_count)
@@ -397,36 +453,17 @@ depfile:close()
         log("Building Resource - [%s]%s", v.package, string.gsub(k, data_path, ""))
         processes[k] = {p=process.exec(string.format("%s \"%s\"", exe, temp_file_name)), l=error_log_filename, d=depoutputfile}
     end
-    -- check the cache
-    needsbuild = true
-    dep_file = io.open(dep_output_file, "r")
-    if dep_file then
-        needsbuild = false
-        for line in dep_file:lines() do
-            local path, hash = string.match(line, '(.*)?(.*)')
-            if global_file_hash_lookup[path] ~= hash then
-                -- something is out of date, build
-                verbose_log("%s=%s doesn't match %s on line %s", path, global_file_hash_lookup[path], hash, line)
-                needsbuild = true
-            end
-        end
-        
-    end
-    if needsbuild == true then
-        dobuild()
-    else
-        cached = cached+1
-        log("Using Cached Resource - [%s]%s", v.package, string.gsub(k, data_path, ""))
-    end
 
+    dobuild()
 end
 
 --Wait for it all to be done
 wait_for_free_job_slot(0)
 
-log("Build complete: %d Successfully Completed, %d Cached, %d Failures", success, cached, failure)
+log("Build complete: %d Successfully Completed, %d Failures", success, failure)
 
 -- Output packages
-write_packages(buildables)
-
-log("Finished Writing Packages.")
+if (failure == 0) then
+	write_packages(buildables)
+	log("Finished Writing Packages.")
+end

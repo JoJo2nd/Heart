@@ -2,8 +2,8 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#include "threading/hThreadLocalStorage.h"
-#include "pal/hMutex.h"
+#include "base/hThreadLocalStorage.h"
+#include "base/hMutex.h"
 #include <winsock2.h>
 #include <windows.h>
 #include <vector>
@@ -22,7 +22,7 @@ struct hTlsDestructor{
 hMutex tlsMutex;
 std::vector< hTlsDestructor > tlsDestructorArray;
 
-hSize_t createKey(hKeyDestructor destructor) {
+HEART_EXPORT hSize_t HEART_API createKey(hKeyDestructor destructor) {
     tlsMutex.Lock();
     hSize_t tlsSlot = TlsAlloc();
     hTlsDestructor dtor;
@@ -33,7 +33,7 @@ hSize_t createKey(hKeyDestructor destructor) {
     return tlsSlot;
 }
 
-void deleteKey(hSize_t key) {
+HEART_EXPORT void HEART_API deleteKey(hSize_t key) {
     tlsMutex.Lock();
     for (auto i=tlsDestructorArray.begin(), n=tlsDestructorArray.end(); i!=n; ++i) {
         if (i->tlsSlot_==key) {
@@ -45,15 +45,15 @@ void deleteKey(hSize_t key) {
     tlsMutex.Unlock();
 }
 
-void    setKeyValue(hSize_t key, void* value) {
+HEART_EXPORT void HEART_API setKeyValue(hSize_t key, void* value) {
     TlsSetValue((DWORD)key, value);
 }
 
-void*   getKeyValue(hSize_t key) {
+HEART_EXPORT void* HEART_API getKeyValue(hSize_t key) {
     return TlsGetValue((DWORD)key);
 }
 
-void threadExit() {
+HEART_EXPORT void HEART_API threadExit() {
     for (auto i=tlsDestructorArray.cbegin(), n=tlsDestructorArray.cend(); i!=n; ++i) {
         if (i->tlsDestructor_) {
             i->tlsDestructor_(getKeyValue(i->tlsSlot_));

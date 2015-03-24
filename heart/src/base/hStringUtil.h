@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string>
 
 namespace Heart
 {
@@ -113,6 +114,10 @@ namespace Heart
     inline hInt HEART_API hIsSpace(hChar c)
     {
         return isspace(c);
+    }
+
+    hFORCEINLINE hInt hStrNCmp(const hChar* str1, const hChar* str2, hSize_t n) {
+        return strncmp(str1, str2, n);
     }
 }
 

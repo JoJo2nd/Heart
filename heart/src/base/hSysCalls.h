@@ -9,8 +9,7 @@ namespace Heart
 {
 
 namespace hSysCall {
-    hUint64 HEART_API GetProcessorSpeed();
-    void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize);
+    HEART_EXPORT hUint64 HEART_API GetProcessorSpeed();
 #if 0
     void HEART_API hInitSystemDebugLibs();
 #endif

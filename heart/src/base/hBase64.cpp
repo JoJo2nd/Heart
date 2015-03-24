@@ -3,7 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 
 namespace Heart
 {
@@ -61,7 +61,7 @@ namespace hBase64
     //////////////////////////////////////////////////////////////////////////
 
     
-    hUint HEART_API EncodeCalcRequiredSize(hUint inputCount) {
+    HEART_EXPORT hUint HEART_API EncodeCalcRequiredSize(hUint inputCount) {
         hUint reqsize=(inputCount+2)/3;
         return (reqsize*4);
     }
@@ -71,7 +71,7 @@ namespace hBase64
     //////////////////////////////////////////////////////////////////////////
    
     
-    hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
+    HEART_EXPORT hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
         hByte* in;
         hByte* out;
         hUint32 len, blocksout = 0, bytesin = inputCount;
@@ -94,7 +94,7 @@ namespace hBase64
     }
 
     
-    hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount) {
+    HEART_EXPORT hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount) {
         hcAssert(inputbuf);
         hUint reqlen=((inputCount/4)-1)*3;
         if (((hChar*)inputbuf)[inputCount-2] == '=') {
@@ -106,7 +106,7 @@ namespace hBase64
     }
 
     
-    hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
+    HEART_EXPORT hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit) {
         hByte* in, *inend;
         hByte* out, *outend;
         hInt read=0;

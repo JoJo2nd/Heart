@@ -113,10 +113,17 @@ try {
 }
 
 extern "C" {
+
+    int FB_API version(lua_State* L) {
+        lua_pushstring(L, "1.0.0");
+        return 1;
+    }
+
 //Lua entry point calls
 DLL_EXPORT int FB_API luaopen_font(lua_State *L) {
     static const luaL_Reg fontlib[] = {
         {"build"      , fontCompile},
+        {"version", version},
         {NULL, NULL}
     };
     luaL_newlib(L, fontlib);

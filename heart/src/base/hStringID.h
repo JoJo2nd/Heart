@@ -8,6 +8,7 @@
 #define HSTRINGID_H__
 
 #include "hTypes.h"
+#include "cryptoMurmurHash.h"
 
 namespace Heart 
 {
@@ -15,11 +16,11 @@ namespace Heart
     *   hStringID is a unique id for a string across a single run of the program. They are 
     *   not valid across multiple runs.
     */
-    class hStringID
+    class HEART_CLASS_EXPORT hStringID
     {
     public:
         hStringID() 
-            : strEntry_(&s_default)
+            : strEntry_(get_default_id()/*&s_default*/)
         {}
         explicit hStringID(const hChar* str_id) 
             : strEntry_(get_string_id(str_id))
@@ -34,11 +35,11 @@ namespace Heart
         hUint operator [] (const hSize_t pos) const { return strEntry_->strValue_[pos]; }
         hUint32 hash() const { return strEntry_->strHash_; }
         hUintptr_t id() const { return (hUintptr_t)strEntry_; }
-        hBool is_default() const { return strEntry_ == &s_default; }
+        hBool is_default() const { return strEntry_ == get_default_id()/*&s_default*/; }
 
     private:
 
-        struct hStringIDEntry {
+        struct HEART_CLASS_EXPORT hStringIDEntry {
             hStringIDEntry() 
                 : strValue_(nullptr)
                 , next_(nullptr)
@@ -53,7 +54,7 @@ namespace Heart
             hUint32         strHash_;
         };
 
-        static hStringIDEntry   s_default;
+        static hStringIDEntry*  get_default_id();
         static const hUint      s_hashTableBucketSize = 16*1024;
         static hUint            s_hashTableCount;
         static hStringIDEntry   s_hashTable[s_hashTableBucketSize];
@@ -75,6 +76,21 @@ namespace std
     struct less<Heart::hStringID>
     {
         bool operator () (const Heart::hStringID& lhs, const Heart::hStringID& rhs) const { return lhs.hash() < rhs.hash(); }
+    };
+}
+
+#include <string>
+
+namespace Heart {
+    typedef std::string hString;
+}
+
+namespace std
+{
+    template<>
+    struct hash < Heart::hString >
+    {
+        size_t operator () (const Heart::hString& rhs) const { hUint32 r; cyMurmurHash3_x86_32(rhs.c_str(), (hUint)rhs.size(), hGetMurmurHashSeed(), &r); return r; }
     };
 }
 

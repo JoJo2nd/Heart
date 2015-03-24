@@ -8,7 +8,7 @@
 #define HCONDITIONVARIABLE_H__
 
 namespace Heart {
-    class hConditionVariable
+    class HEART_CLASS_EXPORT hConditionVariable
     {
     public:
         hConditionVariable() {

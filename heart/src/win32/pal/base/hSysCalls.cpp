@@ -10,18 +10,14 @@
 #   define size_t_fmt "%lu"
 #endif
 
-#include "pal/hPlatform.h"
+#include "base/hHeartConfig.h"
+#include "base/hTypes.h"
+#include <windows.h>
 
-namespace Heart
-{
-namespace hSysCall
-{
+namespace Heart {
+namespace hSysCall {
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hUint64 HEART_API GetProcessorSpeed()
+    HEART_EXPORT hUint64 HEART_API GetProcessorSpeed()
     {
         //char Buffer[_MAX_PATH];
         DWORD BufSize = _MAX_PATH;
@@ -44,15 +40,6 @@ namespace hSysCall
         RegQueryValueEx(hKey, "~MHz", NULL, NULL, (LPBYTE) &dwMHz, NULL/*&BufSize*/);
 
         return dwMHz*1000000;
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void HEART_API GetCurrentWorkingDir(hChar* out, hUint bufsize)
-    {
-        hdGetCurrentWorkingDir(out, bufsize);
     }
 
 }

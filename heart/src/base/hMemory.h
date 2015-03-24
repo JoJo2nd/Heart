@@ -12,9 +12,9 @@
 #define hPLACEMENT_NEW(ptr)                 ::new ((void*)ptr) 
 
 namespace Heart {
-    void* hMalloc(hSize_t size, hSize_t alignment=HEART_MIN_ALLOC_ALIGNMENT);
-    void* hRealloc(void* ptr, hSize_t size, hSize_t alignment=HEART_MIN_ALLOC_ALIGNMENT);
-    void  hFree(void* ptr);
+    HEART_EXPORT void* HEART_API hMalloc(hSize_t size, hSize_t alignment=HEART_MIN_ALLOC_ALIGNMENT);
+    HEART_EXPORT void* HEART_API hRealloc(void* ptr, hSize_t size, hSize_t alignment=HEART_MIN_ALLOC_ALIGNMENT);
+    HEART_EXPORT void  HEART_API hFree(void* ptr);
 }    
 
 #endif // HMEMORYDEFINES_H__

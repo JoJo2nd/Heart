@@ -6,13 +6,14 @@
 #ifndef DEVICEMUTEX_H__
 #define DEVICEMUTEX_H__
 
+#include "base/hHeartConfig.h"
+#include "base/hTypes.h"
 #include <winsock2.h>
 #include <windows.h>
 
 namespace Heart
 {
-    class hMutex
-    {
+    class HEART_CLASS_EXPORT hMutex {
     public:
         hMutex() {
             InitializeCriticalSection( &mutex_ );

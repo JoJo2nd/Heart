@@ -12,6 +12,7 @@
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
 #include "render/hUniformBufferFlags.h"
+#include "render/hRenderShaderProgram.h"
 #include "UnitTestFactory.h"
 
 
@@ -45,12 +46,13 @@ void main() {\n\
 
 class SingleTri : public IUnitTest {
     
-    hTimer                    timer_;
-    hRenderer::hShaderStage*  vert;
-    hRenderer::hShaderStage*  frag;
-    hRenderer::hVertexBuffer* vb;
-    hRenderer::hRenderCall*   rc;
-    hRenderer::hCmdList*      cl;
+    hTimer                     timer_;
+    hShaderProgram*            shaderProg;
+    hRenderer::hShaderStage*   vert;
+    hRenderer::hShaderStage*   frag;
+    hRenderer::hVertexBuffer*  vb;
+    hRenderer::hRenderCall*    rc;
+    hRenderer::hCmdList*       cl;
 
 public:
     SingleTri( Heart::hHeartEngine* engine ) 
@@ -67,8 +69,10 @@ public:
             {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
-        vert = hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
-        frag = hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
+        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
+
+        vert = shaderProg->getShader(hShaderProfile::ES2_vs);//hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
+        frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
         hRenderer::hRenderCallDesc rcd;

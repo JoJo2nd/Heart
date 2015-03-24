@@ -141,14 +141,15 @@ file(GLOB HEART_RESOURCE_FILES
 if (PLATFORM_WINDOWS)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
-		"${HEART_SOURCE_DIR}/src/win32"
+		"${HEART_SOURCE_DIR}/src/win32/pal"
         "${HEART_SOURCE_DIR}/src/openal"
     )
+    file(GLOB HEART_PLATFORM_BASE_FILES
+        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.h"
+        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.cpp")
     file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
         "${HEART_SOURCE_DIR}/src/win32/pal/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/*.cpp"
-        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.h"
-        "${HEART_SOURCE_DIR}/src/win32/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
         "${HEART_SOURCE_DIR}/src/opengl/*.h"
@@ -160,14 +161,15 @@ endif()
 if (PLATFORM_LINUX)
     set( HEART_INCLUDE_DIRS
         ${HEART_INCLUDE_DIRS}
-        "${HEART_SOURCE_DIR}/src/posix"
+        "${HEART_SOURCE_DIR}/src/posix/pal"
         "${HEART_SOURCE_DIR}/src/openal"
     )
+    file(GLOB HEART_PLATFORM_BASE_FILES
+        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.h"
+        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.cpp")
     file(GLOB HEART_PLATFORM_NON_UNITY_FILES 
         "${HEART_SOURCE_DIR}/src/posix/pal/*.h"
         "${HEART_SOURCE_DIR}/src/posix/pal/*.cpp"
-        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.h"
-        "${HEART_SOURCE_DIR}/src/posix/pal/base/*.cpp"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.cpp"
         "${HEART_SOURCE_DIR}/src/opengl/*.h"
@@ -177,11 +179,13 @@ if (PLATFORM_LINUX)
     )
 endif()
 
+set( HEART_BASE_FILES
+    ${HEART_BASE_FILES} ${HEART_PLATFORM_BASE_FILES})
+
 set( HEART_NON_UNITY_FILES
     ${HEART_PLATFORM_NON_UNITY_FILES}
     ${HEART_RESOURCE_FILES}
-    ${HEART_AUDIO_FILES}
-    ${HEART_BASE_FILES} 
+    ${HEART_AUDIO_FILES} 
     ${HEART_COMPONENTS_FILES}
     ${HEART_COMPUTE_FILES}
     ${HEART_CORE_FILES}
@@ -238,7 +242,7 @@ if (UNITY_BUILD)
         ${HEART_SRC_FILES} ${HEART_UNITY_SRC} ${HEART_UNITY_TARGET})
     set_source_files_properties(${HEART_NON_UNITY_FILES} PROPERTIES HEADER_FILE_ONLY 1)
     set(REGEX1 ".+\\.(h|hpp|gitignore|py|lua|txt|inl)")
-    set(UNITY_ARGS "-d \"${HEART_SOURCE_DIR}/src\" -e \".+\\.(h|hpp|gitignore|py|lua|txt|inl)\" -e .+(.unity[\\d*].cpp) -e \".+([U|u]nity.cpp)\" -o \"${HEART_SOURCE_DIR}/src\" -n heart")
+    set(UNITY_ARGS "-d \"${HEART_SOURCE_DIR}/src\" -e \".+\\base\\.\" -e \".+\\.(h|hpp|gitignore|py|lua|txt|inl)\" -e .+(.unity[\\d*].cpp) -e \".+([U|u]nity.cpp)\" -o \"${HEART_SOURCE_DIR}/src\" -n heart")
     set(UNITY_ARGS "${UNITY_ARGS} -x unix -x posix")
     message(${HEART_UNITY_SRC} ${UNITY_ARGS})
     add_custom_command(
@@ -277,10 +281,18 @@ set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPE
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES
-        zlib crypto lua52 minizip libogg libvorbis proto enet memtrackerlib ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
+        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet memtrackerlib ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
+
+#Create the shared base lib
+add_definitions(-DHEART_SHARED_LIB_EXPORTS=1)
+add_library(heart_base SHARED ${HEART_BASE_FILES})
+target_link_libraries(heart_base crypto memtrackerlib ${PLATFORM_LIBS})
+
+#Create the main engine lib
+add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
 target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
@@ -292,3 +304,6 @@ if (PLATFORM_WINDOWS)
         COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
     )
 endif()
+
+# Add Code Components
+add_subdirectory ("src/codecomponents/filesystem")

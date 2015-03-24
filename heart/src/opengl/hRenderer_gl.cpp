@@ -633,8 +633,28 @@ void  destroyTexture2D(hTexture2D* t) {
     });
 }
 
-hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
-    return ft.impl_createUniformBuffer(initdata, size, flags);
+hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
+	hUint infobufsize = 0;
+    for (auto i=0u, n=layout_count; i<n; ++i) {
+    	infobufsize += hStrLen(layout[i].fieldName)+1;
+    }
+    infobufsize += sizeof(hUniformLayoutDesc)*layout_count;
+//     if (dynamic) {
+//         structSize = hAlign(info.size, RenderPrivate::Caps.UniformBufferOffsetAlignment);
+//     }
+    auto* ub = ft.impl_createUniformBuffer(initdata, structSize*bufferCount, flags);
+    ub->layoutDesc = (hUniformLayoutDesc*)hMalloc(infobufsize);
+    ub->layoutDescCount = layout_count;
+    hMemCpy(ub->layoutDesc, layout, sizeof(hUniformLayoutDesc)*layout_count);
+    infobufsize = sizeof(hUniformLayoutDesc)*layout_count;
+    auto* baseptr = (hByte*)ub->layoutDesc;
+    for (auto i=0u, n=layout_count; i<n; ++i) {
+    	ub->layoutDesc[i].fieldName = (char*)(baseptr + infobufsize);
+        auto len=hStrLen(layout[i].fieldName)+1;
+    	hStrCopy(ub->layoutDesc[i].fieldName, len, layout[i].fieldName);
+    	infobufsize += len;
+    }
+    return ub;
 }
 
 void* getMappingPtr(hUniformBuffer* ub) {
@@ -992,7 +1012,7 @@ void destroyRenderCall(hRenderCall* rc) {
 }
 
 struct hProgramReflectionInfo {
-    typedef std::unordered_map<hUint32, hShaderParamInfo> hParamHash;
+    typedef std::unordered_map<hString, hShaderParamInfo> hParamHash;
 
     hProgramReflectionInfo() 
         : prog(0) {}
@@ -1114,10 +1134,9 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         auto blockoffset = 0;
         glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_BLOCK_INDEX, &blockindex);
         glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_OFFSET, &blockoffset);
-        auto hash = 0u;
-        cyMurmurHash3_x86_32(uniname, olen, hGetMurmurHashSeed(), hashes+i);
+
         hShaderParamInfo info = { (hUint)blockindex, (hUint)blockoffset, mapGLParamType(type), (hUint)size };
-        refinfo->paramTable[hashes[i]] = info;
+        refinfo->paramTable[uniname] = info;
     }
 
     refinfo->uniformBlocks.reserve(uniblockcount);
@@ -1127,7 +1146,6 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         info.name = refinfo->ubNames.get()+(i*uniblocknamelimit);
         glGetActiveUniformBlockName(p, i, uniblocknamelimit, nullptr, refinfo->ubNames.get()+(i*uniblocknamelimit));
         glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
-        info.dynamicSize = hAlign(info.size, RenderPrivate::Caps.UniformBufferOffsetAlignment);
         refinfo->uniformBlocks.push_back(info);
     }
 	hGLSyncFlush();
@@ -1144,23 +1162,42 @@ void destroyProgramReflectionInfo(hProgramReflectionInfo* p) {
 
 hShaderParamInfo getParameterInfo(hProgramReflectionInfo* p, const hChar* name) {
     hShaderParamInfo r = {~0u, ~0u, ShaderParamType::Unknown, 0ul};
-    auto hash = 0u;
-    cyMurmurHash3_x86_32(name, hStrLen(name), hGetMurmurHashSeed(), &hash);
-    auto f = p->paramTable.find(hash);
+
+    auto f = p->paramTable.find(name);
     if (f != p->paramTable.end())
         r = f->second;
     return r;
 }
 
-hUint getUniformatBlockCount(hProgramReflectionInfo* p) {
+hUint getUniformBlockCount(hProgramReflectionInfo* p) {
     return (hUint)p->uniformBlocks.size();
 }
 
-hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i) {
+hUniformBlockInfo getUniformBlockInfo(hProgramReflectionInfo* p, hUint i) {
     hUniformBlockInfo info = { nullptr, ~0u, 0 };
     if (i > p->uniformBlocks.size())
         return info;
     return p->uniformBlocks[i];
+}
+
+hUint getParameterTypeByteSize(ShaderParamType type) {
+	switch(type) {
+	case ShaderParamType::Unknown:	return -1;
+	case ShaderParamType::Float:	return 4;
+	case ShaderParamType::Float2:	return 8;
+	case ShaderParamType::Float3:	return 12;
+	case ShaderParamType::Float4:	return 16;
+	case ShaderParamType::Float22:	return 16;
+	case ShaderParamType::Float23:	return 24;
+	case ShaderParamType::Float24:	return 32;
+	case ShaderParamType::Float32:	return 16;
+	case ShaderParamType::Float33:	return 36;
+	case ShaderParamType::Float34:	return 48;
+	case ShaderParamType::Float42:	return 32;
+	case ShaderParamType::Float43:	return 48;
+	case ShaderParamType::Float44:	return 64;
+	default: 		return 0;
+	}
 }
 
 hCmdList* createCmdList() {

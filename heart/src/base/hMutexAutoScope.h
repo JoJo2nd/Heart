@@ -6,12 +6,10 @@
 #ifndef hcMutex_h__
 #define hcMutex_h__
 
-#include "pal/hMutex.h"
+#include "base/hMutex.h"
 
-namespace Heart
-{
-    class hMutexAutoScope
-    {
+namespace Heart {
+    class hMutexAutoScope {
     public:
         hMutexAutoScope( hMutex* mtx )
             : mtx_(mtx)

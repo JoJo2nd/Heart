@@ -535,7 +535,7 @@ int main (int argc, char **argv) {
 
     result = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "data builder script");
     if (result == LUA_ERRSYNTAX) {
-        printf("syntax error in builder script");
+        printf("syntax error in builder script:\n%s", lua_tostring(L, -1));
         return EXIT_FAILURE;
     }
     if (result != LUA_OK) {

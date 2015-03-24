@@ -20,6 +20,7 @@
 #include "render/hRendererCamera.h"
 #include "render/hTextureFormat.h"
 #include "render/hRenderPrim.h"
+#include "render/hProgramReflectionInfo.h"
 
 namespace Heart {
 
@@ -49,6 +50,12 @@ namespace hRenderer {
     struct hUniformBuffer;
 	struct hRenderFence;
 
+    struct hUniformLayoutDesc {
+        char*           fieldName;
+        ShaderParamType type;
+        hUint16         dataOffset;
+    };
+
     void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
     void					destroy();
     hFORCEINLINE hFloat     getRatio() { return 1.f; }
@@ -76,7 +83,7 @@ namespace hRenderer {
 	void* getMappingPtr(hVertexBuffer* vb);
     void  destroyVertexBuffer(hVertexBuffer* vb);
 
-    hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
+    hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
 	void* getMappingPtr(hUniformBuffer* ub);
     void destroyUniformBuffer(hUniformBuffer* ub);
 

@@ -7,10 +7,8 @@
 
 #include "base/hTypes.h"
 
-namespace Heart
-{
-namespace hUTF8
-{
+namespace Heart {
+namespace hUTF8 {
     static const hInt32 MASKBITS   = 0x3F;
     static const hInt32 MASKBYTE   = 0x80;
     static const hInt32 MASK2BYTES = 0xC0;
@@ -21,11 +19,12 @@ namespace hUTF8
 
     typedef hUint16   Unicode;
 
-    hUint32 encodeFromUnicode(Unicode ucIn, hChar* utf8Out);
-    hUint   encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit);
-    hUint   bytesRequiredForUTF8(const Unicode& ucin);
-    hUint32 DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut );
-    hUint32 BytesInUTF8Character(const hChar* uft8In);
-
+    HEART_EXPORT hUint32 HEART_API encodeFromUnicode(Unicode ucIn, hChar* utf8Out);
+    HEART_EXPORT hUint   HEART_API encodeFromUnicodeString(const Unicode* hRestrict ucin, hUint inlimit, hChar* hRestrict utf8out, hUint outlimit);
+    HEART_EXPORT hUint   HEART_API bytesRequiredForUTF8(const Unicode& ucin);
+    HEART_EXPORT hUint32 HEART_API DecodeToUnicode( const hChar* hRestrict uft8In, Unicode& ucOut );
+    HEART_EXPORT hUint32 HEART_API BytesInUTF8Character(const hChar* uft8In);
+    HEART_EXPORT hSize_t HEART_API utf8_to_uc2(const char* src, Unicode* dst, hSize_t len);
+    HEART_EXPORT hSize_t HEART_API uc2_to_utf8(Unicode* uc_in, char* utf8_out, size_t buf_size);
 }
 }

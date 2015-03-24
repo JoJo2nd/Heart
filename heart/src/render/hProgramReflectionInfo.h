@@ -47,15 +47,15 @@ struct hUniformBlockInfo {
     const hChar*    name;
     hUint           index;
     hInt            size;
-    hInt            dynamicSize;
 };
 
 hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);
 void destroyProgramReflectionInfo(hProgramReflectionInfo* p);
 
 hShaderParamInfo  getParameterInfo(hProgramReflectionInfo* p, const hChar* name);
-hUint             getUniformatBlockCount(hProgramReflectionInfo* p);
-hUniformBlockInfo getUniformatBlockInfo(hProgramReflectionInfo* p, hUint i);
+hUint             getUniformBlockCount(hProgramReflectionInfo* p);
+hUniformBlockInfo getUniformBlockInfo(hProgramReflectionInfo* p, hUint i);
+hUint             getParameterTypeByteSize(ShaderParamType type);
 
 }
 }

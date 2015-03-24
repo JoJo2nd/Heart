@@ -16,10 +16,6 @@
 #include "render/hRenderShaderProgram.h"
 #include "UnitTestFactory.h"
 
-struct TimerBlock { 
-	float timeSecs;
-	float pad[3];
-};
 
 namespace Heart {
 class hHeartEngine;
@@ -27,33 +23,7 @@ class hHeartEngine;
 
 using namespace Heart;
 
-const hChar vertSrc[] = 
-"\
-#version 330\n\
-layout(std140) uniform TimerBlock {\n\
-	float timeSecs;\n\
-	vec3  pad;\n\
-};\n\
-layout(location=0) in vec3 in_position;\n\
-layout(location=1) in vec4 in_colour;\n\
-out vec4 inout_colour;\n\
-void main() {\n\
-    inout_colour = in_colour;\n\
-		gl_Position.xyz = in_position.xyz*sin(timeSecs);\n\
-    gl_Position.w = 1;\n\
-}\n\
-";
-const hChar fragSrc[] = 
-"\
-#version 330\n\
-in vec4 inout_colour;\n\
-out vec4 fragColour;\n\
-void main() {\n\
-    fragColour = inout_colour;\n\
-}\n\
-";
-
-class MovingTri : public IUnitTest {
+class ShaderInput : public IUnitTest {
     
 	hTimer								timer_;
     hShaderProgram*                     shaderProg;
@@ -70,7 +40,7 @@ class MovingTri : public IUnitTest {
 	hUint								currentFence;
 
 public:
-    MovingTri( Heart::hHeartEngine* engine ) 
+    ShaderInput( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine ) {
 
         hFloat verts[] = {
@@ -84,26 +54,20 @@ public:
             {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
-        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/moving_tri"));
+        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/shader_input"));
 
         vert = shaderProg->getShader(hShaderProfile::ES2_vs);//hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
         frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
 // 		refInfo = hRenderer::createProgramReflectionInfo(vert, frag, nullptr, nullptr, nullptr);
-// 		for (hUint i=0, n=hRenderer::getParameterInputCount(refInfo); i<n; ++i) {
+// 		for (hUint i=0, n=hRenderer::getUniformatBlockCount(refInfo); i<n; ++i) {
 // 			auto param_info = hRenderer::getUniformatBlockInfo(refInfo, i);
 // 			if (hStrCmp(param_info.name,"TimerBlock") == 0) {
 // 				paramBlockSize = param_info.dynamicSize;
 // 			}
 // 		}
-
-        hRenderer::hUniformLayoutDesc ublo[] = {
-            {"timeSecs", hRenderer::ShaderParamType::Float,    0},
-            {"pad",      hRenderer::ShaderParamType::Float3,   4},
-        };
-
-		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(TimerBlock), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+		//ub = hRenderer::createUniformBuffer(nullptr, paramBlockSize*3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 		for (auto& i:fences) {
 			i = nullptr;
 		}
@@ -114,7 +78,7 @@ public:
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-		rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
+		//rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
         rcd.setVertexBufferLayout(lo, 2);
         rc = hRenderer::createRenderCall(rcd);
 
@@ -123,13 +87,11 @@ public:
 
         SetCanRender(hTrue);
     }
-    ~MovingTri() {
+    ~ShaderInput() {
         hRenderer::destroyRenderCall(rc);
         hRenderer::destroyUniformBuffer(ub);
         hRenderer::destroyProgramReflectionInfo(refInfo);
         hRenderer::destroyVertexBuffer(vb);
-        hRenderer::destroyShader(frag);
-        hRenderer::destroyShader(vert);
     }
 
     virtual hUint32 RunUnitTest() override {
@@ -144,20 +106,20 @@ public:
     void RenderUnitTest() override {
         auto* cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-		if (fences[currentFence]) {
-			hRenderer::wait(fences[currentFence]);
-			fences[currentFence] = nullptr;
-		}
-		auto* ubdata = (TimerBlock*) (((hByte*)hRenderer::getMappingPtr(ub)) + (currentFence*paramBlockSize));
-		ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
-		hRenderer::flushUnibufferMemoryRange(cl, ub, (currentFence*paramBlockSize), paramBlockSize);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1);
-		fences[currentFence] = hRenderer::fence(cl);
-		currentFence = (currentFence+1)%FENCE_COUNT;
+// 		if (fences[currentFence]) {
+// 			hRenderer::wait(fences[currentFence]);
+// 			fences[currentFence] = nullptr;
+// 		}
+// 		auto* ubdata = (TimerBlock*) (((hByte*)hRenderer::getMappingPtr(ub)) + (currentFence*paramBlockSize));
+// 		ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
+// 		hRenderer::flushUnibufferMemoryRange(cl, ub, (currentFence*paramBlockSize), paramBlockSize);
+//         hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1);
+// 		fences[currentFence] = hRenderer::fence(cl);
+// 		currentFence = (currentFence+1)%FENCE_COUNT;
         hRenderer::swapBuffers(cl);
         
         hRenderer::submitFrame(cl);
     }
 };
 
-DEFINE_HEART_UNIT_TEST(MovingTri);
+DEFINE_HEART_UNIT_TEST(ShaderInput);

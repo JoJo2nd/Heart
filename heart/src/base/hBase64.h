@@ -14,10 +14,10 @@
 
 namespace Heart {
 namespace hBase64 {
-    hUint HEART_API EncodeCalcRequiredSize(hUint inputCount);
-    hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
-    hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount);
-    hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
+    HEART_EXPORT hUint HEART_API EncodeCalcRequiredSize(hUint inputCount);
+    HEART_EXPORT hUint HEART_API Encode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
+    HEART_EXPORT hUint HEART_API DecodeCalcRequiredSize(const void* inputbuf, hUint inputCount);
+    HEART_EXPORT hUint HEART_API Decode(const void* inputbuf, hUint inputCount, void* outputbuf, hUint outputLimit);
 }
 }
 

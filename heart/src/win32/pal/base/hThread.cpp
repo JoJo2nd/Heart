@@ -3,20 +3,25 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "pal/hDeviceThread.h"
-#include "threading/hThreadLocalStorage.h"
+#include "base/hThread.h"
+#include "base/hThreadLocalStorage.h"
 
 namespace Heart
 {
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+    hThread::hThread() 
+        : threadFunc_(nullptr) {
+    }
+
+    hThread::~hThread() {
+        delete threadFunc_;
+    }
 
     void hThread::create(const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param)
     {
         memcpy( threadName_, threadName, THREAD_NAME_SIZE );
-        threadFunc_ = pFunctor;
+        threadFunc_ = new hThreadFunc();
+        *threadFunc_ = pFunctor;
         pThreadParam_ = param;
         priority_ = priority;
         if ( priority_ < -2 )
@@ -69,7 +74,7 @@ namespace Heart
         hThread* pThis_ = (hThread*)pParam;
         SetThreadName( pThis_->threadName_ );
         SetThreadPriority( pThis_->ThreadHand_, pThis_->priority_ );
-        pThis_->returnCode_ = pThis_->threadFunc_( pThis_->pThreadParam_ );
+        pThis_->returnCode_ = (*pThis_->threadFunc_)( pThis_->pThreadParam_ );
         TLS::threadExit();
         return pThis_->returnCode_;
     }

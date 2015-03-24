@@ -594,10 +594,17 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
 }
 
 extern "C" {
+
+int MB_API version(lua_State* L) {
+    lua_pushstring(L, "1.0.0");
+    return 1;
+}
+
 //Lua entry point calls
 DLL_EXPORT int MB_API luaopen_material(lua_State *L) {
     static const luaL_Reg materiallib[] = {
         {"build"      , materialCompile},
+        {"version", version},
         {NULL, NULL}
     };
     luaL_newlib(L, materiallib);

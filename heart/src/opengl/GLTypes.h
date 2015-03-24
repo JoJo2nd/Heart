@@ -13,6 +13,8 @@ struct lfds_freelist_element;
 
 namespace Heart {
 namespace hRenderer {
+    struct hUniformLayoutDesc;
+
     struct hGLErrorSentry {
         const hChar* file;
         hSize_t line;
@@ -93,6 +95,9 @@ namespace hRenderer {
         hUint32 createFlags_;
         hUint	mappedOffset_;
         hUint	mappedSize_;
+        hUint   layoutDescCount;
+        hUniformLayoutDesc* layoutDesc;
+        char*   fieldNames; // <- same allocation as layoutDesc, don't delete.
     };
 
     struct hTextureBase : hGLObjectBase {

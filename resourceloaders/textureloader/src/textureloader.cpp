@@ -326,10 +326,17 @@ int TB_API textureCompile(lua_State* L) {
 }
 
 extern "C" {
+
+    int TB_API version(lua_State* L) {
+        lua_pushstring(L, "1.0.0");
+        return 1;
+    }
+
 //Lua entry point calls
 DLL_EXPORT int TB_API luaopen_texture(lua_State *L) {
     static const luaL_Reg texturelib[] = {
         {"build",textureCompile},
+        { "version", version },
         {NULL, NULL}
     };
     luaL_newlib(L, texturelib);
