@@ -5,7 +5,7 @@
 
 #include "threading/hJobManager.h"
 #include "base/hStringUtil.h"
-#include "hMutexAutoScope.h"
+#include "base/hMutexAutoScope.h"
 
 namespace Heart
 {

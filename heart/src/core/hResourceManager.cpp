@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "core/hResourceManager.h"
-#include "threading/hMutexAutoScope.h"
+#include "base/hMutexAutoScope.h"
 #include "base/hMap.h"
 #include "base/hStringID.h"
 #include "base/hStringUtil.h"

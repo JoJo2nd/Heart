@@ -38,12 +38,8 @@ void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine)
     g_TestCore.EngineShutdown(engine);
 }
 
-#if defined (PLATFORM_WINDOWS)
+int main(int argc, char **argv) {
 
-void CreateErrorBox( DWORD error );
-
-int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{	
     hHeartEngineCallbacks callbacks = {0};
 
     callbacks.firstLoaded_ = HeartAppFirstLoaded;
@@ -52,109 +48,40 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     callbacks.mainRender_ = HeartAppMainRender;
     callbacks.shutdownUpdate_ = HeartAppShutdownUpdate;
     callbacks.onShutdown_ = HeartAppOnShutdown;
-
-    while (strstr(lpCmdLine, "-debug")) {}
 
     mem_track_load_symbols();
 
-    Heart::proto::TextureResource texturemsg;
-    //auto meta = texturemsg.GetMetadata();
-    //hcPrintf("%s", meta.descriptor->full_name());
-    hcPrintf("%s", texturemsg.GetTypeName().c_str());
-
-// 
-//     char* leak = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak1 = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak2 = new Heart::GetGlobalHeap(), char[64];
-// 
-//     Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
-// 
-//delete[] Heart::GetGlobalHeap(), dontleak1;     %2 = nullptr;
-//     char* dontleak3 = new Heart::GetGlobalHeap(), char[64];
-//     char* leak2 = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak4 = new Heart::GetGlobalHeap(), char[64];
-//delete[] Heart::GetGlobalHeap(), dontleak4; %2 = nullptr;
-// 
-//     Heart::hMemTracking::TrackPopMarker();
-// 
-//delete[] Heart::GetGlobalHeap(), dontleak2;%2 = nullptr;
-//delete[] Heart::GetGlobalHeap(), dontleak3;%2 = nullptr;
-
-    Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, hinstance, NULL);
-
-    while (hHeartDoMainUpdate(engine) != hErrorCode) {}
-
-    hHeartShutdownEngine(engine);
-    return 0;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-void CreateErrorBox( DWORD error )
-{
-    const DWORD size = 100+1;
-    CHAR buffer[size];
-
-
-    if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL, 
-        error,
-        0,
-        buffer, 
-        size, 
-        NULL))
-    {
-        MessageBox(NULL, buffer, NULL, MB_OK);
+    char* script = nullptr;
+    hSize_t scriptlen = 0;
+    FILE* file = fopen("scripts/config.lua", "rt");
+    if (file) {
+        fseek(file, 0, SEEK_END);
+        scriptlen = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        script = new char[scriptlen+1];
+        scriptlen = fread(script, 1, scriptlen, file);
+        script[scriptlen]=0;
+        fclose(file);
+        file = nullptr;
     }
-}
 
-#elif defined (PLATFORM_LINUX)
-
-int main(int argc, char **argv) {
-    hHeartEngineCallbacks callbacks = {0};
-
-    callbacks.firstLoaded_ = HeartAppFirstLoaded;
-    callbacks.coreAssetsLoaded_ = HeartAppCoreAssetsLoaded;
-    callbacks.mainUpdate_ = HeartAppMainUpate;
-    callbacks.mainRender_ = HeartAppMainRender;
-    callbacks.shutdownUpdate_ = HeartAppShutdownUpdate;
-    callbacks.onShutdown_ = HeartAppOnShutdown;
-
-    //!!JM todo parse command line!
-
-    Heart::proto::TextureResource texturemsg;
-    //auto meta = texturemsg.GetMetadata();
-    //hcPrintf("%s", meta.descriptor->full_name());
-    hcPrintf("%s", texturemsg.GetTypeName().c_str());
-
-//
-//     char* leak = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak1 = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak2 = new Heart::GetGlobalHeap(), char[64];
-//
-//     Heart::hMemTracking::TrackPushMarker("Sibenik_Test");
-//
-//delete[] Heart::GetGlobalHeap(), dontleak1;     %2 = nullptr;
-//     char* dontleak3 = new Heart::GetGlobalHeap(), char[64];
-//     char* leak2 = new Heart::GetGlobalHeap(), char[64];
-//     char* dontleak4 = new Heart::GetGlobalHeap(), char[64];
-//delete[] Heart::GetGlobalHeap(), dontleak4; %2 = nullptr;
-//
-//     Heart::hMemTracking::TrackPopMarker();
-//
-//delete[] Heart::GetGlobalHeap(), dontleak2;%2 = nullptr;
-//delete[] Heart::GetGlobalHeap(), dontleak3;%2 = nullptr;
-
-    Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks);
+    Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, script, scriptlen, argc, argv);
 
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 
     hHeartShutdownEngine(engine);
+
+    delete script;
     return 0;
 }
 
-#else
-#   error ("Unknown platform")
+#if defined (PLATFORM_WINDOWS)
+
+#include <stdlib.h>
+
+int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    return main(__argc, __argv);
+}
+
 #endif

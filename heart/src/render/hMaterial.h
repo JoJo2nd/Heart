@@ -11,10 +11,10 @@
 #include "base/hStringUtil.h"
 #include "base/hCRC32.h"
 #include "core/hResource.h"
+#include "core/hProtobuf.h"
 #include "render/hRenderStateBlock.h"
 #include "render/hRenderCallDesc.h"
 #include "render/hMaterialParamValue.h"
-#include "base/hProtobuf.h"
 #include "components/hObjectFactory.h"
 
 #include "cryptoMurmurHash.h"

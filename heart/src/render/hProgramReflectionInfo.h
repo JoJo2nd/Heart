@@ -49,6 +49,12 @@ struct hUniformBlockInfo {
     hInt            size;
 };
 
+struct hUniformLayoutDesc {
+    char*           fieldName;
+    ShaderParamType type;
+    hUint16         dataOffset;
+};
+
 hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);
 void destroyProgramReflectionInfo(hProgramReflectionInfo* p);
 

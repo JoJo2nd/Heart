@@ -7,7 +7,6 @@
 #include "lua/hLuaStateManager.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "core/hIFile.h"
 #include "core/hIFileSystem.h"
 #include "core/hSystem.h"
 #include "core/hSystemConsole.h"
@@ -187,18 +186,26 @@ by Lua can also return many results.
         return n;
     }
 
+    struct hLuaFileRead {
+        hIFileSystem* fsys;
+        hFileOpHandle op;
+        hUint64       fsize;
+        void*         fbuf;
+    };
+
     static const char* luaReader(lua_State* L, void* data, size_t* size) {
-        hIFile* file = (hIFile*)((void**)data)[0];
-        char* buf = (char*)((void**)data)[1];
-        *size = file->Read(buf, HEART_LUA_READ_SIZE);
+        auto lf = (hLuaFileRead*)data;;
+        auto er = lf->fsys->fileOpWait(lf->op);
+        char* buf = (char*)lf->fbuf;
+        *size = er == FileError::Ok ? lf->fsize : 0;
+        lf->fsize = 0;
         return size != 0 ? buf : NULL;
     }
 
     int heart_lua_require(lua_State* L) {
         HEART_LUA_GET_ENGINE(L);
         hIFileSystem* fsys = engine->GetFileManager();
-        hIFile* file = NULL;
-        void* lrdata[2];
+        hLuaFileRead lrdata;
         const hChar* name = luaL_checkstring(L,-1);
         lua_getfield(L, LUA_REGISTRYINDEX, "_hLOADED");
         lua_getfield(L, -1, name); //look for _hLOADED[name]
@@ -211,13 +218,24 @@ by Lua can also return many results.
         while (path = pushNextSearchPath(L, path)) {
             const hChar* filename = luaL_gsub(L, lua_tostring(L,-1), LUA_PATH_MARK, name);
             lua_remove(L, -2);//remove path template left by pushNextSearchPath
-            file = fsys->OpenFile(filename, FILEMODE_READ);
-            if (file) {
+            hFileHandle file;
+            auto op = fsys->openFile(filename, FILEMODE_READ, &file);
+            auto er = fsys->fileOpWait(op);
+            fsys->fileOpClose(op);
+            if (er == FileError::Ok) {
                 //Opened file, read, parse and run
-                lrdata[0] = (void*)file;
-                lrdata[1] = hAlloca(HEART_LUA_READ_SIZE);
-                int loadret = lua_load(L, luaReader, (void*)lrdata, filename, NULL);
-                fsys->CloseFile(file);
+                hFileStat filestats;
+                op = fsys->fstatAsync(file, &filestats);
+                fsys->fileOpWait(op);
+                fsys->fileOpClose(op);
+                lrdata.fsys = fsys;
+                lrdata.fsize = filestats.filesize;
+                lrdata.fbuf = hMalloc(lrdata.fsize);
+                lrdata.op = fsys->freadAsync(file, lrdata.fbuf, lrdata.fsize, 0);
+                int loadret = lua_load(L, luaReader, (void*)&lrdata, filename, NULL);
+                hFree(lrdata.fbuf);
+                fsys->closeFile(file);
+                fsys->fileOpClose(lrdata.op);
                 if (loadret != 0) {
                     return luaL_error(L, 
                         "error loading module %s from file %s: %s", 
@@ -234,6 +252,7 @@ by Lua can also return many results.
                 lua_setfield(L, -2, name);
                 return 1;
             }
+            fsys->closeFile(file);
         }
         //if we get this far we failed to load the package
         return luaL_error(L, "error loading module \"%s\": file not found", name);

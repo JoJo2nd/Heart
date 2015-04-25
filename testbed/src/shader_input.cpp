@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "base/hTypes.h"
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
 #include "render/hRenderCallDesc.h"
@@ -29,10 +29,12 @@ class ShaderInput : public IUnitTest {
     hShaderProgram*                     shaderProg;
 	hRenderer::hShaderStage*			vert;
     hRenderer::hShaderStage*			frag;
-	hRenderer::hProgramReflectionInfo*	refInfo;
+	//hRenderer::hProgramReflectionInfo*	refInfo;
     hRenderer::hVertexBuffer*			vb;
     hRenderer::hRenderCall*				rc;
 	hRenderer::hUniformBuffer*			ub;
+    hRenderer::hUniformBuffer*			ub2;
+    hRenderer::hUniformBuffer*			ub3;
 
 	static const hUint FENCE_COUNT = 3;
 	hUint								paramBlockSize;
@@ -50,24 +52,40 @@ public:
             -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*9},
+            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*9},
+            {hStringID("in_uv"),       2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*7, hFalse, sizeof(hFloat)*9},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/shader_input"));
 
-        vert = shaderProg->getShader(hShaderProfile::ES2_vs);//hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
-        frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
+        vert = shaderProg->getShader(hShaderProfile::ES2_vs);
+        frag = shaderProg->getShader(hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
-// 		refInfo = hRenderer::createProgramReflectionInfo(vert, frag, nullptr, nullptr, nullptr);
-// 		for (hUint i=0, n=hRenderer::getUniformatBlockCount(refInfo); i<n; ++i) {
-// 			auto param_info = hRenderer::getUniformatBlockInfo(refInfo, i);
-// 			if (hStrCmp(param_info.name,"TimerBlock") == 0) {
-// 				paramBlockSize = param_info.dynamicSize;
-// 			}
-// 		}
-		//ub = hRenderer::createUniformBuffer(nullptr, paramBlockSize*3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        hRenderer::hUniformLayoutDesc ublo[] = {
+            {"timeSecs",    hRenderer::ShaderParamType::Float,   0},
+            {"pos_shift",   hRenderer::ShaderParamType::Float3,  4},
+            {"uv_shift",    hRenderer::ShaderParamType::Float2, 16},
+            {"alpha",       hRenderer::ShaderParamType::Float,  24},
+            {"colour_tint", hRenderer::ShaderParamType::Float3, 28},
+        };
+		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), 40, 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        hRenderer::hUniformLayoutDesc ublo2[] = {
+            { "g_View", hRenderer::ShaderParamType::Float44, 0 },
+            { "g_ViewInverse", hRenderer::ShaderParamType::Float44, 64},
+            { "g_ViewInverseTranspose", hRenderer::ShaderParamType::Float44, 128},
+            { "g_Projection", hRenderer::ShaderParamType::Float44, 192},
+            { "g_ProjectionInverse", hRenderer::ShaderParamType::Float44, 256},
+            { "g_ViewProjection", hRenderer::ShaderParamType::Float44, 320},
+            { "g_ViewProjectionInverse", hRenderer::ShaderParamType::Float44, 384},
+            { "g_viewportSize", hRenderer::ShaderParamType::Float4, 448},
+        };
+        ub2 = hRenderer::createUniformBuffer(nullptr, ublo2, (hUint)hStaticArraySize(ublo2), 454, 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        hRenderer::hUniformLayoutDesc ublo3[] = {
+            { "g_World", hRenderer::ShaderParamType::Float44, 0 },
+        };
+        ub3 = hRenderer::createUniformBuffer(nullptr, ublo3, (hUint)hStaticArraySize(ublo3), 64, 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 		for (auto& i:fences) {
 			i = nullptr;
 		}
@@ -78,8 +96,10 @@ public:
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-		//rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
-        rcd.setVertexBufferLayout(lo, 2);
+		rcd.setUniformBuffer(hStringID("ParamBlock"), ub);
+        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub2);
+        rcd.setUniformBuffer(hStringID("InstanceConstants"), ub3);
+        rcd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
         rc = hRenderer::createRenderCall(rcd);
 
 		timer_.reset();
@@ -90,7 +110,7 @@ public:
     ~ShaderInput() {
         hRenderer::destroyRenderCall(rc);
         hRenderer::destroyUniformBuffer(ub);
-        hRenderer::destroyProgramReflectionInfo(refInfo);
+        //hRenderer::destroyProgramReflectionInfo(refInfo);
         hRenderer::destroyVertexBuffer(vb);
     }
 

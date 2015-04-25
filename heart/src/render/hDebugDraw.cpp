@@ -13,8 +13,8 @@
 #include "render/hVertexBuffer.h"
 #include "render/hIndexBuffer.h"
 #include "render/hRenderShaderProgram.h"
-#include "threading/hMutexAutoScope.h"
-#include "threading/hThreadLocalStorage.h"
+#include "base/hMutexAutoScope.h"
+#include "base/hThreadLocalStorage.h"
 #include "base/hUTF8.h"
 
 namespace Heart {

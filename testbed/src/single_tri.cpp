@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "base/hTypes.h"
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
 #include "render/hRenderCallDesc.h"
@@ -71,15 +71,15 @@ public:
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
 
-        vert = shaderProg->getShader(hShaderProfile::ES2_vs);//hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
-        frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
+        vert = shaderProg->getShader(hShaderProfile::ES2_vs);
+        frag = shaderProg->getShader(hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
         hRenderer::hRenderCallDesc rcd;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-        rcd.setVertexBufferLayout(lo, 2);
+        rcd.setVertexBufferLayout(lo, hStaticArraySize(lo));
         rc = hRenderer::createRenderCall(rcd);
 
         SetCanRender(hTrue);
@@ -87,8 +87,6 @@ public:
     ~SingleTri() {
         hRenderer::destroyRenderCall(rc);
         hRenderer::destroyVertexBuffer(vb);
-        hRenderer::destroyShader(frag);
-        hRenderer::destroyShader(vert);
     }
 
     virtual hUint32 RunUnitTest() override {

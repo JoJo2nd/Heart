@@ -3,7 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 #include "base/hTypes.h"
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 #include "base/hClock.h"
 #include "UnitTestFactory.h"
 

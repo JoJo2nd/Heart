@@ -9,13 +9,14 @@
 #include "base/hTypes.h"
 #include "base/hArray.h"
 #include "base/hFunctor.h"
-#include "base/hProtobuf.h"
+#include "base/hMutex.h"
+#include "base/hMutexAutoScope.h"
+#include "base/hSysCalls.h"
+#include "core/hProtobuf.h"
 #include "core/hConfigOptions.h"
 #include "core/hSystemConsole.h"
 #include "core/hDeviceConfig.h"
 #include "core/hDeviceSystemWindow.h"
-#include "pal/hMutex.h"
-#include "threading/hMutexAutoScope.h"
 
 namespace Heart
 {
@@ -44,11 +45,7 @@ struct hHeartEngineCallbacks
 
 extern "C"
 {
-#ifdef WIN32
-    Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, HINSTANCE hInstance, HWND hWnd);
-#else
-    Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*);
-#endif
+     Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks*, const hChar*, hSize_t, int argc, char** argv);
      hUint32 HEART_API hHeartDoMainUpdate( Heart::hHeartEngine* );
      void HEART_API hHeartShutdownEngine( Heart::hHeartEngine* );
 };
@@ -131,7 +128,7 @@ namespace Heart
     {
     public:
 
-        hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig);
+        hHeartEngine(const hChar* config_script, hSize_t config_script_len);
         ~hHeartEngine();
 
         hIFileSystem*       GetFileManager()        { return fileMananger_; }
@@ -183,7 +180,7 @@ namespace Heart
 
         //app functions
     public:
-        hSharedLibAddress               sharedLib_;
+//         hSharedLibAddress               sharedLib_;
         hFirstLoadedProc                     firstLoaded_;
         hCoreAssetsLoadedProc                coreAssetsLoaded_;
         hMainUpdateProc                      mainUpdate_;

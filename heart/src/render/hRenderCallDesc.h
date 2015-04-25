@@ -7,6 +7,7 @@
 #include "base/hStringID.h"
 #include "base/hColour.h"
 #include "render/hVertexBufferLayout.h"
+#include "render/hProgramReflectionInfo.h"
 
 #pragma once
 
@@ -126,6 +127,9 @@ namespace hRenderer {
         void setTextureSlot(hStringID name, const hTexture3D* t);
         void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
         void setVertexBufferLayout(hVertexBufferLayout* layout, hUint count);
+
+        // Helper functions
+        bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const;
 
         static const hUint      vertexLayoutMax_  = 16;
         static const hUint      samplerStateMax_  = 16;

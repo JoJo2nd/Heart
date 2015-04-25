@@ -11,7 +11,7 @@
 
 namespace Heart
 {
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
     #define HEART_CHECK_OPENAL_ERRORS() { ALenum er = alGetError(); hcAssertMsg( er == AL_NO_ERROR, "OpenAL Error: %s(%u)", GetOpenALErrorString(er), er ); }
 #else
     #define HEART_CHECK_OPENAL_ERRORS()

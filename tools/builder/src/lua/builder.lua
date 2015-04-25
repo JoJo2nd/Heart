@@ -18,8 +18,8 @@ local processes = {}
 local success = 0
 local cached = 0
 local failure = 0
-local temp_data_path = string.gsub(data_path.."/.tmp", "\\", "/");
-local cache_data_path = string.gsub(data_path.."/.cache", "\\", "/");
+local temp_data_path = string.gsub(in_cache_data_path, "\\", "/");
+local cache_data_path = string.gsub(in_cache_data_path, "\\", "/");
 
 local function verbose_log(str, ...)
     if verbose == true then

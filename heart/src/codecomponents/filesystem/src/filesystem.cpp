@@ -81,18 +81,47 @@ void operator delete[](void* ptr) {
     return Heart::hFree(ptr);
 }
 
+static hBool isAbsPath(const hChar* in_path) {
+    return (in_path[0] != '0' && in_path[1] == ':' && in_path[2] == '\\');
+}
+
+static void getExpanedPath(const hChar* in_path, hChar* out_path, hSize_t max_len) {
+    Heart::hMutexAutoScope sentry(&g_mountMtx);
+    Heart::hStrCopy(out_path, HEART_MAX_PATH, in_path);
+    do {
+        hSize_t offset = 0;
+        for (const auto& mnt : g_mounts) {
+            if (Heart::hStrNCmp(mnt.mountName.c_str(), out_path, mnt.mountName.size()) == 0) {
+                offset = mnt.mountName.size();
+                auto plen = mnt.mountPoint.size();
+                auto slen = Heart::hStrLen(out_path);
+                if ((plen + slen + 1) > HEART_MAX_PATH) {
+                    plen = HEART_MAX_PATH-slen;
+                }
+                Heart::hMemMove(out_path+plen, out_path+offset, (slen-offset)+1);
+                Heart::hStrNCopy(out_path, plen, mnt.mountPoint.c_str());
+                break;
+            }
+        }
+    } while (!isAbsPath(out_path));
+}
+
 static hSize_t getExpanedPathUC2(const hChar* in_path, wchar_t* out_path, hSize_t max_len) {
     Heart::hMutexAutoScope sentry(&g_mountMtx);
-    hChar expaned[HEART_MAX_PATH];
-    hSize_t offset = 0;
-    for (const auto& mnt : g_mounts) {
-        if (Heart::hStrNCmp(mnt.mountName.c_str(), in_path, mnt.mountName.size()) == 0) {
-            Heart::hStrCopy(expaned, HEART_MAX_PATH, mnt.mountPoint.c_str());
-            offset = mnt.mountName.size();
-            break;
-        }
-    }
-    Heart::hStrCat(expaned, HEART_MAX_PATH, in_path + offset);
+     hChar expaned[HEART_MAX_PATH] = { 0 };
+//     Heart::hStrCopy(expaned, HEART_MAX_PATH, in_path);
+//     do {
+//         hSize_t offset = 0;
+//         for (const auto& mnt : g_mounts) {
+//             if (Heart::hStrNCmp(mnt.mountName.c_str(), expaned, mnt.mountName.size()) == 0) {
+//                 Heart::hStrCopy(expaned, HEART_MAX_PATH, mnt.mountPoint.c_str());
+//                 offset = mnt.mountName.size();
+//                 break;
+//             }
+//         }
+//         Heart::hStrCat(expaned, HEART_MAX_PATH, in_path + offset);
+//     } while (!isAbsPath(expaned));
+    getExpanedPath(in_path, expaned, HEART_MAX_PATH);
     return Heart::hUTF8::utf8_to_uc2(expaned, (hUint16*)out_path, max_len);
 }
 
@@ -101,12 +130,20 @@ static hSize_t getExpanedPathUC2(const hChar* in_path, wchar_t (&out_path)[t_arr
     return getExpanedPathUC2(in_path, out_path, t_array_size);
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
+void HEART_API hrt_mountPoint(const hChar* path, const hChar* mount);
+HEART_C_EXPORT
+void HEART_API hrt_getCurrentWorkingDir(hChar* out, hUint bufsize);
+
+HEART_C_EXPORT
 hBool HEART_API hrt_initialise_filesystem() {
+    hChar pwd[HEART_MAX_PATH];
+    hrt_getCurrentWorkingDir(pwd, HEART_MAX_PATH);
+    hrt_mountPoint(pwd, "/");
     return hTrue;
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 FileError HEART_API hrt_fileOpComplete(hFileOpHandle in_op) {
     if (&g_syncOp == in_op) {
         return FileError::Ok;
@@ -130,8 +167,12 @@ FileError HEART_API hrt_fileOpComplete(hFileOpHandle in_op) {
     //completed
     return FileError::Ok;
 }
- 
+
+HEART_C_EXPORT
 FileError HEART_API hrt_fileOpWait(hFileOpHandle in_op) {
+    if (in_op == nullptr) {
+        return FileError::Failed;
+    }
     if (&g_syncOp == in_op) {
         return FileError::Ok;
     }
@@ -148,15 +189,16 @@ FileError HEART_API hrt_fileOpWait(hFileOpHandle in_op) {
     return FileError::Ok;
 }
 
+HEART_C_EXPORT
 void HEART_API hrt_fileOpClose(hFileOpHandle in_op) {
-    if (&g_syncOp == in_op || &g_syncOpEOF == in_op) {
+    if (&g_syncOp == in_op || &g_syncOpEOF == in_op || !in_op) {
         return;
     }
 
     delete in_op;
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 hFileOpHandle HEART_API hrt_openFile(const hChar* filename, hInt mode, hFileHandle* outhandle) {
     DWORD access = 0;
     DWORD share = 0;// < always ZERO, dont let things happen to file in use!
@@ -192,15 +234,16 @@ hFileOpHandle HEART_API hrt_openFile(const hChar* filename, hInt mode, hFileHand
     return &g_syncOp;
 }
 
+HEART_C_EXPORT
 void HEART_API hrt_closeFile(hFileHandle handle) {
-    if (handle->fileHandle != INVALID_HANDLE_VALUE) {
+    if (handle && handle->fileHandle != INVALID_HANDLE_VALUE) {
         CloseHandle(handle->fileHandle);
     }
 
     delete handle;
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 hFileOpHandle HEART_API hrt_openDir(const hChar* path, hFileHandle* outhandle) {
     WIN32_FIND_DATAW found;
     auto* dir = new hDir();
@@ -222,7 +265,7 @@ hFileOpHandle HEART_API hrt_openDir(const hChar* path, hFileHandle* outhandle) {
     return &g_syncOp;
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 hFileOpHandle HEART_API hrt_readDir(hFileHandle dirhandle, hDirEntry* out) {
     auto* dir = static_cast<hDir*>(dirhandle);
     if (dir->fileHandle == INVALID_HANDLE_VALUE) {
@@ -251,18 +294,18 @@ hFileOpHandle HEART_API hrt_readDir(hFileHandle dirhandle, hDirEntry* out) {
     return &g_syncOp;
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 void HEART_API hrt_closeDir(hFileHandle dir) {
     delete dir;
 }
 
-HEART_EXPORT
-hFileOpHandle HEART_API hrt_freadAsync(hFileHandle file, void* buffer, hUint32 size, hUint64 offset) {
+HEART_C_EXPORT
+hFileOpHandle HEART_API hrt_freadAsync(hFileHandle file, void* buffer, hSize_t size, hUint64 offset) {
     auto* new_op = new hFileOpRW();
     new_op->hFile = file->fileHandle;
     new_op->operation.Offset = offset & 0xFFFFFFFF;
     new_op->operation.OffsetHigh = (offset & ((hUint64)0xFFFFFFFF << 32)) >> 32;
-    auto Completed = ReadFile(file->fileHandle, buffer, size, nullptr, &new_op->operation);
+    auto Completed = ReadFile(file->fileHandle, buffer, (DWORD)size, nullptr, &new_op->operation);
     if (Completed) {
         delete new_op;
         return &g_syncOp;
@@ -270,13 +313,13 @@ hFileOpHandle HEART_API hrt_freadAsync(hFileHandle file, void* buffer, hUint32 s
     return new_op;
 }
 
-HEART_EXPORT
-hFileOpHandle HEART_API hrt_fwriteAsync(hFileHandle file, const void* buffer, hUint32 size, hUint64 offset) {
+HEART_C_EXPORT
+hFileOpHandle HEART_API hrt_fwriteAsync(hFileHandle file, const void* buffer, hSize_t size, hUint64 offset) {
     auto* new_op = new hFileOpRW();
     new_op->hFile = file->fileHandle;
     new_op->operation.Offset = offset & 0xFFFFFFFF;
     new_op->operation.OffsetHigh = (offset & ((hUint64)0xFFFFFFFF << 32)) >> 32;
-    auto Completed = WriteFile(file->fileHandle, buffer, size, nullptr, &new_op->operation);
+    auto Completed = WriteFile(file->fileHandle, buffer, (DWORD)size, nullptr, &new_op->operation);
     if (Completed) {
         delete new_op;
         return &g_syncOp;
@@ -291,27 +334,40 @@ static time_t FILETIMETotime_t(FILETIME const& ft) {
     return ull.QuadPart / 10000000ULL - 11644473600ULL;
 }
 
-HEART_EXPORT
-hFileOpHandle HEART_API hrt_fstatAsync(const hChar* filename, hFileStat* out) {
-    WIN32_FILE_ATTRIBUTE_DATA fileinfo;
-    wchar_t filename_wide[HEART_MAX_PATH];
-    getExpanedPathUC2(filename, filename_wide);
-    GetFileAttributesExW(filename_wide, GetFileExInfoStandard, &fileinfo);
+HEART_C_EXPORT
+hFileOpHandle HEART_API hrt_fstatAsync(hFileHandle filename, hFileStat* out) {
+    BY_HANDLE_FILE_INFORMATION fileinfo;
+    GetFileInformationByHandle(filename->fileHandle, &fileinfo);
     out->filesize = ((hUint64)fileinfo.nFileSizeHigh << 32)| fileinfo.nFileSizeLow;
     out->modifiedDate = FILETIMETotime_t(fileinfo.ftLastWriteTime);
     return &g_syncOp;
 }
 
-HEART_EXPORT
-void HEART_API hrt_mountPoint(const hChar* path, const hChar* mount) {
-    Heart::hMutexAutoScope sentry(&g_mountMtx);
-    hMount mnt;
-    mnt.mountName = mount;
-    mnt.mountPoint = path;
-    g_mounts.push_back(mnt);
+HEART_C_EXPORT
+hBool HEART_API hrt_isAbsolutePath(const hChar* path) {
+    if (!path) {
+        return hFalse;
+    }
+    return path[0] == '/';
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
+void HEART_API hrt_mountPoint(const hChar* path, const hChar* mount) {
+    Heart::hMutexAutoScope sentry(&g_mountMtx);
+    hcAssert(hrt_isAbsolutePath(mount));
+    hChar expath[HEART_MAX_PATH];
+    getExpanedPath(path, expath, HEART_MAX_PATH);
+    hcAssert(isAbsPath(expath));
+    hMount mnt;
+    mnt.mountName = mount;
+    mnt.mountPoint = expath;
+    g_mounts.push_back(mnt);
+    std::stable_sort(g_mounts.begin(), g_mounts.end(), [](const hMount& lhs, const hMount& rhs) {
+            return lhs.mountName.size() > rhs.mountName.size();
+        });
+}
+
+HEART_C_EXPORT
 void HEART_API hrt_unmountPoint(const hChar* mount) {
     Heart::hMutexAutoScope sentry(&g_mountMtx);
     std::remove_if(g_mounts.begin(), g_mounts.end(), [=](const hMount& rhs) {
@@ -319,20 +375,24 @@ void HEART_API hrt_unmountPoint(const hChar* mount) {
         });
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 void HEART_API hrt_getCurrentWorkingDir(hChar* out, hUint bufsize) {
     wchar_t wd[HEART_MAX_PATH];
-    GetCurrentDirectoryW(HEART_MAX_PATH, wd);
+    auto len = GetCurrentDirectoryW(HEART_MAX_PATH-1, wd);
+    wd[len]='\\';
+    wd[len+1]=0;
     Heart::hUTF8::uc2_to_utf8((hUint16*)wd, out, bufsize);
+    hcAssert(isAbsPath(out));
 }
 
-HEART_EXPORT
+HEART_C_EXPORT
 void HEART_API hrt_getProcessDirectory(hChar* outdir, hUint size) {
     wchar_t pd[HEART_MAX_PATH];
     GetModuleFileNameW(0, pd, HEART_MAX_PATH-1);
     auto* s = wcsrchr(pd, '\\');
     if (s) {
-        *s = 0;
+        *(s+1) = 0;
     }
     Heart::hUTF8::uc2_to_utf8((hUint16*)pd, outdir, size);
+    hcAssert(isAbsPath(outdir));
 }

@@ -22,14 +22,21 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hHeartEngine::hHeartEngine(const hChar* rootdir, hConsoleOutputProc consoleCb, void* consoleUser, hdDeviceConfig* deviceConfig)
-        : firstLoaded_(hNullptr)
-        , coreAssetsLoaded_(hNullptr)
-        , mainUpdate_(hNullptr)
-        , mainRender_(hNullptr)
-        , shutdownUpdate_(hNullptr)
-        , onShutdown_(hNullptr) {
+    hHeartEngine::hHeartEngine(const hChar* config_script, hSize_t config_script_len)
+        : firstLoaded_(nullptr)
+        , coreAssetsLoaded_(nullptr)
+        , mainUpdate_(nullptr)
+        , mainRender_(nullptr)
+        , shutdownUpdate_(nullptr)
+        , onShutdown_(nullptr) {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+        //////////////////////////////////////////////////////////////////////////
+        // Read in the config ////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////
+        luaVM_ = new hLuaStateManager;
+        luaVM_->Initialise();
+        hConfigurationVariables::loadCVars(luaVM_->GetMainState(), config_script, config_script_len);
 
         hUint32 sdlFlags = 0;
         sdlFlags |= SDL_INIT_VIDEO;
@@ -40,35 +47,41 @@ namespace Heart {
 
         hInitFreetype2();
 
-        hdGetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
-        hdGetProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
+        hFileSystemInterface fileInterface;
+        auto plugin_loaded = loadFileSystemInterface(hConfigurationVariables::getCVarStr("plugin.filesystem", "none"), &fileInterface);
+        hcAssertMsg(plugin_loaded, "Failed to load file interface \"%s\"", hConfigurationVariables::getCVarStr("plugin.filesystem", "none"));
+        fileMananger_ = new hIFileSystem(fileInterface);
+
+        fileMananger_->getCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
+        fileMananger_->getProcessDirectory(processDir_.GetBuffer(), processDir_.GetMaxSize());
 
         hcPrintf("Current Directory: %s\nProcess Directory: %s", workingDir_.GetBuffer(), processDir_.GetBuffer());
 
-        hdMountPoint(processDir_, "proc");
-        hdMountPoint(workingDir_, "cd");
+        // current working is already mounted to /
+        fileMananger_->mountPoint(processDir_, "/proc");
+        fileMananger_->mountPoint("/scripts", "/script");
+        fileMananger_->mountPoint("/data", "/data");
+        fileMananger_->mountPoint("/proc/tmp", "/tmp");
+        fileMananger_->mountPoint("/save", "/save");
 
-        {
-            char tmp[1024];
-            hcAssert(hdGetSystemPathSize("/cd/scripts") < 1024);
-            hdGetSystemPath("/cd/scripts", tmp, 1024);
-            hdMountPoint(tmp, "script");
+        const hChar* script_name = hConfigurationVariables::getCVarStr("startup.script", nullptr);
+        hcAssertMsg(script_name, "startup.script is not set");
+        hFileHandle start_script_file;
+        auto op = fileMananger_->openFile(script_name, FILEMODE_READ, &start_script_file);
+        auto er = fileMananger_->fileOpWait(op);
+        fileMananger_->fileOpClose(op);
+        hcAssertMsg(er == FileError::Ok, "failed to open startup.script \"%s\"", script_name);
+        hFileStat scriptfstat;
+        op = fileMananger_->fstatAsync(start_script_file, &scriptfstat);
+        fileMananger_->fileOpWait(op);
+        fileMananger_->fileOpClose(op);
 
-            hcAssert(hdGetSystemPathSize("/cd/data") < 1024);
-            hdGetSystemPath("/cd/data", tmp, 1024);
-            hdMountPoint(tmp, "data");
-
-            hcAssert(hdGetSystemPathSize("/cd/tmp") < 1024);
-            hdGetSystemPath("/cd/tmp", tmp, 1024);
-            hdMountPoint(tmp, "tmp");
-
-            hcAssert(hdGetSystemPathSize("/cd/save") < 1024);
-            hdGetSystemPath("/cd/save", tmp, 1024);
-            hdMountPoint(tmp, "save");
-        }
+        std::unique_ptr<hChar[]> scriptdata(new hChar[scriptfstat.filesize]);
+        op = fileMananger_->freadAsync(start_script_file, scriptdata.get(), scriptfstat.filesize, 0);
 
         google::protobuf::SetLogHandler(&hHeartEngine::ProtoBufLogHandler);
 
+        /**
         if (rootdir) hStrCopy(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), rootdir);
         else hSysCall::GetCurrentWorkingDir(workingDir_.GetBuffer(), workingDir_.GetMaxSize());
 
@@ -76,35 +89,26 @@ namespace Heart {
         if (workingDir_[end] != '\\' && workingDir_[end] != '/') {
             hStrCat(workingDir_.GetBuffer(), workingDir_.GetMaxSize(), "/");
         }
+        */
 
         hNetwork::initialise();
 
-        //////////////////////////////////////////////////////////////////////////
-        // Create engine classes /////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
         mainPublisherCtx_ = new hPublisherContext;
         jobManager = new hJobManager;
         actionManager_ = new hActionManager;
         system_ = new hSystem;
-        fileMananger_ = new hDriveFileSystem;
         soundManager_ = nullptr;//new hSoundManager;
         console_ = nullptr;//new hSystemConsole(consoleCb, consoleUser);
-        luaVM_ = new hLuaStateManager;
         debugMenuManager_ = nullptr;//new hDebugMenuManager;
         debugServer_=new hNetHost;
-
-        //////////////////////////////////////////////////////////////////////////
-        // Read in the configFile_ ///////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        luaVM_->Initialise();
-        hConfigurationVariables::loadCVars(luaVM_->GetMainState(), fileMananger_ );
 
         config_.Width_ = hConfigurationVariables::getCVarUint("renderer.width", 640);
         config_.Height_ = hConfigurationVariables::getCVarUint("renderer.height", 480);
         config_.Fullscreen_ = hConfigurationVariables::getCVarBool("renderer.fullscreen", false);
         config_.vsync_ = hConfigurationVariables::getCVarBool("renderer.vsync", false);
 
-        deviceConfig_ = deviceConfig;
+        //deviceConfig_ = deviceConfig;
+        deviceConfig_ = nullptr;
 
         //////////////////////////////////////////////////////////////////////////
         // Init Engine Classes ///////////////////////////////////////////////////
@@ -113,7 +117,7 @@ namespace Heart {
         //hcSetOutputStringCallback(hSystemConsole::printConsoleMessage);
         debugServer_->initialise(hConfigurationVariables::getCVarInt("debug.server.port", 8335));
         mainPublisherCtx_->initialise(1024*1024);
-        system_->Create(config_, deviceConfig_);
+        system_->Create(config_);
         jobManager->initialise();
         actionManager_->initialise(system_);
         hClock::initialise();
@@ -138,23 +142,16 @@ namespace Heart {
         actionManager_->registerLuaLib(luaVM_);
 
         //Run the start up script
-        const hChar* script_name = hConfigurationVariables::getCVarStr("startup.script", nullptr);
-        if (script_name) {
-            if (hIFile* startup_script = fileMananger_->OpenFile(script_name, FILEMODE_READ)) {
-                hChar* script=nullptr;
-                if (startup_script->getIsMemMapped()) {
-                    script=(hChar*)startup_script->getMemoryMappedBase();
-                } else {
-                    script = (hChar*)hAlloca((hSize_t)startup_script->Length()+1);
-                    startup_script->Read(script, (hUint)startup_script->Length());
-                }
-                luaL_loadbuffer(luaVM_->GetMainState(), script, startup_script->Length(), script_name);
-                if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
-                    hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
-                    lua_pop(luaVM_->GetMainState(), 1);
-                }
-                fileMananger_->CloseFile(startup_script);
+        er = fileMananger_->fileOpWait(op);
+        hcAssertMsg(er == FileError::Ok, "Failed to read startup script \"%s\"", script_name);
+        fileMananger_->fileOpClose(op);
+        {
+            luaL_loadbuffer(luaVM_->GetMainState(), scriptdata.get(), scriptfstat.filesize, script_name);
+            if (lua_pcall(luaVM_->GetMainState(), 0, LUA_MULTRET, 0) != 0) {
+                hcAssertFailMsg("startup.lua Failed to run, Error: %s", lua_tostring(luaVM_->GetMainState(), -1));
+                lua_pop(luaVM_->GetMainState(), 1);
             }
+            fileMananger_->closeFile(start_script_file);
         }
 
         //////////////////////////////////////////////////////////////////////////
@@ -339,7 +336,7 @@ namespace Heart {
         //////////////////////////////////////////////////////////////////////////
         // Create debug menus ////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
 #pragma message ("TODO- Real time profiler menu")
 /*        hRTProfilerMenu* rtProfileMenu_ = new GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer();
         rtProfileMenu_->SetHidden(hTrue);
@@ -375,14 +372,13 @@ namespace Heart {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 #if defined (HEART_PLAT_WINDOWS)
-Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, HINSTANCE hInstance, HWND hWnd)
+Heart::hHeartEngine* HEART_API hHeartInitEngine(hHeartEngineCallbacks* callbacks, const hChar* config_script, hSize_t script_len, int argc, char** argv)
 {
     //Heart::hSysCall::hInitSystemDebugLibs();
     heart_thread_prof_begin("profile_startup.prof");
     Heart::hdDeviceConfig deviceConfig;
 
-    Heart::hHeartEngine* engine = 
-        new Heart::hHeartEngine(callbacks->overrideFileRoot_, callbacks->consoleCallback_, callbacks->consoleCallbackUser_, &deviceConfig);
+    Heart::hHeartEngine* engine = new Heart::hHeartEngine(config_script, script_len);
 
     engine->firstLoaded_        = callbacks->firstLoaded_;
     engine->coreAssetsLoaded_   = callbacks->coreAssetsLoaded_;

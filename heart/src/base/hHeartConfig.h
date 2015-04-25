@@ -7,11 +7,17 @@
 
 #if defined (_DEBUG) || defined (DEBUG)
 #   ifndef HEART_DEBUG
-#       define HEART_DEBUG
+#       define HEART_DEBUG (1)
+#   endif
+#   ifndef HEART_RELEASE
+#       define HEART_RELEASE (0)
 #   endif
 #else
+#   ifndef HEART_DEBUG
+#       define HEART_DEBUG (0)
+#   endif
 #   ifndef HEART_RELEASE
-#       define HEART_RELEASE
+#       define HEART_RELEASE (1)
 #   endif
 #endif
 
@@ -26,7 +32,7 @@
 #endif
 
 // To enable compile at load time of shaders.
-#ifdef HEART_DEBUG // or OpenGL when supported
+#if HEART_DEBUG // or OpenGL when supported
 #   define HEART_ALLOW_SHADER_SOURCE_COMPILE
 #endif
 
@@ -54,7 +60,7 @@
 #   define HEART_TRACK_MEMORY_ALLOCS
 #endif
 
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
 #   if !defined (HEART_TRACK_MEMORY_ALLOCS) && !defined (HEART_FORCE_DISABLE_TRACK_MEMORY_ALLOCS) && defined (HEART_PLAT_WINDOWS)
 #       define HEART_TRACK_MEMORY_ALLOCS
 #   endif
@@ -120,14 +126,19 @@
 
 
 #ifdef HEART_PLAT_WINDOWS
+#   define hSymPrefix "?"
 #   if HEART_SHARED_LIB_EXPORTS
-#       define HEART_EXPORT extern "C" __declspec(dllexport)
+#       define HEART_EXPORT __declspec(dllexport)
+#       define HEART_C_EXPORT extern "C" __declspec(dllexport)
 #       define HEART_CLASS_EXPORT __declspec(dllexport)
 #   else
-#       define HEART_EXPORT extern "C" __declspec(dllimport)
+#       define HEART_EXPORT __declspec(dllimport)
+#       define HEART_C_EXPORT extern "C" __declspec(dllimport)
 #       define HEART_CLASS_EXPORT __declspec(dllimport)
 #   endif
 #else
-#   define HEART_EXPORT extern "C"
+#   define hSymPrefix "_"
+#   define HEART_EXPORT
+#   define HEART_C_EXPORT extern "C" __declspec(dllexport)
 #   define HEART_CLASS_EXPORT
 #endif

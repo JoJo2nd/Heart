@@ -95,8 +95,23 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         hStrCat (packagePath_, MAX_PACKAGE_NAME, ".pkg");
 
         hcAssert(fileSystem_);
-        pkgFileHandle_ = fileSystem_->OpenFile(packagePath_, FILEMODE_READ);
-        hResourceFileStream resourcefilestream(pkgFileHandle_);
+        //On a separate thread here so can block.
+
+        hFileHandle pkgFileHandle_;
+        auto op = fileSystem_->openFile(packagePath_, FILEMODE_READ, &pkgFileHandle_);
+        auto er = fileSystem_->fileOpWait(op);
+        fileSystem_->fileOpClose(op);
+        hcAssertMsg(er == FileError::Ok, "Failed to open package %s", packagePath_);
+        hFileStat pkgStat;
+        op = fileSystem_->fstatAsync(pkgFileHandle_, &pkgStat);
+        er = fileSystem_->fileOpWait(op);
+        hcAssertMsg(er == FileError::Ok, "Failed to fstat package %s", packagePath_);
+        pkgFileData.resize(pkgStat.filesize);
+        op = fileSystem_->freadAsync(pkgFileHandle_, pkgFileData.data(), pkgFileData.size(), 0);
+        er = fileSystem_->fileOpWait(op);
+        hcAssertMsg(er == FileError::Ok, "Failed to read package %s", packagePath_);
+        fileSystem_->closeFile(pkgFileHandle_);
+        hResourceFileStream resourcefilestream(pkgFileData.data(), (hUint32)pkgFileData.size());
         google::protobuf::io::CodedInputStream resourcestream(&resourcefilestream);
 
         google::protobuf::uint32 headersize;
@@ -154,8 +169,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                 packageState_ = PkgState::LoadingResources;
             } break;
         case PkgState::LoadingResources: {
-            hcAssert(pkgFileHandle_->getIsMemMapped());
-            hByte* file_base = (hByte*)pkgFileHandle_->getMemoryMappedBase();
+            hByte* file_base = (hByte*)pkgFileData.data();
             hFloat start_time = hClock::elapsed();
             for (hInt i=nextResourceToLoad_, n=packageHeader_.entries_size(); i<n && (hClock::elapsed()-start_time) < 0.01; ++i, ++nextResourceToLoad_) {
                 hResourceLoadJobInputOutput* jobinfo=resourceJobArray_.data()+i;
@@ -177,7 +191,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             }
             timer_.reset();
             if (nextResourceToLoad_ == packageHeader_.entries_size()) {
-                fileSystem_->CloseFile(pkgFileHandle_);
+                pkgFileData.clear();
                 packageState_=PkgState::ResourceLinking;
             }
         } break;

@@ -7,15 +7,13 @@
 
 #include "base/hTypes.h"
 #include "base/hMap.h"
-#include "base/hReferenceCounted.h"
-#include "base/hProtobuf.h"
 #include "base/hClock.h"
-#include "core/hIFile.h"
+#include "base/hReferenceCounted.h"
+#include "core/hProtobuf.h"
 #include "core/hIFileSystem.h"
 #include "core/hResource.h"
 #include "components/hObjectFactory.h"
 #include "threading/hJobManager.h"
-#include "base/hDeviceFileWatch.h"
 #include <queue>
 
 namespace Heart
@@ -24,55 +22,7 @@ namespace Heart
 
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
 
-    class hResourceFileStream : public google::protobuf::io::ZeroCopyInputStream
-    {
-    public:
-        hResourceFileStream(hIFile* file) 
-            : file_(file)
-            , pos_(0)
-            , bytesRead_(0)
-        {
-            bytes_=new hByte[s_bufferSize];
-        }
-        ~hResourceFileStream() {
-            delete[] bytes_;
-            bytes_ = nullptr;
-        }
-
-        virtual bool Next(const void** data, int* size) {
-            // read in 32K
-            hUint32 read = file_->Read(bytes_, s_bufferSize);
-            *data = bytes_;
-            *size = read;
-            pos_=file_->Tell();
-            bytesRead_ += read;
-            return read != 0;
-        };
-
-        virtual void BackUp(int count) {
-            file_->Seek(count, SEEKOFFSET_CURRENT);
-            pos_=file_->Tell();
-        };
-
-        virtual bool Skip(int count) { 
-            hUint64 expectpos=pos_+count;
-            file_->Seek(count, SEEKOFFSET_CURRENT);
-            pos_=file_->Tell();
-            return expectpos==file_->Tell();
-        };
-        virtual google::protobuf::int64 ByteCount() const { return bytesRead_; };
-
-    private:
-        hResourceFileStream(const hResourceFileStream& rhs);
-        hResourceFileStream& operator = (hResourceFileStream);
-
-        static const hUint32 s_bufferSize = 32*1024;
-
-        hIFile* file_;
-        hUint64 pos_;
-        hUint64 bytesRead_;
-        hByte*  bytes_;
-    };
+    typedef google::protobuf::io::ArrayInputStream hResourceFileStream;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -173,7 +123,7 @@ namespace Heart
         hUint                       nextResourceToLoad_;
         hUint                       totalResources_;
         hUint                       linkedResources_;
-        hIFile*                     pkgFileHandle_;
+        std::vector<hChar>          pkgFileData;
         PkgLinkArray                packageLinks_;
 
         proto::PackageHeader        packageHeader_;

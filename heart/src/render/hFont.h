@@ -6,9 +6,9 @@
 #define __HRFONT_H__
 
 #include "base/hTypes.h"
-#include "base/hProtobuf.h"
 #include "base/hStringID.h"
 #include "base/hRendererConstants.h"
+#include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
 #include "ft2build.h"
 #include FT_FREETYPE_H

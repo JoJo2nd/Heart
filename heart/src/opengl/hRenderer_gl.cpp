@@ -7,10 +7,10 @@
 #include "base/hMemory.h"
 #include "base/hStringUtil.h"
 #include "core/hSystem.h"
-#include "pal/hDeviceThread.h"
-#include "threading/hThreadLocalStorage.h"
-#include "threading/hMutexAutoScope.h"
-#include "pal/hSemaphore.h"
+#include "base/hThread.h"
+#include "base/hThreadLocalStorage.h"
+#include "base/hMutexAutoScope.h"
+#include "base/hSemaphore.h"
 #include "render/hRenderer.h"
 #include "render/hIndexBufferFlags.h"
 #include "render/hVertexBufferFlags.h"
@@ -217,7 +217,7 @@ static void renderDoFrame() {
 #define hGetArgsN(x,c) hGetArgsS(x, c, sizeof(x))
 				hGLDraw* c = (hGLDraw*)cmdptr;
 				hRenderCall* rc = c->rc;
-				hByte* args = rc->opCodes_;
+				hByte* args = rc->opCodes_.get();
 				cmdptr += sizeof(hGLDraw);
 
 				if (rc->header_.blend) {
@@ -289,13 +289,44 @@ static void renderDoFrame() {
 				}
 
 				// uniform buffers
+				auto* ubs = (hGLUniformBuffer*)nullptr;
 				if (rc->header_.uniBufferCount_) {
-					auto* ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
+					ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
 					for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
 						glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
 						//glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
 					}
 				}
+
+                // Uniform parameters
+                for (hUint i=0, n=rc->paramUpdateCount; i<n; ++i) {
+					auto* dataub = rc->uniformBuffers[rc->paramUpdates[i].uniformBufferIndex];
+					auto* dataptr = (hUint8*)(dataub->persistantMapping) + (dataub->mappedOffset_+rc->paramUpdates[i].uniformBufferOffset);
+                    switch(rc->paramUpdates[i].type) {
+					case hParamCall::a1f: glUniform1fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+					case hParamCall::a2f: glUniform2fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+					case hParamCall::a3f: glUniform3fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+					case hParamCall::a4f: glUniform4fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+					case hParamCall::a1i: glUniform1iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+					case hParamCall::a2i: glUniform2iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+					case hParamCall::a3i: glUniform3iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+					case hParamCall::a4i: glUniform4iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                    case hParamCall::a1ui: glUniform1uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                    case hParamCall::a2ui: glUniform2uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                    case hParamCall::a3ui: glUniform3uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                    case hParamCall::a4ui: glUniform4uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                    case hParamCall::m2x2f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m2x3f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m2x4f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m3x2f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m3x3f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m3x4f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m4x2f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m4x3f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    case hParamCall::m4x4f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                    default: hcAssertFailMsg("Unexpected enum value!");
+                    }
+                }
 
 				// index
 				if (rc->header_.index) {
@@ -318,8 +349,7 @@ static void renderDoFrame() {
 					}
 
 					rc->flags |= hRenderCall::VAOBound;
-				}
-				else {
+				} else {
 					hGLErrorScope();
 					glBindVertexArray(rc->vao);
 				}
@@ -676,6 +706,14 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     rc->size_ = 0;
     rc->opCodes_ = nullptr;
     auto& header = rc->header_;
+    hByte* currentOpCodes = nullptr;
+#if HEART_DEBUG
+    static const auto opguard = 16u;
+    currentOpCodes = (hByte*)hRealloc(currentOpCodes, opguard);
+    for (auto i=0u; i<opguard; ++i) currentOpCodes[i] = 0xBB;
+#else
+    static const auto opguard = 0u;
+#endif
 
     rc->program_=glCreateProgram();
     glAttachShader(rc->program_, rcd.vertex_->shaderObj_);
@@ -689,13 +727,13 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto ubtotal = 0;
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &ublimit);
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCKS, &ubtotal);
-    auto* ubary = (GLchar**)hAlloca(ubtotal*sizeof(GLchar*));
-    auto* ubnames = (hChar*)hAlloca(ubtotal*ublimit);
+    std::unique_ptr<GLchar*[]> ubary(new hChar*[ubtotal]);
+    std::unique_ptr<hChar[]> ubnames(new hChar[ubtotal*ublimit]);
     //auto* ubhashes = (hUint32*)hAlloca(ubtotal*sizeof(hUint32));
 
     for (auto i=0,n=ubtotal; i<n; ++i) {
         auto olen = 0;
-        ubary[i] = ubnames+(i*ublimit);
+        ubary[i] = ubnames.get()+(i*ublimit);
         glGetActiveUniformBlockName(rc->program_, i, ublimit, &olen, ubary[i]);
         //cyMurmurHash3_x86_32(ubary[i], olen, hGetMurmurHashSeed(), ubhashes+i);
     }
@@ -712,16 +750,16 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto atotal = 0;
     glGetProgramiv(rc->program_, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &alimit);
     glGetProgramiv(rc->program_, GL_ACTIVE_ATTRIBUTES, &atotal);
-    auto* aary = (GLchar**)hAlloca(atotal*sizeof(GLchar*));
-    auto* anames = (hChar*)hAlloca(atotal*alimit);
-    auto* atypes = (GLenum*)hAlloca(atotal*sizeof(GLenum));
-    auto* asizes = (GLint*)hAlloca(atotal*sizeof(GLint));
-    auto* aloc = (hUint32*)hAlloca(atotal*sizeof(hUint32));
+    std::unique_ptr<GLchar*[]> aary(new hChar*[atotal]);
+    std::unique_ptr<hChar[]> anames(new hChar[atotal*alimit]);
+    std::unique_ptr<GLenum[]> atypes(new GLenum[atotal]);
+    std::unique_ptr<GLint[]> asizes(new GLint[atotal]);
+    std::unique_ptr<hUint32[]> aloc(new hUint32[atotal]);
 
     for (auto i=0,n=atotal; i<n; ++i) {
         auto olen = 0;
-        aary[i] = anames+(i*alimit);
-        glGetActiveAttrib(rc->program_, i, alimit, &olen, asizes+i, atypes+i, aary[i]);
+        aary[i] = anames.get()+(i*alimit);
+        glGetActiveAttrib(rc->program_, i, alimit, &olen, asizes.get()+i, atypes.get()+i, aary[i]);
 		aloc[i] = glGetAttribLocation(rc->program_, aary[i]);
         //cyMurmurHash3_x86_32(aary[i], olen, hGetMurmurHashSeed(), ahashes+i);
     }
@@ -738,18 +776,19 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     auto utotal = 0;
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &ulimit);
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORMS, &utotal);
-    auto* uary = (GLchar**)hAlloca(utotal*sizeof(GLchar*));
-    auto* unames = (hChar*)hAlloca(utotal*ulimit);
-    auto* utypes = (GLenum*)hAlloca(utotal*sizeof(GLenum));
-    auto* usizes = (GLint*)hAlloca(utotal*sizeof(GLint));
-    auto* uloc = (hUint32*)hAlloca(atotal*sizeof(hUint32));
+    std::unique_ptr <GLchar*[]> uary(new GLchar*[utotal]);
+    std::unique_ptr<hChar[]>  unames(new hChar[utotal*ulimit]);
+    std::unique_ptr<GLenum[]> utypes(new GLenum[utotal]);
+    std::unique_ptr<GLint[]>  usizes(new GLint[utotal]);
+    std::unique_ptr <hUint32[]> uloc(new hUint32[utotal]);
     //auto* uhashes = (hUint32*)hAlloca(utotal*sizeof(hUint32));
+    auto requiresUniformParamUpdates = false;
 
     glUseProgram(rc->program_);
     for (auto i=0,n=utotal; i<n; ++i) {
         auto olen = 0;
-        uary[i] = unames+(i*ulimit);
-        glGetActiveUniform(rc->program_, i, ulimit, &olen, usizes+i, utypes+i, uary[i]);
+        uary[i] = unames.get()+(i*ulimit);
+        glGetActiveUniform(rc->program_, i, ulimit, &olen, usizes.get()+i, utypes.get()+i, uary[i]);
         uloc[i] = glGetUniformLocation(rc->program_, uary[i]);
         //cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
         // !!JM TODO: more types handled?
@@ -757,6 +796,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
             glUniform1i(uloc[i], uloc[i]);
             ++header.samplerCount_;
             ++header.textureCount_;
+        } else {
+            requiresUniformParamUpdates = true;
         }
     }
 
@@ -812,23 +853,35 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     // blend state
     if (header.blend) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLBlend));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* glblend = (hGLBlend*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* glblend = (hGLBlend*)(currentOpCodes+rc->size_);
         glblend->func = blendfunctogl(rcd.blend_.blendOp_);
         glblend->src = blendoptogl(rcd.blend_.srcBlend_);
         glblend->dest = blendoptogl(rcd.blend_.destBlend_);
         rc->size_ = ns;
     }
-    // seperate alpha blend state
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_+i] == 0xBB);
+#endif
+    // sepearate alpha blend state
     if (header.seperateAlpha) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLBlend));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* glblend = (hGLBlend*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* glblend = (hGLBlend*)(currentOpCodes+rc->size_);
         glblend->func = blendfunctogl(rcd.blend_.blendOpAlpha_);
         glblend->src = blendoptogl(rcd.blend_.srcBlendAlpha_);
         glblend->dest = blendoptogl(rcd.blend_.destBlendAlpha_);
         rc->size_ = ns;
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
 
     auto comparetogl = [](proto::renderstate::FunctionCompare a) -> GLenum {
         switch(a) {
@@ -847,23 +900,35 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     //depth
     if (header.depth) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLDepth));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* gldepth = (hGLDepth*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* gldepth = (hGLDepth*)(currentOpCodes+rc->size_);
         gldepth->func = comparetogl(rcd.depthStencil_.depthFunc_);
         gldepth->mask = rcd.depthStencil_.depthWriteMask_;
         rc->size_=ns;
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
     //depth bais
     if (header.depthBais) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLDepthBais));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* gldepthbais = (hGLDepthBais*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* gldepthbais = (hGLDepthBais*)(currentOpCodes+rc->size_);
         gldepthbais->depthBias_ = rcd.rasterizer_.depthBias_;
         gldepthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
         gldepthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
         gldepthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
         rc->size_=ns;
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
 
     auto stenciloptogl =[](proto::renderstate::StencilOp a) -> GLenum {
         switch(a) {
@@ -882,8 +947,11 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     //stencil
     if (header.stencil) {
         auto ns = (hUint32)(rc->size_+sizeof(hGLStencil));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* glstencil = (hGLStencil*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* glstencil = (hGLStencil*)(currentOpCodes+rc->size_);
         glstencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
         glstencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
         glstencil->ref_ = rcd.depthStencil_.stencilRef_;
@@ -893,14 +961,19 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         glstencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
         rc->size_=ns;
     }
-
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
     
     // sampler states
     if (header.samplerCount_) {
         auto sizeof_sampler = ft.impl_getSamplerObjectSize();
         auto ns = (hUint32)(rc->size_+(sizeof_sampler*header.samplerCount_));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        rc->samplers_ = (hGLSampler*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        rc->samplers_ = (hGLSampler*)(currentOpCodes+rc->size_);
         auto* wsamplers = rc->samplers_;
         for (auto i=0u, n=hRenderCallDesc::samplerStateMax_; i<n && !rcd.samplerStates_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.samplerStates_[i].name_);
@@ -912,12 +985,18 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         rc->size_=ns;    
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
 
     //textures
     if (header.textureCount_) {
         auto ns = (hUint32)(rc->size_+(sizeof(hGLTexture2D)*header.textureCount_));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* textures = (hGLTexture2D*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* textures = (hGLTexture2D*)(currentOpCodes+rc->size_);
         auto* wtextures = textures;
         for (auto i=0u, n=hRenderCallDesc::textureSlotMax_; i<n && !rcd.textureSlots_[i].name_.is_default(); ++i) {
             auto si = getuniformindex(rcd.textureSlots_[i].name_);
@@ -931,12 +1010,18 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         rc->size_=ns;    
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
 
     // uniform buffers
     if (header.uniBufferCount_) {
         auto ns = (hUint32)(rc->size_+(sizeof(hGLUniformBuffer)*header.uniBufferCount_));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* buffers = (hGLUniformBuffer*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* buffers = (hGLUniformBuffer*)(currentOpCodes+rc->size_);
         auto* wbuffers = buffers;
         for (auto i=0u, n=hRenderCallDesc::uniformBufferMax_; i<n && !rcd.uniformBuffers_[i].name_.is_default(); ++i) {
             auto si = getunibufindex(rcd.uniformBuffers_[i].name_);
@@ -948,15 +1033,78 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         rc->size_=ns;    
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
+
+    if (requiresUniformParamUpdates) {
+        // walk the list of uniforms and find the parameters we need to copy across.
+		auto maxubindex = 0u;
+        std::vector<hUniformParamUpdate> updateparams;
+        updateparams.reserve(utotal);
+        for (hUint i=0, n=utotal; i<n; ++i) {
+            if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+                // Handled in other ways.
+                continue;
+            }
+            hUniformParamUpdate param_update;
+            hUint index, offset, size;
+			ShaderParamType type;
+            auto found = rcd.findNamedParameter(uary[i], &index, &offset, &size, &type);
+            hcAssertMsg(found, "Parameter '%s' is not matched to an input. This will cause rendering issues!", uary[i]);
+            if (found){
+                hcAssertMsg((index & 0xFF) == index && (offset & 0xFFFF) == offset && (size & 0xFF) == size, "Uniform parameter is out of range");
+				maxubindex = index > maxubindex ? index : maxubindex;
+                param_update.uniformBufferIndex = (index & 0xFF);
+                param_update.uniformBufferOffset = (offset & 0xFFFF);
+                param_update.paramSize = (size & 0xFF);
+				param_update.location = glGetUniformLocation(rc->program_, uary[i]);
+                switch (type) {
+                case ShaderParamType::Float     : param_update.type = hParamCall::a1f;   break;
+                case ShaderParamType::Float2    : param_update.type = hParamCall::a2f;   break;
+                case ShaderParamType::Float3    : param_update.type = hParamCall::a3f;   break;
+                case ShaderParamType::Float4    : param_update.type = hParamCall::a4f;   break;
+                case ShaderParamType::Float22   : param_update.type = hParamCall::m2x2f; break;
+                case ShaderParamType::Float23   : param_update.type = hParamCall::m2x3f; break;
+                case ShaderParamType::Float24   : param_update.type = hParamCall::m2x4f; break;
+                case ShaderParamType::Float32   : param_update.type = hParamCall::m4x2f; break;
+                case ShaderParamType::Float33   : param_update.type = hParamCall::m3x3f; break;
+                case ShaderParamType::Float34   : param_update.type = hParamCall::m3x4f; break;
+                case ShaderParamType::Float42   : param_update.type = hParamCall::m4x2f; break;
+                case ShaderParamType::Float43   : param_update.type = hParamCall::m4x3f; break;
+                case ShaderParamType::Float44   : param_update.type = hParamCall::m4x4f; break;
+                default                         : param_update.type = hParamCall::none;  break;
+                }
+                updateparams.push_back(param_update);
+            }
+        }
+		rc->uniformBuffers.resize(++maxubindex, nullptr);
+		for (auto i=0u, n=hRenderCallDesc::uniformBufferMax_; i<maxubindex; ++i) {
+			if (rcd.uniformBuffers_[i].name_.is_default()) {
+				continue;
+			}
+			rc->uniformBuffers[i] = rcd.uniformBuffers_[i].ub_;
+		}
+        rc->paramUpdateCount = (hUint)updateparams.size();
+        hcAssertMsg(updateparams.size() == rc->paramUpdateCount, "too many paramers!");
+        rc->paramUpdates.reset(new hUniformParamUpdate[rc->paramUpdateCount]);
+        hMemCpy(rc->paramUpdates.get(), updateparams.data(), sizeof(hUniformParamUpdate)*rc->paramUpdateCount);
+    }
 
     // index
     if (header.index) {
         auto ns = (hUint32)(rc->size_+(sizeof(hIndexBuffer*)));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto** ib = (hIndexBuffer**)(rc->opCodes_+rc->size_);            
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto** ib = (hIndexBuffer**)(currentOpCodes+rc->size_);
         *ib = rcd.indexBuffer_;
-        rc->size_=ns;    
+        rc->size_=ns;
     }
+#if HEART_DEBUG
+    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
 
     // vertex buffer
     rc->vtxBuf_ = rcd.vertexBuffer_;
@@ -980,8 +1128,11 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         };
 
         auto ns = (hUint32)(rc->size_+(sizeof(hGLVtxAttrib)*header.vtxAttCount_));
-        rc->opCodes_ = (hByte*)hRealloc(rc->opCodes_, ns);
-        auto* attribs = (hGLVtxAttrib*)(rc->opCodes_+rc->size_);
+        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+#endif
+        auto* attribs = (hGLVtxAttrib*)(currentOpCodes+rc->size_);
         for (auto i=0u, n=hRenderCallDesc::vertexLayoutMax_; i<n && !rcd.vertexLayout_[i].bindPoint_.is_default(); ++i) {
             auto bindpoint = getattribindex(rcd.vertexLayout_[i].bindPoint_);
             if (bindpoint != ~0u) {
@@ -994,19 +1145,24 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
             }
         }
         rc->size_=ns;
+#if HEART_DEBUG
+        for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+#endif
     }
+
+    rc->opCodes_ = std::unique_ptr<hByte, std::function<void(hByte*)>>(currentOpCodes, [](hByte* p){hFree(p);});
 	hGLSyncFlush();
     return rc;
 }
 
 void destroyRenderCall(hRenderCall* rc) {
     enqueueRenderResourceDelete([=]{
+        // TODO: Can't this just be a destructor on the object??
         glDeleteProgram(rc->program_);
         auto sizeof_sampler = ft.impl_getSamplerObjectSize();
         for (hUint i=0,n=rc->header_.samplerCount_; i<n; ++i) {
-            ft.impl_destroySamplerObjectInplace((hGLSampler*)(((hByte*)rc->samplers_)+(sizeof_sampler*i)));//glDeleteSamplers(1, &rc->samplers_[i].samplerObj);
+            ft.impl_destroySamplerObjectInplace((hGLSampler*)(((hByte*)rc->samplers_)+(sizeof_sampler*i)));
         }
-        delete rc->opCodes_;
         delete rc;
     });
 }

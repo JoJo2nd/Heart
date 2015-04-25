@@ -39,5 +39,5 @@ source_group(source FILES ${FILESYSTEM_SRC_FILES})
 
 include_directories(${FILESYSTEM_INCLUDE_DIR})
 #link_directories(${HEART_LIB_DIRS})
-add_library(filesystem SHARED ${FILESYSTEM_SRC_FILES})
-target_link_libraries(filesystem heart_base)
+add_library(hddfilesystem SHARED ${FILESYSTEM_SRC_FILES})
+target_link_libraries(hddfilesystem heart_base)

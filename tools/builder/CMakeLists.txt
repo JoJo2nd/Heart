@@ -122,7 +122,7 @@ if (PLATFORM_WINDOWS)
 #      TARGET BUILDER
 #      POST_BUILD
 #  	COMMAND python
-#  	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l BUILDER -s "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#  	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l BUILDER -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 #  )
 endif()
 

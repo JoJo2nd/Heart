@@ -13,6 +13,21 @@ namespace hSysCall {
 #if 0
     void HEART_API hInitSystemDebugLibs();
 #endif
+
+#define HEART_SHAREDLIB_INVALIDADDRESS (nullptr)
+    typedef void* hSharedLibAddress;
+
+    HEART_EXPORT
+    hSharedLibAddress HEART_API openSharedLib(const hChar* libname);
+    HEART_EXPORT
+    void HEART_API closeSharedLib(hSharedLibAddress lib);
+    HEART_EXPORT
+    void* HEART_API getFunctionAddress(hSharedLibAddress lib, const char* symbolName);
+    template < typename t_fn >
+    hFORCEINLINE t_fn* getFunctionAddress(hSharedLibAddress lib, const char* symbolName, t_fn*& fn_ptr) {
+        fn_ptr = static_cast<t_fn*>(getFunctionAddress(lib, symbolName));
+        return fn_ptr;
+    }
 }
 
 namespace hMemTracking {

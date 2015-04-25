@@ -20,7 +20,7 @@ namespace Heart
 	    {
 	    }
 
-	    hBool	Create(const HeartConfig& config, const hdDeviceConfig* deviceconfig);
+	    hBool	Create(const HeartConfig& config);
 	    void	Update();
 	    void	Destroy();
 

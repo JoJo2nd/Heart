@@ -74,7 +74,7 @@ extern "C" {
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
-#include "base/hProtobuf.h"
+#include "core/hProtobuf.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Base //////////////////////////////////////////////////////////////////
@@ -88,14 +88,14 @@ extern "C" {
 #include "components/hEntity.h"
 #include "components/hObjectFactory.h"
 
-#include "pal/hPlatform.h"
+#include "base/hPlatform.h"
 
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Threading /////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-#include "threading/hMutexAutoScope.h"
+#include "base/hMutexAutoScope.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Events /////////////////////////////////////////////////////////////////////////////////////////
@@ -108,9 +108,6 @@ extern "C" {
 #include "threading/hJobManager.h"
 #include "core/hConfigOptions.h"
 #include "core/hIFileSystem.h"
-#include "core/hIFile.h"
-#include "core/hDriveFileSystem.h"
-#include "core/hDriveFile.h"
 #include "core/hResourceStreamHelpers.h"
 #include "core/hResource.h"
 #include "core/hResourcePackage.h"

@@ -17,53 +17,35 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
 
     namespace hClock {
-        void initialise();
-        hFloat elapsed();
-        hUint64 elapsedMilli();
-        hUint64 elapsedNano();
-        hUint64 deltams();
-        hFloat fdeltams();
-        hFloat delta();
-        hUint32 hours();
-        hUint32 mins();
-        hUint32 secs();
-        void update();
+        
+        HEART_EXPORT void HEART_API initialise();
+        HEART_EXPORT hFloat HEART_API elapsed();
+        HEART_EXPORT hUint64 HEART_API elapsedMilli();
+        HEART_EXPORT hUint64 HEART_API elapsedNano();
+        HEART_EXPORT hUint64 HEART_API deltams();
+        HEART_EXPORT hFloat HEART_API fdeltams();
+        HEART_EXPORT hFloat HEART_API delta();
+        HEART_EXPORT hUint32 HEART_API hours();
+        HEART_EXPORT hUint32 HEART_API mins();
+        HEART_EXPORT hUint32 HEART_API secs();
+        HEART_EXPORT void HEART_API update();
     };
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hTimer
+    class HEART_CLASS_EXPORT hTimer
     {
     public:
 
-        hTimer() {
-            reset();
-        }
-        void    reset() {
-            begin_=hClock::elapsedMilli();
-            pauseStack_=0;
-            lastPause_=begin_;
-            pauseTotal_=0;
-        }
-        void    setPause(hBool val) {
-            if (val) {
-                ++pauseStack_;
-                if (pauseStack_==1) {
-                    lastPause_=hClock::elapsedMilli();
-                }
-            } else if (!val && pauseStack_ > 0) {
-                pauseTotal_+=hClock::elapsedMilli()-lastPause_;
-            }
-        }
+        hTimer();
+        void    reset();
+        void    setPause(hBool val);
         hBool   getPaused() const { return pauseStack_ != 0; }
-        hInt64   elaspedPause() const { 
-            hInt64 current=hClock::elapsedMilli()-lastPause_;
-            return getPaused() ? pauseTotal_+current : pauseTotal_;
-        }
-        hInt64   elapsedSec() const { return elapsedMilliSec()/1000; }
-        hInt64   elapsedMilliSec() const { return (hClock::elapsedMilli()-begin_) - elaspedPause(); }
+        hInt64   elaspedPause() const;
+        hInt64   elapsedSec() const;
+        hInt64   elapsedMilliSec() const;
 
     private:
 

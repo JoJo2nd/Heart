@@ -15,8 +15,8 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    hBool hdSystemWindow::Create( const hdDeviceConfig* deviceconfig ) {
-#ifdef HEART_DEBUG
+    hBool hdSystemWindow::Create() {
+#if HEART_DEBUG
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
@@ -24,8 +24,8 @@ namespace Heart {
             "HeartEngine", 
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
-            deviceconfig->getWidth(),
-            deviceconfig->getHeight(),
+            hConfigurationVariables::getCVarInt("window.sizex", 640),
+            hConfigurationVariables::getCVarInt("window.sizey", 320),
             SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
         if (!sdlWindow_) {
             hcPrintf("SDL_CreateWindow() Error: %s", SDL_GetError());

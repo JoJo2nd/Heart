@@ -4,8 +4,8 @@
 *********************************************************************/
 
 #include "core/hConfigOptions.h"
-#include "core/hIFile.h"
 #include "core/hIFileSystem.h"
+#include <memory>
 
 namespace Heart {
 namespace hConfigurationVariables {
@@ -16,27 +16,16 @@ namespace {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void loadCVars(lua_State* L, hIFileSystem* file_system)
+void loadCVars(lua_State* L, const hChar* script_text, hSize_t text_len)
 {
     lua_ = L;
-    hChar* script=nullptr;
-    auto* file = file_system->OpenFile("/script/config.lua", FILEMODE_READ);
-    if (file->getIsMemMapped()) {
-        script=(hChar*)file->getMemoryMappedBase();
-    } else {
-        script = new hChar[file->Length()+1];
-        file->Read(script, (hUint)file->Length());
-    }
-    if (int error = luaL_loadbuffer(lua_, script, file->Length(), "/script/config.lua") != LUA_OK) {
-        hcAssertFailMsg("config.lua Failed to compile, Error: %d\nScript:%s", error, script);
+
+    if (int error = luaL_loadbuffer(lua_, script_text, text_len, "/startup.lua") != LUA_OK) {
+        hcAssertFailMsg("config.lua Failed to compile, Error: %d", error);
     } else if (lua_pcall(lua_, 0, LUA_MULTRET, 0) != 0) {
         hcAssertFailMsg("config.lua Failed to run, Error: %s", lua_tostring(lua_, -1));
         lua_pop(lua_, 1);
     }
-    if (!file->getIsMemMapped()) {
-        delete script;
-    }
-    file_system->CloseFile(file);
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -19,23 +19,19 @@ namespace Heart
     class HEART_CLASS_EXPORT hStringID
     {
     public:
-        hStringID() 
-            : strEntry_(get_default_id()/*&s_default*/)
-        {}
-        explicit hStringID(const hChar* str_id) 
-            : strEntry_(get_string_id(str_id))
-        {}
+        hStringID();
+        explicit hStringID(const hChar* str_id);
 
-        hSize_t size() const { return strEntry_->byteLen_; }
-        hSize_t length() const { return strEntry_->byteLen_; }
-        const char* c_str() const { return strEntry_->strValue_; }
-        hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
-        hBool operator == (const hStringID& rhs) const { return strEntry_ == rhs.strEntry_; }
-        hBool operator != (const hStringID& rhs) const { return strEntry_ != rhs.strEntry_; }
-        hUint operator [] (const hSize_t pos) const { return strEntry_->strValue_[pos]; }
-        hUint32 hash() const { return strEntry_->strHash_; }
-        hUintptr_t id() const { return (hUintptr_t)strEntry_; }
-        hBool is_default() const { return strEntry_ == get_default_id()/*&s_default*/; }
+        hFORCEINLINE hSize_t size() const { return strEntry_->byteLen_; }
+        hFORCEINLINE hSize_t length() const { return strEntry_->byteLen_; }
+        hFORCEINLINE const char* c_str() const { return strEntry_->strValue_; }
+        hFORCEINLINE hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
+        hBool operator == (const hStringID& rhs) const;
+        hBool operator != (const hStringID& rhs) const;
+        hUint operator [] (const hSize_t pos) const;
+        hFORCEINLINE hUint32 hash() const { return strEntry_->strHash_; }
+        hFORCEINLINE hUintptr_t id() const { return (hUintptr_t)strEntry_; }
+        hFORCEINLINE hBool is_default() const { return strEntry_ == get_default_id()/*&s_default*/; }
 
     private:
 

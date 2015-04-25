@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "base/hTypes.h"
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
 #include "render/hFont.h"

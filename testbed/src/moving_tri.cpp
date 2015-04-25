@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "base/hTypes.h"
-#include "utils/hBase64.h"
+#include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
 #include "render/hRenderCallDesc.h"
@@ -59,7 +59,7 @@ class MovingTri : public IUnitTest {
     hShaderProgram*                     shaderProg;
 	hRenderer::hShaderStage*			vert;
     hRenderer::hShaderStage*			frag;
-	hRenderer::hProgramReflectionInfo*	refInfo;
+	//hRenderer::hProgramReflectionInfo*	refInfo;
     hRenderer::hVertexBuffer*			vb;
     hRenderer::hRenderCall*				rc;
 	hRenderer::hUniformBuffer*			ub;
@@ -90,19 +90,12 @@ public:
         frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
-// 		refInfo = hRenderer::createProgramReflectionInfo(vert, frag, nullptr, nullptr, nullptr);
-// 		for (hUint i=0, n=hRenderer::getParameterInputCount(refInfo); i<n; ++i) {
-// 			auto param_info = hRenderer::getUniformatBlockInfo(refInfo, i);
-// 			if (hStrCmp(param_info.name,"TimerBlock") == 0) {
-// 				paramBlockSize = param_info.dynamicSize;
-// 			}
-// 		}
-
         hRenderer::hUniformLayoutDesc ublo[] = {
             {"timeSecs", hRenderer::ShaderParamType::Float,    0},
             {"pad",      hRenderer::ShaderParamType::Float3,   4},
         };
 
+        paramBlockSize = (hUint)sizeof(TimerBlock);
 		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(TimerBlock), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 		for (auto& i:fences) {
 			i = nullptr;
@@ -126,10 +119,8 @@ public:
     ~MovingTri() {
         hRenderer::destroyRenderCall(rc);
         hRenderer::destroyUniformBuffer(ub);
-        hRenderer::destroyProgramReflectionInfo(refInfo);
+        //hRenderer::destroyProgramReflectionInfo(refInfo);
         hRenderer::destroyVertexBuffer(vb);
-        hRenderer::destroyShader(frag);
-        hRenderer::destroyShader(vert);
     }
 
     virtual hUint32 RunUnitTest() override {

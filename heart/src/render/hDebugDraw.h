@@ -8,7 +8,7 @@
 #include "base/hRendererConstants.h"
 #include "base/hTypes.h" 
 #include "math/hVec3.h"
-#include "pal/hMutex.h"
+#include "base/hMutex.h"
 #include <vector>
 
 namespace Heart {

@@ -66,10 +66,10 @@ if (PLATFORM_WINDOWS)
 		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py"
 		ARGS -r "(.*\\.(dll))$"
 		ARGS -s "${freeimage_BIN_DIR}"
-		ARGS -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+		ARGS -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 		COMMAND python
-		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 		COMMAND python
-		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_DEPENDENT_BIN_DIR}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+		ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_DEPENDENT_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 	)
 endif()

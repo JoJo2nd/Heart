@@ -5,9 +5,13 @@
 #pragma once
 
 #include "base/hTypes.h"
+#include "base/hMemory.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "opengl/GLFuncs.h"
 #include <GL/gl.h>
+#include <memory>
+#include <vector>
+#include <functional>
 
 struct lfds_freelist_element;
 
@@ -41,7 +45,7 @@ namespace hRenderer {
         }
     };
 
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
 #   define hGLErrorScope() Heart::hRenderer::hGLErrorSentry gl_error_sentry__blah_blah__(__FILE__, __LINE__)
 #else
 #   define hGLErrorScope()
@@ -52,6 +56,31 @@ namespace hRenderer {
 #elif defined HEART_PLAT_WINDOWS
     typedef const void* hGLDebugCallback_t;
 #endif
+
+    enum class hParamCall {
+        none,
+        a1f,
+        a2f,
+        a3f,
+        a4f,
+        a1i,
+        a2i,
+        a3i,
+        a4i,
+        a1ui,
+        a2ui,
+        a3ui,
+        a4ui,
+        m2x2f,
+        m2x3f,
+        m2x4f,
+        m3x2f,
+        m3x3f,
+        m3x4f,
+        m4x2f,
+        m4x3f,
+        m4x4f,
+    };
 
     struct hRenderFence {
         hRenderFence() 
@@ -119,6 +148,14 @@ namespace hRenderer {
         //GLuint samplerObj;
     };
 
+    struct hUniformParamUpdate {
+        hParamCall type;
+        hInt location;
+        hUint16 uniformBufferOffset;
+        hUint8 uniformBufferIndex;
+        hUint8 paramSize;
+    };
+
     struct hRenderCall {
         enum Flag : hUint8 {
             VAOBound = 0x80,
@@ -126,16 +163,25 @@ namespace hRenderer {
 
         hRenderCall()
             : size_(0)
-            , opCodes_(nullptr)
+            //, opCodes_(nullptr, hFree)
+            , paramUpdateCount(0)
             , flags(0) {
         }
+
+
+        hRenderCall(const hRenderCall& rhs) = delete;
+        hRenderCall& operator = (const hRenderCall& rhs) = delete;
+
         hGLRCHeader header_;
         GLuint program_;
         GLuint vao;
         hVertexBuffer* vtxBuf_;
         hUint size_;
-        hByte* opCodes_;
+        std::unique_ptr<hByte, std::function<void(hByte*)>> opCodes_;
         hGLSampler* samplers_;
+        hUint paramUpdateCount;
+        std::unique_ptr<hUniformParamUpdate[]> paramUpdates;
+		std::vector<const hUniformBuffer*> uniformBuffers;
         hUint8  flags;
     };
 

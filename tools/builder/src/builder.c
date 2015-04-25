@@ -476,8 +476,8 @@ int main (int argc, char **argv) {
     int result = EXIT_SUCCESS;
     int verbose = 0, corecount = 2;
     int c;
-    char* srcpath = NULL, *destpath = NULL; // we leak these
-    const char argopts[] = "vj:s:d:";
+    char* srcpath = NULL, *cachepath = NULL, *destpath = NULL; // we leak these
+    const char argopts[] = "vj:s:d:c:";
     lua_State *L = luaL_newstate();  /* create state */
     luaL_openlibs(L);  /* open libraries */
 
@@ -494,6 +494,11 @@ int main (int argc, char **argv) {
             if (!destpath) return EXIT_FAILURE;
             strcpy(destpath, optarg);
             break;
+		case 'c':
+			cachepath = malloc(strlen(optarg) + 1);
+			if (!cachepath) return EXIT_FAILURE;
+			strcpy(cachepath, optarg);
+			break;
         case 'j':
             corecount = atoi(optarg);
             if (corecount == 0) {
@@ -526,6 +531,9 @@ int main (int argc, char **argv) {
 
     lua_pushstring(L, destpath);
     lua_setglobal(L, "in_output_data_path");
+
+	lua_pushstring(L, cachepath);
+	lua_setglobal(L, "in_cache_data_path");
 
     lua_pushboolean(L, verbose);
     lua_setglobal(L, "in_verbose");

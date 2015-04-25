@@ -6,7 +6,7 @@
 #pragma once
 
 #include "base/hTypes.h"
-#include "base/hProtobuf.h"
+#include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
 #include "render/hTextureFormat.h"
 

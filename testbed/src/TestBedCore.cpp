@@ -52,29 +52,11 @@
         factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
-        // static const luaL_Reg funcs[] = {
-        //     {"printtests", luaPrintTests},
-        //     {NULL, NULL}
-        // };
-
-        // lua_State* L = engine_->GetVM()->GetMainState();
-        // lua_newtable(L);
-        // lua_pushvalue(L,-1);//add twice to avoid set _G[unittest] & get _G[unittest]
-        // lua_setglobal(L, "unittest");
-        // //global table "unittest" already on stack
-        // lua_pushlightuserdata(L, this);
-        // luaL_setfuncs(L,funcs,1);
-        // lua_pop(L, 1);// pop heart module table
-
-        REGISTER_UNIT_TEST(*factory_, ShaderInput);
-        REGISTER_UNIT_TEST(*factory_, TextureFont);
-		REGISTER_UNIT_TEST(*factory_, MovingTri);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
+        REGISTER_UNIT_TEST(*factory_, MovingTri);
+        REGISTER_UNIT_TEST(*factory_, TextureFont);
+        //REGISTER_UNIT_TEST(*factory_, ShaderInput);
         REGISTER_UNIT_TEST(*factory_, Base64);
-
-        // Heart::hResourceManager::loadPackage("core");
-        // Heart::hResourceManager::loadPackage("fonts");
-        // Heart::hResourceManager::loadPackage("textures");
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

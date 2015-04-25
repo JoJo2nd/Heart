@@ -205,7 +205,7 @@ void  hFontRenderCache::flush() {
     root_->y=0;
     root_->w=textureDim_;
     root_->h=textureDim_;
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
     hMemSet(textureCache_.get(), 0x0, textureDim_*textureDim_);
 #endif
 }

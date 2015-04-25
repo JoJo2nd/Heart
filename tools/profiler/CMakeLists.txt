@@ -33,9 +33,3 @@ endif()
 add_executable(profiler ${PROFILER_SRC_FILES})
 set_property(TARGET profiler PROPERTY DEBUG_POSTFIX _d)
 target_link_libraries(profiler dbghelp)
-
-ADD_CUSTOM_COMMAND(
-	TARGET profiler
-    POST_BUILD
-	COMMAND ROBOCOPY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/profiler" *.exe *.pdb ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=00
-)

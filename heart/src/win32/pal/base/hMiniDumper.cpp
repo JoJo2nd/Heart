@@ -3,7 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "pal/hMiniDumper.h"
+#include "base/hMiniDumper.h"
 #include "base/hTypes.h"
 #include <tchar.h>
 

@@ -5,6 +5,9 @@
 
 #include "render/hRenderCallDesc.h"
 #include "base/hMemoryUtil.h"
+#include "base/hStringUtil.h"
+#include "render/hProgramReflectionInfo.h"
+#include "opengl/GLTypes.h"
 
 namespace Heart {
 namespace hRenderer {
@@ -121,6 +124,24 @@ void hRenderCallDesc::setUniformBuffer(hStringID name, const hUniformBuffer* ub)
 void hRenderCallDesc::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
     hcAssert(count < vertexLayoutMax_);
     hMemCpy(vertexLayout_, layout, count*sizeof(hVertexBufferLayout));
+}
+
+bool hRenderCallDesc::findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* outsize, ShaderParamType* outtype) const {
+    for (hUint i=0, n=uniformBufferMax_; i<n && !uniformBuffers_[i].name_.is_default(); ++i) {
+        for (hUint loi=0, lon=uniformBuffers_[i].ub_->layoutDescCount; loi < lon; ++loi) {
+            if (hStrCmp(uniformBuffers_[i].ub_->layoutDesc[loi].fieldName, pname) == 0) {
+                *outindex = i;
+                *outoffset = uniformBuffers_[i].ub_->layoutDesc[loi].dataOffset;
+                *outsize = getParameterTypeByteSize(uniformBuffers_[i].ub_->layoutDesc[loi].type);
+                *outtype = uniformBuffers_[i].ub_->layoutDesc[loi].type;
+                if (*outsize == -1) {
+                    return false;
+                }
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 }

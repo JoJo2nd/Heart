@@ -8,7 +8,7 @@
 #include "render/hDebugDraw.h"
 #include "base/hStringUtil.h"
 #include "base/hCRC32.h"
-#include "base/hProtobuf.h"
+#include "core/hProtobuf.h"
 
 namespace Heart
 {

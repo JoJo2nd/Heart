@@ -8,6 +8,6 @@
 #define __hPLATFORM_H__
 
 #include "base/hHeartConfig.h"
-#include "pal/hWin32.h"
+#include "base/hWin32.h"
 
 #endif

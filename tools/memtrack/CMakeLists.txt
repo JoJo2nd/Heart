@@ -26,10 +26,3 @@ endif()
 include_directories(${MEMTRACK_INCLUDE_DIRS})
 add_executable(mem_track ${MEMTRACK_SRC_FILES} ${MEMTRACK_HDR_FILES})
 target_link_libraries(mem_track crypto getopt_port ${PLATFORM_LIBS})
-
-#ADD_CUSTOM_COMMAND(
-#	TARGET mem_track
-#    POST_BUILD
-#	COMMAND ROBOCOPY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.exe ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-#	COMMAND ROBOCOPY "${wxWidgets_LIB_DIR}" "${CMAKE_SOURCE_DIR}/deploy/mem_tracker" *.dll ${ROBOCOPY_OPTIONS} \n IF %ERRORLEVEL% LEQ 3 SET ERRORLEV=0
-#)

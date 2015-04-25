@@ -289,7 +289,7 @@ link_directories(${HEART_LIB_DIRS})
 #Create the shared base lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=1)
 add_library(heart_base SHARED ${HEART_BASE_FILES})
-target_link_libraries(heart_base crypto memtrackerlib ${PLATFORM_LIBS})
+target_link_libraries(heart_base crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
 
 #Create the main engine lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
@@ -300,8 +300,8 @@ if (PLATFORM_WINDOWS)
     ADD_CUSTOM_COMMAND(
         TARGET heart
         POST_BUILD
-        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
-        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+        COMMAND python "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
     )
 endif()
 

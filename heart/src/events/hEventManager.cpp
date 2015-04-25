@@ -4,7 +4,7 @@
 *********************************************************************/
 
 #include "events/hEventManager.h"
-#include "pal/hDeviceThread.h"
+#include "base/hThread.h"
 
 namespace Heart
 {

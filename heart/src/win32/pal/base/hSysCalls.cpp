@@ -12,6 +12,10 @@
 
 #include "base/hHeartConfig.h"
 #include "base/hTypes.h"
+#include "base/hSysCalls.h"
+#include "base/hStringUtil.h"
+#include "core/hIFileSystem.h"
+#include <SDL.h>
 #include <windows.h>
 
 namespace Heart {
@@ -42,6 +46,22 @@ namespace hSysCall {
         return dwMHz*1000000;
     }
 
+    HEART_EXPORT
+    hSharedLibAddress HEART_API openSharedLib(const hChar* libname) {
+        hChar finalLibName[HEART_MAX_PATH];
+        hStrCopy(finalLibName, hStaticArraySize(finalLibName), libname);
+        return SDL_LoadObject(finalLibName);
+    }
+
+    HEART_EXPORT
+    void HEART_API closeSharedLib(hSharedLibAddress lib) {
+        SDL_UnloadObject(lib);
+    }
+
+    HEART_EXPORT
+    void* HEART_API getFunctionAddress(hSharedLibAddress lib, const char* symbolName) {
+        return SDL_LoadFunction(lib, symbolName);
+    }
 }
 
 namespace hMemTracking

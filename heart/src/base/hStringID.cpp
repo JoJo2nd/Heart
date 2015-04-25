@@ -16,6 +16,18 @@ namespace Heart
 
     static hMutex s_writeMutex;
 
+    hStringID::hStringID() 
+        : strEntry_(get_default_id()/*&s_default*/)
+    {
+
+    }
+
+    hStringID::hStringID(const hChar* str_id) 
+        : strEntry_(get_string_id(str_id))
+    {
+
+    }
+
     hStringID::hStringIDEntry* hStringID::get_default_id() {
         static hStringID::hStringIDEntry s_default;
         return &s_default;
@@ -69,6 +81,21 @@ namespace Heart
         ++s_hashTableCount;
 
         return newentry;
+    }
+
+    hBool hStringID::operator==(const hStringID& rhs) const
+    {
+        return strEntry_ == rhs.strEntry_;
+    }
+
+    hBool hStringID::operator!=(const hStringID& rhs) const
+    {
+        return strEntry_ != rhs.strEntry_;
+    }
+
+    hUint hStringID::operator[](const hSize_t pos) const
+    {
+        return strEntry_->strValue_[pos];
     }
 
 }

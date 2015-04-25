@@ -50,12 +50,6 @@ namespace hRenderer {
     struct hUniformBuffer;
 	struct hRenderFence;
 
-    struct hUniformLayoutDesc {
-        char*           fieldName;
-        ShaderParamType type;
-        hUint16         dataOffset;
-    };
-
     void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
     void					destroy();
     hFORCEINLINE hFloat     getRatio() { return 1.f; }

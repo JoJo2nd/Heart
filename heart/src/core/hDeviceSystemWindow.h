@@ -8,8 +8,8 @@
 #include "base/hTypes.h"
 #include "base/hFunctor.h"
 #include "core/hDeviceConfig.h"
-#include "pal/hMutex.h"
-#include "pal/hConditionVariable.h"
+#include "base/hMutex.h"
+#include "base/hConditionVariable.h"
 #include "SDL.h"
 #include "SDL_syswm.h"
 #include <unordered_map>
@@ -17,9 +17,6 @@
 namespace Heart {
     class HeartConfig;
     class EventManager;
-
-    #define                             HEART_SHAREDLIB_INVALIDADDRESS (nullptr)
-    typedef hUintptr_t                  hSharedLibAddress; 
 
     typedef SDL_Event                   hSysEvent; // just in-case it is replaced at a later date
 #define hGetSystemEventID(x) (SDL_##x)
@@ -31,15 +28,6 @@ namespace Heart {
         virtual hUintptr_t  getSystemHandle() = 0;
     };
 
-    hBool HEART_API                hd_DefaultFullscreenSetting();
-    hUint32 HEART_API              hd_DefaultScreenWidth();
-    hUint32 HEART_API              hd_DefaultScreenHeight();
-    hBool HEART_API                hd_DefaultVsyncSetting();
-    void HEART_API                 hd_AddSharedLibSearchDir(const hChar* abspath);
-    hSharedLibAddress HEART_API    hd_OpenSharedLib(const hChar* libname);
-    void HEART_API                 hd_CloseSharedLib(hSharedLibAddress lib);
-    hTime HEART_API                hd_GetSharedLibTimestamp(hSharedLibAddress lib);
-    void* HEART_API                hd_GetFunctionAddress(hSharedLibAddress lib, const char* symbolName);
 
     class hdSystemWindow
     {
@@ -51,7 +39,7 @@ namespace Heart {
             hAtomic::AtomicSet(exitSignal_, 0);
         }
 
-        hBool                   Create( const hdDeviceConfig* config );
+        hBool                   Create();
         const ISystemHandle*    GetSystemHandle() { return systemHandle_; };
         void                    SetWindowTitle( const hChar* titleStr );
         void                    Update();

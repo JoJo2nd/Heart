@@ -7,7 +7,7 @@
 
 #include "base/hTypes.h"
 #include "base/hStringID.h"
-#include "base/hProtobuf.h"
+#include "core/hProtobuf.h"
 
 namespace Heart {
     typedef ::google::protobuf::MessageLite hObjectMarshall;

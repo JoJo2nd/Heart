@@ -8,9 +8,9 @@ project(HEART)
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 #
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
@@ -250,6 +250,9 @@ else()
 endif(BUILD_64_BIT)
 
 #cache vars
+if (PLATFORM_WINDOWS)
+  set(WindowsSDKDir CACHE PATH "Directory of the WindowsSDK")
+endif()
 set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
 set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")

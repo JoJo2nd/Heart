@@ -6,7 +6,7 @@
 #include "input/hActionManager.h"
 #include "base/hTypes.h"
 #include "base/hStringID.h"
-#include "pal/hDeviceInput.h"
+#include "base/hDeviceInput.h"
 #include "core/hDeviceSystemWindow.h"
 #include "lua/hLuaStateManager.h"
 #include <unordered_map>

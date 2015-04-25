@@ -59,7 +59,7 @@ void HEART_API hcOutputStringVA( const hChar* msg, bool newline, va_list vargs )
 		buffer[ len+1 ] =  0;
 	}
 
-#ifdef HEART_DEBUG
+#if HEART_DEBUG
 	OutputDebugString( buffer );
 #endif // HEART_DEBUG
 #ifdef HEART_STDIO_OUTPUT

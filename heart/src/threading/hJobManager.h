@@ -9,10 +9,10 @@
 #include "base/hTypes.h"
 #include "base/hLinkedList.h"
 #include "base/hArray.h"
-#include "pal/hMutex.h"
-#include "pal/hDeviceThread.h"
-#include "pal/hConditionVariable.h"
-#include "pal/hSemaphore.h"
+#include "base/hMutex.h"
+#include "base/hThread.h"
+#include "base/hConditionVariable.h"
+#include "base/hSemaphore.h"
 
 namespace Heart
 {

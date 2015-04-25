@@ -9,7 +9,7 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "base/hMemoryUtil.h"
-#include "pal/hMutex.h"
+#include "base/hMutex.h"
 
 typedef void (*hConsoleOutputProc)(const hChar*, void*);
 #if 0 // !!JM

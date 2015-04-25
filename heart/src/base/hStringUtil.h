@@ -20,19 +20,18 @@ namespace Heart
         return (hUint32)strlen( s1 );
     }
 
-    inline void HEART_API hStrCopy( hChar* dest, hUint32 destlen, const hChar* src )
+    inline void HEART_API hStrCopy( hChar* dest, hSize_t destlen, const hChar* src )
     {
-        hcAssert( (hUint32)hStrLen( src ) <= destlen );
+        hcAssert( hStrLen( src ) <= destlen-1 );
         strcpy( dest, src );
     }
 
-    inline void HEART_API hStrNCopy( hChar* dest, hUint32 destlen, const hChar* src )
+    inline void HEART_API hStrNCopy( hChar* dest, hSize_t destlen, const hChar* src )
     {
-        strncpy( dest, src, destlen-1 );
-        dest[destlen-1] = 0;
+        strncpy( dest, src, destlen );
     }
 
-    inline void HEART_API hStrCat( hChar* dest, hUint32 destlen, const hChar* src )
+    inline void HEART_API hStrCat( hChar* dest, hSize_t destlen, const hChar* src )
     {
         hcAssert( destlen - (hUint32)hStrLen( dest ) <= destlen );
         strcat( dest, src );

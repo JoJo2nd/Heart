@@ -17,7 +17,7 @@ class hIFileSystem;
 
 namespace hConfigurationVariables {
 
-void         loadCVars(lua_State* L, hIFileSystem* file_system);
+void         loadCVars(lua_State* L, const hChar* script_text, hSize_t text_len);
 hUint        getCVarUint(const hChar* key, hUint defval);
 hInt         getCVarInt(const hChar* key, hInt defval);
 hFloat       getCVarFloat(const hChar* key, hFloat defval);
