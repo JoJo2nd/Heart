@@ -4,9 +4,6 @@ project(HEART)
 
 ENABLE_PROFILE_IF_SET()
 
-# set project directories
-set(heart_BINARY_DIR "${HEART_SOURCE_DIR}/../bin/heart")
-
 # heart include directorys
 set( HEART_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}
@@ -26,6 +23,7 @@ set( HEART_INCLUDE_DIRS
     "${SDL2_INCLUDE_DIR}"
     "${GLEW_INCLUDE_DIRS}"
     "${FREETYPE_INCLUDE_DIRS}"
+    "${IMGUI_INCLUDE_DIR}"
     "${MEMTRACKERLIB_SRC_DIR}"
 )
 
@@ -280,8 +278,10 @@ set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPE
 
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
-set(HEART_LIBRARIES
-        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet memtrackerlib ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
+set(HEART_LIBRARIES_DEBUG 
+        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet imgui memtrackerlib ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
+set(HEART_LIBRARIES_RELEASE
+         heart_base zlib crypto lua52 minizip libogg libvorbis proto enet ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
@@ -289,12 +289,14 @@ link_directories(${HEART_LIB_DIRS})
 #Create the shared base lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=1)
 add_library(heart_base SHARED ${HEART_BASE_FILES})
-target_link_libraries(heart_base crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
+target_link_libraries(heart_base debug crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
+target_link_libraries(heart_base optimized crypto ${SDL2_LIBRARY} ${PLATFORM_LIBS})
 
 #Create the main engine lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
-target_link_libraries(heart ${HEART_LIBRARIES} ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart debug ${HEART_LIBRARIES_DEBUG} ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart optimized ${HEART_LIBRARIES_DEBUG} ${PLATFORM_LIBS} ${PROFILE_LIBS})
 
 if (PLATFORM_WINDOWS)
     ADD_CUSTOM_COMMAND(

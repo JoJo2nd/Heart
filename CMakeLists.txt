@@ -17,6 +17,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(PLATFORM_WINDOWS true)
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua.exe)
   add_definitions(-DPLATFORM_WINDOWS)
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
   set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 endif()
 
@@ -290,6 +292,9 @@ set(GETOPT_PORT_INCLUDE_DIR
 set(CRYPTO_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/crypto/src"
 )
+set(IMGUI_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/imgui/src"
+)
 set(PROTO_SRC_DIR
     "${TOOLS_SRC_ROOT}/proto/src"
 )
@@ -361,7 +366,7 @@ add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
 add_subdirectory ("external/minfs")
 add_subdirectory ("external/nvidia-texture-tools")
-#add_subdirectory ("external/physfs")
+add_subdirectory ("external/imgui")
 if (PLATFORM_WINDOWS)
   add_subdirectory ("external/libprof")
 endif()

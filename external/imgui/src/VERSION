@@ -1,0 +1,5 @@
+commit 6844952d566eed6f0ebf64425e647baf29bd328c
+Author: ocornut <omarcornut@gmail.com>
+Date:   Fri Apr 24 09:22:29 2015 +0200
+
+    Fixed build with Visual Studio 2008 or earlier (via PR #203)
