@@ -23,7 +23,7 @@
 typedef void (*hPrintfCallback)(const hChar*);
 HEART_EXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 
-#if defined HEART_DEBUG || defined HEART_DO_ASSERTS
+#if HEART_DO_ASSERTS
 
 #define MAX_WARNING_LEVEL ( WARNING_HIGH )
 
@@ -73,7 +73,7 @@ HEART_EXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ..
 #   endif
 #endif
 
-#elif defined HEART_RELEASE
+#else
 //#else
 
 #define MAX_WARNING_LEVEL ( WARNING_NONE )
@@ -92,10 +92,6 @@ HEART_EXPORT void HEART_API hcOutputString( const hChar* msg, ... );
 #define hcWarningMed( cond, msg, ... )				hcWarning( WARNING_MED, cond, msg, __VA_ARGS__ )
 #define hcWarningLow( cond, msg, ... )				hcWarning( WARNING_LOW, cond, msg, __VA_ARGS__ )
 #define hcWarning( lvl, cond, x, ... )				__noop()
-
-#else
-
-#error ("Need to define release or debug")
 
 #endif
 

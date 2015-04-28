@@ -50,6 +50,7 @@ hVertexBuffer* createVertexBuffer(const void* data, hUint32 elementsize, hUint32
     vb->elementCount_ = elementcount;
     vb->elementSize_ = elementsize;
     vb->createFlags_ = flags;
+    vb->alignedSize = elementcount*elementsize;
     vb->persistantMapping = mapped_ptr;
     return vb;
 }

@@ -72,6 +72,7 @@ namespace hResourceManager
     typedef void* hPackageLoadRequest;
 
     hBool   initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager);
+    hBool   systemResourcesReady();
     void    update();
     void    shutdown();
     void    printResourceInfo();

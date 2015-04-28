@@ -19,6 +19,7 @@ namespace GLExt {
 namespace Fallback {
 
 Heart::hRenderer::hVertexBuffer* createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+void flushVertexBuffer(Heart::hRenderer::hVertexBuffer* vb, hUint offset, hUint size);
 void destroyVertexBuffer(Heart::hRenderer::hVertexBuffer* vb);
 Heart::hRenderer::hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
 void flushUniformBuffer(Heart::hRenderer::hUniformBuffer* ub);

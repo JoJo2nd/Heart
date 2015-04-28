@@ -40,7 +40,7 @@ namespace hRenderer {
                 case GL_OUT_OF_MEMORY: errorstr = "Out of Memory"; break;
                 default: break;
                 }
-                hcPrintf("%s:%d: OpenGL Error %s", file, line, errorstr);
+                hcPrintf("%s(%d): OpenGL Error %s", file, line, errorstr);
             }
         }
     };
@@ -117,6 +117,7 @@ namespace hRenderer {
         hUint32 elementCount_;
         hUint32 elementSize_;
         hUint32 createFlags_;
+        hUint32 alignedSize;
     };
 
     struct hUniformBuffer : hGLObjectBase {

@@ -101,7 +101,7 @@ public:
     void RenderUnitTest() override {
         cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1);
+        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
         hRenderer::swapBuffers(cl);
         
         hRenderer::submitFrame(cl);

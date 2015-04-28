@@ -61,6 +61,10 @@ hBool initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
     return hTrue;
 }
 
+hBool systemResourcesReady() {
+    return getIsPackageLoaded("system");
+}
+
 void shutdown() {
     unloadPackage("system");
     for (auto i : packages) {

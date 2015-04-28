@@ -5,6 +5,7 @@
 
 #include "Heart.h"
 #include "lua/hLuaHeartLib.h"
+#include "render/hImGuiRenderer.h"
 #include "memtracker.h"
 
 namespace Heart {
@@ -298,12 +299,14 @@ namespace Heart {
         case hHeartState_LoadingCore:
             {
                 DoUpdate();
-                PostCoreResourceLoad();
-                if (coreAssetsLoaded_)
-                {
-                    (*coreAssetsLoaded_)(this);
+                if (hResourceManager::systemResourcesReady()) {
+                    PostCoreResourceLoad();
+                    if (coreAssetsLoaded_)
+                    {
+                        (*coreAssetsLoaded_)(this);
+                    }
+                    engineState_ = hHeartState_Running;
                 }
-                engineState_ = hHeartState_Running;
             }
             break;
         case hHeartState_Running: 
@@ -336,6 +339,7 @@ namespace Heart {
         //////////////////////////////////////////////////////////////////////////
         // Create debug menus ////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
+        ImGuiInit();
 #if HEART_DEBUG
 #pragma message ("TODO- Real time profiler menu")
 /*        hRTProfilerMenu* rtProfileMenu_ = new GetDebugHeap(), hRTProfilerMenu)(debugMenuManager_->GetDebugCanvas(), GetRenderer();

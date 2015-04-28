@@ -13,6 +13,7 @@ namespace Heart {
 namespace hRenderer {
 
 struct hUniformBuffer;
+struct hVertexBuffer;
 struct hTexture2D;
 struct hRenderCall;
 struct hRenderFence;
@@ -25,6 +26,8 @@ enum class Op : hUint8 {
     Jump,
 	Fence,
 	UniBufferFlush,
+    VtxBufferFlush,
+    SetScissor,
     EndFrame,
 };
 
@@ -103,6 +106,7 @@ struct hGLVtxAttrib {
     GLint   size_;
     GLenum  type_;
     GLsizei stride_;
+    hBool   normalise;
     void*   pointer_;
 };
 
@@ -121,16 +125,27 @@ struct hGLClear {
     hFloat  depth;
 };
 
+struct hGLScissor {
+    hUint x, y, width, height;
+};
+
 struct hGLDraw {
 	hRenderCall* rc;
 	GLenum		 primType;
 	hUint		 count;
+    hUint        vtxOffset;
 };
 
 struct hGLUniBufferFlush {
 	hUniformBuffer* ub;
 	hUint			offset;
 	hUint			size;
+};
+
+struct hGLVertexBufferFlush {
+    hVertexBuffer* vb;
+    hUint offset;
+    hUint size;
 };
 
 }

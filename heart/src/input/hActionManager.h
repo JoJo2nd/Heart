@@ -19,6 +19,7 @@ namespace Heart
         hStringID   actionName_;
         hInt64      deviceID_;
         hInt        value_;
+        hInt        absValue;
         hUint       rising_ : 1; // aka button down
         hUint       falling_ : 1; // aka button up
         hUint       isRepeat_ : 1;

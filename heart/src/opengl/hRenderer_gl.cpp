@@ -76,6 +76,7 @@ namespace RenderPrivate {
     GLCaps Caps;
     struct {
         hVertexBuffer* (*impl_createVertexBuffer)(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+        void(*impl_flushVertexBuffer)(hVertexBuffer* vb, hUint offset, hUint size);
         void(*impl_destroyVertexBuffer)(hVertexBuffer*);
         hUniformBuffer* (*impl_createUniformBuffer)(const void* initdata, hUint size, hUint32 flags);
         void (*impl_flushUniformBuffer)(hUniformBuffer* ub);
@@ -180,6 +181,10 @@ static void renderDoFrame() {
             }
         }
 
+        if (!cmds && !multiThreadedRenderer) {
+            break;
+        }
+
 		for (hUint i=0; cmdptr < cmdend /*&& i < renderCommandThreshold*/; ++i) {
 			Op opcode = *((hRenderer::Op*)cmdptr);
 			cmdptr += OpCodeSize;
@@ -210,6 +215,16 @@ static void renderDoFrame() {
                     ft.impl_flushUniformBuffer(c->ub);
                 }
 			} break;
+            case Op::VtxBufferFlush: {
+                auto* c = (hGLVertexBufferFlush*)cmdptr;
+                // vtx flush should never be push if this is null
+                hcAssert(ft.impl_flushVertexBuffer);
+                ft.impl_flushVertexBuffer(c->vb, c->offset, c->size);
+            } break;
+            case Op::SetScissor: {
+                auto* c = (hGLScissor*)cmdptr;
+                glScissor(c->x, c->y, c->width, c->height);
+            } break;
 			case Op::Draw: {
 				hGLErrorScope();
 #define hGetArgs(x) (x*)args; args+=sizeof(x)
@@ -221,18 +236,18 @@ static void renderDoFrame() {
 				cmdptr += sizeof(hGLDraw);
 
 				if (rc->header_.blend) {
+                    glEnable(GL_BLEND);
+                    glBlendColor(1.0, 1.0, 1.0, 1.0);
 					auto* blend = hGetArgs(hGLBlend);
 					if (rc->header_.seperateAlpha) {
 						auto* alpha = hGetArgs(hGLBlend);
 						glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
 						glBlendEquationSeparate(blend->func, alpha->func);
-					}
-					else {
+					} else {
 						glBlendFunc(blend->src, blend->dest);
 						glBlendEquation(blend->func);
 					}
-				}
-				else {
+				} else {
 					glDisable(GL_BLEND);
 				}
 
@@ -241,8 +256,7 @@ static void renderDoFrame() {
 					glEnable(GL_DEPTH_TEST);
 					glDepthFunc(depth->func);
 					glDepthMask(depth->mask == ~0u);
-				}
-				else {
+				} else {
 					glDisable(GL_DEPTH_TEST);
 				}
 				//depth bais
@@ -263,11 +277,16 @@ static void renderDoFrame() {
 					//stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
 					//stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
 					//stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
-				}
-				else {
+				} else {
 					glDisable(GL_STENCIL_TEST);
 				}
                 glUseProgram(rc->program_);
+
+                if (rc->header_.scissor) {
+                    glEnable(GL_SCISSOR_TEST);
+                } else {
+                    glDisable(GL_SCISSOR_TEST);
+                }
 
                 //sampler states
                 if (rc->header_.samplerCount_) {
@@ -345,7 +364,7 @@ static void renderDoFrame() {
 						hGLErrorScope();
 						glBindBuffer(GL_ARRAY_BUFFER, rc->vtxBuf_->name);
 						glEnableVertexAttribArray(va[i].index_);
-						glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, GL_FALSE, va[i].stride_, va[i].pointer_);
+						glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, va[i].normalise, va[i].stride_, va[i].pointer_);
 					}
 
 					rc->flags |= hRenderCall::VAOBound;
@@ -356,7 +375,7 @@ static void renderDoFrame() {
 
 				{
 					hGLErrorScope();
-					glDrawArrays(c->primType, 0, c->count);
+					glDrawArrays(c->primType, c->vtxOffset, c->count);
 				}
 				break;
 #undef hGetArgs
@@ -471,6 +490,7 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
         ft.impl_destroyUniformBuffer = Caps.BufferStorageProc.destroyUniformBuffer;
     } else {
         ft.impl_createVertexBuffer = GLExt::Fallback::createVertexBuffer;
+        ft.impl_flushVertexBuffer = GLExt::Fallback::flushVertexBuffer;
         ft.impl_destroyVertexBuffer = GLExt::Fallback::destroyVertexBuffer;
         ft.impl_createUniformBuffer = GLExt::Fallback::createUniformBuffer;
         ft.impl_flushUniformBuffer = GLExt::Fallback::flushUniformBuffer;
@@ -596,6 +616,14 @@ void destroyIndexBuffer(hIndexBuffer* ib) {
 
 hVertexBuffer*  createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
     return ft.impl_createVertexBuffer(data, elementsize, elementcount, flags);
+}
+
+void* getMappingPtr(hVertexBuffer* vb, hUint32* outsize) {
+    hcAssert(vb);
+    if (outsize) {
+        *outsize = vb->alignedSize;
+    }
+    return vb->persistantMapping;
 }
 
 void  destroyVertexBuffer(hVertexBuffer* vb) {
@@ -1142,6 +1170,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
                 attribs[bindpoint].type_=inputtypetogl(rcd.vertexLayout_[i].type_);
                 attribs[bindpoint].pointer_=(void*)rcd.vertexLayout_[i].offset_;
                 attribs[bindpoint].stride_=rcd.vertexLayout_[i].stride_;
+                attribs[bindpoint].normalise=rcd.vertexLayout_[i].normalised_;
             }
         }
         rc->size_=ns;
@@ -1416,10 +1445,19 @@ void wait(hRenderFence* fence) {
 	lfds_freelist_push(fenceFreeList, fence->element);
 }
 
-void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims) {
+void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
+    auto* cmd = (hGLScissor*)cl->allocCmdMem(Op::SetScissor, sizeof(hGLScissor));
+    cmd->x = left;
+    cmd->y = top;
+    cmd->width = right-left;
+    cmd->height = bottom-top;
+}
+
+void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims, hUint vtx_offset) {
 	auto* cmd = (hGLDraw*)cl->allocCmdMem(Op::Draw, sizeof(hGLDraw));
 	cmd->rc = rc;
 	cmd->count = prims;
+    cmd->vtxOffset = vtx_offset;
 	cmd->primType = hglToPrimType(pt, &cmd->count);
 }
 
@@ -1428,6 +1466,15 @@ void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, h
 	cmd->ub = ub;
 	cmd->offset = offset;
 	cmd->size = size;
+}
+
+void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
+    if (ft.impl_flushVertexBuffer) {
+        auto* cmd = (hGLVertexBufferFlush*)cl->allocCmdMem(Op::VtxBufferFlush, sizeof(hGLVertexBufferFlush));
+        cmd->vb = vb;
+        cmd->offset = offset;
+        cmd->size = size;
+    }
 }
 
 void swapBuffers(hCmdList* cl) {
@@ -1468,10 +1515,14 @@ void flush(hCmdList* cl) {
 }
 
 void finish() {
-    auto* cl = createCmdList();
-    auto* f = fence(cl);
-    flush(cl);
-    wait(f);
+    if (multiThreadedRenderer) {
+        auto* cl = createCmdList();
+        auto* f = fence(cl);
+        flush(cl);
+        wait(f);
+    } else {
+        
+    }
 }
 
 }

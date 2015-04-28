@@ -1,4 +1,4 @@
-﻿// ImGui library v1.39 WIP
+﻿// ImGui library v1.38
 // See ImGui::ShowTestWindow() for sample code.
 // Read 'Programmer guide' below for notes on how to setup ImGui in your codebase.
 // Get latest version at https://github.com/ocornut/imgui
@@ -400,13 +400,9 @@
 #include "imgui.h"
 #include <ctype.h>      // toupper, isprint
 #include <math.h>       // sqrtf, fabsf, fmodf, powf, cosf, sinf, floorf, ceilf
+#include <stdint.h>     // intptr_t
 #include <stdio.h>      // vsnprintf, sscanf
 #include <new>          // new (ptr)
-#if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
-#include <stddef.h>     // intptr_t
-#else
-#include <stdint.h>     // intptr_t
-#endif
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4505) // unreferenced local function has been removed (stb stuff)
@@ -1417,14 +1413,6 @@ float* ImGuiStorage::GetFloatRef(ImGuiID key, float default_val)
     if (it == Data.end() || it->key != key)
         it = Data.insert(it, Pair(key, default_val));
     return &it->val_f;
-}
-
-void** ImGuiStorage::GetVoidPtrRef(ImGuiID key, void* default_val)
-{
-    ImVector<Pair>::iterator it = LowerBound(Data, key);
-    if (it == Data.end() || it->key != key)
-        it = Data.insert(it, Pair(key, default_val));
-    return &it->val_p;
 }
 
 // FIXME-OPT: Wasting CPU because all SetInt() are preceeded by GetInt() calls so we should have the result from lower_bound already in place.

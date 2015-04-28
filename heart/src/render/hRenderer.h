@@ -70,11 +70,11 @@ namespace hRenderer {
     void  destroyTexture2D(hTexture2D* t);
 
     hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags);
-	void* getMappingPtr(hVertexBuffer* vb);
+	void* getMappingPtr(hIndexBuffer* vb);
     void  destroyIndexBuffer(hIndexBuffer* ib);
 
     hVertexBuffer*  createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
-	void* getMappingPtr(hVertexBuffer* vb);
+	void* getMappingPtr(hVertexBuffer* vb, hUint32* size);
     void  destroyVertexBuffer(hVertexBuffer* vb);
 
     hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
@@ -93,8 +93,10 @@ namespace hRenderer {
 
 
     void clear(hCmdList* cl, hColour colour, hFloat depth);
-	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims);
+    void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
+	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
 	void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
+    void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
 	hRenderFence* fence(hCmdList* cl);
 	void wait(hRenderFence* fence);
     void flush(hCmdList* cl);

@@ -45,8 +45,14 @@ hVertexBuffer* createVertexBuffer(const void* data, hUint32 elementsize, hUint32
     vb->elementCount_ = elementcount;
     vb->elementSize_ = elementsize;
     vb->createFlags_ = flags;
+    vb->alignedSize = elementsize*elementcount;
     vb->persistantMapping = mapped_ptr;
     return vb;
+}
+
+void flushVertexBuffer(hVertexBuffer* vb, hUint offset, hUint size) {
+    glBindBuffer(GL_ARRAY_BUFFER, vb->name);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, size, ((hByte*)vb->persistantMapping)+offset);
 }
 
 void destroyVertexBuffer(hVertexBuffer* vb) {
@@ -91,6 +97,7 @@ hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 fl
 }
 
 void flushUniformBuffer(hUniformBuffer* ub) {
+    glBindBuffer(GL_UNIFORM_BUFFER, ub->name);
     glBufferSubData(GL_UNIFORM_BUFFER, ub->mappedOffset_, ub->mappedSize_, ((hByte*)ub->persistantMapping)+ub->mappedOffset_);
 }
 

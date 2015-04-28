@@ -27,42 +27,14 @@ class hHeartEngine;
 
 using namespace Heart;
 
-const hChar vertSrc[] = 
-"\
-#version 330\n\
-layout(std140) uniform TimerBlock {\n\
-	float timeSecs;\n\
-	vec3  pad;\n\
-};\n\
-layout(location=0) in vec3 in_position;\n\
-layout(location=1) in vec4 in_colour;\n\
-out vec4 inout_colour;\n\
-void main() {\n\
-    inout_colour = in_colour;\n\
-		gl_Position.xyz = in_position.xyz*sin(timeSecs);\n\
-    gl_Position.w = 1;\n\
-}\n\
-";
-const hChar fragSrc[] = 
-"\
-#version 330\n\
-in vec4 inout_colour;\n\
-out vec4 fragColour;\n\
-void main() {\n\
-    fragColour = inout_colour;\n\
-}\n\
-";
-
-class MovingTri : public IUnitTest {
+class MovingTriCPU : public IUnitTest {
     
 	hTimer								timer_;
     hShaderProgram*                     shaderProg;
 	hRenderer::hShaderStage*			vert;
     hRenderer::hShaderStage*			frag;
-	//hRenderer::hProgramReflectionInfo*	refInfo;
     hRenderer::hVertexBuffer*			vb;
     hRenderer::hRenderCall*				rc;
-	hRenderer::hUniformBuffer*			ub;
 
 	static const hUint FENCE_COUNT = 3;
 	hUint								paramBlockSize;
@@ -70,7 +42,7 @@ class MovingTri : public IUnitTest {
 	hUint								currentFence;
 
 public:
-    MovingTri( Heart::hHeartEngine* engine ) 
+    MovingTriCPU( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine ) {
 
         hFloat verts[] = {
@@ -84,19 +56,12 @@ public:
             {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
-        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/moving_tri"));
+        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
 
-        vert = shaderProg->getShader(hShaderProfile::ES2_vs);//hRenderer::compileShaderStageFromSource(vertSrc, hStrLen(vertSrc), "main", hShaderProfile::ES2_vs);
-        frag = shaderProg->getShader(hShaderProfile::ES2_ps);//hRenderer::compileShaderStageFromSource(fragSrc, hStrLen(fragSrc), "main", hShaderProfile::ES2_ps);
-        vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
+        vert = shaderProg->getShader(hShaderProfile::ES2_vs);
+        frag = shaderProg->getShader(hShaderProfile::ES2_ps);
+        vb   = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat)*7, 3*FENCE_COUNT, (hUint)hRenderer::hUniformBufferFlags::Dynamic);
 
-        hRenderer::hUniformLayoutDesc ublo[] = {
-            {"timeSecs", hRenderer::ShaderParamType::Float,    0},
-            {"pad",      hRenderer::ShaderParamType::Float3,   4},
-        };
-
-        paramBlockSize = (hUint)sizeof(TimerBlock);
-		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(TimerBlock), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 		for (auto& i:fences) {
 			i = nullptr;
 		}
@@ -107,7 +72,6 @@ public:
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-		rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
         rcd.setVertexBufferLayout(lo, 2);
         rc = hRenderer::createRenderCall(rcd);
 
@@ -116,10 +80,8 @@ public:
 
         SetCanRender(hTrue);
     }
-    ~MovingTri() {
+    ~MovingTriCPU() {
         hRenderer::destroyRenderCall(rc);
-        hRenderer::destroyUniformBuffer(ub);
-        //hRenderer::destroyProgramReflectionInfo(refInfo);
         hRenderer::destroyVertexBuffer(vb);
     }
 
@@ -139,10 +101,32 @@ public:
             hRenderer::wait(fences[currentFence]);
             fences[currentFence] = nullptr;
         }
-        auto* ubdata = (TimerBlock*) (((hByte*)hRenderer::getMappingPtr(ub)) + (currentFence*paramBlockSize));
-        ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
-        hRenderer::flushUnibufferMemoryRange(cl, ub, (currentFence*paramBlockSize), paramBlockSize);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
+
+        hFloat verts[] = {
+            //pos            //colour
+            0.f, .5f, 0.f, /**/ 1.f, 0.f, 0.f, 1.f,
+            .5f, -.5f, 0.f, /**/ 0.f, 1.f, 0.f, 1.f,
+            -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
+        };
+
+        auto* vertsptr = (hFloat*)hRenderer::getMappingPtr(vb, nullptr);
+        vertsptr += (21*currentFence);
+        hMemCpy(vertsptr, verts, sizeof(verts));
+        vertsptr[0] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[1] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[2] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[3] *= sinf(timer_.elapsedMilliSec() / 1000.f);
+
+        vertsptr[7] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[8] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[9] *= sinf(timer_.elapsedMilliSec()/1000.f);
+
+        vertsptr[14] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[15] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        vertsptr[16] *= sinf(timer_.elapsedMilliSec()/1000.f);
+        hRenderer::flushVertexBufferMemoryRange(cl, vb, (21*sizeof(hFloat)*currentFence), 21*sizeof(hFloat));
+
+        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 3*currentFence);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         hRenderer::swapBuffers(cl);
@@ -151,4 +135,4 @@ public:
     }
 };
 
-DEFINE_HEART_UNIT_TEST(MovingTri);
+DEFINE_HEART_UNIT_TEST(MovingTriCPU);

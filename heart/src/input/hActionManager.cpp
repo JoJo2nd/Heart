@@ -97,6 +97,7 @@ struct hActionManagerImpl {
                     mapping->second,
                     0, //device ID
                     0, // value
+                    0,
                     1,
                     0,
                     (sysevent->key.repeat > 0),
@@ -115,6 +116,7 @@ struct hActionManagerImpl {
                     0, //device ID
                     0, // value
                     0,
+                    0,
                     1,
                     (sysevent->key.repeat > 0),
                     0, // no axis on keyboard
@@ -125,6 +127,8 @@ struct hActionManagerImpl {
 
         } else if (syseventid == hGetSystemEventID(MOUSEMOTION)) {
             auto boundID = getBoundID(sysevent->motion.which);
+            int x, y;
+            SDL_GetMouseState(&x, &y);
             if (sysevent->motion.xrel != 0) {
                 hInputID keyid(hInputID::hType_MouseAxis, 0, 0, 0);
                 auto invalid = defaultMappings_.end();
@@ -134,6 +138,7 @@ struct hActionManagerImpl {
                         mapping->second,
                         sysevent->motion.which, //device ID
                         sysevent->motion.xrel, // val
+                        x,
                         0,
                         0,
                         0,
@@ -151,6 +156,7 @@ struct hActionManagerImpl {
                         mapping->second,
                         sysevent->motion.which, //device ID
                         sysevent->motion.yrel, // val
+                        y,
                         0,
                         0,
                         0,
@@ -170,6 +176,7 @@ struct hActionManagerImpl {
                         mapping->second,
                         sysevent->wheel.which, //device ID
                         sysevent->wheel.x, // val
+                        sysevent->wheel.x,
                         0,
                         0,
                         0,
@@ -186,6 +193,7 @@ struct hActionManagerImpl {
                     hInputAction action = {
                         mapping->second,
                         sysevent->wheel.which, //device ID
+                        sysevent->wheel.y, // val
                         sysevent->wheel.y, // val
                         0,
                         0,
@@ -204,7 +212,8 @@ struct hActionManagerImpl {
                 hInputAction action = {
                     mapping->second,
                     sysevent->button.which, //device ID
-                    0, // value
+                    1, // value
+                    0,
                     1,
                     0,
                     0,
@@ -222,6 +231,7 @@ struct hActionManagerImpl {
                     mapping->second,
                     sysevent->button.which, //device ID
                     0, // value
+                    0,
                     0,
                     1,
                     0,
@@ -242,6 +252,7 @@ struct hActionManagerImpl {
                     0,
                     0,
                     0,
+                    0,
                     1, // no axis on keyboard
                 };
                 bufferedActions_.emplace_back(action);
@@ -256,6 +267,7 @@ struct hActionManagerImpl {
                     mapping->second,
                     sysevent->cbutton.which, //device ID
                     0, // value
+                    0,
                     1,
                     0,
                     0,
@@ -273,6 +285,7 @@ struct hActionManagerImpl {
                     mapping->second,
                     sysevent->cbutton.which, //device ID
                     0, // value
+                    0,
                     0,
                     1,
                     0,

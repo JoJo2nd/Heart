@@ -1,4 +1,4 @@
-// ImGui library v1.39 WIP
+// ImGui library v1.38
 // See .cpp file for documentation.
 // See ImGui::ShowTestWindow() for sample code.
 // Read 'Programmer guide' in .cpp for notes on how to setup ImGui in your codebase.
@@ -13,7 +13,7 @@
 #include <stdlib.h>         // NULL, malloc, free, qsort, atoi
 #include <string.h>         // memset, memmove, memcpy, strlen, strchr, strcpy, strcmp
 
-#define IMGUI_VERSION       "1.39 WIP"
+#define IMGUI_VERSION       "1.38"
 
 // Define assertion handler.
 #ifndef IM_ASSERT
@@ -804,7 +804,6 @@ struct ImGuiStorage
     // - You can also use this to quickly create temporary editable values during a session of using Edit&Continue, without restarting your application.
     IMGUI_API int*    GetIntRef(ImGuiID key, int default_val = 0);
     IMGUI_API float*  GetFloatRef(ImGuiID key, float default_val = 0);
-    IMGUI_API void**  GetVoidPtrRef(ImGuiID key, void* default_val = NULL);
 
     // Use on your own storage if you know only integer are being stored (open/close all tree nodes)
     IMGUI_API void    SetAllInt(int val);

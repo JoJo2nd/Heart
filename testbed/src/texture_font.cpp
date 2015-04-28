@@ -219,8 +219,8 @@ public:
     void RenderUnitTest() override {
         auto* cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, hStaticArraySizeConstExpr(testString)*2);
-        hRenderer::draw(cl, rcatlas, hRenderer::Primative::Triangles, 2);
+        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, hStaticArraySizeConstExpr(testString)*2, 0);
+        hRenderer::draw(cl, rcatlas, hRenderer::Primative::Triangles, 2, 0);
         hRenderer::swapBuffers(cl);
         
         hRenderer::submitFrame(cl);
