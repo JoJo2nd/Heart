@@ -51,7 +51,8 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
         hRenderer::wait(imguiCtx.fences[imguiCtx.currentFence]);
         imguiCtx.fences[imguiCtx.currentFence] = nullptr;
     }
-    ImDrawVert* vtx_dst = (ImDrawVert*)hRenderer::getMappingPtr(imguiCtx.vb, nullptr);
+    auto* vtx_start = (ImDrawVert*)hRenderer::getMappingPtr(imguiCtx.vb, nullptr);
+    auto* vtx_dst = vtx_start;
     vtx_dst += (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence);
     for (int n = 0; n < cmd_lists_count; n++)
     {
@@ -59,7 +60,8 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
         memcpy(vtx_dst, &cmd_list->vtx_buffer[0], cmd_list->vtx_buffer.size() * sizeof(ImDrawVert));
         vtx_dst += cmd_list->vtx_buffer.size();
     }
-    hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), ImGuiCtx::VERTEX_BUFFER_SIZE*sizeof(ImDrawVert));
+    auto vtx_bytes = (hPtrdiff_t)vtx_dst-(hPtrdiff_t)vtx_start;
+    hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
 
     auto ubsize = 0u;
     auto* ubptr = (hByte*)hRenderer::getMappingPtr(imguiCtx.ub);
@@ -87,8 +89,8 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
             {
                 //hRenderer::overrideSampler(slot, sampler);
                 //hRenderer::overrideTexture(slot, texture);
-                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)pcmd->clip_rect.y, (hUint)pcmd->clip_rect.z, (hUint)pcmd->clip_rect.w);
-                hRenderer::draw(gfx_cmd_list, imguiCtx.rc, hRenderer::Primative::Triangles, pcmd->vtx_count, vtx_offset);
+                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.y), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.w));
+                hRenderer::draw(gfx_cmd_list, imguiCtx.rc, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
             }
             vtx_offset += pcmd->vtx_count;
         }

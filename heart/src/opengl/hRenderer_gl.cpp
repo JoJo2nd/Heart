@@ -187,6 +187,7 @@ static void renderDoFrame() {
 
 		for (hUint i=0; cmdptr < cmdend /*&& i < renderCommandThreshold*/; ++i) {
 			Op opcode = *((hRenderer::Op*)cmdptr);
+            hUint32 cmdsize = *((hUint32*)(cmdptr+4));
 			cmdptr += OpCodeSize;
 			switch (opcode) {
 			case Op::NoOp: break;
@@ -195,12 +196,10 @@ static void renderDoFrame() {
 				hGLClear* c = (hGLClear*)cmdptr;
 				glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
 				glClear(GL_COLOR_BUFFER_BIT);
-				cmdptr += sizeof(hGLClear);
 			} break;
 			case Op::Fence: {
 				hGLErrorScope();
 				hGLFence* c = (hGLFence*)cmdptr;
-				cmdptr += sizeof(hGLFence);
                 auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
                 glFlush();
 				c->fence->sync = f;
@@ -208,7 +207,6 @@ static void renderDoFrame() {
 			} break;
 			case Op::UniBufferFlush: {
 				auto* c = (hGLUniBufferFlush*)cmdptr;
-				cmdptr += sizeof(hGLUniBufferFlush);
 				c->ub->mappedOffset_ = c->offset;
 				c->ub->mappedSize_ = c->size;
                 if (ft.impl_flushUniformBuffer) {
@@ -233,7 +231,6 @@ static void renderDoFrame() {
 				hGLDraw* c = (hGLDraw*)cmdptr;
 				hRenderCall* rc = c->rc;
 				hByte* args = rc->opCodes_.get();
-				cmdptr += sizeof(hGLDraw);
 
 				if (rc->header_.blend) {
                     glEnable(GL_BLEND);
@@ -396,6 +393,7 @@ static void renderDoFrame() {
                 pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
             } break;
 			}
+            cmdptr += cmdsize;
 		}
 
         if (cmdptr >= cmdend && cmds) {
@@ -1450,7 +1448,7 @@ void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom)
     cmd->x = left;
     cmd->y = top;
     cmd->width = right-left;
-    cmd->height = bottom-top;
+    cmd->height = top-bottom;
 }
 
 void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims, hUint vtx_offset) {

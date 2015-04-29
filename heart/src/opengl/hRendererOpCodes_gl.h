@@ -31,7 +31,7 @@ enum class Op : hUint8 {
     EndFrame,
 };
 
-static hUint OpCodeSize = 8; // required for cmd alignment
+static hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
 
 struct hGLJump {
     void* next;

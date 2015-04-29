@@ -206,6 +206,7 @@ namespace hRenderer {
                     auto j = nextcmd + cmdsSize;
                     cmdsSize += sizeof(hGLJump) + OpCodeSize;
                     *((Op*)j) = Op::Jump;
+                    *((hUint32*)(j+4)) = 0;
                     ((hGLJump*)(j + OpCodeSize))->next = memnext;
                 }
                 nextcmd = memnext;
@@ -220,6 +221,7 @@ namespace hRenderer {
             cmdsSize += needed; nextcmd += needed;
 
             *((Op*)r) = opcode;
+            *((hUint32*)(r+4)) = s;
             return (r + OpCodeSize);
         }
 
