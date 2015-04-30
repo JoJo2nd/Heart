@@ -89,7 +89,7 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
             {
                 //hRenderer::overrideSampler(slot, sampler);
                 //hRenderer::overrideTexture(slot, texture);
-                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.y), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.w));
+                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(B-pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(B-pcmd->clip_rect.y));
                 hRenderer::draw(gfx_cmd_list, imguiCtx.rc, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
             }
             vtx_offset += pcmd->vtx_count;
@@ -183,6 +183,11 @@ hRenderer::hCmdList* ImGuiNewFrame(hSystem* system, hActionManager* action_mgr) 
 
     imguiCtx.lastCmdList = hRenderer::createCmdList();
     ImGui::NewFrame();
+    return imguiCtx.lastCmdList;
+}
+
+hRenderer::hCmdList* ImGuiCurrentCommandList() {
+    auto& imguiCtx = g_imguiCtx;
     return imguiCtx.lastCmdList;
 }
 

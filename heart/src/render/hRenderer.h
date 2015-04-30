@@ -101,6 +101,8 @@ namespace hRenderer {
 	void wait(hRenderFence* fence);
     void flush(hCmdList* cl);
     void finish();
+    void call(hCmdList* cl, hCmdList* tocall);
+    void endReturn(hCmdList* cl);
     void swapBuffers(hCmdList* cl);
 
     void submitFrame(hCmdList* cmds);

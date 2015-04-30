@@ -15,7 +15,7 @@ using namespace Heart;
 
 class ImGuiTestMenu : public IUnitTest {
     
-	hTimer								timer_;
+    hTimer timer_;
 
 
 public:
@@ -27,22 +27,19 @@ public:
     }
 
     virtual hUint32 RunUnitTest() override {
-        if (timer_.elapsedMilliSec() > 120*1000 || getForceExitFlag()) {
-            //SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+        hBool opened = hTrue;
+        ImGui::ShowTestWindow(&opened);
+        if (!opened || getForceExitFlag()) {
+            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
 
         return 0;
     }
 
-    void RenderUnitTest() override {
-        hBool opened = hFalse;
-        auto* cl = ImGuiNewFrame(engine_->GetSystem(), engine_->getActionManager());
-        hRenderer::clear(cl, hColour(0.f, 0.f, 0.2f, 1.f), 1.f);
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);     // Normally user code doesn't need/want to call it because positions are saved in .ini file anyway. Here we just want to make the demo initial state a bit more friendly!
-        ImGui::ShowTestWindow(&opened);
-        ImGui::Render();
-        hRenderer::swapBuffers(cl);
-        hRenderer::submitFrame(cl);
+    Heart::hRenderer::hCmdList* RenderUnitTest() override {
+        auto* cl = hRenderer::createCmdList();
+        hRenderer::clear(cl, hColour(0.f, 0.2f, 0.2f, 1.f), 1.f);
+        return cl;
     }
 };
 

@@ -98,13 +98,13 @@ public:
         return 0;
     }
 
-    void RenderUnitTest() override {
+    Heart::hRenderer::hCmdList* RenderUnitTest() override {
         cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
-        hRenderer::swapBuffers(cl);
-        
-        hRenderer::submitFrame(cl);
+        return cl;
+        //hRenderer::swapBuffers(cl);
+        //hRenderer::submitFrame(cl);
     }
 };
 

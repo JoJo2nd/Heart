@@ -17,4 +17,5 @@ namespace hRenderer {
     hBool ImGuiInit();
     void ImGuiShutdown();
     hRenderer::hCmdList* ImGuiNewFrame(hSystem* system, hActionManager* action_mgr);
+    hRenderer::hCmdList* ImGuiCurrentCommandList();
 }

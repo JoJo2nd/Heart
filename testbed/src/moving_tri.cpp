@@ -132,7 +132,7 @@ public:
         return 0;
     }
 
-    void RenderUnitTest() override {
+    Heart::hRenderer::hCmdList* RenderUnitTest() override {
         auto* cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         if (fences[currentFence]) {
@@ -145,9 +145,9 @@ public:
         hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
-        hRenderer::swapBuffers(cl);
-        
-        hRenderer::submitFrame(cl);
+        return cl;
+        //hRenderer::swapBuffers(cl);
+        //hRenderer::submitFrame(cl);
     }
 };
 

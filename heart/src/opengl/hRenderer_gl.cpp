@@ -160,10 +160,248 @@ void hGLSyncFlush() {
 	}
 }
 
+static void doRenderCmds(hByte* cmds) {
+    auto sizeof_sampler = ft.impl_getSamplerObjectSize();
+    hByte* cmdptr = cmds;
+    hByte* pcstack = nullptr;
+    hBool end_of_cmds = hFalse;
+    while (!end_of_cmds) {
+        Op opcode = *((hRenderer::Op*)cmdptr);
+        hUint32 cmdsize = *((hUint32*)(cmdptr + 4));
+        cmdptr += OpCodeSize;
+        hByte* nextcmdptr = cmdptr + cmdsize;
+        switch (opcode) {
+        default: hcAssertFailMsg("Unknown Render Op Code:%d", opcode); break;
+        case Op::NoOp: break;
+        case Op::Call: {
+            hGLCall* c = (hGLCall*)cmdptr;
+            hcAssertMsg(!pcstack, "Call stack is only 1-level deep");
+            pcstack = nextcmdptr;
+            nextcmdptr = c->jumpTo->cmds;
+        } break;
+        case Op::Return: {
+            if (pcstack) {
+                nextcmdptr = pcstack;
+                pcstack = nullptr;
+            }
+            else {
+                end_of_cmds = true;
+                nextcmdptr = nullptr;
+            }
+        } break;
+        case Op::Clear: {
+            hGLErrorScope();
+            hGLClear* c = (hGLClear*)cmdptr;
+            glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
+            glClear(GL_COLOR_BUFFER_BIT);
+        } break;
+        case Op::Fence: {
+            hGLErrorScope();
+            hGLFence* c = (hGLFence*)cmdptr;
+            auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            glFlush();
+            c->fence->sync = f;
+            hAtomic::LWMemoryBarrier();
+        } break;
+        case Op::UniBufferFlush: {
+            auto* c = (hGLUniBufferFlush*)cmdptr;
+            c->ub->mappedOffset_ = c->offset;
+            c->ub->mappedSize_ = c->size;
+            if (ft.impl_flushUniformBuffer) {
+                ft.impl_flushUniformBuffer(c->ub);
+            }
+        } break;
+        case Op::VtxBufferFlush: {
+            auto* c = (hGLVertexBufferFlush*)cmdptr;
+            // vtx flush should never be push if this is null
+            hcAssert(ft.impl_flushVertexBuffer);
+            ft.impl_flushVertexBuffer(c->vb, c->offset, c->size);
+        } break;
+        case Op::SetScissor: {
+            auto* c = (hGLScissor*)cmdptr;
+            glScissor(c->x, c->y, c->width, c->height);
+        } break;
+        case Op::Draw: {
+            hGLErrorScope();
+#define hGetArgs(x) (x*)args; args+=sizeof(x)
+#define hGetArgsS(x,c,s) (x*)args; args+=((s)*(c))
+#define hGetArgsN(x,c) hGetArgsS(x, c, sizeof(x))
+            hGLDraw* c = (hGLDraw*)cmdptr;
+            hRenderCall* rc = c->rc;
+            hByte* args = rc->opCodes_.get();
+
+            if (rc->header_.blend) {
+                glEnable(GL_BLEND);
+                glBlendColor(1.0, 1.0, 1.0, 1.0);
+                auto* blend = hGetArgs(hGLBlend);
+                if (rc->header_.seperateAlpha) {
+                    auto* alpha = hGetArgs(hGLBlend);
+                    glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
+                    glBlendEquationSeparate(blend->func, alpha->func);
+                }
+                else {
+                    glBlendFunc(blend->src, blend->dest);
+                    glBlendEquation(blend->func);
+                }
+            }
+            else {
+                glDisable(GL_BLEND);
+            }
+
+            if (rc->header_.depth) {
+                auto* depth = hGetArgs(hGLDepth);
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(depth->func);
+                glDepthMask(depth->mask == ~0u);
+            }
+            else {
+                glDisable(GL_DEPTH_TEST);
+            }
+            //depth bais
+            if (rc->header_.depthBais) {
+                auto* depthbais = hGetArgs(hGLDepthBais);
+                //depthbais->depthBias_ = rcd.rasterizer_.depthBias_;
+                //depthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
+                //depthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
+                //depthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
+            }
+            //stencil
+            if (rc->header_.stencil) {
+                auto* stencil = hGetArgs(hGLStencil);
+                //stencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
+                //stencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
+                //stencil->ref_ = rcd.depthStencil_.stencilRef_;
+                //stencil->failOp_ = stenciloptogl(rcd.depthStencil_.stencilFailOp_);
+                //stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
+                //stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
+                //stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
+            }
+            else {
+                glDisable(GL_STENCIL_TEST);
+            }
+            glUseProgram(rc->program_);
+
+            if (rc->header_.scissor) {
+                glEnable(GL_SCISSOR_TEST);
+            }
+            else {
+                glDisable(GL_SCISSOR_TEST);
+            }
+
+            //sampler states
+            if (rc->header_.samplerCount_) {
+                auto* samplers = hGetArgsS(hGLSampler, rc->header_.samplerCount_, sizeof_sampler);
+                for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
+                    auto* sampler = (hGLSampler*)(((hByte*)samplers) + (i*sizeof_sampler));
+                    glUniform1i(sampler->index, sampler->index);
+                    ft.impl_bindSamplerObject(sampler->index, sampler);
+                }
+            }
+
+            //textures
+            if (rc->header_.textureCount_) {
+                auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_);
+                for (hUint8 i = 0, n = rc->header_.textureCount_; i < n; ++i) {
+                    glActiveTexture(GL_TEXTURE0 + textures[i].index_);
+                    glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
+                }
+            }
+
+            // uniform buffers
+            auto* ubs = (hGLUniformBuffer*)nullptr;
+            if (rc->header_.uniBufferCount_) {
+                ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
+                for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
+                    glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
+                    //glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
+                }
+            }
+
+            // Uniform parameters
+            for (hUint i = 0, n = rc->paramUpdateCount; i < n; ++i) {
+                auto* dataub = rc->uniformBuffers[rc->paramUpdates[i].uniformBufferIndex];
+                auto* dataptr = (hUint8*)(dataub->persistantMapping) + (dataub->mappedOffset_ + rc->paramUpdates[i].uniformBufferOffset);
+                switch (rc->paramUpdates[i].type) {
+                case hParamCall::a1f: glUniform1fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+                case hParamCall::a2f: glUniform2fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+                case hParamCall::a3f: glUniform3fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+                case hParamCall::a4f: glUniform4fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
+                case hParamCall::a1i: glUniform1iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a2i: glUniform2iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a3i: glUniform3iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a4i: glUniform4iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a1ui: glUniform1uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                case hParamCall::a2ui: glUniform2uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                case hParamCall::a3ui: glUniform3uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                case hParamCall::a4ui: glUniform4uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                case hParamCall::m2x2f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m2x3f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m2x4f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m3x2f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m3x3f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m3x4f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m4x2f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m4x3f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                case hParamCall::m4x4f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
+                default: hcAssertFailMsg("Unexpected enum value!");
+                }
+            }
+
+            // index
+            if (rc->header_.index) {
+                auto* ib = hGetArgs(hIndexBuffer);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->name);
+            }
+
+            // vertex buffer
+            if (!(rc->flags & hRenderCall::VAOBound)) {
+                hGLErrorScope();
+                auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
+                glGenVertexArrays(1, &rc->vao);
+                glBindVertexArray(rc->vao);
+
+                for (hUint8 i = 0, n = rc->header_.vtxAttCount_; i < n; ++i) {
+                    hGLErrorScope();
+                    glBindBuffer(GL_ARRAY_BUFFER, rc->vtxBuf_->name);
+                    glEnableVertexAttribArray(va[i].index_);
+                    glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, va[i].normalise, va[i].stride_, va[i].pointer_);
+                }
+
+                rc->flags |= hRenderCall::VAOBound;
+            }
+            else {
+                hGLErrorScope();
+                glBindVertexArray(rc->vao);
+            }
+
+                {
+                    hGLErrorScope();
+                    glDrawArrays(c->primType, c->vtxOffset, c->count);
+                }
+                break;
+#undef hGetArgs
+#undef hGetArgsS
+#undef hGetArgsN
+        }
+        case Op::Swap: {
+            hGLErrorScope();
+            SDL_GL_SwapWindow(window_);
+        } break;
+        }
+        cmdptr = nextcmdptr;
+    }
+
+    rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
+    // do pending deletes
+    for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
+        n = i->next;
+        delete i;
+    }
+    pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
+}
+
 static void renderDoFrame() {
     hCmdList* cmds = nullptr, *fcmds = nullptr, *ncmds = nullptr;
-    hByte* cmdptr = nullptr, *cmdend = nullptr;
-    auto sizeof_sampler = ft.impl_getSamplerObjectSize();
 	while (1) {
         while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
             hRenderDestructBase::linkLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
@@ -174,8 +412,6 @@ static void renderDoFrame() {
             lfds_queue_dequeue(cmdListQueue, (void**)&ncmds);
             if (ncmds) {
                 fcmds = cmds = ncmds;
-                cmdptr = cmds->cmds;
-                cmdend = cmds->cmds + cmds->cmdsSize;
             } else {
                 Device::ThreadYield();
             }
@@ -183,225 +419,13 @@ static void renderDoFrame() {
 
         if (!cmds && !multiThreadedRenderer) {
             break;
-        }
+        } else if (cmds) {
+            doRenderCmds(cmds->cmds);
 
-		for (hUint i=0; cmdptr < cmdend /*&& i < renderCommandThreshold*/; ++i) {
-			Op opcode = *((hRenderer::Op*)cmdptr);
-            hUint32 cmdsize = *((hUint32*)(cmdptr+4));
-			cmdptr += OpCodeSize;
-			switch (opcode) {
-			case Op::NoOp: break;
-			case Op::Clear: {
-				hGLErrorScope();
-				hGLClear* c = (hGLClear*)cmdptr;
-				glClearColor(c->colour.r_, c->colour.g_, c->colour.b_, c->colour.a_);
-				glClear(GL_COLOR_BUFFER_BIT);
-			} break;
-			case Op::Fence: {
-				hGLErrorScope();
-				hGLFence* c = (hGLFence*)cmdptr;
-                auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-                glFlush();
-				c->fence->sync = f;
-                hAtomic::LWMemoryBarrier();
-			} break;
-			case Op::UniBufferFlush: {
-				auto* c = (hGLUniBufferFlush*)cmdptr;
-				c->ub->mappedOffset_ = c->offset;
-				c->ub->mappedSize_ = c->size;
-                if (ft.impl_flushUniformBuffer) {
-                    ft.impl_flushUniformBuffer(c->ub);
-                }
-			} break;
-            case Op::VtxBufferFlush: {
-                auto* c = (hGLVertexBufferFlush*)cmdptr;
-                // vtx flush should never be push if this is null
-                hcAssert(ft.impl_flushVertexBuffer);
-                ft.impl_flushVertexBuffer(c->vb, c->offset, c->size);
-            } break;
-            case Op::SetScissor: {
-                auto* c = (hGLScissor*)cmdptr;
-                glScissor(c->x, c->y, c->width, c->height);
-            } break;
-			case Op::Draw: {
-				hGLErrorScope();
-#define hGetArgs(x) (x*)args; args+=sizeof(x)
-#define hGetArgsS(x,c,s) (x*)args; args+=((s)*(c))
-#define hGetArgsN(x,c) hGetArgsS(x, c, sizeof(x))
-				hGLDraw* c = (hGLDraw*)cmdptr;
-				hRenderCall* rc = c->rc;
-				hByte* args = rc->opCodes_.get();
-
-				if (rc->header_.blend) {
-                    glEnable(GL_BLEND);
-                    glBlendColor(1.0, 1.0, 1.0, 1.0);
-					auto* blend = hGetArgs(hGLBlend);
-					if (rc->header_.seperateAlpha) {
-						auto* alpha = hGetArgs(hGLBlend);
-						glBlendFuncSeparate(blend->src, blend->dest, alpha->src, alpha->dest);
-						glBlendEquationSeparate(blend->func, alpha->func);
-					} else {
-						glBlendFunc(blend->src, blend->dest);
-						glBlendEquation(blend->func);
-					}
-				} else {
-					glDisable(GL_BLEND);
-				}
-
-				if (rc->header_.depth) {
-					auto* depth = hGetArgs(hGLDepth);
-					glEnable(GL_DEPTH_TEST);
-					glDepthFunc(depth->func);
-					glDepthMask(depth->mask == ~0u);
-				} else {
-					glDisable(GL_DEPTH_TEST);
-				}
-				//depth bais
-				if (rc->header_.depthBais) {
-					auto* depthbais = hGetArgs(hGLDepthBais);
-					//depthbais->depthBias_ = rcd.rasterizer_.depthBias_;
-					//depthbais->depthBiasClamp_ = rcd.rasterizer_.depthBiasClamp_;
-					//depthbais->slopeScaledDepthBias_ = rcd.rasterizer_.slopeScaledDepthBias_;
-					//depthbais->depthClipEnable_ = rcd.rasterizer_.depthClipEnable_;
-				}
-				//stencil
-				if (rc->header_.stencil) {
-					auto* stencil = hGetArgs(hGLStencil);
-					//stencil->readMask_ = rcd.depthStencil_.stencilReadMask_;
-					//stencil->writeMask_ = rcd.depthStencil_.stencilWriteMask_;
-					//stencil->ref_ = rcd.depthStencil_.stencilRef_;
-					//stencil->failOp_ = stenciloptogl(rcd.depthStencil_.stencilFailOp_);
-					//stencil->depthFailOp_ = stenciloptogl(rcd.depthStencil_.stencilDepthFailOp_);
-					//stencil->passOp_ = stenciloptogl(rcd.depthStencil_.stencilPassOp_);
-					//stencil->func_ = comparetogl(rcd.depthStencil_.stencilFunc_);
-				} else {
-					glDisable(GL_STENCIL_TEST);
-				}
-                glUseProgram(rc->program_);
-
-                if (rc->header_.scissor) {
-                    glEnable(GL_SCISSOR_TEST);
-                } else {
-                    glDisable(GL_SCISSOR_TEST);
-                }
-
-                //sampler states
-                if (rc->header_.samplerCount_) {
-                    auto* samplers = hGetArgsS(hGLSampler, rc->header_.samplerCount_, sizeof_sampler);
-                    for (hUint8 i = 0, n = rc->header_.samplerCount_; i < n; ++i) {
-                        auto* sampler = (hGLSampler*)(((hByte*)samplers) + (i*sizeof_sampler));
-                        glUniform1i(sampler->index, sampler->index);
-                        ft.impl_bindSamplerObject(sampler->index, sampler);
-                    }
-                }
-
-				//textures
-				if (rc->header_.textureCount_) {
-					auto* textures = hGetArgsN(hGLTexture2D, rc->header_.textureCount_); 
-					for (hUint8 i = 0, n = rc->header_.textureCount_; i < n; ++i) {
-						glActiveTexture(GL_TEXTURE0+textures[i].index_);
-                        glBindTexture(textures[i].tex_->target_, textures[i].tex_->name);
-					}
-				}
-
-				// uniform buffers
-				auto* ubs = (hGLUniformBuffer*)nullptr;
-				if (rc->header_.uniBufferCount_) {
-					ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
-					for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
-						glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
-						//glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
-					}
-				}
-
-                // Uniform parameters
-                for (hUint i=0, n=rc->paramUpdateCount; i<n; ++i) {
-					auto* dataub = rc->uniformBuffers[rc->paramUpdates[i].uniformBufferIndex];
-					auto* dataptr = (hUint8*)(dataub->persistantMapping) + (dataub->mappedOffset_+rc->paramUpdates[i].uniformBufferOffset);
-                    switch(rc->paramUpdates[i].type) {
-					case hParamCall::a1f: glUniform1fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
-					case hParamCall::a2f: glUniform2fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
-					case hParamCall::a3f: glUniform3fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
-					case hParamCall::a4f: glUniform4fv(rc->paramUpdates[i].location, 1, (float*)dataptr); break;
-					case hParamCall::a1i: glUniform1iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
-					case hParamCall::a2i: glUniform2iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
-					case hParamCall::a3i: glUniform3iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
-					case hParamCall::a4i: glUniform4iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
-                    case hParamCall::a1ui: glUniform1uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                    case hParamCall::a2ui: glUniform2uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                    case hParamCall::a3ui: glUniform3uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                    case hParamCall::a4ui: glUniform4uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                    case hParamCall::m2x2f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m2x3f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m2x4f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m3x2f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m3x3f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m3x4f: glUniformMatrix3fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m4x2f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m4x3f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    case hParamCall::m4x4f: glUniformMatrix4fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
-                    default: hcAssertFailMsg("Unexpected enum value!");
-                    }
-                }
-
-				// index
-				if (rc->header_.index) {
-					auto* ib = hGetArgs(hIndexBuffer);
-					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->name);
-				}
-
-				// vertex buffer
-				if (!(rc->flags & hRenderCall::VAOBound)) {
-					hGLErrorScope();
-					auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
-					glGenVertexArrays(1, &rc->vao);
-					glBindVertexArray(rc->vao);
-
-					for (hUint8 i = 0, n = rc->header_.vtxAttCount_; i < n; ++i) {
-						hGLErrorScope();
-						glBindBuffer(GL_ARRAY_BUFFER, rc->vtxBuf_->name);
-						glEnableVertexAttribArray(va[i].index_);
-						glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, va[i].normalise, va[i].stride_, va[i].pointer_);
-					}
-
-					rc->flags |= hRenderCall::VAOBound;
-				} else {
-					hGLErrorScope();
-					glBindVertexArray(rc->vao);
-				}
-
-				{
-					hGLErrorScope();
-					glDrawArrays(c->primType, c->vtxOffset, c->count);
-				}
-				break;
-#undef hGetArgs
-#undef hGetArgsS
-#undef hGetArgsN
-			}
-			case Op::Swap: {
-				hGLErrorScope();
-				SDL_GL_SwapWindow(window_);
-			} break;
-            case Op::EndFrame: {
-                rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
-                // do pending deletes
-                for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
-                    n = i->next;
-                    delete i;
-                }
-                pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
-            } break;
-			}
-            cmdptr += cmdsize;
-		}
-
-        if (cmdptr >= cmdend && cmds) {
             cmds = cmds->next;
-        }
-
-		if (cmds == fcmds) {
-			cmds = fcmds = nullptr;
+            if (cmds == fcmds) {
+                cmds = fcmds = nullptr;
+            }
         }
 	}
 }
@@ -1448,7 +1472,7 @@ void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom)
     cmd->x = left;
     cmd->y = top;
     cmd->width = right-left;
-    cmd->height = top-bottom;
+    cmd->height = bottom-top;
 }
 
 void draw(hCmdList* cl, hRenderCall* rc, Primative pt, hUint prims, hUint vtx_offset) {
@@ -1475,6 +1499,16 @@ void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset,
     }
 }
 
+void call(hCmdList* cl, hCmdList* tocall) {
+    auto* cmd = (hGLCall*)cl->allocCmdMem(Op::Call, sizeof(hGLCall));
+    cmd->jumpTo=tocall;
+    endReturn(tocall);
+}
+
+void endReturn(hCmdList* cl) {
+    cl->allocCmdMem(Op::Return, 0);
+}
+
 void swapBuffers(hCmdList* cl) {
     cl->allocCmdMem(Op::Swap, 0);
 }
@@ -1493,7 +1527,7 @@ void submitFrame(hCmdList* cl) {
 	frameFences[fenceIndex] = fence(ncl);
 	fenceIndex = (fenceIndex+1)%FRAME_COUNT;
 
-    ncl->allocCmdMem(Op::EndFrame, 0);
+    ncl->allocCmdMem(Op::Return, 0);
 
     flush(cl);
 
@@ -1516,6 +1550,7 @@ void finish() {
     if (multiThreadedRenderer) {
         auto* cl = createCmdList();
         auto* f = fence(cl);
+        endReturn(cl);
         flush(cl);
         wait(f);
     } else {

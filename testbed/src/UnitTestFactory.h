@@ -9,13 +9,15 @@
 
 namespace Heart {
 class hHeartEngine;
+namespace hRenderer {
+struct hCmdList;
+}
 }
 
 #define UNIT_TEST_EXIT_CODE_RUNNING (1)
 #define UNIT_TEST_EXIT_CODE_OK      (0)
 
-    class IUnitTest
-    {
+    class IUnitTest {
     public:
         IUnitTest(Heart::hHeartEngine* engine) 
             : startExit_(hFalse)
@@ -29,7 +31,7 @@ class hHeartEngine;
 
         virtual void        BeginUnitTest() {};
         virtual hUint32     RunUnitTest() = 0;
-        virtual void        RenderUnitTest() {};
+        virtual Heart::hRenderer::hCmdList* RenderUnitTest() { return nullptr; };
         void                forceExitTest() { startExit_=hTrue; }
         hUint32             GetExitCode() const { return exitCode_; }
         hBool               GetCanRender() const { return canRender_; }

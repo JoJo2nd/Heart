@@ -17,6 +17,7 @@ struct hVertexBuffer;
 struct hTexture2D;
 struct hRenderCall;
 struct hRenderFence;
+struct hCmdList;
 
 enum class Op : hUint8 {
     NoOp = 0,
@@ -28,13 +29,18 @@ enum class Op : hUint8 {
 	UniBufferFlush,
     VtxBufferFlush,
     SetScissor,
-    EndFrame,
+    Call,
+    Return,
 };
 
 static hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
 
 struct hGLJump {
     void* next;
+};
+
+struct hGLCall {
+    hCmdList* jumpTo;
 };
 
 struct hGLFence {

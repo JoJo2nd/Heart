@@ -5,9 +5,9 @@
 
 #include "testbed_precompiled.h"
 #include "TestBedCore.h" 
-
-#include <time.h>
 #include "memtracker.h"
+#include "render\hImGuiRenderer.h"
+#include <time.h>
 
 #define LUA_GET_TESTBED(L) \
     TestBedCore* testbed = (TestBedCore*)lua_topointer(L, lua_upvalueindex(1)); \
@@ -83,9 +83,8 @@
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
-        if (!Heart::hResourceManager::getIsPackageLoaded("system")) {
-            return;
-        }
+        Heart::ImGuiNewFrame(engine_->GetSystem(), engine_->getActionManager());
+        hcAssert(Heart::hResourceManager::getIsPackageLoaded("system"));
 
         if (!currentTest_ && !exiting_) {
             Heart::hRenderer::finish();
@@ -106,9 +105,17 @@
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine ) {
+        auto* cl = Heart::ImGuiCurrentCommandLine();
+        Heart::hRenderer::clear(cl, Heart::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
         if (currentTest_ && currentTest_->GetCanRender()) {
-            currentTest_->RenderUnitTest();
+            if (auto* tcl = currentTest_->RenderUnitTest()) {
+                Heart::hRenderer::call(cl, tcl);
+            }
         }
+
+        ImGui::Render();
+        Heart::hRenderer::swapBuffers(cl);
+        Heart::hRenderer::submitFrame(cl);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
