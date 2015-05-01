@@ -5,7 +5,7 @@ project(HEART)
 # Example of setting binary directories
 #set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 #
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -160,7 +160,7 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	    COMMAND python ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
+	    COMMAND python ARGS "${CMAKE_CURRENT_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
 	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ lite protocol buffer compiler on ${FIL_WE}")
@@ -219,7 +219,8 @@ elseif (FORCE_ENABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
 endif(FORCE_DISABLE_MEMORY_TRACKING)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/modules/")
+message("${CMAKE_CURRENT_SOURCE_DIR}")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/modules/")
 
 find_package(Protobuf REQUIRED)
 find_package(SDL2 REQUIRED)
