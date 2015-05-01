@@ -85,6 +85,10 @@ public:
         hRenderer::destroyVertexBuffer(vb);
     }
 
+    const hChar* getHelpString() override {
+        return "Single triangle scaled by time on the CPU.\nVertex buffer is dynamic and written to by the CPU.";
+    }
+
     virtual hUint32 RunUnitTest() override {
 
         if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {

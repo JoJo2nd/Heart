@@ -26,6 +26,10 @@ public:
     ~ImGuiTestMenu() {
     }
 
+    const hChar* getHelpString() override {
+        return "An example of the ImGui test menu in action.";
+    }
+
     virtual hUint32 RunUnitTest() override {
         hBool opened = hTrue;
         ImGui::ShowTestWindow(&opened);

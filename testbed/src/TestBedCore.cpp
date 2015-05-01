@@ -98,6 +98,15 @@
                 currentTestIdx_=(currentTestIdx_+1)%factory_->getTestCount();
             }
         }
+        ImGui::SetNextWindowPos(ImVec2(10, 10));
+        ImGui::Begin("Testbed Overlay", nullptr, ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_ShowBorders);
+        ImGui::Text("Heart Test Bed");
+        ImGui::Separator();
+        ImGui::Text("Current Test %d: %s", currentTestIdx_, factory_->getUnitTestName(currentTestIdx_));
+        if (currentTest_) {
+            ImGui::Text("Extra info:\n%s", currentTest_->getHelpString());
+        }
+        ImGui::End();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +114,7 @@
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine ) {
-        auto* cl = Heart::ImGuiCurrentCommandLine();
+        auto* cl = Heart::ImGuiCurrentCommandList();
         Heart::hRenderer::clear(cl, Heart::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
         if (currentTest_ && currentTest_->GetCanRender()) {
             if (auto* tcl = currentTest_->RenderUnitTest()) {

@@ -33,6 +33,7 @@ struct hCmdList;
         virtual hUint32     RunUnitTest() = 0;
         virtual Heart::hRenderer::hCmdList* RenderUnitTest() { return nullptr; };
         void                forceExitTest() { startExit_=hTrue; }
+        virtual const hChar* getHelpString() { return ""; }
         hUint32             GetExitCode() const { return exitCode_; }
         hBool               GetCanRender() const { return canRender_; }
     protected:

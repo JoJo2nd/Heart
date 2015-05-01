@@ -123,6 +123,10 @@ public:
         hRenderer::destroyVertexBuffer(vb);
     }
 
+    const hChar* getHelpString() override {
+        return "Single triangle scaled by time in the shader.\nTime parameter is passed by shader input parameters.";
+    }
+
     virtual hUint32 RunUnitTest() override {
 
         if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
@@ -146,8 +150,6 @@ public:
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;
-        //hRenderer::swapBuffers(cl);
-        //hRenderer::submitFrame(cl);
     }
 };
 
