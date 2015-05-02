@@ -38,12 +38,27 @@ add_library(proto_full ${PROTO_SRC_FILES} ${ProtoSources} ${ProtoHeaders})
 target_link_libraries(proto_full debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS})
 target_link_libraries(proto_full optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})
 
-file(GLOB PROTO_LUA_SRC_FILES "${PROTO_SRC_DIR}/proto_lua*.cpp" "${PROTO_SRC_DIR}/proto_lua*.h")
+file(GLOB PROTO_FILES
+    "${PROTO_SRC_DIR}/*.proto"
+)
 
-add_library(proto_lua SHARED ${PROTO_LUA_SRC_FILES} ${PROTO_SRC_FILES} ${LuaProtoHeaders} ${LuaProtoSources})
+message("${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pbscan -l ${PROTO_SRC_DIR}/proto_lua.cpp" ${PROTO_FILES})
+add_custom_command(
+    OUTPUT "${PROTO_SRC_DIR}/proto_lua.cpp"
+    COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pbscan"
+    ARGS -l ${PROTO_SRC_DIR}/proto_lua.cpp ${PROTO_FILES}
+    DEPENDS ${PROTO_FILES}
+    VERBATIM
+)
+set_source_files_properties("${PROTO_SRC_DIR}/proto_lua.cpp" PROPERTIES GENERATED 1)
+
+file(GLOB PROTO_LUA_SRC_FILES "${PROTO_SRC_DIR}/*.h")
+
+add_library(proto_lua SHARED "${PROTO_SRC_DIR}/proto_lua.cpp" ${PROTO_LUA_SRC_FILES} ${PROTO_SRC_FILES} ${LuaProtoHeaders} ${LuaProtoSources})
 target_link_libraries(proto_lua debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS} lua52 proto_full)
 target_link_libraries(proto_lua optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS} lua52 proto_full)
 set_target_properties(proto_lua PROPERTIES PREFIX "")
+add_dependencies(proto_lua pbscan)
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

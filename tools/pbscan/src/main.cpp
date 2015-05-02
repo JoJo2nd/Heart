@@ -21,13 +21,15 @@
 #include <algorithm>
 
 
-const char options[] = {"lrao:"};
+const char options[] = {"l:o"};
 static struct option long_options[] = {
-    {"output",          required_argument,  0, 'o'},
+    {"output",                no_argument,  0, 'o'},
+    {"luapboutput",     required_argument,  0, 'l'},
     {0, 0, 0, 0}
 };
 enum class Option { // ensure these match options above
     optOutputToFile,
+    optLuaPBOutputToFile,
 };
 
 static void print_usage() {
@@ -40,15 +42,18 @@ static void print_usage() {
 }
 
 struct Options {
+    Options() 
+        : outputFile(false)
+    {}
     std::vector<std::string> inputFiles_;
-    std::string              outputFile_;
+    bool                     outputFile;
+    std::string              luaPBOutputFile;
 };
 
 bool getOptions(int argc, char **argv, Options* out_opts) {
     int c;
     for (;;) {
         /* getopt_long stores the option index here. */
-        Option opt;
         int option_index = 0;
 
         c = gop_getopt_long (argc, argv, options, long_options, &option_index);
@@ -58,21 +63,12 @@ bool getOptions(int argc, char **argv, Options* out_opts) {
             break;
 
        switch (c) {
-       case 0: opt = (Option)option_index; break;
-       case 'o': opt = Option::optOutputToFile; break;
+       case 'o': out_opts->outputFile = true; break;
+       case 'l': out_opts->luaPBOutputFile = optarg; break;
        case '?':
            /* getopt_long already printed an error message. */
        default:
            return false;
-       }
-
-       switch (opt)
-       {
-       case Option::optOutputToFile:
-           out_opts->outputFile_ = optarg;
-           break;
-       default:
-           break;
        }
     }
 
@@ -264,6 +260,47 @@ const char srcStrFtr[] =
 } \n\
 ";
 
+const char luapbCPPHdr1[] =
+"\
+/********************************************************************\n\
+    This file is auto-generated. Do not edit.\n\
+    Please see the file HEART_LICENSE.txt in the source's root directory.\n\
+*********************************************************************/\n\
+\n\
+#ifdef __cplusplus\n\
+extern \"C\" {\n\
+#endif\n\
+#   include \"lua.h\"\n\
+#   include \"lualib.h\"\n\
+#   include \"lauxlib.h\"\n\
+#ifdef __cplusplus\n\
+}\n\
+#endif\n\
+\n\
+";
+
+const char luapbCPPHdr2[] = "\n\
+#include \"proto_lua.h\" \n\
+\n\
+#ifdef __cplusplus\n\
+extern \"C\" {\n\
+#endif\n\
+\n\
+//Lua entry point calls\n\
+proto_lua_dll_export int proto_lua_api luaopen_proto_lua(lua_State *L) {\n\
+    lua_newtable(L);\n\
+    lua_protobuf_coded_streams_open(L);\n\
+";
+
+const char luapbCPPHdr3[] = "\
+    return 1;\n\
+}\n\
+\n\
+#ifdef __cplusplus\n\
+}\n\
+#endif\n\
+";
+
 int main(int argc, char **argv) {
     Options options;
     if (!getOptions(argc, argv, &options)) {
@@ -272,6 +309,8 @@ int main(int argc, char **argv) {
     using google::protobuf::compiler::DiskSourceTree;
     using google::protobuf::compiler::Importer;
     
+    for (auto i=0; i<argc; ++i) { printf("%s ", argv[i]);}
+
     typedef std::map<std::string, PBType>::value_type PBTypePair;
     std::map<std::string, PBType> typemap;
     std::set<std::string> includes;
@@ -324,21 +363,45 @@ int main(int argc, char **argv) {
     }
 
     if (!errorcollector.hasError) {
-        FILE* hdroutput = fopen("type_database.h", "wb");
-        FILE* cppoutput = fopen("type_database.cpp", "wb");
-        fwrite(hdrStr, 1, sizeof(hdrStr)-1, hdroutput);
-        fclose(hdroutput);
+        if (options.outputFile) {
+            FILE* hdroutput = fopen("type_database.h", "wb");
+            FILE* cppoutput = fopen("type_database.cpp", "wb");
+            fwrite(hdrStr, 1, sizeof(hdrStr) - 1, hdroutput);
+            fclose(hdroutput);
 
-        fwrite(srcStrHdr1, 1, sizeof(srcStrHdr1)-1, cppoutput);
-        for (const auto& i : includes) {
-            fprintf(cppoutput, "#include \"%s\"\n", i.c_str());
+            fwrite(srcStrHdr1, 1, sizeof(srcStrHdr1) - 1, cppoutput);
+            for (const auto& i : includes) {
+                fprintf(cppoutput, "#include \"%s\"\n", i.c_str());
+            }
+            fwrite(srcStrHdr2, 1, sizeof(srcStrHdr2) - 1, cppoutput);
+            for (const auto& i : typemap) {
+                fprintf(cppoutput, "\t\tDEFINE_AND_REGISTER_TYPE(%s, %s);\n", i.second.pbnamespace.c_str(), i.second.name.c_str());
+            }
+            fwrite(srcStrFtr, 1, sizeof(srcStrFtr) - 1, cppoutput);
+            fclose(cppoutput);
         }
-        fwrite(srcStrHdr2, 1, sizeof(srcStrHdr2)-1, cppoutput);
-        for (const auto& i : typemap) {
-            fprintf(cppoutput, "\t\tDEFINE_AND_REGISTER_TYPE(%s, %s);\n", i.second.pbnamespace.c_str(), i.second.name.c_str());
+
+        if (!options.luaPBOutputFile.empty()) {
+            FILE* cppoutput = fopen(options.luaPBOutputFile.c_str(), "wb");
+            if (!cppoutput) {
+                printf("Can't open file '%s' for writing", options.luaPBOutputFile.c_str());
+                return -1;
+            }
+            fwrite(luapbCPPHdr1, 1, sizeof(luapbCPPHdr1)-1, cppoutput);
+            for (const auto& i : includes) {
+                auto s = i;
+                s.erase(i.find(".pb.h"), std::string::npos);
+                fprintf(cppoutput, "#include \"%s.pb.lua.h\"\n", s.c_str());
+            }
+            fwrite(luapbCPPHdr2, 1, sizeof(luapbCPPHdr2)-1, cppoutput);
+            for (const auto& i : includes) {
+                auto s = i;
+                s.erase(i.find(".pb.h"), std::string::npos);
+                fprintf(cppoutput, "\tlua_protobuf_%s_open(L);\n", s.c_str());
+            }
+            fwrite(luapbCPPHdr3, 1, sizeof(luapbCPPHdr3)-1, cppoutput);
+            fclose(cppoutput);
         }
-        fwrite(srcStrFtr, 1, sizeof(srcStrFtr)-1, cppoutput);
-        fclose(cppoutput);
     } else {
         printf("%s", errorcollector.errors.c_str());
     }
