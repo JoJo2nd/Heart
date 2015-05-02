@@ -46,7 +46,7 @@ ADD_CUSTOM_COMMAND(
 	TARGET lua_standalone
     POST_BUILD
 	#COMMAND python
-	#ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l lua -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+	#ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l lua -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 	COMMAND python
-	ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r .*\\.lua -s "${LUA_SA_SRC_DIR}/src/lua" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
+	ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r .*\\.lua -s "${LUA_SA_SRC_DIR}/src/lua" -d "${CMAKE_SOURCE_DIR}/bin/${CMAKE_CFG_INTDIR}"
 )

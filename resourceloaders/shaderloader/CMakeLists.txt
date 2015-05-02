@@ -57,7 +57,7 @@ endif()
 #	TARGET shader_builder
 #    POST_BUILD
 #    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l gpuprogram -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l gpuprogram -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 #)
 
 if (PLATFORM_WINDOWS)
@@ -65,11 +65,11 @@ ADD_CUSTOM_COMMAND(
     TARGET shader_builder
     POST_BUILD 
     COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l d3dcompiler -s "${WindowsSDKDir}/redist/d3d/${PLATTYPE}/" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l d3dcompiler -s "${WindowsSDKDir}/redist/d3d/${PLATTYPE}/" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
     COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
     COMMAND python
-    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+    ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 )
 endif()
 if (PLATFORM_LINUX)

@@ -2,15 +2,13 @@ cmake_minimum_required(VERSION 2.8.12.2)
 
 project(HEART)
 
-# Example of setting binary directories
-#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
-#
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+set(DEPLOY_TOOLS_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/build/deploy_scripts"
+)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
@@ -160,7 +158,7 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
-	    COMMAND python ARGS "${CMAKE_CURRENT_SOURCE_DIR}/build/deploy_scripts/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
+	    COMMAND python ARGS "${DEPLOY_TOOLS_DIR}/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
 	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ lite protocol buffer compiler on ${FIL_WE}")
@@ -219,7 +217,6 @@ elseif (FORCE_ENABLE_MEMORY_TRACKING)
 	add_definitions(-DHEART_FORCE_TRACK_MEMORY_ALLOCS)
 endif(FORCE_DISABLE_MEMORY_TRACKING)
 
-message("${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/modules/")
 
 find_package(Protobuf REQUIRED)
@@ -261,6 +258,9 @@ set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
 set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")
 
 #Common var
+set(DEPLOY_TOOLS_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/build/deploy_scripts"
+)
 set(EXTERNAL_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/external"
 )
@@ -271,11 +271,11 @@ set(HEART_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/heart"
 )
 set(GENERATED_PROTO_INC_DIRS
-    "${CMAKE_BINARY_DIR}/tools/proto/pb_lite/"
+    "${CMAKE_CURRENT_BINARY_DIR}/tools/proto/pb_lite/"
     #add more as needed
 )
 set(GENERATED_PROTO_FULL_INC_DIRS
-    "${CMAKE_BINARY_DIR}/tools/proto_full"
+    "${CMAKE_CURRENT_BINARY_DIR}/tools/proto_full"
     #add more as needed
 )
 set(ENET_INCLUDE_DIR
@@ -401,3 +401,13 @@ add_subdirectory("tools/pkginspector")
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")
 endif()
+
+#common vars to pass up to parent directory
+set( LIBHEART_INCLUDES
+    ${LIBHEART_INCLUDES}
+    PARENT_SCOPE
+)
+set( LIBHEART_LIB_DIRS
+  ${LIBHEART_LIB_DIRS}
+  PARENT_SCOPE
+)

@@ -33,5 +33,5 @@ target_link_libraries(enet_lua lua52 enet)
 #	TARGET enet_lua
 #    POST_BUILD
 #    COMMAND python
-#    ARGS "${CMAKE_SOURCE_DIR}/build/deploy_scripts/deploy_lib.py" -l enet_lua -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
+#    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l enet_lua -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
 #)
