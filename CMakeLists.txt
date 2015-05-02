@@ -178,6 +178,10 @@ else()
 	add_definitions(-DBUILD_64_BIT)
 endif()
 
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pre_game.txt")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/pre_game.txt")
+endif()
+
 #config vars
 #set(CMAKE_USE_RELATIVE_PATHS OFF)
 #set(CMAKE_DEBUG_POSTFIX "")
@@ -402,12 +406,6 @@ if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")
 endif()
 
-#common vars to pass up to parent directory
-set( LIBHEART_INCLUDES
-    ${LIBHEART_INCLUDES}
-    PARENT_SCOPE
-)
-set( LIBHEART_LIB_DIRS
-  ${LIBHEART_LIB_DIRS}
-  PARENT_SCOPE
-)
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/post_game.txt")
+  include("${CMAKE_CURRENT_SOURCE_DIR}/post_game.txt")
+endif()

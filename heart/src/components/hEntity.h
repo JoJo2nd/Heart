@@ -2,8 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#ifndef HENTITY_H__
-#define HENTITY_H__
+#pragma once
 
 namespace Heart
 {
@@ -74,4 +73,3 @@ namespace Heart
 #endif
 }
 
-#endif // HENTITY_H__
