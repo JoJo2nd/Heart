@@ -25,4 +25,4 @@
 /tools/builder/src/lua/*.inl
 /tools/viewer/src/lua/builder_script.inl
 tools/pkginspector/src/type_database.*
-#tools/proto/src/proto_lua.cpp
+tools/proto/src/proto_lua.cpp
