@@ -8,6 +8,7 @@ if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings
     add_definitions(/wd"4267") # proto buffers spits out a lot of size_t to int conversion warnings
     add_definitions(/wd"4996") # iterator copy rubbish
+	add_definitions(/wd"4018") # signed unsigned compares
     add_definitions(-D_SCL_SECURE_NO_WARNINGS) # A secure MS future
 endif()
 
@@ -25,6 +26,12 @@ set( PROTO_INCLUDE_DIRS
 
 file(GLOB PROTO_SRC_FILES "${PROTO_SRC_DIR}/*.proto")
 
+file(GLOB PROTO_SRC_FILES "${PROTO_SRC_DIR}/*.proto")
+foreach(ADD_PROTO_SRC ${ADDITIONAL_PROTO_SRC_DIRS})
+  file(GLOB EXTRA_PROTO_SRC_FILES ${ADD_PROTO_SRC}/*.proto)
+  set(PROTO_SRC_FILES ${PROTO_SRC_FILES} ${EXTRA_PROTO_SRC_FILES})
+endforeach(ADD_PROTO_SRC)
+
 set(PROTO_LITE_SRC_FILES ${PROTO_SRC_FILES})
 
 include_directories(${PROTOBUF_INCLUDE_DIR} "${EXTERNAL_SRC_ROOT}/lua/src" ${GENERATED_PROTO_FULL_INC_DIRS})
@@ -38,11 +45,8 @@ add_library(proto_full ${PROTO_SRC_FILES} ${ProtoSources} ${ProtoHeaders})
 target_link_libraries(proto_full debug ${PROTOBUF_LIBRARY_DEBUG} ${PROFILE_LIBS})
 target_link_libraries(proto_full optimized ${PROTOBUF_LIBRARY} ${PROFILE_LIBS})
 
-file(GLOB PROTO_FILES
-    "${PROTO_SRC_DIR}/*.proto"
-)
+set(PROTO_FILES ${PROTO_SRC_FILES})
 
-message("${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pbscan -l ${PROTO_SRC_DIR}/proto_lua.cpp" ${PROTO_FILES})
 add_custom_command(
     OUTPUT "${PROTO_SRC_DIR}/proto_lua.cpp"
     COMMAND "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pbscan"

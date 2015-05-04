@@ -1,0 +1,13 @@
+package Testbed.proto;
+
+message TestGameComponent1 {
+	optional string entryName = 1;
+	optional uint64 entryOffset = 2;
+	optional uint64 entrySize = 3;
+	optional string entryType = 4;
+}
+
+message TestGameComponent2 {
+	repeated string			packageDependencies = 1;
+	optional uint64			highscore = 2;
+}

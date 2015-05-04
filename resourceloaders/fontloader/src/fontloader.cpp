@@ -4,6 +4,7 @@
 *********************************************************************/
 
 #include "minfs.h"
+#include "resource_common.pb.h"
 #include "resource_font.pb.h"
 #include <fstream>
 #include <memory>

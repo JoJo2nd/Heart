@@ -30,7 +30,6 @@ set(ALL_SRC_FILES
     "${TDB_SRC_FILES}"
 )
 
-message("${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/pbscan -o ${PROTO_FILES}")
 add_custom_command(
     OUTPUT ${TDB_SRC_FILES}
     WORKING_DIRECTORY "${BUILDER_SRC_DIR}/src"

@@ -29,6 +29,7 @@ extern "C" {
 #   pragma warning(pop)
 #endif
 
+#include "resource_common.pb.h"
 #include "resource_texture.pb.h"
 #include <memory>
 

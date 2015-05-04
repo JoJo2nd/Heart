@@ -303,6 +303,10 @@ set(IMGUI_INCLUDE_DIR
 set(PROTO_SRC_DIR
     "${TOOLS_SRC_ROOT}/proto/src"
 )
+set(PROTO_LUA_SRC_DIR
+  ${PROTO_SRC_DIR}
+  ${GENERATED_PROTO_FULL_INC_DIRS}
+)
 set(MEMTRACKERLIB_SRC_DIR
     "${TOOLS_SRC_ROOT}/memtrackerlib/src"
 )
@@ -356,10 +360,16 @@ if (PLATFORM_WINDOWS)
   add_definitions(-DLUA_BUILD_AS_DLL)
 endif()
 
-message("protoc path: ${PROTOBUF_PROTOC_EXECUTABLE}")
-message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
-message("protobuf lib: ${PROTOBUF_LIBRARY}")
-message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
+#message("protoc path: ${PROTOBUF_PROTOC_EXECUTABLE}")
+#message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
+#message("protobuf lib: ${PROTOBUF_LIBRARY}")
+#message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
+
+# Add testbed proto buffer files
+set(ADDITIONAL_PROTO_SRC_DIRS 
+  ${ADDITIONAL_PROTO_SRC_DIRS}
+  "${CMAKE_CURRENT_SOURCE_DIR}/testbed/proto"
+)
 
 add_subdirectory ("external/getopt_port")
 add_subdirectory ("external/zlib")
@@ -386,6 +396,7 @@ add_subdirectory("resourceloaders/textureloader")
 add_subdirectory("resourceloaders/materialloader")
 add_subdirectory("resourceloaders/meshloader")
 add_subdirectory("resourceloaders/fontloader")
+add_subdirectory("resourceloaders/entitydefloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

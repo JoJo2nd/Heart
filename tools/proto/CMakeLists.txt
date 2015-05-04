@@ -6,6 +6,7 @@ if (MSVC)
     add_definitions(/wd"4244") # proto buffers spits out a lot of uint64 to int conversion warnings
     add_definitions(/wd"4267") # proto buffers spits out a lot of size_t to int conversion warnings
     add_definitions(/wd"4996") # iterator copy rubbish
+    add_definitions(/wd"4018") # signed unsigned compares
     add_definitions(-D_SCL_SECURE_NO_WARNINGS) # A secure MS future
 endif()
 
@@ -18,6 +19,10 @@ set( PROTO_INCLUDE_DIRS
 )
 
 file(GLOB PROTO_SRC_FILES "${PROTO_SRC_DIR}/*.proto")
+foreach(ADD_PROTO_SRC ${ADDITIONAL_PROTO_SRC_DIRS})
+  file(GLOB EXTRA_PROTO_SRC_FILES ${ADD_PROTO_SRC}/*.proto)
+  set(PROTO_SRC_FILES ${PROTO_SRC_FILES} ${EXTRA_PROTO_SRC_FILES})
+endforeach(ADD_PROTO_SRC)
 
 set(PROTO_LITE_SRC_FILES ${PROTO_SRC_FILES})
 

@@ -42,8 +42,8 @@ link_directories(
 	${nvtt_LIB_DIR}
 	${freeimage_LIB_DIR})
 add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-target_link_libraries(texture_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+target_link_libraries(texture_builder debug lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY_DEBUG})
+target_link_libraries(texture_builder optimized lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY})
 
 set_target_properties(texture_builder PROPERTIES PREFIX "")
 set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)

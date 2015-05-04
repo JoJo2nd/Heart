@@ -1,0 +1,9 @@
+import "resource_common.proto";
+
+package Heart.proto;
+
+message EntityDef {
+	optional string entryName = 1;
+	optional bool canSerialise = 2;
+	repeated MessageContainer components = 3;
+}
