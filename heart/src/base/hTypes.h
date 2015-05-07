@@ -31,6 +31,9 @@ typedef bool				hBool;
 typedef time_t              hTime;
 typedef uintptr_t           hUintptr_t;
 typedef ptrdiff_t           hPtrdiff_t;
+class hUuid_t {
+    hByte internalData[16];
+};
 
 class hNullType {};
 struct hcEmptyType {};

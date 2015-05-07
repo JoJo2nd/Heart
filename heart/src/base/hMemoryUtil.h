@@ -25,6 +25,10 @@ namespace Heart
     hFORCEINLINE void hMemMove(void* dest, const void* src, hSize_t size) {
         memmove(dest, src, size);
     }
+
+    hFORCEINLINE int hMemCmp(const void* lhs, const void* rhs, hSize_t size) {
+        return memcmp(lhs, rhs, size);
+    }
 }
 
 #endif // HMEMORYUTIL_H__

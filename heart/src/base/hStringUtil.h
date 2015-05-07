@@ -98,13 +98,11 @@ namespace Heart
 
 #define hScanf scanf
 
-    inline hInt32 HEART_API hAtoI(const hChar* str)
-    {
+    inline hInt32 HEART_API hAtoI(const hChar* str) {
         return atoi(str);
     }
 
-    inline hFloat HEART_API hAtoF(const hChar* str)
-    {
+    inline hFloat HEART_API hAtoF(const hChar* str) {
         return (hFloat)atof(str);
     }
 

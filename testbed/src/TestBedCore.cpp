@@ -52,6 +52,7 @@
         factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
+        REGISTER_UNIT_TEST(*factory_, UUIDTests);
         REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, MovingTriCPU);
