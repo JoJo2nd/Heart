@@ -3,58 +3,40 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
+#include "components/hEntity.h"
+#include "components/hEntityFactory.h"
+
 namespace Heart
 {
-#if defined (HEART_PLAT_WINDOWS)
-#   pragma message ("STUBBED OUT: hEntity")
-#elif defined (HEART_PLAT_LINUX)
-#   message ("STUBBED OUT: hEntity")
-#endif
-#if 0
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
+    hRegisterObjectType(EntityDef, Heart::hEntityDef, Heart::proto::EntityDef);
 
-    hComponent* hEntity::FindComponentByID(hUint32 id)
-    {
-        for (hUint32 i = 0; i < components_.size(); ++i)
-        {
-            if(components_[i].componentHash_ == id)
-                return components_[i].component_;
+
+    hEntityDef::~hEntityDef() {
+
+    }
+
+    hBool hEntityDef::serialiseObject(Heart::proto::EntityDef* obj) const {
+        return hTrue;
+    }
+
+    hBool hEntityDef::deserialiseObject(Heart::proto::EntityDef* obj) {
+        definition.CopyFrom(*obj);
+        name = hStringID(definition.entryname().c_str());
+        componentDefs.reserve(definition.components_size());
+        for (auto i=0, n=definition.components_size(); i < n; ++i) {
+            hComponentDef comp_def;
+            comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(definition.components(i).type_name().c_str());
+            if (comp_def.typeDefintion) {
+                comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
+                comp_def.marshall->ParseFromString(definition.components(i).messagedata());
+                componentDefs.push_back(std::move(comp_def));
+            }
         }
-
-        return NULL;
+        hEntityFactory::registerEntityDefinition(name, this);
+        return hTrue;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hEntity::AddComponent(hComponent* component)
-    {
-        hcPrintf("Stub :"__FUNCTION__);
-//         hcAssert(FindComponentByID(component->GetID()) == NULL);
-// 
-//         hComponentContainer c;
-//         c.component_ = component;
-//         c.componentHash_ = component->GetID();
-//         components_.PushBack(c);
+    hBool hEntityDef::linkObject() {
+        return hTrue;
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hEntity::RemoveComponent( hComponent* component )
-    {
-        for (hUint32 i = 0; i < components_.size(); ++i)
-        {
-            if(components_[i].component_ == component)
-                components_[i].component_ = NULL;
-        }
-    }
-#endif
-
-
-
 }

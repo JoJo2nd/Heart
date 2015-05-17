@@ -169,13 +169,18 @@ namespace Heart {
         //////////////////////////////////////////////////////////////////////////
         // Load core assets - are none now... ////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////
-        engineState_ = hHeartState_LoadingCore;
 
-        // Temp workaround for dead stripping of these types
-        hcPrintf("Auto-registered type %s=%d", hShaderProgram::getTypeNameStatic().c_str(), hShaderProgram::auto_object_registered);
-        hcPrintf("Auto-registered type %s=%d", hMaterial::getTypeNameStatic().c_str(), hMaterial::auto_object_registered);
-        hcPrintf("Auto-registered type %s=%d", hTTFFontFace::getTypeNameStatic().c_str(), hTTFFontFace::auto_object_registered);
-        hcPrintf("Auto-registered type %s=%d", hTextureResource::getTypeNameStatic().c_str(), hTextureResource::auto_object_registered);
+        // Workaround for dead stripping of these types
+        hBool register_type = hTrue;
+        register_type &= hShaderProgram::auto_object_registered;
+        register_type &= hMaterial::auto_object_registered;
+        register_type &= hTTFFontFace::auto_object_registered;
+        register_type &= hTextureResource::auto_object_registered;
+        register_type &= hEntityDef::auto_object_registered;
+
+        if (register_type) {
+            engineState_ = hHeartState_LoadingCore;
+        }
 
         mem_track_marker("AfterEngineInit");
     }

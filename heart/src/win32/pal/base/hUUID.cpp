@@ -9,6 +9,11 @@
 #include "base/hStringUtil.h"
 #include <windows.h>
 
+
+bool hUuid_t::operator==(const hUuid_t& rhs) const {
+    return Heart::hUUID::compareUUID(*this, rhs);
+}
+
 namespace Heart {
 namespace hUUID {
     static_assert(sizeof(hUuid_t) >= sizeof(GUID), "hUuid_t must provide enough space to store a GUID object");

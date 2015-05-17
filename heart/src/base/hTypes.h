@@ -31,8 +31,9 @@ typedef bool				hBool;
 typedef time_t              hTime;
 typedef uintptr_t           hUintptr_t;
 typedef ptrdiff_t           hPtrdiff_t;
-class hUuid_t {
+struct HEART_CLASS_EXPORT hUuid_t {
     hByte internalData[16];
+    bool operator == (const hUuid_t& rhs) const;
 };
 
 class hNullType {};
@@ -161,3 +162,13 @@ namespace Heart
 #else 
 #   define hNoExcept(func) func noexcept 
 #endif
+
+#include "cryptoMurmurHash.h"
+
+namespace std {
+    template<>
+    struct hash < hUuid_t > {
+        size_t operator () (const hUuid_t& rhs) const { hUint32 r; cyMurmurHash3_x86_32(rhs.internalData, (hUint)hStaticArraySize(rhs.internalData), hGetMurmurHashSeed(), &r); return r; }
+    };
+}
+

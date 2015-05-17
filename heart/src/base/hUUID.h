@@ -15,3 +15,4 @@ HEART_EXPORT hSize_t HEART_API toString(const hUuid_t& a, hChar* out, hSize_t ou
 HEART_EXPORT hUuid_t HEART_API fromString(const hChar* out, hSize_t in_size);
 }
 }
+

@@ -34,6 +34,11 @@ const hObjectDefinition* getObjectDefinition(hStringID name) {
     return definition->second;
 }
 
+const hObjectDefinition* getObjectDefinitionFromSerialiserName(const hChar* name) {
+    hObjectDefinition* obj_def = (*serialiserDefTable_)[hStringID(name)];
+    return obj_def;
+}
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -73,10 +78,10 @@ hBool objectFactoryRegistar(hObjectDefinition* definition, const char* serialise
         serialiserDefTable_ = &localSerialiserDefTable_;
     }
     hcAssertMsg(doneGlobalInit_ == hFalse, "Registering Type too later, this should be done before main()");
-    if (doneGlobalInit_ || definition->entityName_.is_default()) {
+    if (doneGlobalInit_ || definition->objectName_.is_default()) {
         return hFalse;
     }
-    (*objectDefTable_)[definition->entityName_] = definition;
+    (*objectDefTable_)[definition->objectName_] = definition;
 
     hString real_serialiser_type_name = serialiser_type_name;
     for (auto loc=real_serialiser_type_name.find("::"); loc != real_serialiser_type_name.npos; loc=real_serialiser_type_name.find("::")) {
@@ -102,7 +107,7 @@ hBool objectFactoryRegistar(hObjectDefinition* definition, const char* serialise
 //////////////////////////////////////////////////////////////////////////
 
 void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID* out_type_name) {
-    hObjectDefinition* obj_def = (*serialiserDefTable_)[hStringID(msg_container->type_name().c_str())];
+    const hObjectDefinition* obj_def = getObjectDefinitionFromSerialiserName(msg_container->type_name().c_str());
     if (!obj_def) {
         return nullptr;
     }
@@ -123,7 +128,7 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     delete marshall;
     marshall = nullptr;
     if (out_type_name) {
-        *out_type_name = obj_def->entityName_;
+        *out_type_name = obj_def->objectName_;
     }
     return obj;
 }

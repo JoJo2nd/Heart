@@ -14,6 +14,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(BUILD_PLATFORM "windows")
   set(PLATFORM_WINDOWS true)
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua.exe)
+  set(PROTOBUF_CPPDIFF_PLUGIN protoc-gen-cppdiff.exe)
   add_definitions(-DPLATFORM_WINDOWS)
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
@@ -26,6 +27,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(BUILD_PLATFORM "linux")
   set(PLATFORM_LINUX true)
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua)
+  set(PROTOBUF_CPPDIFF_PLUGIN protoc-gen-cppdiff)
   add_definitions(-DPLATFORM_LINUX)
   add_definitions(-DGLEW_NO_GLU)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -msse -msse2") # add -v for verbose
@@ -151,15 +153,19 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
 
     list(APPEND ${SRCS} "${PROTO_IM_DIR}/${FIL_WE}.pb.cc")
     list(APPEND ${HDRS} "${PROTO_IM_DIR}/${FIL_WE}.pb.h")
+    list(APPEND ${SRCS} "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.cc")
+    list(APPEND ${HDRS} "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.h")
 
 	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
 	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
 
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
+             "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.cc"
              "${PROTO_IM_DIR}/${FIL_WE}.pb.h"
+             "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.h"
 	    COMMAND python ARGS "${DEPLOY_TOOLS_DIR}/copy_create_proto_files.py" "-s" "${ABS_FIL}" "-d" "${PROTO_IM_DIR}"
-	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} ${PROTO_IM_FILE}
+	    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} ARGS --proto_path=${PROTO_IM_DIR} --cpp_out=${PROTO_IM_DIR} --cppdiff_out=${PROTO_IM_DIR} ${PROTO_IM_FILE} --plugin=protoc-gen-cppdiff=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/${PROTOBUF_CPPDIFF_PLUGIN}
       DEPENDS ${ABS_FIL}
       COMMENT "Running C++ lite protocol buffer compiler on ${FIL_WE}")
   endforeach()
@@ -387,6 +393,7 @@ if (PLATFORM_WINDOWS)
 endif()
 # !!JM Disabled. May reimplement in the future
 #add_subdirectory ("external/luadb")
+add_subdirectory ("external/protobuf/cppdiff")
 add_subdirectory ("heart")
 
 add_subdirectory ("testbed")
