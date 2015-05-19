@@ -34,7 +34,7 @@ source_group(proto_files FILES ${PROTO_LITE_SRC_FILES})
 source_group(autogen FILES ${LiteProtoSources} ${LiteProtoHeaders})
 
 add_library(proto ${PROTO_LITE_SRC_FILES} ${LiteProtoSources} ${LiteProtoHeaders})
-target_link_libraries(proto debug ${PROTOBUF_LITE_LIBRARY_DEBUG} ${PROFILE_LIBS})
 target_link_libraries(proto optimized ${PROTOBUF_LITE_LIBRARY} ${PROFILE_LIBS})
+target_link_libraries(proto debug ${PROTOBUF_LITE_LIBRARY_DEBUG} ${PROFILE_LIBS})
 add_dependencies(proto protoc_gen_cppdiff)
 

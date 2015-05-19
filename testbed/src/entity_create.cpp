@@ -79,6 +79,25 @@ public:
     }
     ~EntityTest() {}
 
+    void printGameHighscore(const Testbed::proto::GameHighscores& a) {
+        hcPrintf("Printing object...");
+        if (a.has_extra1()) {
+            hcPrintf("\textra1=");
+            a.extra1().has_highscore() ? hcPrintf("\t\thighscore=%d", a.extra1().highscore()) : hcPrintf("\t\thighscore=missing");
+            for (auto i=0, n=a.extra1().packagedependencies_size(); i < n; ++i) {
+                hcPrintf("\t\tpackagedependencies[%d]=%s", i, a.extra1().packagedependencies(i).c_str());
+            }
+        } else {
+            hcPrintf("\textra1=missing");
+        }
+        a.has_extra2() ? hcPrintf("\textra2=%d", a.extra2()) : hcPrintf("\textra2=missing");
+        for (auto i=0, n=a.highscores_size(); i < n; ++i) {
+            hcPrintf("\thighscores[%d]=", i);
+            a.highscores(i).has_name() ? hcPrintf("\t\tname=%s", a.highscores(i).name().c_str()) : hcPrintf("\t\tname=missing");
+            a.highscores(i).has_highscore() ? hcPrintf("\t\thighscore=%d", a.highscores(i).highscore()) : hcPrintf("\t\thighscore=missing");
+        }
+    }
+
     virtual hUint32 RunUnitTest() override {
         using namespace Heart;
         if (doTest_) {
@@ -106,6 +125,53 @@ public:
             hcAssert(a2.entryoffset() == a4.entryoffset());
             hcAssert(a2.entrysize() == a4.entrysize());
             hcAssert(a2.entrytype() == a4.entrytype());
+
+            Testbed::proto::GameHighscores b1, b2, b3, b4;
+            b1.set_extra2(1999);
+            b1.mutable_extra1()->add_packagedependencies("test1");
+            b1.mutable_extra1()->add_packagedependencies("test2");
+            b1.mutable_extra1()->set_highscore(535353);
+            auto* ba1 = b1.add_highscores();
+            ba1->set_name("jim"); ba1->set_highscore(9000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("tim"); ba1->set_highscore(8000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("nin"); ba1->set_highscore(7000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("ric"); ba1->set_highscore(6000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("con"); ba1->set_highscore(5000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("wil"); ba1->set_highscore(4000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("wil"); ba1->set_highscore(3000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("meg"); ba1->set_highscore(2000);
+            ba1 = b1.add_highscores();
+            ba1->set_name("cid"); ba1->set_highscore(1000);
+
+            b2.CopyFrom(b1);
+            b2.mutable_extra1()->mutable_packagedependencies()->RemoveLast();
+            b2.mutable_highscores(0)->set_name("ace");
+            b2.mutable_highscores(0)->set_highscore(9999);
+            auto* ba2 = b2.add_highscores();
+            ba2->set_name("gem"); ba2->set_highscore(512);
+            ba2 = b2.add_highscores();
+            ba2->set_name("rob"); ba2->set_highscore(256);
+            ba2 = b2.add_highscores();
+            ba2->set_name("abe"); ba2->set_highscore(128);
+
+            Testbed::proto::GameHighscores_diff(b1, b2, b3);
+            Testbed::proto::GameHighscores_merge(b1, b3, b4);
+
+            hcPrintf("Base Object");
+            printGameHighscore(b1);
+            hcPrintf("Changed Object");
+            printGameHighscore(b2);
+            hcPrintf("Diff Object");
+            printGameHighscore(b3);
+            hcPrintf("Merged Object");
+            printGameHighscore(b4);
 
             // Test creating entities
             hEntityFactory::hEntityCreateDesc entities[] = {

@@ -11,3 +11,14 @@ message TestGameComponent2 {
 	repeated string			packageDependencies = 1;
 	optional uint64			highscore = 2;
 }
+
+message Highscore {
+	optional string name = 1;
+	optional uint64 highscore = 2;
+}
+
+message GameHighscores {
+	repeated Highscore highscores = 1;
+	optional TestGameComponent2 extra1 = 2;
+	optional int32 extra2 = 3;
+}

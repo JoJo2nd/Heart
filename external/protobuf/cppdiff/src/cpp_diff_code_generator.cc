@@ -285,6 +285,7 @@ bool CppDiffGenerator::Generate(
                     "for (int i=0, n=a.$field_name_lower$_size(), n2=b.$field_name_lower$_size(); i < n2; ++i) {\n");
                 if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
                     printer.Print(parameters,
+                        "  c.add_$field_name_lower$();\n"
                         "  $other_namespace$$other_type$_merge(i < n ? a.$field_name_lower$(i) : $other_namespace$$other_type$(), b.$field_name_lower$(i), *c.mutable_$field_name_lower$(i));\n");
                 }
                 else {
