@@ -278,7 +278,7 @@ set(TOOLS_SRC_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/tools"
 )
 set(HEART_SRC_ROOT
-    "${CMAKE_CURRENT_SOURCE_DIR}/heart"
+    "${CMAKE_CURRENT_SOURCE_DIR}/heart/src"
 )
 set(GENERATED_PROTO_INC_DIRS
     "${CMAKE_CURRENT_BINARY_DIR}/tools/proto/pb_lite/"

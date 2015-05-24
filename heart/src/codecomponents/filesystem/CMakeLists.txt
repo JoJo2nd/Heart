@@ -22,7 +22,6 @@ set(FILESYSTEM_SRC_DIR
 # heart include directorys
 set( FILESYSTEM_INCLUDE_DIR
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${HEART_SRC_ROOT}/include/base"
 )
 
 file(GLOB FILESYSTEM_SRC_FILES 

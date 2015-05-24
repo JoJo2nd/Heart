@@ -52,6 +52,7 @@ size_t minfs_current_working_directory(char* out_cwd, size_t buf_size);
 size_t minfs_path_parent(const char* filepath, char* out_cwd, size_t buf_size);
 size_t minfs_path_leaf(const char* filepath, char* out_cwd, size_t buf_size);
 size_t minfs_path_without_ext(const char* filepath, char* out_cwd, size_t buf_size);
+size_t minfs_path_join(const char* parent, const char* leaf, char* out_path, size_t buf_size);
 int minfs_read_directory(const char* filepath, void* scratch, size_t scratchlen, minfs_read_dir_callback cb, void* opaque);
 MinFSDirectoryEntry_t* minfs_read_directory_entries(const char* filepath, void* scratch, size_t scratchlen);
 

@@ -8,7 +8,7 @@ ENABLE_PROFILE_IF_SET()
 set( HEART_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}
     "${ENET_INCLUDE_DIR}"
-    "${HEART_SRC_ROOT}/include"
+    "${HEART_SRC_ROOT}"
     "${EXTERNAL_SRC_ROOT}/zlib/include"
     "${EXTERNAL_SRC_ROOT}/lua/src"
     "${EXTERNAL_SRC_ROOT}/crypto/src"

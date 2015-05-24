@@ -1,0 +1,26 @@
+package Heart.builder;
+
+import "resource_common.proto";
+
+message InputParameterValue {
+	optional int32 intValue = 1;
+	optional float floatValue = 2;
+	optional string strValue = 3;
+	optional bool boolValue = 4;
+}
+
+message InputParameter {
+	optional string name = 1;
+	repeated InputParameterValue values = 2;
+}
+
+message Input {
+	optional string resourceInputPath = 1;
+	repeated InputParameter buildParameters = 2;
+	optional string resourceType = 3;
+	optional string package = 4;
+}
+
+message Output {
+	optional Heart.proto.MessageContainer pkgData = 1;
+}

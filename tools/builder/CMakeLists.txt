@@ -28,9 +28,11 @@ set( BUILDER_INCLUDE_DIRS
 	"${TOOLS_SRC_ROOT}/lualibs/filesystem/src"
 	"${TOOLS_SRC_ROOT}/lualibs/lua_process/src"
 	"${TOOLS_SRC_ROOT}/proto/src"
+	"${HEART_SRC_ROOT}"
 	"${PROTOBUF_INCLUDE_DIR}"
 	"${GENERATED_PROTO_FULL_INC_DIRS}"
 	"${GETOPT_PORT_INCLUDE_DIR}"
+	"${MINFS_INCLUDE_DIR}"
 )
 
 file(GLOB BUILDER_SRC_FILES
@@ -55,7 +57,7 @@ file(GLOB BUILDER_PRECOMPILED_SRC_FILES
 )
 
 file(GLOB BUILDER_LUA_FILES "${BUILDER_SRC_DIR}/src/lua/*.lua")
-file(GLOB BUILDER_SRC_FILES "${BUILDER_SRC_DIR}/src/*.c")
+file(GLOB BUILDER_SRC_FILES "${BUILDER_SRC_DIR}/src/*.cpp")
 
 set(GENERATED_FILES "${BUILDER_SRC_DIR}/src/lua/builder_script.inl")
 
@@ -101,7 +103,9 @@ if (PLATFORM_LINUX)
 #  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}")
 endif()
 
-include_directories(${BUILDER_INCLUDE_DIRS})
+include_directories(
+	${BUILDER_INCLUDE_DIRS}
+	${GENERATED_PROTO_FULL_INC_DIRS})
 link_directories(
 	${LIBHEART_LIB_DIRS}
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
@@ -114,8 +118,7 @@ else()
 	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
 endif()
 add_executable(builder ${ALL_SRC_FILES})
-#target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 lua_filesystem lua_process proto_lua proto_full)
-target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 getopt_port)
+target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 getopt_port proto_full minfs heart_base)
 
 if (PLATFORM_WINDOWS)
 #  ADD_CUSTOM_COMMAND(

@@ -106,7 +106,7 @@ namespace Heart
         return (hFloat)atof(str);
     }
 
-    int HEART_API hStrWildcardMatch(const hChar *wildcard, const hChar *target);
+    HEART_EXPORT int HEART_API hStrWildcardMatch(const hChar *wildcard, const hChar *target);
 
     inline hInt HEART_API hIsSpace(hChar c)
     {

@@ -147,3 +147,29 @@ size_t minfs_path_without_ext(const char* filepath, char* out_cwd, size_t buf_si
     // no space to write
     return NO_MEM;
 }
+
+size_t minfs_path_join(const char* parent, const char* leaf, char* out_path, size_t buf_size) {
+    size_t parent_len = strlen(parent);
+    size_t leaf_len = strlen(leaf);
+    if (parent[parent_len > 0 ? parent_len-1 : 0] == '/') {
+        --parent_len;
+    }
+    if (leaf[0] == '/') {
+        --leaf_len;
+        ++leaf;
+    }
+
+    if (leaf_len+parent_len+1 > buf_size) {
+        return NO_MEM;
+    }
+    
+    strncpy(out_path, parent, parent_len);
+    if (leaf_len == 0) {
+        out_path[parent_len] = 0;
+        return parent_len;
+    }
+    out_path[parent_len] = '/';
+    strncpy(out_path + parent_len + 1, leaf, leaf_len);
+    out_path[leaf_len + parent_len + 1] = 0;
+    return leaf_len+parent_len+1;
+}
