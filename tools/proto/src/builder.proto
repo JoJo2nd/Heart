@@ -14,13 +14,24 @@ message InputParameter {
 	repeated InputParameterValue values = 2;
 }
 
+message FileTimestamp {
+	optional string filePath = 1;
+	optional string hash = 2;
+}
+
 message Input {
 	optional string resourceInputPath = 1;
 	repeated InputParameter buildParameters = 2;
 	optional string resourceType = 3;
 	optional string package = 4;
+	optional string resourceId = 5;
+	optional string builtResourcePath = 6;
 }
 
 message Output {
 	optional Heart.proto.MessageContainer pkgData = 1;
+	repeated string resourceDependency = 2;
+	repeated string fileDependency = 3;
+	repeated FileTimestamp fileTimestamps = 4;
+	optional string testData = 12;
 }
