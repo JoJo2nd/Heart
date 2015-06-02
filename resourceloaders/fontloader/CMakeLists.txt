@@ -7,6 +7,7 @@ set( FONT_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
     "${FONT_BUILDER_SRC_DIR}/include"
     "${MINFS_INCLUDE_DIR}"
+	${GETOPT_PORT_INCLUDE_DIR}
 )
 set( FONT_BUILDER_SRC_FILES
     "${FONT_BUILDER_SRC_DIR}/src/fontloader.cpp"
@@ -23,13 +24,10 @@ endif()
 
 include_directories(${FONT_BUILDER_INCLUDE_DIRS})
 link_directories(${FONT_BUILDER_LIB_DIRS})
-add_library(font_builder SHARED ${FONT_BUILDER_SRC_FILES} ${FONT_BUILDER_HDR_FILES})
-set(FB_LIBS proto lua52 crypto minfs ${PLATFORM_LIBS})
+add_executable(font_builder ${FONT_BUILDER_SRC_FILES} ${FONT_BUILDER_HDR_FILES})
+set(FB_LIBS proto lua52 crypto minfs getopt_port ${PLATFORM_LIBS})
 target_link_libraries(font_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${FB_LIBS})
 target_link_libraries(font_builder optimized ${PROTOBUF_LIBRARY} ${FB_LIBS})
-
-set_target_properties(font_builder PROPERTIES PREFIX "")
-set_target_properties(font_builder PROPERTIES OUTPUT_NAME font)
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

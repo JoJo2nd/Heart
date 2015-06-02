@@ -115,6 +115,8 @@ static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* p
         return -1;
     }
 
+    CloseHandle(childStdin_Rd);
+    CloseHandle(childStdout_Wr);
     *pstdin = childStdin_Wr;
     *pstdout = childStdout_Rd;
 
@@ -166,6 +168,7 @@ int handleLuaFileReadError(lua_State* L, int errorCode) {
 struct Builder {
     typedef std::unordered_multimap< std::string, std::shared_ptr<Heart::builder::InputParameter> > ResourceParameterTable;
     typedef std::unordered_map< std::string, std::shared_ptr<Heart::builder::Input> > ResourceTable;
+    typedef std::unordered_multimap< std::string, std::shared_ptr<Heart::builder::Input> > ResourceMutliTable;
 
     std::string rootBuilderScript;
     std::string srcDataPath;
@@ -175,7 +178,7 @@ struct Builder {
     std::unordered_map<std::string, std::string> jobCommands;
     std::queue< std::shared_ptr<Heart::builder::Input> > jobQueue;
     std::unordered_set<std::string> packages;
-    ResourceTable pkgLookup;
+    ResourceMutliTable pkgLookup;
     ResourceTable resourceLookup;
     std::stack<std::string> currentPackage;
     std::stack<ResourceParameterTable> resourceParameters;
@@ -206,10 +209,10 @@ static std::shared_ptr<Heart::builder::InputParameter> getInputParameter(lua_Sta
     input_param->set_name(parameter_name);
     switch (lua_type(L, idx)) {
     case LUA_TBOOLEAN: {
-        input_param->add_values()->set_boolvalue(!!lua_toboolean(L, 3));
+        input_param->add_values()->set_boolvalue(!!lua_toboolean(L, idx));
     } break;
     case LUA_TNUMBER: {
-        float value = (float)lua_tonumber(L, 3);
+        float value = (float)lua_tonumber(L, idx);
         float intpart;
         modff(value, &intpart);
         if (intpart == value) {
@@ -220,12 +223,12 @@ static std::shared_ptr<Heart::builder::InputParameter> getInputParameter(lua_Sta
         }
     } break;
     case LUA_TSTRING: {
-        input_param->add_values()->set_strvalue(lua_tostring(L, 3));
+        input_param->add_values()->set_strvalue(lua_tostring(L, idx));
     } break;
     case LUA_TTABLE: {
         int i = 0;
         lua_pushnil(L);
-        while (lua_next(L, -2) != 0) {
+        while (lua_next(L, idx < 0 ? idx-1 : idx) != 0) {
             /* uses 'key' (at index -2) and 'value' (at index -1) */
             auto type = lua_type(L, -1);
             if (type == LUA_TBOOLEAN) {
@@ -250,10 +253,9 @@ static std::shared_ptr<Heart::builder::InputParameter> getInputParameter(lua_Sta
             lua_pop(L, 1);
             ++i;
         }
-        lua_pop(L, 1);
     } break;
     default:
-        luaL_errorthrow(L, "Cannot set parameter with type %s", lua_typename(L, lua_type(L, 3)));
+        luaL_errorthrow(L, "Cannot set parameter with type %s", lua_typename(L, lua_type(L, idx)));
     }
 
     return input_param;
@@ -330,6 +332,22 @@ try {
             for (auto p = parameter_range.first; p != parameter_range.second; ++p) {
                 auto* bp = new_input->add_buildparameters();
                 bp->CopyFrom(*p->second);
+            }
+
+            if (lua_istable(L, 3)) {
+                int i = 0;
+                lua_pushnil(L);
+                while (lua_next(L, 3) != 0) {
+                    /* uses 'key' (at index -2) and 'value' (at index -1) */
+                    if (!lua_isstring(L, -2)) {
+                        luaL_errorthrow(L, "parameter table keys must be strings");
+                    }
+                    auto* bp = new_input->add_buildparameters();
+                    bp->CopyFrom(*getInputParameter(L, lua_tostring(L, -2), -1));
+                    /* removes 'value'; keeps 'key' for next iteration */
+                    lua_pop(L, 1);
+                    ++i;
+                }
             }
 
             b->jobQueue.push(new_input);
@@ -429,15 +447,13 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
     return builder;
 }
 
-static int do_build(Builder* ) {
-}
-
 int main (int argc, char **argv) {
     int result = EXIT_SUCCESS;
     int verbose = 0, corecount = 2;
     int c;
     char* srcpath = NULL, *cachepath = NULL, *destpath = NULL; // we leak these
-    const char argopts[] = "vj:s:d:c:xn";
+    std::string config_script = ".build_config";
+    const char argopts[] = "vj:s:d:c:xng:";
     bool version_2 = false;
     bool dry_run = false;
     lua_State *L = luaL_newstate();  /* create state */
@@ -469,6 +485,7 @@ int main (int argc, char **argv) {
             }
             break;
         case 'x': version_2 = true; break;
+        case 'g': config_script = optarg; break;
         case 'n': dry_run = true; break;
         case '?':
             if (strchr(argopts, optopt))
@@ -496,7 +513,7 @@ int main (int argc, char **argv) {
     }
 
     if (version_2) {
-        result = luaL_dofile(L, ".build_config");
+        result = luaL_dofile(L, config_script.c_str());
         if (handleLuaFileReadError(L, result)) {
             return EXIT_FAILURE;
         }
@@ -559,10 +576,23 @@ int main (int argc, char **argv) {
                         DWORD written;
                         WriteFile(pstdin, str.c_str(), (int)str.size(), &written, nullptr);
                         CloseHandle(pstdin);
+                        BOOL success;
+                        DWORD bytesread;
+                        std::string finaloutput;
+                        do{
+                            char buf[4096];
+                            success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
+                            if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
+                                success = TRUE;
+                            }
+                            finaloutput.append(buf, bytesread);
+                        } while (success);
+                        CloseHandle(pstdout);
 
                         DWORD exit_code;
                         do {
                             GetExitCodeProcess(pid, &exit_code);
+                            Sleep(10);
                         } while (exit_code == STILL_ACTIVE);
                         CloseHandle(tid);
                         CloseHandle(pid);
@@ -571,17 +601,6 @@ int main (int argc, char **argv) {
                             fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\n", cmd.c_str(), job->resourceinputpath().c_str(), exit_code);
                             continue;
                         }
-
-                        BOOL success;
-                        DWORD bytesread;
-                        std::string finaloutput;
-                        do{
-                            char buf[4096];
-                            // TODO: handle pipes i.e. ERROR_MORE_DATA
-                            success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
-                            finaloutput.append(buf, bytesread);
-                        } while (success && bytesread == 4096);
-
 
                         Heart::builder::Output test_output;
                         test_output.ParseFromString(finaloutput);
@@ -592,6 +611,7 @@ int main (int argc, char **argv) {
                             fprintf(stderr, "Couldn't open %s for writing\n", res_stdout_path.c_str());
                         } else {
                             test_output.SerializeToOstream(&res_output);
+                            job->set_runtimetype(test_output.pkgdata().type_name());
                         }
                     }
                     job->set_builtresourcepath(res_stdout_path);
@@ -623,12 +643,21 @@ int main (int argc, char **argv) {
                 uint64_t offset = 0;
                 for (const auto& i : pkg_resources_to_write) {
                     //TODO: add dep array
-                    auto filesize = minfs_get_file_size(i->builtresourcepath().c_str());
+                    std::ifstream res_file;
+                    res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
+                    if (!res_file.is_open()) {
+                        fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath());
+                        builder_ctx->fatalError.store(true);
+                        break;
+                    }
+                    Heart::builder::Output resource_data;
+                    resource_data.ParseFromIstream(&res_file);
+                    auto filesize = resource_data.pkgdata().ByteSize();
                     auto* entry = header.add_entries();
                     entry->set_entryname(i->resourceid());
                     entry->set_entryoffset(offset);
                     entry->set_entrysize(filesize);
-                    entry->set_entrytype(i->resourcetype());
+                    entry->set_entrytype(i->runtimetype());
                     offset += filesize;
                 }
 
@@ -657,15 +686,18 @@ int main (int argc, char **argv) {
                          builder_ctx->fatalError.store(true);
                          break;
                      }
-                     auto res_filesize = minfs_get_file_size(i->builtresourcepath().c_str());
-                     data.resize(res_filesize);
-                     res_file.read(data.data(), res_filesize);
-                     outputstream.WriteRaw(data.data(), (uint32_t)data.size());
+                     Heart::builder::Output resource_data;
+                     resource_data.ParseFromIstream(&res_file);
+                     auto res_filesize = resource_data.pkgdata().ByteSize();
+                     auto data_to_load = resource_data.pkgdata().SerializeAsString();
+                     outputstream.WriteRaw(data_to_load.data(), (uint32_t)data_to_load.size());
                 }
             }
         }
 
         lua_close(L);
+
+        result = builder_ctx->fatalError.load() ? EXIT_FAILURE : EXIT_SUCCESS;
     } else {
         lua_pushstring(L, srcpath);
         lua_setglobal(L, "in_data_path");

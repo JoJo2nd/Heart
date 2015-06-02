@@ -8,6 +8,7 @@ set( ENTITYDEF_BUILDER_INCLUDE_DIRS
     ${PROTO_LUA_SRC_DIR}
     "${ENTITYDEF_BUILDER_SRC_DIR}/include"
     "${MINFS_INCLUDE_DIR}"
+	${GETOPT_PORT_INCLUDE_DIR}
 )
 set( ENTITYDEF_BUILDER_SRC_FILES
     "${ENTITYDEF_BUILDER_SRC_DIR}/src/entitydefloader.cpp"
@@ -22,13 +23,10 @@ endif()
 
 include_directories(${ENTITYDEF_BUILDER_INCLUDE_DIRS})
 link_directories(${ENTITYDEF_BUILDER_LIB_DIRS})
-add_library(entitydef_builder SHARED ${ENTITYDEF_BUILDER_SRC_FILES} ${ENTITYDEF_BUILDER_HDR_FILES})
-set(EDB_LIBS proto proto_lua lua52 crypto minfs)
+add_executable(entitydef_builder ${ENTITYDEF_BUILDER_SRC_FILES} ${ENTITYDEF_BUILDER_HDR_FILES})
+set(EDB_LIBS proto proto_lua lua52 crypto minfs getopt_port)
 target_link_libraries(entitydef_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${EDB_LIBS})
 target_link_libraries(entitydef_builder optimized ${PROTOBUF_LIBRARY} ${EDB_LIBS})
-
-set_target_properties(entitydef_builder PROPERTIES PREFIX "")
-set_target_properties(entitydef_builder PROPERTIES OUTPUT_NAME entitydef)
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

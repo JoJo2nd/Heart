@@ -8,6 +8,7 @@ set( SHADER_BUILDER_INCLUDE_DIRS
     "${GENERATED_PROTO_INC_DIRS}"
     "${SHADER_BUILDER_SRC_DIR}/src"
     ${MINFS_INCLUDE_DIR}
+	${GETOPT_PORT_INCLUDE_DIR}
 )
 file(GLOB SHADER_BUILDER_FILES 
     "${SHADER_BUILDER_SRC_DIR}/src/*.h"
@@ -19,24 +20,21 @@ set(SHADER_BUILDER_LIB_DIRS
     ${SDL2_LIB_PATH}
 )
 set(SB_LIBS 
-    "lua52"
     "crypto"
     "proto"
     ${GLEW_LIBRARIES}
     ${SDL2_LIBRARY}
     "minfs"
+	"getopt_port"
 )
 
 source_group(source  FILES ${SHADER_BUILDER_FILES})
 
 include_directories(${SHADER_BUILDER_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
-add_library(shader_builder SHARED ${SHADER_BUILDER_FILES} )
+add_executable(shader_builder ${SHADER_BUILDER_FILES})
 target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${PLATFORM_LIBS})
 target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${PLATFORM_LIBS})
-
-set_target_properties(shader_builder PROPERTIES PREFIX "")
-set_target_properties(shader_builder PROPERTIES OUTPUT_NAME gpuprogram)
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors

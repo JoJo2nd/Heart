@@ -3,20 +3,12 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include <fstream>
-#include <vector>
-#include <string>
-#include <stdio.h>
 #include "rapidxml/rapidxml.hpp"
 #include "utils/hRapidXML.h"
 #include "minfs.h"
 #include "resource_material_fx.pb.h"
-
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
+#include "builder.pb.h"
+#include "getopt.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -31,27 +23,25 @@ extern "C" {
 #   pragma warning(pop)
 #endif
 
-#if defined PLATFORM_WINDOWS
-#   define MB_API __cdecl
-#elif PLATFORM_LINUX
-#   if BUILD_64_BIT
-#       define MB_API
-#   else
-#       define MB_API __attribute__((cdecl))
-#   endif
-#else
-#   error
+#include <fstream>
+#include <vector>
+#include <string>
+#include <stdio.h>
+#include <iostream>
+
+#ifdef _WIN32
+#   include <io.h>
+#   include <fcntl.h>
 #endif
 
-#if defined (PLATFORM_WINDOWS)
-#   if defined (material_builder_EXPORTS)
-#       define DLL_EXPORT __declspec(dllexport)
-#   else
-#       define DLL_EXPORT __declspec(dllimport)
-#   endif
-#else
-#   define DLL_EXPORT
-#endif
+static const char argopts[] = "vi:";
+static struct option long_options[] = {
+    { "version", no_argument, 0, 'z' },
+    { 0, 0, 0, 0 }
+};
+
+#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
+#define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
 typedef std::vector< std::string > StrVectorType;
 
@@ -179,7 +169,7 @@ Heart::hXMLEnumReamp g_stencilOpEnum[] =
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps);
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps);
 
 Heart::proto::MaterialSampler* findOrAddMaterialSampler(Heart::proto::MaterialResource* mat, const hChar* name) {
     for (hUint i=0, n=mat->samplers_size(); i<n; ++i) {
@@ -243,15 +233,43 @@ Heart::proto::MaterialPass* findOrAddMaterialPass(Heart::proto::MaterialTechniqu
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int MB_API materialCompile(lua_State* L) {
+int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif
     using namespace Heart;
 
+    google::protobuf::io::IstreamInputStream input_stream(&std::cin);
+    Heart::builder::Input input_pb;
+
+    int c;
+    int option_index = 0;
+    bool verbose = false, use_stdin = true;
+
+    while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
+        switch (c) {
+        case 'z': fprintf(stdout, "heart material builder v0.8.0"); exit(0);
+        case 'v': verbose = 1; break;
+        case 'i': {
+            std::ifstream input_file_stream;
+            input_file_stream.open(optarg, std::ios_base::binary | std::ios_base::in);
+            if (input_file_stream.is_open()) {
+                google::protobuf::io::IstreamInputStream file_stream(&input_file_stream);
+                input_pb.ParseFromZeroCopyStream(&file_stream);
+                use_stdin = false;
+            }
+        } break;
+        default: return 2;
+        }
+    }
+
+    if (use_stdin) {
+        input_pb.ParseFromZeroCopyStream(&input_stream);
+    }
+
     /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TSTRING);
-    luaL_checktype(L, 2, LUA_TTABLE);
-    luaL_checktype(L, 3, LUA_TTABLE);
-    luaL_checktype(L, 4, LUA_TSTRING);
-try {
     Heart::proto::MaterialResource materialresource;
     std::vector<std::string> openedfiles;
     std::string filepath;
@@ -260,14 +278,14 @@ try {
     StrVectorType depresnames;
     StrVectorType includes;
 
-    filepath=lua_tostring(L, 1);
+    filepath=input_pb.resourceinputpath();
     filesize=(hUint)minfs_get_file_size(filepath.c_str());
 
     std::vector<hChar> xmlmem(filesize+1);
     std::ifstream infile;
     infile.open(filepath);
     if (!infile.is_open()) {
-        luaL_errorthrow(L, "Unable to open file %s", filepath.c_str());
+        fatal_error("Unable to open file %s", filepath.c_str());
     }
     memset(xmlmem.data(), 0, filesize+1);
     infile.read(xmlmem.data(), filesize);
@@ -276,58 +294,38 @@ try {
     try {
         xmldoc.parse< rapidxml::parse_default >(xmlmem.data());
     } catch (...) {
-        luaL_errorthrow(L, "Failed to parse material file");
+        fatal_error("Failed to parse material file");
     }
 
-    readMaterialXMLToMaterialData(L, xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
+    readMaterialXMLToMaterialData(xmldoc, filepath.c_str(), &materialresource, &includes, &depresnames);
 
     for (auto i=includes.begin(),n=includes.end(); i!=n; ++i) {
         openedfiles.push_back(*i);
     }
 
-    const hChar* outputpath=lua_tostring(L, 4);
-    std::ofstream output;
-    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
-
-    if (!output.is_open()) {
-        luaL_errorthrow(L, "Unable to open output file %s for writing", outputpath);
-    }
+    Heart::builder::Output output;
 
     //write the resource header
-    {
-        google::protobuf::io::OstreamOutputStream filestream(&output);
-        google::protobuf::io::CodedOutputStream outputstream(&filestream);
-        Heart::proto::MessageContainer msgContainer;
-        msgContainer.set_type_name(materialresource.GetTypeName());
-        msgContainer.set_messagedata(materialresource.SerializeAsString());
-        msgContainer.SerializePartialToCodedStream(&outputstream);
-    }
-    output.close();
+    output.mutable_pkgdata()->set_type_name(materialresource.GetTypeName());
+    output.mutable_pkgdata()->set_messagedata(materialresource.SerializeAsString());
 
     //Return a list of resources this material is dependent on
-    lua_newtable(L); // push table of input files we depend on (absolute paths or relative to game data folder)
-    int idx=1;
-    for (auto i=depresnames.begin(),n=depresnames.end(); i!=n; ++i) {
-        lua_pushstring(L, i->c_str());
-        lua_rawseti(L, -2, idx);
-        ++idx;
+    for (const auto& i : depresnames) {
+        output.add_resourcedependency(i);
     }
-    for (auto i=openedfiles.begin(), n=openedfiles.end(); i!=n; ++i) {
-        lua_pushstring(L, i->c_str());
-        lua_rawseti(L, -2, idx);
-        ++idx;
+    for (const auto& i : openedfiles) {
+        output.add_filedependency(i);
     }
-    return 1;
-} catch (std::exception e) {
-    return lua_error(L);
-}
+
+    google::protobuf::io::OstreamOutputStream filestream(&std::cout);
+    return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
+void readMaterialXMLToMaterialData(const rapidxml::xml_document<>& xmldoc, const hChar* xmlpath, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
     using namespace Heart;
 
     if (hXMLGetter(&xmldoc).FirstChild("material").GetAttributeString("inherit")) {
@@ -360,7 +358,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             }
             incfile.close();
             includes->push_back(fullbasepath);
-            readMaterialXMLToMaterialData(L, xmldocbase, fullbasepath, mat, includes, deps);
+            readMaterialXMLToMaterialData(xmldocbase, fullbasepath, mat, includes, deps);
         }
     }
 
@@ -372,7 +370,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         if (xSampler.GetAttribute("name")) {
             sampler = findOrAddMaterialSampler(mat, xSampler.GetAttribute("name")->value());
         } else { // Error? can't process this!
-            luaL_errorthrow(L, "Can't find name parameter for sampler in material");
+            fatal_error("Can't find name parameter for sampler in material");
         }
 
         if (xSampler.FirstChild("addressu").ToNode()) {
@@ -416,7 +414,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         if (xParameter.GetAttribute("name")) {
             param=findOrAddMaterialParameter(mat, xParameter.GetAttributeString("name","none"));
         } else {
-            luaL_errorthrow(L, "Can't find name for parameter in material");
+            fatal_error("Can't find name for parameter in material");
         }
         if (xParameter.GetAttribute("type")) {
             ptype = xParameter.GetAttributeEnum("type", g_parameterTypes, proto::matparam_none );
@@ -450,7 +448,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
         if (xGroup.GetAttribute("name")) {
             group=findOrAddMaterialGroup(mat, xGroup.GetAttributeString("name","none"));
         } else {
-            luaL_errorthrow(L, "Material group is missing name");
+            fatal_error("Material group is missing name");
         }
         mat->set_totalgroups(mat->totalgroups()+1);
         hXMLGetter xTech = xGroup.FirstChild("technique");
@@ -464,7 +462,7 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             if (xTech.GetAttribute("name")) {
                 tech=findOrAddMaterialTechnique(group, xTech.GetAttributeString("name","none"));
             } else {
-                luaL_errorthrow(L, "Material technique is missing name");
+                fatal_error("Material technique is missing name");
             }
             if (xTech.FirstChild("sort").ToNode()) {
                 tech->set_transparent(hStrICmp(xTech.FirstChild("sort").GetValueString("false"), "true") == 0);
@@ -591,24 +589,5 @@ void readMaterialXMLToMaterialData(lua_State* L, const rapidxml::xml_document<>&
             }
         }
     }
-}
-
-extern "C" {
-
-int MB_API version(lua_State* L) {
-    lua_pushstring(L, "1.0.0");
-    return 1;
-}
-
-//Lua entry point calls
-DLL_EXPORT int MB_API luaopen_material(lua_State *L) {
-    static const luaL_Reg materiallib[] = {
-        {"build"      , materialCompile},
-        {"version", version},
-        {NULL, NULL}
-    };
-    luaL_newlib(L, materiallib);
-    return 1;
-}
 }
 

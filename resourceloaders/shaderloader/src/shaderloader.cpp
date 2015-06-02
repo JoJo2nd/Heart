@@ -3,6 +3,8 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
+#define SDL_MAIN_HANDLED
+
 #include <stdio.h>
 #include <string>
 #include <map>
@@ -17,13 +19,9 @@
 #include "SDL.h"
 #include "resource_common.pb.h"
 #include "resource_shader.pb.h"
+#include "builder.pb.h"
 #include "minfs.h"
-
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
+#include "getopt.h"
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -38,42 +36,28 @@ extern "C" {
 #   pragma warning(pop)
 #endif
 #include <regex>
-
-#if defined PLATFORM_WINDOWS
-#   define SB_API __cdecl
-#elif PLATFORM_LINUX
-#   if BUILD_64_BIT
-#       define SB_API
-#   else
-#       define SB_API __attribute__((cdecl))
-#   endif
-#else
-#   error
+#include <iostream>
+#ifdef _WIN32
+#   include <io.h>
+#   include <fcntl.h>
+#   define snprintf _snprintf
+#endif
+#ifndef MAX_PATH
+#   define MAX_PATH 260
 #endif
 
-#if defined (PLATFORM_WINDOWS)
-#   if defined (shader_builder_EXPORTS)
-#       define DLL_EXPORT __declspec(dllexport)
-#   else
-#       define DLL_EXPORT __declspec(dllimport)
-#   endif
-#else
-#   define DLL_EXPORT
-#endif
+static const char argopts[] = "vi:";
+static struct option long_options[] = {
+    { "version", no_argument, 0, 'z' },
+    { 0, 0, 0, 0 }
+};
 
 typedef unsigned char   uchar;
 typedef unsigned int    uint;
 typedef std::regex_iterator<std::string::iterator> sre_iterator;
 
-#define luaL_errorthrow(L, fmt, ...) \
-    luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, ##__VA_ARGS__ ); \
-    lua_concat(L, 2); \
-    lua_getglobal(L, "print"); \
-    lua_pushvalue(L, -2); \
-    lua_pcall(L, 1, 0, 0); \
-    throw std::exception();
-
+#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
+#define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
 #define VS_COMMON_DEFINES ""
 #define PS_COMMON_DEFINES "precision highp float;\n"
@@ -115,7 +99,7 @@ uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& sha
 uint initGLCompiler(std::string* out_errors);
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params,
     std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
-uint parseShaderSource(lua_State* L, const std::string& shader_path, std::vector<std::string> in_include_paths,
+uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths,
     std::string* out_source_string, std::map<std::string, std::string>* inc_ctx, std::vector<std::string>*);
 
 struct ShaderProfile {
@@ -149,13 +133,13 @@ struct ShaderProfile {
     { "FL11_ds",      { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "1"}, {"HEART_ES2", "0"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "1"} },  Heart::proto::eShaderType_FL11_ds   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
 };
 
-ShaderProfile getShaderProfile(lua_State* L, const char* profile) {
+ShaderProfile getShaderProfile(const char* profile) {
     for (const auto& i : shaderProfiles) {
         if (strcmp(i.profileName, profile) == 0) {
             return i;
         }
     }
-    luaL_errorthrow(L, "profiles %s not supported!", profile);
+    fatal_error("profiles %s not supported!", profile);
     return shaderProfiles[0];
 }
 
@@ -163,110 +147,87 @@ ShaderProfile getShaderProfile(lua_State* L, const char* profile) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int SB_API shaderCompiler(lua_State* L) {
+int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif
     using namespace Heart;
 
-    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TSTRING);
-    luaL_checktype(L, 2, LUA_TTABLE);
-    luaL_checktype(L, 3, LUA_TTABLE);
-    luaL_checktype(L, 4, LUA_TSTRING);
+    google::protobuf::io::IstreamInputStream input_stream(&std::cin);
+    Heart::builder::Input input_pb;
 
-try {
+    int c;
+    int option_index = 0;
+    bool verbose = false, use_stdin = true;
+
+    while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
+        switch (c) {
+        case 'z': fprintf(stdout, "heart shader builder v0.8.0"); exit(0);
+        case 'v': verbose = 1; break;
+        case 'i': {
+            std::ifstream input_file_stream;
+            input_file_stream.open(optarg, std::ios_base::binary | std::ios_base::in);
+            if (input_file_stream.is_open()) {
+                google::protobuf::io::IstreamInputStream file_stream(&input_file_stream);
+                input_pb.ParseFromZeroCopyStream(&file_stream);
+                use_stdin = false;
+            }
+        } break;
+        default: return 2;
+        }
+    }
+
+    if (use_stdin) {
+        input_pb.ParseFromZeroCopyStream(&input_stream);
+    }
+
     std::vector<char> scratchbuffer;
     std::vector<ShaderProfile> profilesToCompile;
-    scratchbuffer.reserve(1024);
-    const char* entry = nullptr;
-    const char* profile = nullptr;
-    entry="main";
-
-    lua_getfield(L, 3, "profiles");
-    if (!lua_istable(L, -1)) {
-        luaL_errorthrow(L, "profiles is an unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
-    }
-    uint i = 0;
-    lua_pushnil(L);
-    while (lua_next(L, -2) != 0) {
-        /* uses 'key' (at index -2) and 'value' (at index -1) */
-        if (!lua_isstring(L, -2) || !lua_isstring(L, -1)) {
-            luaL_errorthrow(L, "profiles table entry unexpected type(got [%s]=%s; expected [%s]=%s)",
-                lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
-            break;
-        }
-        profilesToCompile.push_back(getShaderProfile(L, lua_tostring(L, -1)));
-        /* removes 'value'; keeps 'key' for next iteration */
-        lua_pop(L, 1);
-        ++i;
-    }
-    lua_pop(L, 1);
-
-    ShaderCompileParams shader_compile_params;
-    uint compileFlags = 0;
-#if defined (PLATFORM_WINDOWS)    
-    lua_getfield(L, 3, "debug");
-    if (lua_toboolean(L, -1)) {
-        compileFlags |= D3DCOMPILE_DEBUG;
-    }
-    lua_pop(L, 1);
-    lua_getfield(L, 3, "skipoptimization");
-    if (lua_toboolean(L, -1)) {
-        compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-    }
-    lua_pop(L, 1);
-    lua_getfield(L, 3, "warningsaserrors");
-    if (lua_toboolean(L, -1)) {
-        compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-    }
-    lua_pop(L, 1);
-#endif
-    uint definecount=0;
-    bool hasdefines=false;
-    lua_getfield(L, 3, "defines");
-    if (!lua_istable(L, -1) && !lua_isnil(L, -1)) {
-        luaL_errorthrow(L, "defines unexpected type (got %s; expected %s)", lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TTABLE));
-    }
-    if (lua_istable(L, -1)) {
-        hasdefines=true;
-    }
-
-    shader_compile_params.entry_ = entry;
-    shader_compile_params.compileFlags_ = compileFlags;
-    shader_compile_params.macros_.emplace_back("HEART_ENGINE", "1");
-    if (hasdefines) {
-        uint i=0;
-        lua_pushnil(L);
-        while (lua_next(L, -2) != 0) {
-            /* uses 'key' (at index -2) and 'value' (at index -1) */
-            if (!lua_isstring(L,-2) && !lua_isstring(L,-1)) {
-                luaL_errorthrow(L, "DEFINE table entry unexpected type(got [%s]=%s; expected [%s]=%s)", 
-                    lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)), lua_typename(L, LUA_TSTRING), lua_typename(L, LUA_TSTRING));
-                break;
-            }
-            shader_compile_params.macros_.emplace_back(lua_tostring(L,-2), lua_tostring(L,-1));
-            /* removes 'value'; keeps 'key' for next iteration */
-            lua_pop(L, 1);
-            ++i;
-        }
-    }
-    lua_pop(L, 1);
-
-    const char* path=lua_tostring(L, 1);
     std::vector<std::string> base_include_paths;
+    ShaderCompileParams shader_compile_params;
+    scratchbuffer.reserve(1024);
+    const char* entry = "main";
+    const char* profile = nullptr;
+    shader_compile_params.entry_ = entry;
+    shader_compile_params.compileFlags_ = 0;
 
-    lua_getfield(L, 3, "include_dirs");
-    if (lua_istable(L, -1)) {
-        size_t pathlen=strlen(path)+1;
-        scratchbuffer.resize(strlen(path)+1);
-        minfs_path_parent(path, scratchbuffer.data(), pathlen);
-        std::string source_root = scratchbuffer.data();
-        lua_pushnil(L);
-        while (lua_next(L, -2) != 0) {
-            /* uses 'key' (at index -2) and 'value' (at index -1) */
-            if (lua_isstring(L, -1)) {
-                base_include_paths.push_back(source_root + "/" + lua_tostring(L, -1));
+    char root_path[MAX_PATH];
+    minfs_path_parent(input_pb.resourceinputpath().c_str(), root_path, MAX_PATH);
+
+    for (int i = 0, n = input_pb.buildparameters_size(); i < n; ++i) {
+        auto& param = input_pb.buildparameters(i);
+        if (param.name() == "profiles") {
+            for (auto pi = 0; pi < param.values_size(); ++pi) {
+                fatal_error_check(param.values(pi).has_strvalue(), "profiles must contain string values"); 
+                profilesToCompile.push_back(getShaderProfile(param.values(pi).strvalue().c_str()));
             }
-            /* removes 'value'; keeps 'key' for next iteration */
-            lua_pop(L, 1);
+        } else if (param.name() == "include_dirs") {
+            for (auto pi = 0; pi < param.values_size(); ++pi) {
+                fatal_error_check(param.values(pi).has_strvalue(), "include_dirs must contain string values");
+                char path_tmp[MAX_PATH];
+                minfs_path_join(root_path, param.values(pi).strvalue().c_str(), path_tmp, MAX_PATH);
+                base_include_paths.push_back(path_tmp);
+            }
+        } else if (param.name() == "debug" || param.name() == "skipoptimization" || param.name() == "warningsaserrors" || param.name() == "includesource") {
+            // todo: handle
+        } else {
+            // We assume its a define of some kind
+            fatal_error_check(param.values_size() == 1, "shader defines can't be arrays of parameters");
+            if (param.values(0).has_strvalue()) {
+                shader_compile_params.macros_.emplace_back(param.name().c_str(), param.values(0).strvalue().c_str());
+            } else if (param.values(0).has_boolvalue()) {
+                shader_compile_params.macros_.emplace_back(param.name().c_str(), param.values(0).boolvalue() ? "true" : "false");
+            } else if (param.values(0).has_intvalue()) {
+                char buf[4096];
+                snprintf(buf, 4096, "%d", param.values(0).intvalue());
+                shader_compile_params.macros_.emplace_back(param.name().c_str(), buf);
+            } else if (param.values(0).has_floatvalue()) {
+                char buf[4096];
+                snprintf(buf, 4096, "%f", param.values(0).floatvalue());
+                shader_compile_params.macros_.emplace_back(param.name().c_str(), buf);
+            }
         }
     }
 
@@ -274,7 +235,7 @@ try {
     std::string full_shader_source;
     std::map<std::string, std::string> parse_ctx;
     std::vector<std::string> included_files;
-    parseShaderSource(L, path, base_include_paths, &full_shader_source, &parse_ctx, &included_files);
+    parseShaderSource(input_pb.resourceinputpath().c_str(), base_include_paths, &full_shader_source, &parse_ctx, &included_files);
 
     for (const auto& i : profilesToCompile) {
         Heart::proto::ShaderResource* shaderresource = resource_container.add_shaderresources();
@@ -288,7 +249,7 @@ try {
         }
         local_shader_compile_params.profile_ = i.type;
         if (i.func_(&full_result_source, local_shader_compile_params, &error_string, &bin_blob, &bin_blob_len) != 0) {
-            luaL_errorthrow(L, "Shader Compile failed! Error Msg ::\n%s", error_string.c_str());
+            fatal_error("Shader Compile failed! Error Msg ::\n%s", error_string.c_str());
         }
 
         shaderresource->set_rendersystem(i.system_);
@@ -302,45 +263,25 @@ try {
     }
 
     //write the resource
-    const char* outputpath=lua_tostring(L, 4);
-    std::ofstream output;
-    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
-    if (!output.is_open()) {
-        luaL_errorthrow(L, "Unable to open output file %s", outputpath);
-    }
+    Heart::builder::Output output;
 
-    google::protobuf::io::OstreamOutputStream filestream(&output);
-    google::protobuf::io::CodedOutputStream outputstream(&filestream);
-    {
-        google::protobuf::io::OstreamOutputStream filestream(&output);
-        google::protobuf::io::CodedOutputStream outputstream(&filestream);
-        Heart::proto::MessageContainer msgContainer;
-        msgContainer.set_type_name(resource_container.GetTypeName());
-        msgContainer.set_messagedata(resource_container.SerializeAsString());
-        msgContainer.SerializePartialToCodedStream(&outputstream);
-    }
-    output.close();
+    //write the resource header
+    output.mutable_pkgdata()->set_type_name(resource_container.GetTypeName());
+    output.mutable_pkgdata()->set_messagedata(resource_container.SerializeAsString());
 
-    lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
-    int idx=1;
     for (const auto& i : included_files) {
-        lua_pushstring(L, i.c_str());
-        lua_rawseti(L, -2, idx);
-        ++idx;
+        output.add_filedependency(i);
     }
 
-    return 1;
-} catch (std::exception e) {
-    return lua_error(L);
-}
+    google::protobuf::io::OstreamOutputStream filestream(&std::cout);
+    return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-uint parseShaderSource(lua_State* L,
-const std::string& shader_path, 
+uint parseShaderSource(const std::string& shader_path, 
 std::vector<std::string> in_include_paths, 
 std::string* out_source_string,
 std::map<std::string, std::string>* inc_ctx,
@@ -385,16 +326,13 @@ std::vector<std::string>* inc_files) {
             if (inc_source_itr != inc_ctx->end()) {
                 did_include = true;
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_source_itr->second));
-            } else if (parseShaderSource(L, inc_file, in_include_paths, &inc_string, inc_ctx, inc_files) == 0) {
+            } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx, inc_files) == 0) {
                 did_include = true;
                 inc_ctx->insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
             }
         }
-        if (!did_include) {
-            //todo: throw error!
-            luaL_errorthrow(L, "Cannot include file %s", (*re_i)[1].str().c_str());
-        }
+        fatal_error_check(did_include, "Cannot include file %s", (*re_i)[1].str().c_str());
     }
     // replace #includes
     std::smatch re_match;
@@ -659,23 +597,3 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     return 0;
 }
 
-extern "C" {
-
-    int SB_API version(lua_State* L) {
-        lua_pushstring(L, "1.0.5");
-        return 1;
-    }
-
-//Lua entry point calls
-DLL_EXPORT int SB_API luaopen_gpuprogram(lua_State *L) {
-    static const luaL_Reg gpuproglib[] = {
-        {"build",shaderCompiler},
-        { "version", version },
-        {NULL, NULL}
-    };
-
-    luaL_newlib(L, gpuproglib);
-
-    return 1;
-}
-};

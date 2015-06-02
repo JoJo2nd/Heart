@@ -6,14 +6,11 @@
 #include "minfs.h"
 #include "resource_common.pb.h"
 #include "resource_font.pb.h"
+#include "builder.pb.h"
+#include "getopt.h"
 #include <fstream>
 #include <memory>
-
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
+#include <iostream>
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -29,54 +26,62 @@ extern "C" {
 #   pragma warning(pop)
 #endif
 
-#if defined PLATFORM_WINDOWS
-#   define FB_API __cdecl
-#elif PLATFORM_LINUX
-#   if BUILD_64_BIT
-#       define FB_API
-#   else
-#       define FB_API __attribute__((cdecl))
-#   endif
-#else
-#   error
+#ifdef _WIN32
+#   include <io.h>
+#   include <fcntl.h>
 #endif
 
-#if defined (PLATFORM_WINDOWS)
-#   if defined (font_builder_EXPORTS)
-#       define DLL_EXPORT __declspec(dllexport)
-#   else
-#       define DLL_EXPORT __declspec(dllimport)
-#   endif
-#else
-#   define DLL_EXPORT
+static const char argopts[] = "vi:";
+static struct option long_options[] = {
+    { "version", no_argument, 0, 'z' },
+    { 0, 0, 0, 0 }
+};
+
+#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
+#define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
+
+int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
 #endif
-
-#define luaL_errorthrow(L, fmt, ...) \
-    luaL_where(L, 1); \
-    lua_pushfstring(L, fmt, ##__VA_ARGS__ ); \
-    lua_concat(L, 2); \
-    throw std::exception();
-
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-int fontCompile(lua_State* L) {
     using namespace Heart;
-    
-    /* Args from Lua (1: input files table, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    luaL_checktype(L, 1, LUA_TSTRING);
-    luaL_checktype(L, 2, LUA_TTABLE);
-    luaL_checktype(L, 3, LUA_TTABLE);
-    luaL_checktype(L, 4, LUA_TSTRING);
+    google::protobuf::io::IstreamInputStream input_stream(&std::cin);
+    Heart::builder::Input input_pb;
 
-try {
+    int c;
+    int option_index = 0;
+    bool verbose = false, use_stdin = true;
+
+    while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
+        switch (c) {
+        case 'z': fprintf(stdout, "heart font builder v0.8.0"); exit(0);
+        case 'v': verbose = 1; break;
+        case 'i': {
+            std::ifstream input_file_stream;
+            input_file_stream.open(optarg, std::ios_base::binary | std::ios_base::in);
+            if (input_file_stream.is_open()) {
+                google::protobuf::io::IstreamInputStream file_stream(&input_file_stream);
+                input_pb.ParseFromZeroCopyStream(&file_stream);
+                use_stdin = false;
+            }
+        } break;
+        default: return 2;
+        }
+    }
+
+    if (use_stdin) {
+        input_pb.ParseFromZeroCopyStream(&input_stream);
+    }
+    
     std::vector<char> scratchbuffer;
     scratchbuffer.reserve(1024*10);
-    const char* ttf_path=lua_tostring(L, 1);
+    const char* ttf_path=input_pb.resourceinputpath().c_str();
     size_t filesize=minfs_get_file_size(ttf_path);
     scratchbuffer.resize(filesize+1);
     FILE* f = fopen(ttf_path, "rt");
+    fatal_error_check(f, "Unable to open output file %s", ttf_path);
     fread(scratchbuffer.data(), 1, filesize, f);
     fclose(f);
     scratchbuffer[filesize] = 0;
@@ -84,51 +89,13 @@ try {
     proto::TTFResource resource_container;
     resource_container.set_ttfdata(scratchbuffer.data(), filesize);
 
-    //write the resource
-    const char* outputpath=lua_tostring(L, 4);
-    std::ofstream output;
-    output.open(outputpath, std::ios_base::out|std::ios_base::binary);
-    if (!output.is_open()) {
-        luaL_errorthrow(L, "Unable to open output file %s", outputpath);
-    }
+    Heart::builder::Output output;
 
-    google::protobuf::io::OstreamOutputStream filestream(&output);
-    google::protobuf::io::CodedOutputStream outputstream(&filestream);
-    {
-        google::protobuf::io::OstreamOutputStream filestream(&output);
-        google::protobuf::io::CodedOutputStream outputstream(&filestream);
-        Heart::proto::MessageContainer msgContainer;
-        msgContainer.set_type_name(resource_container.GetTypeName());
-        msgContainer.set_messagedata(resource_container.SerializeAsString());
-        msgContainer.SerializePartialToCodedStream(&outputstream);
-    }
-    output.close();
+    //write the resource header
+    output.mutable_pkgdata()->set_type_name(resource_container.GetTypeName());
+    output.mutable_pkgdata()->set_messagedata(resource_container.SerializeAsString());
 
-    // push table of files files that where included (always empty for ttf fonts)
-    lua_newtable(L); // push table of files files that where included by the shader (parse_ctx should have this info)
-
-    return 1;
-} catch (std::exception e) {
-    return lua_error(L);
-}
-}
-
-extern "C" {
-
-    int FB_API version(lua_State* L) {
-        lua_pushstring(L, "1.0.0");
-        return 1;
-    }
-
-//Lua entry point calls
-DLL_EXPORT int FB_API luaopen_font(lua_State *L) {
-    static const luaL_Reg fontlib[] = {
-        {"build"      , fontCompile},
-        {"version", version},
-        {NULL, NULL}
-    };
-    luaL_newlib(L, fontlib);
-    return 1;
-}
+    google::protobuf::io::OstreamOutputStream filestream(&std::cout);
+    return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
 }
 

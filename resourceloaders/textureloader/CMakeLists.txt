@@ -7,6 +7,7 @@ set( TEXTURE_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
     "${TEXTURE_BUILDER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
+	"${GETOPT_PORT_INCLUDE_DIR}"
 if (PLATFORM_WINDOWS)
 	"${EXTERNAL_SRC_ROOT}/nvidia-texture-tools/src"
 endif()
@@ -41,12 +42,9 @@ link_directories(
 	${TEXTURE_BUILDER_LIB_DIRS}
 	${nvtt_LIB_DIR}
 	${freeimage_LIB_DIR})
-add_library(texture_builder SHARED ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder debug lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY_DEBUG})
-target_link_libraries(texture_builder optimized lua52 crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY})
-
-set_target_properties(texture_builder PROPERTIES PREFIX "")
-set_target_properties(texture_builder PROPERTIES OUTPUT_NAME texture)
+add_executable(texture_builder ${TEXTURE_BUILDER_SRC_FILES})
+target_link_libraries(texture_builder debug getopt_port crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY_DEBUG})
+target_link_libraries(texture_builder optimized getopt_port crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY})
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

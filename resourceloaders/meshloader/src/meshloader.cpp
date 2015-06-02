@@ -28,6 +28,12 @@
 
 #include "resource_mesh.pb.h"
 
+int main(int argc, char *argv[]) {
+    // just die
+    return -10;
+}
+
+#if 0
 #include "Heart.h" //TODO: remove this include?
 #include "minfs.h"
 
@@ -275,4 +281,4 @@ DLL_EXPORT int MB_API luaopen_mesh(lua_State *L) {
     return 1;
 }
 }
-
+#endif

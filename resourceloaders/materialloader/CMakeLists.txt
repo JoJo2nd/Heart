@@ -7,6 +7,7 @@ set( MATERIAL_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
 	${MINFS_INCLUDE_DIR}
     "${MATERIAL_BUILDER_SRC_DIR}/src"
+	${GETOPT_PORT_INCLUDE_DIR}
 )
 file(GLOB MATERIAL_BUILDER_SRC_FILES 
     "${MATERIAL_BUILDER_SRC_DIR}/src/*.h"
@@ -24,12 +25,11 @@ endif()
 
 include_directories(${MATERIAL_BUILDER_INCLUDE_DIRS})
 link_directories(${MATERIAL_BUILDER_LIB_DIRS})
-add_library(material_builder SHARED ${MATERIAL_BUILDER_SRC_FILES})
-target_link_libraries(material_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto minfs)
-target_link_libraries(material_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto minfs)
+add_executable(material_builder ${MATERIAL_BUILDER_SRC_FILES})
+target_link_libraries(material_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto minfs getopt_port)
+target_link_libraries(material_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto minfs getopt_port)
 
 set_target_properties(material_builder PROPERTIES PREFIX "")
-set_target_properties(material_builder PROPERTIES OUTPUT_NAME material)
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

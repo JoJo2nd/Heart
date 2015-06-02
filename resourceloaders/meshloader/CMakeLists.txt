@@ -39,12 +39,9 @@ source_group(source  FILES ${MESH_BUILDER_SRC_FILES})
 
 include_directories(${MESH_BUILDER_INCLUDE_DIRS})
 link_directories(${MESH_BUILDER_LIB_DIRS})
-add_library(mesh_builder SHARED ${MESH_BUILDER_SRC_FILES})
+add_executable(mesh_builder ${MESH_BUILDER_SRC_FILES})
 target_link_libraries(mesh_builder debug ${PROTOBUF_LIBRARY_DEBUG} lua52 crypto proto minfs)
 target_link_libraries(mesh_builder optimized ${PROTOBUF_LIBRARY} lua52 crypto proto minfs)
-
-set_target_properties(mesh_builder PROPERTIES PREFIX "")
-set_target_properties(mesh_builder PROPERTIES OUTPUT_NAME mesh)
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(

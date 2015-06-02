@@ -9,12 +9,7 @@
 #include <string>
 #include <stdio.h>
 #include <vector>
-
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-};
+#include <iostream>
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -31,29 +26,21 @@ extern "C" {
 
 #include "resource_common.pb.h"
 #include "resource_texture.pb.h"
+#include "builder.pb.h"
+#include "getopt.h"
 #include <memory>
-
-#if defined PLATFORM_WINDOWS
-#   define TB_API __cdecl
-#elif PLATFORM_LINUX
-#   if BUILD_64_BIT
-#       define TB_API
-#   else
-#       define TB_API __attribute__((cdecl))
-#   endif
-#else
-#   error
+#ifdef _WIN32
+#   include <io.h>
+#   include <fcntl.h>
 #endif
 
-#if defined (PLATFORM_WINDOWS)
-#   if defined (texture_builder_EXPORTS)
-#       define DLL_EXPORT __declspec(dllexport)
-#   else
-#       define DLL_EXPORT __declspec(dllimport)
-#   endif
-#else
-#   define DLL_EXPORT
-#endif
+static const char argopts[] = "vi:";
+static struct option long_options[] = {
+    { "version", no_argument, 0, 'z' },
+    { 0, 0, 0, 0 }
+};
+
+#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
 
 namespace FreeImageFileIO
 {
@@ -78,25 +65,41 @@ namespace FreeImageFileIO
     }
 }
 
-const char* textureFormats[] = {
+struct EnumName {
+    const char* name;
+    int value;
+};
+#define define_enum_name(name, value) {name, (int)value}
+
+EnumName textureFormats[] = {
     // No compression.
-    "rgba",// Format_RGBA = Format_RGB,
+    define_enum_name("rgba", nvtt::Format_RGBA),// Format_RGBA = Format_RGB,
     // // DX10 formats.
-    "bc1",// Format_BC1 = Format_DXT1,
-    "bc1a",// Format_BC1a = Format_DXT1a,
-    "bc2",// Format_BC2 = Format_DXT3,
-    "bc3",// Format_BC3 = Format_DXT5,
-    "bc3n",// Format_BC3n = Format_DXT5n,
-    "bc4",// Format_BC4,     // ATI1
-    "bc5",// Format_BC5,     // 3DC, ATI2
+    define_enum_name("bc1", nvtt::Format_BC1),// Format_BC1 = Format_DXT1,
+    define_enum_name("bc1a", nvtt::Format_BC1),// Format_BC1a = Format_DXT1a,
+    define_enum_name("bc2", nvtt::Format_BC2),// Format_BC2 = Format_DXT3,
+    define_enum_name("bc3", nvtt::Format_BC3),// Format_BC3 = Format_DXT5,
+    define_enum_name("bc3n", nvtt::Format_BC3n),// Format_BC3n = Format_DXT5n,
+    define_enum_name("bc4", nvtt::Format_BC4),// Format_BC4,     // ATI1
+    define_enum_name("bc5", nvtt::Format_BC5),// Format_BC5,     // 3DC, ATI2
 };
 
-const char* qualityFormats[] = {
-    "fastest",      // Quality_Fastest,
-    "normal",       // Quality_Normal,
-    "production",   // Quality_Production,
-    "highest",      // Quality_Highest,
+EnumName qualityFormats[] = {
+    define_enum_name("fastest",nvtt::Quality_Fastest),      // Quality_Fastest,
+    define_enum_name("normal",nvtt::Quality_Normal),       // Quality_Normal,
+    define_enum_name("production",nvtt::Quality_Production),   // Quality_Production,
+    define_enum_name("highest",nvtt::Quality_Highest),      // Quality_Highest,
 };
+
+template <typename t_ty, size_t n>
+t_ty getEnumFromName(const char* name, EnumName (&names)[n], t_ty def) {
+    for (const auto i : names) {
+        if (strcmp(name, i.name) == 0) {
+            return (t_ty)i.value;
+        }
+    }
+    return def;
+}
 
 #define getPitchFromWidth(w,bitsPerPixel) (( w * bitsPerPixel + 7 ) / 8)
 size_t getDXTTextureSize(bool dxt1, size_t width, size_t height) {
@@ -109,7 +112,8 @@ size_t getDXTTextureSize(bool dxt1, size_t width, size_t height) {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-static bool writeOutTexture(const char* input_path, const char* output_path, bool gammacorrect, nvtt::Format format, nvtt::Quality quality) {
+static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::Format format, nvtt::Quality quality) {
+    Heart::builder::Output output;
     FreeImageIO fiIO;
     fiIO.read_proc=&FreeImageFileIO::read_proc;
     fiIO.seek_proc=&FreeImageFileIO::seek_proc;
@@ -263,84 +267,80 @@ static bool writeOutTexture(const char* input_path, const char* output_path, boo
             delete[] data; 
             data=nullptr;
 
-            std::ofstream output;
-            output.open(output_path, std::ios_base::out|std::ios_base::binary);
-            if (!output.is_open()) {
-                printf("Couldn't open %s for writing", output_path);
-                return false;
-            }
-
-            {
-                google::protobuf::io::OstreamOutputStream filestream(&output);
-                google::protobuf::io::CodedOutputStream outputstream(&filestream);
-                Heart::proto::MessageContainer msgContainer;
-                msgContainer.set_type_name(textureRes.GetTypeName());
-                msgContainer.set_messagedata(textureRes.SerializeAsString());
-                msgContainer.SerializePartialToCodedStream(&outputstream);
-            }
-            output.close();
+            output.mutable_pkgdata()->set_type_name(textureRes.GetTypeName());
+            output.mutable_pkgdata()->set_messagedata(textureRes.SerializeAsString());
+        } else {
+            return false;
         }
         fclose(file);
-    }
-    else {
-        //error
+    } else {
+        return false;
     }
 
-    return true;
+    google::protobuf::io::OstreamOutputStream filestream(&std::cout);
+    return output.SerializeToZeroCopyStream(&filestream);
 }
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-int TB_API textureCompile(lua_State* L) {
-    /* Args from Lua 1: input file, 2: dep files table, 3: parameter table, 4: outputpath)*/
-    const char* input_path = luaL_checkstring(L, 1);
-    luaL_checktype(L, 2, LUA_TTABLE);
-    luaL_checktype(L, 3, LUA_TTABLE);
-    const char* output_path = luaL_checkstring(L, 4);
+int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stderr), _O_BINARY);
+#endif
+
+    google::protobuf::io::IstreamInputStream input_stream(&std::cin);
+    Heart::builder::Input input_pb;
+
+    int c;
+    int option_index = 0;
+    bool verbose = false, use_stdin = true;
+
+    while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
+        switch (c) {
+        case 'z': fprintf(stdout, "heart texture builder v0.8.0"); exit(0);
+        case 'v': verbose = 1; break;
+        case 'i': {
+            std::ifstream input_file_stream;
+            input_file_stream.open(optarg, std::ios_base::binary | std::ios_base::in);
+            if (input_file_stream.is_open()) {
+                google::protobuf::io::IstreamInputStream file_stream(&input_file_stream);
+                input_pb.ParseFromZeroCopyStream(&file_stream);
+                use_stdin = false;
+            }
+        } break;
+        default: return 2;
+        }
+    }
+
+    if (use_stdin) {
+        input_pb.ParseFromZeroCopyStream(&input_stream);
+    }
+
     bool gammaCorrect = false;
-    nvtt::Format texFmt;
-    nvtt::Quality quality;
+    nvtt::Format texFmt = nvtt::Format_BC1;
+    nvtt::Quality quality = nvtt::Quality_Fastest;
 
-    lua_getfield(L, 3, "sRGB");
-    if (lua_isboolean(L, -1)) {
-        gammaCorrect = lua_toboolean(L, -1) != 0;
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 3, "format");
-    texFmt = (nvtt::Format)luaL_checkoption(L, -1, "bc1", textureFormats);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 3, "quality");
-    quality = (nvtt::Quality)luaL_checkoption(L, -1, "normal", qualityFormats);
-    lua_pop(L, 1);
-
-    if (!writeOutTexture(input_path, output_path, gammaCorrect, texFmt, quality)) {
-        return luaL_error(L, "Texture build failed");
+    for (int i=0, n=input_pb.buildparameters_size(); i < n; ++i) {
+        auto& param = input_pb.buildparameters(i);
+        if (param.name() == "sRGB") {
+            fatal_error_check(param.values_size() && param.values(0).has_boolvalue(), "sRGB is not a boolean value");
+            gammaCorrect = param.values(0).boolvalue();
+        } else if (param.name() == "format") {
+            fatal_error_check(param.values_size() && param.values(0).has_strvalue(), "format is not a boolean value");
+            texFmt = getEnumFromName<nvtt::Format>(param.values(0).strvalue().c_str(), textureFormats, nvtt::Format_BC1);
+        } else if (param.name() == "quality") {
+            fatal_error_check(param.values_size() && param.values(0).has_strvalue(), "quality is not a boolean value");
+            quality = getEnumFromName<nvtt::Quality>(param.values(0).strvalue().c_str(), qualityFormats, nvtt::Quality_Fastest);
+        }
     }
 
-    //return an empty table
-    lua_newtable(L);
-    return 1;
-}
-
-extern "C" {
-
-    int TB_API version(lua_State* L) {
-        lua_pushstring(L, "1.0.0");
-        return 1;
+    if (!writeOutTexture(input_pb.resourceinputpath().c_str(), gammaCorrect, texFmt, quality)) {
+        return -2;
     }
 
-//Lua entry point calls
-DLL_EXPORT int TB_API luaopen_texture(lua_State *L) {
-    static const luaL_Reg texturelib[] = {
-        {"build",textureCompile},
-        { "version", version },
-        {NULL, NULL}
-    };
-    luaL_newlib(L, texturelib);
-    return 1;
-}
+    return 0;
 }

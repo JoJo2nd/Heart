@@ -177,6 +177,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
                 jobinfo->resMemEnd_= resourceJobArray_[i].resMemStart_+packageHeader_.entries(i).entrysize();
                 jobinfo->createdResource_=nullptr;
                 jobinfo->resourceID_=hStringID(packageHeader_.entries(i).entryname().c_str());
+                jobinfo->resourceType_=hStringID(packageHeader_.entries(i).entrytype().c_str());
                 jobinfo->linked_=false;
 
                 proto::ResourceHeader resheader;
