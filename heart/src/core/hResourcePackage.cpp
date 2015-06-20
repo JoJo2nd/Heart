@@ -122,7 +122,9 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         resourcestream.PopLimit(limit);
 
         for (hInt i=0, n=packageHeader_.packagedependencies_size(); i<n; ++i) {
-            packageLinks_.push_back(hStringID(packageHeader_.packagedependencies(i).c_str()));
+            if (packageHeader_.packagedependencies(i).length()) {
+                packageLinks_.push_back(hStringID(packageHeader_.packagedependencies(i).c_str()));
+            }
         }
         for (hInt i=0, n=packageHeader_.entries_size(); i<n; ++i) {
             packageHeader_.mutable_entries(i)->set_entryoffset(packageHeader_.entries(i).entryoffset()+headersize);
@@ -137,6 +139,13 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         hcAssert(isInReadyState());//TODO: Allow canceling?
         for (const auto& i:resourceJobArray_) {
             hResourceManager::removeResource(i.resourceID_);
+        }
+        for (hUint i = 0, n = packageLinks_.size(); i < n; ++i) {
+            hcAssert(packageLinks_[i].length());
+            // It's is valid to depend on ourselves
+            if (hStrCmp(packageLinks_[i].c_str(), packageName_.c_str())) {
+                hResourceManager::unloadPackage(packageLinks_[i].c_str());
+            }
         }
         packageState_ = PkgState::Unloaded;
     }
@@ -162,7 +171,9 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             } break;
         case PkgState::RequestLinkedPkgs: {
                 for (hUint i=0, n=packageLinks_.size(); i<n; ++i) {
-                    if (packageLinks_[i].length() > 0) { // !!JM todo: find out why this package name is empty
+                    hcAssert(packageLinks_[i].length());
+                    // It's is valid to depend on ourselves
+                    if (hStrCmp(packageLinks_[i].c_str(), packageName_.c_str())) {
                         hResourceManager::loadPackage(packageLinks_[i].c_str());
                     }
                 }

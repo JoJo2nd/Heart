@@ -65,7 +65,7 @@ namespace Heart
     class hResourcePackage : public hIReferenceCounted
     {
     public:
-        hObjectType(Heart::hResourcePackage, Heart::proto::PackageHeader);
+        hObjectType(hResourcePackage, Heart::proto::PackageHeader);
 
         hResourcePackage();
         ~hResourcePackage();

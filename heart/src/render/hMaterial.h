@@ -101,7 +101,7 @@ namespace Heart {
         std::unique_ptr<hStringID[]>                                passProgIDs_;
 
     public:
-        hObjectType(Heart::hMaterial, Heart::proto::MaterialResource);
+        hObjectType(hMaterial, Heart::proto::MaterialResource);
 
         hMaterial() {}
         ~hMaterial() {}

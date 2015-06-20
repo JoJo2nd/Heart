@@ -30,6 +30,7 @@
 #include "getopt.h"
 #include "lua/builder_script.inl"
 #include "minfs.h"
+#include "cryptoMD5.h"
 #include "builder.pb.h"
 #include "package.pb.h"
 #if defined (_MSC_VER)
@@ -447,6 +448,36 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
     return builder;
 }
 
+std::unordered_map<std::string, std::string> fileMD5Map;
+typedef std::unordered_map<std::string, std::string>::value_type MD5Pair;
+
+void md5_filereader(const char* origpath, const char* file, void* user) {
+	char fullpath[BUILDER_MAX_PATH];
+	minfs_path_join(origpath, file, fullpath, BUILDER_MAX_PATH);
+	if (minfs_is_directory(fullpath)) {
+		char inner_scratch[4096];
+		minfs_read_directory(fullpath, inner_scratch, sizeof(inner_scratch), md5_filereader, user);
+	} else {
+		cyMD5_CTX md5;
+		cyMD5Init(&md5);
+		auto fsize = minfs_get_file_size(fullpath);
+		FILE* f = fopen(fullpath, "rb");
+		if (f) {
+			cyByte md5digest[CY_MD5_LEN];
+			char md5str[CY_MD5_STR_LEN]={0};
+			std::unique_ptr<char[]> fdata(new char[fsize]);
+			fread(fdata.get(), 1, fsize, f);
+			fclose(f);
+			cyMD5Update(&md5, fdata.get(), (cyUint)fsize);
+			cyMD5Final(&md5, md5digest);
+			cyMD5DigestToString(md5digest, md5str);
+			fileMD5Map.insert(MD5Pair(fullpath, md5str));
+		} else {
+			fprintf(stderr, "Unable to generate MD5 for %s\n", fullpath);
+		}
+	}
+}
+
 int main (int argc, char **argv) {
     int result = EXIT_SUCCESS;
     int verbose = 0, corecount = 2;
@@ -518,13 +549,20 @@ int main (int argc, char **argv) {
             return EXIT_FAILURE;
         }
 
-        auto builder_ctx = open_builder_lib(L);
+		auto builder_ctx = open_builder_lib(L);
+		auto file_md5_worker = std::thread([&](const std::string& src_dir){
+			char scratch[4096];
+			minfs_read_directory(src_dir.c_str(), scratch, sizeof(scratch), md5_filereader, nullptr);
+		}, builder_ctx->srcDataPath);
+
         builder_ctx->push(builder_ctx->srcDataPath.c_str(), "");
         result = luaL_dofile(L, builder_ctx->rootBuilderScript.c_str());
         if (handleLuaFileReadError(L, result)) {
             return EXIT_FAILURE;
         }
         builder_ctx->pop();
+
+		file_md5_worker.join();
 
         //Spawn worker threads
         std::mutex mtx;
@@ -553,7 +591,21 @@ int main (int argc, char **argv) {
                     std::string res_stdout_path = cached_res_path;
                     res_stdout_path += ".stdout";
                     if (minfs_path_exist(res_stdout_path.c_str())) {
-                        // TODO: Check the cached 
+                        std::ifstream in_data;
+                        in_data.open(res_stdout_path, std::ios_base::in | std::ios_base::binary);
+                        if (in_data.is_open()) {
+                            Heart::builder::Output test_output;
+                            test_output.ParseFromIstream(&in_data);
+                            build_required = test_output.filetimestamps_size() == 0;
+                            for (int i = 0, n = test_output.filetimestamps_size(); i < n; ++i) {
+                                auto it = fileMD5Map.find(test_output.filetimestamps(i).filepath());
+                                if (it == fileMD5Map.end() || !test_output.filetimestamps(i).has_hash() || it->second != test_output.filetimestamps(i).hash()) {
+                                    //fprintf(stderr, "Building %s because it doesn't match cache (%s, %s)\n", resource_path.c_str(), test_output.filetimestamps(i).filepath().c_str(), test_output.filetimestamps(i).hash().c_str());
+                                    build_required = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                     if (build_required) {
                         if (builder_ctx->saveStdIn) {
@@ -605,6 +657,18 @@ int main (int argc, char **argv) {
                         Heart::builder::Output test_output;
                         test_output.ParseFromString(finaloutput);
 
+                        for (int i=0, n=test_output.filedependency_size(); i < n; ++i) {
+                            auto* stamp = test_output.add_filetimestamps();
+                            auto dep_filepath = test_output.filedependency(i);
+                            char canon_path[BUILDER_MAX_PATH];
+                            minfs_canonical_path(dep_filepath.c_str(), canon_path, BUILDER_MAX_PATH);
+                            stamp->set_filepath(canon_path);
+                            auto it = fileMD5Map.find(canon_path);
+                            if (it != fileMD5Map.end()) {
+                                stamp->set_hash(it->second);
+                            }
+                        }
+
                         std::ofstream res_output;
                         res_output.open(res_stdout_path.c_str(), std::ios_base::out | std::ios_base::binary);
                         if (!res_output.is_open()) {
@@ -640,6 +704,7 @@ int main (int argc, char **argv) {
                     return lhs->resourceid() < rhs->resourceid();
                 });
                 Heart::proto::PackageHeader header;
+                std::unordered_set<std::string> dep_pkgs;
                 uint64_t offset = 0;
                 for (const auto& i : pkg_resources_to_write) {
                     //TODO: add dep array
@@ -659,6 +724,18 @@ int main (int argc, char **argv) {
                     entry->set_entrysize(filesize);
                     entry->set_entrytype(i->runtimetype());
                     offset += filesize;
+                    for (int di = 0, n = resource_data.resourcedependency_size(); di < n; ++di) {
+                        auto dr = builder_ctx->resourceLookup.find(resource_data.resourcedependency(di));
+                        if (dr != builder_ctx->resourceLookup.end()) {
+                            dep_pkgs.insert(dr->second->package());
+                        } else {
+                            fprintf(stderr, "WARNING: Unable to find dependent resource %s for resource %s\n", resource_data.resourcedependency(di).c_str(), i->resourceid().c_str());
+                        }
+                    }
+                }
+
+                for (const auto& i : dep_pkgs) {
+                    header.add_packagedependencies(i);
                 }
 
                 char output_path[BUILDER_MAX_PATH];

@@ -207,7 +207,7 @@ bool CppDiffGenerator::Generate(
                     parameters["other_namespace"] = GetPackageNamespacePrefix(type_desc->file()->package());
                     parameters["other_type"] = type_desc->name();
                     printer.Print(parameters,
-                        "  $other_namespace$$other_type$_diff(a.$field_name_lower$(), b.$field_name_lower$(), *c.mutable_$field_name_lower$());\n");
+                        "  ::$other_namespace$$other_type$_diff(a.$field_name_lower$(), b.$field_name_lower$(), *c.mutable_$field_name_lower$());\n");
                 } else {
                     printer.Print(parameters,
                         "  if (a.$field_name_lower$() != b.$field_name_lower$()) {\n"
@@ -226,9 +226,9 @@ bool CppDiffGenerator::Generate(
                     "for (int i=0, n=a.$field_name_lower$_size(), n2=b.$field_name_lower$_size(); i < n2; ++i) {\n");
                 if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
                     printer.Print(parameters,
-                        "$other_namespace$$other_type$ default_instance;\n"
+                        "::$other_namespace$$other_type$ default_instance;\n"
                         "c.add_$field_name_lower$();\n"
-                        "$other_namespace$$other_type$_diff(i < n ? a.$field_name_lower$(i) : default_instance, b.$field_name_lower$(i), *c.mutable_$field_name_lower$(i));\n");
+                        "::$other_namespace$$other_type$_diff(i < n ? a.$field_name_lower$(i) : default_instance, b.$field_name_lower$(i), *c.mutable_$field_name_lower$(i));\n");
                 } else {
                     printer.Print(parameters,
                         "if (i >= n || a.$field_name_lower$(i) != b.$field_name_lower$(i)) {\n"
@@ -262,7 +262,7 @@ bool CppDiffGenerator::Generate(
                     parameters["other_type"] = type_desc->name();
                     printer.Print(parameters,
                         "if (b.has_$field_name_lower$()) {\n"
-                        "  $other_namespace$$other_type$_merge(a.has_$field_name_lower$() ? a.$field_name_lower$() : $other_namespace$$other_type$(), b.$field_name_lower$(), *c.mutable_$field_name_lower$());\n"
+                        "  ::$other_namespace$$other_type$_merge(a.has_$field_name_lower$() ? a.$field_name_lower$() : ::$other_namespace$$other_type$(), b.$field_name_lower$(), *c.mutable_$field_name_lower$());\n"
                         "} else if (a.has_$field_name_lower$()) {\n"
                         "  c.mutable_$field_name_lower$()->CopyFrom(a.$field_name_lower$());\n"
                         "}\n");
@@ -286,7 +286,7 @@ bool CppDiffGenerator::Generate(
                 if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
                     printer.Print(parameters,
                         "  c.add_$field_name_lower$();\n"
-                        "  $other_namespace$$other_type$_merge(i < n ? a.$field_name_lower$(i) : $other_namespace$$other_type$(), b.$field_name_lower$(i), *c.mutable_$field_name_lower$(i));\n");
+                        "  ::$other_namespace$$other_type$_merge(i < n ? a.$field_name_lower$(i) : ::$other_namespace$$other_type$(), b.$field_name_lower$(i), *c.mutable_$field_name_lower$(i));\n");
                 }
                 else {
                     printer.Print(parameters,

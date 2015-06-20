@@ -36,7 +36,7 @@ class  hShaderProgram {
     hUint32 profileCount_;
 
 public:
-    hObjectType(Heart::hShaderProgram, Heart::proto::ShaderResourceContainer);
+    hObjectType(hShaderProgram, Heart::proto::ShaderResourceContainer);
 
     hShaderProgram() 
         : shaderProfiles_(nullptr)

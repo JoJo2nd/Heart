@@ -31,7 +31,7 @@ namespace hRenderer {
         };
 
     public:
-        hObjectType(Heart::hTextureResource, Heart::proto::TextureResource);
+        hObjectType(hTextureResource, Heart::proto::TextureResource);
 
         hTextureResource() 
             : arraySize_(0)

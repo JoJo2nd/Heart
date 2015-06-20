@@ -304,7 +304,7 @@ int main(int argc, char* argv[]) {
     }
 
     Heart::builder::Output output;
-
+    output.add_filedependency(filepath);
     //write the resource header
     output.mutable_pkgdata()->set_type_name(materialresource.GetTypeName());
     output.mutable_pkgdata()->set_messagedata(materialresource.SerializeAsString());

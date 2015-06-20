@@ -62,7 +62,7 @@ namespace Heart {
 
     class  hTTFFontFace {
     public:
-        hObjectType(Heart::hTTFFontFace, Heart::proto::TTFResource);
+        hObjectType(hTTFFontFace, Heart::proto::TTFResource);
 
         hTTFFontFace()
             : TTFSize_(0){

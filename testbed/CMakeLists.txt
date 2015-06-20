@@ -24,7 +24,7 @@ file(GLOB TESTBED_SRC_FILES
 )
 ADD_MSVC_PRECOMPILED_HEADER(
 	"${TESTBED_SOURCE_DIR}/include/testbed_precompiled.h" 
-	"${TESTBED_SOURCE_DIR}/src/testbed_precompiled.cpp" 
+	"${TESTBED_SOURCE_DIR}/src/testbed_precompiled.cpp"
 	TESTBED_PRECOMPILED_SRC_FILES
 )
 

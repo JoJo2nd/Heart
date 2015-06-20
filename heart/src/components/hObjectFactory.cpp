@@ -48,7 +48,7 @@ void* createEntity(hStringID name) {
     if (definition == objectDefTable_->end()) {
         return hNullptr;
     }
-    void* ptr=definition->second->construct_();
+    void* ptr=definition->second->construct_(nullptr);
     return ptr;
 }
 
@@ -111,7 +111,7 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     if (!obj_def) {
         return nullptr;
     }
-    void* obj = obj_def->construct_();
+    void* obj = obj_def->construct_(nullptr);
     hObjectMarshall* marshall = obj_def->constructMarshall_();
     if (!obj || !marshall) {
         hFree(obj);//delete obj; // delete void* is undefined

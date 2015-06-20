@@ -201,6 +201,10 @@ option(FORCE_DISABLE_MEMORY_TRACKING "Disable all memory tracking, including deb
 option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" OFF)
 option(UNITY_BUILD "Unity build where possible" OFF)
 
+if(MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+endif()
 
 MACRO(ENABLE_PROFILE_IF_SET)
 	if (DO_PROFILE)

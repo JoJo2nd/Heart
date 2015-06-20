@@ -133,34 +133,39 @@ namespace Heart
         hUint size_;
     };
 
-#if 0
-    template< typename t_ty >
-    class hIntrusiveCircularList
-    {
-    public:
-        hIntrusiveCircularList(t_ty* base_ptr)
-            : base_(base_ptr)
-            , next_(this)
-            , prev_(this)
-        {
-            
-        }
-        hIntrusiveCircularList(const hIntrusiveCircularList&& rhs)
-            : base_(nullptr)
-            , next_(this)
-            , prev_(this)
-        {
-            base_ = rhs.next
-        }
-
-    private:
-        hIntrusiveCircularList(const hIntrusiveCircularList& rhs);
-
-        t_ty*                   base_;
-        hIntrusiveCircularList* next_;
-        hIntrusiveCircularList* prev_;
-    };
-#endif
+namespace hCircularLinkedList {
+	template< typename t_ty >
+	void breakElementLinks(t_ty* node) {
+		node->lprev = node;
+		node->lnext = node;
+	}
+	template< typename t_ty >
+	void insert(t_ty* node, t_ty* before, t_ty* after) {
+		//node must be removed from other lists first
+		hcAssert(node->lprev == node && node->lnext == node);
+		node->lprev = before;
+		node->lnext = after;
+		before->lnext = node;
+		after->lprev = node;
+	}
+	template< typename t_ty >
+	void insertAfter(t_ty* node, t_ty* add) {
+		insert(node, add, add->lnext);
+	}
+	template< typename t_ty >
+	void insertBefore(t_ty* node, t_ty* add) {
+		insert(node, add->lprev, add);
+	}
+	template< typename t_ty >
+	t_ty* remove(t_ty* node) {
+		hcAssert(node && node->lprev && node->lnext);
+		t_ty* next = node->lnext;
+		node->lprev->lnext = node->lnext;
+		node->lnext->lprev = node->lprev;
+		breakElementLinks(node);
+		return next;
+	}
+}
 }
 
 #endif // huLinkList_h__

@@ -57,7 +57,6 @@ namespace Heart
     class hDebugInfo;
     class hDebugMenuManager;
     class hDriveFileSystem;
-    class hEntityFactory;
     class hHeartEngine;
     class hIFileSystem;    
     class hJobManager;

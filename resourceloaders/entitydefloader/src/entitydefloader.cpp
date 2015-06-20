@@ -46,6 +46,14 @@ static struct option long_options[] = {
 #define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
 #define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
+std::vector<std::string> resource_imports;
+
+int lua_import_resource(lua_State* L) {
+    const char* resource_path = luaL_checkstring(L, 1);
+    resource_imports.push_back(resource_path);
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
     _setmode(_fileno(stdin), _O_BINARY);
@@ -85,6 +93,9 @@ int main(int argc, char* argv[]) {
     luaL_openlibs(L);
     luaopen_proto_lua(L);
     lua_setglobal(L, "protobuf");
+    lua_pushcclosure(L, lua_import_resource, 0);
+    lua_setglobal(L, "import");
+
 
     const char* script_path=input_pb.resourceinputpath().c_str();
     if (luaL_dofile(L, script_path)) {
@@ -146,7 +157,10 @@ int main(int argc, char* argv[]) {
 
     //write the resource
     Heart::builder::Output output;
-
+    output.add_filedependency(script_path);
+    for (const auto& res_dep : resource_imports) {
+        output.add_resourcedependency(res_dep);
+    }
     //write the resource header
     output.mutable_pkgdata()->set_type_name(entity_def.GetTypeName());
     output.mutable_pkgdata()->set_messagedata(entity_def.SerializeAsString());

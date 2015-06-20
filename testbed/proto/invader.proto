@@ -1,0 +1,28 @@
+package Invader.proto;
+
+enum InvaderType {
+	Standard = 0;
+}
+
+message Vec2 {
+	optional float x = 1;
+	optional float y = 2;
+}
+
+message Defender {
+	optional Vec2 position = 1;
+}
+
+message Invader {
+	optional InvaderType type = 1;
+	optional Vec2 position = 2;
+}
+
+message Missle {
+	optional Vec2 position = 1;
+}
+
+message RenderSprite {
+	optional string atlasResource = 1;
+
+}

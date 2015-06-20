@@ -9,9 +9,14 @@
 #include "entity_def.pb.h"
 
 namespace Heart {
+    class hEntityContext;
+namespace hEntityFactory {
+    struct hComponentMgt;
+}
+
     class hEntityDef {
     public:
-        hObjectType(Heart::hEntityDef, Heart::proto::EntityDef);
+        hObjectType(hEntityDef, Heart::proto::EntityDef);
 
         ~hEntityDef();
 
@@ -23,7 +28,7 @@ namespace Heart {
         hSize_t getComponentDefinitionCount() const {
             return componentDefs.size();
         }
-        hComponentDef getComponentDefinition(hSize_t i) {
+        hComponentDef getComponentDefinition(hSize_t i) const {
             return componentDefs[i];
         }
     private:
@@ -33,6 +38,37 @@ namespace Heart {
         std::vector<hComponentDef> componentDefs;
     };
 
+    class hEntityComponentHandle {
+    public:
+        hEntityComponentHandle() 
+            : proc(nullptr)
+            , ptr(nullptr)
+        {}
+        explicit hEntityComponentHandle(hEntityFactory::hComponentMgt* in_proc, hEntityComponent* in_ptr)
+            : proc(in_proc)
+            , ptr(in_ptr)
+        {}
+        template< typename t_ty >
+        t_ty* get() {
+            return static_cast<t_ty*>(ptr);
+        }
+        hEntityComponent* getBase() {
+            return ptr;
+        }
+        bool isValid() {
+            return ptr != nullptr && proc != nullptr;
+        }
+        void update(hEntityComponent* in_ptr) {
+            ptr = in_ptr;
+        }
+        const hEntityFactory::hComponentMgt* getComponentMgt() const {
+            return proc;
+        }
+    private:
+        hEntityFactory::hComponentMgt* proc;
+        hEntityComponent* ptr;
+    };
+
     class hEntityComponent {
     public:
         virtual ~hEntityComponent() {}
@@ -40,10 +76,11 @@ namespace Heart {
 
     class hEntity {
     public:
-    //private:
+    //private: // ?? - not sure we want anyone messing with these
 
         hUuid_t entityId;
-        std::vector<hEntityComponent*> entityComponent;
+        hEntityContext* owningCtx;
+        std::vector<hEntityComponentHandle> entityComponent;
     };
 }
 

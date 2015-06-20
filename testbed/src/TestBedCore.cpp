@@ -55,7 +55,8 @@
         REGISTER_UNIT_TEST(*factory_, UUIDTests);
         REGISTER_UNIT_TEST(*factory_, Base64);
         REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
-        REGISTER_UNIT_TEST(*factory_, EntityTest);
+        REGISTER_UNIT_TEST(*factory_, InvaderGame);
+        //REGISTER_UNIT_TEST(*factory_, EntityTest);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, MovingTriCPU);
         REGISTER_UNIT_TEST(*factory_, MovingTri);
