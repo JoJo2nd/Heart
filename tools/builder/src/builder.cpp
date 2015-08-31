@@ -352,7 +352,7 @@ try {
             }
 
             b->jobQueue.push(new_input);
-            b->resourceLookup.insert(Builder::ResourceTable::value_type(new_input->resourceinputpath(), new_input));
+            b->resourceLookup.insert(Builder::ResourceTable::value_type(new_input->resourceid(), new_input));
             b->pkgLookup.insert(Builder::ResourceTable::value_type(new_input->package(), new_input));
             if (b->packages.find(new_input->package()) == b->packages.end()) {
                 b->packages.insert(new_input->package());
@@ -480,44 +480,17 @@ void md5_filereader(const char* origpath, const char* file, void* user) {
 
 int main (int argc, char **argv) {
     int result = EXIT_SUCCESS;
-    int verbose = 0, corecount = 2;
+    int verbose = 0;
     int c;
-    char* srcpath = NULL, *cachepath = NULL, *destpath = NULL; // we leak these
     std::string config_script = ".build_config";
-    const char argopts[] = "vj:s:d:c:xng:";
-    bool version_2 = false;
-    bool dry_run = false;
+    const char argopts[] = "vg:h";
     lua_State *L = luaL_newstate();  /* create state */
     luaL_openlibs(L);  /* open libraries */
 
     while ((c = gop_getopt(argc, argv, argopts)) != -1) {
         switch(c) {
         case 'v': verbose = 1; break;
-        case 's':
-            srcpath = (char*)malloc(strlen(optarg)+1);
-            if (!srcpath) return EXIT_FAILURE;
-            strcpy(srcpath, optarg);
-            break;
-        case 'd':
-            destpath = (char*)malloc(strlen(optarg)+1);
-            if (!destpath) return EXIT_FAILURE;
-            strcpy(destpath, optarg);
-            break;
-		case 'c':
-			cachepath = (char*)malloc(strlen(optarg) + 1);
-			if (!cachepath) return EXIT_FAILURE;
-			strcpy(cachepath, optarg);
-			break;
-        case 'j':
-            corecount = atoi(optarg);
-            if (corecount == 0) {
-                fprintf (stderr, "Option -%c requires an valid numeric argument, '%s' is not valid.\n", optopt, optarg);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'x': version_2 = true; break;
         case 'g': config_script = optarg; break;
-        case 'n': dry_run = true; break;
         case '?':
             if (strchr(argopts, optopt))
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -543,171 +516,218 @@ int main (int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    if (version_2) {
-        result = luaL_dofile(L, config_script.c_str());
-        if (handleLuaFileReadError(L, result)) {
-            return EXIT_FAILURE;
-        }
+    result = luaL_dofile(L, config_script.c_str());
+    if (handleLuaFileReadError(L, result)) {
+        return EXIT_FAILURE;
+    }
 
-		auto builder_ctx = open_builder_lib(L);
-		auto file_md5_worker = std::thread([&](const std::string& src_dir){
-			char scratch[4096];
-			minfs_read_directory(src_dir.c_str(), scratch, sizeof(scratch), md5_filereader, nullptr);
-		}, builder_ctx->srcDataPath);
+	auto builder_ctx = open_builder_lib(L);
+	auto file_md5_worker = std::thread([&](const std::string& src_dir){
+		char scratch[4096];
+		minfs_read_directory(src_dir.c_str(), scratch, sizeof(scratch), md5_filereader, nullptr);
+	}, builder_ctx->srcDataPath);
 
-        builder_ctx->push(builder_ctx->srcDataPath.c_str(), "");
-        result = luaL_dofile(L, builder_ctx->rootBuilderScript.c_str());
-        if (handleLuaFileReadError(L, result)) {
-            return EXIT_FAILURE;
-        }
-        builder_ctx->pop();
+    builder_ctx->push(builder_ctx->srcDataPath.c_str(), "");
+    result = luaL_dofile(L, builder_ctx->rootBuilderScript.c_str());
+    if (handleLuaFileReadError(L, result)) {
+        return EXIT_FAILURE;
+    }
+    builder_ctx->pop();
 
-		file_md5_worker.join();
+	file_md5_worker.join();
 
-        //Spawn worker threads
-        std::mutex mtx;
-        std::vector<std::thread> workers;
-        for (auto i=0; i < builder_ctx->parallelJobCount; ++i) {
-            workers.push_back(std::thread([&](){
-                std::shared_ptr<Heart::builder::Input> job;
-                for (;;) { {
-                        std::unique_lock<std::mutex> lck(mtx);
-                        if (builder_ctx->jobQueue.size() == 0) {
-                            return;
-                        }
-                        job = builder_ctx->jobQueue.front();
-                        builder_ctx->jobQueue.pop();
+    //Spawn worker threads
+    std::mutex mtx;
+    std::vector<std::thread> workers;
+    for (auto i=0; i < builder_ctx->parallelJobCount; ++i) {
+        workers.push_back(std::thread([&](){
+            std::shared_ptr<Heart::builder::Input> job;
+            for (;;) { {
+                    std::unique_lock<std::mutex> lck(mtx);
+                    if (builder_ctx->jobQueue.size() == 0) {
+                        return;
                     }
-                    bool build_required = true;
-                    char cached_res_path[BUILDER_MAX_PATH];
-                    char tmp_path[BUILDER_MAX_PATH];
-                    std::string resource_path = job->resourceid();
-                    std::replace(resource_path.begin(), resource_path.end(), '/', '_');
-                    minfs_path_join(builder_ctx->cacheDataPath.c_str(), job->package().c_str(), tmp_path, BUILDER_MAX_PATH);
-                    minfs_create_directories(tmp_path);
-                    minfs_path_join(tmp_path, resource_path.c_str(), cached_res_path, BUILDER_MAX_PATH);
-                    std::string res_stdin_path = cached_res_path;
-                    res_stdin_path += ".stdin";
-                    std::string res_stdout_path = cached_res_path;
-                    res_stdout_path += ".stdout";
-                    if (minfs_path_exist(res_stdout_path.c_str())) {
-                        std::ifstream in_data;
-                        in_data.open(res_stdout_path, std::ios_base::in | std::ios_base::binary);
-                        if (in_data.is_open()) {
-                            Heart::builder::Output test_output;
-                            test_output.ParseFromIstream(&in_data);
-                            build_required = test_output.filetimestamps_size() == 0;
-                            for (int i = 0, n = test_output.filetimestamps_size(); i < n; ++i) {
-                                auto it = fileMD5Map.find(test_output.filetimestamps(i).filepath());
-                                if (it == fileMD5Map.end() || !test_output.filetimestamps(i).has_hash() || it->second != test_output.filetimestamps(i).hash()) {
-                                    //fprintf(stderr, "Building %s because it doesn't match cache (%s, %s)\n", resource_path.c_str(), test_output.filetimestamps(i).filepath().c_str(), test_output.filetimestamps(i).hash().c_str());
-                                    build_required = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (build_required) {
-                        if (builder_ctx->saveStdIn) {
-                            std::ofstream output;
-                            output.open(res_stdin_path.c_str(), std::ios_base::out | std::ios_base::binary);
-                            if (!output.is_open()) {
-                                fprintf(stderr, "Couldn't open %s for writing\n", res_stdin_path.c_str());
-                            } else {
-                                job->SerializeToOstream(&output);
-                            }
-                        }
-                        auto cmd = builder_ctx->jobCommands[job->resourcetype()];
-                        HANDLE pstdin, pstdout, pid, tid;
-                        if (exec2(cmd.c_str(), &pstdin, &pstdout, &pid, &tid) < 0) {
-                            fprintf(stderr, "Error beginning command '%s'\n", cmd);
-                            continue;
-                        }
-
-                        auto str = job->SerializeAsString();
-                        DWORD written;
-                        WriteFile(pstdin, str.c_str(), (int)str.size(), &written, nullptr);
-                        CloseHandle(pstdin);
-                        BOOL success;
-                        DWORD bytesread;
-                        std::string finaloutput;
-                        do{
-                            char buf[4096];
-                            success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
-                            if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
-                                success = TRUE;
-                            }
-                            finaloutput.append(buf, bytesread);
-                        } while (success);
-                        CloseHandle(pstdout);
-
-                        DWORD exit_code;
-                        do {
-                            GetExitCodeProcess(pid, &exit_code);
-                            Sleep(10);
-                        } while (exit_code == STILL_ACTIVE);
-                        CloseHandle(tid);
-                        CloseHandle(pid);
-
-                        if (exit_code != 0) {
-                            fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\n", cmd.c_str(), job->resourceinputpath().c_str(), exit_code);
-                            continue;
-                        }
-
+                    job = builder_ctx->jobQueue.front();
+                    builder_ctx->jobQueue.pop();
+                }
+                bool build_required = true;
+                char cached_res_path[BUILDER_MAX_PATH];
+                char tmp_path[BUILDER_MAX_PATH];
+                std::string resource_path = job->resourceid();
+                std::replace(resource_path.begin(), resource_path.end(), '/', '_');
+                minfs_path_join(builder_ctx->cacheDataPath.c_str(), job->package().c_str(), tmp_path, BUILDER_MAX_PATH);
+                minfs_create_directories(tmp_path);
+                minfs_path_join(tmp_path, resource_path.c_str(), cached_res_path, BUILDER_MAX_PATH);
+                std::string res_stdin_path = cached_res_path;
+                res_stdin_path += ".stdin";
+                std::string res_stdout_path = cached_res_path;
+                res_stdout_path += ".stdout";
+                if (minfs_path_exist(res_stdout_path.c_str())) {
+                    std::ifstream in_data;
+                    in_data.open(res_stdout_path, std::ios_base::in | std::ios_base::binary);
+                    if (in_data.is_open()) {
                         Heart::builder::Output test_output;
-                        test_output.ParseFromString(finaloutput);
-
-                        for (int i=0, n=test_output.filedependency_size(); i < n; ++i) {
-                            auto* stamp = test_output.add_filetimestamps();
-                            auto dep_filepath = test_output.filedependency(i);
-                            char canon_path[BUILDER_MAX_PATH];
-                            minfs_canonical_path(dep_filepath.c_str(), canon_path, BUILDER_MAX_PATH);
-                            stamp->set_filepath(canon_path);
-                            auto it = fileMD5Map.find(canon_path);
-                            if (it != fileMD5Map.end()) {
-                                stamp->set_hash(it->second);
+                        test_output.ParseFromIstream(&in_data);
+                        build_required = test_output.filetimestamps_size() == 0;
+                        for (int i = 0, n = test_output.filetimestamps_size(); i < n; ++i) {
+                            auto it = fileMD5Map.find(test_output.filetimestamps(i).filepath());
+                            if (it == fileMD5Map.end() || !test_output.filetimestamps(i).has_hash() || it->second != test_output.filetimestamps(i).hash()) {
+                                //fprintf(stderr, "Building %s because it doesn't match cache (%s, %s)\n", resource_path.c_str(), test_output.filetimestamps(i).filepath().c_str(), test_output.filetimestamps(i).hash().c_str());
+                                build_required = true;
+                                break;
                             }
                         }
-
-                        std::ofstream res_output;
-                        res_output.open(res_stdout_path.c_str(), std::ios_base::out | std::ios_base::binary);
-                        if (!res_output.is_open()) {
-                            fprintf(stderr, "Couldn't open %s for writing\n", res_stdout_path.c_str());
+                    }
+                }
+                if (build_required) {
+                    if (builder_ctx->saveStdIn) {
+                        std::ofstream output;
+                        output.open(res_stdin_path.c_str(), std::ios_base::out | std::ios_base::binary);
+                        if (!output.is_open()) {
+                            fprintf(stderr, "Couldn't open %s for writing\n", res_stdin_path.c_str());
                         } else {
-                            test_output.SerializeToOstream(&res_output);
-                            job->set_runtimetype(test_output.pkgdata().type_name());
+                            job->SerializeToOstream(&output);
                         }
                     }
-                    job->set_builtresourcepath(res_stdout_path);
-                    ++builder_ctx->builtResources;
+                    auto cmd = builder_ctx->jobCommands[job->resourcetype()];
+                    HANDLE pstdin, pstdout, pid, tid;
+                    if (exec2(cmd.c_str(), &pstdin, &pstdout, &pid, &tid) < 0) {
+                        fprintf(stderr, "Error beginning command '%s'\n", cmd);
+                        continue;
+                    }
+
+                    auto str = job->SerializeAsString();
+                    DWORD written;
+                    WriteFile(pstdin, str.c_str(), (int)str.size(), &written, nullptr);
+                    CloseHandle(pstdin);
+                    BOOL success;
+                    DWORD bytesread;
+                    std::string finaloutput;
+                    do{
+                        char buf[4096];
+                        success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
+                        if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
+                            success = TRUE;
+                        }
+                        finaloutput.append(buf, bytesread);
+                    } while (success);
+                    CloseHandle(pstdout);
+
+                    DWORD exit_code;
+                    do {
+                        GetExitCodeProcess(pid, &exit_code);
+                        Sleep(10);
+                    } while (exit_code == STILL_ACTIVE);
+                    CloseHandle(tid);
+                    CloseHandle(pid);
+
+                    if (exit_code != 0) {
+                        fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\n", cmd.c_str(), job->resourceinputpath().c_str(), exit_code);
+                        continue;
+                    }
+
+                    Heart::builder::Output test_output;
+                    test_output.ParseFromString(finaloutput);
+
+                    for (int i=0, n=test_output.filedependency_size(); i < n; ++i) {
+                        auto* stamp = test_output.add_filetimestamps();
+                        auto dep_filepath = test_output.filedependency(i);
+                        char canon_path[BUILDER_MAX_PATH];
+                        minfs_canonical_path(dep_filepath.c_str(), canon_path, BUILDER_MAX_PATH);
+                        stamp->set_filepath(canon_path);
+                        auto it = fileMD5Map.find(canon_path);
+                        if (it != fileMD5Map.end()) {
+                            stamp->set_hash(it->second);
+                        }
+                    }
+
+                    std::ofstream res_output;
+                    res_output.open(res_stdout_path.c_str(), std::ios_base::out | std::ios_base::binary);
+                    if (!res_output.is_open()) {
+                        fprintf(stderr, "Couldn't open %s for writing\n", res_stdout_path.c_str());
+                    } else {
+                        test_output.SerializeToOstream(&res_output);
+                        job->set_runtimetype(test_output.pkgdata().type_name());
+                    }
                 }
-            }));
-        }
+                job->set_builtresourcepath(res_stdout_path);
+                ++builder_ctx->builtResources;
+            }
+        }));
+    }
         
-        for (auto& i : workers) {
-            i.join();
-        }
+    for (auto& i : workers) {
+        i.join();
+    }
 
-        builder_ctx->fatalError.store(builder_ctx->builtResources.load() != builder_ctx->resourceLookup.size());
+    builder_ctx->fatalError.store(builder_ctx->builtResources.load() != builder_ctx->resourceLookup.size());
 
-        if (!builder_ctx->fatalError.load()) {
-            for (const auto& pkg : builder_ctx->packages) {
-                auto pkg_resources = builder_ctx->pkgLookup.equal_range(pkg);
-                std::vector<std::shared_ptr<Heart::builder::Input>> pkg_resources_to_write;
-                for (auto i=pkg_resources.first; i!=pkg_resources.second; ++i) {
-                    pkg_resources_to_write.push_back(i->second);
+    if (!builder_ctx->fatalError.load()) {
+        for (const auto& pkg : builder_ctx->packages) {
+            auto pkg_resources = builder_ctx->pkgLookup.equal_range(pkg);
+            std::vector<std::shared_ptr<Heart::builder::Input>> pkg_resources_to_write;
+            for (auto i=pkg_resources.first; i!=pkg_resources.second; ++i) {
+                pkg_resources_to_write.push_back(i->second);
+            }
+            if (pkg_resources_to_write.size() == 0) {
+                continue;
+            }
+            std::sort(pkg_resources_to_write.begin(), pkg_resources_to_write.end(), [](const std::shared_ptr<Heart::builder::Input>& lhs, const std::shared_ptr<Heart::builder::Input>& rhs){
+                return lhs->resourceid() < rhs->resourceid();
+            });
+            Heart::proto::PackageHeader header;
+            std::unordered_set<std::string> dep_pkgs;
+            uint64_t offset = 0;
+            for (const auto& i : pkg_resources_to_write) {
+                //TODO: add dep array
+                std::ifstream res_file;
+                res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
+                if (!res_file.is_open()) {
+                    fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath());
+                    builder_ctx->fatalError.store(true);
+                    break;
                 }
-                if (pkg_resources_to_write.size() == 0) {
-                    continue;
+                Heart::builder::Output resource_data;
+                resource_data.ParseFromIstream(&res_file);
+                auto filesize = resource_data.pkgdata().ByteSize();
+                auto* entry = header.add_entries();
+                entry->set_entryname(i->resourceid());
+                entry->set_entryoffset(offset);
+                entry->set_entrysize(filesize);
+                entry->set_entrytype(i->runtimetype());
+                offset += filesize;
+                for (int di = 0, n = resource_data.resourcedependency_size(); di < n; ++di) {
+                    auto dr = builder_ctx->resourceLookup.find(resource_data.resourcedependency(di));
+                    if (dr != builder_ctx->resourceLookup.end()) {
+                        dep_pkgs.insert(dr->second->package());
+                    } else {
+                        fprintf(stderr, "WARNING: Unable to find dependent resource %s for resource %s\n", resource_data.resourcedependency(di).c_str(), i->resourceid().c_str());
+                    }
                 }
-                std::sort(pkg_resources_to_write.begin(), pkg_resources_to_write.end(), [](const std::shared_ptr<Heart::builder::Input>& lhs, const std::shared_ptr<Heart::builder::Input>& rhs){
-                    return lhs->resourceid() < rhs->resourceid();
-                });
-                Heart::proto::PackageHeader header;
-                std::unordered_set<std::string> dep_pkgs;
-                uint64_t offset = 0;
-                for (const auto& i : pkg_resources_to_write) {
-                    //TODO: add dep array
+            }
+
+            for (const auto& i : dep_pkgs) {
+                header.add_packagedependencies(i);
+            }
+
+            char output_path[BUILDER_MAX_PATH];
+            std::string package_filename = pkg;
+            package_filename += ".pkg";
+            minfs_path_join(builder_ctx->dstDataPath.c_str(), package_filename.c_str(), output_path, BUILDER_MAX_PATH);
+            std::ofstream output;
+            output.open(output_path, std::ios_base::out | std::ios_base::binary);
+            if (!output.is_open()) {
+                fprintf(stderr, "Couldn't open %s for writing", output_path);
+                builder_ctx->fatalError.store(true);
+                break;
+            }
+            std::vector<char> data;
+            google::protobuf::io::OstreamOutputStream filestream(&output);
+            google::protobuf::io::CodedOutputStream outputstream(&filestream);
+            auto header_out = header.SerializeAsString();
+            outputstream.WriteVarint32((uint32_t)header_out.size());
+            outputstream.WriteRaw(header_out.c_str(), (uint32_t)header_out.size());
+            for (const auto& i : pkg_resources_to_write) {
                     std::ifstream res_file;
                     res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
                     if (!res_file.is_open()) {
@@ -717,98 +737,16 @@ int main (int argc, char **argv) {
                     }
                     Heart::builder::Output resource_data;
                     resource_data.ParseFromIstream(&res_file);
-                    auto filesize = resource_data.pkgdata().ByteSize();
-                    auto* entry = header.add_entries();
-                    entry->set_entryname(i->resourceid());
-                    entry->set_entryoffset(offset);
-                    entry->set_entrysize(filesize);
-                    entry->set_entrytype(i->runtimetype());
-                    offset += filesize;
-                    for (int di = 0, n = resource_data.resourcedependency_size(); di < n; ++di) {
-                        auto dr = builder_ctx->resourceLookup.find(resource_data.resourcedependency(di));
-                        if (dr != builder_ctx->resourceLookup.end()) {
-                            dep_pkgs.insert(dr->second->package());
-                        } else {
-                            fprintf(stderr, "WARNING: Unable to find dependent resource %s for resource %s\n", resource_data.resourcedependency(di).c_str(), i->resourceid().c_str());
-                        }
-                    }
-                }
-
-                for (const auto& i : dep_pkgs) {
-                    header.add_packagedependencies(i);
-                }
-
-                char output_path[BUILDER_MAX_PATH];
-                std::string package_filename = pkg;
-                package_filename += ".pkg";
-                minfs_path_join(builder_ctx->dstDataPath.c_str(), package_filename.c_str(), output_path, BUILDER_MAX_PATH);
-                std::ofstream output;
-                output.open(output_path, std::ios_base::out | std::ios_base::binary);
-                if (!output.is_open()) {
-                    fprintf(stderr, "Couldn't open %s for writing", output_path);
-                    builder_ctx->fatalError.store(true);
-                    break;
-                }
-                std::vector<char> data;
-                google::protobuf::io::OstreamOutputStream filestream(&output);
-                google::protobuf::io::CodedOutputStream outputstream(&filestream);
-                auto header_out = header.SerializeAsString();
-                outputstream.WriteVarint32((uint32_t)header_out.size());
-                outputstream.WriteRaw(header_out.c_str(), (uint32_t)header_out.size());
-                for (const auto& i : pkg_resources_to_write) {
-                     std::ifstream res_file;
-                     res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
-                     if (!res_file.is_open()) {
-                         fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath());
-                         builder_ctx->fatalError.store(true);
-                         break;
-                     }
-                     Heart::builder::Output resource_data;
-                     resource_data.ParseFromIstream(&res_file);
-                     auto res_filesize = resource_data.pkgdata().ByteSize();
-                     auto data_to_load = resource_data.pkgdata().SerializeAsString();
-                     outputstream.WriteRaw(data_to_load.data(), (uint32_t)data_to_load.size());
-                }
+                    auto res_filesize = resource_data.pkgdata().ByteSize();
+                    auto data_to_load = resource_data.pkgdata().SerializeAsString();
+                    outputstream.WriteRaw(data_to_load.data(), (uint32_t)data_to_load.size());
             }
         }
-
-        lua_close(L);
-
-        result = builder_ctx->fatalError.load() ? EXIT_FAILURE : EXIT_SUCCESS;
-    } else {
-        lua_pushstring(L, srcpath);
-        lua_setglobal(L, "in_data_path");
-
-        lua_pushstring(L, destpath);
-        lua_setglobal(L, "in_output_data_path");
-
-	    lua_pushstring(L, cachepath); 
-	    lua_setglobal(L, "in_cache_data_path");
-
-        lua_pushboolean(L, verbose);
-        lua_setglobal(L, "in_verbose");
-
-        lua_pushinteger(L, corecount);
-        lua_setglobal(L, "in_cores");
-
-        result = luaL_loadbuffer(L, builder_script_data, builder_script_data_len, "data builder script");
-        if (result == LUA_ERRSYNTAX) {
-            printf("syntax error in builder script:\n%s", lua_tostring(L, -1));
-            return EXIT_FAILURE;
-        }
-        if (result != LUA_OK) {
-            printf("Memory error loading builder script");
-            return EXIT_FAILURE;
-        }
-        result = lua_pcall(L, 0, LUA_MULTRET, 0);
-        if (result == LUA_ERRRUN) {
-            printf("Runtime Error: %s", lua_tostring(L,-1));
-        }
-
-        // Close the lua state or some files/etc wont' get flushed
-        lua_gc(L, LUA_GCCOLLECT, 0);
-        lua_close(L);
     }
+
+    lua_close(L);
+
+    result = builder_ctx->fatalError.load() ? EXIT_FAILURE : EXIT_SUCCESS;
 
     return (result == LUA_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

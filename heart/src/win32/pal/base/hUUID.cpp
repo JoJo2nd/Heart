@@ -86,5 +86,10 @@ namespace hUUID {
         hZeroMem(&zero, sizeof(zero));
         return compareUUID(a, zero);
     }
+
+	HEART_EXPORT hUuid_t HEART_API getInvalid() {
+		hUuid_t zero = {0};
+		return zero;
+	}
 }
 }

@@ -40,7 +40,7 @@ void registerComponentManagement(const hComponentMgt& comp_mgt);
 void unregisterComponentManagement(const hObjectDefinition* object_def);
 Heart::hEntityDef* getEntityDefinition(hStringID definition_name);
 void unregisterEntityDefinition(hStringID definition_name);
-hEntityContext* createEntityContext(const hChar* context_name, const hEntityCreateDesc* entity_defs, hSize_t entity_def_count);
+hEntityContext* createEntityContext(const hChar* context_name, hEntityCreateDesc* entity_defs, hSize_t entity_def_count);
 void destroyEntityContext(hEntityContext* ctx);
 hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDef* entity_def);
 void destroyEntity(hUuid_t entity_id);

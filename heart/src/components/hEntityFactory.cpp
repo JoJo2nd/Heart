@@ -54,17 +54,6 @@ class hEntityContext {
 		}
         hcAssert(!freeList);
 		freeList = this_freelist;
-        /* else {
-			for (auto* i=freeList; i->lnext != freeList; i=i->lnext) {
-				if ((hUintptr_t)i > (hUintptr_t)this_freelist) {
-					this_freelist->lprev->lnext = i->lnext;
-					i->lnext->lprev = this_freelist->lprev;
-					i->lnext = this_freelist;
-					this_freelist->lprev = i;
-					break;
-				}
-			}
-		}*/
 	}
 
 public:
@@ -148,31 +137,19 @@ Heart::hEntityDef* getEntityDefinition(hStringID definition_name) {
 void unregisterEntityDefinition(hStringID definition_name) {
     g_entityContextManager.entityDefTable.erase(definition_name);
 }
-hEntityContext* createEntityContext(const char* context_name, const hEntityCreateDesc* entity_defs, hSize_t entity_def_count) {
+hEntityContext* createEntityContext(const char* context_name, hEntityCreateDesc* entity_defs, hSize_t entity_def_count) {
     auto* ctx = new hEntityContext();
     ctx->contextName = hStringID(context_name);
     ctx->entities.reserve(entity_def_count);
-    //!!JM!!TODO: Scope Allocator and smarter component allocation
     for (auto i=0u; i < entity_def_count; ++i) {
         auto* etd = getEntityDefinition(hStringID(entity_defs[i].entityDefinition));
         hcAssertMsg(etd, "Failed to find entity definition for '%s'", entity_defs[i].entityDefinition);
-//         Heart::hEntity new_entity;
-//         new_entity.entityId = entity_defs[i].entityId;
-//         new_entity.entityComponent.reserve(etd->getComponentDefinitionCount());
-//         for (hSize_t ci=0, cn=etd->getComponentDefinitionCount(); ci < cn; ++ci) {
-//             auto comp_def = etd->getComponentDefinition(ci);
-//             hcAssertMsg(comp_def.typeDefintion->costructComponent, "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
-//             hEntityComponent* obj = comp_def.typeDefintion->costructComponent(nullptr);
-//             comp_def.typeDefintion->deserialise_(obj, comp_def.marshall);
-//             new_entity.entityComponent.push_back(obj);
-//         }
-//         ctx->entities.push_back(std::move(new_entity));
+        if (!hUUID::isNull(entity_defs[i].entityId)) {
+            entity_defs[i].entityId = hUUID::generateUUID();
+        }
+        createEntity(ctx, entity_defs[i].entityId, etd);
     }
 
-    //for (auto& i : ctx->entities) {
-    //    g_entityContextManager.entityTable.insert(hEntityContextManager::hEntityEntry(i.entityId, &i));
-    //}
-    //g_entityContextManager.contexts.push_back(ctx);
     return ctx;
 }
 void destroyEntityContext(hEntityContext* ctx) {
@@ -181,6 +158,7 @@ void destroyEntityContext(hEntityContext* ctx) {
 
 hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDef* entity_def) {
     hcAssertMsg(context && entity_def && !hUUID::isNull(id), "Invalid args to %s", __FUNCTION__);
+	bool linked = true;
     Heart::hEntity new_entity;
     new_entity.entityId = id;
     new_entity.entityComponent.resize(entity_def->getComponentDefinitionCount());
@@ -190,10 +168,19 @@ hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDe
         hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
         hEntityComponent* obj = comp_mgt->second.construct(&new_entity.entityComponent[ci]);
         comp_def.typeDefintion->deserialise_(obj, comp_def.marshall);
+		linked &= comp_def.typeDefintion->link_(obj);
+		hcAssertMsg(linked, "Failed to link object. Object will not be created");
+		if (linked) {
+			break;
+		}
         new_entity.entityComponent[ci].update(obj);
     }
 
-    context->addEntity(new_entity);
+	if (!linked) {
+		return hUUID::getInvalid();
+	}
+
+    g_entityContextManager.entityTable[id] = context->addEntity(new_entity);
     return id;
 }
 
@@ -214,7 +201,8 @@ void destroyEntity(hUuid_t entity_id) {
 }
 
 hEntity* findEntity(hUuid_t entity_id) {
-    return nullptr;
+    auto it = g_entityContextManager.entityTable.find(entity_id);
+    return it != g_entityContextManager.entityTable.end() ? it->second : nullptr;
 }
 
 

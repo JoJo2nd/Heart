@@ -10,10 +10,13 @@
 #include "core/hHeart.h"
 #include "components/hEntity.h"
 #include "components/hEntityFactory.h"
+#include "math/hVec2.h"
 #include "render/hRenderer.h"
 #include "render/hImGuiRenderer.h"
 #include "UnitTestFactory.h"
 #include "Invader.pb.h"
+#include "render/hRenderCallDesc.h"
+#include "render/hTexture.h"
 
 using namespace Heart;
 
@@ -45,23 +48,104 @@ static hInt DefenderCompCompact() {
 class RenderSprite : public hEntityComponent {
 public:
     hObjectType(RenderSprite, Invader::proto::RenderSprite);
+    RenderSprite() 
+        : loadingData(nullptr)
+        , handle(nullptr) 
+        , spriteTex(nullptr)
+        , lnext(this)
+        , lprev(this){
+    }
 
+    bool initilise(hEntityComponentHandle* in_handle) {
+        handle = in_handle;
+    }
+	void createRenderResources() {
+		hRenderer::hRenderCallDesc rcd;
+		// rcd.vertex_ = vert;
+		// rcd.fragment_ = frag;
+		// rcd.vertexBuffer_ = vb;
+		// rcd.setSampler(hStringID("font_sampler"), font_sampler_desc);
+		// rcd.setTextureSlot(hStringID("font_sampler"), t2d);
+		// rcd.setVertexBufferLayout(lo, 2);
+		auto* rc = hRenderer::createRenderCall(rcd);
+	}
+
+    struct LoadingData {
+        hStringID spriteResourceID;
+		hStringID shaderResourceID;
+    } *loadingData;
+
+    hEntityComponentHandle* handle;
+    hVec2 pos;
+    hVec2 dimensions;
+    hTextureResource* spriteTex;
+	hShaderProgram* spriteProgram;
+    RenderSprite* lnext, *lprev;
+
+    struct SpriteCall {
+        SpriteCall(hTexture* in_texture=nullptr, hRenderer::hRenderCall* in_rc=nullptr) 
+            : texture(in_texture), rc(in_rc) {
+            hAtomic::AtomicSet(ref, 0);
+        }
+
+        hTextureResource* texture;
+        hAtomicInt ref;
+        hRenderer::hRenderCall* rc;
+    };
+    static std::vector<SpriteCall> pooledSprites;
+
+    static hRenderer::hRenderCall* getPooledSpriteRenderCall(hTextureResource* texture) {
+        for (auto& i : pooledSprites) {
+            if (i.texture == texture) {
+                hAtomic::Increment(i.ref);
+                return i.rc;
+            }
+        }
+        hRenderer::hRenderCallDesc rcd;
+        // rcd.vertex_ = vert;
+        // rcd.fragment_ = frag;
+        // rcd.vertexBuffer_ = vb;
+        // rcd.setSampler(hStringID("font_sampler"), font_sampler_desc);
+        // rcd.setTextureSlot(hStringID("font_sampler"), t2d);
+        // rcd.setVertexBufferLayout(lo, 2);
+        auto* rc = hRenderer::createRenderCall(rcd);
+        pooledSprites.emplace_back(texture, rc);
+    }
+
+    static void renderSpriteGroup(hRenderer::hCmdList* cl, const RenderSprite* sprites, size_t count) {
+        //for ()
+    }
 };
+
+std::vector<RenderSprite::SpriteCall> RenderSprite::pooledSprites;
+
+size_t g_RenderSpriteCount = 0;
+RenderSprite g_RenderSprites[100];
+RenderSprite* g_RenderSpriteFreelist = nullptr;
+
 hRegisterComponentObjectType(RenderSprite, RenderSprite, Invader::proto::RenderSprite);
 hBool RenderSprite::serialiseObject(Invader::proto::RenderSprite* obj) const {
     return hTrue;
 }
 hBool RenderSprite::deserialiseObject(Invader::proto::RenderSprite* obj) {
+	loadingData = new RenderSprite::LoadingData();
+    loadingData->spriteResourceID = hStringID(obj->atlasresource().c_str());
+	loadingData->shaderResourceID = hStringID(obj->atlasresource().c_str());
+
     return hTrue;
 }
 hBool RenderSprite::linkObject() {
+	spriteTex = 
     return hTrue;
 }
 static hEntityComponent* RenderSpriteCompConstruct(hEntityComponentHandle* handle_address) {
-    return new RenderSprite();
+    auto* r = new RenderSprite();
+    r->initilise(handle_address);
+    return r;
 }
 static void RenderSpriteCompDestruct(hEntityComponent* ptr) {
-    delete ptr;
+    auto* rs_ptr = (RenderSprite*)ptr;
+    delete rs_ptr;
 }
 static hInt RenderSpriteCompCompact() {
     return 0;
@@ -134,7 +218,22 @@ public:
 
     Heart::hRenderer::hCmdList* RenderUnitTest() override {
         auto* cl = hRenderer::createCmdList();
-        hRenderer::clear(cl, hColour(0.f, 0.2f, 0.0f, 1.f), 1.f);
+        hRenderer::clear(cl, hColour(0.f, 0.0627f, 0.345f, 1.f), 1.f);
+        if (!g_RenderSpriteFreelist) {
+            RenderSprite::renderSpriteGroup(cl, g_RenderSprites, hArraySize(g_RenderSprites));
+        } else {
+            auto remain = g_RenderSpriteCount;
+            auto* p = g_RenderSprites;
+            auto* i = g_RenderSpriteFreelist;
+            do {
+                if (p - i > 0) {
+                    remain -= (p - i);
+                    RenderSprite::renderSpriteGroup(cl, p, (p - i));
+                }
+                p = i;
+                i = i->lnext;
+            } while (i != g_RenderSpriteFreelist && remain);
+        }
         return cl;
     }
 };
