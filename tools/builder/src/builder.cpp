@@ -166,6 +166,31 @@ int handleLuaFileReadError(lua_State* L, int errorCode) {
     return EXIT_SUCCESS;
 }
 
+static std::vector<std::string> findFilesMatchingWildcard(const char* current_dir, const char* wildcard_path) {
+	std::vector<std::string> found_paths;
+	char scratch[BUILDER_MAX_PATH];
+	char canoncal_path[BUILDER_MAX_PATH];
+	char wildcard_leaf[BUILDER_MAX_PATH];
+	char wildcard_parent[BUILDER_MAX_PATH];
+	minfs_path_leaf(wildcard_path, wildcard_leaf, BUILDER_MAX_PATH);
+	minfs_path_parent(wildcard_path, wildcard_parent, BUILDER_MAX_PATH);
+	if (strcmp(wildcard_parent, wildcard_leaf) == 0) {
+		wildcard_parent[0] = 0;
+	}
+	minfs_path_join(current_dir, wildcard_parent, canoncal_path, BUILDER_MAX_PATH);
+	auto lambda = std::function<void(const char* origpath, const char* file, void* opaque)>([&](const char* origpath, const char* file, void* opaque) {
+		if (Heart::hStrWildcardMatch(wildcard_leaf, file)) {
+			char full_path[BUILDER_MAX_PATH];
+			minfs_path_join(origpath, file, full_path, BUILDER_MAX_PATH);
+			found_paths.push_back(full_path);
+		}
+	});
+	minfs_read_directory(canoncal_path, scratch, BUILDER_MAX_PATH, [](const char* origpath, const char* file, void* opaque) {
+		(*((std::function<void(const char* origpath, const char* file, void* opaque)>*)opaque))(origpath, file, opaque);
+	}, &lambda);
+	return found_paths;
+}
+
 struct Builder {
     typedef std::unordered_multimap< std::string, std::shared_ptr<Heart::builder::InputParameter> > ResourceParameterTable;
     typedef std::unordered_map< std::string, std::shared_ptr<Heart::builder::Input> > ResourceTable;
@@ -179,7 +204,8 @@ struct Builder {
     std::unordered_map<std::string, std::string> jobCommands;
     std::queue< std::shared_ptr<Heart::builder::Input> > jobQueue;
     std::unordered_set<std::string> packages;
-    ResourceMutliTable pkgLookup;
+	std::unordered_map<std::string, std::vector<std::string> > packageContents;
+    //ResourceMutliTable pkgLookup;
     ResourceTable resourceLookup;
     std::stack<std::string> currentPackage;
     std::stack<ResourceParameterTable> resourceParameters;
@@ -287,6 +313,28 @@ int set_current_package(lua_State* L) {
     b->currentPackage.top() = luaL_checkstring(L, 1);
     return 0;
 }
+int add_resources_to_package(lua_State* L) {
+	Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
+	const char* package_name = luaL_checkstring(L, 1);
+	if (!lua_istable(L, 2)) {
+		lua_error(L);
+	}
+try {
+	int i=2;
+	for (; i <= lua_gettop(L); ++i) {
+		if (!lua_isstring(L,i)) {
+			luaL_errorthrow(L, "bad argument %d: string expected, got %s", i, luaL_typename(L, i));
+		}
+		const char* resource_wildcard = lua_tostring(L, i);
+		auto foundFiles = findFilesMatchingWildcard(b->currentDirectory.top().c_str(), resource_wildcard);
+		b->packageContents[package_name].insert(b->packageContents[package_name].end(), foundFiles.begin(), foundFiles.end());
+	}
+	lua_pop(L, 1);
+} catch (std::exception e) {
+	return lua_error(L);
+}
+	return 0;
+}
 int set_type_parameter(lua_State* L) {
     Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
     const char* resource_name = luaL_checkstring(L, 1);
@@ -313,6 +361,7 @@ try {
     if (strcmp(wildcard_parent, wildcard_leaf) == 0) {
         wildcard_parent[0] = 0;
     }
+	//TODO: Replace this call with findFilesMatchingWildcard(); -> D.R.Y.
     minfs_path_join(b->currentDirectory.top().c_str(), wildcard_parent, canoncal_path, BUILDER_MAX_PATH);
     auto lambda = std::function<void(const char* origpath, const char* file, void* opaque)>([&](const char* origpath, const char* file, void* opaque) {
         if (Heart::hStrWildcardMatch(wildcard_leaf, file)) {
@@ -353,10 +402,10 @@ try {
 
             b->jobQueue.push(new_input);
             b->resourceLookup.insert(Builder::ResourceTable::value_type(new_input->resourceid(), new_input));
-            b->pkgLookup.insert(Builder::ResourceTable::value_type(new_input->package(), new_input));
-            if (b->packages.find(new_input->package()) == b->packages.end()) {
-                b->packages.insert(new_input->package());
-            }
+            //b->pkgLookup.insert(Builder::ResourceTable::value_type(new_input->package(), new_input));
+            //if (b->packages.find(new_input->package()) == b->packages.end()) {
+            //    b->packages.insert(new_input->package());
+            //}
         }
     });
     minfs_read_directory(canoncal_path, scratch, BUILDER_MAX_PATH, [](const char* origpath, const char* file, void* opaque) {
@@ -663,11 +712,10 @@ int main (int argc, char **argv) {
     builder_ctx->fatalError.store(builder_ctx->builtResources.load() != builder_ctx->resourceLookup.size());
 
     if (!builder_ctx->fatalError.load()) {
-        for (const auto& pkg : builder_ctx->packages) {
-            auto pkg_resources = builder_ctx->pkgLookup.equal_range(pkg);
+        for (const auto& pkg : builder_ctx->packageContents) {
             std::vector<std::shared_ptr<Heart::builder::Input>> pkg_resources_to_write;
-            for (auto i=pkg_resources.first; i!=pkg_resources.second; ++i) {
-                pkg_resources_to_write.push_back(i->second);
+            for (const auto& resource : pkg.second) {
+                pkg_resources_to_write.push_back(builder_ctx->resourceLookup[resource]);
             }
             if (pkg_resources_to_write.size() == 0) {
                 continue;
@@ -711,7 +759,7 @@ int main (int argc, char **argv) {
             }
 
             char output_path[BUILDER_MAX_PATH];
-            std::string package_filename = pkg;
+            std::string package_filename = pkg.first;
             package_filename += ".pkg";
             minfs_path_join(builder_ctx->dstDataPath.c_str(), package_filename.c_str(), output_path, BUILDER_MAX_PATH);
             std::ofstream output;

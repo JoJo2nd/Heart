@@ -2,26 +2,17 @@
 	"build_systems":
 	[
 		{
-			"cmd":
-			[
-				"make"
-			],
+			"cmd": [ "cmake", "--build", "D:\\dev\\heart\\", "--config", "Debug" ],
 			"name": "Build \"Heart Debug x64\"",
 			"selector": "source.c++",
 			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
-			"working_dir": "$project_path/int/cmake_debug"
 		},
 
 		{
-			"cmd":
-			[
-				"make",
-				"clean"
-			],
-			"name": "Build \"Heart Debug Clean\"",
+			"cmd": [ "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.com", "D:\\dev\\heart\\heart.sln", "/build", "Debug|x64"],
+			"name": "Build \"Heart Debug x64 VS\"",
 			"selector": "source.c++",
-			"file_regex": "\\s*(.*?):(\\d+):(\\d+):\\s*(.*)",
-			"working_dir": "$project_path/int/cmake_debug"
+			"file_regex": "\\d+>\\s*(.*)\\((\\d+),?\\d*\\)",
 		},
 
 		{
@@ -52,56 +43,11 @@
 		{
 			"folder_exclude_patterns":
 			[
-				"deploy/tools",
-				"deploy/gamedata",
-				"deploy/viewer",
-				"deploy/game*.*",
-				"deploy/game/gamedata",
 				"cmake64",
-				"cmake32",
-				"lib",
-				"bin",
+				"cmake32"
 			],
 			"follow_symlinks": true,
 			"path": "."
 		},
 	],
-	"settings":
-	{
-	    "sublimeclang_options":
-	    [
-	    	"-ferror-limit=0",
-	    	"-msse4.2",
-	    	"-msse4.1",
-	    	"-msse3",
-	    	"-DPLATFORM_LINUX",
-	    	"-DBUILD_64_BIT",
-	    	"-stdlib=libc++",
-	    	"-I/usr/include/freetype2",
-	    	"-I/usr/include/SDL2",
-	    	"-I${project_path}/int/build/tools/proto/pb_lite",
-	        "-I${project_path}/heart/src/**",
-	        "-I${project_path}/heart/src/posix",
-	        "-I${project_path}/heart/src/linux",
-	        "-I${project_path}/heart/src/openal",
-	        "-I${project_path}/heart/src/opengl",
-	        "-I${project_path}/external/crypto/src",
-	        "-I${project_path}/external/enet/include",
-	        "-I${project_path}/external/freeimage/Dist",
-	        "-I${project_path}/external/getopt_port/",
-	        "-I${project_path}/external/libogg/include",
-	        "-I${project_path}/external/libpng/Include",
-	        "-I${project_path}/external/libvorbis/include",
-	        "-I${project_path}/external/lua/src",
-	        "-I${project_path}/external/minfs/src",
-	        "-I${project_path}/external/rapidxml-1.13/include",
-	        "-I${project_path}/external/nvidia-texture-tools/src",
-	        "-I${project_path}/external/openal/include",
-	        "-I${project_path}/external/sce_vectormath/include",
-	        "-I${project_path}/external/tinyxml2",
-	        "-I${project_path}/external/zlib/include",
-	        "-I${project_path}/heart/testbed/src",
-	        "-I${project_path}/heart/resourceloaders/**"
-	    ]
-	}
 }
