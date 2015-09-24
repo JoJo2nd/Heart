@@ -8,7 +8,6 @@
 #   pragma warning (push)
 #   pragma warning (disable:4267)
 #endif
-#include <google/protobuf/testing/file.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream.h>

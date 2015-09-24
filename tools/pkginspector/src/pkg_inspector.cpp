@@ -297,7 +297,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::int32, printarraydim> {
     static void print(const google::protobuf::int32& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%d\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%d\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%d\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -307,7 +307,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::int64, printarraydim> {
     static void print(const google::protobuf::int64& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%lld\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%lld\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%lld\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -317,7 +317,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::uint32, printarraydim> {
     static void print(const google::protobuf::uint32& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%u\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%u\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%u\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -327,7 +327,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::uint64, printarraydim> {
     static void print(const google::protobuf::uint64& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%llu\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%llu\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%llu\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -337,7 +337,7 @@ template<bool printarraydim>
 struct TypePrinter<float, printarraydim> {
     static void print(const float& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%g\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%g\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%g\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -347,7 +347,7 @@ template<bool printarraydim>
 struct TypePrinter<double, printarraydim> {
     static void print(const double& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%lg\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
+            fprintf(output, "%s%s[%llu]=%lg\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val);
         else
             fprintf(output, "%s%s=%lg\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val);
     }
@@ -357,7 +357,7 @@ template<bool printarraydim>
 struct TypePrinter<bool, printarraydim> {
     static void print(const bool& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val ? "true" : "false");
+            fprintf(output, "%s%s[%llu]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val ? "true" : "false");
         else
             fprintf(output, "%s%s=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val ? "true" : "false");
     }
@@ -367,7 +367,7 @@ template<bool printarraydim>
 struct TypePrinter<std::string, printarraydim> {
     static void print(const std::string& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val.c_str());
+            fprintf(output, "%s%s[%llu]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val.c_str());
         else
             fprintf(output, "%s%s=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val.c_str());
     }
@@ -377,7 +377,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::EnumValueDescriptor, printarraydim> {
     static void print(const google::protobuf::EnumValueDescriptor& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim)
-            fprintf(output, "%s%s[%u]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val.name().c_str());
+            fprintf(output, "%s%s[%llu]=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex, val.name().c_str());
         else
             fprintf(output, "%s%s=%s\n", std::string(tabcount,' ').c_str(), fieldname.c_str(), val.name().c_str());
     }
@@ -387,7 +387,7 @@ template<bool printarraydim>
 struct TypePrinter<google::protobuf::Message, printarraydim> {
     static void print(const google::protobuf::Message& val, const std::string& fieldname, FILE* output, int tabcount, size_t arrayindex) {
         if (printarraydim) {
-            fprintf(output, "%s%s[%u]=", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex);
+            fprintf(output, "%s%s[%llu]=", std::string(tabcount,' ').c_str(), fieldname.c_str(), arrayindex);
             parseMessageToFILE(val, output, tabcount);
         } else {
             fprintf(output, "%s%s=", std::string(tabcount,' ').c_str(), fieldname.c_str());

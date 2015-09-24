@@ -58,6 +58,7 @@ public:
 
     bool initilise(hEntityComponentHandle* in_handle) {
         handle = in_handle;
+        return hTrue;
     }
 	void createRenderResources() {
 		hRenderer::hRenderCallDesc rcd;
@@ -83,7 +84,7 @@ public:
     RenderSprite* lnext, *lprev;
 
     struct SpriteCall {
-        SpriteCall(hTexture* in_texture=nullptr, hRenderer::hRenderCall* in_rc=nullptr) 
+        SpriteCall(hTextureResource* in_texture=nullptr, hRenderer::hRenderCall* in_rc=nullptr)
             : texture(in_texture), rc(in_rc) {
             hAtomic::AtomicSet(ref, 0);
         }
@@ -135,7 +136,7 @@ hBool RenderSprite::deserialiseObject(Invader::proto::RenderSprite* obj) {
     return hTrue;
 }
 hBool RenderSprite::linkObject() {
-	spriteTex = 
+	//spriteTex = 
     return hTrue;
 }
 static hEntityComponent* RenderSpriteCompConstruct(hEntityComponentHandle* handle_address) {

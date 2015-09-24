@@ -26,3 +26,10 @@
 /tools/viewer/src/lua/builder_script.inl
 tools/pkginspector/src/type_database.*
 tools/proto/src/proto_lua.cpp
+
+# Third party deps
+external/SDL2/*
+external/freetype/*
+external/glew/*
+external/nvtt/*
+external/protobuf/vs2015/*

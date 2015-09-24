@@ -16,8 +16,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(PROTOBUF_LUA_PLUGIN protoc-gen-lua.exe)
   set(PROTOBUF_CPPDIFF_PLUGIN protoc-gen-cppdiff.exe)
   add_definitions(-DPLATFORM_WINDOWS)
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_ITERATOR_DEBUG_LEVEL=0")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
   set(ROBOCOPY_OPTIONS /XO /XX /njh /njs /ndl /nc /ns /np /W:2)
 endif()
 
@@ -202,8 +202,8 @@ option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" O
 option(UNITY_BUILD "Unity build where possible" OFF)
 
 if(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4091") #MP
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4091")
 endif()
 
 MACRO(ENABLE_PROFILE_IF_SET)
@@ -233,43 +233,66 @@ endif(FORCE_DISABLE_MEMORY_TRACKING)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/modules/")
 
-find_package(Protobuf REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(Freetype REQUIRED)
-if (PLATFORM_LINUX)
-  find_package(FreeImage REQUIRED)
-  message("freeimage: ${freeiage_LIBRARIES}")
-endif()
-
+## Common code for finding libs
 find_package(OpenGL REQUIRED)
-set(GLEW_PATH_HINT "" CACHE PATH "Root path for GLEW install")
-find_package(GLEW REQUIRED)
-set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "${GLEW_PATH_HINT}/include")
-if (BUILD_64_BIT)
-    set(GLEW_LIB_PATH "${GLEW_PATH_HINT}/lib/Release/x64")
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${GLEW_LIB_PATH})
-else()
-    set(GLEW_LIB_PATH "${GLEW_PATH_HINT}/lib/Release/Win32")
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${GLEW_LIB_PATH})
-endif(BUILD_64_BIT)
-# path to glew shared library
-if (BUILD_64_BIT)
-    if(WIN32)
-        set(GLEW_BIN_PATH "${GLEW_INCLUDE_DIR}/../bin/Release/x64")
-    endif()
-else()
-    if(WIN32)
-        set(GLEW_BIN_PATH "${GLEW_INCLUDE_DIR}/../bin/Release/Win32")
-    endif()
-endif(BUILD_64_BIT)
 
-#cache vars
+## Platform Handling
 if (PLATFORM_WINDOWS)
-  set(WindowsSDKDir CACHE PATH "Directory of the WindowsSDK")
-endif()
-set(assimp_BIN_DIR CACHE PATH "Directory for assimp binaries")
-set(assimp_LIB_DIR CACHE PATH "Directory for assimp libraries")
-set(assimp_INCLUDE_DIR CACHE PATH "Directory for assimp includes")
+  #Setup from prebuild libraries
+  ## Protobuf ##
+  set(PROTOBUF_PROTOC_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/bin/Release/protoc.exe")
+  set(PROTOBUF_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/include")
+  set(PROTOBUF_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Release/libprotobuf.lib")
+  set(PROTOBUF_LITE_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Release/libprotobuf-lite.lib")
+  set(PROTOBUF_PROTOC_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Release/libprotoc.lib")
+  ## Protobuf Debug ##
+  set(PROTOBUF_LIBRARY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Debug/libprotobuf.lib")
+  set(PROTOBUF_LITE_LIBRARY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Debug/libprotobuf-lite.lib")
+  set(PROTOBUF_PROTOC_LIBRARY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/external/protobuf/vs2015/lib/Debug/libprotoc.lib")
+  ## SDL2 ##
+  set(SDL2_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL2/lib/x64/SDL2.lib")
+  set(SDL2_FOUND TRUE)
+  set(SDL2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL2/include")
+  set(SDL2_BINARY "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL2/lib/x64/SDL2.dll")
+  ## FreeType ##
+  set(FREETYPE_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/lib/Release/freetype253.lib")
+  set(FREETYPE_FOUND TRUE)
+  set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/include")
+  set(FREETYPE_INCLUDE_DIR_ft2build "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/include/config")
+  set(FREETYPE_INCLUDE_DIR_freetype2 "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/include/config")
+  ## GLEW ##
+  set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include") #- include directories for GLEW
+  set(GLEW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/lib/Release/x64/glew32.lib") #- libraries to link against GLEW
+  set(GLEW_FOUND TRUE) #- true if GLEW has been found and can be used
+  set(GLEW_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/bin/Release/x64/glew32.dll") # - Non-standard
+  ## NVTT ##
+  set(NVTT_LIBRARIES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/bc6h.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/bc7.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/nvcore.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/nvimage.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/nvmath.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/nvthread.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/nvtt.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/squish.lib")
+  set(NVTT_LIBRARIES_DEBUG
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/bc6h.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/bc7.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvcore.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvimage.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvmath.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvthread.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvtt.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/squish.lib")
+  set(NVTT_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/src")
+
+else()
+  find_package(Protobuf REQUIRED)
+  find_package(SDL2 REQUIRED)
+  find_package(Freetype REQUIRED)
+  find_package(FreeImage REQUIRED)
+  find_package(GLEW REQUIRED)
+endif(PLATFORM_WINDOWS)
 
 #Common var
 set(DEPLOY_TOOLS_DIR
@@ -370,11 +393,6 @@ if (PLATFORM_WINDOWS)
   add_definitions(-DLUA_BUILD_AS_DLL)
 endif()
 
-#message("protoc path: ${PROTOBUF_PROTOC_EXECUTABLE}")
-#message("protobuf include dir: ${PROTOBUF_INCLUDE_DIR}")
-#message("protobuf lib: ${PROTOBUF_LIBRARY}")
-#message("protobuf lite lib: ${PROTOBUF_LITE_LIBRARY}")
-
 # Add testbed proto buffer files
 set(ADDITIONAL_PROTO_SRC_DIRS 
   ${ADDITIONAL_PROTO_SRC_DIRS}
@@ -390,7 +408,7 @@ add_subdirectory ("external/libvorbis")
 add_subdirectory ("external/libogg")
 add_subdirectory ("external/enet")
 add_subdirectory ("external/minfs")
-add_subdirectory ("external/nvidia-texture-tools")
+#add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/imgui")
 if (PLATFORM_WINDOWS)
   add_subdirectory ("external/libprof")

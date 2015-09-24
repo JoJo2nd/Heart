@@ -148,7 +148,7 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
             , reserve_(0)
         {}
         /// Indicate the start of a new compressed image that's part of the final texture.
-        virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) {
+        virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) override {
             activeMip_=resource_->add_mips();
             activeMip_->set_width(width);
             activeMip_->set_height(height);
@@ -160,7 +160,7 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
         }
 
         /// Output data. Compressed data is output as soon as it's generated to minimize memory allocations.
-        virtual bool writeData(const void * data, int size) {
+        virtual bool writeData(const void * data, int size) override {
             if (activeMip_) {
                 if (size_ + size > reserve_) {
                     unsigned char* newdata = new unsigned char[(size_+size)*2];
@@ -175,6 +175,8 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
 
             return true;
         }
+        // Indicate the end of the compressed image. (New in NVTT 2.1)
+        virtual void endImage() override {}
 
         Heart::proto::TextureResource*      resource_;
         Heart::proto::TextureMip*           activeMip_;
@@ -207,13 +209,13 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
 
 		}
 		/// Indicate the start of a new compressed image that's part of the final texture.
-		virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) {
+		virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) override {
 			mipLevels.emplace_back(size, miplevel, width, height);
 			activeMip = &mipLevels[mipLevels.size()-1];
 			written = 0;
 		}
 		/// Output data. Compressed data is output as soon as it's generated to minimize memory allocations.
-		virtual bool writeData(const void * data, int size) {
+		virtual bool writeData(const void * data, int size) override {
             if (!activeMip) {
                 return true;
             }
@@ -223,6 +225,8 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
 
 			return true;
 		}
+        // Indicate the end of the compressed image. (New in NVTT 2.1)
+        virtual void endImage() override {}
 
 		std::vector<MipLevel> mipLevels;
 		MipLevel* activeMip;
@@ -402,10 +406,10 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
                         struct BCMipHandler : public nvtt::OutputHandler {
                             BCMipHandler(PixelWorkBlock* in_job) 
                                 : job(in_job), doneHeader(false), written(0) {}
-                            virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) {
+                            virtual void beginImage(int size, int width, int height, int depth, int face, int miplevel) override {
                                 doneHeader = true;
                             }
-                            virtual bool writeData(const void * data, int size) {
+                            virtual bool writeData(const void * data, int size) override {
                                 if (!doneHeader) {
                                     return true;
                                 }
@@ -414,6 +418,8 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
                                 written += size;
                                 return true;
                             }
+                            // Indicate the end of the compressed image. (New in NVTT 2.1)
+                            virtual void endImage() override {}
 
                             PixelWorkBlock* job;
                             size_t written;

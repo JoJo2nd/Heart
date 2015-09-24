@@ -240,4 +240,4 @@ endif()
 
 get_filename_component(PROTOBUF_SRC_ROOT_FOLDER ${PROTOBUF_INCLUDE_DIR} DIRECTORY)
 
-message("${PROTOBUF_LIBRARY}")
+#message("${PROTOBUF_LIBRARY}")

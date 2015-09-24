@@ -112,7 +112,7 @@ hBool ImGuiInit() {
     int width, height, bbp;
     io->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bbp);
     //imguiCtx.
-    hRenderer::hMipDesc mip = {width, height, pixels, width*height*bbp};
+    hRenderer::hMipDesc mip = {(hUint32)width, (hUint32)height, pixels, (hUint32)(width*height*bbp)};
     imguiCtx.fonttex = hRenderer::createTexture2D(1, &mip, hTextureFormat::RGBA8_unorm, 0);
 
     hRenderer::hVertexBufferLayout lo[] = {

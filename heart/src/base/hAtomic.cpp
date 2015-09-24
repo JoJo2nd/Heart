@@ -16,17 +16,17 @@ namespace Heart {
 namespace hAtomic {
 #if defined (PLATFORM_WINDOWS)
     HEART_EXPORT hUint32 HEART_API Increment( hAtomicInt& i ) {
-        hcAssert( ((hUint32)&i.value_ % 16) == 0 );
+        hcAssert( ((hUintptr_t)&i.value_ % 16) == 0 );
         return InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
     }
 
     HEART_EXPORT hUint32 HEART_API Decrement( hAtomicInt& i ) {
-        hcAssert( ((hUint32)&i.value_ % 16) == 0 );
+        hcAssert( ((hUintptr_t)&i.value_ % 16) == 0 );
         return InterlockedDecrementAcquire( (volatile LONG*)&i.value_ );
     }
 
     HEART_EXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal ) {
-        hcAssert( ((hUint32)&val.value_ % 16) == 0 );
+        hcAssert( ((hUintptr_t)&val.value_ % 16) == 0 );
         return InterlockedCompareExchangeAcquire( (volatile LONG*) &val.value_, newVal, compare );
     }
 

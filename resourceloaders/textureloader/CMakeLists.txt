@@ -8,9 +8,7 @@ set( TEXTURE_BUILDER_INCLUDE_DIRS
     "${TEXTURE_BUILDER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
 	"${GETOPT_PORT_INCLUDE_DIR}"
-if (PLATFORM_WINDOWS)
-	"${EXTERNAL_SRC_ROOT}/nvidia-texture-tools/src"
-endif()
+	"${NVTT_INCLUDE_DIRS}"
 )
 file(GLOB TEXTURE_BUILDER_SRC_FILES 
     "${TEXTURE_BUILDER_SRC_DIR}/src/*.h"
@@ -23,8 +21,6 @@ if (MSVC)
 	add_definitions(/WX) # Warnings as errors
 endif()
 
-set(nvtt_BIN_DIR "${EXTERNAL_SRC_ROOT}nvidia-texture-tools/gnuwin32/bin")
-set(nvtt_DEPENDENT_BIN_DIR "${EXTERNAL_SRC_ROOT}nvidia-texture-tools/gnuwin32/bin")
 
 if(PLATFORM_WINDOWS)
 	if (BUILD_64_BIT)
@@ -37,14 +33,22 @@ if(PLATFORM_WINDOWS)
 	set(FreeImage_LIBRARIES freeimage)
 endif()
 
+set(TB_LIBS_OPT ${NVTT_LIBRARIES} ${PROTOBUF_LIBRARY})
+set(TB_LIBS_DEBUG ${NVTT_LIBRARIES_DEBUG} ${PROTOBUF_LIBRARY_DEBUG})
+
+message("TB_LIBS_OPT: ${TB_LIBS_OPT}")
+message("TB_LIBS_DEBUG: ${TB_LIBS_DEBUG}")
+
 include_directories(${TEXTURE_BUILDER_INCLUDE_DIRS})
 link_directories(
 	${TEXTURE_BUILDER_LIB_DIRS}
 	${nvtt_LIB_DIR}
 	${freeimage_LIB_DIR})
 add_executable(texture_builder ${TEXTURE_BUILDER_SRC_FILES})
-target_link_libraries(texture_builder debug getopt_port crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY_DEBUG})
-target_link_libraries(texture_builder optimized getopt_port crypto proto nvtt ${FreeImage_LIBRARIES} ${PROTOBUF_LIBRARY})
+#target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES} optimized ${TB_LIBS_OPT} debug ${TB_LIBS_DEBUG})
+target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES})
+#target_link_libraries(texture_builder optimized ${TB_LIBS_OPT})
+target_link_libraries(texture_builder debug ${TB_LIBS_DEBUG})
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(
@@ -57,6 +61,7 @@ if (PLATFORM_LINUX)
 endif()
 
 if (PLATFORM_WINDOWS)
+	get_filename_component(GLEW_BIN_DIR ${GLEW_BIN_PATH} DIRECTORY)
 	ADD_CUSTOM_COMMAND(
 		TARGET texture_builder
 	    POST_BUILD
@@ -66,8 +71,6 @@ if (PLATFORM_WINDOWS)
 		ARGS -s "${freeimage_BIN_DIR}"
 		ARGS -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 		COMMAND python
-		ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
-		COMMAND python
-		ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r "(.*\\.(dll))$" -s "${nvtt_DEPENDENT_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+		ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r "(.*\\.(dll))$" -s "${GLEW_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 	)
 endif()

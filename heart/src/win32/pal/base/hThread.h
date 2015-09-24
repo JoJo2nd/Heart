@@ -14,7 +14,7 @@ namespace Heart
 namespace Device
 {
     hFORCEINLINE
-    void* HEART_API GetCurrentThreadID() { return (void*)GetCurrentThreadId(); }
+    void* HEART_API GetCurrentThreadID() { return (void*)((hUintptr_t)GetCurrentThreadId()); }
     hFORCEINLINE
     void  HEART_API ThreadSleep( DWORD dwMilliseconds ) { Sleep( dwMilliseconds ); }
     hFORCEINLINE

@@ -69,7 +69,7 @@ MemLog::~MemLog() {
 void MemLog::listAllMarkers(FILE* output) {
     for (const auto& i : events) {
         if (i.eventChunk.chunkID == mt_chunk_id_marker_event) {
-            fprintf(output, "Marker: %s@%llu\n", i.memory, i.eventChunk.eventID);
+            fprintf(output, "Marker: %s@%llu\n", (const char*)i.memory, i.eventChunk.eventID);
         }
     }
 }
@@ -79,7 +79,7 @@ bool MemLog::getMarkers(FILE* output, const std::vector<std::string>& marker_lis
     char tmp[4096];
     for (const auto& i : events) {
         if (i.eventChunk.chunkID == mt_chunk_id_marker_event) {
-            sprintf(tmp, "%s@%llu", i.memory, i.eventChunk.eventID);
+            sprintf(tmp, "%s@%llu", (const char*)i.memory, i.eventChunk.eventID);
             for (const auto& m : marker_list) {
                 if (strcmp(tmp, m.c_str()) == 0) {
                     marker_ids.push_back(i.eventChunk.eventID);
@@ -124,7 +124,7 @@ void MemLog::writeAllLeaks(FILE* output, mt_uint64 first_marker, mt_uint64 last_
 
     for (const auto& i : allocations) {
         auto* bt = (mt_trace_backtrace_t*)i.second.memory;
-        fprintf(output, "Memory leak detected at Address 0x%016X, Size %llu, EventID %llu, Callstack:\n", bt->address, bt->size, i.second.eventChunk.eventID);
+        fprintf(output, "Memory leak detected at Address 0x%016llX, Size %llu, EventID %llu, Callstack:\n", bt->address, bt->size, i.second.eventChunk.eventID);
         void** st = (void**)(bt+1);
         for (auto n=bt->stackSize, i=0ul; i<n; ++i) {
             fprintf(output, "\t%s\n", debugSymbols->getSymbolFromAddress((mt_uint64)st[i]));
@@ -172,7 +172,7 @@ const char* PlatformDebugSymbols::getSymbolFromAddress(mt_uint64 in_address) {
     }
     if (SymGetLineFromAddr64(process, (DWORD64)address, &dwDisplacement, &line)) {
         if (errorcode != 0) {
-            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p - %s(%u)", address, line.FileName, line.LineNumber);
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p - %s(%u)", (void*)address, line.FileName, line.LineNumber);
         }
         else {
             sprintf_s(outbuffer, sizeof(outbuffer), "%s - %s(%u)", symbol->Name, line.FileName, line.LineNumber);
@@ -180,7 +180,7 @@ const char* PlatformDebugSymbols::getSymbolFromAddress(mt_uint64 in_address) {
     }
     else {
         if (errorcode != 0) {
-            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p", address);
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p", (void*)address);
         }
         else {
             sprintf_s(outbuffer, sizeof(outbuffer), "%s", symbol->Name);

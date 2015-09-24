@@ -30,13 +30,13 @@ int resolveSymbols(uint64 funcaddress, uint64 oldbase, uint64 newbase) {
     }
     if (SymGetLineFromAddr64(process, (DWORD64)address, &dwDisplacement, &line)) {
         if (errorcode!=0) {
-            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(%u)", address, line.LineNumber);
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(%u)", (void*)address, line.LineNumber);
         } else {
             sprintf_s(outbuffer, sizeof(outbuffer), "%s(%u)", symbol->Name, line.LineNumber);
         }
     } else {
         if (errorcode!=0) {
-            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(NoLineNumber)", address);
+            sprintf_s(outbuffer, sizeof(outbuffer), "0x%p(NoLineNumber)", (void*)address);
         } else {
             sprintf_s(outbuffer, sizeof(outbuffer), "%s(NoLineNumber)", symbol->Name);
         }

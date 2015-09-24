@@ -19,6 +19,7 @@ set(ALL_SRC_FILES
 
 include_directories(${GEN_CPPDIFF_INCLUDE_DIRS})
 add_executable(protoc_gen_cppdiff ${ALL_SRC_FILES})
-target_link_libraries(protoc_gen_cppdiff optimized ${PROTOBUF_LIBRARY} ${PROTOBUF_PROTOC_LIBRARY})
-target_link_libraries(protoc_gen_cppdiff debug ${PROTOBUF_LIBRARY_DEBUG} ${PROTOBUF_PROTOC_LIBRARY_DEBUG})
 set_target_properties(protoc_gen_cppdiff PROPERTIES OUTPUT_NAME protoc-gen-cppdiff)
+
+target_link_libraries(protoc_gen_cppdiff debug ${PROTOBUF_LIBRARY_DEBUG} debug ${PROTOBUF_PROTOC_LIBRARY_DEBUG})
+target_link_libraries(protoc_gen_cppdiff optimized ${PROTOBUF_LIBRARY} optimized ${PROTOBUF_PROTOC_LIBRARY})

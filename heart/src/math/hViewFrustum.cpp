@@ -21,9 +21,9 @@ namespace Heart
 			oNear = Far;
 		}
 
-		hFloat FarH = 2 * tan( fov / 2 ) * Far;
+		hFloat FarH = 2.f * tanf( fov / 2.f ) * Far;
 		hFloat FarW = FarH * Aspect;
-		hFloat NearH = 2 * tan( fov / 2 ) * oNear;
+		hFloat NearH = 2.f * tanf( fov / 2.f ) * oNear;
 		hFloat NearW = NearH * Aspect;
 		hVec3 Right;
 		hVec3 D = normalize( LookDir );

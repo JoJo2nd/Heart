@@ -173,7 +173,7 @@ void huMiniDumper::SetDumpFilename()
 		}
 	}
 
-	sprintf_s( scratch, MAX_PATH, "%s%slastest.dmp" );
+	sprintf_s( scratch, MAX_PATH, "%s%slastest.dmp", AppPath_, AppBaseName_);
 	strcpy_s( DumpPath_, MAX_PATH, scratch );
 
 }

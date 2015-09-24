@@ -9,7 +9,7 @@
 		},
 
 		{
-			"cmd": [ "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.com", "D:\\dev\\heart\\heart.sln", "/build", "Debug|x64"],
+			"cmd": [ "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\Common7\\IDE\\devenv.com", "C:\\Users\\James\\projects\\heart\\heart.sln", "/build", "Debug|x64"],
 			"name": "Build \"Heart Debug x64 VS\"",
 			"selector": "source.c++",
 			"file_regex": "\\d+>\\s*(.*)\\((\\d+),?\\d*\\)",

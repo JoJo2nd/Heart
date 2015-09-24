@@ -28,7 +28,6 @@
 #endif
 
 #include "getopt.h"
-#include "lua/builder_script.inl"
 #include "minfs.h"
 #include "cryptoMD5.h"
 #include "builder.pb.h"
@@ -152,22 +151,22 @@ static void print_usage() {
 
 int handleLuaFileReadError(lua_State* L, int errorCode) {
     if (errorCode == LUA_ERRSYNTAX) {
-        printf("Syntax error in builder config script:\n%s", lua_tostring(L, -1));
+        printf("Syntax error in builder config script:\n%s\n", lua_tostring(L, -1));
         return EXIT_FAILURE;
     }
     if (errorCode != LUA_OK) {
-        printf("Error loading builder const script:\n%s", lua_tostring(L, -1));
+        printf("Error loading builder const script:\n%s\n", lua_tostring(L, -1));
         return EXIT_FAILURE;
     }
     if (errorCode == LUA_ERRRUN) {
-        printf("Builder config script runtime Error:\n%s", lua_tostring(L, -1));
+        printf("Builder config script runtime Error:\n%s\n", lua_tostring(L, -1));
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }
 
-static std::vector<std::string> findFilesMatchingWildcard(const char* current_dir, const char* wildcard_path) {
-	std::vector<std::string> found_paths;
+static std::vector<std::pair<std::string, std::string>> findFilesMatchingWildcard(const char* current_dir, const char* remapped_current_dir, const char* wildcard_path) {
+	std::vector<std::pair<std::string, std::string>> found_paths;
 	char scratch[BUILDER_MAX_PATH];
 	char canoncal_path[BUILDER_MAX_PATH];
 	char wildcard_leaf[BUILDER_MAX_PATH];
@@ -181,8 +180,14 @@ static std::vector<std::string> findFilesMatchingWildcard(const char* current_di
 	auto lambda = std::function<void(const char* origpath, const char* file, void* opaque)>([&](const char* origpath, const char* file, void* opaque) {
 		if (Heart::hStrWildcardMatch(wildcard_leaf, file)) {
 			char full_path[BUILDER_MAX_PATH];
+            char tmp_path[BUILDER_MAX_PATH];
+            char resource_id[BUILDER_MAX_PATH];
 			minfs_path_join(origpath, file, full_path, BUILDER_MAX_PATH);
-			found_paths.push_back(full_path);
+            minfs_path_join(remapped_current_dir, wildcard_parent, resource_id, BUILDER_MAX_PATH);
+            minfs_path_join(resource_id, file, tmp_path, BUILDER_MAX_PATH);
+            minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+
+			found_paths.push_back(std::pair<std::string, std::string>(full_path, resource_id));
 		}
 	});
 	minfs_read_directory(canoncal_path, scratch, BUILDER_MAX_PATH, [](const char* origpath, const char* file, void* opaque) {
@@ -316,9 +321,6 @@ int set_current_package(lua_State* L) {
 int add_resources_to_package(lua_State* L) {
 	Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
 	const char* package_name = luaL_checkstring(L, 1);
-	if (!lua_istable(L, 2)) {
-		lua_error(L);
-	}
 try {
 	int i=2;
 	for (; i <= lua_gettop(L); ++i) {
@@ -326,8 +328,12 @@ try {
 			luaL_errorthrow(L, "bad argument %d: string expected, got %s", i, luaL_typename(L, i));
 		}
 		const char* resource_wildcard = lua_tostring(L, i);
-		auto foundFiles = findFilesMatchingWildcard(b->currentDirectory.top().c_str(), resource_wildcard);
-		b->packageContents[package_name].insert(b->packageContents[package_name].end(), foundFiles.begin(), foundFiles.end());
+		auto foundFiles = findFilesMatchingWildcard(b->currentDirectory.top().c_str(), b->currentResourceDirectory.top().c_str(), resource_wildcard);
+        auto& pkg_list =  b->packageContents[package_name];
+        for (const auto& rid : foundFiles){
+            // Constanst lookup Perf issue?
+            pkg_list.push_back(rid.second);
+        }
 	}
 	lua_pop(L, 1);
 } catch (std::exception e) {
@@ -475,7 +481,8 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
     //expose the builder library to Lua
     luaL_Reg builder_funcs[] = {
         {"add_build_folder", add_build_folder},
-        {"set_current_package", set_current_package},
+        //{"set_current_package", set_current_package},
+        {"add_resources_to_package", add_resources_to_package},
         {"set_type_parameter", set_type_parameter},
         {"add_files", add_files},
         {NULL,NULL}
@@ -641,7 +648,7 @@ int main (int argc, char **argv) {
                     auto cmd = builder_ctx->jobCommands[job->resourcetype()];
                     HANDLE pstdin, pstdout, pid, tid;
                     if (exec2(cmd.c_str(), &pstdin, &pstdout, &pid, &tid) < 0) {
-                        fprintf(stderr, "Error beginning command '%s'\n", cmd);
+                        fprintf(stderr, "Error beginning command '%s'\n", cmd.c_str());
                         continue;
                     }
 
@@ -715,7 +722,10 @@ int main (int argc, char **argv) {
         for (const auto& pkg : builder_ctx->packageContents) {
             std::vector<std::shared_ptr<Heart::builder::Input>> pkg_resources_to_write;
             for (const auto& resource : pkg.second) {
-                pkg_resources_to_write.push_back(builder_ctx->resourceLookup[resource]);
+                const auto i = builder_ctx->resourceLookup.find(resource);
+                if (i != builder_ctx->resourceLookup.end()) {
+                    pkg_resources_to_write.push_back(i->second);
+                }
             }
             if (pkg_resources_to_write.size() == 0) {
                 continue;
@@ -731,7 +741,7 @@ int main (int argc, char **argv) {
                 std::ifstream res_file;
                 res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
                 if (!res_file.is_open()) {
-                    fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath());
+                    fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath().c_str());
                     builder_ctx->fatalError.store(true);
                     break;
                 }
@@ -779,7 +789,7 @@ int main (int argc, char **argv) {
                     std::ifstream res_file;
                     res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
                     if (!res_file.is_open()) {
-                        fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath());
+                        fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath().c_str());
                         builder_ctx->fatalError.store(true);
                         break;
                     }

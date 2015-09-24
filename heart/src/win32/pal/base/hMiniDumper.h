@@ -1,11 +1,8 @@
 /********************************************************************
-	created:	2008/07/06
-	created:	6:7:2008   20:15
-	filename: 	huMiniDumper.h
-	author:		James Moran
-	
-	purpose:	
+Written by James Moran
+Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
+
 #ifndef huMiniDumper_h__
 #define huMiniDumper_h__
 
@@ -13,16 +10,6 @@
 #include <windows.h>
 #include <dbghelp.h>
 
-//-----------------------------------------------------------------------
-///
-/// @class huMiniDumper
-/// @brief The Mini Dumper class creates crash dumps for a program, to use it, simply 
-///	declare one at the of you're main file. It will create crash dump files using a {exe_name}_{crashnumber}.dmp format
-/// @author James Moran
-/// @date [13/7/2008]
-/// @version 1.0
-///
-//-----------------------------------------------------------------------
 class huMiniDumper
 {
 public:

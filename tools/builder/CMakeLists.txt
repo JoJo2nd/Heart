@@ -1,22 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-#if (PLATFORM_WINDOWS)
-#	add_definitions(-DWXUSINGDLL)
-#endif()
-if (PLATFORM_LINUX)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-#    message("wxWidgets use file: ${wxWidgets_USE_FILE}")
-#	 include(${wxWidgets_USE_FILE})
-#    if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-#        # workaround for clang __has_include(tr1/type_traits) returning true
-#        add_definitions(-DHAVE_TYPE_TRAITS=1)
-#    endif()
-endif()
-
-#message("wxWidgets_DEFINITIONS=${wxWidgets_DEFINITIONS}")
-#message("wxWidgets_LIBRARIES=${wxWidgets_LIBRARIES}")
-
-
 set(BUILDER_SRC_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -56,20 +39,16 @@ file(GLOB BUILDER_PRECOMPILED_SRC_FILES
     "${BUILDER_SRC_DIR}/src/precompiled/*.cpp"
 )
 
-file(GLOB BUILDER_LUA_FILES "${BUILDER_SRC_DIR}/src/lua/*.lua")
 file(GLOB BUILDER_SRC_FILES "${BUILDER_SRC_DIR}/src/*.cpp")
 
-set(GENERATED_FILES "${BUILDER_SRC_DIR}/src/lua/builder_script.inl")
+#add_custom_command(
+#      OUTPUT "${BUILDER_SRC_DIR}/src/lua/builder_script.inl"
+#      COMMAND python
+#      ARGS "${TOOLS_SRC_ROOT}/utils/file_to_cpp.py" -i "${BUILDER_SRC_DIR}/src/lua/builder.lua" -o "${BUILDER_SRC_DIR}/src/lua/builder_script.inl" -d builder_script
+#      DEPENDS "${BUILDER_SRC_DIR}/src/lua/builder.lua"
+#      COMMENT "Converting Lua script to C++ inline file"
+#      VERBATIM )
 
-add_custom_command(
-      OUTPUT "${BUILDER_SRC_DIR}/src/lua/builder_script.inl"
-      COMMAND python
-      ARGS "${TOOLS_SRC_ROOT}/utils/file_to_cpp.py" -i "${BUILDER_SRC_DIR}/src/lua/builder.lua" -o "${BUILDER_SRC_DIR}/src/lua/builder_script.inl" -d builder_script
-      DEPENDS "${BUILDER_SRC_DIR}/src/lua/builder.lua"
-      COMMENT "Converting Lua script to C++ inline file"
-      VERBATIM )
-
-set_source_files_properties(${BUILDER_LUA_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties(${GENERATED_FILES} PROPERTIES GENERATED TRUE)
 
 source_group(include FILES ${BUILDER_HDR_FILES})
@@ -83,16 +62,10 @@ source_group(generated FILES ${GENERATED_FILES})
 
 set(ALL_SRC_FILES
         ${BUILDER_SRC_FILES}
-        #${COMMON_SRC_FILES}
         ${BUILDER_LUA_FILES}
 	${GENERATED_FILES}
 )
 
-#ADD_MSVC_PRECOMPILED_HEADER(
-#        "${BUILDER_SRC_DIR}/src/precompiled/precompiled.h"
-#        "${BUILDER_SRC_DIR}/src/precompiled/precompiled.cpp"
-#	"${ALL_SRC_FILES}"
-#)
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors
@@ -118,16 +91,8 @@ else()
 	set(freeimage_BIN_DIR "${EXTERNAL_SRC_ROOT}/freeimage/Dist/x86")
 endif()
 add_executable(builder ${ALL_SRC_FILES})
-target_link_libraries(builder ${PROTOBUF_LIBRARY} crypto lua52 getopt_port proto_full minfs heart_base)
-
-if (PLATFORM_WINDOWS)
-#  ADD_CUSTOM_COMMAND(
-#      TARGET BUILDER
-#      POST_BUILD
-#  	COMMAND python
-#  	ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l BUILDER -s "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -d "${CMAKE_SOURCE_DIR}/deploy/tools/${CMAKE_CFG_INTDIR}"
-#  )
-endif()
+target_link_libraries(builder optimized ${PROTOBUF_LIBRARY} crypto lua52 getopt_port proto_full minfs heart_base)
+target_link_libraries(builder debug ${PROTOBUF_LIBRARY_DEBUG} crypto lua52 getopt_port proto_full minfs heart_base)
 
 if (PLATFORM_WINDOWS)
 #ADD_CUSTOM_COMMAND(
