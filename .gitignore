@@ -33,3 +33,5 @@ external/freetype/*
 external/glew/*
 external/nvtt/*
 external/protobuf/vs2015/*
+external/ANGLE/*
+external/hlslcc/*

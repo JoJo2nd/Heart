@@ -60,7 +60,7 @@ typedef std::regex_iterator<std::string::iterator> sre_iterator;
 #define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
 #define VS_COMMON_DEFINES ""
-#define PS_COMMON_DEFINES "precision highp float;\n"
+#define PS_COMMON_DEFINES ""
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 
     while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
         switch (c) {
-        case 'z': fprintf(stdout, "heart shader builder v0.8.0"); exit(0);
+        case 'z': fprintf(stdout, "heart shader builder v0.8.1"); exit(0);
         case 'v': verbose = 1; break;
         case 'i': {
             std::ifstream input_file_stream;
@@ -257,9 +257,10 @@ int main(int argc, char* argv[]) {
         shaderresource->set_profile(i.type);
         if (bin_blob) {
             shaderresource->set_compiledprogram(bin_blob, bin_blob_len);
+        } else {
+            shaderresource->set_source(full_result_source);
         }
-        shaderresource->set_type(i.type);
-        shaderresource->set_source(full_result_source);
+        shaderresource->set_type(i.type);       
     }
 
     //write the resource
@@ -480,30 +481,50 @@ uint initGLCompiler(std::string* out_errors){
     return 0;
 }
 
+FILE* makeTempFile(std::string* out_name) {
+    char temp_path[MAX_PATH];
+    
+    if (GetTempPath(MAX_PATH, temp_path) == 0) {
+        return nullptr;
+    }
+    char temp_name[MAX_PATH];
+    char prefix[] = "ht_";
+    FILE* out = nullptr;
+    while (!out) {
+        GetTempFileName(temp_path, prefix, 0, temp_name);
+        out = fopen(temp_name, "wb");
+    }
+
+    *out_name = temp_name;
+    return out;
+}
+
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params, 
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     struct GLSLProfile {
-        GLuint glType;
-        GLuint type;
         const char* profileStr;
+        GLuint type;
+        const char* versionStr;
+        const char* entry;
+        const char* defineStr;
     };
     static const GLSLProfile OpenGL_shaderProfiles[] = {
-        { GL_VERTEX_SHADER,     Heart::proto::eShaderType_ES2_vs,   "#version 100\n" VS_COMMON_DEFINES },  
-        { GL_FRAGMENT_SHADER,   Heart::proto::eShaderType_ES2_ps,   "#version 100\n" PS_COMMON_DEFINES },
-        { GL_VERTEX_SHADER,     Heart::proto::eShaderType_WebGL_vs, "#version 100\n" VS_COMMON_DEFINES },
-        { GL_FRAGMENT_SHADER,   Heart::proto::eShaderType_WebGL_ps, "#version 100\n" PS_COMMON_DEFINES },
-        { GL_VERTEX_SHADER,     Heart::proto::eShaderType_ES3_vs,   "#version 100\n" VS_COMMON_DEFINES }, // version ??
-        { GL_FRAGMENT_SHADER,   Heart::proto::eShaderType_ES3_ps,   "#version 100\n" PS_COMMON_DEFINES }, // version ??
-        { GL_VERTEX_SHADER,     Heart::proto::eShaderType_FL10_vs,  "#version 330\n" VS_COMMON_DEFINES }, // version ??
-        { GL_FRAGMENT_SHADER,   Heart::proto::eShaderType_FL10_ps,  "#version 330\n" PS_COMMON_DEFINES }, // version ??
-        { GL_GEOMETRY_SHADER,   Heart::proto::eShaderType_FL10_gs,  "#version 330\n" }, // version ??
-        { GL_COMPUTE_SHADER,    Heart::proto::eShaderType_FL10_cs,  "#version 330\n" }, // version ??
-        { GL_VERTEX_SHADER,     Heart::proto::eShaderType_FL11_vs,  "#version 330\n" VS_COMMON_DEFINES }, // version ??
-        { GL_FRAGMENT_SHADER,   Heart::proto::eShaderType_FL11_ps,  "#version 330\n" PS_COMMON_DEFINES }, // version ??
-        { GL_GEOMETRY_SHADER,   Heart::proto::eShaderType_FL11_gs,  "#version 100\n" }, // version ??
-        { GL_COMPUTE_SHADER,    Heart::proto::eShaderType_FL11_cs,  "#version 100\n" }, // version ??
-        { GL_INVALID_ENUM,      Heart::proto::eShaderType_FL11_hs,  "#version 100\n" }, // version ??
-        { GL_INVALID_ENUM,      Heart::proto::eShaderType_FL11_ds,  "#version 100\n" }, // version ??
+        { "vs_4_0_level_9_3",   Heart::proto::eShaderType_ES2_vs,   "330"  , "main_vs", VS_COMMON_DEFINES },  
+        { "ps_4_0_level_9_3",   Heart::proto::eShaderType_ES2_ps,   "330"  , "main_ps", PS_COMMON_DEFINES },
+        { "vs_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
+        { "ps_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_ps, "es100", "main_ps", PS_COMMON_DEFINES },
+        { "vs_5_0"          ,   Heart::proto::eShaderType_ES3_vs,   "es300", "main_vs", VS_COMMON_DEFINES }, // version ??
+        { "ps_5_0"          ,   Heart::proto::eShaderType_ES3_ps,   "es300", "main_ps", PS_COMMON_DEFINES }, // version ??
+        { "vs_4_0"          ,   Heart::proto::eShaderType_FL10_vs,  "330"  , "main_vs", VS_COMMON_DEFINES }, // version ??
+        { "ps_4_0"          ,   Heart::proto::eShaderType_FL10_ps,  "330"  , "main_ps", PS_COMMON_DEFINES }, // version ??
+        { "gs_4_0"          ,   Heart::proto::eShaderType_FL10_gs,  "330"  , "main_gs", }, // version ??
+        { "cs_4_0"          ,   Heart::proto::eShaderType_FL10_cs,  "330"  , "main_cs", }, // version ??
+        { "vs_5_0"          ,   Heart::proto::eShaderType_FL11_vs,  "440"  , "main_vs", VS_COMMON_DEFINES }, // version ??
+        { "ps_5_0"          ,   Heart::proto::eShaderType_FL11_ps,  "440"  , "main_ps", PS_COMMON_DEFINES }, // version ??
+        { "gs_5_0"          ,   Heart::proto::eShaderType_FL11_gs,  "440"  , "main_gs", }, // version ??
+        { "cs_5_0"          ,   Heart::proto::eShaderType_FL11_cs,  "440"  , "main_cs", }, // version ??
+        { "hs_5_0"          ,   Heart::proto::eShaderType_FL11_hs,  "440"  , "main_hs", }, // version ??
+        { "ds_5_0"          ,   Heart::proto::eShaderType_FL11_ds,  "440"  , "main_ds", }, // version ??
     };
 
     // no binaries for GL
@@ -511,7 +532,6 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     *bin_blob_len = 0;
 
     auto profile_index = shader_params.profile_-Heart::proto::eShaderType_MIN;
-    GLuint shader_type = OpenGL_shaderProfiles[profile_index].glType;
 
     std::string define_str;
     for (size_t i=0, n=shader_params.macros_.size(); i<n; ++i) {
@@ -520,80 +540,108 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         shader_source->insert(0, define_str);
     }
 
-    shader_source->insert(0, "#define HEART_IS_HLSL (0)\n");
-    shader_source->insert(0, "#define HEART_IS_GLSL (1)\n");
+    shader_source->insert(0, "#define HEART_IS_HLSL (1)\n");
 
-    define_str = OpenGL_shaderProfiles[profile_index].profileStr;
+    define_str = OpenGL_shaderProfiles[profile_index].defineStr;
     shader_source->insert(0, define_str);
 
-    // parse the gl shader looking for input & output
-    // maybe at somepoint I'll fix this to auto-gen boiler plate for this...
-//     std::string input_struct_name;
-//     std::string output_struct_name;
-//     std::regex in_out_regex("glsl_(in|out)_struct\\(\\s*(.+?)\\s*\\)");
-//     sre_iterator re_i(shader_source->begin(), shader_source->end(), in_out_regex);
-//     for (sre_iterator re_n; re_i!=re_n; ++re_i) {
-//         if ((*re_i)[2].str() == "__x__") {
-//             continue;
-//         }
-//         if ((*re_i)[1].str() == "in") {
-//             input_struct_name = (*re_i)[2].str();
-//         } else if ((*re_i)[1].str() == "out") {
-//             output_struct_name = (*re_i)[2].str();
-//         }
-//     }
-
-    //printf("input struct name: %s\n", input_struct_name.c_str());
-    //printf("output struct name: %s\n", output_struct_name.c_str());
-
-    //read in the parameters for input (seperate function later...?)
-    //std::string tmp_str("struct\\s*?");
-    //std::regex in_struct_regex(tmp_str+input_struct_name+)
-
-    //printf("OpenGL Source: \n%s\n", shader_source->c_str());
-
-    GLint params = -1;
-    if (initGLCompiler(out_errors) != 0) {
-        // If we can't create a opengl context we can't test compile the
-        // shader so just return the source and the run time will assert.
-        return 0;
-    }
-
-    GLuint shader_obj = glCreateShader(shader_type);
-    const char* sources[] = {
-        shader_source->c_str(),
-    };
-    GLint sources_len[] = {
-        (GLint)shader_source->length(),
-    };
-    glShaderSource(shader_obj, 1, sources, sources_len);
-    glCompileShader(shader_obj);
-    glGetShaderiv(shader_obj, GL_COMPILE_STATUS, &params);
-    if (params != GL_TRUE) {
-        auto line = 1u;
-        char linetxt[128];
-        GLint actual_length = 0;
-        char log[8*1024] = {0};
-        glGetShaderInfoLog (shader_obj, sizeof(log)-1, &actual_length, log);
-        *out_errors = log;
-        *out_errors += "\nShader Source:\n";
-        std::remove(shader_source->begin(), shader_source->end(), '\r');
-        out_errors->reserve(out_errors->length()+(shader_source->length()*2));
-        sprintf(linetxt, "line %d:", line);
-        *out_errors += linetxt;
-        ++line;
-        for(const auto& i : *shader_source) {
-            *out_errors += i;
-            if (i == '\n')
-            {
-                sprintf(linetxt, "line %d:", line);
-                *out_errors += linetxt;
-                ++line;
+    struct D3DBlobSentry {
+        D3DBlobSentry() : blob_(nullptr) {}
+        ~D3DBlobSentry() { 
+            if (blob_) {
+                blob_->Release();
+                blob_ = nullptr;
             }
         }
-        return 1;
+        ID3DBlob* blob_;
+    };
+    D3DBlobSentry errors;
+    D3DBlobSentry result;
+
+    HRESULT hr = D3DCompile( 
+        shader_source->c_str(), 
+        shader_source->length(), 
+        "direct3D shader source",
+        nullptr, // macros
+        nullptr, //Includes
+        OpenGL_shaderProfiles[profile_index].entry,
+        OpenGL_shaderProfiles[profile_index].profileStr, 
+        shader_params.compileFlags_, 
+        0, 
+        &result.blob_, 
+        &errors.blob_);
+
+    if (FAILED(hr) && errors.blob_) {
+        std::string err=(char*)errors.blob_->GetBufferPointer();
+        *out_errors = (char*)errors.blob_->GetBufferPointer();
+        return -1;
     }
-    glDeleteShader(shader_obj);
-    return 0;
+
+    std::string tmp_filename;
+    auto* tmp_file = makeTempFile(&tmp_filename);
+
+    if (!tmp_file) {
+        *out_errors = "Failed to create tempary file";
+        return -1;
+    }
+
+    fwrite(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), 1, tmp_file);
+    fclose(tmp_file);
+
+    STARTUPINFO         si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    std::string tmp_ref = tmp_filename+".json";
+    std::string tmp_out = tmp_filename+".o";
+    char cmdline[4096];
+    snprintf(cmdline, sizeof(cmdline), "HLSLcc -lang=%s -in=%s -out=%s -reflect=%s -flags=%d", 
+        OpenGL_shaderProfiles[profile_index].versionStr, tmp_filename.c_str(), tmp_out.c_str(), tmp_ref.c_str(), shader_params.compileFlags_);
+
+    //fprintf(stderr, "HLSLcc command line: %s", cmdline);
+
+    // Start the child process. 
+    if (!CreateProcess(NULL,// No module name (use command line)
+        cmdline,            // Command line
+        NULL,               // Process handle not inheritable
+        NULL,               // Thread handle not inheritable
+        FALSE,              // Set handle inheritance to FALSE
+        CREATE_NO_WINDOW,   // CREATE_NO_WINDOW prevents stdout,stderr redirection to this process
+        NULL,               // Use parent's environment block
+        NULL,               // Use parent's starting directory 
+        &si,                // Pointer to STARTUPINFO structure
+        &pi)               // Pointer to PROCESS_INFORMATION structure
+        )
+    {
+        DeleteFile(tmp_filename.c_str());
+        *out_errors = "Failed to call HLSLcc.";
+        return -1;
+    }
+
+    DWORD exit_code;
+    do {
+        GetExitCodeProcess(pi.hProcess, &exit_code);
+        Sleep(10);
+    } while (exit_code == STILL_ACTIVE);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+
+    bool failed = true;
+    auto glsl_source_size = minfs_get_file_size(tmp_out.c_str());
+    FILE* glsl_source_file = fopen(tmp_out.c_str(), "rb");
+    if (glsl_source_file) {
+        *bin_blob = new uint8_t[glsl_source_size];
+        *bin_blob_len = glsl_source_size;
+        fread(*bin_blob, 1, glsl_source_size, glsl_source_file);
+        fclose(glsl_source_file);
+        failed = false;
+    }
+
+    DeleteFile(tmp_filename.c_str());
+    DeleteFile(tmp_ref.c_str());
+    DeleteFile(tmp_out.c_str());
+    return failed;
 }
 

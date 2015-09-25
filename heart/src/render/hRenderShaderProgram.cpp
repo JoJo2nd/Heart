@@ -50,7 +50,7 @@ namespace Heart
             shaderProfiles_[i].profile_ = type;
             shaderProfiles_[i].shader_ = nullptr;
             if (hRenderer::isProfileSupported(type)) {
-                shaderProfiles_[i].shader_ = hRenderer::compileShaderStageFromSource((hChar*)sres.source().c_str(), (hUint32)sres.source().size(), sres.entry().c_str(), type);
+                shaderProfiles_[i].shader_ = hRenderer::compileShaderStageFromSource((hChar*)sres.compiledprogram().c_str(), (hUint32)sres.compiledprogram().size(), sres.entry().c_str(), type);
             }
         }
         return hTrue;

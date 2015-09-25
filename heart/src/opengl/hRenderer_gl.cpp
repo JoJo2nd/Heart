@@ -770,7 +770,32 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
     glAttachShader(rc->program_, rcd.fragment_->shaderObj_);
     glLinkProgram(rc->program_);
 
+#if HEART_DEBUG
+    glGetShaderiv(rcd.vertex_->shaderObj_, GL_COMPILE_STATUS, &p);
+    if (p != GL_TRUE) {
+        GLint actual_length = 0;
+        char log[8*1024] = {0};
+        glGetShaderInfoLog (rcd.vertex_->shaderObj_, sizeof(log)-1, &actual_length, log);
+        hcPrintf("Vertex Shader Error: %s\n", log);
+    }
+    glGetShaderiv(rcd.fragment_->shaderObj_, GL_COMPILE_STATUS, &p);
+    if (p != GL_TRUE) {
+        GLint actual_length = 0;
+        char log[8*1024] = {0};
+        glGetShaderInfoLog (rcd.fragment_->shaderObj_, sizeof(log)-1, &actual_length, log);
+        hcPrintf("Fragment Shader Error: %s\n", log);
+    }
+#endif
+
     glGetProgramiv(rc->program_, GL_LINK_STATUS, &p);
+#if HEART_DEBUG
+    if (p != GL_TRUE){
+        GLint actual_length = 0;
+        char log[8 * 1024] = { 0 };
+        glGetProgramInfoLog(rc->program_, sizeof(log) - 1, &actual_length, log);
+        hcPrintf("Program Link Error: %s\n", log);
+    }
+#endif
     hcAssert(p==GL_TRUE);
 
     auto ublimit = 0;

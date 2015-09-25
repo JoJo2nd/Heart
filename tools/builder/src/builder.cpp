@@ -59,11 +59,13 @@ extern "C" {
 
 #include <windows.h>
 
-static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* pid_out, HANDLE* tid_out) {
+static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* pstderr, HANDLE* pid_out, HANDLE* tid_out) {
     HANDLE childStdin_Rd = NULL;
     HANDLE childStdin_Wr = NULL;
     HANDLE childStdout_Rd = NULL;
     HANDLE childStdout_Wr = NULL;
+    HANDLE childStdErr_Rd = NULL;
+    HANDLE childStdErr_Wr = NULL;
     STARTUPINFO         si;
     PROCESS_INFORMATION pi;
     SECURITY_ATTRIBUTES saAttr;
@@ -81,6 +83,14 @@ static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* p
     if (!SetHandleInformation(childStdout_Rd, HANDLE_FLAG_INHERIT, 0))
         return -1;
 
+    // Create a pipe for the child process's STDERR. 
+    if (!CreatePipe(&childStdErr_Rd, &childStdErr_Wr, &saAttr, 0))
+        return -1;
+
+    // Ensure the read handle to the pipe for STDERR is not inherited.
+    if (!SetHandleInformation(childStdErr_Rd, HANDLE_FLAG_INHERIT, 0))
+        return -1;
+
     // Create a pipe for the child process's STDIN. 
     if (!CreatePipe(&childStdin_Rd, &childStdin_Wr, &saAttr, 0))
         return -1;
@@ -96,6 +106,7 @@ static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* p
     si.cb = sizeof(si);
     si.hStdOutput = childStdout_Wr;
     si.hStdInput = childStdin_Rd;
+    si.hStdError = childStdErr_Wr;
     si.dwFlags |= STARTF_USESTDHANDLES;
     ZeroMemory(&pi, sizeof(pi));
 
@@ -117,8 +128,10 @@ static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* p
 
     CloseHandle(childStdin_Rd);
     CloseHandle(childStdout_Wr);
+    CloseHandle(childStdErr_Wr);
     *pstdin = childStdin_Wr;
     *pstdout = childStdout_Rd;
+    *pstderr = childStdErr_Rd;
 
     *pid_out = pi.hProcess;
     *tid_out = pi.hThread;
@@ -618,6 +631,8 @@ int main (int argc, char **argv) {
                 res_stdin_path += ".stdin";
                 std::string res_stdout_path = cached_res_path;
                 res_stdout_path += ".stdout";
+                std::string res_stderr_path = cached_res_path;
+                res_stderr_path += ".stderr";
                 if (minfs_path_exist(res_stdout_path.c_str())) {
                     std::ifstream in_data;
                     in_data.open(res_stdout_path, std::ios_base::in | std::ios_base::binary);
@@ -646,8 +661,8 @@ int main (int argc, char **argv) {
                         }
                     }
                     auto cmd = builder_ctx->jobCommands[job->resourcetype()];
-                    HANDLE pstdin, pstdout, pid, tid;
-                    if (exec2(cmd.c_str(), &pstdin, &pstdout, &pid, &tid) < 0) {
+                    HANDLE pstdin, pstdout, pstderr, pid, tid;
+                    if (exec2(cmd.c_str(), &pstdin, &pstdout, &pstderr, &pid, &tid) < 0) {
                         fprintf(stderr, "Error beginning command '%s'\n", cmd.c_str());
                         continue;
                     }
@@ -669,6 +684,17 @@ int main (int argc, char **argv) {
                     } while (success);
                     CloseHandle(pstdout);
 
+                    std::string stderroutput;
+                    do{
+                        char buf[4096];
+                        success = ReadFile(pstderr, buf, sizeof(buf), &bytesread, nullptr);
+                        if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
+                            success = TRUE;
+                        }
+                        stderroutput.append(buf, bytesread);
+                    } while (success);
+                    CloseHandle(pstderr);
+
                     DWORD exit_code;
                     do {
                         GetExitCodeProcess(pid, &exit_code);
@@ -677,6 +703,13 @@ int main (int argc, char **argv) {
                     CloseHandle(tid);
                     CloseHandle(pid);
 
+                    std::ofstream err_output;
+                    err_output.open(res_stderr_path.c_str(), std::ios_base::out | std::ios_base::binary);
+                    if (err_output.is_open()) {
+                        err_output << stderroutput;
+                    }
+
+                    fprintf(stderr, "%s\n", stderroutput.c_str());
                     if (exit_code != 0) {
                         fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\n", cmd.c_str(), job->resourceinputpath().c_str(), exit_code);
                         continue;
