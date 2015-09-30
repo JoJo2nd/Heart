@@ -22,7 +22,6 @@ set(SHADER_BUILDER_LIB_DIRS
 set(SB_LIBS 
     "crypto"
     "proto"
-    ${GLEW_LIBRARIES}
     ${SDL2_LIBRARY}
     "minfs"
 	"getopt_port"
@@ -62,12 +61,7 @@ if (PLATFORM_WINDOWS)
 ADD_CUSTOM_COMMAND(
     TARGET shader_builder
     POST_BUILD 
-    COMMAND python
-    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l d3dcompiler -s "${WindowsSDKDir}/redist/d3d/${PLATTYPE}/" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
-    COMMAND python
-    ARGS "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
-    COMMAND python
-    ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r glew32.dll -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+    COMMAND python "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r ".*\\.exe" -s "${HLSLcc_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 )
 endif()
 if (PLATFORM_LINUX)

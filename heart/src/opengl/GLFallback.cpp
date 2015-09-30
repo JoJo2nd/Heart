@@ -6,8 +6,8 @@
 #include "opengl/GLFallback.h"
 #include "render/hUniformBufferFlags.h"
 #include "opengl/GLTypes.h"
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 namespace GLExt {
 namespace Fallback {
@@ -64,6 +64,7 @@ void destroyVertexBuffer(hVertexBuffer* vb) {
 hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags) {
     hglEnsureTLSContext();
     hGLErrorScope();
+/*
     GLuint ubname;
     GLenum gl_flags;
     hBool dynamic = (flags & (hUint32)hUniformBufferFlags::Dynamic) == (hUint32)hUniformBufferFlags::Dynamic;
@@ -85,40 +86,87 @@ hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 fl
     }
     glBufferData(GL_UNIFORM_BUFFER, size, initdata, gl_flags);
     hGLSyncFlush();
-
+*/
     auto* ub = new hUniformBuffer();
-    ub->name = ubname;
+    ub->name = 0/*ubname*/;
     ub->size_ = size;
     ub->createFlags_ = flags;
-    ub->persistantMapping = mapped_ptr;
+    ub->persistantMapping = new hByte[size];
     ub->mappedOffset_ = 0;
     ub->mappedSize_ = size;
     return ub;
 }
 
 void flushUniformBuffer(hUniformBuffer* ub) {
-    glBindBuffer(GL_UNIFORM_BUFFER, ub->name);
-    glBufferSubData(GL_UNIFORM_BUFFER, ub->mappedOffset_, ub->mappedSize_, ((hByte*)ub->persistantMapping)+ub->mappedOffset_);
+    //glBindBuffer(GL_UNIFORM_BUFFER, ub->name);
+    //glBufferSubData(GL_UNIFORM_BUFFER, ub->mappedOffset_, ub->mappedSize_, ((hByte*)ub->persistantMapping)+ub->mappedOffset_);
 }
 
 void destroyUniformBuffer(hUniformBuffer* ub) {
-    glDeleteBuffers(1, &ub->name);
+    //glDeleteBuffers(1, &ub->name);
     delete (hByte*)ub->persistantMapping;
     delete ub;
 }
 
+struct GLESSamplerObject : hGLSampler {
+    GLuint minFilter;
+    GLuint magFilter;
+    GLuint addressU;
+    GLuint addressV;
+};
+
 hSize_t getSamplerObjectSize() {
-    return 0;
+    return sizeof(GLESSamplerObject);
 }
 
 void genSamplerObjectInplace(const hRenderCallDesc::hSamplerStateDesc& desc, hGLSampler* out, hSize_t osize) {
+    hcAssert(osize >= getSamplerObjectSize());
+    if (osize < getSamplerObjectSize()) {
+        return;
+    }
+    static auto filtertogl = [](proto::renderstate::SamplerState a) -> GLint {
+        switch (a) {
+        case proto::renderstate::point: return GL_NEAREST;
+        case proto::renderstate::linear: return GL_LINEAR;
+        case proto::renderstate::anisotropic: return GL_LINEAR;
+        }
+        return GL_INVALID_VALUE;
+    };
+    static auto minfiltertogl = [](proto::renderstate::SamplerState a) -> GLint {
+        switch (a) {
+        case proto::renderstate::point: return GL_NEAREST_MIPMAP_NEAREST;
+        case proto::renderstate::linear: return GL_LINEAR_MIPMAP_LINEAR;
+        case proto::renderstate::anisotropic: return GL_LINEAR_MIPMAP_LINEAR;
+        }
+        return GL_INVALID_VALUE;
+    };
+    static auto bordertogl = [](proto::renderstate::SamplerBorder a) -> GLint {
+        switch (a) {
+        case proto::renderstate::wrap: return GL_REPEAT;
+        case proto::renderstate::mirror: return GL_MIRRORED_REPEAT;
+        case proto::renderstate::clamp: return GL_CLAMP_TO_EDGE;
+        }
+        return GL_INVALID_VALUE;
+    };
 
+
+    auto* s = (GLESSamplerObject*)out;
+    s->minFilter = minfiltertogl(desc.filter_);
+    s->magFilter = filtertogl(desc.filter_);
+    s->addressU = bordertogl(desc.addressU_);
+    s->addressV = bordertogl(desc.addressV_);
 }
 
 void destroySamplerObjectInplace(hGLSampler* data) {
 }
 
 void bindSamplerObject(hInt index, Heart::hRenderer::hGLSampler* so) {
+    auto* s = (GLESSamplerObject*)so;
+    // GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_WRAP_S, or GL_TEXTURE_WRAP_T
+    glTexParameteri(index, GL_TEXTURE_MIN_FILTER, s->minFilter);
+    glTexParameteri(index, GL_TEXTURE_MAG_FILTER, s->magFilter);
+    glTexParameteri(index, GL_TEXTURE_WRAP_S, s->addressU);
+    glTexParameteri(index, GL_TEXTURE_WRAP_T, s->addressV);
 }
 
 }

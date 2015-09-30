@@ -16,6 +16,13 @@
 		},
 
 		{
+			"cmd": [ "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\Common7\\IDE\\devenv.com", "C:\\Users\\James\\projects\\heart\\heart.sln", "/build", "RelWithDebInfo|x64"],
+			"name": "Build \"Heart RelWithDebugInfo x64 VS\"",
+			"selector": "source.c++",
+			"file_regex": "\\d+>\\s*(.*)\\((\\d+),?\\d*\\)",
+		},
+
+		{
 			"cmd":
 			[
 				"make"

@@ -184,6 +184,16 @@ else()
 	add_definitions(-DBUILD_64_BIT)
 endif()
 
+## CMAKE_C_FLAGS_[DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL] ##
+set(CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG} "CMAKE_DEBUG_BUILD")
+set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} "CMAKE_DEBUG_BUILD")
+set(CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE} "CMAKE_RELEASE_BUILD")
+set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE} "CMAKE_RELEASE_BUILD")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO} "CMAKE_RELWITHDEBINFO_BUILD")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} "CMAKE_RELWITHDEBINFO_BUILD")
+set(CMAKE_C_FLAGS_MINSIZEREL ${CMAKE_C_FLAGS_MINSIZEREL} "CMAKE_MINSIZEREL_BUILD")
+set(CMAKE_CXX_FLAGS_MINSIZEREL ${CMAKE_CXX_FLAGS_MINSIZEREL} "CMAKE_MINSIZEREL_BUILD")
+
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pre_game.txt")
   include("${CMAKE_CURRENT_SOURCE_DIR}/pre_game.txt")
 endif()
@@ -202,6 +212,8 @@ option(FORCE_ENABLE_MEMORY_TRACKING "Enable all memory tracking in all builds" O
 option(UNITY_BUILD "Unity build where possible" OFF)
 
 if(MSVC)
+  # /GR- -> No Runtime Type information (Sadly, protobuffers requires RTI)
+  # /wdXYZW -> Disable warning XYZW
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4091") #MP
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4091")
 endif()
@@ -234,7 +246,7 @@ endif(FORCE_DISABLE_MEMORY_TRACKING)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake/modules/")
 
 ## Common code for finding libs
-find_package(OpenGL REQUIRED)
+#find_package(OpenGL REQUIRED)
 
 ## Platform Handling
 if (PLATFORM_WINDOWS)
@@ -261,10 +273,10 @@ if (PLATFORM_WINDOWS)
   set(FREETYPE_INCLUDE_DIR_ft2build "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/include/config")
   set(FREETYPE_INCLUDE_DIR_freetype2 "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/vs2015/include/config")
   ## GLEW ##
-  set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include") #- include directories for GLEW
-  set(GLEW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/lib/Release/x64/glew32.lib") #- libraries to link against GLEW
-  set(GLEW_FOUND TRUE) #- true if GLEW has been found and can be used
-  set(GLEW_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/bin/Release/x64/glew32.dll") # - Non-standard
+  # set(GLEW_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/include") #- include directories for GLEW
+  # set(GLEW_LIBRARIES "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/lib/Release/x64/glew32.lib") #- libraries to link against GLEW
+  # set(GLEW_FOUND TRUE) #- true if GLEW has been found and can be used
+  # set(GLEW_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/glew/bin/Release/x64/glew32.dll") # - Non-standard
   ## NVTT ##
   set(NVTT_LIBRARIES 
     "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Release/bc6h.lib"
@@ -285,7 +297,16 @@ if (PLATFORM_WINDOWS)
     "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/nvtt.lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/lib/Debug/squish.lib")
   set(NVTT_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/nvtt/src")
-
+  ## ANGLE ##
+  set(ANGLE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/ANGLE/include")
+  set(ANGLE_LIBRARIES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/ANGLE/lib/libEGL.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/ANGLE/lib/libGLESv2.lib"
+  )
+  set(ANGLE_FOUND TRUE)
+  set(ANGLE_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/ANGLE/bin")
+  ## HLSLcc ##
+  set(HLSLcc_BIN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/hlslcc/bin")
 else()
   find_package(Protobuf REQUIRED)
   find_package(SDL2 REQUIRED)
@@ -346,8 +367,18 @@ set(MEMTRACKERLIB_SRC_DIR
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
-	set(PLATFORM_LIBS dbghelp dxguid dxgi XInput9_1_0 d3d11 d3dcompiler openAL32 ws2_32 Winmm)
-	#set(PLATFORM_LIBS dbghelp dxguid xinput d3d11 d3dcompiler openAL32)
+	set(PLATFORM_LIBS_CORE 
+    dxguid dxgi
+    XInput9_1_0 
+    d3d11
+    d3dcompiler
+    openAL32
+    ws2_32
+    Winmm
+    Version
+    Imm32
+  )
+  set(PLATFORM_LIBS ${PLATFORM_LIBS_CORE} dbghelp)
 endif()
 
 if (USE_ASSIMP_DEBUG)

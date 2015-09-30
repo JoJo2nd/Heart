@@ -551,15 +551,24 @@ int main (int argc, char **argv) {
     int result = EXIT_SUCCESS;
     int verbose = 0;
     int c;
+    int option_index;
+    bool clean_build = false;
     std::string config_script = ".build_config";
     const char argopts[] = "vg:h";
+    static struct option long_options[] = {
+        { "version", no_argument, 0, (int)'v' },
+        { "clean", no_argument, 0, (int)'c' },
+        { "force", no_argument, 0, (int)'c' },
+        { 0, 0, 0, 0 }
+    };
     lua_State *L = luaL_newstate();  /* create state */
     luaL_openlibs(L);  /* open libraries */
 
-    while ((c = gop_getopt(argc, argv, argopts)) != -1) {
+    while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
         switch(c) {
         case 'v': verbose = 1; break;
         case 'g': config_script = optarg; break;
+        case 'c': clean_build = true; break;
         case '?':
             if (strchr(argopts, optopt))
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -633,7 +642,7 @@ int main (int argc, char **argv) {
                 res_stdout_path += ".stdout";
                 std::string res_stderr_path = cached_res_path;
                 res_stderr_path += ".stderr";
-                if (minfs_path_exist(res_stdout_path.c_str())) {
+                if (minfs_path_exist(res_stdout_path.c_str()) && !clean_build) {
                     std::ifstream in_data;
                     in_data.open(res_stdout_path, std::ios_base::in | std::ios_base::binary);
                     if (in_data.is_open()) {
@@ -650,7 +659,7 @@ int main (int argc, char **argv) {
                         }
                     }
                 }
-                if (build_required) {
+                if (build_required || clean_build) {
                     if (builder_ctx->saveStdIn) {
                         std::ofstream output;
                         output.open(res_stdin_path.c_str(), std::ios_base::out | std::ios_base::binary);

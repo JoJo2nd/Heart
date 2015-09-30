@@ -5,6 +5,8 @@
 #include "opengl/GLExtSamplerObjects.h"
 #include "opengl/GLTypes.h"
 
+#if 0
+
 namespace GLExt {
 namespace SamplerObjects {
 using namespace Heart;
@@ -79,3 +81,5 @@ void    bindSamplerObject(hInt index, hGLSampler* so) {
 
 }
 }
+
+#endif

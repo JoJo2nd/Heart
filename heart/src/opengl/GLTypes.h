@@ -45,7 +45,7 @@ namespace hRenderer {
         }
     };
 
-#if HEART_DEBUG
+#if HEART_DEBUG_INFO
 #   define hGLErrorScope() Heart::hRenderer::hGLErrorSentry gl_error_sentry__blah_blah__(__FILE__, __LINE__)
 #else
 #   define hGLErrorScope()

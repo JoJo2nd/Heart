@@ -5,8 +5,10 @@
 
 #include "render/hUniformBufferFlags.h"
 #include "opengl/GLTypes.h"
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
+#if 0
 
 namespace GLExt {
 namespace BufferStorage {
@@ -103,3 +105,5 @@ void destroyUniformBuffer(hUniformBuffer* ub) {
 
 }
 }
+
+#endif

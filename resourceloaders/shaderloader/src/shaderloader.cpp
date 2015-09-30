@@ -15,8 +15,7 @@
 #   include <d3d11shader.h>
 #   include <d3dcompiler.h>
 #endif
-#include "GL/glew.h"
-#include "SDL.h"
+
 #include "resource_common.pb.h"
 #include "resource_shader.pb.h"
 #include "builder.pb.h"
@@ -96,7 +95,7 @@ size_t parseVertexInputFormat(const D3D11_SHADER_DESC &desc, ID3D11ShaderReflect
 uint compileD3DShader(std::string* shader_source, const ShaderCompileParams& shader_params,
     std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
 #endif
-uint initGLCompiler(std::string* out_errors);
+
 uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shader_params,
     std::string* out_errors, void** bin_blob, size_t* bin_blob_len);
 uint parseShaderSource(const std::string& shader_path, std::vector<std::string> in_include_paths,
@@ -451,36 +450,6 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
 }
 #endif // if defined (PLATFORM_WINDOWS)
 
-uint initGLCompiler(std::string* out_errors){
-    static bool run_once = false;
-    if (run_once) {
-        return 0;
-    }
-    
-    SDL_Window *mainwindow;
-    SDL_GLContext opengl_context;
- 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        return -1; /* Or die on error */
-    }
- 
-    mainwindow = SDL_CreateWindow("OpenGL Shader Compiler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 512, 512, SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
-    if (!mainwindow) {
-        return -2;
-    }
-
-    opengl_context = SDL_GL_CreateContext(mainwindow);
-
-    glewExperimental=GL_TRUE;
-    int ret = glewInit();
-    if (ret != GLEW_OK) {
-        *out_errors = (char*)glewGetErrorString(ret);
-    }
-
-    run_once = true;
-    return 0;
-}
-
 FILE* makeTempFile(std::string* out_name) {
     char temp_path[MAX_PATH];
     
@@ -503,16 +472,20 @@ uint compileGLShader(std::string* shader_source, const ShaderCompileParams& shad
 std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     struct GLSLProfile {
         const char* profileStr;
-        GLuint type;
+        uint32_t type;
         const char* versionStr;
         const char* entry;
         const char* defineStr;
     };
     static const GLSLProfile OpenGL_shaderProfiles[] = {
-        { "vs_4_0_level_9_3",   Heart::proto::eShaderType_ES2_vs,   "330"  , "main_vs", VS_COMMON_DEFINES },  
-        { "ps_4_0_level_9_3",   Heart::proto::eShaderType_ES2_ps,   "330"  , "main_ps", PS_COMMON_DEFINES },
-        { "vs_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
-        { "ps_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_ps, "es100", "main_ps", PS_COMMON_DEFINES },
+        //{ "vs_4_0_level_9_3",   Heart::proto::eShaderType_ES2_vs,   "es100", "main_vs", VS_COMMON_DEFINES },  
+        //{ "ps_4_0_level_9_3",   Heart::proto::eShaderType_ES2_ps,   "es100", "main_ps", PS_COMMON_DEFINES },
+        //{ "vs_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
+        //{ "ps_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_ps, "es100", "main_ps", PS_COMMON_DEFINES },
+        { "vs_3_0"          ,   Heart::proto::eShaderType_ES2_vs,   "es100", "main_vs", VS_COMMON_DEFINES },  
+        { "ps_3_0"          ,   Heart::proto::eShaderType_ES2_ps,   "es100", "main_ps", PS_COMMON_DEFINES },
+        { "vs_3_0"          ,   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
+        { "ps_3_0"          ,   Heart::proto::eShaderType_WebGL_ps, "es100", "main_ps", PS_COMMON_DEFINES },
         { "vs_5_0"          ,   Heart::proto::eShaderType_ES3_vs,   "es300", "main_vs", VS_COMMON_DEFINES }, // version ??
         { "ps_5_0"          ,   Heart::proto::eShaderType_ES3_ps,   "es300", "main_ps", PS_COMMON_DEFINES }, // version ??
         { "vs_4_0"          ,   Heart::proto::eShaderType_FL10_vs,  "330"  , "main_vs", VS_COMMON_DEFINES }, // version ??
@@ -572,8 +545,9 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         &errors.blob_);
 
     if (FAILED(hr) && errors.blob_) {
-        std::string err=(char*)errors.blob_->GetBufferPointer();
         *out_errors = (char*)errors.blob_->GetBufferPointer();
+        *out_errors += "\nShader Source:\n";
+        *out_errors += *shader_source;
         return -1;
     }
 

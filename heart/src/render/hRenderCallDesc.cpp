@@ -134,9 +134,6 @@ bool hRenderCallDesc::findNamedParameter(const hChar* pname, hUint* outindex, hU
         fieldname = pname;
     }
     for (hUint i=0, n=uniformBufferMax_; i<n && !uniformBuffers_[i].name_.is_default(); ++i) {
-        if (fieldname != pname && hStrNCmp(uniformBuffers_[i].name_.c_str(), pname, uniformBuffers_[i].name_.length())) {
-            continue;
-        }
         for (hUint loi=0, lon=uniformBuffers_[i].ub_->layoutDescCount; loi < lon; ++loi) {
             if (hStrCmp(uniformBuffers_[i].ub_->layoutDesc[loi].fieldName, fieldname) == 0) {
                 *outindex = i;

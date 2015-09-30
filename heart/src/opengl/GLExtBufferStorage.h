@@ -15,9 +15,9 @@ namespace hRenderer {
 
 namespace GLExt {
 namespace BufferStorage {
-Heart::hRenderer::hVertexBuffer* createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
-void destroyVertexBuffer(Heart::hRenderer::hVertexBuffer* vb);
-Heart::hRenderer::hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
-void destroyUniformBuffer(Heart::hRenderer::hUniformBuffer* ub);
+//Heart::hRenderer::hVertexBuffer* createVertexBuffer(const void* data, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+//void destroyVertexBuffer(Heart::hRenderer::hVertexBuffer* vb);
+//Heart::hRenderer::hUniformBuffer* createUniformBuffer(const void* initdata, hUint size, hUint32 flags);
+//void destroyUniformBuffer(Heart::hRenderer::hUniformBuffer* ub);
 }
 }

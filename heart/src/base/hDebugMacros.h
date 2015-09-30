@@ -95,4 +95,4 @@ HEART_EXPORT void HEART_API hcOutputString( const hChar* msg, ... );
 
 #endif
 
-#define hStub() /*hcPrintf("STUBBED OUT %s", __FUNCTION__)*/
+#define hStub() hcPrintf("%s(%d) - STUBBED OUT", __FILE__, __LINE__)

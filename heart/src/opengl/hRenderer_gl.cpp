@@ -26,8 +26,8 @@
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include "lfds/lfds.h"
-#include <GL/glew.h>    
-#include <GL/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <SDL.h>
 #include <memory>
 #include <unordered_map>
@@ -128,13 +128,9 @@ void hglEnsureTLSContext() {
 		SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 		SDL_GL_MakeCurrent(window_, mtContext_);
         ctx = SDL_GL_CreateContext(window_);
+        hcAssertMsg(ctx, "Thread SDL_GL_CreateContext() error: %s", SDL_GetError());
         TLS::setKeyValue(tlsContext_, ctx);
         SDL_GL_MakeCurrent(window_, ctx);
-		if (GL_ARB_debug_output) {
-			glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, hGLDebugCallback_t userParam) {
-				hcPrintf("OpenGL Debug Message: %s", message);
-			}, nullptr);
-		}
     }
 }
 
@@ -152,12 +148,13 @@ void hglReleaseTLSContext() {
 }
 
 void hGLSyncFlush() {
-	GLsync fenceId = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 ); 
-	GLenum result = GL_TIMEOUT_EXPIRED; 
-	while(result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) { 
-		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
-		result = glClientWaitSync(fenceId, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
-	}
+    hStub();
+//	GLsync fenceId = glFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 ); 
+//	GLenum result = GL_TIMEOUT_EXPIRED; 
+//	while(result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) { 
+//		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
+//		result = glClientWaitSync(fenceId, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
+//	}
 }
 
 static void doRenderCmds(hByte* cmds) {
@@ -197,10 +194,11 @@ static void doRenderCmds(hByte* cmds) {
         } break;
         case Op::Fence: {
             hGLErrorScope();
-            hGLFence* c = (hGLFence*)cmdptr;
-            auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-            glFlush();
-            c->fence->sync = f;
+            hStub();
+            //hGLFence* c = (hGLFence*)cmdptr;
+            //auto f = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            //glFlush();
+            //c->fence->sync = f;
             hAtomic::LWMemoryBarrier();
         } break;
         case Op::UniBufferFlush: {
@@ -308,14 +306,15 @@ static void doRenderCmds(hByte* cmds) {
             }
 
             // uniform buffers
-            auto* ubs = (hGLUniformBuffer*)nullptr;
-            if (rc->header_.uniBufferCount_) {
-                ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
-                for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
-                    glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
-                    //glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
-                }
-            }
+            hStub();
+            //auto* ubs = (hGLUniformBuffer*)nullptr;
+            //if (rc->header_.uniBufferCount_) {
+            //    ubs = hGetArgsN(hGLUniformBuffer, rc->header_.uniBufferCount_);
+            //    for (hUint8 i = 0, n = rc->header_.uniBufferCount_; i < n; ++i) {
+            //        glBindBufferRange(GL_UNIFORM_BUFFER, ubs[i].index_, ubs[i].ub_->name, ubs[i].ub_->mappedOffset_, ubs[i].ub_->mappedSize_);
+            //        //glBindBuffer(ubs[i].index_, ubs[i].ub_->name);
+            //    }
+            //}
 
             // Uniform parameters
             for (hUint i = 0, n = rc->paramUpdateCount; i < n; ++i) {
@@ -330,10 +329,10 @@ static void doRenderCmds(hByte* cmds) {
                 case hParamCall::a2i: glUniform2iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
                 case hParamCall::a3i: glUniform3iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
                 case hParamCall::a4i: glUniform4iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
-                case hParamCall::a1ui: glUniform1uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                case hParamCall::a2ui: glUniform2uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                case hParamCall::a3ui: glUniform3uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
-                case hParamCall::a4ui: glUniform4uiv(rc->paramUpdates[i].location, 1, (hUint*)dataptr); break;
+                case hParamCall::a1ui: glUniform1iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a2ui: glUniform2iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a3ui: glUniform3iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
+                case hParamCall::a4ui: glUniform4iv(rc->paramUpdates[i].location, 1, (int*)dataptr); break;
                 case hParamCall::m2x2f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
                 case hParamCall::m2x3f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
                 case hParamCall::m2x4f: glUniformMatrix2fv(rc->paramUpdates[i].location, 1, hFalse, (float*)dataptr); break;
@@ -357,8 +356,9 @@ static void doRenderCmds(hByte* cmds) {
             if (!(rc->flags & hRenderCall::VAOBound)) {
                 hGLErrorScope();
                 auto* va = hGetArgsN(hGLVtxAttrib, rc->header_.vtxAttCount_);
-                glGenVertexArrays(1, &rc->vao);
-                glBindVertexArray(rc->vao);
+                hStub();
+                //glGenVertexArrays(1, &rc->vao);
+                //glBindVertexArray(rc->vao);
 
                 for (hUint8 i = 0, n = rc->header_.vtxAttCount_; i < n; ++i) {
                     hGLErrorScope();
@@ -367,18 +367,18 @@ static void doRenderCmds(hByte* cmds) {
                     glVertexAttribPointer(va[i].index_, va[i].size_, va[i].type_, va[i].normalise, va[i].stride_, va[i].pointer_);
                 }
 
-                rc->flags |= hRenderCall::VAOBound;
+                //rc->flags |= hRenderCall::VAOBound;
             }
-            else {
-                hGLErrorScope();
-                glBindVertexArray(rc->vao);
-            }
+            //else {
+            //    hGLErrorScope();
+            //    glBindVertexArray(rc->vao);
+            //}
 
-                {
-                    hGLErrorScope();
-                    glDrawArrays(c->primType, c->vtxOffset, c->count);
-                }
-                break;
+            {
+                hGLErrorScope();
+                glDrawArrays(c->primType, c->vtxOffset, c->count);
+            }
+            break;
 #undef hGetArgs
 #undef hGetArgsS
 #undef hGetArgsN
@@ -483,23 +483,16 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
 
     window_ = system->getSDLWindow();
 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
 	
 	mtContext_ = SDL_GL_CreateContext(window_);
+    if (!mtContext_) {
+        hcPrintf("SDL_GL_CreateContext() error: %s", SDL_GetError());
+    }
+    hcAssert(mtContext_);
 	if (multiThreadedRenderer == false) {
 		TLS::setKeyValue(tlsContext_, mtContext_);
-	}
-
-	glewExperimental = GL_TRUE;
-	GLenum result = glewInit();
-	if (result != GLEW_OK) {
-		hcPrintf("glewInit() error %d [%s]", result, glewGetErrorString(result));
-	}
-
-	if (GL_ARB_debug_output) {
-		glDebugMessageCallbackARB([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, hGLDebugCallback_t userParam) {
-			hcPrintf("OpenGL Debug Message: %s", message);
-		}, nullptr);
 	}
 
     //check for extensions
@@ -524,8 +517,14 @@ void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat 
         ft.impl_destroySamplerObjectInplace = Caps.SamplerObjectsProc.destroySamplerObjectInplace;
         ft.impl_bindSamplerObject = Caps.SamplerObjectsProc.bindSamplerObject;
     } else {
-        hcAssertFailMsg("TODO: Fallback for SamplerObjects");
+        ft.impl_getSamplerObjectSize = GLExt::Fallback::getSamplerObjectSize;
+        ft.impl_genSamplerObjectInplace = GLExt::Fallback::genSamplerObjectInplace;
+        ft.impl_destroySamplerObjectInplace = GLExt::Fallback::destroySamplerObjectInplace;
+        ft.impl_bindSamplerObject = GLExt::Fallback::bindSamplerObject;
     }
+
+    hcPrintf("OpenGL Vendor: %s\nOpenGL Renderer: %s\nOpenGL Version: %s\nOpenGL GLSL Version: %s\nOpenGL Extensions: %s\n", 
+        glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION), glGetString(GL_EXTENSIONS));
 
 	if (multiThreadedRenderer == true) {
 		SDL_GL_MakeCurrent(window_, nullptr);
@@ -590,10 +589,8 @@ hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len,
     if (status != GL_TRUE) {
         char slog[4096];
         glGetShaderInfoLog(gls, sizeof(slog), nullptr, slog);
-        hcPrintf("Compile error: %s", slog);
+        hcAssertMsg(status == GL_TRUE, "Compile error: %s", slog);
     }
-
-    hcAssert(status == GL_TRUE);
     
 	hGLSyncFlush();
     auto* s = new hShaderStage();
@@ -658,23 +655,24 @@ void  destroyVertexBuffer(hVertexBuffer* vb) {
 hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat format, hUint32 flags) {
     hglEnsureTLSContext();
     hGLErrorScope();
+    hStub(); //Missing formats...
     GLuint tname;
     GLuint fmt = GL_INVALID_VALUE;
     GLuint intfmt = GL_INVALID_VALUE;
     GLuint type = GL_INVALID_VALUE;
     hBool compressed = false;
     switch(format) {
-    case hTextureFormat::R8_unorm:         intfmt=GL_R8;                                  fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    //case hTextureFormat::R8_unorm:         intfmt=GL_R8;                                  fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = false; break; 
     case hTextureFormat::RGBA8_unorm:      intfmt=GL_RGBA8;                               fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
-    case hTextureFormat::RGBA8_sRGB_unorm: intfmt=GL_SRGB8_ALPHA8;                        fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
-    case hTextureFormat::BC1_unorm:        intfmt=GL_COMPRESSED_RGB_S3TC_DXT1_EXT;        fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC2_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC3_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC4_unorm:        intfmt=GL_COMPRESSED_RED_RGTC1;                fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC5_unorm:        intfmt=GL_COMPRESSED_RG_RGTC2;                 fmt=GL_RG;   type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC1_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC2_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
-    case hTextureFormat::BC3_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::RGBA8_sRGB_unorm: intfmt=GL_SRGB8_ALPHA8;                        fmt=GL_RGBA; type=GL_UNSIGNED_BYTE; compressed = false; break; 
+    //case hTextureFormat::BC1_unorm:        intfmt=GL_COMPRESSED_RGB_S3TC_DXT1_EXT;        fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC2_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC3_unorm:        intfmt=GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC4_unorm:        intfmt=GL_COMPRESSED_RED_RGTC1;                fmt=GL_RED;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC5_unorm:        intfmt=GL_COMPRESSED_RG_RGTC2;                 fmt=GL_RG;   type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC1_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;       fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC2_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
+    //case hTextureFormat::BC3_sRGB_unorm:   intfmt=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; fmt=GL_RGB;  type=GL_UNSIGNED_BYTE; compressed = true;  break;
     default: hcAssertFailMsg("Can't handle texture format"); return nullptr;
     }
 
@@ -800,6 +798,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     auto ublimit = 0;
     auto ubtotal = 0;
+    hStub();
+#if 0
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &ublimit);
     glGetProgramiv(rc->program_, GL_ACTIVE_UNIFORM_BLOCKS, &ubtotal);
     std::unique_ptr<GLchar*[]> ubary(new hChar*[ubtotal]);
@@ -820,6 +820,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         }
         return ~0u;
     };
+#endif
 
     auto alimit = 0;
     auto atotal = 0;
@@ -867,7 +868,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         uloc[i] = glGetUniformLocation(rc->program_, uary[i]);
         //cyMurmurHash3_x86_32(uary[i], olen, hGetMurmurHashSeed(), uhashes+i);
         // !!JM TODO: more types handled?
-        if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+        //if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+        if (utypes[i] == GL_SAMPLER_2D) {
             glUniform1i(uloc[i], uloc[i]);
             ++header.samplerCount_;
             ++header.textureCount_;
@@ -916,11 +918,12 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         return GL_INVALID_VALUE;
     };
     auto blendfunctogl = [](proto::renderstate::BlendFunction a) -> GLenum {
+        hStub();
         switch(a) {
         case proto::renderstate::Add : return GL_FUNC_ADD;
         case proto::renderstate::Sub : return GL_FUNC_SUBTRACT;
-        case proto::renderstate::Min : return GL_MIN;
-        case proto::renderstate::Max : return GL_MAX;
+        //case proto::renderstate::Min : return GL_MIN;
+        //case proto::renderstate::Max : return GL_MAX;
         }
         hcAssertFailMsg("unknown blend function value");
         return GL_INVALID_VALUE;
@@ -1090,27 +1093,27 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 #endif
 
     // uniform buffers
-    if (header.uniBufferCount_) {
-        auto ns = (hUint32)(rc->size_+(sizeof(hGLUniformBuffer)*header.uniBufferCount_));
-        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
-#if HEART_DEBUG
-        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
-#endif
-        auto* buffers = (hGLUniformBuffer*)(currentOpCodes+rc->size_);
-        auto* wbuffers = buffers;
-        for (auto i=0u, n=hRenderCallDesc::uniformBufferMax_; i<n && !rcd.uniformBuffers_[i].name_.is_default(); ++i) {
-            auto si = getunibufindex(rcd.uniformBuffers_[i].name_);
-            if (si != ~0u) {
-                wbuffers->index_ = si; 
-                wbuffers->ub_ = rcd.uniformBuffers_[i].ub_; 
-                ++wbuffers;
-            }
-        }
-        rc->size_=ns;    
-    }
-#if HEART_DEBUG
-    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
-#endif
+//    if (header.uniBufferCount_) {
+//        auto ns = (hUint32)(rc->size_+(sizeof(hGLUniformBuffer)*header.uniBufferCount_));
+//        currentOpCodes = (hByte*)hRealloc(currentOpCodes, ns+opguard);
+//#if HEART_DEBUG
+//        for (auto i = 0u; i < opguard; ++i) currentOpCodes[ns + i] = 0xBB;
+//#endif
+//        auto* buffers = (hGLUniformBuffer*)(currentOpCodes+rc->size_);
+//        auto* wbuffers = buffers;
+//        for (auto i=0u, n=hRenderCallDesc::uniformBufferMax_; i<n && !rcd.uniformBuffers_[i].name_.is_default(); ++i) {
+//            auto si = getunibufindex(rcd.uniformBuffers_[i].name_);
+//            if (si != ~0u) {
+//                wbuffers->index_ = si; 
+//                wbuffers->ub_ = rcd.uniformBuffers_[i].ub_; 
+//                ++wbuffers;
+//            }
+//        }
+//        rc->size_=ns;    
+//    }
+//#if HEART_DEBUG
+//    for (auto i = 0u; i < opguard; ++i) hcAssert(currentOpCodes[rc->size_ + i] == 0xBB);
+//#endif
 
     if (requiresUniformParamUpdates) {
         // walk the list of uniforms and find the parameters we need to copy across.
@@ -1118,7 +1121,8 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
         std::vector<hUniformParamUpdate> updateparams;
         updateparams.reserve(utotal);
         for (hUint i=0, n=utotal; i<n; ++i) {
-            if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+            //if (utypes[i] == GL_SAMPLER_1D || utypes[i] == GL_SAMPLER_2D || utypes[i] == GL_SAMPLER_3D) {
+            if (utypes[i] == GL_SAMPLER_2D) {
                 // Handled in other ways.
                 continue;
             }
@@ -1186,6 +1190,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
 
     // vertex attributes
     {
+        hStub(); // --missing types
         auto inputtypetogl = [](Heart::hRenderer::hVertexInputType a) -> GLenum {
             switch(a) {
             case hVertexInputType::Byte        : return GL_BYTE;
@@ -1194,7 +1199,7 @@ hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
             case hVertexInputType::UShort      : return GL_UNSIGNED_SHORT;
             case hVertexInputType::Int         : return GL_INT;
             case hVertexInputType::UInt        : return GL_UNSIGNED_INT;
-            case hVertexInputType::HalfFloat   : return GL_HALF_FLOAT;
+            //case hVertexInputType::HalfFloat   : return GL_HALF_FLOAT;
             case hVertexInputType::Float       : return GL_FLOAT;
             case hVertexInputType::Double      : return GL_DOUBLE;
             }
@@ -1256,6 +1261,7 @@ struct hProgramReflectionInfo {
 };
 
 static ShaderParamType mapGLParamType(GLenum t) {
+    hStub(); // -- missing types
     switch(t) {
     case GL_FLOAT: return ShaderParamType::Float;
     case GL_FLOAT_VEC2: return ShaderParamType::Float2;
@@ -1266,9 +1272,9 @@ static ShaderParamType mapGLParamType(GLenum t) {
     case GL_INT_VEC3: return ShaderParamType::Unknown;
     case GL_INT_VEC4: return ShaderParamType::Unknown;
     case GL_UNSIGNED_INT: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_VEC2: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_VEC3: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_VEC4: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_VEC2: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_VEC3: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_VEC4: return ShaderParamType::Unknown;
     case GL_BOOL: return ShaderParamType::Unknown;
     case GL_BOOL_VEC2: return ShaderParamType::Unknown;
     case GL_BOOL_VEC3: return ShaderParamType::Unknown;
@@ -1276,48 +1282,48 @@ static ShaderParamType mapGLParamType(GLenum t) {
     case GL_FLOAT_MAT2: return ShaderParamType::Float22;
     case GL_FLOAT_MAT3: return ShaderParamType::Float33;
     case GL_FLOAT_MAT4: return ShaderParamType::Float44;
-    case GL_FLOAT_MAT2x3: return ShaderParamType::Float23;
-    case GL_FLOAT_MAT2x4: return ShaderParamType::Float24;
-    case GL_FLOAT_MAT3x2: return ShaderParamType::Float32;
-    case GL_FLOAT_MAT3x4: return ShaderParamType::Float34;
-    case GL_FLOAT_MAT4x2: return ShaderParamType::Float42;
-    case GL_FLOAT_MAT4x3: return ShaderParamType::Float43;
-    case GL_SAMPLER_1D: return ShaderParamType::Sampler1D;
+    //case GL_FLOAT_MAT2x3: return ShaderParamType::Float23;
+    //case GL_FLOAT_MAT2x4: return ShaderParamType::Float24;
+    //case GL_FLOAT_MAT3x2: return ShaderParamType::Float32;
+    //case GL_FLOAT_MAT3x4: return ShaderParamType::Float34;
+    //case GL_FLOAT_MAT4x2: return ShaderParamType::Float42;
+    //case GL_FLOAT_MAT4x3: return ShaderParamType::Float43;
+    //case GL_SAMPLER_1D: return ShaderParamType::Sampler1D;
     case GL_SAMPLER_2D: return ShaderParamType::Sampler2D;
-    case GL_SAMPLER_3D: return ShaderParamType::Sampler3D;
+    //case GL_SAMPLER_3D: return ShaderParamType::Sampler3D;
     case GL_SAMPLER_CUBE: return ShaderParamType::Unknown;
-    case GL_SAMPLER_1D_SHADOW: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_SHADOW: return ShaderParamType::Unknown;
-    case GL_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
-    case GL_SAMPLER_1D_ARRAY_SHADOW: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_ARRAY_SHADOW: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
-    case GL_SAMPLER_CUBE_SHADOW: return ShaderParamType::Unknown;
-    case GL_SAMPLER_BUFFER: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
-    case GL_SAMPLER_2D_RECT_SHADOW: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_1D: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_2D: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_3D: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_CUBE: return ShaderParamType::SamplerCube;
-    case GL_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
-    case GL_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_1D: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_2D: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_3D: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_CUBE: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
-    case GL_UNSIGNED_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_1D_SHADOW: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_SHADOW: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_1D_ARRAY_SHADOW: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_ARRAY_SHADOW: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_CUBE_SHADOW: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    //case GL_SAMPLER_2D_RECT_SHADOW: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_1D: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_2D: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_3D: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_CUBE: return ShaderParamType::SamplerCube;
+    //case GL_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    //case GL_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_1D: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_2D: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_3D: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_CUBE: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_1D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_BUFFER: return ShaderParamType::Unknown;
+    //case GL_UNSIGNED_INT_SAMPLER_2D_RECT: return ShaderParamType::Unknown;
     }
     return ShaderParamType::Unknown;
 };
@@ -1351,8 +1357,9 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
     auto uniblockcount = 0;
     glGetProgramiv(p, GL_ACTIVE_UNIFORM_MAX_LENGTH, &namelimit);
     glGetProgramiv(p, GL_ACTIVE_UNIFORMS, &unicount);
-    glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCKS, &uniblockcount);
-    glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &uniblocknamelimit);
+    hStub();
+    //glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCKS, &uniblockcount);
+    //glGetProgramiv(p, GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH, &uniblocknamelimit);
     refinfo->ubNames.reset(new hChar[uniblockcount*uniblocknamelimit]);
     hChar* uniname = (hChar*)hAlloca(namelimit);
     hUint32* hashes = (hUint32*)hAlloca(unicount*sizeof(hUint32));
@@ -1364,22 +1371,24 @@ hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShade
         auto i2 = (GLuint)i;
         auto blockindex = 0;
         auto blockoffset = 0;
-        glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_BLOCK_INDEX, &blockindex);
-        glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_OFFSET, &blockoffset);
+        hStub();
+        //glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_BLOCK_INDEX, &blockindex);
+        //glGetActiveUniformsiv(p, 1, &i2, GL_UNIFORM_OFFSET, &blockoffset);
 
         hShaderParamInfo info = { (hUint)blockindex, (hUint)blockoffset, mapGLParamType(type), (hUint)size };
         refinfo->paramTable[uniname] = info;
     }
 
-    refinfo->uniformBlocks.reserve(uniblockcount);
-    for (auto i=0,n=uniblockcount; i<n; ++i) {
-        hUniformBlockInfo info;
-        info.index = i;
-        info.name = refinfo->ubNames.get()+(i*uniblocknamelimit);
-        glGetActiveUniformBlockName(p, i, uniblocknamelimit, nullptr, refinfo->ubNames.get()+(i*uniblocknamelimit));
-        glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
-        refinfo->uniformBlocks.push_back(info);
-    }
+    hStub();
+    //refinfo->uniformBlocks.reserve(uniblockcount);
+    //for (auto i=0,n=uniblockcount; i<n; ++i) {
+    //    hUniformBlockInfo info;
+    //    info.index = i;
+    //    info.name = refinfo->ubNames.get()+(i*uniblocknamelimit);
+    //    glGetActiveUniformBlockName(p, i, uniblocknamelimit, nullptr, refinfo->ubNames.get()+(i*uniblocknamelimit));
+    //    glGetActiveUniformBlockiv(p, i, GL_UNIFORM_BLOCK_DATA_SIZE, &info.size);
+    //    refinfo->uniformBlocks.push_back(info);
+    //}
 	hGLSyncFlush();
     refinfo->prog = p;
     return refinfo;
@@ -1476,17 +1485,18 @@ hRenderFence* fence(hCmdList* cl) {
 
 void wait(hRenderFence* fence) {
 	hglEnsureTLSContext();
-	while (fence->sync == nullptr) {
-		Device::ThreadYield();
-	}
-	hcAssert(glIsSync(fence->sync));
-	GLenum result = GL_TIMEOUT_EXPIRED;
-	while (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
-		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
-		result = glClientWaitSync(fence->sync, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
-	}
-
-	glDeleteSync(fence->sync);
+    hStub();
+//	while (fence->sync == nullptr) {
+//		Device::ThreadYield();
+//	}
+//	hcAssert(glIsSync(fence->sync));
+//	GLenum result = GL_TIMEOUT_EXPIRED;
+//	while (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
+//		//5 Second timeout but we ignore timeouts and wait until all OpenGL commands are processed! 
+//		result = glClientWaitSync(fence->sync, GL_SYNC_FLUSH_COMMANDS_BIT, GLuint64(5000000000));
+//	}
+//
+//	glDeleteSync(fence->sync);
 	fence->sync = nullptr;
     hAtomic::LWMemoryBarrier();
 	lfds_freelist_push(fenceFreeList, fence->element);

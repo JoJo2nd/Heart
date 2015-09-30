@@ -7,8 +7,8 @@
 #include "base/hTypes.h"
 #include "render/hRenderCallDesc.h"
 #include "opengl/GLFallback.h"
-#include <GL/glew.h>    
-#include <GL/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 namespace Heart {
 namespace hRenderer {

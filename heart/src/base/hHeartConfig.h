@@ -5,7 +5,7 @@
 
 #pragma once
 
-#if defined (_DEBUG) || defined (DEBUG)
+#if defined (_DEBUG) || defined (DEBUG) || defined (CMAKE_DEBUG_BUILD)
 #   ifndef HEART_DEBUG
 #       define HEART_DEBUG (1)
 #   endif
@@ -21,9 +21,17 @@
 #   endif
 #endif
 
-#if HEART_DEBUG
+#if defined (HEART_DEBUG) || defined (CMAKE_RELWITHDEBINFO_BUILD)
+#	define HEART_DEBUG_INFO (1)
+#endif
+
+#if !defined (HEART_DEBUG_INFO)
+#	defined HEART_DEBUG_INFO (0)
+#endif
+
+#if HEART_DEBUG_INFO
 #   define HEART_DO_ASSERTS (1)
-#elif HEART_RELEASE
+#else
 #   define HEART_DO_ASSERTS (0)
 #endif
 
@@ -38,7 +46,7 @@
 #endif
 
 // To enable compile at load time of shaders.
-#if HEART_DEBUG // or OpenGL when supported
+#if HEART_DEBUG_INFO // or OpenGL when supported
 #   define HEART_ALLOW_SHADER_SOURCE_COMPILE (1)
 #endif
 

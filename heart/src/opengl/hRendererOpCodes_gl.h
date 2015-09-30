@@ -6,8 +6,8 @@
 
 #include "base/hTypes.h"
 #include "base/hColour.h"
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
 namespace Heart {
 namespace hRenderer {

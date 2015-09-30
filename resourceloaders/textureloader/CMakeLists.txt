@@ -47,8 +47,8 @@ link_directories(
 add_executable(texture_builder ${TEXTURE_BUILDER_SRC_FILES})
 #target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES} optimized ${TB_LIBS_OPT} debug ${TB_LIBS_DEBUG})
 target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES})
-#target_link_libraries(texture_builder optimized ${TB_LIBS_OPT})
-target_link_libraries(texture_builder debug ${TB_LIBS_DEBUG})
+target_link_libraries(texture_builder optimized ${TB_LIBS_OPT})
+#target_link_libraries(texture_builder debug ${TB_LIBS_DEBUG})
 
 if (PLATFORM_LINUX)
     ADD_CUSTOM_COMMAND(
@@ -61,7 +61,6 @@ if (PLATFORM_LINUX)
 endif()
 
 if (PLATFORM_WINDOWS)
-	get_filename_component(GLEW_BIN_DIR ${GLEW_BIN_PATH} DIRECTORY)
 	ADD_CUSTOM_COMMAND(
 		TARGET texture_builder
 	    POST_BUILD
@@ -70,7 +69,7 @@ if (PLATFORM_WINDOWS)
 		ARGS -r "(.*\\.(dll))$"
 		ARGS -s "${freeimage_BIN_DIR}"
 		ARGS -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
-		COMMAND python
-		ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r "(.*\\.(dll))$" -s "${GLEW_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+		#COMMAND python
+		#ARGS "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r "(.*\\.(dll))" -s "${GLEW_BIN_DIR}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
 	)
 endif()

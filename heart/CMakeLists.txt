@@ -21,10 +21,10 @@ set( HEART_INCLUDE_DIRS
     "${PROTOBUF_INCLUDE_DIR}"
     "${GENERATED_PROTO_INC_DIRS}"
     "${SDL2_INCLUDE_DIR}"
-    "${GLEW_INCLUDE_DIRS}"
     "${FREETYPE_INCLUDE_DIRS}"
     "${IMGUI_INCLUDE_DIR}"
     "${MEMTRACKERLIB_SRC_DIR}"
+    "${ANGLE_INCLUDE_DIRS}"
 )
 
 set(HEART_LIB_DIRS)
@@ -279,9 +279,9 @@ set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPE
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES_DEBUG 
-        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet imgui memtrackerlib ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
+        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet imgui memtrackerlib ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
 set(HEART_LIBRARIES_RELEASE
-         heart_base zlib crypto lua52 minizip libogg libvorbis proto enet ${SDL2_LIBRARY} ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY} ${FREETYPE_LIBRARIES})
+         heart_base zlib crypto lua52 minizip libogg libvorbis proto enet ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})
@@ -289,21 +289,24 @@ link_directories(${HEART_LIB_DIRS})
 #Create the shared base lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=1)
 add_library(heart_base SHARED ${HEART_BASE_FILES})
-target_link_libraries(heart_base debug crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
-target_link_libraries(heart_base optimized crypto ${SDL2_LIBRARY} ${PLATFORM_LIBS})
+#add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
+#add_library(heart_base ${HEART_BASE_FILES})
+target_link_libraries(heart_base crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
 
 #Create the main engine lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
 add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES} ${HEART_GEN_FILES} "${HEART_SOURCE_DIR}/src/base/hFunctor_gen.py")
-target_link_libraries(heart debug ${HEART_LIBRARIES_DEBUG} ${PLATFORM_LIBS} ${PROFILE_LIBS})
-target_link_libraries(heart optimized ${HEART_LIBRARIES_DEBUG} ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart ${PLATFORM_LIBS} ${PROFILE_LIBS})
+target_link_libraries(heart debug ${HEART_LIBRARIES_DEBUG})
+target_link_libraries(heart optimized ${HEART_LIBRARIES_RELEASE})
 
 if (PLATFORM_WINDOWS)
     ADD_CUSTOM_COMMAND(
         TARGET heart
         POST_BUILD
-        COMMAND python "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+        #COMMAND python "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l glew32 -s "${GLEW_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
         COMMAND python "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -l SDL2 -s "${SDL2_LIB_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
+        COMMAND python "${DEPLOY_TOOLS_DIR}/deploy_files.py" -r ".*\\.dll" -s "${ANGLE_BIN_PATH}" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}"
     )
 endif()
 
