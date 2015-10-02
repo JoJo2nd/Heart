@@ -11,9 +11,11 @@
 #include <vector>
 #include <fstream>
 #if defined (PLATFORM_WINDOWS)
+#   include <d3d9.h>
 #   include <d3d11.h>
 #   include <d3d11shader.h>
 #   include <d3dcompiler.h>
+#   include "d3d9reflectionhelper.h"
 #endif
 
 #include "resource_common.pb.h"
@@ -551,10 +553,75 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
     }
 
     if (strcmp(OpenGL_shaderProfiles[profile_index].versionStr, "--") == 0) {
+//        ID3D11ShaderReflection* reflector = nullptr; 
+//        hr = D3DReflect(result.blob_->GetBufferPointer(), result.blob_->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflector);
+//        if (hr != S_OK) {
+//            *out_errors = "Failed to shader reflection information.";
+//            return -1;
+//        }
+//        D3D11_SHADER_DESC desc;
+//        reflector->GetDesc(&desc);
+        ConstantTable const_table;
+        if (!const_table.Create(result.blob_->GetBufferPointer())) {
+            *out_errors = "Failed to shader reflection information.";
+            return -1;
+        }
+
+        struct ReflHeader {
+            uint32_t magic; //0x7777C0DE
+            uint32_t totalLen;
+            uint32_t constCount;
+        };
+        struct ReflMember {
+            uint32_t type; //0 = bool, 1 = int, 2 = float, 3 = sampler
+            uint32_t regStart;
+            uint32_t regCount;
+            uint32_t rows;
+            uint32_t columns;
+            uint32_t elements;
+            uint32_t members;
+            uint32_t bytes;
+            uint32_t stringTableOffset;
+        };
+
+        uint32_t stringTableSize = 0;
+        ReflHeader hdr;
+        hdr.totalLen = sizeof(ReflHeader);
+        for (size_t ci=0; ci<const_table.GetConstantCount(); ++ci) {
+            hdr.totalLen += sizeof(ReflMember);
+            stringTableSize += (uint32_t)(const_table.GetConstantByIndex(ci)->Name.length()+1); // +1 for null terminator.
+        }
+
+        size_t blob_len = result.blob_->GetBufferSize()+hdr.totalLen+stringTableSize;
+        auto* blob_ptr = new uint8_t[blob_len];
+        hdr.magic = 0x7777C0DE;
+        hdr.totalLen += stringTableSize;
+        hdr.constCount = (uint32_t)const_table.GetConstantCount();
+        memcpy(blob_ptr, &hdr, sizeof(hdr));
+        auto* constants = (ReflMember*)(blob_ptr+sizeof(ReflHeader));
+        auto* stringtable = (char*)(blob_ptr+(sizeof(ReflHeader)+(sizeof(ReflMember)*hdr.constCount)));
+        uint32_t str_offset = 0;
+        for (size_t ci=0; ci<const_table.GetConstantCount(); ++ci) {
+            auto* desc = const_table.GetConstantByIndex(ci);
+            constants[ci].type = desc->RegisterSet;
+            constants[ci].regStart = desc->RegisterIndex;
+            constants[ci].regCount = desc->RegisterCount;
+            constants[ci].rows = desc->Rows;
+            constants[ci].columns = desc->Columns;
+            constants[ci].elements = desc->Elements;
+            constants[ci].members = desc->StructMembers;
+            constants[ci].bytes = (uint32_t)desc->Bytes;
+            constants[ci].stringTableOffset = str_offset;
+            strcpy(stringtable, desc->Name.c_str());
+            stringtable += desc->Name.length()+1; // +1 for null terminator.
+            str_offset += (uint32_t)desc->Name.length();
+        }
+        memcpy(stringtable, result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
+
         // Skip calling HLSLcc. DX Bytecode is good enough
-        *bin_blob = new uint8_t[result.blob_->GetBufferSize()];
-        *bin_blob_len = result.blob_->GetBufferSize();
-        memcpy(*bin_blob, result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
+        *bin_blob = blob_ptr;
+        *bin_blob_len = blob_len;
+        
         return 0;
     }
 

@@ -93,14 +93,124 @@ namespace hRenderer {
     typedef std::unique_ptr<IDirect3DIndexBuffer9, IUnknownDeleter<IDirect3DIndexBuffer9>> IDirect3DIndexBuffer9Ptr;
 
     struct hShaderStage {
+        enum ConstantType {
+            Bool, Int4, Float4, Sampler
+        };
+        struct ReflectionHeader {
+            hUint32 magic; //0x7777C0DE
+            hUint32 totalLen;
+            hUint32 constCount;
+        };
+        struct Constant {
+            hUint32 type; //0 = bool, 1 = int, 2 = float, 3 = sampler
+            hUint32 regStart;
+            hUint32 regCount;
+            hUint32 rows;
+            hUint32 columns;
+            hUint32 elements;
+            hUint32 members;
+            hUint32 bytes;
+            hUint32 stringTableOffset;
+        };
+
         hShaderStage(hShaderProfile in_profile, const hChar* shader_prog, hUint32 len) 
-            : profile(in_profile) {
-            shaderBinary.reset(new hChar[len]);
-            hMemCpy(shaderBinary.get(), shader_prog, len);
+            : profile(in_profile)
+            , floatRegStart(~0)
+            , floatRegCount(0)
+            , intRegStart(~0)
+            , intRegCount(0) {
+            shaderBlob.reset(new hChar[len]);
+            hMemCpy(shaderBlob.get(), shader_prog, len);
+            header = (ReflectionHeader*)shaderBlob.get();
+            constants = (Constant*)(shaderBlob.get()+sizeof(ReflectionHeader));
+            strings = (char*)(constants+header->constCount);
+            programBlob = (void*)(shaderBlob.get()+header->totalLen);
+            hUint32 float_reg_size_bytes = 0;
+            hUint32 int_reg_size_bytes = 0;
+            for (hUint32 i=0; i<header->constCount; ++i) {
+                if (constants[i].type == 2) {
+                    auto data_end = constants[i].regStart*sizeof(float)*4+constants[i].bytes;
+                    if (data_end > float_reg_size_bytes) float_reg_size_bytes = (hUint32)data_end;
+                } else if (constants[i].type == 1) {
+                    auto data_end = constants[i].regStart*sizeof(hInt)*4+constants[i].bytes;
+                    if (data_end > int_reg_size_bytes) int_reg_size_bytes = (hUint32)data_end;
+                }
+            }
+            floatRegCount = float_reg_size_bytes/(sizeof(float)*4);
+            intRegCount = int_reg_size_bytes/(sizeof(hInt)*4);
+            if (float_reg_size_bytes > 0) floatRegs.reset(new hFloat[float_reg_size_bytes/sizeof(float)]);
+            if (int_reg_size_bytes > 0) intRegs.reset(new hInt[int_reg_size_bytes/sizeof(hInt)]);
+        }
+
+        hBool getSamplerIndex(const hChar* name, hUint32* index) {
+            hcAssert(index);
+            for (hUint32 i=0, n=header->constCount; i<n; ++i) {
+                if (hStrCmp(name, strings+constants[i].stringTableOffset) == 0) {
+                    *index = constants[i].regStart;
+                    return hTrue;
+                }
+            }
+            return hFalse;
+        }
+
+        hBool getFloatParamStart(const hChar* name, hUint32* start, hUint32* bytesize) {
+            hcAssert(start && bytesize);
+            for (hUint32 i=0, n=header->constCount; i<n; ++i) {
+                if (hStrCmp(name, strings+constants[i].stringTableOffset) == 0) {
+                    *start = constants[i].regStart;
+                    *bytesize = constants[i].bytes;
+                    return hTrue;
+                }
+            }
+            return hFalse;
+        }
+
+        hBool getIntParamStart(const hChar* name, hUint32* start, hUint32* bytesize) {
+            hcAssert(start && bytesize);
+            for (hUint32 i=0, n=header->constCount; i<n; ++i) {
+                if (hStrCmp(name, strings+constants[i].stringTableOffset) == 0) {
+                    *start = constants[i].regStart;
+                    *bytesize = constants[i].bytes;
+                    return hTrue;
+                }
+            }
+            return hFalse;
+        }
+
+        hFloat* getFloatRegisterBaseAddress() {
+            return floatRegs.get();
+        }
+
+        hInt* getIntRegisterBaseAddress() {
+            return intRegs.get();
+        }
+
+        void uploadConstants(IDirect3DDevice9* d3d_device) {
+            if (floatRegCount && vertexShader.get()) {
+                d3d_device->SetVertexShaderConstantF(floatRegStart, floatRegs.get(), floatRegCount);
+            }
+            if (intRegCount && vertexShader.get()) {
+                d3d_device->SetVertexShaderConstantI(intRegStart, intRegs.get(), intRegCount);
+            }
+            if (floatRegCount && pixelShader.get()) {
+                d3d_device->SetPixelShaderConstantF(floatRegStart, floatRegs.get(), floatRegCount);
+            }
+            if (intRegCount && pixelShader.get()) {
+                d3d_device->SetPixelShaderConstantI(intRegStart, intRegs.get(), intRegCount);
+            }
         }
 
         hShaderProfile profile;
-        std::unique_ptr<hChar> shaderBinary;
+        std::unique_ptr<hChar> shaderBlob;
+        const ReflectionHeader* header;
+        const Constant* constants;
+        const hChar* strings;
+        const void* programBlob;
+        hUint32 floatRegStart, floatRegCount;
+        hUint32 intRegStart, intRegCount;
+        std::unique_ptr<hFloat> floatRegs;
+        std::unique_ptr<hInt> intRegs;
+        // No support for bools...yet
         IDirect3DVertexShader9Ptr vertexShader;
         IDirect3DPixelShader9Ptr pixelShader;
     };
@@ -170,8 +280,43 @@ namespace hRenderer {
         
     };
 
-    struct hRenderCall {
+    struct hSamplerState {
+        struct StateValue {
+            DWORD state;
+            DWORD value;
+        };
+        hUint stateCount;
+        StateValue* states;
+    };
 
+    struct hRenderCall {
+        struct RenderState {
+            DWORD state;
+            DWORD value;
+        };
+        struct SamplerState {
+            hUint index;
+            hSamplerState* samplerState;
+        };
+        struct ParamUpdate {
+            enum {
+                Float, Int, Bool
+            };
+            hUint ubIndex;
+            hUint ubOffset;
+            hUint vec4Size;
+        };
+
+        hShaderStage* vertex;
+        hShaderStage* pixel;
+        hUint stateCount;
+        RenderState* states;
+        hUint samplerCount;
+        SamplerState* samplerStates;
+        hUint uniBufferCount;
+        hUniformBuffer** uniBuffers;
+        hUint paramUpdateCount;
+        ParamUpdate* paramUpdates;
     };
 
     struct hRenderFence {
@@ -441,7 +586,9 @@ namespace d3d9 {
     }
     
     void  destroyShader(hShaderStage* prog) {
-        // push to destroy queue
+        enqueueRenderResourceDelete([=](){
+            delete prog;
+        });
     }
 
     hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags) {
@@ -464,6 +611,9 @@ namespace d3d9 {
         return new hTexture2D(initialData->width, initialData->height, initialData, levels, intfmt);
     }
     void  destroyTexture2D(hTexture2D* t) {
+        enqueueRenderResourceDelete([=](){
+            delete t;
+        });
     }
 
     hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags) {
@@ -503,7 +653,13 @@ namespace d3d9 {
     }
 
     hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
-        return new hRenderCall();
+        static const hUint sampler_size = 1;
+        hUint sampler_count = 0;
+        hUint param_update_count = 0;
+
+        auto* rc = new hRenderCall();
+        //rcd.
+        return rc;
     }
     void destroyRenderCall(hRenderCall* rc) {
         enqueueRenderResourceDelete([=](){
