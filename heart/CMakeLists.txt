@@ -150,6 +150,8 @@ if (PLATFORM_WINDOWS)
         "${HEART_SOURCE_DIR}/src/win32/pal/*.cpp"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
+        "${HEART_SOURCE_DIR}/src/d3d9/*.h"
+        "${HEART_SOURCE_DIR}/src/d3d9/*.cpp"
         "${HEART_SOURCE_DIR}/src/opengl/*.h"
         "${HEART_SOURCE_DIR}/src/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"

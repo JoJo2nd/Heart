@@ -9,7 +9,7 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <SDL.h>
-
+#if HEART_USEOPENGL
 namespace Heart {
 namespace hRenderer {
 
@@ -25,3 +25,4 @@ void hGLSyncFlush();
 
 }
 }
+#endif//HEART_USEOPENGL

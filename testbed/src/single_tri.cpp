@@ -71,8 +71,8 @@ public:
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
 
-        vert = shaderProg->getShader(hShaderProfile::ES2_vs);
-        frag = shaderProg->getShader(hShaderProfile::ES2_ps);
+        vert = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
+        frag = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
         vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
 
         hRenderer::hRenderCallDesc rcd;

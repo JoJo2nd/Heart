@@ -15,6 +15,8 @@
 
 struct lfds_freelist_element;
 
+#if HEART_USEOPENGL
+
 namespace Heart {
 namespace hRenderer {
     struct hUniformLayoutDesc;
@@ -265,3 +267,4 @@ namespace hRenderer {
     };
 }
 }
+#endif//HEART_USEOPENGL

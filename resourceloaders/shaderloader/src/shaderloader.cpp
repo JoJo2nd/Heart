@@ -113,7 +113,6 @@ struct ShaderProfile {
     Heart::proto::eShaderRenderSystem system_;
 } shaderProfiles[] = {
     { "XXXXXXX",      { { "HEART_INVALID"                 , "0"}, { "HEART_XXX" , "0"} },   Heart::proto::eShaderType_ES2_vs    , nullptr ,         Heart::proto::eShaderRenderSystem_OpenGL, },
-
     { "ES2_vs",       { {"HEART_COMPILE_VERTEX_PROG", "1"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "1"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "0"} },  Heart::proto::eShaderType_ES2_vs    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
     { "ES2_ps",       { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "1"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "1"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "0"} },  Heart::proto::eShaderType_ES2_ps    , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
     { "WebGL_vs",     { {"HEART_COMPILE_VERTEX_PROG", "1"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "0"}, {"HEART_WebGL", "1"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "0"} },  Heart::proto::eShaderType_WebGL_vs  , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
@@ -130,6 +129,8 @@ struct ShaderProfile {
     { "FL11_cs",      { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "1"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "0"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "1"} },  Heart::proto::eShaderType_FL11_cs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
     { "FL11_hs",      { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "1"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "0"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "1"} },  Heart::proto::eShaderType_FL11_hs   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
     { "FL11_ds",      { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "1"}, {"HEART_ES2", "0"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "1"} },  Heart::proto::eShaderType_FL11_ds   , compileGLShader , Heart::proto::eShaderRenderSystem_OpenGL, },
+    { "D3D9_vs",      { {"HEART_COMPILE_VERTEX_PROG", "1"}, {"HEART_COMPILE_FRAGMENT_PROG", "0"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "1"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "0"} },  Heart::proto::eShaderType_D3D9_vs   , compileGLShader , Heart::proto::eShaderRenderSystem_D3D9, },
+    { "D3D9_ps",      { {"HEART_COMPILE_VERTEX_PROG", "0"}, {"HEART_COMPILE_FRAGMENT_PROG", "1"}, {"HEART_COMPILE_GEOMETRY_PROG", "0"}, {"HEART_COMPILE_COMPUTE_PROG", "0"}, {"HEART_COMPILE_HULL_PROG", "0"}, {"HEART_COMPILE_DOMAIN_PROG", "0"}, {"HEART_ES2", "1"}, {"HEART_WebGL", "0"}, {"HEART_ES3", "0"}, {"HEART_FL10", "0"}, {"HEART_FL11", "0"} },  Heart::proto::eShaderType_D3D9_ps   , compileGLShader , Heart::proto::eShaderRenderSystem_D3D9, },
 };
 
 ShaderProfile getShaderProfile(const char* profile) {
@@ -478,10 +479,6 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         const char* defineStr;
     };
     static const GLSLProfile OpenGL_shaderProfiles[] = {
-        //{ "vs_4_0_level_9_3",   Heart::proto::eShaderType_ES2_vs,   "es100", "main_vs", VS_COMMON_DEFINES },  
-        //{ "ps_4_0_level_9_3",   Heart::proto::eShaderType_ES2_ps,   "es100", "main_ps", PS_COMMON_DEFINES },
-        //{ "vs_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
-        //{ "ps_4_0_level_9_3",   Heart::proto::eShaderType_WebGL_ps, "es100", "main_ps", PS_COMMON_DEFINES },
         { "vs_3_0"          ,   Heart::proto::eShaderType_ES2_vs,   "es100", "main_vs", VS_COMMON_DEFINES },  
         { "ps_3_0"          ,   Heart::proto::eShaderType_ES2_ps,   "es100", "main_ps", PS_COMMON_DEFINES },
         { "vs_3_0"          ,   Heart::proto::eShaderType_WebGL_vs, "es100", "main_vs", VS_COMMON_DEFINES },
@@ -498,6 +495,8 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         { "cs_5_0"          ,   Heart::proto::eShaderType_FL11_cs,  "440"  , "main_cs", }, // version ??
         { "hs_5_0"          ,   Heart::proto::eShaderType_FL11_hs,  "440"  , "main_hs", }, // version ??
         { "ds_5_0"          ,   Heart::proto::eShaderType_FL11_ds,  "440"  , "main_ds", }, // version ??
+        { "vs_3_0"          ,   Heart::proto::eShaderType_D3D9_vs,  "--"   , "main_vs", VS_COMMON_DEFINES },  
+        { "ps_3_0"          ,   Heart::proto::eShaderType_D3D9_ps,  "--"   , "main_ps", PS_COMMON_DEFINES },
     };
 
     // no binaries for GL
@@ -549,6 +548,14 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         *out_errors += "\nShader Source:\n";
         *out_errors += *shader_source;
         return -1;
+    }
+
+    if (strcmp(OpenGL_shaderProfiles[profile_index].versionStr, "--") == 0) {
+        // Skip calling HLSLcc. DX Bytecode is good enough
+        *bin_blob = new uint8_t[result.blob_->GetBufferSize()];
+        *bin_blob_len = result.blob_->GetBufferSize();
+        memcpy(*bin_blob, result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
+        return 0;
     }
 
     std::string tmp_filename;

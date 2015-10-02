@@ -9,6 +9,8 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
+#if HEART_USEOPENGL
+
 namespace GLExt {
 namespace Fallback {
 
@@ -171,3 +173,5 @@ void bindSamplerObject(hInt index, Heart::hRenderer::hGLSampler* so) {
 
 }
 }
+
+#endif//HEART_USEOPENGL

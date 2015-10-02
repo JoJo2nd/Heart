@@ -370,6 +370,7 @@ if (WIN32)
 	set(PLATFORM_LIBS_CORE 
     dxguid dxgi
     XInput9_1_0 
+    d3d9
     d3d11
     d3dcompiler
     openAL32
@@ -404,6 +405,7 @@ set(assimp_LIB_DIR_FULL "${assimp_LIB_DIR}/${assimp_BUILD_EXT}")
 
 #SDL2
 add_definitions(-DHEART_USE_SDL2)
+add_definitions(-DHEART_USED3D=1)
 if (PLATFORM_WINDOWS)
   get_filename_component(SDL2_LIB_PATH ${SDL2_LIBRARY} DIRECTORY)
 endif()

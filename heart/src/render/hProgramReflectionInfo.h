@@ -6,6 +6,16 @@
 
 #include "base/hTypes.h"
 
+#ifndef HEART_STATIC_RENDER_API
+#   define HEART_STATIC_RENDER_API (0)
+#endif
+
+#if !HEART_STATIC_RENDER_API
+#   define HEART_MODULE_API(r, fn_name) extern r (HEART_API *fn_name)
+#else
+#   define HEART_MODULE_API(r, fn_name) r fn_name
+#endif
+
 namespace Heart {
 namespace hRenderer {
 
@@ -55,13 +65,12 @@ struct hUniformLayoutDesc {
     hUint16         dataOffset;
 };
 
-hProgramReflectionInfo* createProgramReflectionInfo(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);
-void destroyProgramReflectionInfo(hProgramReflectionInfo* p);
-
-hShaderParamInfo  getParameterInfo(hProgramReflectionInfo* p, const hChar* name);
-hUint             getUniformBlockCount(hProgramReflectionInfo* p);
-hUniformBlockInfo getUniformBlockInfo(hProgramReflectionInfo* p, hUint i);
-hUint             getParameterTypeByteSize(ShaderParamType type);
+HEART_MODULE_API(hProgramReflectionInfo*, createProgramReflectionInfo)(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain);
+HEART_MODULE_API(void, destroyProgramReflectionInfo)(hProgramReflectionInfo* p);
+HEART_MODULE_API(hShaderParamInfo, getParameterInfo)(hProgramReflectionInfo* p, const hChar* name);
+HEART_MODULE_API(hUint, getUniformBlockCount)(hProgramReflectionInfo* p);
+HEART_MODULE_API(hUniformBlockInfo, getUniformBlockInfo)(hProgramReflectionInfo* p, hUint i);
+HEART_MODULE_API(hUint, getParameterTypeByteSize)(ShaderParamType type);
 
 }
 }

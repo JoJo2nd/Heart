@@ -5,6 +5,7 @@ enum eShaderRenderSystem {
 	eShaderRenderSystem_None 	= -1;
 	eShaderRenderSystem_D3D11 	= 0;
 	eShaderRenderSystem_OpenGL 	= 1;
+    eShaderRenderSystem_D3D9    = 2;
 }
 
 enum eShaderType {
@@ -51,6 +52,9 @@ enum eShaderType {
     eShaderType_FL11_cs = 33;
     eShaderType_FL11_hs = 34;
     eShaderType_FL11_ds = 35;
+    // Direct3D 9
+    eShaderType_D3D9_vs = 36;
+    eShaderType_D3D9_ps = 37;
 }
 
 enum eShaderStreamType {

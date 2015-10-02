@@ -45,6 +45,8 @@ namespace Heart
             case proto::eShaderType_FL11_cs: type = hShaderProfile::FL11_cs;  break;
             case proto::eShaderType_FL11_hs: type = hShaderProfile::FL11_hs;  break;
             case proto::eShaderType_FL11_ds: type = hShaderProfile::FL11_ds;  break;
+            case proto::eShaderType_D3D9_vs: type = hShaderProfile::D3D_9c_vs; break;
+            case proto::eShaderType_D3D9_ps: type = hShaderProfile::D3D_9c_ps; break;
             default: break;
             }
             shaderProfiles_[i].profile_ = type;

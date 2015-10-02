@@ -33,12 +33,15 @@
 #include <unordered_map>
 #include <functional>
 
+#if HEART_USEOPENGL
+
 namespace Heart {    
 
 class hSystem;
 
 namespace hRenderer {
-namespace RenderPrivate {
+namespace ogl {
+//namespace RenderPrivate {
 
 	static const hUint  FRAME_COUNT = 3;
     static const hUint  RMEM_COUNT = FRAME_COUNT+1;
@@ -86,12 +89,12 @@ namespace RenderPrivate {
         void(*impl_destroySamplerObjectInplace)(hGLSampler* data);
         void(*impl_bindSamplerObject)(hInt index, hGLSampler* so);
     } ft;
-}
+//}
 
-using namespace RenderPrivate;
+//using namespace RenderPrivate;
 
 // !!JM TODO: Improve these (make lock-free?), they are placeholder
-void* rtmp_malloc(hSize_t size, hUint alignment/*=16*/) {
+void* rtmp_malloc(hSize_t size, hUint alignment=16) {
     hMutexAutoScope sentry(&memAccess);
     renderScratchAllocd[memIndex] = hAlign(renderScratchAllocd[memIndex], alignment);
     void* r = renderScratchMem[memIndex] + renderScratchAllocd[memIndex];
@@ -676,7 +679,7 @@ hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initdata, hTextureFormat 
     default: hcAssertFailMsg("Can't handle texture format"); return nullptr;
     }
 
-    glActiveTexture(GL_TEXTURE0 + (RenderPrivate::Caps.MaxTextureUnits - 1));
+    glActiveTexture(GL_TEXTURE0 + (Caps.MaxTextureUnits - 1));
     glGenTextures(1, &tname);
     glBindTexture(GL_TEXTURE_2D, tname);
 
@@ -1552,14 +1555,14 @@ void submitFrame(hCmdList* cl) {
 	auto writeindex = fenceIndex;
 	// wait for prev frame to finish
 	if (frameFences[fenceIndex]) {
-		wait(frameFences[fenceIndex]);
+		ogl::wait(frameFences[fenceIndex]);
 		frameFences[fenceIndex] = nullptr;
 	}
 
 	hCmdList* ncl=cl->prev;
 
 	hcAssert(frameFences[fenceIndex] == nullptr);
-	frameFences[fenceIndex] = fence(ncl);
+	frameFences[fenceIndex] = ogl::fence(ncl);
 	fenceIndex = (fenceIndex+1)%FRAME_COUNT;
 
     ncl->allocCmdMem(Op::Return, 0);
@@ -1584,10 +1587,10 @@ void flush(hCmdList* cl) {
 void finish() {
     if (multiThreadedRenderer) {
         auto* cl = createCmdList();
-        auto* f = fence(cl);
-        endReturn(cl);
-        flush(cl);
-        wait(f);
+        auto* f = ogl::fence(cl);
+        ogl::endReturn(cl);
+        ogl::flush(cl);
+        ogl::wait(f);
     } else {
         
     }
@@ -1595,3 +1598,5 @@ void finish() {
 
 }
 }
+}
+#endif // HEART_USEOPENGL

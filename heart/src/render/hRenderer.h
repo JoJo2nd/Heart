@@ -22,6 +22,16 @@
 #include "render/hRenderPrim.h"
 #include "render/hProgramReflectionInfo.h"
 
+#ifndef HEART_STATIC_RENDER_API
+#   define HEART_STATIC_RENDER_API (0)
+#endif
+
+#if !HEART_STATIC_RENDER_API
+#   define HEART_MODULE_API(r, fn_name) extern r (HEART_API *fn_name)
+#else
+#   define HEART_MODULE_API(r, fn_name) r fn_name
+#endif
+
 namespace Heart {
 
 class hShaderProgram;
@@ -50,71 +60,62 @@ namespace hRenderer {
     struct hUniformBuffer;
 	struct hRenderFence;
 
-    void					create(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
-    void					destroy();
-    hFORCEINLINE hFloat     getRatio() { return 1.f; }
+    HEART_MODULE_API(void, create)(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
+    HEART_MODULE_API(void, destroy)();
+    HEART_MODULE_API(hFloat, getRatio)();
+    HEART_MODULE_API(bool, isProfileSupported)(hShaderProfile profile);
+    HEART_MODULE_API(hShaderProfile, getActiveProfile)(hShaderFrequency);
+    HEART_MODULE_API(const hRenderFrameStats*, getRenderStats)();
+    HEART_MODULE_API(hShaderStage*, compileShaderStageFromSource)(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
+    HEART_MODULE_API(void, destroyShader)(hShaderStage* prog);
+    HEART_MODULE_API(hTexture2D*, createTexture2D)(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
+    HEART_MODULE_API(void, destroyTexture2D)(hTexture2D* t);
+    HEART_MODULE_API(hIndexBuffer*, createIndexBuffer)(const void* pIndices, hUint32 nIndices, hUint32 flags);
+    HEART_MODULE_API(void*, getIndexBufferMappingPtr)(hIndexBuffer* vb);
+    HEART_MODULE_API(void, destroyIndexBuffer)(hIndexBuffer* ib);
+    HEART_MODULE_API(hVertexBuffer*,  createVertexBuffer)(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+    HEART_MODULE_API(void*, getVertexBufferMappingPtr)(hVertexBuffer* vb, hUint32* size);
+    HEART_MODULE_API(void,  destroyVertexBuffer)(hVertexBuffer* vb);
+    HEART_MODULE_API(hUniformBuffer*, createUniformBuffer)(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
+    HEART_MODULE_API(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub);
+    HEART_MODULE_API(void, destroyUniformBuffer)(hUniformBuffer* ub);
+    HEART_MODULE_API(hRenderCall*, createRenderCall)(const hRenderCallDesc& rcd);
+    HEART_MODULE_API(void, destroyRenderCall)(hRenderCall* rc);
+    HEART_MODULE_API(void*, allocTempRenderMemory)( hUint32 size );
+    HEART_MODULE_API(hCmdList*, createCmdList)();
+    HEART_MODULE_API(void, linkCmdLists)(hCmdList* before, hCmdList* after, hCmdList* i);
+    HEART_MODULE_API(void, detachCmdLists)(hCmdList* i);
+    HEART_MODULE_API(hCmdList*, nextCmdList)(hCmdList* i);
+    HEART_MODULE_API(void, clear)(hCmdList* cl, hColour colour, hFloat depth);
+    HEART_MODULE_API(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
+    HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
+    HEART_MODULE_API(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
+    HEART_MODULE_API(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
+    HEART_MODULE_API(hRenderFence*, fence)(hCmdList* cl);
+    HEART_MODULE_API(void, wait)(hRenderFence* fence);
+    HEART_MODULE_API(void, flush)(hCmdList* cl);
+    HEART_MODULE_API(void, finish)();
+    HEART_MODULE_API(void, call)(hCmdList* cl, hCmdList* tocall);
+    HEART_MODULE_API(void, endReturn)(hCmdList* cl);
+    HEART_MODULE_API(void, swapBuffers)(hCmdList* cl);
+    HEART_MODULE_API(void, submitFrame)(hCmdList* cmds);
+    HEART_MODULE_API(void, rendererFrameSubmit)(hCmdList* cmdlists, hUint count);
+    HEART_MODULE_API(hFloat, getLastGPUTime)();
+    HEART_MODULE_API(hBool, isRenderThread)();
 
-    bool                    isProfileSupported(hShaderProfile profile);
+    inline void* getMappingPtr(hIndexBuffer* ib) {
+        return getIndexBufferMappingPtr(ib);
+    }
+    inline void* getMappingPtr(hVertexBuffer* vb, hUint32* size) {
+        return getVertexBufferMappingPtr(vb, size);
+    }
+    inline void* getMappingPtr(hUniformBuffer* ub) {
+        return getUniformBufferMappingPtr(ub);
+    }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-    const hRenderFrameStats* getRenderStats();
-    
-    hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
-    hShaderStage* createShaderStage(const hChar* shaderProg, hUint32 len, Heart::hShaderType type);
-    void  destroyShader(hShaderStage* prog);
-
-    hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
-    void  destroyTexture2D(hTexture2D* t);
-
-    hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags);
-	void* getMappingPtr(hIndexBuffer* vb);
-    void  destroyIndexBuffer(hIndexBuffer* ib);
-
-    hVertexBuffer*  createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
-	void* getMappingPtr(hVertexBuffer* vb, hUint32* size);
-    void  destroyVertexBuffer(hVertexBuffer* vb);
-
-    hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
-	void* getMappingPtr(hUniformBuffer* ub);
-    void destroyUniformBuffer(hUniformBuffer* ub);
-
-    hRenderCall* createRenderCall(const hRenderCallDesc& rcd);
-    void destroyRenderCall(hRenderCall* rc);
-
-    void* allocTempRenderMemory( hUint32 size );
-
-    hCmdList* createCmdList();
-    void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i);
-    void      detachCmdLists(hCmdList* i);
-    hCmdList* nextCmdList(hCmdList* i);
-
-
-    void clear(hCmdList* cl, hColour colour, hFloat depth);
-    void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
-	void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
-	void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
-    void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
-	hRenderFence* fence(hCmdList* cl);
-	void wait(hRenderFence* fence);
-    void flush(hCmdList* cl);
-    void finish();
-    void call(hCmdList* cl, hCmdList* tocall);
-    void endReturn(hCmdList* cl);
-    void swapBuffers(hCmdList* cl);
-
-    void submitFrame(hCmdList* cmds);
-
-    /*
-        Methods to be called between beginCmdList & endCmdList
-    */
-
-    void rendererFrameSubmit(hCmdList* cmdlists, hUint count);
-    hFloat getLastGPUTime();
-    hBool isRenderThread();
-
+#if !HEART_STATIC_RENDER_API
+    void initialiseRenderFunc();
+#endif
 }
 }
 

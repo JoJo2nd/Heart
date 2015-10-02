@@ -156,3 +156,12 @@
 #   define HEART_C_EXPORT extern "C" __declspec(dllexport)
 #   define HEART_CLASS_EXPORT
 #endif
+
+
+#if !defined (HEART_USED3D)
+#   define HEART_USED3D (0)
+#endif
+
+#if !defined (HEART_USEOPENGL)
+#   define HEART_USEOPENGL (0)
+#endif

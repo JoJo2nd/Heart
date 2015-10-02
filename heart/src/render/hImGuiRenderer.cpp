@@ -121,8 +121,8 @@ hBool ImGuiInit() {
         { hStringID("in_colour")    , 4, hRenderer::hVertexInputType::UByte , sizeof(hFloat) * 4, hTrue , 20 },
     };
     imguiCtx.shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/imgui"));
-    imguiCtx.vert = imguiCtx.shaderProg->getShader(hShaderProfile::ES2_vs);
-    imguiCtx.pixel = imguiCtx.shaderProg->getShader(hShaderProfile::ES2_ps);
+    imguiCtx.vert = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
+    imguiCtx.pixel = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
     imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat) * 9, ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 
     hRenderer::hUniformLayoutDesc ublo[] = {

@@ -48,6 +48,10 @@ namespace Heart {
 
         hInitFreetype2();
 
+#if !HEART_STATIC_RENDER_API
+        hRenderer::initialiseRenderFunc();
+#endif
+
         hFileSystemInterface fileInterface;
         auto plugin_loaded = loadFileSystemInterface(hConfigurationVariables::getCVarStr("plugin.filesystem", "none"), &fileInterface);
         hcAssertMsg(plugin_loaded, "Failed to load file interface \"%s\"", hConfigurationVariables::getCVarStr("plugin.filesystem", "none"));

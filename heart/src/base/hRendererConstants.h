@@ -334,38 +334,21 @@ namespace Heart {
         eRenderResourceType_Invalid = ~0
     };
 
-    enum class hShaderProfile 
-    {
-        // Deprecated 
-//         eShaderProfile_vs4_0,
-//         eShaderProfile_vs4_1,
-//         eShaderProfile_vs5_0,
-// 
-//         eShaderProfile_ps4_0,
-//         eShaderProfile_ps4_1,
-//         eShaderProfile_ps5_0,
-// 
-//         eShaderProfile_gs4_0,
-//         eShaderProfile_gs4_1,
-//         eShaderProfile_gs5_0,
-// 
-//         eShaderProfile_cs4_0,
-//         eShaderProfile_cs4_1,
-//         eShaderProfile_cs5_0,
-// 
-//         eShaderProfile_hs5_0,
-//         eShaderProfile_ds5_0,
-        // End - Deprecated
-
+    enum class hShaderProfile {
         ES2_vs, ES2_ps,
         WebGL_vs, WebGL_ps,
         ES3_vs, ES3_ps,
+        D3D_9c_vs, D3D_9c_ps,
         FL10_vs, FL10_ps, FL10_gs, FL10_cs,
         FL11_vs, FL11_ps, FL11_gs, FL11_cs, FL11_hs, FL11_ds,
 
         // Nothing should support invalid
         Invalid,
         eShaderProfile_Max,
+    };
+
+    enum class hShaderFrequency {
+        Vertex, Pixel, Hull, Domain, Compute
     };
 
     enum hSAMPLER_STATE_VALUE

@@ -9,6 +9,8 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
+#if HEART_USEOPENGL
+
 namespace Heart {
 namespace hRenderer {
 
@@ -156,3 +158,5 @@ struct hGLVertexBufferFlush {
 
 }
 }
+
+#endif//HEART_USEOPENGL
