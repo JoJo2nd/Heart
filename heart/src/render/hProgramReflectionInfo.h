@@ -60,7 +60,7 @@ struct hUniformBlockInfo {
 };
 
 struct hUniformLayoutDesc {
-    char*           fieldName;
+    const hChar*   fieldName;
     ShaderParamType type;
     hUint16         dataOffset;
 };

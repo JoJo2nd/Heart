@@ -124,7 +124,7 @@ namespace hRenderer {
             header = (ReflectionHeader*)shaderBlob.get();
             constants = (Constant*)(shaderBlob.get()+sizeof(ReflectionHeader));
             strings = (char*)(constants+header->constCount);
-            programBlob = (void*)(shaderBlob.get()+header->totalLen);
+            programBlob = (DWORD*)(shaderBlob.get()+header->totalLen);
             hUint32 float_reg_size_bytes = 0;
             hUint32 int_reg_size_bytes = 0;
             for (hUint32 i=0; i<header->constCount; ++i) {
@@ -140,6 +140,15 @@ namespace hRenderer {
             intRegCount = int_reg_size_bytes/(sizeof(hInt)*4);
             if (float_reg_size_bytes > 0) floatRegs.reset(new hFloat[float_reg_size_bytes/sizeof(float)]);
             if (int_reg_size_bytes > 0) intRegs.reset(new hInt[int_reg_size_bytes/sizeof(hInt)]);
+        }
+
+        hBool hasSampler(const hChar* name) {
+            for (hUint32 i=0, n=header->constCount; i<n; ++i) {
+                if (hStrCmp(name, strings+constants[i].stringTableOffset) == 0) {
+                    return hTrue;
+                }
+            }
+            return hFalse;
         }
 
         hBool getSamplerIndex(const hChar* name, hUint32* index) {
@@ -200,12 +209,40 @@ namespace hRenderer {
             }
         }
 
+        hBool isBound() { 
+            return vertexShader.get() || pixelShader.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            if (profile == hShaderProfile::D3D_9c_vs) {
+                IDirect3DVertexShader9* vshader;
+                auto hr = d3d_device->CreateVertexShader(programBlob, &vshader);
+                if (hr != S_OK) {
+                    hcAssertMsg(hr == S_OK, "CreateVertexShader() failed.");
+                    return hFalse;
+                }
+                vertexShader.reset(vshader);
+                return hTrue;
+            } else if (profile == hShaderProfile::D3D_9c_ps) {
+                IDirect3DPixelShader9* pshader;
+                auto hr = d3d_device->CreatePixelShader(programBlob, &pshader);
+                if (hr != S_OK) {
+                    hcAssertMsg(hr == S_OK, "CreatePixelShader() failed.");
+                    return hFalse;
+                }
+                pixelShader.reset(pshader);
+                return hTrue;
+            }
+
+            return hFalse;
+        }
+
         hShaderProfile profile;
         std::unique_ptr<hChar> shaderBlob;
         const ReflectionHeader* header;
         const Constant* constants;
         const hChar* strings;
-        const void* programBlob;
+        const DWORD* programBlob;
         hUint32 floatRegStart, floatRegCount;
         hUint32 intRegStart, intRegCount;
         std::unique_ptr<hFloat> floatRegs;
@@ -230,6 +267,14 @@ namespace hRenderer {
             }
         }
 
+        hBool isBound() {
+            return !!texture.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            return hFalse;
+        }
+
         DWORD d3dFormat;
         hUint32 baseWidth;
         hUint32 baseHeight;
@@ -242,14 +287,34 @@ namespace hRenderer {
         hVertexBuffer(hUint32 in_elementsize, hUint32 in_elementcount, const hByte* in_data)
             : elementSize(in_elementsize)
             , elementCount(in_elementcount)
+            , usage(0)
             , data(new hByte[in_elementsize*in_elementcount]) {
             if (in_data) {
                 hMemCpy(data.get(), in_data, in_elementsize*in_elementcount);
             }
         }
 
+        hBool isBound() {
+            return !!vertexBuffer.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            IDirect3DVertexBuffer9* vbuffer;
+            auto hr = d3d_device->CreateVertexBuffer(elementSize*elementCount, usage, 0, D3DPOOL_MANAGED, &vbuffer, nullptr);
+            hcAssertMsg(hr == S_OK, "CreateVertexBuffer() failed.");
+            if (hr == S_OK) {
+                vertexBuffer.reset(vbuffer);
+                void* lock_ptr;
+                vertexBuffer->Lock(0, 0, &lock_ptr, 0);
+                hMemCpy(lock_ptr, data.get(), elementSize*elementCount);
+                vertexBuffer->Unlock();
+            }
+            return hr == S_OK;
+        }
+
         hUint32 elementSize;
         hUint32 elementCount;
+        DWORD usage;
         std::unique_ptr<hByte> data;
         IDirect3DVertexBuffer9Ptr vertexBuffer;
     };
@@ -257,64 +322,136 @@ namespace hRenderer {
     struct hIndexBuffer {
         hIndexBuffer(hUint32 in_size, const hByte* in_data)
             : size(in_size)
+            , usage(0)
             , data(new hByte[in_size]) {
             if (in_data) {
                 hMemCpy(data.get(), in_data, in_size);
             }
         }
 
+        hBool isBound() {
+            return !!indexBuffer.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            IDirect3DIndexBuffer9* ibuffer;
+            auto hr = d3d_device->CreateIndexBuffer(size, usage, D3DFMT_INDEX16, D3DPOOL_MANAGED, &ibuffer, nullptr);
+            hcAssertMsg(hr == S_OK, "CreateVertexBuffer() failed.");
+            if (hr == S_OK) {
+                indexBuffer.reset(ibuffer);
+                void* lock_ptr;
+                indexBuffer->Lock(0, 0, &lock_ptr, 0);
+                hMemCpy(lock_ptr, data.get(), size);
+                indexBuffer->Unlock();
+            }
+            return hr == S_OK;
+        }
+
         hUint32 size;
+        DWORD usage;
         std::unique_ptr<hByte> data;
         IDirect3DIndexBuffer9Ptr indexBuffer;
     };
 
     struct hUniformBuffer {
-        hUniformBuffer(hUint32 in_size)
+        hUniformBuffer(hUint32 in_size, const hUniformLayoutDesc* in_layout, hUint in_count)
             : data(new hByte[in_size])
             , size(in_size) {
-
+            layout.resize(in_count);
+            hMemCpy(layout.data(), in_layout, sizeof(hUniformLayoutDesc)*in_count);
         }
 
         std::unique_ptr<hByte> data;
+        std::vector<hUniformLayoutDesc> layout;
         hUint32 size;
         
     };
 
     struct hSamplerState {
+        /* -- Sampler states to update
+            D3DSAMP_ADDRESSU;
+            D3DSAMP_ADDRESSV;
+            D3DSAMP_ADDRESSW;
+            D3DSAMP_BORDERCOLOR;
+            D3DSAMP_MAGFILTER;
+            D3DSAMP_MINFILTER;
+            D3DSAMP_MIPFILTER;
+            D3DSAMP_MIPMAPLODBIAS;
+            D3DSAMP_MAXMIPLEVEL;
+            D3DSAMP_MAXANISOTROPY;
+            //D3DSAMP_SRGBTEXTURE;
+            //D3DSAMP_ELEMENTINDEX;
+            //D3DSAMP_DMAPOFFSET;
+        */
         struct StateValue {
             DWORD state;
             DWORD value;
-        };
-        hUint stateCount;
-        StateValue* states;
+        } states [9];
     };
 
     struct hRenderCall {
+        /* -- Render States to update
+            if (D3DRS_ALPHABLENDENABLE) { ->0
+                D3DRS_SRCBLEND; ->1
+                D3DRS_DESTBLEND; ->2
+                D3DRS_BLENDOP; ->3
+                if (D3DRS_SEPARATEALPHABLENDENABLE) { ->4
+                    D3DRS_SRCBLENDALPHA; ->5
+                    D3DRS_DESTBLENDALPHA; ->6
+                    D3DRS_BLENDOPALPHA; ->7
+                }
+            }
+            if (D3DRS_ZENABLE) { ->8
+                D3DRS_ZWRITEENABLE; ->9
+                D3DRS_ZFUNC; ->10
+            }
+            if (D3DRS_STENCILENABLE) { ->11
+                D3DRS_STENCILFAIL; ->12
+                D3DRS_STENCILZFAIL; ->13
+                D3DRS_STENCILPASS; ->14
+                D3DRS_STENCILFUNC; ->15
+                D3DRS_STENCILREF; ->16
+                D3DRS_STENCILMASK; ->17
+                D3DRS_STENCILWRITEMASK; ->18
+            }
+            D3DRS_FILLMODE; ->19
+            D3DRS_CULLMODE; ->20
+            D3DRS_DEPTHBIAS; ->21
+            D3DRS_SLOPESCALEDEPTHBIAS; ->22
+            D3DRS_SCISSORTESTENABLE; ->23
+        */
         struct RenderState {
             DWORD state;
             DWORD value;
         };
         struct SamplerState {
             hUint index;
-            hSamplerState* samplerState;
+            const hTexture2D* texture;
+            hSamplerState samplerState;
         };
         struct ParamUpdate {
             enum {
-                Float, Int, Bool
+                Float = 1, 
+                Int = 2, 
+                Bool = 4,
+                Vertex = 8,
+                Fragment = 16,
             };
-            hUint ubIndex;
-            hUint ubOffset;
-            hUint vec4Size;
+            hUint regIndex;
+            hUint16 ubIndex;
+            hUint16 ubOffset;
+            hUint16 byteSize;
+            hByte type;
         };
 
         hShaderStage* vertex;
         hShaderStage* pixel;
         hUint stateCount;
-        RenderState* states;
+        RenderState states[24];
         hUint samplerCount;
         SamplerState* samplerStates;
         hUint uniBufferCount;
-        hUniformBuffer** uniBuffers;
+        const hUniformBuffer** uniBuffers;
         hUint paramUpdateCount;
         ParamUpdate* paramUpdates;
     };
@@ -641,7 +778,12 @@ namespace d3d9 {
     }
 
     hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
-        return new hUniformBuffer(structSize);
+        return new hUniformBuffer(structSize, layout, layout_count);
+    }
+    const hUniformLayoutDesc* getUniformBufferLayoutInfo(const hUniformBuffer* ub, hUint* out_count) {
+        hcAssert(out_count);
+        *out_count = (hUint)ub->layout.size();
+        return ub->layout.data();
     }
     void* getUniformBufferMappingPtr(hUniformBuffer* ub) {
         return ub->data.get();
@@ -653,12 +795,289 @@ namespace d3d9 {
     }
 
     hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
-        static const hUint sampler_size = 1;
+        static const hUint sampler_size = sizeof(hSamplerState);
         hUint sampler_count = 0;
-        hUint param_update_count = 0;
+        hUint int_param_update_count = 0;
+        hUint float_param_update_count = 0;
+        hUint uniform_buffer_count = 0;
 
-        auto* rc = new hRenderCall();
-        //rcd.
+        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
+            const auto& sampler = rcd.vertex_->constants[i];
+            if (sampler.type == 3) {
+                ++sampler_count;
+            }
+        }
+        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
+            const auto& sampler = rcd.fragment_->constants[i];
+            if (sampler.type == 3) {
+                ++sampler_count;
+            }
+        }
+        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
+            const auto& const_param = rcd.vertex_->constants[i];
+            if (const_param.type == 1) {
+                ++int_param_update_count;
+            } else if (const_param.type == 2) {
+                ++float_param_update_count;
+            }
+        }
+        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
+            const auto& const_param = rcd.fragment_->constants[i];
+            if (const_param.type == 1) {
+                ++int_param_update_count;
+            } else if (const_param.type == 2) {
+                ++float_param_update_count;
+            }
+        }
+        for (const auto& uni_buffer : rcd.uniformBuffers_) {
+            if (!uni_buffer.name_.is_default()) {
+                ++uniform_buffer_count;
+            }
+        }
+
+        auto blendOpConv = [](proto::renderstate::BlendOp in) -> DWORD {
+            switch(in) {
+            case proto::renderstate::BlendZero             : return D3DBLEND_ZERO;
+            case proto::renderstate::BlendOne              : return D3DBLEND_ONE;
+            case proto::renderstate::BlendSrcColour        : return D3DBLEND_SRCCOLOR;
+            case proto::renderstate::BlendInverseSrcColour : return D3DBLEND_INVSRCCOLOR;
+            case proto::renderstate::BlendDestColour       : return D3DBLEND_DESTCOLOR;
+            case proto::renderstate::BlendInverseDestColour: return D3DBLEND_INVDESTCOLOR;
+            case proto::renderstate::BlendSrcAlpha         : return D3DBLEND_SRCALPHA;
+            case proto::renderstate::BlendInverseSrcAlpha  : return D3DBLEND_INVSRCALPHA;
+            case proto::renderstate::BlendDestAlpha        : return D3DBLEND_DESTALPHA;
+            case proto::renderstate::BlendInverseDestAlpha : return D3DBLEND_INVDESTALPHA;
+            }
+            return D3DBLEND_ZERO;
+        };
+        auto blendFuncConv = [](proto::renderstate::BlendFunction in) -> DWORD {
+            switch (in) {
+            case proto::renderstate::Add: return D3DBLENDOP_ADD;
+            case proto::renderstate::Sub: return D3DBLENDOP_SUBTRACT;
+            case proto::renderstate::Min: return D3DBLENDOP_MIN;
+            case proto::renderstate::Max: return D3DBLENDOP_MAX;
+            }
+            return D3DBLENDOP_ADD;
+        };
+        auto funcCompConv = [](proto::renderstate::FunctionCompare in) -> DWORD {
+            switch(in) {
+            case proto::renderstate::CompareNever        : return D3DCMP_NEVER;
+            case proto::renderstate::CompareLess         : return D3DCMP_LESS;
+            case proto::renderstate::CompareEqual        : return D3DCMP_EQUAL;
+            case proto::renderstate::CompareLessEqual    : return D3DCMP_LESSEQUAL;
+            case proto::renderstate::CompareGreater      : return D3DCMP_GREATER;
+            case proto::renderstate::CompareNotEqual     : return D3DCMP_NOTEQUAL;
+            case proto::renderstate::CompareGreaterEqual : return D3DCMP_GREATEREQUAL;
+            case proto::renderstate::CompareAlways       : return D3DCMP_ALWAYS;
+            }
+            return D3DCMP_NEVER;
+        };
+        auto stencilOpConv = [](proto::renderstate::StencilOp in) -> DWORD {
+            switch(in) {
+            case proto::renderstate::StencilKeep   : return D3DSTENCILOP_KEEP;
+            case proto::renderstate::StencilZero   : return D3DSTENCILOP_ZERO;
+            case proto::renderstate::StencilReplace: return D3DSTENCILOP_REPLACE;
+            case proto::renderstate::StencilIncSat : return D3DSTENCILOP_INCRSAT;
+            case proto::renderstate::StencilDecSat : return D3DSTENCILOP_DECRSAT;
+            case proto::renderstate::StencilInvert : return D3DSTENCILOP_INVERT;
+            case proto::renderstate::StencilIncr   : return D3DSTENCILOP_INCR;
+            case proto::renderstate::StencilDecr   : return D3DSTENCILOP_DECR;
+            }
+            return D3DSTENCILOP_KEEP;
+        };
+        auto fillModeConv = [](proto::renderstate::FillMode in) -> DWORD {
+            if (in == proto::renderstate::Wireframe) {
+                return D3DFILL_WIREFRAME;
+            } else {
+                return D3DFILL_SOLID;
+            }
+        };
+        auto cullModeConv = [](proto::renderstate::CullMode in) -> DWORD {
+            switch(in) {
+            case proto::renderstate::CullNone            : return D3DCULL_NONE;
+            case proto::renderstate::CullClockwise       : return D3DCULL_CW;
+            case proto::renderstate::CullCounterClockwise: return D3DCULL_CCW;
+            }
+            return D3DCULL_CW;
+        };
+        auto textureFilterConv = [](proto::renderstate::SamplerState in) {
+            switch(in) {
+            case proto::renderstate::point      : return D3DTEXF_POINT;
+            case proto::renderstate::linear     : return D3DTEXF_LINEAR;
+            case proto::renderstate::anisotropic: return D3DTEXF_ANISOTROPIC;
+            }
+            return D3DTEXF_POINT;
+        };
+        auto textureAddConv = [](proto::renderstate::SamplerBorder in) {
+            switch(in) {
+            case proto::renderstate::wrap  : return D3DTADDRESS_WRAP;
+            case proto::renderstate::mirror: return D3DTADDRESS_MIRROR;
+            case proto::renderstate::clamp : return D3DTADDRESS_CLAMP;
+            case proto::renderstate::border: return D3DTADDRESS_BORDER;
+            }
+            return D3DTADDRESS_CLAMP;
+        };
+        auto floatBitsToDWORD = [](float in) {
+            union {
+                float f;
+                DWORD d;
+            } mish_mash;
+            mish_mash.f = in;
+            return mish_mash.d;
+        };
+        auto intBitsToDWORD = [](hInt32 in) {
+            union {
+                hInt32 i;
+                DWORD d;
+            } mish_mash;
+            mish_mash.i = in;
+            return mish_mash.d;
+        };
+
+        bool separate_alpha_blend = 
+        rcd.blend_.blendEnable_ && 
+        (rcd.blend_.srcBlend_ != rcd.blend_.srcBlendAlpha_ ||
+        rcd.blend_.destBlend_ != rcd.blend_.destBlendAlpha_ ||
+        rcd.blend_.blendOp_ != rcd.blend_.blendOpAlpha_);
+
+        hSize_t rnd_call_size = sizeof(hRenderCall) 
+            + (sampler_count*sampler_size) 
+            + (int_param_update_count*sizeof(hRenderCall::ParamUpdate))
+            + (float_param_update_count*sizeof(hRenderCall::ParamUpdate))
+            + (uniform_buffer_count*sizeof(void*));
+        auto* ptr = (hByte*)hMalloc(rnd_call_size);
+        auto* rc = new (ptr) hRenderCall();
+        rc->samplerStates = (hRenderCall::SamplerState*)(ptr+sizeof(hRenderCall));
+        rc->samplerCount = sampler_count;
+        rc->uniBuffers = (const hUniformBuffer**)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)));
+        rc->uniBufferCount = uniform_buffer_count;
+        rc->paramUpdates = (hRenderCall::ParamUpdate*)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)+(uniform_buffer_count*sizeof(void*))));
+        rc->paramUpdateCount = int_param_update_count+float_param_update_count;
+        rc->vertex=rcd.vertex_;
+        rc->pixel=rcd.fragment_;
+        rc->states[0]  = { (DWORD)D3DRS_ALPHABLENDENABLE, (DWORD)(rcd.blend_.blendEnable_ ? TRUE : FALSE) };
+        rc->states[1]  = { (DWORD)D3DRS_SRCBLEND, blendOpConv(rcd.blend_.srcBlend_) };
+        rc->states[2]  = { (DWORD)D3DRS_DESTBLEND, blendOpConv(rcd.blend_.destBlend_) };
+        rc->states[3]  = { (DWORD)D3DRS_BLENDOP, blendFuncConv(rcd.blend_.blendOp_) };
+        rc->states[4]  = { (DWORD)D3DRS_SEPARATEALPHABLENDENABLE, (DWORD)(separate_alpha_blend ? TRUE : FALSE) };
+        rc->states[5]  = { (DWORD)D3DRS_SRCBLENDALPHA, blendOpConv(rcd.blend_.srcBlendAlpha_) };
+        rc->states[6]  = { (DWORD)D3DRS_DESTBLENDALPHA, blendOpConv(rcd.blend_.destBlendAlpha_) };
+        rc->states[7]  = { (DWORD)D3DRS_BLENDOPALPHA, blendFuncConv(rcd.blend_.blendOpAlpha_) };
+        rc->states[8]  = { (DWORD)D3DRS_ZENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[9]  = { (DWORD)D3DRS_ZWRITEENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[10] = { (DWORD)D3DRS_ZFUNC, funcCompConv(rcd.depthStencil_.depthFunc_) };
+        rc->states[11] = { (DWORD)D3DRS_STENCILENABLE, rcd.depthStencil_.stencilEnable_ };
+        rc->states[12] = { (DWORD)D3DRS_STENCILFAIL, stencilOpConv(rcd.depthStencil_.stencilFailOp_) };
+        rc->states[13] = { (DWORD)D3DRS_STENCILZFAIL, stencilOpConv(rcd.depthStencil_.stencilDepthFailOp_) };
+        rc->states[14] = { (DWORD)D3DRS_STENCILPASS, stencilOpConv(rcd.depthStencil_.stencilPassOp_) };
+        rc->states[15] = { (DWORD)D3DRS_STENCILFUNC, funcCompConv(rcd.depthStencil_.stencilFunc_) };
+        rc->states[16] = { (DWORD)D3DRS_STENCILREF, rcd.depthStencil_.stencilRef_ };
+        rc->states[17] = { (DWORD)D3DRS_STENCILMASK, rcd.depthStencil_.stencilReadMask_ };
+        rc->states[18] = { (DWORD)D3DRS_STENCILWRITEMASK, rcd.depthStencil_.stencilWriteMask_ };
+        rc->states[19] = { (DWORD)D3DRS_FILLMODE, fillModeConv(rcd.rasterizer_.fillMode_) };
+        rc->states[20] = { (DWORD)D3DRS_CULLMODE, cullModeConv(rcd.rasterizer_.cullMode_) };
+        rc->states[21] = { (DWORD)D3DRS_DEPTHBIAS, intBitsToDWORD(rcd.rasterizer_.depthBias_) };
+        rc->states[22] = { (DWORD)D3DRS_SLOPESCALEDEPTHBIAS, floatBitsToDWORD(rcd.rasterizer_.slopeScaledDepthBias_) };
+        rc->states[23] = { (DWORD)D3DRS_SCISSORTESTENABLE, (DWORD)(rcd.rasterizer_.scissorEnable_ ? TRUE : FALSE) };
+
+        auto addSampler = [&](hRenderCall* in_rc, hUint i, hUint sampler_reg, const hRenderCallDesc::hSamplerStateDesc& ss, const hTexture2D* in_tex) {
+            hcAssertMsg(in_tex, "No texture bound to sampler.");
+            in_rc->samplerStates[i].index = sampler_reg;
+            in_rc->samplerStates[i].texture = in_tex;
+            in_rc->samplerStates[i].samplerState.states[0] = { (DWORD)D3DSAMP_ADDRESSU, (DWORD)textureAddConv(ss.addressU_)};
+            in_rc->samplerStates[i].samplerState.states[1] = { (DWORD)D3DSAMP_ADDRESSV, (DWORD)textureAddConv(ss.addressV_)};
+            in_rc->samplerStates[i].samplerState.states[2] = { (DWORD)D3DSAMP_ADDRESSW, (DWORD)textureAddConv(ss.addressW_)};
+            in_rc->samplerStates[i].samplerState.states[3] = { (DWORD)D3DSAMP_BORDERCOLOR, (hUint32)ss.borderColour_};
+            in_rc->samplerStates[i].samplerState.states[4] = { (DWORD)D3DSAMP_MAGFILTER, (DWORD)textureFilterConv(ss.filter_)};
+            in_rc->samplerStates[i].samplerState.states[5] = { (DWORD)D3DSAMP_MINFILTER, (DWORD)textureFilterConv(ss.filter_)};
+            in_rc->samplerStates[i].samplerState.states[6] = { (DWORD)D3DSAMP_MAXANISOTROPY, ss.maxAnisotropy_};
+            in_rc->samplerStates[i].samplerState.states[7] = { (DWORD)D3DSAMP_MAXMIPLEVEL, floatBitsToDWORD(ss.maxLOD_)};
+            in_rc->samplerStates[i].samplerState.states[8] = { (DWORD)D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
+        };
+        auto findMatchingSampler = [](const hRenderCallDesc& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
+            for (const auto& i : in_rcd.samplerStates_) {
+                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
+                    return &i.sampler_;
+                }
+            }
+            return nullptr;
+        };
+        auto findMatchingTexture = [](const hRenderCallDesc& in_rcd, const hChar* name) -> const hTexture2D* {
+            for (const auto& i : in_rcd.textureSlots_) {
+                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
+                    return i.t2D_;
+                }
+            }
+            return nullptr;
+        };
+        hUint current_sampler = 0;
+        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
+            const auto& sampler = rcd.vertex_->constants[i];
+            if (sampler.type != 3) continue;
+            if (auto* ss_ptr = findMatchingSampler(rcd, rcd.vertex_->strings+sampler.stringTableOffset)) {
+                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr, findMatchingTexture(rcd, rcd.vertex_->strings+sampler.stringTableOffset));
+            }
+        }
+        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
+            const auto& sampler = rcd.fragment_->constants[i];
+            if (sampler.type != 3) continue;
+            if (auto* ss_ptr = findMatchingSampler(rcd, rcd.fragment_->strings+sampler.stringTableOffset)) {
+                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr, findMatchingTexture(rcd, rcd.fragment_->strings+sampler.stringTableOffset));
+            }
+        }
+        hcAssert(current_sampler == rc->samplerCount);
+
+        hUint current_ub = 0;
+        for (auto& uni_buffer : rcd.uniformBuffers_) {
+            if (!uni_buffer.name_.is_default()) {
+                rc->uniBuffers[current_ub++] = uni_buffer.ub_;
+            }
+        }
+        hcAssert(current_ub == rc->uniBufferCount);
+
+        hUint current_pu = 0;
+        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
+            const auto& const_param = rcd.vertex_->constants[i];
+            hUint index, offset, size;
+            ShaderParamType type;
+            if (const_param.type == 1 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Vertex | hRenderCall::ParamUpdate::Int;
+                ++current_pu;
+            } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Vertex | hRenderCall::ParamUpdate::Float;
+                ++current_pu;
+            }
+        }
+        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
+            const auto& const_param = rcd.fragment_->constants[i];
+            hUint index, offset, size;
+            ShaderParamType type;
+            if (const_param.type == 1 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Fragment | hRenderCall::ParamUpdate::Int;
+                ++current_pu;
+            } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Fragment | hRenderCall::ParamUpdate::Float;
+                ++current_pu;
+            }
+        }
+        hcAssert(current_pu == rc->paramUpdateCount);
+
         return rc;
     }
     void destroyRenderCall(hRenderCall* rc) {
@@ -885,6 +1304,26 @@ namespace d3d9 {
     hBool isRenderThread() {
         return hFalse;
     }
+
+    hUint getParameterTypeByteSize(ShaderParamType type) {
+        switch(type) {
+        case ShaderParamType::Unknown:  return -1;
+        case ShaderParamType::Float:    return 4;
+        case ShaderParamType::Float2:   return 8;
+        case ShaderParamType::Float3:   return 12;
+        case ShaderParamType::Float4:   return 16;
+        case ShaderParamType::Float22:  return 16;
+        case ShaderParamType::Float23:  return 24;
+        case ShaderParamType::Float24:  return 32;
+        case ShaderParamType::Float32:  return 16;
+        case ShaderParamType::Float33:  return 36;
+        case ShaderParamType::Float34:  return 48;
+        case ShaderParamType::Float42:  return 32;
+        case ShaderParamType::Float43:  return 48;
+        case ShaderParamType::Float44:  return 64;
+        default:        return 0;
+    }
+}
 }
     void initialiseRenderFunc() {
         hRenderer::create = d3d9::create;
@@ -904,6 +1343,7 @@ namespace d3d9 {
         hRenderer::getVertexBufferMappingPtr = d3d9::getVertexBufferMappingPtr;
         hRenderer::destroyVertexBuffer = d3d9::destroyVertexBuffer;
         hRenderer::createUniformBuffer = d3d9::createUniformBuffer;
+        hRenderer::getUniformBufferLayoutInfo = d3d9::getUniformBufferLayoutInfo;
         hRenderer::getUniformBufferMappingPtr = d3d9::getUniformBufferMappingPtr;
         hRenderer::destroyUniformBuffer = d3d9::destroyUniformBuffer;
         hRenderer::createRenderCall = d3d9::createRenderCall;
@@ -929,6 +1369,7 @@ namespace d3d9 {
         hRenderer::rendererFrameSubmit = d3d9::rendererFrameSubmit;
         hRenderer::getLastGPUTime = d3d9::getLastGPUTime;
         hRenderer::isRenderThread = d3d9::isRenderThread;
+        hRenderer::getParameterTypeByteSize = d3d9::getParameterTypeByteSize;
     }
 }}
 

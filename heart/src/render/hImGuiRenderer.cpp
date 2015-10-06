@@ -150,8 +150,9 @@ hBool ImGuiInit() {
     rcd.rasterizer_.scissorEnable_ = 1;
     hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
     ssd.filter_ = proto::renderstate::linear;
-    rcd.setSampler(hStringID("t_tex2D"), ssd);
+    rcd.setSampler(hStringID("tSampler"), ssd);
     rcd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex);
+    rcd.setTextureSlot(hStringID("tSampler"), imguiCtx.fonttex);
     rcd.setUniformBuffer(hStringID("ParamBlock"), imguiCtx.ub);
     rcd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
     imguiCtx.rc = hRenderer::createRenderCall(rcd);
