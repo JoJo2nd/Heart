@@ -652,8 +652,8 @@ namespace Private {
 
         bool initialise() {
             hRenderer::hVertexBufferLayout lo[] = {
-                { hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,                  0, hFalse, sizeof(hFloat) * 7 },
-                { hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 3, hFalse, sizeof(hFloat) * 7 },
+                { hStringID("in_position"), hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,                  0, hFalse, sizeof(hFloat) * 7 },
+                { hStringID("in_colour"),   hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 3, hFalse, sizeof(hFloat) * 7 },
             };
             dynVtxBuffer = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat)*7, 3, 0);
 

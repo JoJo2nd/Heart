@@ -24,8 +24,27 @@ namespace hRenderer {
         Double,
     };
 
+    enum class hSemantic {
+        Position      = 0,
+        Blendweight   = 1,
+        Blendindices  = 2,
+        Normal        = 3,
+        Psize         = 4,
+        Texcoord      = 5,
+        Tangent       = 6,
+        Binormal      = 7,
+        Tessfactor    = 8,
+        Positiont     = 9,
+        Colour        = 10,
+        Fog           = 11,
+        Depth         = 12,
+        Sample        = 13
+    };
+
     struct hVertexBufferLayout {
         hStringID        bindPoint_;
+        hSemantic        semantic_;
+        hUint16          semIndex_;
         hUint8           elementCount_;
         hVertexInputType type_;
         hUint16          offset_;

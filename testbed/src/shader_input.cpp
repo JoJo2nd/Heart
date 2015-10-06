@@ -52,9 +52,9 @@ public:
             -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*9},
-            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*9},
-            {hStringID("in_uv"),       2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*7, hFalse, sizeof(hFloat)*9},
+            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*9},
+            {hStringID("in_colour"),  hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*9},
+            {hStringID("in_uv"),      hRenderer::hSemantic::Texcoord, 0, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*7, hFalse, sizeof(hFloat)*9},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/shader_input"));

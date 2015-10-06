@@ -57,7 +57,7 @@ void hRenderCallDesc::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
     hcAssertFailMsg("Too many sampler states");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture1D* tex) {
+void hRenderCallDesc::setTextureSlot(hStringID name, hTexture1D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t1D_=tex;
@@ -74,7 +74,7 @@ void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture1D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture2D* tex) {
+void hRenderCallDesc::setTextureSlot(hStringID name, hTexture2D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t2D_=tex;
@@ -91,7 +91,7 @@ void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture2D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, const hTexture3D* tex) {
+void hRenderCallDesc::setTextureSlot(hStringID name, hTexture3D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t3D_=tex;
@@ -123,6 +123,7 @@ void hRenderCallDesc::setUniformBuffer(hStringID name, const hUniformBuffer* ub)
 
 void hRenderCallDesc::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
     hcAssert(count < vertexLayoutMax_);
+    vertexLayoutCount = count;
     hMemCpy(vertexLayout_, layout, count*sizeof(hVertexBufferLayout));
 }
 

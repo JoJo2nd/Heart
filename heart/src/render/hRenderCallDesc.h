@@ -122,9 +122,9 @@ namespace hRenderer {
         hRenderCallDesc();
         void clearDescription();
         void setSampler(hStringID name, const hSamplerStateDesc& ssd);
-        void setTextureSlot(hStringID name, const hTexture1D* t);
-        void setTextureSlot(hStringID name, const hTexture2D* t);
-        void setTextureSlot(hStringID name, const hTexture3D* t);
+        void setTextureSlot(hStringID name, hTexture1D* t);
+        void setTextureSlot(hStringID name, hTexture2D* t);
+        void setTextureSlot(hStringID name, hTexture3D* t);
         void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
         void setVertexBufferLayout(hVertexBufferLayout* layout, hUint count);
 
@@ -140,13 +140,14 @@ namespace hRenderer {
             hStringID           name_;
             hSamplerStateDesc   sampler_;
         } samplerStates_[samplerStateMax_];
+        hUint                   vertexLayoutCount;
         hVertexBufferLayout     vertexLayout_[vertexLayoutMax_];
         struct {
             hStringID   name_;
             union {
-                const hTexture1D* t1D_;
-                const hTexture2D* t2D_;
-                const hTexture3D* t3D_;
+                hTexture1D* t1D_;
+                hTexture2D* t2D_;
+                hTexture3D* t3D_;
             };
             hUint8 texType_; // 1, 2 or 3
         } textureSlots_[textureSlotMax_];

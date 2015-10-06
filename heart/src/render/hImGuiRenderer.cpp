@@ -63,7 +63,7 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     auto vtx_bytes = (hPtrdiff_t)vtx_dst-(hPtrdiff_t)vtx_start;
     hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
 
-    auto ubsize = 0u;
+    auto ubsize = (hUint)sizeof(ImGuiConstBlock);
     auto* ubptr = (hByte*)hRenderer::getMappingPtr(imguiCtx.ub);
     auto* ubdata = (ImGuiConstBlock*) (ubptr + (imguiCtx.currentFence*ubsize));
     const float L = 0.0f;
@@ -107,7 +107,10 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
 hBool ImGuiInit() {
     auto& imguiCtx = g_imguiCtx; // So the debugger can see it
     auto* io = &ImGui::GetIO();
-
+    io->MemAllocFn = [](size_t x) {
+        return hMalloc(x);
+    };
+    io->MemFreeFn = hFree;
     unsigned char* pixels;
     int width, height, bbp;
     io->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bbp);
@@ -116,14 +119,14 @@ hBool ImGuiInit() {
     imguiCtx.fonttex = hRenderer::createTexture2D(1, &mip, hTextureFormat::RGBA8_unorm, 0);
 
     hRenderer::hVertexBufferLayout lo[] = {
-        { hStringID("in_position")  , 2, hRenderer::hVertexInputType::Float ,                  0, hFalse, 20 },
-        { hStringID("in_uv")        , 2, hRenderer::hVertexInputType::Float , sizeof(hFloat) * 2, hFalse, 20 },
-        { hStringID("in_colour")    , 4, hRenderer::hVertexInputType::UByte , sizeof(hFloat) * 4, hTrue , 20 },
+        { hStringID("in_position"), hRenderer::hSemantic::Position, 0, 2, hRenderer::hVertexInputType::Float,                  0, hFalse, 20 },
+        { hStringID("in_uv")      , hRenderer::hSemantic::Texcoord, 0, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 2, hFalse, 20 },
+        { hStringID("in_colour")  , hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::UByte, sizeof(hFloat) * 4, hTrue , 20 },
     };
     imguiCtx.shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/imgui"));
     imguiCtx.vert = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
     imguiCtx.pixel = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
-    imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat) * 9, ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+    imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat) * 8, ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 
     hRenderer::hUniformLayoutDesc ublo[] = {
         { "projection", hRenderer::ShaderParamType::Float44, 0 },

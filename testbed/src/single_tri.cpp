@@ -65,8 +65,8 @@ public:
             -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),   4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_colour"),  hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
@@ -92,7 +92,7 @@ public:
     virtual hUint32 RunUnitTest() override {
 
         if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
-            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+            //SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
 
         return 0;

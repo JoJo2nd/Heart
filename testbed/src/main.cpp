@@ -7,7 +7,18 @@
 #include "TestBedCore.h"
 #include "resource_texture.pb.h"
 #include "memtracker.h"
-
+/*
+auto early = [](){
+    _CrtMemDumpAllObjectsSince(nullptr);
+    int tmpFlag = _CrtSetDbgFlag( _CRTDBG_REPORT_FLAG );
+    // Turn on leak-checking bit.
+    tmpFlag |= _CRTDBG_CHECK_ALWAYS_DF;
+    _CrtSetDbgFlag( tmpFlag );
+    //_CrtSetBreakAlloc(10987);
+    return true;
+};
+auto early_ret = early();
+*/
 TestBedCore g_TestCore;
 
 void HEART_API HeartAppFirstLoaded(Heart::hHeartEngine*)
@@ -39,6 +50,8 @@ void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine)
 }
 
 int main(int argc, char **argv) {
+
+
 
     hHeartEngineCallbacks callbacks = {0};
 

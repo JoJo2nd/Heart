@@ -102,8 +102,8 @@ public:
         static const hUint element_count = hStaticArraySizeConstExpr(testString)*6;
         hFloat verts[element_count*5] = { .0f };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"), 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*5},
-            {hStringID("in_uv")      , 2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*5},
+            {hStringID("in_position"), hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*5},
+            {hStringID("in_uv")      , hRenderer::hSemantic::Colour  , 0, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*5},
         };
 
         // warm up the cache and get the data we need

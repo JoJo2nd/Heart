@@ -36,8 +36,13 @@
 
 namespace Heart {    
 namespace hRenderer {
+namespace d3d9 {
+    hUint getD3DFormatPitch(hUint32, D3DFORMAT);
+}
+
     static const hUint  FRAME_COUNT = 3;
     static const hUint  RMEM_COUNT = FRAME_COUNT+1;
+    static const hUint32 BC_PITCH = 0x80000000;
 
     LPDIRECT3D9 pD3D;
     LPDIRECT3DDEVICE9 d3dDevice;
@@ -62,6 +67,9 @@ namespace hRenderer {
     hThread             renderThread;
     hConditionVariable  rtComsSignal;
     hMutex              rtMutex;
+    void*               rtID;
+
+    std::unordered_map<hUint32, hUint32> d3dFormatPitch;
 
     // !!JM TODO: Improve these (make lock-free?), they are placeholder
     void* rtmp_malloc(hSize_t size, hUint alignment=16) {
@@ -91,6 +99,7 @@ namespace hRenderer {
     typedef std::unique_ptr<IDirect3DTexture9, IUnknownDeleter<IDirect3DTexture9>> IDirect3DTexture9Ptr;
     typedef std::unique_ptr<IDirect3DVertexBuffer9, IUnknownDeleter<IDirect3DVertexBuffer9>> IDirect3DVertexBuffer9Ptr;
     typedef std::unique_ptr<IDirect3DIndexBuffer9, IUnknownDeleter<IDirect3DIndexBuffer9>> IDirect3DIndexBuffer9Ptr;
+    typedef std::unique_ptr<IDirect3DVertexDeclaration9, IUnknownDeleter<IDirect3DVertexDeclaration9>> IDirect3DVertexDeclaration9Ptr;
 
     struct hShaderStage {
         enum ConstantType {
@@ -129,9 +138,11 @@ namespace hRenderer {
             hUint32 int_reg_size_bytes = 0;
             for (hUint32 i=0; i<header->constCount; ++i) {
                 if (constants[i].type == 2) {
+                    if (constants[i].regStart < floatRegStart) floatRegStart = constants[i].regStart;
                     auto data_end = constants[i].regStart*sizeof(float)*4+constants[i].bytes;
                     if (data_end > float_reg_size_bytes) float_reg_size_bytes = (hUint32)data_end;
                 } else if (constants[i].type == 1) {
+                    if (constants[i].regStart < intRegStart) intRegStart = constants[i].regStart;
                     auto data_end = constants[i].regStart*sizeof(hInt)*4+constants[i].bytes;
                     if (data_end > int_reg_size_bytes) int_reg_size_bytes = (hUint32)data_end;
                 }
@@ -209,11 +220,12 @@ namespace hRenderer {
             }
         }
 
-        hBool isBound() { 
+        hBool isBound() const { 
             return vertexShader.get() || pixelShader.get();
         }
 
         hBool bind(IDirect3DDevice9* d3d_device) {
+            return hTrue;
             if (profile == hShaderProfile::D3D_9c_vs) {
                 IDirect3DVertexShader9* vshader;
                 auto hr = d3d_device->CreateVertexShader(programBlob, &vshader);
@@ -238,26 +250,28 @@ namespace hRenderer {
         }
 
         hShaderProfile profile;
-        std::unique_ptr<hChar> shaderBlob;
+        std::unique_ptr<hChar[]> shaderBlob;
+        std::unique_ptr<hChar[]> shaderBlob2;
         const ReflectionHeader* header;
         const Constant* constants;
         const hChar* strings;
         const DWORD* programBlob;
         hUint32 floatRegStart, floatRegCount;
         hUint32 intRegStart, intRegCount;
-        std::unique_ptr<hFloat> floatRegs;
-        std::unique_ptr<hInt> intRegs;
+        std::unique_ptr<hFloat[]> floatRegs;
+        std::unique_ptr<hInt[]> intRegs;
         // No support for bools...yet
         IDirect3DVertexShader9Ptr vertexShader;
         IDirect3DPixelShader9Ptr pixelShader;
     };
 
     struct hTexture2D {
-        hTexture2D(hUint32 w, hUint32 h, hMipDesc* in_mips, hUint32 mip_count, DWORD in_format) 
+        hTexture2D(hUint32 w, hUint32 h, hMipDesc* in_mips, hUint32 mip_count, D3DFORMAT in_format) 
             : d3dFormat(in_format)
             , baseWidth(w)
             , baseHeight(h)
-            , levels(mip_count) {
+            , levels(mip_count)
+            , usage(0) {
             for (hUint32 i=0; i < mip_count; ++i) {
                 if (!in_mips[i].data) {
                     break;
@@ -267,18 +281,42 @@ namespace hRenderer {
             }
         }
 
-        hBool isBound() {
+        hBool isBound() const {
             return !!texture.get();
         }
 
         hBool bind(IDirect3DDevice9* d3d_device) {
-            return hFalse;
+            IDirect3DTexture9* tex;
+            auto hr = d3d_device->CreateTexture(baseWidth, baseHeight, levels, usage, d3dFormat, D3DPOOL_MANAGED, &tex, nullptr);
+            hcAssertMsg(hr == S_OK, "CreateTexture() failed.");
+            if (hr != S_OK) return hFalse;
+            texture.reset(tex);
+            hUint lvl = 0;
+            hUint32 h = baseHeight;
+            hUint int_pitch = d3d9::getD3DFormatPitch(baseWidth, d3dFormat);
+
+            for (const auto& mip : mips) {
+                D3DLOCKED_RECT r;
+                texture->LockRect(lvl, &r, nullptr, 0);
+                hByte* src_ptr = mip.get();
+                hByte* dest_ptr = (hByte*)r.pBits;
+                for(hUint32 i=0; i<h; ++i) {
+                    hMemCpy(dest_ptr, src_ptr, r.Pitch);
+                    src_ptr+=int_pitch;
+                    dest_ptr+=r.Pitch;
+                }
+                texture->UnlockRect(lvl);
+                lvl++;
+            }
+
+            return hTrue;
         }
 
-        DWORD d3dFormat;
+        D3DFORMAT d3dFormat;
         hUint32 baseWidth;
         hUint32 baseHeight;
         hUint32 levels;
+        DWORD usage;
         std::vector<std::unique_ptr<hByte>> mips;
         IDirect3DTexture9Ptr texture;
     };
@@ -294,7 +332,7 @@ namespace hRenderer {
             }
         }
 
-        hBool isBound() {
+        hBool isBound() const {
             return !!vertexBuffer.get();
         }
 
@@ -329,7 +367,7 @@ namespace hRenderer {
             }
         }
 
-        hBool isBound() {
+        hBool isBound() const {
             return !!indexBuffer.get();
         }
 
@@ -356,13 +394,19 @@ namespace hRenderer {
     struct hUniformBuffer {
         hUniformBuffer(hUint32 in_size, const hUniformLayoutDesc* in_layout, hUint in_count)
             : data(new hByte[in_size])
+            , baseOffset(0)
             , size(in_size) {
             layout.resize(in_count);
             hMemCpy(layout.data(), in_layout, sizeof(hUniformLayoutDesc)*in_count);
         }
 
+        hByte* getBase() const {
+            return data.get()+baseOffset;
+        }
+
         std::unique_ptr<hByte> data;
         std::vector<hUniformLayoutDesc> layout;
+        hUint32 baseOffset;
         hUint32 size;
         
     };
@@ -384,7 +428,7 @@ namespace hRenderer {
             //D3DSAMP_DMAPOFFSET;
         */
         struct StateValue {
-            DWORD state;
+            D3DSAMPLERSTATETYPE state;
             DWORD value;
         } states [9];
     };
@@ -421,12 +465,12 @@ namespace hRenderer {
             D3DRS_SCISSORTESTENABLE; ->23
         */
         struct RenderState {
-            DWORD state;
+            D3DRENDERSTATETYPE state;
             DWORD value;
         };
         struct SamplerState {
             hUint index;
-            const hTexture2D* texture;
+            hTexture2D* texture;
             hSamplerState samplerState;
         };
         struct ParamUpdate {
@@ -444,8 +488,30 @@ namespace hRenderer {
             hByte type;
         };
 
+        hBool isBound() {
+            return !!vtxDecl.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            hBool bound = hTrue;
+            if (!vertex->isBound()) bound &= vertex->bind(d3d_device);
+            if (!pixel->isBound()) bound &= pixel->bind(d3d_device);
+            if (ib && !ib->isBound()) bound &= ib->bind(d3d_device);
+            if (!vb->isBound()) bound &= vb->bind(d3d_device);
+            for (hUint i=0, n=samplerCount; i<n; ++i) {
+                if (!samplerStates[i].texture->isBound()) bound &= samplerStates[i].texture->bind(d3d_device);            }
+            if (bound && !vtxDecl.get()) {
+                IDirect3DVertexDeclaration9* decl;
+                auto hr = d3d_device->CreateVertexDeclaration(vtxDeclDesc, &decl);
+                vtxDecl.reset(decl);
+            }
+            return bound && vtxDecl.get();
+        }
+
         hShaderStage* vertex;
         hShaderStage* pixel;
+        hVertexBuffer* vb;
+        hIndexBuffer* ib;
         hUint stateCount;
         RenderState states[24];
         hUint samplerCount;
@@ -454,6 +520,9 @@ namespace hRenderer {
         const hUniformBuffer** uniBuffers;
         hUint paramUpdateCount;
         ParamUpdate* paramUpdates;
+        //hUint vtxDeclCount;
+        D3DVERTEXELEMENT9* vtxDeclDesc;
+        IDirect3DVertexDeclaration9Ptr vtxDecl;
     };
 
     struct hRenderFence {
@@ -555,6 +624,9 @@ namespace hRenderer {
     };
 namespace d3d9 {
     void renderDoFrame();
+    hBool isRenderThread() {
+        return Device::GetCurrentThreadID() == rtID;
+    }
 
     struct hRenderDestructBase {
         hRenderDestructBase()  {
@@ -629,6 +701,85 @@ namespace d3d9 {
             hcAssertFailMsg("Failed to create D3D Device");
             return;
         }
+
+        rtID = Device::GetCurrentThreadID();
+
+        d3dFormatPitch[D3DFMT_R8G8B8] = 4;
+        d3dFormatPitch[D3DFMT_A8R8G8B8] = 4;
+        d3dFormatPitch[D3DFMT_X8R8G8B8] = 4;
+        d3dFormatPitch[D3DFMT_R5G6B5] = 2;
+        d3dFormatPitch[D3DFMT_X1R5G5B5] = 2;
+        d3dFormatPitch[D3DFMT_A1R5G5B5] = 2;
+        d3dFormatPitch[D3DFMT_A4R4G4B4] = 2;
+        d3dFormatPitch[D3DFMT_R3G3B2] = 1;
+        d3dFormatPitch[D3DFMT_A8] = 1;
+        d3dFormatPitch[D3DFMT_A8R3G3B2] = 2;
+        d3dFormatPitch[D3DFMT_X4R4G4B4] = 2;
+        d3dFormatPitch[D3DFMT_A2B10G10R10] = 4;
+        d3dFormatPitch[D3DFMT_A8B8G8R8] = 4;
+        d3dFormatPitch[D3DFMT_X8B8G8R8] = 4;
+        d3dFormatPitch[D3DFMT_G16R16] = 4;
+        d3dFormatPitch[D3DFMT_A2R10G10B10] = 4;
+        d3dFormatPitch[D3DFMT_A16B16G16R16] = 8;
+        d3dFormatPitch[D3DFMT_A8P8] = 2;
+        d3dFormatPitch[D3DFMT_P8] = 1;
+        d3dFormatPitch[D3DFMT_L8] = 1;
+        d3dFormatPitch[D3DFMT_A8L8] = 2;
+        d3dFormatPitch[D3DFMT_A4L4] = 2;
+        d3dFormatPitch[D3DFMT_V8U8] = 2;
+        d3dFormatPitch[D3DFMT_L6V5U5] = 2;
+        d3dFormatPitch[D3DFMT_X8L8V8U8] = 4;
+        d3dFormatPitch[D3DFMT_Q8W8V8U8] = 4;
+        d3dFormatPitch[D3DFMT_V16U16] = 2;
+        d3dFormatPitch[D3DFMT_A2W10V10U10] = 4;
+        d3dFormatPitch[D3DFMT_UYVY] = 4;
+        d3dFormatPitch[D3DFMT_R8G8_B8G8] = 4;
+        d3dFormatPitch[D3DFMT_YUY2] = 4;
+        d3dFormatPitch[D3DFMT_G8R8_G8B8] = 4;
+        d3dFormatPitch[D3DFMT_DXT1] = BC_PITCH;
+        d3dFormatPitch[D3DFMT_DXT2] = BC_PITCH;
+        d3dFormatPitch[D3DFMT_DXT3] = BC_PITCH;
+        d3dFormatPitch[D3DFMT_DXT4] = BC_PITCH;
+        d3dFormatPitch[D3DFMT_DXT5] = BC_PITCH;
+        d3dFormatPitch[D3DFMT_D16_LOCKABLE] = 2;
+        d3dFormatPitch[D3DFMT_D32] = 4;
+        d3dFormatPitch[D3DFMT_D15S1] = 2;
+        d3dFormatPitch[D3DFMT_D24S8] = 4;
+        d3dFormatPitch[D3DFMT_D24X8] = 4;
+        d3dFormatPitch[D3DFMT_D24X4S4] = 4;
+        d3dFormatPitch[D3DFMT_D16] = 2;
+        d3dFormatPitch[D3DFMT_D32F_LOCKABLE] = 4;
+        d3dFormatPitch[D3DFMT_D24FS8] = 4;
+        d3dFormatPitch[D3DFMT_L16] = 2;
+        d3dFormatPitch[D3DFMT_VERTEXDATA] = 0;
+        d3dFormatPitch[D3DFMT_INDEX16] = 0;
+        d3dFormatPitch[D3DFMT_INDEX32] = 0;
+        d3dFormatPitch[D3DFMT_Q16W16V16U16] = 8;
+        d3dFormatPitch[D3DFMT_MULTI2_ARGB8] = 0;
+        d3dFormatPitch[D3DFMT_R16F] = 2;
+        d3dFormatPitch[D3DFMT_G16R16F] = 4;
+        d3dFormatPitch[D3DFMT_A16B16G16R16F] = 8;
+        d3dFormatPitch[D3DFMT_R32F] = 4;
+        d3dFormatPitch[D3DFMT_G32R32F] = 8;
+        d3dFormatPitch[D3DFMT_A32B32G32R32F] = 16;
+        d3dFormatPitch[D3DFMT_CxV8U8] = 2;
+#if !defined(D3D_DISABLE_9EX)
+        //D3DFMT_D32_LOCKABLE         = 84,
+        //D3DFMT_S8_LOCKABLE          = 85,
+        //D3DFMT_A1                   = 118,
+        //D3DFMT_A2B10G10R10_XR_BIAS  = 119,
+        //D3DFMT_BINARYBUFFER         = 199,
+#endif // !D3D_DISABLE_9EX
+    }
+
+    hUint32 getBCPitch(hBool dxt1, hUint32 width) {
+        hUint32 bytecount = hMax( 1u, ((width+3)/4) );
+        bytecount *= (dxt1) ? 8 : 16;
+        return bytecount;
+    }
+
+    hUint getD3DFormatPitch(hUint32 width, D3DFORMAT fmt) {
+        return (d3dFormatPitch[fmt] == BC_PITCH) ? getBCPitch(fmt == D3DFMT_DXT1, width) : d3dFormatPitch[fmt]*width;
     }
 
     hUint32 renderThreadMain(void* param) {
@@ -730,7 +881,7 @@ namespace d3d9 {
 
     hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags) {
         bool compressed = true;
-        DWORD intfmt;
+        D3DFORMAT intfmt;
         switch(format) {
         case hTextureFormat::R8_unorm:         intfmt=D3DFMT_L8; compressed = false; break; 
         case hTextureFormat::RGBA8_unorm:      intfmt=D3DFMT_A8R8G8B8; compressed = false; break; 
@@ -778,7 +929,7 @@ namespace d3d9 {
     }
 
     hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
-        return new hUniformBuffer(structSize, layout, layout_count);
+        return new hUniformBuffer(structSize*bufferCount, layout, layout_count);
     }
     const hUniformLayoutDesc* getUniformBufferLayoutInfo(const hUniformBuffer* ub, hUint* out_count) {
         hcAssert(out_count);
@@ -795,7 +946,7 @@ namespace d3d9 {
     }
 
     hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
-        static const hUint sampler_size = sizeof(hSamplerState);
+        static const hUint sampler_size = sizeof(hRenderCall::SamplerState);
         hUint sampler_count = 0;
         hUint int_param_update_count = 0;
         hUint float_param_update_count = 0;
@@ -934,7 +1085,7 @@ namespace d3d9 {
             return mish_mash.d;
         };
 
-        bool separate_alpha_blend = 
+        bool separate_alpha_blend =
         rcd.blend_.blendEnable_ && 
         (rcd.blend_.srcBlend_ != rcd.blend_.srcBlendAlpha_ ||
         rcd.blend_.destBlend_ != rcd.blend_.destBlendAlpha_ ||
@@ -944,8 +1095,9 @@ namespace d3d9 {
             + (sampler_count*sampler_size) 
             + (int_param_update_count*sizeof(hRenderCall::ParamUpdate))
             + (float_param_update_count*sizeof(hRenderCall::ParamUpdate))
-            + (uniform_buffer_count*sizeof(void*));
-        auto* ptr = (hByte*)hMalloc(rnd_call_size);
+            + (uniform_buffer_count*sizeof(void*))
+            + ((rcd.vertexLayoutCount+1)*sizeof(D3DVERTEXELEMENT9));
+        auto* ptr = (hByte*)hMalloc(rnd_call_size*2);
         auto* rc = new (ptr) hRenderCall();
         rc->samplerStates = (hRenderCall::SamplerState*)(ptr+sizeof(hRenderCall));
         rc->samplerCount = sampler_count;
@@ -953,46 +1105,49 @@ namespace d3d9 {
         rc->uniBufferCount = uniform_buffer_count;
         rc->paramUpdates = (hRenderCall::ParamUpdate*)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)+(uniform_buffer_count*sizeof(void*))));
         rc->paramUpdateCount = int_param_update_count+float_param_update_count;
+        rc->vtxDeclDesc = (D3DVERTEXELEMENT9*)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)+(uniform_buffer_count*sizeof(void*))+(rc->paramUpdateCount*sizeof(hRenderCall::ParamUpdate))));
         rc->vertex=rcd.vertex_;
         rc->pixel=rcd.fragment_;
-        rc->states[0]  = { (DWORD)D3DRS_ALPHABLENDENABLE, (DWORD)(rcd.blend_.blendEnable_ ? TRUE : FALSE) };
-        rc->states[1]  = { (DWORD)D3DRS_SRCBLEND, blendOpConv(rcd.blend_.srcBlend_) };
-        rc->states[2]  = { (DWORD)D3DRS_DESTBLEND, blendOpConv(rcd.blend_.destBlend_) };
-        rc->states[3]  = { (DWORD)D3DRS_BLENDOP, blendFuncConv(rcd.blend_.blendOp_) };
-        rc->states[4]  = { (DWORD)D3DRS_SEPARATEALPHABLENDENABLE, (DWORD)(separate_alpha_blend ? TRUE : FALSE) };
-        rc->states[5]  = { (DWORD)D3DRS_SRCBLENDALPHA, blendOpConv(rcd.blend_.srcBlendAlpha_) };
-        rc->states[6]  = { (DWORD)D3DRS_DESTBLENDALPHA, blendOpConv(rcd.blend_.destBlendAlpha_) };
-        rc->states[7]  = { (DWORD)D3DRS_BLENDOPALPHA, blendFuncConv(rcd.blend_.blendOpAlpha_) };
-        rc->states[8]  = { (DWORD)D3DRS_ZENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
-        rc->states[9]  = { (DWORD)D3DRS_ZWRITEENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
-        rc->states[10] = { (DWORD)D3DRS_ZFUNC, funcCompConv(rcd.depthStencil_.depthFunc_) };
-        rc->states[11] = { (DWORD)D3DRS_STENCILENABLE, rcd.depthStencil_.stencilEnable_ };
-        rc->states[12] = { (DWORD)D3DRS_STENCILFAIL, stencilOpConv(rcd.depthStencil_.stencilFailOp_) };
-        rc->states[13] = { (DWORD)D3DRS_STENCILZFAIL, stencilOpConv(rcd.depthStencil_.stencilDepthFailOp_) };
-        rc->states[14] = { (DWORD)D3DRS_STENCILPASS, stencilOpConv(rcd.depthStencil_.stencilPassOp_) };
-        rc->states[15] = { (DWORD)D3DRS_STENCILFUNC, funcCompConv(rcd.depthStencil_.stencilFunc_) };
-        rc->states[16] = { (DWORD)D3DRS_STENCILREF, rcd.depthStencil_.stencilRef_ };
-        rc->states[17] = { (DWORD)D3DRS_STENCILMASK, rcd.depthStencil_.stencilReadMask_ };
-        rc->states[18] = { (DWORD)D3DRS_STENCILWRITEMASK, rcd.depthStencil_.stencilWriteMask_ };
-        rc->states[19] = { (DWORD)D3DRS_FILLMODE, fillModeConv(rcd.rasterizer_.fillMode_) };
-        rc->states[20] = { (DWORD)D3DRS_CULLMODE, cullModeConv(rcd.rasterizer_.cullMode_) };
-        rc->states[21] = { (DWORD)D3DRS_DEPTHBIAS, intBitsToDWORD(rcd.rasterizer_.depthBias_) };
-        rc->states[22] = { (DWORD)D3DRS_SLOPESCALEDEPTHBIAS, floatBitsToDWORD(rcd.rasterizer_.slopeScaledDepthBias_) };
-        rc->states[23] = { (DWORD)D3DRS_SCISSORTESTENABLE, (DWORD)(rcd.rasterizer_.scissorEnable_ ? TRUE : FALSE) };
+        rc->vb = rcd.vertexBuffer_;
+        rc->ib = rcd.indexBuffer_;
+        rc->states[0]  = { D3DRS_ALPHABLENDENABLE, (DWORD)(rcd.blend_.blendEnable_ ? TRUE : FALSE) };
+        rc->states[1]  = { D3DRS_SRCBLEND, blendOpConv(rcd.blend_.srcBlend_) };
+        rc->states[2]  = { D3DRS_DESTBLEND, blendOpConv(rcd.blend_.destBlend_) };
+        rc->states[3]  = { D3DRS_BLENDOP, blendFuncConv(rcd.blend_.blendOp_) };
+        rc->states[4]  = { D3DRS_SEPARATEALPHABLENDENABLE, (DWORD)(separate_alpha_blend ? FALSE : FALSE) };
+        rc->states[5]  = { D3DRS_SRCBLENDALPHA, blendOpConv(rcd.blend_.srcBlendAlpha_) };
+        rc->states[6]  = { D3DRS_DESTBLENDALPHA, blendOpConv(rcd.blend_.destBlendAlpha_) };
+        rc->states[7]  = { D3DRS_BLENDOPALPHA, blendFuncConv(rcd.blend_.blendOpAlpha_) };
+        rc->states[8]  = { D3DRS_ZENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[9]  = { D3DRS_ZWRITEENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[10] = { D3DRS_ZFUNC, funcCompConv(rcd.depthStencil_.depthFunc_) };
+        rc->states[11] = { D3DRS_STENCILENABLE, rcd.depthStencil_.stencilEnable_ };
+        rc->states[12] = { D3DRS_STENCILFAIL, stencilOpConv(rcd.depthStencil_.stencilFailOp_) };
+        rc->states[13] = { D3DRS_STENCILZFAIL, stencilOpConv(rcd.depthStencil_.stencilDepthFailOp_) };
+        rc->states[14] = { D3DRS_STENCILPASS, stencilOpConv(rcd.depthStencil_.stencilPassOp_) };
+        rc->states[15] = { D3DRS_STENCILFUNC, funcCompConv(rcd.depthStencil_.stencilFunc_) };
+        rc->states[16] = { D3DRS_STENCILREF, rcd.depthStencil_.stencilRef_ };
+        rc->states[17] = { D3DRS_STENCILMASK, rcd.depthStencil_.stencilReadMask_ };
+        rc->states[18] = { D3DRS_STENCILWRITEMASK, rcd.depthStencil_.stencilWriteMask_ };
+        rc->states[19] = { D3DRS_FILLMODE, fillModeConv(rcd.rasterizer_.fillMode_) };
+        rc->states[20] = { D3DRS_CULLMODE, cullModeConv(rcd.rasterizer_.cullMode_) };
+        rc->states[21] = { D3DRS_DEPTHBIAS, intBitsToDWORD(rcd.rasterizer_.depthBias_) };
+        rc->states[22] = { D3DRS_SLOPESCALEDEPTHBIAS, floatBitsToDWORD(rcd.rasterizer_.slopeScaledDepthBias_) };
+        rc->states[23] = { D3DRS_SCISSORTESTENABLE, (DWORD)(rcd.rasterizer_.scissorEnable_ ? TRUE : FALSE) };
 
-        auto addSampler = [&](hRenderCall* in_rc, hUint i, hUint sampler_reg, const hRenderCallDesc::hSamplerStateDesc& ss, const hTexture2D* in_tex) {
+        auto addSampler = [&](hRenderCall* in_rc, hUint i, hUint sampler_reg, const hRenderCallDesc::hSamplerStateDesc& ss, hTexture2D* in_tex) {
             hcAssertMsg(in_tex, "No texture bound to sampler.");
             in_rc->samplerStates[i].index = sampler_reg;
             in_rc->samplerStates[i].texture = in_tex;
-            in_rc->samplerStates[i].samplerState.states[0] = { (DWORD)D3DSAMP_ADDRESSU, (DWORD)textureAddConv(ss.addressU_)};
-            in_rc->samplerStates[i].samplerState.states[1] = { (DWORD)D3DSAMP_ADDRESSV, (DWORD)textureAddConv(ss.addressV_)};
-            in_rc->samplerStates[i].samplerState.states[2] = { (DWORD)D3DSAMP_ADDRESSW, (DWORD)textureAddConv(ss.addressW_)};
-            in_rc->samplerStates[i].samplerState.states[3] = { (DWORD)D3DSAMP_BORDERCOLOR, (hUint32)ss.borderColour_};
-            in_rc->samplerStates[i].samplerState.states[4] = { (DWORD)D3DSAMP_MAGFILTER, (DWORD)textureFilterConv(ss.filter_)};
-            in_rc->samplerStates[i].samplerState.states[5] = { (DWORD)D3DSAMP_MINFILTER, (DWORD)textureFilterConv(ss.filter_)};
-            in_rc->samplerStates[i].samplerState.states[6] = { (DWORD)D3DSAMP_MAXANISOTROPY, ss.maxAnisotropy_};
-            in_rc->samplerStates[i].samplerState.states[7] = { (DWORD)D3DSAMP_MAXMIPLEVEL, floatBitsToDWORD(ss.maxLOD_)};
-            in_rc->samplerStates[i].samplerState.states[8] = { (DWORD)D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
+            in_rc->samplerStates[i].samplerState.states[0] = { D3DSAMP_ADDRESSU, (DWORD)textureAddConv(ss.addressU_)};
+            in_rc->samplerStates[i].samplerState.states[1] = { D3DSAMP_ADDRESSV, (DWORD)textureAddConv(ss.addressV_)};
+            in_rc->samplerStates[i].samplerState.states[2] = { D3DSAMP_ADDRESSW, (DWORD)textureAddConv(ss.addressW_)};
+            in_rc->samplerStates[i].samplerState.states[3] = { D3DSAMP_BORDERCOLOR, (hUint32)ss.borderColour_};
+            in_rc->samplerStates[i].samplerState.states[4] = { D3DSAMP_MAGFILTER, (DWORD)textureFilterConv(ss.filter_)};
+            in_rc->samplerStates[i].samplerState.states[5] = { D3DSAMP_MINFILTER, (DWORD)textureFilterConv(ss.filter_)};
+            in_rc->samplerStates[i].samplerState.states[6] = { D3DSAMP_MAXANISOTROPY, ss.maxAnisotropy_};
+            in_rc->samplerStates[i].samplerState.states[7] = { D3DSAMP_MAXMIPLEVEL, floatBitsToDWORD(ss.maxLOD_)};
+            in_rc->samplerStates[i].samplerState.states[8] = { D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
         };
         auto findMatchingSampler = [](const hRenderCallDesc& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
             for (const auto& i : in_rcd.samplerStates_) {
@@ -1002,7 +1157,7 @@ namespace d3d9 {
             }
             return nullptr;
         };
-        auto findMatchingTexture = [](const hRenderCallDesc& in_rcd, const hChar* name) -> const hTexture2D* {
+        auto findMatchingTexture = [](const hRenderCallDesc& in_rcd, const hChar* name) -> hTexture2D* {
             for (const auto& i : in_rcd.textureSlots_) {
                 if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
                     return i.t2D_;
@@ -1078,6 +1233,40 @@ namespace d3d9 {
         }
         hcAssert(current_pu == rc->paramUpdateCount);
 
+        auto vtxDeclTypeConv = [](hVertexInputType in, hUint count, hBool normalise) {
+            switch(in) {
+            case hVertexInputType::Byte: hcAssert(count == 4 && !normalise); return D3DDECLTYPE_UBYTE4;
+            case hVertexInputType::UByte: hcAssert(count == 4); return normalise ? D3DDECLTYPE_D3DCOLOR : D3DDECLTYPE_UBYTE4;
+            case hVertexInputType::Short: {
+                hcAssert(count == 4 || count == 2); 
+                return (D3DDECLTYPE)((normalise ? D3DDECLTYPE_SHORT2N : D3DDECLTYPE_SHORT2) + (count-2));
+            }
+            case hVertexInputType::UShort: {
+                hcAssert(count == 4 || count == 2);
+                hcAssert(normalise);
+                return (D3DDECLTYPE)(D3DDECLTYPE_USHORT2N + (count-2));
+            }
+            //case hVertexInputType::Int: return ;
+            //case hVertexInputType::UInt: return ;
+            case hVertexInputType::HalfFloat: {
+                return (D3DDECLTYPE)(D3DDECLTYPE_FLOAT16_2 + (count-2));
+            }
+            case hVertexInputType::Float: return (D3DDECLTYPE)(D3DDECLTYPE_FLOAT1 + (count-1));
+            //case hVertexInputType::Double: return ;
+            }
+            hcAssertFailMsg("Unsupported vertex format!");
+            return D3DDECLTYPE_UNUSED;
+        };
+        for (hUint i=0; i<rcd.vertexLayoutCount; ++i) {
+            rc->vtxDeclDesc[i].Stream = 0;
+            rc->vtxDeclDesc[i].Offset = rcd.vertexLayout_[i].offset_;
+            rc->vtxDeclDesc[i].Type = vtxDeclTypeConv(rcd.vertexLayout_[i].type_, rcd.vertexLayout_[i].elementCount_, rcd.vertexLayout_[i].normalised_);
+            rc->vtxDeclDesc[i].Method = D3DDECLMETHOD_DEFAULT;
+            rc->vtxDeclDesc[i].Usage = (BYTE)rcd.vertexLayout_[i].semantic_;
+            rc->vtxDeclDesc[i].UsageIndex = (BYTE)rcd.vertexLayout_[i].semIndex_;
+        }
+        rc->vtxDeclDesc[rcd.vertexLayoutCount] = D3DDECL_END();
+
         return rc;
     }
     void destroyRenderCall(hRenderCall* rc) {
@@ -1123,19 +1312,83 @@ namespace d3d9 {
     }
 
     void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
-
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            RECT r;
+            r.left = left; r.top = top;
+            r.right = right; r.bottom = bottom;
+            d3dDevice->SetScissorRect(&r);
+            return 0;
+        });
     }
 
     void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) {
-
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            hcAssert(isRenderThread());
+            // Bind any unbound objects
+            if (!rc->isBound()) rc->bind(d3dDevice);
+            //Update constants from uniform buffers
+            for (hUint i=0, n=rc->paramUpdateCount; i<n; ++i) {
+                if (rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Vertex) {
+                    hUint32* reg_add = ((rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Float) ? (hUint32*)rc->vertex->getFloatRegisterBaseAddress() : (hUint32*)rc->vertex->getIntRegisterBaseAddress());
+                    void* ub_add = rc->uniBuffers[rc->paramUpdates[i].ubIndex]->getBase()+rc->paramUpdates[i].ubOffset;
+                    hMemCpy(reg_add+rc->paramUpdates[i].regIndex, ub_add, rc->paramUpdates[i].byteSize);
+                }
+                if (rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Fragment) {
+                    hUint32* reg_add = ((rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Float) ? (hUint32*)rc->pixel->getFloatRegisterBaseAddress() : (hUint32*)rc->pixel->getIntRegisterBaseAddress());
+                    void* ub_add = rc->uniBuffers[rc->paramUpdates[i].ubIndex]->getBase()+rc->paramUpdates[i].ubOffset;
+                    hMemCpy(reg_add+rc->paramUpdates[i].regIndex, ub_add, rc->paramUpdates[i].byteSize);
+                }
+            }
+            //Update d3d device state
+            d3dDevice->SetVertexShader(rc->vertex->vertexShader.get());
+            d3dDevice->SetPixelShader(rc->pixel->pixelShader.get());
+            rc->vertex->uploadConstants(d3dDevice);
+            rc->pixel->uploadConstants(d3dDevice);
+            for (hUint i=0, n=rc->samplerCount; i<n; ++i) {
+                auto samp_i = rc->samplerStates[i].index;
+                for (const auto& ss : rc->samplerStates[i].samplerState.states) {
+                    d3dDevice->SetSamplerState(samp_i, ss.state, ss.value);
+                }
+                d3dDevice->SetTexture(samp_i, rc->samplerStates[i].texture->texture.get());
+            }
+            for (const auto& rs : rc->states) {
+                d3dDevice->SetRenderState(rs.state, rs.value);
+            }
+            d3dDevice->SetVertexDeclaration(rc->vtxDecl.get());
+            d3dDevice->SetStreamSource(0, rc->vb->vertexBuffer.get(), 0, rc->vb->elementSize);
+            D3DPRIMITIVETYPE type;
+            if (t == Primative::Triangles) type = D3DPT_TRIANGLELIST;
+            else if (t == Primative::TriangleStrip) type = D3DPT_TRIANGLESTRIP;
+            if (rc->ib) {
+                d3dDevice->SetIndices(rc->ib->indexBuffer.get());
+                d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, prims, vtx_offset);
+            } else {
+                d3dDevice->DrawPrimitive(type, vtx_offset, prims);
+            }
+            return 0;
+        });
     }
 
     void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
-
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+            ub->baseOffset = offset;
+            return 0;
+        });
     }
 
-    void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size) {
-
+    void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
+        
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            hcAssert(isRenderThread());
+            if (!vb->isBound()) vb->bind(d3dDevice);
+            void* ptr;
+            auto hr = vb->vertexBuffer->Lock(offset, size, &ptr, D3DLOCK_NOOVERWRITE);
+            hcAssert(hr == S_OK);
+            hMemCpy(ptr, vb->data.get()+offset, size);
+            vb->vertexBuffer->Unlock();
+            return 0;
+        });
+        
     }
 
     hRenderFence* fence(hCmdList* cl) {
@@ -1183,6 +1436,7 @@ namespace d3d9 {
 
     void swapBuffers(hCmdList* cl) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            d3dDevice->EndScene();
             d3dDevice->Present(nullptr, nullptr, 0, nullptr);
             return 0;
         });
@@ -1218,6 +1472,8 @@ namespace d3d9 {
         hByte* cmdptr = cmds;
         hByte* pcstack = nullptr;
         hBool end_of_cmds = hFalse;
+        hcAssert(isRenderThread());
+        d3dDevice->BeginScene();
         while (!end_of_cmds) {
             Op opcode = *((hRenderer::Op*)cmdptr);
             hUint32 cmdsize = *((hUint32*)(cmdptr + 4));
@@ -1301,9 +1557,6 @@ namespace d3d9 {
 
     void rendererFrameSubmit(hCmdList* cmdlists, hUint count) {}
     hFloat getLastGPUTime() { return 0.f; }
-    hBool isRenderThread() {
-        return hFalse;
-    }
 
     hUint getParameterTypeByteSize(ShaderParamType type) {
         switch(type) {
