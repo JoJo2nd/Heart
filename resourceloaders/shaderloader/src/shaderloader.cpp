@@ -540,7 +540,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
         nullptr, //Includes
         OpenGL_shaderProfiles[profile_index].entry,
         OpenGL_shaderProfiles[profile_index].profileStr, 
-        shader_params.compileFlags_, 
+        shader_params.compileFlags_ | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR, //D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_PACK_MATRIX_ROW_MAJOR
         0, 
         &result.blob_, 
         &errors.blob_);

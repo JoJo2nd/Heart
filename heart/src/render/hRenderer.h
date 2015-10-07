@@ -88,6 +88,7 @@ namespace hRenderer {
     HEART_MODULE_API(void, detachCmdLists)(hCmdList* i);
     HEART_MODULE_API(hCmdList*, nextCmdList)(hCmdList* i);
     HEART_MODULE_API(void, clear)(hCmdList* cl, hColour colour, hFloat depth);
+    HEART_MODULE_API(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz);
     HEART_MODULE_API(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
     HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
     HEART_MODULE_API(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);

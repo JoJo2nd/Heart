@@ -53,7 +53,7 @@ public:
         };
         hRenderer::hVertexBufferLayout lo[] = {
             {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),  hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_colour"),  hRenderer::hSemantic::Texcoord, 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));

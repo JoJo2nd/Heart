@@ -58,22 +58,25 @@ public:
     SingleTri( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine ) {
 
-        hFloat verts[] = {
+        struct Vtx{
+            hFloat x,y,z;
+            hFloat r, g, b, a;
+        } verts[] = {
             //pos            //colour
              0.f,  .5f, 0.f, /**/ 1.f, 0.f, 0.f, 1.f,
              .5f, -.5f, 0.f, /**/ 0.f, 1.f, 0.f, 1.f,
             -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),  hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,                0, hFalse, sizeof(Vtx)},
+            {hStringID("in_colour"),  hRenderer::hSemantic::Texcoord, 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(Vtx)},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/single_tri"));
 
         vert = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
         frag = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
-        vb   = hRenderer::createVertexBuffer(verts, sizeof(hFloat)*7, 3, 0);
+        vb   = hRenderer::createVertexBuffer(verts, sizeof(Vtx), 3, 0);
 
         hRenderer::hRenderCallDesc rcd;
         rcd.vertex_ = vert;
@@ -92,7 +95,7 @@ public:
     virtual hUint32 RunUnitTest() override {
 
         if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
-            //SetExitCode(UNIT_TEST_EXIT_CODE_OK);
+            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
         }
 
         return 0;
@@ -100,7 +103,7 @@ public:
 
     Heart::hRenderer::hCmdList* RenderUnitTest() override {
         cl = hRenderer::createCmdList();
-        hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
+        hRenderer::clear(cl, hColour(1.f, 0.f, 1.f, 1.f), 1.f);
         hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
         return cl;
         //hRenderer::swapBuffers(cl);

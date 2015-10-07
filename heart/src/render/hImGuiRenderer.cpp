@@ -52,8 +52,8 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
         imguiCtx.fences[imguiCtx.currentFence] = nullptr;
     }
     auto* vtx_start = (ImDrawVert*)hRenderer::getMappingPtr(imguiCtx.vb, nullptr);
+    vtx_start += (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence);
     auto* vtx_dst = vtx_start;
-    vtx_dst += (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence);
     for (int n = 0; n < cmd_lists_count; n++)
     {
         const ImDrawList* cmd_list = cmd_lists[n];
@@ -70,7 +70,13 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     const float R = ImGui::GetIO().DisplaySize.x;
     const float B = ImGui::GetIO().DisplaySize.y;
     const float T = 0.0f;
-    ubdata->projection = hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
+    hMatrix clipspace_mtx (
+        hVec4( 1.0f, 0.0f, 0.0f, 0.0f ),
+        hVec4( 0.0f, 1.0f, 0.0f, 0.0f ),
+        hVec4( 0.0f, 0.0f, 0.5f, 0.0f ),
+        hVec4( 0.0f, 0.0f, 0.5f, 1.0f )
+    );
+    ubdata->projection = clipspace_mtx*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
     hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, (imguiCtx.currentFence*ubsize), ubsize);
 
     // Render command lists
@@ -89,7 +95,7 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
             {
                 //hRenderer::overrideSampler(slot, sampler);
                 //hRenderer::overrideTexture(slot, texture);
-                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(B-pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(B-pcmd->clip_rect.y));
+                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.y));
                 hRenderer::draw(gfx_cmd_list, imguiCtx.rc, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
             }
             vtx_offset += pcmd->vtx_count;
@@ -119,14 +125,14 @@ hBool ImGuiInit() {
     imguiCtx.fonttex = hRenderer::createTexture2D(1, &mip, hTextureFormat::RGBA8_unorm, 0);
 
     hRenderer::hVertexBufferLayout lo[] = {
-        { hStringID("in_position"), hRenderer::hSemantic::Position, 0, 2, hRenderer::hVertexInputType::Float,                  0, hFalse, 20 },
-        { hStringID("in_uv")      , hRenderer::hSemantic::Texcoord, 0, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 2, hFalse, 20 },
-        { hStringID("in_colour")  , hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::UByte, sizeof(hFloat) * 4, hTrue , 20 },
+        { hStringID("in_position"), hRenderer::hSemantic::Position, 0, 2, hRenderer::hVertexInputType::Float,                  0, hFalse, sizeof(ImDrawVert) },
+        { hStringID("in_uv")      , hRenderer::hSemantic::Texcoord, 1, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 2, hFalse, sizeof(ImDrawVert) },
+        { hStringID("in_colour")  , hRenderer::hSemantic::Texcoord, 0, 4, hRenderer::hVertexInputType::UByte, sizeof(hFloat) * 4, hTrue , sizeof(ImDrawVert) },
     };
     imguiCtx.shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/imgui"));
     imguiCtx.vert = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
     imguiCtx.pixel = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
-    imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat) * 8, ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+    imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(ImDrawVert), ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 
     hRenderer::hUniformLayoutDesc ublo[] = {
         { "projection", hRenderer::ShaderParamType::Float44, 0 },

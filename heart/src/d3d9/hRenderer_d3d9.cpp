@@ -22,8 +22,6 @@
 #include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderPrim.h"
-#include "opengl/GLCaps.h"
-#include "opengl/GLTypes.h"
 #include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include "lfds/lfds.h"
@@ -147,8 +145,8 @@ namespace d3d9 {
                     if (data_end > int_reg_size_bytes) int_reg_size_bytes = (hUint32)data_end;
                 }
             }
-            floatRegCount = float_reg_size_bytes/(sizeof(float)*4);
-            intRegCount = int_reg_size_bytes/(sizeof(hInt)*4);
+            floatRegCount = (float_reg_size_bytes+12)/(sizeof(float)*4);
+            intRegCount = (int_reg_size_bytes+12)/(sizeof(hInt)*4);
             if (float_reg_size_bytes > 0) floatRegs.reset(new hFloat[float_reg_size_bytes/sizeof(float)]);
             if (int_reg_size_bytes > 0) intRegs.reset(new hInt[int_reg_size_bytes/sizeof(hInt)]);
         }
@@ -225,7 +223,6 @@ namespace d3d9 {
         }
 
         hBool bind(IDirect3DDevice9* d3d_device) {
-            return hTrue;
             if (profile == hShaderProfile::D3D_9c_vs) {
                 IDirect3DVertexShader9* vshader;
                 auto hr = d3d_device->CreateVertexShader(programBlob, &vshader);
@@ -703,6 +700,8 @@ namespace d3d9 {
         }
 
         rtID = Device::GetCurrentThreadID();
+
+        d3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
         d3dFormatPitch[D3DFMT_R8G8B8] = 4;
         d3dFormatPitch[D3DFMT_A8R8G8B8] = 4;
@@ -1304,6 +1303,7 @@ namespace d3d9 {
 
     void clear(hCmdList* cl, hColour colour, hFloat depth) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            hcAssert(isRenderThread());
             d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 
                 D3DCOLOR_ARGB((hInt)(colour.a_*255.f+.5f), (hInt)(colour.r_*255.f+.5f), (hInt)(colour.g_*255.f+.5f), (hInt)(colour.b_*255.f+.5f)),
                 depth, 0);
@@ -1311,8 +1311,21 @@ namespace d3d9 {
         });
     }
 
+    void setViewport(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            hcAssert(isRenderThread());
+            D3DVIEWPORT9 vp;
+            vp.X = x; vp.Y = y;
+            vp.Width = width; vp.Height = height;
+            vp.MinZ = minz; vp.MaxZ = maxz;
+            d3dDevice->SetViewport(&vp);
+            return 0;
+        });
+    }
+
     void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            hcAssert(isRenderThread());
             RECT r;
             r.left = left; r.top = top;
             r.right = right; r.bottom = bottom;
@@ -1361,7 +1374,7 @@ namespace d3d9 {
             else if (t == Primative::TriangleStrip) type = D3DPT_TRIANGLESTRIP;
             if (rc->ib) {
                 d3dDevice->SetIndices(rc->ib->indexBuffer.get());
-                d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, prims, vtx_offset);
+                d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, vtx_offset, prims);
             } else {
                 d3dDevice->DrawPrimitive(type, vtx_offset, prims);
             }
@@ -1377,7 +1390,7 @@ namespace d3d9 {
     }
 
     void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
-        
+        hcAssert(offset + size <= vb->elementCount*vb->elementSize);
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             if (!vb->isBound()) vb->bind(d3dDevice);
@@ -1607,6 +1620,7 @@ namespace d3d9 {
         hRenderer::detachCmdLists = d3d9::detachCmdLists;
         hRenderer::nextCmdList = d3d9::nextCmdList;
         hRenderer::clear = d3d9::clear;
+        hRenderer::setViewport = d3d9::setViewport;
         hRenderer::scissorRect = d3d9::scissorRect;
         hRenderer::draw = d3d9::draw;
         hRenderer::flushUnibufferMemoryRange = d3d9::flushUnibufferMemoryRange;

@@ -27,32 +27,6 @@ class hHeartEngine;
 
 using namespace Heart;
 
-const hChar vertSrc[] = 
-"\
-#version 330\n\
-layout(std140) uniform TimerBlock {\n\
-	float timeSecs;\n\
-	vec3  pad;\n\
-};\n\
-layout(location=0) in vec3 in_position;\n\
-layout(location=1) in vec4 in_colour;\n\
-out vec4 inout_colour;\n\
-void main() {\n\
-    inout_colour = in_colour;\n\
-		gl_Position.xyz = in_position.xyz*sin(timeSecs);\n\
-    gl_Position.w = 1;\n\
-}\n\
-";
-const hChar fragSrc[] = 
-"\
-#version 330\n\
-in vec4 inout_colour;\n\
-out vec4 fragColour;\n\
-void main() {\n\
-    fragColour = inout_colour;\n\
-}\n\
-";
-
 class MovingTri : public IUnitTest {
     
 	hTimer								timer_;
@@ -80,8 +54,8 @@ public:
             -.5f, -.5f, 0.f, /**/ 0.f, 0.f, 1.f, 1.f,
         };
         hRenderer::hVertexBufferLayout lo[] = {
-            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,				 0, hFalse, sizeof(hFloat)*7},
-            {hStringID("in_colour"),  hRenderer::hSemantic::Colour  , 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_position"),hRenderer::hSemantic::Position, 0, 3, hRenderer::hVertexInputType::Float,                0, hFalse, sizeof(hFloat)*7},
+            {hStringID("in_colour"),  hRenderer::hSemantic::Texcoord, 0, 4, hRenderer::hVertexInputType::Float, sizeof(hFloat)*3, hFalse, sizeof(hFloat)*7},
         };
 
         shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/moving_tri"));
