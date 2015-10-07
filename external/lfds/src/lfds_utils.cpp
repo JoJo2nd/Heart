@@ -4,10 +4,10 @@
 *********************************************************************/
 
 #include "lfds/lfds.h"
-#include "base/hMemory.h"
+//#include "base/hMemory.h"
 
-#define lfds_liblfds_aligned_malloc(s, a)  	Heart::hMalloc(s, a)
-#define lfds_liblfds_aligned_free(p)		Heart::hFree(p)
+#define lfds_liblfds_aligned_malloc(s, a)  	malloc(s)  /*Heart::hMalloc(s, a)*/
+#define lfds_liblfds_aligned_free(p)		free(p) /*Heart::hFree(p)*/
 
 /***** defines *****/
 #define RAISED   1

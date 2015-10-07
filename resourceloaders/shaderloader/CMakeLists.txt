@@ -32,8 +32,8 @@ source_group(source  FILES ${SHADER_BUILDER_FILES})
 include_directories(${SHADER_BUILDER_INCLUDE_DIRS})
 link_directories(${SHADER_BUILDER_LIB_DIRS})
 add_executable(shader_builder ${SHADER_BUILDER_FILES})
-target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${PLATFORM_LIBS})
-target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${PLATFORM_LIBS})
+target_link_libraries(shader_builder debug ${PROTOBUF_LIBRARY_DEBUG} ${SB_LIBS} ${PLATFORM_LIBS} ${D3DCOMPILER_LIBS})
+target_link_libraries(shader_builder optimized ${PROTOBUF_LIBRARY} ${SB_LIBS} ${PLATFORM_LIBS} ${D3DCOMPILER_LIBS})
 
 if (MSVC)
 	add_definitions(/WX) # Warnings as errors

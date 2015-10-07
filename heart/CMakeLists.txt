@@ -25,6 +25,7 @@ set( HEART_INCLUDE_DIRS
     "${IMGUI_INCLUDE_DIR}"
     "${MEMTRACKERLIB_SRC_DIR}"
     "${ANGLE_INCLUDE_DIRS}"
+    "${LFDS_INCLUDE_DIR}"
 )
 
 set(HEART_LIB_DIRS)
@@ -76,11 +77,6 @@ file(GLOB HEART_COMPONENTS_FILES
 file(GLOB HEART_CORE_FILES 
     "${HEART_SOURCE_DIR}/src/core/*.h"
     "${HEART_SOURCE_DIR}/src/core/*.cpp"
-)
-file(GLOB HEART_LFDS_FILES 
-    "${HEART_SOURCE_DIR}/src/lfds/*.h"
-    "${HEART_SOURCE_DIR}/src/lfds/*.c"
-    "${HEART_SOURCE_DIR}/src/lfds/*.cpp"
 )
 file(GLOB HEART_COMPUTE_FILES 
     "${HEART_SOURCE_DIR}/src/compute/*.h"
@@ -150,10 +146,6 @@ if (PLATFORM_WINDOWS)
         "${HEART_SOURCE_DIR}/src/win32/pal/*.cpp"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/win32/pal/device/*.cpp"
-        "${HEART_SOURCE_DIR}/src/d3d9/*.h"
-        "${HEART_SOURCE_DIR}/src/d3d9/*.cpp"
-        "${HEART_SOURCE_DIR}/src/opengl/*.h"
-        "${HEART_SOURCE_DIR}/src/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"
     )
@@ -172,8 +164,6 @@ if (PLATFORM_LINUX)
         "${HEART_SOURCE_DIR}/src/posix/pal/*.cpp"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.h"
         "${HEART_SOURCE_DIR}/src/posix/pal/device/*.cpp"
-        "${HEART_SOURCE_DIR}/src/opengl/*.h"
-        "${HEART_SOURCE_DIR}/src/opengl/*.cpp"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.h"
         "${HEART_SOURCE_DIR}/src/openal/pal/*.cpp"        
     )
@@ -293,7 +283,7 @@ add_definitions(-DHEART_SHARED_LIB_EXPORTS=1)
 add_library(heart_base SHARED ${HEART_BASE_FILES})
 #add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
 #add_library(heart_base ${HEART_BASE_FILES})
-target_link_libraries(heart_base crypto memtrackerlib ${SDL2_LIBRARY} ${PLATFORM_LIBS})
+target_link_libraries(heart_base crypto memtrackerlib lfds ${SDL2_LIBRARY} ${PLATFORM_LIBS})
 
 #Create the main engine lib
 add_definitions(-DHEART_SHARED_LIB_EXPORTS=0)
@@ -314,3 +304,4 @@ endif()
 
 # Add Code Components
 add_subdirectory ("src/codecomponents/filesystem")
+add_subdirectory ("src/codecomponents/d3d9_renderer")

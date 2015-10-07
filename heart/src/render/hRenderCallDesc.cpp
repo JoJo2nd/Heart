@@ -12,11 +12,11 @@
 namespace Heart {
 namespace hRenderer {
 
-hRenderCallDesc::hRenderCallDesc() {
+hRenderCallDescBase::hRenderCallDescBase() {
     clearDescription();
 }
 
-void hRenderCallDesc::clearDescription() {
+void hRenderCallDescBase::clearDescription() {
     for (auto& s : samplerStates_) {
         s.name_ = hStringID();
         s.sampler_ = hSamplerStateDesc();
@@ -42,7 +42,7 @@ void hRenderCallDesc::clearDescription() {
     fragment_ = nullptr;
 }
 
-void hRenderCallDesc::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
+void hRenderCallDescBase::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
     for (auto& s : samplerStates_) {
         if (s.name_==name) {
             s.sampler_=ssd;
@@ -57,7 +57,7 @@ void hRenderCallDesc::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
     hcAssertFailMsg("Too many sampler states");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, hTexture1D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture1D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t1D_=tex;
@@ -74,7 +74,7 @@ void hRenderCallDesc::setTextureSlot(hStringID name, hTexture1D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, hTexture2D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture2D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t2D_=tex;
@@ -91,7 +91,7 @@ void hRenderCallDesc::setTextureSlot(hStringID name, hTexture2D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDesc::setTextureSlot(hStringID name, hTexture3D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture3D* tex) {
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t3D_=tex;
@@ -108,7 +108,7 @@ void hRenderCallDesc::setTextureSlot(hStringID name, hTexture3D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDesc::setUniformBuffer(hStringID name, const hUniformBuffer* ub) {
+void hRenderCallDescBase::setUniformBuffer(hStringID name, const hUniformBuffer* ub) {
     for (auto& t : uniformBuffers_) {
         if (t.name_==name) {
             t.ub_=ub;
@@ -121,7 +121,7 @@ void hRenderCallDesc::setUniformBuffer(hStringID name, const hUniformBuffer* ub)
     }
 }
 
-void hRenderCallDesc::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
+void hRenderCallDescBase::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
     hcAssert(count < vertexLayoutMax_);
     vertexLayoutCount = count;
     hMemCpy(vertexLayout_, layout, count*sizeof(hVertexBufferLayout));

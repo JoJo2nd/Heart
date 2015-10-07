@@ -4,10 +4,8 @@
 *********************************************************************/
 #pragma once
 
-#include "base/hTypes.h"
-
 /***** defines *****/
-#if (defined HEART_PLAT_WINDOWS && defined HEART_64BIT && !defined WIN_KERNEL_BUILD)
+#if (defined PLATFORM_WINDOWS && defined BUILD_64_BIT && !defined WIN_KERNEL_BUILD)
 // TRD : 64-bit Windows user-mode with the Microsoft C compiler, any CPU
 #include <assert.h>
 #include <stdio.h>
@@ -27,7 +25,7 @@ typedef unsigned __int64                 lfds_atom_t;
 #define LFDS_BARRIER_PROCESSOR_FULL   _mm_mfence()
 #endif
 
-#if (defined HEART_PLAT_WINDOWS && !defined HEART_64BIT && !defined WIN_KERNEL_BUILD)
+#if (defined PLATFORM_WINDOWS && !defined BUILD_64_BIT && !defined WIN_KERNEL_BUILD)
 // TRD : 32-bit Windows user-mode with the Microsoft C compiler, any CPU
 #include <assert.h>
 #include <stdio.h>
@@ -50,7 +48,7 @@ typedef unsigned long int                lfds_atom_t;
 #define _InterlockedCompareExchangePointer(destination, exchange, compare) _InterlockedCompareExchange((volatile long *) destination, (long) exchange, (long) compare)
 #endif
 
-#if (defined HEART_PLAT_WINDOWS && defined HEART_64BIT && defined WIN_KERNEL_BUILD)
+#if (defined PLATFORM_WINDOWS && defined BUILD_64_BIT && defined WIN_KERNEL_BUILD)
 // TRD : 64-bit Windows kernel with the Microsoft C compiler, any CPU
 #include <assert.h>
 #include <stdio.h>
@@ -69,7 +67,7 @@ typedef unsigned __int64                 lfds_atom_t;
 #define LFDS_BARRIER_PROCESSOR_FULL   _mm_mfence()
 #endif
 
-#if (defined HEART_PLAT_WINDOWS && !defined HEART_64BIT && defined WIN_KERNEL_BUILD)
+#if (defined PLATFORM_LINUX && !defined BUILD_64_BIT && defined WIN_KERNEL_BUILD)
 // TRD : 32-bit Windows kernel with the Microsoft C compiler, any CPU
 #include <assert.h>
 #include <stdio.h>
@@ -91,7 +89,7 @@ typedef unsigned long int                lfds_atom_t;
 #define _InterlockedCompareExchangePointer(destination, exchange, compare) _InterlockedCompareExchange((volatile long *) destination, (long) exchange, (long) compare)
 #endif
 
-#if (defined HEART_PLAT_LINUX && defined HEART_64BIT)
+#if (defined PLATFORM_LINUX && defined BUILD_64_BIT)
 // TRD : any UNIX on x64
 #include <assert.h>
 #include <stdio.h>
@@ -109,7 +107,7 @@ typedef unsigned long long int           lfds_atom_t;
 #define LFDS_BARRIER_PROCESSOR_FULL   __sync_synchronize()
 #endif
 
-#if (defined HEART_PLAT_LINUX && !defined HEART_64BIT)
+#if (defined PLATFORM_LINUX && !defined BUILD_64_BIT)
 // TRD : any UNIX with GCC on x86
 #include <assert.h>
 #include <stdio.h>

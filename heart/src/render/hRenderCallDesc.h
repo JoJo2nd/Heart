@@ -22,7 +22,9 @@ namespace hRenderer {
     struct hVertexBuffer;
     struct hUniformBuffer;
 
-    struct hRenderCallDesc {
+    // !!JM TODO - Make this a Abstract Binary Interface. Plug-ins use it and will break when this is changed.
+    // Use of Proto buffer enums currently prevents this.
+    struct hRenderCallDescBase {
         struct hBlendStateDesc {
             hBlendStateDesc() {
                 blendEnable_           = hFalse;
@@ -119,7 +121,7 @@ namespace hRenderer {
             hFloat                            maxLOD_;
         };
 
-        hRenderCallDesc();
+        hRenderCallDescBase();
         void clearDescription();
         void setSampler(hStringID name, const hSamplerStateDesc& ssd);
         void setTextureSlot(hStringID name, hTexture1D* t);
@@ -129,7 +131,7 @@ namespace hRenderer {
         void setVertexBufferLayout(hVertexBufferLayout* layout, hUint count);
 
         // Helper functions
-        bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const;
+        virtual bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const = 0;
 
         static const hUint      vertexLayoutMax_  = 16;
         static const hUint      samplerStateMax_  = 16;
@@ -162,6 +164,10 @@ namespace hRenderer {
         hVertexBuffer*          vertexBuffer_;
         hShaderStage*           vertex_;
         hShaderStage*           fragment_;
+    };
+
+    struct hRenderCallDesc : public hRenderCallDescBase {
+        bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const override;
     };
 } 
 }

@@ -1,5 +1,5 @@
 cvar("plugin.filesystem", "hddfilesystem")
-cvar("plugin.renderer", "opengl_es2")
+cvar("plugin.renderer", "d3d9renderer")
 
 cvar("renderer.fullscreen", false)
 cvar("renderer.vsync", true)

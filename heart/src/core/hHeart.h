@@ -158,6 +158,7 @@ namespace Heart
         void                            DoUpdate();
 
         HeartConfig                     config_;
+        hConfigurationVariablesImpl     cvars;
         hdDeviceConfig*                 deviceConfig_;
         hHeartState                     engineState_;
         hArray< hChar, 1024 >           workingDir_;

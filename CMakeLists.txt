@@ -354,6 +354,9 @@ set(CRYPTO_INCLUDE_DIR
 set(IMGUI_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/imgui/src"
 )
+set(LFDS_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/lfds/include"
+)
 set(PROTO_SRC_DIR
     "${TOOLS_SRC_ROOT}/proto/src"
 )
@@ -368,17 +371,17 @@ set(MEMTRACKERLIB_SRC_DIR
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
 	set(PLATFORM_LIBS_CORE 
-    dxguid dxgi
     XInput9_1_0 
-    d3d9
-    d3d11
-    d3dcompiler
     openAL32
     ws2_32
     Winmm
     Version
     Imm32
   )
+  set(D3D9_LIBS d3d9)
+  set(D3D11_LIBS d3d11)
+  set(D3DCOMPILER_LIBS  ${D3D11_LIBS} d3dcompiler dxguid dxgi)
+
   set(PLATFORM_LIBS ${PLATFORM_LIBS_CORE} dbghelp)
 endif()
 
@@ -443,6 +446,7 @@ add_subdirectory ("external/enet")
 add_subdirectory ("external/minfs")
 #add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/imgui")
+add_subdirectory ("external/lfds")
 if (PLATFORM_WINDOWS)
   add_subdirectory ("external/libprof")
 endif()

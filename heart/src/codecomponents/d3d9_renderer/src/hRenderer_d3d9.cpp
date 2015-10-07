@@ -22,7 +22,6 @@
 #include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderPrim.h"
-#include "opengl/hRendererOpCodes_gl.h"
 #include "cryptoMurmurHash.h"
 #include "lfds/lfds.h"
 #include <d3d9.h>
@@ -31,6 +30,22 @@
 #include <memory>
 #include <unordered_map>
 #include <functional>
+
+void* operator new(size_t size){
+    return Heart::hMalloc(size);
+}
+
+void* operator new[](size_t size) {
+    return Heart::hMalloc(size);
+}
+
+void operator delete(void* ptr) {
+    return Heart::hFree(ptr);
+}
+
+void operator delete[](void* ptr) {
+    return Heart::hFree(ptr);
+}
 
 namespace Heart {    
 namespace hRenderer {
@@ -41,6 +56,8 @@ namespace d3d9 {
     static const hUint  FRAME_COUNT = 3;
     static const hUint  RMEM_COUNT = FRAME_COUNT+1;
     static const hUint32 BC_PITCH = 0x80000000;
+
+    hIConfigurationVariables* configVars;
 
     LPDIRECT3D9 pD3D;
     LPDIRECT3DDEVICE9 d3dDevice;
@@ -797,12 +814,12 @@ namespace d3d9 {
 
     void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
 
-    	multiThreadedRenderer = !!hConfigurationVariables::getCVarUint("renderer.gl.multithreaded", 1);
-        renderScratchMemSize = hConfigurationVariables::getCVarUint("renderer.scratchmemsize", 1*1024*1024);
-    	fenceCount = hConfigurationVariables::getCVarUint("renderer.fencecount", 256);
-        auto destruction_queue_size = hConfigurationVariables::getCVarUint("renderer.destroyqueuesize", 256);
-        auto cmd_queue_size = hConfigurationVariables::getCVarUint("renderer.cmdlistqueuesize", 256);
-        renderCommandThreshold = hConfigurationVariables::getCVarUint("renderer.commandthreshold", 32);
+    	multiThreadedRenderer = !!configVars->getCVarUint("renderer.gl.multithreaded", 1);
+        renderScratchMemSize = configVars->getCVarUint("renderer.scratchmemsize", 1*1024*1024);
+    	fenceCount = configVars->getCVarUint("renderer.fencecount", 256);
+        auto destruction_queue_size = configVars->getCVarUint("renderer.destroyqueuesize", 256);
+        auto cmd_queue_size = configVars->getCVarUint("renderer.cmdlistqueuesize", 256);
+        renderCommandThreshold = configVars->getCVarUint("renderer.commandthreshold", 32);
         
     	fences = new hRenderFence[fenceCount];
 
@@ -944,7 +961,7 @@ namespace d3d9 {
         });
     }
 
-    hRenderCall* createRenderCall(const hRenderCallDesc& rcd) {
+    hRenderCall* createRenderCall(const hRenderCallDescBase& rcd) {
         static const hUint sampler_size = sizeof(hRenderCall::SamplerState);
         hUint sampler_count = 0;
         hUint int_param_update_count = 0;
@@ -1148,7 +1165,7 @@ namespace d3d9 {
             in_rc->samplerStates[i].samplerState.states[7] = { D3DSAMP_MAXMIPLEVEL, floatBitsToDWORD(ss.maxLOD_)};
             in_rc->samplerStates[i].samplerState.states[8] = { D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
         };
-        auto findMatchingSampler = [](const hRenderCallDesc& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
+        auto findMatchingSampler = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
             for (const auto& i : in_rcd.samplerStates_) {
                 if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
                     return &i.sampler_;
@@ -1156,7 +1173,7 @@ namespace d3d9 {
             }
             return nullptr;
         };
-        auto findMatchingTexture = [](const hRenderCallDesc& in_rcd, const hChar* name) -> hTexture2D* {
+        auto findMatchingTexture = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> hTexture2D* {
             for (const auto& i : in_rcd.textureSlots_) {
                 if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
                     return i.t2D_;
@@ -1437,14 +1454,14 @@ namespace d3d9 {
 
     }
 
+    void endReturn(hCmdList* cl) {
+        cl->allocCmdMem(Op::Return, 0);
+    }
+
     void call(hCmdList* cl, hCmdList* tocall) {
         auto* cmd = (hRndrOpCall*)cl->allocCmdMem(Op::Call, sizeof(hRndrOpCall));
         cmd->jumpTo=tocall;
-        endReturn(tocall);
-    }
-
-    void endReturn(hCmdList* cl) {
-        cl->allocCmdMem(Op::Return, 0);
+        d3d9::endReturn(tocall);
     }
 
     void swapBuffers(hCmdList* cl) {
@@ -1591,52 +1608,55 @@ namespace d3d9 {
     }
 }
 }
-    void initialiseRenderFunc() {
-        hRenderer::create = d3d9::create;
-        hRenderer::destroy = d3d9::destroy;
-        //hRenderer::getRatio = d3d9::getRatio;
-        hRenderer::isProfileSupported = d3d9::isProfileSupported;
-        hRenderer::getActiveProfile = d3d9::getActiveProfile;
-        hRenderer::getRenderStats = d3d9::getRenderStats;
-        hRenderer::compileShaderStageFromSource = d3d9::compileShaderStageFromSource;
-        hRenderer::destroyShader = d3d9::destroyShader;
-        hRenderer::createTexture2D = d3d9::createTexture2D;
-        hRenderer::destroyTexture2D = d3d9::destroyTexture2D;
-        hRenderer::createIndexBuffer = d3d9::createIndexBuffer;
-        hRenderer::getIndexBufferMappingPtr = d3d9::getIndexBufferMappingPtr;
-        hRenderer::destroyIndexBuffer = d3d9::destroyIndexBuffer;
-        hRenderer::createVertexBuffer = d3d9::createVertexBuffer;
-        hRenderer::getVertexBufferMappingPtr = d3d9::getVertexBufferMappingPtr;
-        hRenderer::destroyVertexBuffer = d3d9::destroyVertexBuffer;
-        hRenderer::createUniformBuffer = d3d9::createUniformBuffer;
-        hRenderer::getUniformBufferLayoutInfo = d3d9::getUniformBufferLayoutInfo;
-        hRenderer::getUniformBufferMappingPtr = d3d9::getUniformBufferMappingPtr;
-        hRenderer::destroyUniformBuffer = d3d9::destroyUniformBuffer;
-        hRenderer::createRenderCall = d3d9::createRenderCall;
-        hRenderer::destroyRenderCall = d3d9::destroyRenderCall;
-        hRenderer::allocTempRenderMemory = d3d9::allocTempRenderMemory;
-        hRenderer::createCmdList = d3d9::createCmdList;
-        hRenderer::linkCmdLists = d3d9::linkCmdLists;
-        hRenderer::detachCmdLists = d3d9::detachCmdLists;
-        hRenderer::nextCmdList = d3d9::nextCmdList;
-        hRenderer::clear = d3d9::clear;
-        hRenderer::setViewport = d3d9::setViewport;
-        hRenderer::scissorRect = d3d9::scissorRect;
-        hRenderer::draw = d3d9::draw;
-        hRenderer::flushUnibufferMemoryRange = d3d9::flushUnibufferMemoryRange;
-        hRenderer::flushVertexBufferMemoryRange = d3d9::flushVertexBufferMemoryRange;
-        hRenderer::fence = d3d9::fence;
-        hRenderer::wait = d3d9::wait;
-        hRenderer::flush = d3d9::flush;
-        hRenderer::finish = d3d9::finish;
-        hRenderer::call = d3d9::call;
-        hRenderer::endReturn = d3d9::endReturn;
-        hRenderer::swapBuffers = d3d9::swapBuffers;
-        hRenderer::submitFrame = d3d9::submitFrame;
-        hRenderer::rendererFrameSubmit = d3d9::rendererFrameSubmit;
-        hRenderer::getLastGPUTime = d3d9::getLastGPUTime;
-        hRenderer::isRenderThread = d3d9::isRenderThread;
-        hRenderer::getParameterTypeByteSize = d3d9::getParameterTypeByteSize;
+    HEART_C_EXPORT
+    void HEART_API hrt_initialiseRenderFunc(hIConfigurationVariables* config_vars, hRendererInterfaceInitializer* out_funcs) {
+                //hRenderer::getRatio = d3d9::getRatio;
+        configVars = config_vars;
+
+        out_funcs->create = d3d9::create;
+        out_funcs->destroy = d3d9::destroy;
+        out_funcs->isProfileSupported = d3d9::isProfileSupported;
+        out_funcs->getActiveProfile = d3d9::getActiveProfile;
+        out_funcs->getRenderStats = d3d9::getRenderStats;
+        out_funcs->compileShaderStageFromSource = d3d9::compileShaderStageFromSource;
+        out_funcs->destroyShader = d3d9::destroyShader;
+        out_funcs->createTexture2D = d3d9::createTexture2D;
+        out_funcs->destroyTexture2D = d3d9::destroyTexture2D;
+        out_funcs->createIndexBuffer = d3d9::createIndexBuffer;
+        out_funcs->getIndexBufferMappingPtr = d3d9::getIndexBufferMappingPtr;
+        out_funcs->destroyIndexBuffer = d3d9::destroyIndexBuffer;
+        out_funcs->createVertexBuffer = d3d9::createVertexBuffer;
+        out_funcs->getVertexBufferMappingPtr = d3d9::getVertexBufferMappingPtr;
+        out_funcs->destroyVertexBuffer = d3d9::destroyVertexBuffer;
+        out_funcs->createUniformBuffer = d3d9::createUniformBuffer;
+        out_funcs->getUniformBufferLayoutInfo = d3d9::getUniformBufferLayoutInfo;
+        out_funcs->getUniformBufferMappingPtr = d3d9::getUniformBufferMappingPtr;
+        out_funcs->destroyUniformBuffer = d3d9::destroyUniformBuffer;
+        out_funcs->createRenderCall = d3d9::createRenderCall;
+        out_funcs->destroyRenderCall = d3d9::destroyRenderCall;
+        out_funcs->allocTempRenderMemory = d3d9::allocTempRenderMemory;
+        out_funcs->createCmdList = d3d9::createCmdList;
+        out_funcs->linkCmdLists = d3d9::linkCmdLists;
+        out_funcs->detachCmdLists = d3d9::detachCmdLists;
+        out_funcs->nextCmdList = d3d9::nextCmdList;
+        out_funcs->clear = d3d9::clear;
+        out_funcs->setViewport = d3d9::setViewport;
+        out_funcs->scissorRect = d3d9::scissorRect;
+        out_funcs->draw = d3d9::draw;
+        out_funcs->flushUnibufferMemoryRange = d3d9::flushUnibufferMemoryRange;
+        out_funcs->flushVertexBufferMemoryRange = d3d9::flushVertexBufferMemoryRange;
+        out_funcs->fence = d3d9::fence;
+        out_funcs->wait = d3d9::wait;
+        out_funcs->flush = d3d9::flush;
+        out_funcs->finish = d3d9::finish;
+        out_funcs->call = d3d9::call;
+        out_funcs->endReturn = d3d9::endReturn;
+        out_funcs->swapBuffers = d3d9::swapBuffers;
+        out_funcs->submitFrame = d3d9::submitFrame;
+        out_funcs->rendererFrameSubmit = d3d9::rendererFrameSubmit;
+        out_funcs->getLastGPUTime = d3d9::getLastGPUTime;
+        out_funcs->isRenderThread = d3d9::isRenderThread;
+        out_funcs->getParameterTypeByteSize = d3d9::getParameterTypeByteSize;
     }
 }}
 

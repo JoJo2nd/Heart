@@ -11,6 +11,7 @@
 #include "base/hLinkedList.h"
 #include "base/hArray.h"
 #include "base/hRendererConstants.h"
+#include "base/hConfigOptionsInterface.h"
 #include "core/hResource.h"
 #include "math/hMatrix.h"
 #include "math/hVec3.h"
@@ -28,6 +29,7 @@
 
 #if !HEART_STATIC_RENDER_API
 #   define HEART_MODULE_API(r, fn_name) extern r (HEART_API *fn_name)
+#   define HEART_MODULE_API_INIT(r, fn_name) r (HEART_API *fn_name)
 #else
 #   define HEART_MODULE_API(r, fn_name) r fn_name
 #endif
@@ -49,7 +51,7 @@ namespace hRenderer {
 
     struct hCmdList;
     struct hRenderCall;
-    struct hRenderCallDesc;
+    struct hRenderCallDescBase;
     struct hMipDesc;
     struct hTexture1D;
     struct hTexture2D;
@@ -80,7 +82,7 @@ namespace hRenderer {
     HEART_MODULE_API(const hUniformLayoutDesc*, getUniformBufferLayoutInfo)(const hUniformBuffer* ub, hUint* out_count);
     HEART_MODULE_API(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub);
     HEART_MODULE_API(void, destroyUniformBuffer)(hUniformBuffer* ub);
-    HEART_MODULE_API(hRenderCall*, createRenderCall)(const hRenderCallDesc& rcd);
+    HEART_MODULE_API(hRenderCall*, createRenderCall)(const hRenderCallDescBase& rcd);
     HEART_MODULE_API(void, destroyRenderCall)(hRenderCall* rc);
     HEART_MODULE_API(void*, allocTempRenderMemory)( hUint32 size );
     HEART_MODULE_API(hCmdList*, createCmdList)();
@@ -115,9 +117,57 @@ namespace hRenderer {
         return getUniformBufferMappingPtr(ub);
     }
 
-#if !HEART_STATIC_RENDER_API
-    void initialiseRenderFunc();
-#endif
+    struct hRendererInterfaceInitializer {
+        HEART_MODULE_API_INIT(void, create)(hSystem* pSystem, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync);
+        HEART_MODULE_API_INIT(void, destroy)();
+        HEART_MODULE_API_INIT(hFloat, getRatio)();
+        HEART_MODULE_API_INIT(bool, isProfileSupported)(hShaderProfile profile);
+        HEART_MODULE_API_INIT(hShaderProfile, getActiveProfile)(hShaderFrequency);
+        HEART_MODULE_API_INIT(const hRenderFrameStats*, getRenderStats)();
+        HEART_MODULE_API_INIT(hShaderStage*, compileShaderStageFromSource)(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
+        HEART_MODULE_API_INIT(void, destroyShader)(hShaderStage* prog);
+        HEART_MODULE_API_INIT(hTexture2D*, createTexture2D)(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
+        HEART_MODULE_API_INIT(void, destroyTexture2D)(hTexture2D* t);
+        HEART_MODULE_API_INIT(hIndexBuffer*, createIndexBuffer)(const void* pIndices, hUint32 nIndices, hUint32 flags);
+        HEART_MODULE_API_INIT(void*, getIndexBufferMappingPtr)(hIndexBuffer* vb);
+        HEART_MODULE_API_INIT(void, destroyIndexBuffer)(hIndexBuffer* ib);
+        HEART_MODULE_API_INIT(hVertexBuffer*,  createVertexBuffer)(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
+        HEART_MODULE_API_INIT(void*, getVertexBufferMappingPtr)(hVertexBuffer* vb, hUint32* size);
+        HEART_MODULE_API_INIT(void,  destroyVertexBuffer)(hVertexBuffer* vb);
+        HEART_MODULE_API_INIT(hUniformBuffer*, createUniformBuffer)(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
+        HEART_MODULE_API_INIT(const hUniformLayoutDesc*, getUniformBufferLayoutInfo)(const hUniformBuffer* ub, hUint* out_count);
+        HEART_MODULE_API_INIT(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub);
+        HEART_MODULE_API_INIT(void, destroyUniformBuffer)(hUniformBuffer* ub);
+        HEART_MODULE_API_INIT(hRenderCall*, createRenderCall)(const hRenderCallDescBase& rcd);
+        HEART_MODULE_API_INIT(void, destroyRenderCall)(hRenderCall* rc);
+        HEART_MODULE_API_INIT(void*, allocTempRenderMemory)( hUint32 size );
+        HEART_MODULE_API_INIT(hCmdList*, createCmdList)();
+        HEART_MODULE_API_INIT(void, linkCmdLists)(hCmdList* before, hCmdList* after, hCmdList* i);
+        HEART_MODULE_API_INIT(void, detachCmdLists)(hCmdList* i);
+        HEART_MODULE_API_INIT(hCmdList*, nextCmdList)(hCmdList* i);
+        HEART_MODULE_API_INIT(void, clear)(hCmdList* cl, hColour colour, hFloat depth);
+        HEART_MODULE_API_INIT(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz);
+        HEART_MODULE_API_INIT(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
+        HEART_MODULE_API_INIT(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
+        HEART_MODULE_API_INIT(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
+        HEART_MODULE_API_INIT(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
+        HEART_MODULE_API_INIT(hRenderFence*, fence)(hCmdList* cl);
+        HEART_MODULE_API_INIT(void, wait)(hRenderFence* fence);
+        HEART_MODULE_API_INIT(void, flush)(hCmdList* cl);
+        HEART_MODULE_API_INIT(void, finish)();
+        HEART_MODULE_API_INIT(void, call)(hCmdList* cl, hCmdList* tocall);
+        HEART_MODULE_API_INIT(void, endReturn)(hCmdList* cl);
+        HEART_MODULE_API_INIT(void, swapBuffers)(hCmdList* cl);
+        HEART_MODULE_API_INIT(void, submitFrame)(hCmdList* cmds);
+        HEART_MODULE_API_INIT(void, rendererFrameSubmit)(hCmdList* cmdlists, hUint count);
+        HEART_MODULE_API_INIT(hFloat, getLastGPUTime)();
+        HEART_MODULE_API_INIT(hBool, isRenderThread)();
+        //
+        HEART_MODULE_API_INIT(hUint, getParameterTypeByteSize)(ShaderParamType type);
+    };
+
+    void loadRendererModule(const hChar* module_name, hIConfigurationVariables* cvars, hRendererInterfaceInitializer* out_funcs);
+    void initialiseRenderFunc(const hRendererInterfaceInitializer& in_funcs);
 }
 }
 
