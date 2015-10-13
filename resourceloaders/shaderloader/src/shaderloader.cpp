@@ -614,7 +614,7 @@ std::string* out_errors, void** bin_blob, size_t* bin_blob_len) {
             constants[ci].stringTableOffset = str_offset;
             strcpy(stringtable, desc->Name.c_str());
             stringtable += desc->Name.length()+1; // +1 for null terminator.
-            str_offset += (uint32_t)desc->Name.length();
+            str_offset += (uint32_t)desc->Name.length()+1;
         }
         memcpy(stringtable, result.blob_->GetBufferPointer(), result.blob_->GetBufferSize());
 
