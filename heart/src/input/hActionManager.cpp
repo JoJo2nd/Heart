@@ -38,12 +38,13 @@ struct hInputID {
             hUint scancode_ : 9; // only valid on keyboard
             hUint buttonId_ : 8; // only on mouse/controller, axisId is zero
             hUint axisId_ : 8; // only on mouse/controller, buttonId is zero
+            hUint spare : 3;
         };
     };
 
     hInputID() {}
     hInputID(hType type, hUint scancode, hUint buttonid, hUint axisid)
-        : type_(type), scancode_(scancode), buttonId_(buttonid), axisId_(axisid)
+        : type_(type), scancode_(scancode), buttonId_(buttonid), axisId_(axisid), spare(0)
     {}
 
     hBool operator == (const hInputID& rhs) const { return id_ == rhs.id_; }

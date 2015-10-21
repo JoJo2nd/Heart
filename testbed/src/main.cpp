@@ -7,6 +7,7 @@
 #include "TestBedCore.h"
 #include "resource_texture.pb.h"
 #include "memtracker.h"
+
 /*
 auto early = [](){
     _CrtMemDumpAllObjectsSince(nullptr);

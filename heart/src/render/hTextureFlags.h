@@ -3,11 +3,12 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "base/hRendererConstants.h"
-#include "base/hStringUtil.h"
-#include <vector>
+#pragma once
 
-namespace Heart
-{
-
-}
+namespace Heart {
+namespace hRenderer {
+    enum class TextureFlags : hUint32 {
+        RenderTarget = 0x80000000,
+        Dynamic = 0x80000001,
+    };
+}}

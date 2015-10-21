@@ -22,6 +22,7 @@
 #include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderPrim.h"
+#include "render/hTextureFlags.h"
 #include "cryptoMurmurHash.h"
 #include "lfds/lfds.h"
 #include <d3d9.h>
@@ -47,6 +48,12 @@ void operator delete[](void* ptr) {
     return Heart::hFree(ptr);
 }
 
+#if HEART_DEBUG_INFO
+#   define hD3D9_VERIFY(x) { auto hr = (x); hcAssertMsg(hr == S_OK, "Error form D3D9 function: %s -> %d/%x", #x, hr, hr); }
+#else 
+#   define hD3D9_VERIFY(x) x
+#endif
+
 namespace Heart {    
 namespace hRenderer {
 namespace d3d9 {
@@ -61,6 +68,7 @@ namespace d3d9 {
 
     LPDIRECT3D9 pD3D;
     LPDIRECT3DDEVICE9 d3dDevice;
+    IDirect3DSurface9* backBufferSurface;
     bool multiThreadedRenderer;
     hUint32 fenceCount;
     hUint32 renderCommandThreshold;
@@ -115,6 +123,7 @@ namespace d3d9 {
     typedef std::unique_ptr<IDirect3DVertexBuffer9, IUnknownDeleter<IDirect3DVertexBuffer9>> IDirect3DVertexBuffer9Ptr;
     typedef std::unique_ptr<IDirect3DIndexBuffer9, IUnknownDeleter<IDirect3DIndexBuffer9>> IDirect3DIndexBuffer9Ptr;
     typedef std::unique_ptr<IDirect3DVertexDeclaration9, IUnknownDeleter<IDirect3DVertexDeclaration9>> IDirect3DVertexDeclaration9Ptr;
+    typedef std::unique_ptr<IDirect3DSurface9, IUnknownDeleter<IDirect3DSurface9>> IDirect3DSurface9Ptr;
 
     struct hShaderStage {
         enum ConstantType {
@@ -280,12 +289,12 @@ namespace d3d9 {
     };
 
     struct hTexture2D {
-        hTexture2D(hUint32 w, hUint32 h, hMipDesc* in_mips, hUint32 mip_count, D3DFORMAT in_format) 
+        hTexture2D(hUint32 w, hUint32 h, hMipDesc* in_mips, hUint32 mip_count, D3DFORMAT in_format, DWORD in_usage) 
             : d3dFormat(in_format)
             , baseWidth(w)
             , baseHeight(h)
             , levels(mip_count)
-            , usage(0) {
+            , usage(in_usage) {
             for (hUint32 i=0; i < mip_count; ++i) {
                 if (!in_mips[i].data) {
                     break;
@@ -301,7 +310,7 @@ namespace d3d9 {
 
         hBool bind(IDirect3DDevice9* d3d_device) {
             IDirect3DTexture9* tex;
-            auto hr = d3d_device->CreateTexture(baseWidth, baseHeight, levels, usage, d3dFormat, D3DPOOL_MANAGED, &tex, nullptr);
+            auto hr = d3d_device->CreateTexture(baseWidth, baseHeight, levels, usage, d3dFormat, (usage & D3DUSAGE_RENDERTARGET) ? D3DPOOL_DEFAULT : D3DPOOL_MANAGED, &tex, nullptr);
             hcAssertMsg(hr == S_OK, "CreateTexture() failed.");
             if (hr != S_OK) return hFalse;
             texture.reset(tex);
@@ -423,6 +432,33 @@ namespace d3d9 {
         hUint32 baseOffset;
         hUint32 size;
         
+    };
+
+    struct hRenderTarget {
+        hRenderTarget(hTexture2D* in_texture, hUint in_mip_level) 
+            : rtTexture(in_texture)
+            , mipLevel(in_mip_level) {
+
+        }
+
+        hBool isBound() const {
+            return !!surface.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            if (rtTexture->isBound() || rtTexture->bind(d3d_device)) {
+                auto* t = rtTexture->texture.get();
+                IDirect3DSurface9* s;
+                t->GetSurfaceLevel(mipLevel, &s); // <- calls AddRef().
+                surface.reset(s);
+                return hTrue;
+            }
+            return hFalse;
+        }
+
+        hUint mipLevel;
+        hTexture2D* rtTexture;
+        IDirect3DSurface9Ptr surface;
     };
 
     struct hSamplerState {
@@ -563,6 +599,7 @@ namespace d3d9 {
         Call,
         Return,
         CustomCall,
+        SetTargets,
     };
 
     static hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
@@ -573,6 +610,11 @@ namespace d3d9 {
 
     struct hRndrOpCall {
         hCmdList* jumpTo;
+    };
+
+    struct hRndrOpSetTargets {
+        hUint16 nTargets;
+        /* -- Followed by array of hRenderTarget*[nTargets] -- */
     };
 
     /*-- The following is intended as a quick and dirty start up for adding new render calls. */
@@ -638,7 +680,8 @@ namespace d3d9 {
     };
 namespace d3d9 {
     void renderDoFrame();
-    hBool isRenderThread() {
+    HEART_C_EXPORT
+    hBool HEART_API isRenderThread() {
         return Device::GetCurrentThreadID() == rtID;
     }
 
@@ -717,6 +760,7 @@ namespace d3d9 {
         }
 
         rtID = Device::GetCurrentThreadID();
+        hD3D9_VERIFY(d3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBufferSurface));
 
         d3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
@@ -812,7 +856,8 @@ namespace d3d9 {
         return 0;
     }
 
-    void create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
+    HEART_C_EXPORT
+    void HEART_API create(hSystem* system, hUint32 width, hUint32 height, hUint32 bpp, hFloat shaderVersion, hBool fullscreen, hBool vsync) {
 
     	multiThreadedRenderer = !!configVars->getCVarUint("renderer.gl.multithreaded", 1);
         renderScratchMemSize = configVars->getCVarUint("renderer.scratchmemsize", 1*1024*1024);
@@ -863,15 +908,18 @@ namespace d3d9 {
         }
     }
 
-    void destroy() {
+    HEART_C_EXPORT
+    void HEART_API destroy() {
 
     }
 
-    bool isProfileSupported(hShaderProfile profile) {
+    HEART_C_EXPORT
+    bool HEART_API isProfileSupported(hShaderProfile profile) {
         return (profile == hShaderProfile::D3D_9c_vs || profile == hShaderProfile::D3D_9c_ps);
     }
 
-    hShaderProfile getActiveProfile(hShaderFrequency freq) {
+    HEART_C_EXPORT
+    hShaderProfile HEART_API getActiveProfile(hShaderFrequency freq) {
         if (freq == hShaderFrequency::Vertex) return hShaderProfile::D3D_9c_vs;
         if (freq == hShaderFrequency::Pixel) return hShaderProfile::D3D_9c_ps;
         return hShaderProfile::Invalid;
@@ -881,21 +929,25 @@ namespace d3d9 {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    const hRenderFrameStats* getRenderStats()  {
+    HEART_C_EXPORT
+    const hRenderFrameStats* HEART_API getRenderStats()  {
         return nullptr;
     }
     
-    hShaderStage* compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile) {
+    HEART_C_EXPORT
+    hShaderStage* HEART_API compileShaderStageFromSource(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile) {
         return new hShaderStage(profile, shaderProg, len);
     }
     
-    void  destroyShader(hShaderStage* prog) {
+    HEART_C_EXPORT
+    void  HEART_API destroyShader(hShaderStage* prog) {
         enqueueRenderResourceDelete([=](){
             delete prog;
         });
     }
 
-    hTexture2D*  createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags) {
+    HEART_C_EXPORT
+    hTexture2D*  HEART_API createTexture2D(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags) {
         bool compressed = true;
         D3DFORMAT intfmt;
         switch(format) {
@@ -912,56 +964,78 @@ namespace d3d9 {
         case hTextureFormat::BC5_unorm:
         default: hcAssertFailMsg("Can't handle texture format"); return nullptr;
         }
-        return new hTexture2D(initialData->width, initialData->height, initialData, levels, intfmt);
+        DWORD usage = 0;
+        if (flags & (hUint32)TextureFlags::RenderTarget) usage |= D3DUSAGE_RENDERTARGET;
+        return new hTexture2D(initialData->width, initialData->height, initialData, levels, intfmt, usage);
     }
-    void  destroyTexture2D(hTexture2D* t) {
+
+    HEART_C_EXPORT
+    void  HEART_API destroyTexture2D(hTexture2D* t) {
         enqueueRenderResourceDelete([=](){
             delete t;
         });
     }
 
-    hIndexBuffer* createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags) {
+    HEART_C_EXPORT
+    hIndexBuffer* HEART_API createIndexBuffer(const void* pIndices, hUint32 nIndices, hUint32 flags) {
         return new hIndexBuffer(nIndices*sizeof(hUint16), (const hByte*)pIndices);
     }
-    void* getIndexBufferMappingPtr(hIndexBuffer* vb) {
+
+    HEART_C_EXPORT
+    void* HEART_API getIndexBufferMappingPtr(hIndexBuffer* vb) {
         return vb->data.get();
     }
-    void  destroyIndexBuffer(hIndexBuffer* ib) {
+
+    HEART_C_EXPORT
+    void  HEART_API destroyIndexBuffer(hIndexBuffer* ib) {
         enqueueRenderResourceDelete([=]() {
             delete ib;
         });
     }
 
-    hVertexBuffer*  createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
+    HEART_C_EXPORT
+    hVertexBuffer*  HEART_API createVertexBuffer(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags) {
         return new hVertexBuffer(elementsize, elementcount, (const hByte*)initData);
     }
-    void* getVertexBufferMappingPtr(hVertexBuffer* vb, hUint32* size) {
+
+    HEART_C_EXPORT
+    void* HEART_API getVertexBufferMappingPtr(hVertexBuffer* vb, hUint32* size) {
         return vb->data.get();
     }
-    void  destroyVertexBuffer(hVertexBuffer* vb) {
+
+    HEART_C_EXPORT
+    void  HEART_API destroyVertexBuffer(hVertexBuffer* vb) {
         enqueueRenderResourceDelete([=]() {
             delete vb;
         });
     }
 
-    hUniformBuffer* createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
+    HEART_C_EXPORT
+    hUniformBuffer* HEART_API createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
         return new hUniformBuffer(structSize*bufferCount, layout, layout_count);
     }
-    const hUniformLayoutDesc* getUniformBufferLayoutInfo(const hUniformBuffer* ub, hUint* out_count) {
+
+    HEART_C_EXPORT
+    const hUniformLayoutDesc* HEART_API getUniformBufferLayoutInfo(const hUniformBuffer* ub, hUint* out_count) {
         hcAssert(out_count);
         *out_count = (hUint)ub->layout.size();
         return ub->layout.data();
     }
-    void* getUniformBufferMappingPtr(hUniformBuffer* ub) {
+
+    HEART_C_EXPORT
+    void* HEART_API getUniformBufferMappingPtr(hUniformBuffer* ub) {
         return ub->data.get();
     }
-    void destroyUniformBuffer(hUniformBuffer* ub) {
+
+    HEART_C_EXPORT
+    void HEART_API destroyUniformBuffer(hUniformBuffer* ub) {
         enqueueRenderResourceDelete([=](){
             delete ub;
         });
     }
 
-    hRenderCall* createRenderCall(const hRenderCallDescBase& rcd) {
+    HEART_C_EXPORT
+    hRenderCall* HEART_API createRenderCall(const hRenderCallDescBase& rcd) {
         static const hUint sampler_size = sizeof(hRenderCall::SamplerState);
         hUint sampler_count = 0;
         hUint int_param_update_count = 0;
@@ -1212,14 +1286,14 @@ namespace d3d9 {
             hUint index, offset, size;
             ShaderParamType type;
             if (const_param.type == 1 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
                 rc->paramUpdates[current_pu].ubIndex = index;
                 rc->paramUpdates[current_pu].ubOffset = offset;
                 rc->paramUpdates[current_pu].byteSize = size;
                 rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Vertex | hRenderCall::ParamUpdate::Int;
                 ++current_pu;
             } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
                 rc->paramUpdates[current_pu].ubIndex = index;
                 rc->paramUpdates[current_pu].ubOffset = offset;
                 rc->paramUpdates[current_pu].byteSize = size;
@@ -1232,14 +1306,14 @@ namespace d3d9 {
             hUint index, offset, size;
             ShaderParamType type;
             if (const_param.type == 1 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
                 rc->paramUpdates[current_pu].ubIndex = index;
                 rc->paramUpdates[current_pu].ubOffset = offset;
                 rc->paramUpdates[current_pu].byteSize = size;
                 rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Fragment | hRenderCall::ParamUpdate::Int;
                 ++current_pu;
             } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart;
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
                 rc->paramUpdates[current_pu].ubIndex = index;
                 rc->paramUpdates[current_pu].ubOffset = offset;
                 rc->paramUpdates[current_pu].byteSize = size;
@@ -1285,73 +1359,112 @@ namespace d3d9 {
 
         return rc;
     }
-    void destroyRenderCall(hRenderCall* rc) {
+
+    HEART_C_EXPORT
+    void HEART_API destroyRenderCall(hRenderCall* rc) {
         enqueueRenderResourceDelete([=](){
             delete rc;
         });
     }
 
-    void* allocTempRenderMemory( hUint32 size ) {
+    HEART_C_EXPORT
+    hRenderTarget* HEART_API createRenderTarget(hTexture2D* texture, hUint mip) {
+        return new hRenderTarget(texture, mip);
+    }
+
+    HEART_C_EXPORT
+    void HEART_API destroyRenderTarget(hRenderTarget* rt) {
+        enqueueRenderResourceDelete([=]() {
+            delete rt;
+        });
+    }
+
+    HEART_C_EXPORT
+    void* HEART_API allocTempRenderMemory( hUint32 size ) {
         return nullptr;
     }
 
-    hCmdList* createCmdList() {
+    HEART_C_EXPORT
+    hCmdList* HEART_API createCmdList() {
         return new (rtmp_malloc(sizeof(hCmdList))) hCmdList();
     }
 
-    void      linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i) {
+    HEART_C_EXPORT
+    void HEART_API linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i) {
         i->next = before->next;
         i->prev = after->prev;
         before->next = i;
         after->prev = i;
     }
 
-    void      detachCmdLists(hCmdList* i) {
+    HEART_C_EXPORT
+    void HEART_API detachCmdLists(hCmdList* i) {
         i->next->prev = i->prev;
         i->prev->next = i->next;
         i->next = i;
         i->prev = i;
     }
 
-    hCmdList* nextCmdList(hCmdList* i) {
+    HEART_C_EXPORT
+    hCmdList* HEART_API nextCmdList(hCmdList* i) {
         return i->next;
     }
 
-
-    void clear(hCmdList* cl, hColour colour, hFloat depth) {
+    HEART_C_EXPORT
+    void HEART_API clear(hCmdList* cl, hColour colour, hFloat depth) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
-            d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 
+            hD3D9_VERIFY(d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 
                 D3DCOLOR_ARGB((hInt)(colour.a_*255.f+.5f), (hInt)(colour.r_*255.f+.5f), (hInt)(colour.g_*255.f+.5f), (hInt)(colour.b_*255.f+.5f)),
-                depth, 0);
+                depth, 0));
             return 0;
         });
     }
 
-    void setViewport(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) {
+    HEART_C_EXPORT
+    void HEART_API setViewport(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             D3DVIEWPORT9 vp;
             vp.X = x; vp.Y = y;
             vp.Width = width; vp.Height = height;
             vp.MinZ = minz; vp.MaxZ = maxz;
-            d3dDevice->SetViewport(&vp);
+            hD3D9_VERIFY(d3dDevice->SetViewport(&vp));
             return 0;
         });
     }
 
-    void scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
+    HEART_C_EXPORT
+    void HEART_API setRenderTargets(hCmdList* cl, hRenderTarget** targets, hUint count) {
+        if (targets == nullptr) {
+            auto* cmd = new (cl->allocCmdMem(Op::SetTargets, sizeof(hRndrOpSetTargets)+sizeof(hRenderTarget*))) hRndrOpSetTargets();
+            cmd->nTargets = 1;
+            auto* rts = (hRenderTarget**)(cmd+1);
+            *rts = nullptr;
+        } else {
+            auto* cmd = new (cl->allocCmdMem(Op::SetTargets, sizeof(hRndrOpSetTargets)+(sizeof(hRenderTarget*)*count))) hRndrOpSetTargets();
+            auto* rts = (hRenderTarget**)(cmd+1);
+            cmd->nTargets = count;
+            for (hUint i=0; i<count; ++i) {
+                rts[i] = targets[i];
+            }
+        }
+    }
+
+    HEART_C_EXPORT
+    void HEART_API scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             RECT r;
             r.left = left; r.top = top;
             r.right = right; r.bottom = bottom;
-            d3dDevice->SetScissorRect(&r);
+            hD3D9_VERIFY(d3dDevice->SetScissorRect(&r));
             return 0;
         });
     }
 
-    void draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) {
+    HEART_C_EXPORT
+    void HEART_API draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             // Bind any unbound objects
@@ -1370,43 +1483,45 @@ namespace d3d9 {
                 }
             }
             //Update d3d device state
-            d3dDevice->SetVertexShader(rc->vertex->vertexShader.get());
-            d3dDevice->SetPixelShader(rc->pixel->pixelShader.get());
+            hD3D9_VERIFY(d3dDevice->SetVertexShader(rc->vertex->vertexShader.get()));
+            hD3D9_VERIFY(d3dDevice->SetPixelShader(rc->pixel->pixelShader.get()));
             rc->vertex->uploadConstants(d3dDevice);
             rc->pixel->uploadConstants(d3dDevice);
             for (hUint i=0, n=rc->samplerCount; i<n; ++i) {
                 auto samp_i = rc->samplerStates[i].index;
                 for (const auto& ss : rc->samplerStates[i].samplerState.states) {
-                    d3dDevice->SetSamplerState(samp_i, ss.state, ss.value);
+                    hD3D9_VERIFY(d3dDevice->SetSamplerState(samp_i, ss.state, ss.value));
                 }
-                d3dDevice->SetTexture(samp_i, rc->samplerStates[i].texture->texture.get());
+                hD3D9_VERIFY(d3dDevice->SetTexture(samp_i, rc->samplerStates[i].texture->texture.get()));
             }
             for (const auto& rs : rc->states) {
-                d3dDevice->SetRenderState(rs.state, rs.value);
+                hD3D9_VERIFY(d3dDevice->SetRenderState(rs.state, rs.value));
             }
-            d3dDevice->SetVertexDeclaration(rc->vtxDecl.get());
-            d3dDevice->SetStreamSource(0, rc->vb->vertexBuffer.get(), 0, rc->vb->elementSize);
+            hD3D9_VERIFY(d3dDevice->SetVertexDeclaration(rc->vtxDecl.get()));
+            hD3D9_VERIFY(d3dDevice->SetStreamSource(0, rc->vb->vertexBuffer.get(), 0, rc->vb->elementSize));
             D3DPRIMITIVETYPE type;
             if (t == Primative::Triangles) type = D3DPT_TRIANGLELIST;
             else if (t == Primative::TriangleStrip) type = D3DPT_TRIANGLESTRIP;
             if (rc->ib) {
-                d3dDevice->SetIndices(rc->ib->indexBuffer.get());
-                d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, vtx_offset, prims);
+                hD3D9_VERIFY(d3dDevice->SetIndices(rc->ib->indexBuffer.get()));
+                hD3D9_VERIFY(d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, vtx_offset, prims));
             } else {
-                d3dDevice->DrawPrimitive(type, vtx_offset, prims);
+                hD3D9_VERIFY(d3dDevice->DrawPrimitive(type, vtx_offset, prims));
             }
             return 0;
         });
     }
 
-    void flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
+    HEART_C_EXPORT
+    void HEART_API flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
             ub->baseOffset = offset;
             return 0;
         });
     }
 
-    void flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
+    HEART_C_EXPORT
+    void HEART_API flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
         hcAssert(offset + size <= vb->elementCount*vb->elementSize);
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
@@ -1421,7 +1536,8 @@ namespace d3d9 {
         
     }
 
-    hRenderFence* fence(hCmdList* cl) {
+    HEART_C_EXPORT
+    hRenderFence* HEART_API fence(hCmdList* cl) {
         lfds_freelist_element* e;
         hRenderFence* f;
         lfds_freelist_use(fenceFreeList);
@@ -1437,34 +1553,40 @@ namespace d3d9 {
         return f;
     }
 
-    void wait(hRenderFence* fence) {
+    HEART_C_EXPORT
+    void HEART_API wait(hRenderFence* fence) {
         fence->wait();
         hAtomic::LWMemoryBarrier();
         lfds_freelist_push(fenceFreeList, fence->element);
     }
 
-    void flush(hCmdList* cl) {
+    HEART_C_EXPORT
+    void HEART_API flush(hCmdList* cl) {
         lfds_queue_use(cmdListQueue);
         while (lfds_queue_enqueue(cmdListQueue, cl) == 0) {
             Device::ThreadYield();
         }
     }
 
-    void finish() {
+    HEART_C_EXPORT
+    void HEART_API finish() {
 
     }
 
-    void endReturn(hCmdList* cl) {
+    HEART_C_EXPORT
+    void HEART_API endReturn(hCmdList* cl) {
         cl->allocCmdMem(Op::Return, 0);
     }
 
-    void call(hCmdList* cl, hCmdList* tocall) {
+    HEART_C_EXPORT
+    void HEART_API call(hCmdList* cl, hCmdList* tocall) {
         auto* cmd = (hRndrOpCall*)cl->allocCmdMem(Op::Call, sizeof(hRndrOpCall));
         cmd->jumpTo=tocall;
         d3d9::endReturn(tocall);
     }
 
-    void swapBuffers(hCmdList* cl) {
+    HEART_C_EXPORT
+    void HEART_API swapBuffers(hCmdList* cl) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             d3dDevice->EndScene();
             d3dDevice->Present(nullptr, nullptr, 0, nullptr);
@@ -1474,7 +1596,8 @@ namespace d3d9 {
 
     void renderDoFrame();
 
-    void submitFrame(hCmdList* cl) {
+    HEART_C_EXPORT
+    void HEART_API submitFrame(hCmdList* cl) {
         auto writeindex = fenceIndex;
         // wait for prev frame to finish
         if (frameFences[fenceIndex]) {
@@ -1529,10 +1652,17 @@ namespace d3d9 {
                 if (pcstack) {
                     nextcmdptr = pcstack;
                     pcstack = nullptr;
-                }
-                else {
+                } else {
                     end_of_cmds = true;
                     nextcmdptr = nullptr;
+                }
+            } break;
+            case Op::SetTargets: {
+                hRndrOpSetTargets* rt_cmd = (hRndrOpSetTargets*)cmdptr;
+                hRenderTarget** rts = (hRenderTarget**)(rt_cmd+1);
+                for (hUint i=0; i<rt_cmd->nTargets; ++i) {
+                    if (rts[i] && !rts[i]->isBound()) rts[i]->bind(d3dDevice);
+                    hD3D9_VERIFY(d3dDevice->SetRenderTarget(i, rts[i] ? rts[i]->surface.get() : backBufferSurface));
                 }
             } break;
             case Op::CustomCall: {
@@ -1585,10 +1715,23 @@ namespace d3d9 {
         Methods to be called between beginCmdList & endCmdList
     */
 
-    void rendererFrameSubmit(hCmdList* cmdlists, hUint count) {}
-    hFloat getLastGPUTime() { return 0.f; }
+    HEART_C_EXPORT
+    void HEART_API rendererFrameSubmit(hCmdList* cmdlists, hUint count) {}
+    HEART_C_EXPORT
+    hFloat HEART_API getLastGPUTime() { return 0.f; }
+    HEART_C_EXPORT
+    void HEART_API getPlatformClipMatrix(hFloat* out_floats) {
+        hFloat clipspace_mtx[] = {
+            1.0f, 0.0f, 0.0f, 0.0f, 
+            0.0f, 1.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.5f, 0.0f, 
+            0.0f, 0.0f, 0.5f, 1.0f,
+        };
+        hMemCpy(out_floats, clipspace_mtx, sizeof(hFloat)*16);
+    }
 
-    hUint getParameterTypeByteSize(ShaderParamType type) {
+    HEART_C_EXPORT
+    hUint HEART_API getParameterTypeByteSize(ShaderParamType type) {
         switch(type) {
         case ShaderParamType::Unknown:  return -1;
         case ShaderParamType::Float:    return 4;
@@ -1605,58 +1748,13 @@ namespace d3d9 {
         case ShaderParamType::Float43:  return 48;
         case ShaderParamType::Float44:  return 64;
         default:        return 0;
+        }
     }
-}
-}
-    HEART_C_EXPORT
-    void HEART_API hrt_initialiseRenderFunc(hIConfigurationVariables* config_vars, hRendererInterfaceInitializer* out_funcs) {
-                //hRenderer::getRatio = d3d9::getRatio;
-        configVars = config_vars;
 
-        out_funcs->create = d3d9::create;
-        out_funcs->destroy = d3d9::destroy;
-        out_funcs->isProfileSupported = d3d9::isProfileSupported;
-        out_funcs->getActiveProfile = d3d9::getActiveProfile;
-        out_funcs->getRenderStats = d3d9::getRenderStats;
-        out_funcs->compileShaderStageFromSource = d3d9::compileShaderStageFromSource;
-        out_funcs->destroyShader = d3d9::destroyShader;
-        out_funcs->createTexture2D = d3d9::createTexture2D;
-        out_funcs->destroyTexture2D = d3d9::destroyTexture2D;
-        out_funcs->createIndexBuffer = d3d9::createIndexBuffer;
-        out_funcs->getIndexBufferMappingPtr = d3d9::getIndexBufferMappingPtr;
-        out_funcs->destroyIndexBuffer = d3d9::destroyIndexBuffer;
-        out_funcs->createVertexBuffer = d3d9::createVertexBuffer;
-        out_funcs->getVertexBufferMappingPtr = d3d9::getVertexBufferMappingPtr;
-        out_funcs->destroyVertexBuffer = d3d9::destroyVertexBuffer;
-        out_funcs->createUniformBuffer = d3d9::createUniformBuffer;
-        out_funcs->getUniformBufferLayoutInfo = d3d9::getUniformBufferLayoutInfo;
-        out_funcs->getUniformBufferMappingPtr = d3d9::getUniformBufferMappingPtr;
-        out_funcs->destroyUniformBuffer = d3d9::destroyUniformBuffer;
-        out_funcs->createRenderCall = d3d9::createRenderCall;
-        out_funcs->destroyRenderCall = d3d9::destroyRenderCall;
-        out_funcs->allocTempRenderMemory = d3d9::allocTempRenderMemory;
-        out_funcs->createCmdList = d3d9::createCmdList;
-        out_funcs->linkCmdLists = d3d9::linkCmdLists;
-        out_funcs->detachCmdLists = d3d9::detachCmdLists;
-        out_funcs->nextCmdList = d3d9::nextCmdList;
-        out_funcs->clear = d3d9::clear;
-        out_funcs->setViewport = d3d9::setViewport;
-        out_funcs->scissorRect = d3d9::scissorRect;
-        out_funcs->draw = d3d9::draw;
-        out_funcs->flushUnibufferMemoryRange = d3d9::flushUnibufferMemoryRange;
-        out_funcs->flushVertexBufferMemoryRange = d3d9::flushVertexBufferMemoryRange;
-        out_funcs->fence = d3d9::fence;
-        out_funcs->wait = d3d9::wait;
-        out_funcs->flush = d3d9::flush;
-        out_funcs->finish = d3d9::finish;
-        out_funcs->call = d3d9::call;
-        out_funcs->endReturn = d3d9::endReturn;
-        out_funcs->swapBuffers = d3d9::swapBuffers;
-        out_funcs->submitFrame = d3d9::submitFrame;
-        out_funcs->rendererFrameSubmit = d3d9::rendererFrameSubmit;
-        out_funcs->getLastGPUTime = d3d9::getLastGPUTime;
-        out_funcs->isRenderThread = d3d9::isRenderThread;
-        out_funcs->getParameterTypeByteSize = d3d9::getParameterTypeByteSize;
+    HEART_C_EXPORT
+    void HEART_API initialiseRendererPlugin(hIConfigurationVariables* in_config_vars) {
+        configVars = in_config_vars;
     }
-}}
+
+}}}
 

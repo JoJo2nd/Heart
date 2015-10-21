@@ -24,9 +24,6 @@ namespace Heart {
     
         hAABB           getBounds() const { return totalBounds_; }
         hBool           bindVertexStream(hUint inputSlot, hVertexBuffer* vtxBuf);
-        hRCmd*          getRenderCommands(hUint offset) {
-            return renderCommands_.getCommandAtOffset(offset);
-        }
         void            setRenderableCountHint(hUint val) {
             renderables_.reserve(val);
         }
@@ -59,7 +56,6 @@ namespace Heart {
 
         std::vector< hRenderable >                  renderables_;
         hAABB                                       totalBounds_;
-        hRenderCommands                             renderCommands_;
     };
 
 }

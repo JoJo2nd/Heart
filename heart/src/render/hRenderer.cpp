@@ -35,6 +35,8 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyUniformBuffer)(hUniformBuffer* ub) = nullptr;
     HEART_MODULE_API_ENTRY(hRenderCall*, createRenderCall)(const hRenderCallDescBase& rcd) = nullptr;
+    HEART_MODULE_API_ENTRY(hRenderTarget*, createRenderTarget)(hTexture2D* target, hUint mip) = nullptr;
+    HEART_MODULE_API_ENTRY(void, destroyRenderTarget)(hRenderTarget*) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyRenderCall)(hRenderCall* rc) = nullptr;
     HEART_MODULE_API_ENTRY(void*, allocTempRenderMemory)( hUint32 size ) = nullptr;
     HEART_MODULE_API_ENTRY(hCmdList*, createCmdList)() = nullptr;
@@ -43,6 +45,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(hCmdList*, nextCmdList)(hCmdList* i) = nullptr;
     HEART_MODULE_API_ENTRY(void, clear)(hCmdList* cl, hColour colour, hFloat depth) = nullptr;
     HEART_MODULE_API_ENTRY(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) = nullptr;
+    HEART_MODULE_API_ENTRY(void, setRenderTargets)(hCmdList* cl, hRenderTarget** targets, hUint count) = nullptr;
     HEART_MODULE_API_ENTRY(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) = nullptr;
     HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) = nullptr;
@@ -58,6 +61,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, rendererFrameSubmit)(hCmdList* cmdlists, hUint count) = nullptr;
     HEART_MODULE_API_ENTRY(hFloat, getLastGPUTime)() = nullptr;
     HEART_MODULE_API_ENTRY(hBool, isRenderThread)() = nullptr;
+    HEART_MODULE_API_ENTRY(void, getPlatformClipMatrix)(hFloat*) = nullptr;
     HEART_MODULE_API_ENTRY(hProgramReflectionInfo*, createProgramReflectionInfo)(hShaderStage* vertex, hShaderStage* pixel, hShaderStage* geom, hShaderStage* hull, hShaderStage* domain) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyProgramReflectionInfo)(hProgramReflectionInfo* p) = nullptr;
     HEART_MODULE_API_ENTRY(hShaderParamInfo, getParameterInfo)(hProgramReflectionInfo* p, const hChar* name) = nullptr;
@@ -65,59 +69,61 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(hUniformBlockInfo, getUniformBlockInfo)(hProgramReflectionInfo* p, hUint i) = nullptr;
     HEART_MODULE_API_ENTRY(hUint, getParameterTypeByteSize)(ShaderParamType type) = nullptr;
 
-    void loadRendererModule(const hChar* module_name, hIConfigurationVariables* cvars, hRendererInterfaceInitializer* out_funcs) {
+    void loadRendererModule(const hChar* module_name, hIConfigurationVariables* cvars) {
         auto lib = hSysCall::openSharedLib(module_name);
-        void (HEART_API *hrt_initialiseRenderFunc_ptr)(hIConfigurationVariables*, hRendererInterfaceInitializer*) = nullptr;
         auto success = true;
-        success &= hSysCall::getFunctionAddress(lib, "hrt_initialiseRenderFunc", hrt_initialiseRenderFunc_ptr) != nullptr;
-        hrt_initialiseRenderFunc_ptr(cvars, out_funcs);
-    }
-
-    void initialiseRenderFunc(const hRendererInterfaceInitializer& in_funcs) {
-        hRenderer::create = in_funcs.create;
-        hRenderer::destroy = in_funcs.destroy;
-        hRenderer::isProfileSupported = in_funcs.isProfileSupported;
-        hRenderer::getActiveProfile = in_funcs.getActiveProfile;
-        hRenderer::getRenderStats = in_funcs.getRenderStats;
-        hRenderer::compileShaderStageFromSource = in_funcs.compileShaderStageFromSource;
-        hRenderer::destroyShader = in_funcs.destroyShader;
-        hRenderer::createTexture2D = in_funcs.createTexture2D;
-        hRenderer::destroyTexture2D = in_funcs.destroyTexture2D;
-        hRenderer::createIndexBuffer = in_funcs.createIndexBuffer;
-        hRenderer::getIndexBufferMappingPtr = in_funcs.getIndexBufferMappingPtr;
-        hRenderer::destroyIndexBuffer = in_funcs.destroyIndexBuffer;
-        hRenderer::createVertexBuffer = in_funcs.createVertexBuffer;
-        hRenderer::getVertexBufferMappingPtr = in_funcs.getVertexBufferMappingPtr;
-        hRenderer::destroyVertexBuffer = in_funcs.destroyVertexBuffer;
-        hRenderer::createUniformBuffer = in_funcs.createUniformBuffer;
-        hRenderer::getUniformBufferLayoutInfo = in_funcs.getUniformBufferLayoutInfo;
-        hRenderer::getUniformBufferMappingPtr = in_funcs.getUniformBufferMappingPtr;
-        hRenderer::destroyUniformBuffer = in_funcs.destroyUniformBuffer;
-        hRenderer::createRenderCall = in_funcs.createRenderCall;
-        hRenderer::destroyRenderCall = in_funcs.destroyRenderCall;
-        hRenderer::allocTempRenderMemory = in_funcs.allocTempRenderMemory;
-        hRenderer::createCmdList = in_funcs.createCmdList;
-        hRenderer::linkCmdLists = in_funcs.linkCmdLists;
-        hRenderer::detachCmdLists = in_funcs.detachCmdLists;
-        hRenderer::nextCmdList = in_funcs.nextCmdList;
-        hRenderer::clear = in_funcs.clear;
-        hRenderer::setViewport = in_funcs.setViewport;
-        hRenderer::scissorRect = in_funcs.scissorRect;
-        hRenderer::draw = in_funcs.draw;
-        hRenderer::flushUnibufferMemoryRange = in_funcs.flushUnibufferMemoryRange;
-        hRenderer::flushVertexBufferMemoryRange = in_funcs.flushVertexBufferMemoryRange;
-        hRenderer::fence = in_funcs.fence;
-        hRenderer::wait = in_funcs.wait;
-        hRenderer::flush = in_funcs.flush;
-        hRenderer::finish = in_funcs.finish;
-        hRenderer::call = in_funcs.call;
-        hRenderer::endReturn = in_funcs.endReturn;
-        hRenderer::swapBuffers = in_funcs.swapBuffers;
-        hRenderer::submitFrame = in_funcs.submitFrame;
-        hRenderer::rendererFrameSubmit = in_funcs.rendererFrameSubmit;
-        hRenderer::getLastGPUTime = in_funcs.getLastGPUTime;
-        hRenderer::isRenderThread = in_funcs.isRenderThread;
-        hRenderer::getParameterTypeByteSize = in_funcs.getParameterTypeByteSize;
+        success &= hSysCall::getFunctionAddress(lib, "create", hRenderer::create) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroy", hRenderer::destroy) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "isProfileSupported", hRenderer::isProfileSupported) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getActiveProfile", hRenderer::getActiveProfile) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getRenderStats", hRenderer::getRenderStats) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "compileShaderStageFromSource", hRenderer::compileShaderStageFromSource) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyShader", hRenderer::destroyShader) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createTexture2D", hRenderer::createTexture2D) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyTexture2D", hRenderer::destroyTexture2D) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createIndexBuffer", hRenderer::createIndexBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getIndexBufferMappingPtr", hRenderer::getIndexBufferMappingPtr) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyIndexBuffer", hRenderer::destroyIndexBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createVertexBuffer", hRenderer::createVertexBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getVertexBufferMappingPtr", hRenderer::getVertexBufferMappingPtr) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyVertexBuffer", hRenderer::destroyVertexBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createUniformBuffer", hRenderer::createUniformBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getUniformBufferLayoutInfo", hRenderer::getUniformBufferLayoutInfo) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getUniformBufferMappingPtr", hRenderer::getUniformBufferMappingPtr) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyUniformBuffer", hRenderer::destroyUniformBuffer) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createRenderCall", hRenderer::createRenderCall) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyRenderCall", hRenderer::destroyRenderCall) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createRenderTarget", hRenderer::createRenderTarget) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyRenderTarget", hRenderer::destroyRenderTarget) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "allocTempRenderMemory", hRenderer::allocTempRenderMemory) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createCmdList", hRenderer::createCmdList) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "linkCmdLists", hRenderer::linkCmdLists) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "detachCmdLists", hRenderer::detachCmdLists) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "nextCmdList", hRenderer::nextCmdList) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "clear", hRenderer::clear) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "setViewport", hRenderer::setViewport) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "setRenderTargets", hRenderer::setRenderTargets) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "scissorRect", hRenderer::scissorRect) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "draw", hRenderer::draw) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "flushUnibufferMemoryRange", hRenderer::flushUnibufferMemoryRange) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "flushVertexBufferMemoryRange", hRenderer::flushVertexBufferMemoryRange) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "fence", hRenderer::fence) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "wait", hRenderer::wait) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "flush", hRenderer::flush) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "finish", hRenderer::finish) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "call", hRenderer::call) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "endReturn", hRenderer::endReturn) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "swapBuffers", hRenderer::swapBuffers) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "submitFrame", hRenderer::submitFrame) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "rendererFrameSubmit", hRenderer::rendererFrameSubmit) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getLastGPUTime", hRenderer::getLastGPUTime) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "isRenderThread", hRenderer::isRenderThread) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getPlatformClipMatrix", hRenderer::getPlatformClipMatrix) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getParameterTypeByteSize", hRenderer::getParameterTypeByteSize) != nullptr;
+        void (*initialiseRendererPlugin)(hIConfigurationVariables*);
+        success &= hSysCall::getFunctionAddress(lib, "initialiseRendererPlugin", initialiseRendererPlugin) != nullptr;
+        hcAssertMsg(success, "Failed to load renderer plug-in.");
+        initialiseRendererPlugin(cvars);
     }
 
 #endif

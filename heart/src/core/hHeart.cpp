@@ -48,9 +48,7 @@ namespace Heart {
 
         hInitFreetype2();
 
-        hRenderer::hRendererInterfaceInitializer module_funcs;
-        hRenderer::loadRendererModule(hConfigurationVariables::getCVarStr("plugin.renderer", "none"), &cvars, &module_funcs);
-        hRenderer::initialiseRenderFunc(module_funcs);
+        hRenderer::loadRendererModule(hConfigurationVariables::getCVarStr("plugin.renderer", "none"), &cvars);
 
         hFileSystemInterface fileInterface;
         auto plugin_loaded = loadFileSystemInterface(hConfigurationVariables::getCVarStr("plugin.filesystem", "none"), &fileInterface);

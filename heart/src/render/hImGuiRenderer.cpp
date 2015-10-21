@@ -70,13 +70,13 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     const float R = ImGui::GetIO().DisplaySize.x;
     const float B = ImGui::GetIO().DisplaySize.y;
     const float T = 0.0f;
-    hMatrix clipspace_mtx (
-        hVec4( 1.0f, 0.0f, 0.0f, 0.0f ),
-        hVec4( 0.0f, 1.0f, 0.0f, 0.0f ),
-        hVec4( 0.0f, 0.0f, 0.5f, 0.0f ),
-        hVec4( 0.0f, 0.0f, 0.5f, 1.0f )
-    );
-    ubdata->projection = clipspace_mtx*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
+//    hMatrix clipspace_mtx (
+//        hVec4( 1.0f, 0.0f, 0.0f, 0.0f ),
+//        hVec4( 0.0f, 1.0f, 0.0f, 0.0f ),
+//        hVec4( 0.0f, 0.0f, 0.5f, 0.0f ),
+//        hVec4( 0.0f, 0.0f, 0.5f, 1.0f )
+//    );
+    ubdata->projection = hRenderer::getClipspaceMatrix()*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
     hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, (imguiCtx.currentFence*ubsize), ubsize);
 
     // Render command lists

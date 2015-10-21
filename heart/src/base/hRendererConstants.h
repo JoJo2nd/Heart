@@ -96,8 +96,6 @@ namespace Heart {
 #define HEART_MAX_GLOBAL_CONST_BLOCK_NAME_LEN           (64)
 #define HEART_MAX_SIMULTANEOUS_RENDER_TARGETS           (8)
 
-    typedef void* (*hTempRenderMemAlloc)( hUint32 size );
-    typedef void (*hTempRenderMemFree)( void* ptr );
 
     struct hConstantBlockDesc
     {
@@ -107,203 +105,6 @@ namespace Heart {
         hUint                   bindPoint_;
         hUint                   index_;
         hUint32                 hash_;
-    };
-
-    typedef hUint32 hShaderParameterID;
-
-    struct hShaderParameter
-    {
-        hShaderParameter() 
-            : size_(0)
-            , cReg_(0)
-            , cBufferBindPoint_(0)
-        {
-            hZeroMem(name_,sizeof(name_));
-        }
-
-        hArray< hChar, 32 >                 name_; 
-        hUint32                             size_;
-        hUint32                             cReg_;
-        hUint32                             cBufferBindPoint_;
-    };
-
-    enum hShaderInputType {
-        eShaderInputType_Buffer,
-        eShaderInputType_Resource,
-        eShaderInputType_Sampler,
-        eShaderInputType_UAV,
-
-        eShaderInputType_Invalid
-    };
-
-    struct hShaderInput
-    {
-        hShaderInput() 
-            : type_(eShaderInputType_Invalid)
-            , bindPoint_(0)
-            , arraySize_(0)
-        {
-            hZeroMem(name_,sizeof(name_));
-        }
-
-        hArray< hChar, 32 > name_; 
-        hShaderInputType    type_;
-        hUint               bindPoint_;
-        hUint               arraySize_;
-    };
-
-    struct hShaderDefine 
-    {
-        const hChar* define_;
-        const hChar* value_;
-    };
-
-    class hIIncludeHandler
-    {
-    public:
-        virtual ~hIIncludeHandler() {}
-        virtual void findInclude(const hChar* includepath, const void** outdata, hUint* outlen) = 0;
-    };
-
-    enum hRenderCmdOpCode 
-    {
-        eRenderCmd_NOOP,
-        eRenderCmd_Jump,
-        eRenderCmd_Return,
-        eRenderCmd_Draw,
-        eRenderCmd_DrawIndex,
-        eRenderCmd_DrawInstanced,
-        eRenderCmd_DrawInstancedIndex,
-
-        eRenderCmd_DeviceCmds, //NoOp - any enum higher is processed by the device level
-
-        eRenderCmd_SetRenderStates,
-        eRenderCmd_SetVertexShader,
-        eRenderCmd_SetPixelShader,
-        eRenderCmd_SetGeometeryShader,
-        eRenderCmd_SetHullShader,
-        eRenderCmd_SetDomainShader,
-        eRenderCmd_SetComputeShader,
-
-        eRenderCmd_SetVertexInputs,
-        eRenderCmd_SetPixelInputs,
-        eRenderCmd_SetGeometryInputs,
-        eRenderCmd_SetHullInputs,
-        eRenderCmd_SetDomainInputs,
-        eRenderCmd_SetComputeInputs,
-
-        eRenderCmd_SetInputStreams,
-
-        eRenderCmd_End
-    };
-
-#define HEART_RENDER_CMD_APPEND (hErrorCode)
-
-    struct hRCmd 
-    {
-        hRCmd(hRenderCmdOpCode oc, hSize_t size) 
-            : opCode_(oc), size_((hByte)size) {}
-        hRenderCmdOpCode    opCode_;
-        hByte               size_;
-    };
-
-    struct hRCmdJump : public hRCmd
-    {
-        hRCmdJump(hRCmd* cmd) 
-            : hRCmd(eRenderCmd_Jump, sizeof(hRCmdJump))
-            , cmd_(cmd) {}
-        hRCmd* cmd_;
-    };
-
-    struct hRCmdReturn : public hRCmd
-    {
-        hRCmdReturn() : hRCmd(eRenderCmd_Return, sizeof(hRCmdReturn)) {}
-    };
-
-    struct hRCmdNOOP : public hRCmd
-    {
-        hRCmdNOOP() : hRCmd(eRenderCmd_NOOP, sizeof(hRCmdNOOP)) {}
-    };
-
-    struct hRCmdDraw : public hRCmd
-    {
-        hRCmdDraw(hUint nPrims, hUint startvtx) 
-            : hRCmd(eRenderCmd_Draw, sizeof(hRCmdDraw))
-            , nPrimatives_(nPrims), startVertex_(startvtx) {}
-        hUint nPrimatives_;
-        hUint startVertex_;
-    };
-
-    struct hRCmdDrawIndex : public hRCmd
-    {
-        hRCmdDrawIndex(hUint nPrims, hUint startvtx) 
-            : hRCmd(eRenderCmd_DrawIndex, sizeof(hRCmdDrawIndex))
-            , nPrimatives_(nPrims), startVertex_(startvtx) {}
-        hUint nPrimatives_;
-        hUint startVertex_;
-    };
-
-    struct hRCmdDrawInstanced : public hRCmd
-    {
-        hRCmdDrawInstanced(hUint nPrims, hUint startvtx, hUint count) 
-            : hRCmd(eRenderCmd_DrawInstanced, sizeof(hRCmdDrawInstanced))
-            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount_(count) {}
-        hUint nPrimatives_;
-        hUint startVertex_;
-        hUint instanceCount_;
-    };
-
-    struct hRCmdDrawInstancedIndex : public hRCmd
-    {
-        hRCmdDrawInstancedIndex(hUint nPrims, hUint startvtx, hUint count) 
-            : hRCmd(eRenderCmd_DrawInstancedIndex, sizeof(hRCmdDrawInstancedIndex))
-            , nPrimatives_(nPrims), startVertex_(startvtx), instanceCount_(count) {}
-        hUint nPrimatives_;
-        hUint startVertex_;
-        hUint instanceCount_;
-    };
-
-    class hRenderCommands
-    {
-    public:
-        hRenderCommands()
-            : cmdSize_(0)
-            , allocatedSize_(0)
-            , cmds_(hNullptr)
-        {
-
-        }
-        ~hRenderCommands()
-        {
-            release();
-        }
-
-        void    reset() { cmdSize_ = 0; }
-        hBool   isEmpty() const { return cmdSize_ == 0; }
-        hRCmd*  getFirst() { return cmds_; }
-        hRCmd*  getEnd() { return (hRCmd*)((hByte*)cmds_+cmdSize_); }
-        hRCmd*  getCommandAtOffset(hUint offset) { 
-            hcAssert(offset < cmdSize_);
-            return (hRCmd*)((hByte*)cmds_+offset);
-        }
-        void    release() {
-            delete[] cmds_;
-            cmds_ = nullptr;
-        }
-
-    private:
-
-        hRenderCommands(const hRenderCommands& rhs);
-        hRenderCommands& operator = (const hRenderCommands& rhs);
-
-        friend class hRenderCommandGenerator;
-
-        void    insertCommand(hUint where, const hRCmd* command, hBool overwrite);
-        void    reserveSpace(hUint size);
-
-        hUint  cmdSize_;
-        hUint  allocatedSize_;
-        hRCmd* cmds_;
     };
 
     enum hShaderType
@@ -364,7 +165,7 @@ namespace Heart {
 
         SSV_FORCE_DWORD = ~0U
     };
-
+/*
     //////////////////////////////////////////////////////////////////////////
     // These may want to move into the device layer //////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -447,49 +248,7 @@ namespace Heart {
     
         eIF_FORCEDWORD = 0xFFFFFFFF
     };
-
-    struct hInputLayoutDesc
-    {
-    public:
-        hInputLayoutDesc()
-            : semanticName_(0)
-            , semIndex_(0)
-            , typeFormat_(eIF_FLOAT1)
-            , inputStream_(0)
-            , instanceDataRepeat_(0)
-        {}
-        hInputLayoutDesc(const hChar* semanticname, hByte semidx, hInputFormat fmt, hUint32 stream, hUint16 instancerepeat)
-            : semanticName_(0)
-            , semIndex_(semidx)
-            , typeFormat_(fmt)
-            , inputStream_(stream)
-            , instanceDataRepeat_(instancerepeat)
-        {
-            setSemanticName(semanticname);
-        }
-        
-        void         setSemanticName(const hChar* name);
-        const hChar* getSemanticName() const;
-        void         setSemanticIndex(hByte idx) { semIndex_=idx; }
-        hByte        getSemanticIndex() const { return semIndex_; }
-        void         setInputFormat(hInputFormat fmt) { typeFormat_=fmt; }
-        hInputFormat getInputFormat() const { return typeFormat_; }
-        void         setInputStream(hUint32 stream) { inputStream_=stream; }
-        hUint32      getInputStream() const { return inputStream_; }
-        void         setInstanceRepeat(hUint16 repeat) { instanceDataRepeat_=repeat; }
-        hUint16      getInstanceRepeat() const { return instanceDataRepeat_; }
-        
-    private:
-
-        hUint           semanticName_;
-        hByte           semIndex_;
-        hInputFormat    typeFormat_;
-        hUint32         inputStream_;
-        hUint16         instanceDataRepeat_;
-
-        static std::vector<std::string> s_semanticNameMap;
-    };
-
+*/
     enum ResourceFlags
     {
         RESOURCEFLAG_DYNAMIC         = 1 << 1,
@@ -519,84 +278,6 @@ namespace Heart {
 
         hIndexBufferType_Max
     };
-
-    enum hDebugShaderID
-    {
-        eDebugVertexPosOnly,
-        eDebugPixelWhite,
-        eConsoleVertex,
-        eConsolePixel,
-        eDebugFontVertex,
-        eDebugFontPixel,
-        eDebugVertexPosNormal,
-        eDebugPixelWhiteViewLit,
-        eDebugTexVertex,
-        eDebugTexPixel,
-        eDebugVertexPosCol,
-        eDebugPixelPosCol,
-
-        eDebugShaderMax
-    };
-
-#define hDebugShaderResourceID_VertexPosOnly     (Heart::hStringID("?builtin/vertex_pos_only"       ))
-#define hDebugShaderResourceID_PixelWhite        (Heart::hStringID("?builtin/pixel_white"           ))
-#define hDebugShaderResourceID_ConsoleVertex     (Heart::hStringID("?builtin/console_vertex"        ))
-#define hDebugShaderResourceID_ConsolePixel      (Heart::hStringID("?builtin/console_pixel"         ))
-#define hDebugShaderResourceID_FontVertex        (Heart::hStringID("?builtin/font_vertex"           ))
-#define hDebugShaderResourceID_FontPixel         (Heart::hStringID("?builtin/font_pixel"            ))
-#define hDebugShaderResourceID_VertexPosNormal   (Heart::hStringID("?builtin/vertex_pos_normal"     ))
-#define hDebugShaderResourceID_PixelWhiteViewLit (Heart::hStringID("?builtin/pixel_white_view_lit"  ))
-#define hDebugShaderResourceID_TexVertex         (Heart::hStringID("?builtin/texture_vertex"        ))
-#define hDebugShaderResourceID_TexPixel          (Heart::hStringID("?builtin/texture_pixel"         ))
-#define hDebugShaderResourceID_VertexPosCol      (Heart::hStringID("?builtin/vertex_pos_col"        ))
-#define hDebugShaderResourceID_PixelPosCol       (Heart::hStringID("?builtin/pixel_pos_col"         ))
-
-
-    struct hBufferSRV
-    {
-        hUint firstElement_;
-        hUint elementOffset_;
-        hUint numElements_;
-        hUint elementWidth_;
-    };
-    typedef hBufferSRV hBufferRTV;
-    typedef hBufferSRV hBufferDSV;
-
-    struct hTex1DSRV
-    {
-        hUint topMip_;
-        hUint mipLevels_;
-    };
-    typedef hTex1DSRV hTex1DRTV;
-    typedef hTex1DSRV hTex1DDSV;
-
-    struct hTex1DArraySRV
-    {
-        hUint topMip_;
-        hUint mipLevels_;
-        hUint arraySize_;
-        hUint arrayStart_;
-    };
-    typedef hTex1DArraySRV hTex1DArrayRTV;
-    typedef hTex1DArraySRV hTex1DArrayDSV;
-
-    struct hTex2DSRV
-    {
-        hUint topMip_;
-        hUint mipLevels_;
-    };
-    typedef hTex2DSRV hTex2DRTV;
-    typedef hTex2DSRV hTex2DDSV;
-
-    struct hTex2DArraySRV
-    {
-        hUint topMip_;
-        hUint mipLevels_;
-        hUint arraySize_;
-        hUint arrayStart_;
-    };
-    typedef hTex2DArraySRV hTex2DArrayRTV;
-    typedef hTex2DArraySRV hTex2DArrayDSV;
 
 }//Heart
 

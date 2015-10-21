@@ -52,16 +52,23 @@
         factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
-        REGISTER_UNIT_TEST(*factory_, UUIDTests);
-        REGISTER_UNIT_TEST(*factory_, Base64);
+        //REGISTER_UNIT_TEST(*factory_, UUIDTests);
+        //REGISTER_UNIT_TEST(*factory_, Base64);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, MovingTriCPU);
         REGISTER_UNIT_TEST(*factory_, MovingTri);
+        REGISTER_UNIT_TEST(*factory_, RenderTarget);
         //REGISTER_UNIT_TEST(*factory_, TextureFont);
         REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
         //REGISTER_UNIT_TEST(*factory_, InvaderGame);
         //REGISTER_UNIT_TEST(*factory_, EntityTest);
         //REGISTER_UNIT_TEST(*factory_, ShaderInput);
+
+        auto ts = factory_->getTestCount();
+        testNames.resize(ts);
+        for (hUint i=0; i<ts; ++i) {
+            testNames[i] = factory_->getUnitTestName(i);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,9 +93,16 @@
 
     void TestBedCore::EngineUpdateTick( hFloat delta, Heart::hHeartEngine* pEngine )
     {
+        static int current_test = 0;
         Heart::ImGuiNewFrame(engine_->GetSystem(), engine_->getActionManager());
         hcAssert(Heart::hResourceManager::getIsPackageLoaded("system"));
 
+        if (currentTestIdx_ != current_test) {
+            hcAssert(current_test < factory_->getTestCount());
+            delete currentTest_;
+            currentTest_ = nullptr;
+            currentTestIdx_=current_test;
+        }
         if (!currentTest_ && !exiting_) {
             Heart::hRenderer::finish();
             mem_track_marker(factory_->getUnitTestName(currentTestIdx_));
@@ -96,16 +110,13 @@
         }
         if (currentTest_) {
             currentTest_->RunUnitTest();
-            if (currentTest_->GetExitCode() != UNIT_TEST_EXIT_CODE_RUNNING) {
-                delete currentTest_; currentTest_ = nullptr;
-                currentTestIdx_=(currentTestIdx_+1)%factory_->getTestCount();
-            }
         }
         ImGui::SetNextWindowPos(ImVec2(10, 10));
         ImGui::Begin("Testbed Overlay", nullptr, ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_ShowBorders);
         ImGui::Text("Heart Test Bed");
         ImGui::Separator();
         ImGui::Text("Current Test %d: %s", currentTestIdx_, factory_->getUnitTestName(currentTestIdx_));
+        ImGui::Combo("", &current_test, testNames.data(), testNames.size());
         if (currentTest_) {
             ImGui::Text("Extra info:\n%s", currentTest_->getHelpString());
         }

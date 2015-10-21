@@ -43,4 +43,5 @@ private:
     hUint32                                 currentTestIdx_;
     hBool                                   exiting_;
     hBool                                   createdDummyTarget_;
+    std::vector<const hChar*>               testNames;
 };
