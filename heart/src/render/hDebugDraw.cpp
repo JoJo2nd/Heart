@@ -9,7 +9,7 @@
 #include "render/hMaterial.h"
 #include "render/hRenderer.h"
 #include "render/hRenderUtility.h"
-#include "render/hTexture.h"
+#include "render/hTextureResource.h"
 #include "render/hVertexBuffer.h"
 #include "render/hIndexBuffer.h"
 #include "render/hRenderShaderProgram.h"

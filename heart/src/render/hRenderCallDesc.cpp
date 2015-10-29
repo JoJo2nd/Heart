@@ -57,7 +57,8 @@ void hRenderCallDescBase::setSampler(hStringID name, const hSamplerStateDesc& ss
     hcAssertFailMsg("Too many sampler states");
 }
 
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture1D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture1D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
+    setSampler(name2, ssd);
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t1D_=tex;
@@ -74,7 +75,8 @@ void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture1D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture2D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture2D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
+    setSampler(name2, ssd);
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t2D_=tex;
@@ -91,7 +93,8 @@ void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture2D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture3D* tex) {
+void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture3D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
+    setSampler(name2, ssd);
     for (auto& t : textureSlots_) {
         if (t.name_==name) {
             t.t3D_=tex;

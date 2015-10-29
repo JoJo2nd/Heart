@@ -149,8 +149,7 @@ public:
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-        rcd.setSampler(hStringID("font_sampler"), font_sampler_desc);
-        rcd.setTextureSlot(hStringID("font_sampler"), t2d);
+        rcd.setTextureSlot(hStringID("font_sampler"), t2d, hStringID("font_sampler"), font_sampler_desc);
         rcd.setVertexBufferLayout(lo, 2);
         rc = hRenderer::createRenderCall(rcd);
 

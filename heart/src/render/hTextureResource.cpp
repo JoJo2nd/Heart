@@ -3,7 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "render/hTexture.h"
+#include "render/hTextureResource.h"
 #include "render/hMipDesc.h"
 #include "render/hRenderer.h"
 

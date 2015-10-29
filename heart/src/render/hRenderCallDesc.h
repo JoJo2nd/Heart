@@ -123,10 +123,9 @@ namespace hRenderer {
 
         hRenderCallDescBase();
         void clearDescription();
-        void setSampler(hStringID name, const hSamplerStateDesc& ssd);
-        void setTextureSlot(hStringID name, hTexture1D* t);
-        void setTextureSlot(hStringID name, hTexture2D* t);
-        void setTextureSlot(hStringID name, hTexture3D* t);
+        void setTextureSlot(hStringID tex_name, hTexture1D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
+        void setTextureSlot(hStringID tex_name, hTexture2D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
+        void setTextureSlot(hStringID tex_name, hTexture3D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
         void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
         void setVertexBufferLayout(hVertexBufferLayout* layout, hUint count);
 
@@ -164,6 +163,9 @@ namespace hRenderer {
         hVertexBuffer*          vertexBuffer_;
         hShaderStage*           vertex_;
         hShaderStage*           fragment_;
+
+    private:
+        void setSampler(hStringID name, const hSamplerStateDesc& ssd);
     };
 
     struct hRenderCallDesc : public hRenderCallDescBase {

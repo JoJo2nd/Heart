@@ -15,7 +15,9 @@
 #include "render/hTextureFlags.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderShaderProgram.h"
+#include "render/hTextureResource.h"
 #include "render/hMipDesc.h"
+#include "render/hImGuiRenderer.h"
 #include "math/hMatrix.h"
 #include "math/hVector.h"
 #include "UnitTestFactory.h"
@@ -36,7 +38,7 @@ struct ViewportConstants {
     hMatrix viewProjectionInverse;
     hVec4   viewportSize         ;
 };
-hRenderer::hUniformLayoutDesc ViewportConstants_layout[] = {
+static hRenderer::hUniformLayoutDesc ViewportConstants_layout[] = {
     {"g_View", hRenderer::ShaderParamType::Float44, 0},
     {"g_ViewInverse", hRenderer::ShaderParamType::Float44, 64},
     {"g_ViewInverseTranspose", hRenderer::ShaderParamType::Float44, 128},
@@ -50,24 +52,21 @@ hRenderer::hUniformLayoutDesc ViewportConstants_layout[] = {
 struct InstanceConstants {
     hMatrix world;
 };
-hRenderer::hUniformLayoutDesc InstanceConstants_layout[] = {
+static hRenderer::hUniformLayoutDesc InstanceConstants_layout[] = {
     {"g_World", hRenderer::ShaderParamType::Float44, 0},
 };
 
 
-class RenderTarget : public IUnitTest {
+class TexturedCube : public IUnitTest {
     
     hTimer                              timer_;
     hShaderProgram*                     shaderProg;
-    hShaderProgram*                     shaderProg2;
     hRenderer::hShaderStage*            vert;
     hRenderer::hShaderStage*            frag;
-    hRenderer::hShaderStage*            vert2;
-    hRenderer::hShaderStage*            frag2;
     hRenderer::hVertexBuffer*           vb;
     hRenderer::hIndexBuffer*            ib;
-    hRenderer::hRenderCall*             rc[2];
-    hRenderer::hUniformBuffer*          ub1[2];
+    hRenderer::hRenderCall*             rc;
+    hRenderer::hUniformBuffer*          ub1;
     hRenderer::hUniformBuffer*          ub2;
     hRenderer::hTexture2D*              t2d;
     hRenderer::hRenderTarget*           rt;
@@ -77,8 +76,11 @@ class RenderTarget : public IUnitTest {
     hRenderer::hRenderFence*            fences[FENCE_COUNT];
     hUint                               currentFence;
 
+    hVec3 camPos;
+    hFloat rotationSpeed;
+
 public:
-    RenderTarget( Heart::hHeartEngine* engine ) 
+    TexturedCube( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine ) {
 
         struct Vtx{
@@ -153,30 +155,24 @@ public:
             {hStringID("in_uv")     ,  hRenderer::hSemantic::Texcoord, 1, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat)*7, hFalse, sizeof(Vtx)},
         };
 
-        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/render_target_1"));
-        shaderProg2 = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/render_target_2"));
+        shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/textured_cube"));
 
         vert = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
         frag = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
-        vert2 = shaderProg2->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
-        frag2 = shaderProg2->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
         vb = hRenderer::createVertexBuffer(cube_verts, sizeof(Vtx), hStaticArraySize(cube_verts), 0);
         ib = hRenderer::createIndexBuffer(cube_indices, hStaticArraySize(cube_indices), 0);
-        hRenderer::hMipDesc rt_mip[] = {
-            {512, 512, nullptr, 0},
-        };
-        t2d = hRenderer::createTexture2D(1, rt_mip, hTextureFormat::RGBA8_unorm, (hUint32)hRenderer::TextureFlags::RenderTarget);
-        rt = hRenderer::createRenderTarget(t2d, 0);
+        t2d = hResourceManager::weakResource<hTextureResource>(hStringID("/textures/test_tile_set_bc1"))->getTexture2D();
 
 
-        ub1[0] = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
-        ub1[1] = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        ub1 = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
         ub2 = hRenderer::createUniformBuffer(nullptr, InstanceConstants_layout, (hUint)hStaticArraySize(InstanceConstants_layout), (hUint)sizeof(InstanceConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
         for (auto& i:fences) {
             i = nullptr;
         }
         currentFence = 0;
 
+        hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
+        ssd.filter_ = proto::renderstate::linear;
         hRenderer::hRenderCallDesc rcd;
         rcd.depthStencil_.depthEnable_ = hTrue;
         rcd.rasterizer_.cullMode_ = proto::renderstate::CullClockwise;
@@ -184,31 +180,23 @@ public:
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.indexBuffer_ = ib;
-        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1[1]);
+        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1);
         rcd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
-        rcd.setVertexBufferLayout(lo, 3);
-        rc[0] = hRenderer::createRenderCall(rcd);
-
-        hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
-        ssd.filter_ = proto::renderstate::linear;
-        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1[0]);
         rcd.setTextureSlot(hStringID("t_tex2D"), t2d, hStringID("tSampler"), ssd);
-        rcd.vertex_ = vert2;
-        rcd.fragment_ = frag2;
-        rc[1] = hRenderer::createRenderCall(rcd);
+        rcd.setVertexBufferLayout(lo, 3);
+        rc = hRenderer::createRenderCall(rcd);
 
         timer_.reset();
         timer_.setPause(hFalse);
 
+        camPos = hVec3(0.f, 0.f, 3.f);
+        rotationSpeed = 1.f;
+
         SetCanRender(hTrue);
     }
-    ~RenderTarget() {
-        for (const auto& i : rc) {
-            hRenderer::destroyRenderCall(i);
-        }
-        for (const auto& i : ub1) {
-            hRenderer::destroyUniformBuffer(i);
-        }
+    ~TexturedCube() {
+        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyUniformBuffer(ub1);
         hRenderer::destroyUniformBuffer(ub2);
         hRenderer::destroyTexture2D(t2d);
         hRenderer::destroyRenderTarget(rt);
@@ -234,15 +222,28 @@ public:
             hRenderer::wait(fences[currentFence]);
             fences[currentFence] = nullptr;
         }
-        hMatrix v = hMatrix::lookAt(hPoint3(0.f, 0.f, 5.f), hPoint3(0.f, 0.f, 0.f), hVec3(0.f, 1.f, 0.f));
+
+        hFloat p[3] = {camPos.getX(), camPos.getY(), camPos.getZ()};
+        ImGui::SetNextWindowPos(ImVec2(10, 200));
+        ImGui::Begin("Textured Cube View", nullptr, ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_ShowBorders);
+        ImGui::Text("View Settings");
+        ImGui::Separator();
+        ImGui::SliderFloat("Camera X", p  , -5, 5);
+        ImGui::SliderFloat("Camera Y", p+1, -5, 5);
+        ImGui::SliderFloat("Camera Z", p+2, 0, 25);
+        ImGui::Separator();
+        ImGui::SliderFloat("Cube Rotation Factor", &rotationSpeed, 0, 10);
+        ImGui::End();
+
+        camPos = hVec3(p[0], p[1], p[2]);
+        hMatrix v = hMatrix::lookAt((hPoint3)camPos, camPos+hPoint3(0.f, 0.f, -1.f), hVec3(0.f, 1.f, 0.f));
         hMatrix p1 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 1280.f/720.f, 0.01f, 100.f);
         hMatrix p2 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 512.f/512.f, 0.01f, 100.f);
         hMatrix w = hMatrix::identity();
         hFloat r = timer_.elapsedMilliSec()/2000.f;
-        w = hMatrix::rotationZYX(hVec3(r, r*2.f, r*3.f));
+        w = hMatrix::rotationZYX(hVec3(0, r*rotationSpeed, 0));
 
-        auto* ub1data1 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1[0])) + (currentFence*sizeof(ViewportConstants)));
-        auto* ub1data2 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1[1])) + (currentFence*sizeof(ViewportConstants)));
+        auto* ub1data1 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1)) + (currentFence*sizeof(ViewportConstants)));
         auto* ub2data = (InstanceConstants*) (((hByte*)hRenderer::getMappingPtr(ub2)) + (currentFence*sizeof(InstanceConstants)));
 
         ub1data1->view                 = v;
@@ -254,30 +255,16 @@ public:
         ub1data1->viewProjectionInverse= inverse(ub1data1->viewProjection);
         ub1data1->viewportSize         = hVec4(1280.f, 720.f, 1.f/1280.f, 1.f/720.f);
 
-        ub1data2->view                 = v;
-        ub1data2->viewInverse          = inverse(v);
-        ub1data2->viewInverseTranspose = transpose(ub1data2->viewInverse);
-        ub1data2->projection           = p2;
-        ub1data2->projectionInverse    = inverse(p2);
-        ub1data2->viewProjection       = p2*v;
-        ub1data2->viewProjectionInverse= inverse(ub1data2->viewProjection);
-        ub1data2->viewportSize         = hVec4(512.f, 512.f, 1.f/512.f, 1.f/512.f);
-
         ub2data->world = w;
 
-        hRenderer::flushUnibufferMemoryRange(cl, ub1[0], (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
-        hRenderer::flushUnibufferMemoryRange(cl, ub1[1], (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
+        hRenderer::flushUnibufferMemoryRange(cl, ub1, (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
         hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
-        hRenderer::setRenderTargets(cl, &rt, 1);
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc[0], hRenderer::Primative::Triangles, 12, 0);
-        hRenderer::setRenderTargets(cl, nullptr, 0);
-        hRenderer::clear(cl, hColour(0.f, 0.2f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc[1], hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 12, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;
     }
 };
 
-DEFINE_HEART_UNIT_TEST(RenderTarget);
+DEFINE_HEART_UNIT_TEST(TexturedCube);

@@ -16,7 +16,7 @@
 #include "UnitTestFactory.h"
 #include "Invader.pb.h"
 #include "render/hRenderCallDesc.h"
-#include "render/hTexture.h"
+#include "render/hTextureResource.h"
 
 using namespace Heart;
 

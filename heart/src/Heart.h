@@ -148,7 +148,7 @@ extern "C" {
 #include "render/hVertexBuffer.h"
 #include "render/hIndexBuffer.h"
 #include "math/hViewFrustum.h"
-#include "render/hTexture.h"
+#include "render/hTextureResource.h"
 #include "render/hRenderShaderProgram.h"
 #include "render/hMaterial.h"
 #include "render/hRenderSubmissionContext.h"

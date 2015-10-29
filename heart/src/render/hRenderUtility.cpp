@@ -11,7 +11,7 @@
 #include "math/hMathUtil.h"
 #include "hRenderer.h"
 #include "hMaterial.h"
-#include "hTexture.h"
+#include "hTextureResource.h"
 #include "base/hProfiler.h"
 
 extern const float g_debugfontHeight;

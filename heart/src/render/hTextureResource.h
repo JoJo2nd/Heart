@@ -50,6 +50,7 @@ namespace hRenderer {
         hTextureFormat          getTextureFormat() const { return format_; }
         hUint                   getMipCount() const { return mipCount_; }
         hUint                   getArraySize() const { return arraySize_; }
+        hRenderer::hTexture2D*  getTexture2D() const { return texture2D_; }
     };
 
 }

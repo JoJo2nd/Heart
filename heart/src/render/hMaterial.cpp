@@ -7,7 +7,7 @@
 #include "render/hRenderer.h"
 #include "render/hRenderShaderProgram.h"
 #include "render/hProgramReflectionInfo.h"
-#include "render/hTexture.h"
+#include "render/hTextureResource.h"
 #include "core/hResourceManager.h"
 
 #include <algorithm>

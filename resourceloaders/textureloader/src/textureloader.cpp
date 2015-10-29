@@ -355,16 +355,26 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
                 };
                 struct PixelWorkBlock {
                     PixelWorkBlock() {}
-                    PixelWorkBlock(int w, int h, int dx, int dy, size_t ss, size_t ds, void* s, void* d)
-                        : width(w), height(h), destX(dx), destY(dy), srcSize(ss), destSize(ds), src(s), dest(d)
-                    {}
+                    PixelWorkBlock(int fw, int fh, int w, int h, int dx, int dy, size_t ss, size_t ds, void* s, void* d)
+                        : width(w), height(h), destX(dx), destY(dy), srcSize(ss), destSize(ds), dest(d)
+                    {
+                        assert(ss <= 16*sizeof(uint32_t));
+                        auto* p = (uint32_t*)s;
+                        for (int y=0; y<4; ++y) {
+                            for (int x=0; x<4; ++x) {
+                                if (dy+y < fh && dx+w < fw) {
+                                    src[(y*4)+x] = p[(y*fw)+x];
+                                }
+                            }
+                        }
+                    }
                     int width;
                     int height;
                     int destX;
                     int destY;
                     size_t srcSize;
                     size_t destSize;
-                    void* src;
+                    uint32_t src[16]; // for 4x4 block
                     void* dest;
                 };
                 std::vector<MipOutputData> compressedMips;
@@ -389,6 +399,7 @@ static bool writeOutTexture(const char* input_path, bool gammacorrect, nvtt::For
                             auto dest_offset = ((x/4)*block_size)+dest_y_offset;
                             assert(dest_offset+block_size <= bc_size);
                             jobs.emplace_back(PixelWorkBlock(
+                                m.width, m.height,
                                 x_size, y_size, x, y,
                                 x_size*y_size*4, getBCTextureSize(bc1size, x_size, y_size), 
                                 m.data.get()+((y*m.width+x)*4), mip.data.get()+dest_offset

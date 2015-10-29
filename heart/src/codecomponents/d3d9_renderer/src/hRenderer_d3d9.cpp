@@ -316,19 +316,22 @@ namespace d3d9 {
             texture.reset(tex);
             hUint lvl = 0;
             hUint32 h = baseHeight;
-            hUint int_pitch = d3d9::getD3DFormatPitch(baseWidth, d3dFormat);
+            hUint32 w = baseWidth;
 
             for (const auto& mip : mips) {
                 D3DLOCKED_RECT r;
                 texture->LockRect(lvl, &r, nullptr, 0);
                 hByte* src_ptr = mip.get();
                 hByte* dest_ptr = (hByte*)r.pBits;
-                for(hUint32 i=0; i<h; ++i) {
+                hUint32 mh = (d3dFormatPitch[d3dFormat] == BC_PITCH) ? ((h+3)/4) : h;
+                hUint int_pitch = d3d9::getD3DFormatPitch(w, d3dFormat);
+                for(hUint32 i=0; i<mh; ++i) {
                     hMemCpy(dest_ptr, src_ptr, r.Pitch);
                     src_ptr+=int_pitch;
                     dest_ptr+=r.Pitch;
                 }
                 texture->UnlockRect(lvl);
+                h /= 2; w /= 2;
                 lvl++;
             }
 
@@ -1240,16 +1243,22 @@ namespace d3d9 {
             in_rc->samplerStates[i].samplerState.states[8] = { D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
         };
         auto findMatchingSampler = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
+            // name comes in the form '[sampler_name]+[texture_name]'
+            const auto* tname = hStrChr(name, '+');
+            auto slen = tname ? ((hPtrdiff_t)tname - (hPtrdiff_t)name) : hStrLen(name);
             for (const auto& i : in_rcd.samplerStates_) {
-                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
+                if (!i.name_.is_default() && hStrNCmp(i.name_.c_str(), name, slen) == 0) {
                     return &i.sampler_;
                 }
             }
             return nullptr;
         };
         auto findMatchingTexture = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> hTexture2D* {
+            // name comes in the form '[sampler_name]+[texture_name]'
+            const auto* tname = hStrChr(name, '+');
+            tname = tname ? tname+1 : name;
             for (const auto& i : in_rcd.textureSlots_) {
-                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), name) == 0) {
+                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), tname) == 0) {
                     return i.t2D_;
                 }
             }
