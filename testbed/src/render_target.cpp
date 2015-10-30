@@ -7,7 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
@@ -66,7 +66,8 @@ class RenderTarget : public IUnitTest {
     hRenderer::hShaderStage*            frag2;
     hRenderer::hVertexBuffer*           vb;
     hRenderer::hIndexBuffer*            ib;
-    hRenderer::hRenderCall*             rc[2];
+    hRenderer::hPipelineState*          rc[2];
+    hRenderer::hInputState*             is[2];
     hRenderer::hUniformBuffer*          ub1[2];
     hRenderer::hUniformBuffer*          ub2;
     hRenderer::hTexture2D*              t2d;
@@ -177,25 +178,29 @@ public:
         }
         currentFence = 0;
 
-        hRenderer::hRenderCallDesc rcd;
+        hRenderer::hPipelineStateDesc rcd;
+        hRenderer::hInputStateDesc isd;
         rcd.depthStencil_.depthEnable_ = hTrue;
         rcd.rasterizer_.cullMode_ = proto::renderstate::CullClockwise;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.indexBuffer_ = ib;
-        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1[1]);
-        rcd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
         rcd.setVertexBufferLayout(lo, 3);
-        rc[0] = hRenderer::createRenderCall(rcd);
+        rc[0] = hRenderer::createRenderPipelineState(rcd);
+        isd.setUniformBuffer(hStringID("ViewportConstants"), ub1[1]);
+        isd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
+        is[0] = hRenderer::createRenderInputState(isd, rcd);
 
-        hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
+        hRenderer::hPipelineStateDesc::hSamplerStateDesc ssd;
         ssd.filter_ = proto::renderstate::linear;
-        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1[0]);
-        rcd.setTextureSlot(hStringID("t_tex2D"), t2d, hStringID("tSampler"), ssd);
         rcd.vertex_ = vert2;
         rcd.fragment_ = frag2;
-        rc[1] = hRenderer::createRenderCall(rcd);
+        rcd.setSampler(hStringID("tSampler"), ssd);
+        rc[1] = hRenderer::createRenderPipelineState(rcd);
+        isd.setUniformBuffer(hStringID("ViewportConstants"), ub1[0]);
+        isd.setTextureSlot(hStringID("t_tex2D"), t2d);
+        is[1] = hRenderer::createRenderInputState(isd, rcd);
 
         timer_.reset();
         timer_.setPause(hFalse);
@@ -204,7 +209,10 @@ public:
     }
     ~RenderTarget() {
         for (const auto& i : rc) {
-            hRenderer::destroyRenderCall(i);
+            hRenderer::destroyRenderPipelineState(i);
+        }
+        for (const auto& i : is) {
+            hRenderer::destroyRenderInputState(i);
         }
         for (const auto& i : ub1) {
             hRenderer::destroyUniformBuffer(i);
@@ -270,10 +278,10 @@ public:
         hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
         hRenderer::setRenderTargets(cl, &rt, 1);
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc[0], hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::draw(cl, rc[0], is[0], hRenderer::Primative::Triangles, 12, 0);
         hRenderer::setRenderTargets(cl, nullptr, 0);
         hRenderer::clear(cl, hColour(0.f, 0.2f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc[1], hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::draw(cl, rc[1], is[1], hRenderer::Primative::Triangles, 12, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;

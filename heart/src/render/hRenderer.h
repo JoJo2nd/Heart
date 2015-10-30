@@ -50,8 +50,10 @@ class hSystem;
 namespace hRenderer {
 
     struct hCmdList;
-    struct hRenderCall;
-    struct hRenderCallDescBase;
+    struct hPipelineState;
+    struct hPipelineStateDescBase;
+    struct hInputState;
+    struct hInputStateDescBase;
     struct hMipDesc;
     struct hTexture1D;
     struct hTexture2D;
@@ -83,8 +85,10 @@ namespace hRenderer {
     HEART_MODULE_API(const hUniformLayoutDesc*, getUniformBufferLayoutInfo)(const hUniformBuffer* ub, hUint* out_count);
     HEART_MODULE_API(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub);
     HEART_MODULE_API(void, destroyUniformBuffer)(hUniformBuffer* ub);
-    HEART_MODULE_API(hRenderCall*, createRenderCall)(const hRenderCallDescBase& rcd);
-    HEART_MODULE_API(void, destroyRenderCall)(hRenderCall* rc);
+    HEART_MODULE_API(hPipelineState*, createRenderPipelineState)(const hPipelineStateDescBase& plsd);
+    HEART_MODULE_API(void, destroyRenderPipelineState)(hPipelineState* pls);
+    HEART_MODULE_API(hInputState*, createRenderInputState)(const hInputStateDescBase& isd, const hPipelineStateDescBase& plsd);
+    HEART_MODULE_API(void, destroyRenderInputState)(hInputState* is);
     /* - Unimplemented APIs
     HEART_MODULE_API(hRenderState*, createRenderState)(const hRenderStateDescBase& rcd);
     HEART_MODULE_API(void, destroyRenderState)(hRenderState*);
@@ -103,7 +107,7 @@ namespace hRenderer {
     HEART_MODULE_API(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz);
     HEART_MODULE_API(void, setRenderTargets)(hCmdList* cl, hRenderTarget** targets, hUint count);
     HEART_MODULE_API(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
-    HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset);
+    HEART_MODULE_API(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset);
     /* - Unimplemented APIs
     HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderState* rs, hRenderResourceBinding* binding, Primative t, hUint prims, hUint vtx_offset);
     */

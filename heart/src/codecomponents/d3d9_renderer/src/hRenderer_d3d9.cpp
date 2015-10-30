@@ -15,11 +15,10 @@
 #include "render/hRenderer.h"
 #include "render/hIndexBufferFlags.h"
 #include "render/hVertexBufferFlags.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hMipDesc.h"
 #include "render/hTextureFormat.h"
 #include "render/hUniformBufferFlags.h"
-#include "render/hRenderCallDesc.h"
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderPrim.h"
 #include "render/hTextureFlags.h"
@@ -486,7 +485,7 @@ namespace d3d9 {
         } states [9];
     };
 
-    struct hRenderCall {
+    struct hPipelineState {
         /* -- Render States to update
             if (D3DRS_ALPHABLENDENABLE) { ->0
                 D3DRS_SRCBLEND; ->1
@@ -523,8 +522,44 @@ namespace d3d9 {
         };
         struct SamplerState {
             hUint index;
-            hTexture2D* texture;
             hSamplerState samplerState;
+        };
+
+        hBool isBound() {
+            return !!vtxDecl.get();
+        }
+
+        hBool bind(IDirect3DDevice9* d3d_device) {
+            hBool bound = hTrue;
+            if (!vertex->isBound()) bound &= vertex->bind(d3d_device);
+            if (!pixel->isBound()) bound &= pixel->bind(d3d_device);
+            if (ib && !ib->isBound()) bound &= ib->bind(d3d_device);
+            if (!vb->isBound()) bound &= vb->bind(d3d_device);
+            if (bound && !vtxDecl.get()) {
+                IDirect3DVertexDeclaration9* decl;
+                auto hr = d3d_device->CreateVertexDeclaration(vtxDeclDesc, &decl);
+                vtxDecl.reset(decl);
+            }
+            return bound && vtxDecl.get();
+        }
+
+        hShaderStage* vertex;
+        hShaderStage* pixel;
+        hVertexBuffer* vb;
+        hIndexBuffer* ib;
+        hUint stateCount;
+        RenderState states[24];
+        hUint samplerCount;
+        SamplerState* samplerStates;
+        //hUint vtxDeclCount;
+        D3DVERTEXELEMENT9* vtxDeclDesc;
+        IDirect3DVertexDeclaration9Ptr vtxDecl;
+    };
+
+    struct hInputState {
+        struct TextureInput {
+            hUint index;
+            hTexture2D* texture;
         };
         struct ParamUpdate {
             enum {
@@ -542,40 +577,26 @@ namespace d3d9 {
         };
 
         hBool isBound() {
-            return !!vtxDecl.get();
+            return fullyBound;
         }
 
         hBool bind(IDirect3DDevice9* d3d_device) {
             hBool bound = hTrue;
-            if (!vertex->isBound()) bound &= vertex->bind(d3d_device);
-            if (!pixel->isBound()) bound &= pixel->bind(d3d_device);
-            if (ib && !ib->isBound()) bound &= ib->bind(d3d_device);
-            if (!vb->isBound()) bound &= vb->bind(d3d_device);
-            for (hUint i=0, n=samplerCount; i<n; ++i) {
-                if (!samplerStates[i].texture->isBound()) bound &= samplerStates[i].texture->bind(d3d_device);            }
-            if (bound && !vtxDecl.get()) {
-                IDirect3DVertexDeclaration9* decl;
-                auto hr = d3d_device->CreateVertexDeclaration(vtxDeclDesc, &decl);
-                vtxDecl.reset(decl);
+            for (hUint i=0, n=textureCount; i<n; ++i) {
+                if (!textureInputs[i].texture->isBound()) 
+                    bound &= textureInputs[i].texture->bind(d3d_device);
             }
-            return bound && vtxDecl.get();
+            fullyBound = bound;
+            return fullyBound;
         }
 
-        hShaderStage* vertex;
-        hShaderStage* pixel;
-        hVertexBuffer* vb;
-        hIndexBuffer* ib;
-        hUint stateCount;
-        RenderState states[24];
-        hUint samplerCount;
-        SamplerState* samplerStates;
+        hUint textureCount;
+        TextureInput* textureInputs;
         hUint uniBufferCount;
         const hUniformBuffer** uniBuffers;
         hUint paramUpdateCount;
         ParamUpdate* paramUpdates;
-        //hUint vtxDeclCount;
-        D3DVERTEXELEMENT9* vtxDeclDesc;
-        IDirect3DVertexDeclaration9Ptr vtxDecl;
+        hBool fullyBound;
     };
 
     struct hRenderFence {
@@ -1038,44 +1059,20 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
-    hRenderCall* HEART_API createRenderCall(const hRenderCallDescBase& rcd) {
-        static const hUint sampler_size = sizeof(hRenderCall::SamplerState);
+    hPipelineState* HEART_API createRenderPipelineState(const hPipelineStateDescBase& plsd) {
+        static const hUint sampler_size = sizeof(hPipelineState::SamplerState);
         hUint sampler_count = 0;
-        hUint int_param_update_count = 0;
-        hUint float_param_update_count = 0;
-        hUint uniform_buffer_count = 0;
 
-        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
-            const auto& sampler = rcd.vertex_->constants[i];
+        for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
+            const auto& sampler = plsd.vertex_->constants[i];
             if (sampler.type == 3) {
                 ++sampler_count;
             }
         }
-        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
-            const auto& sampler = rcd.fragment_->constants[i];
+        for (hUint i = 0; i<plsd.fragment_->header->constCount; ++i) {
+            const auto& sampler = plsd.fragment_->constants[i];
             if (sampler.type == 3) {
                 ++sampler_count;
-            }
-        }
-        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
-            const auto& const_param = rcd.vertex_->constants[i];
-            if (const_param.type == 1) {
-                ++int_param_update_count;
-            } else if (const_param.type == 2) {
-                ++float_param_update_count;
-            }
-        }
-        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
-            const auto& const_param = rcd.fragment_->constants[i];
-            if (const_param.type == 1) {
-                ++int_param_update_count;
-            } else if (const_param.type == 2) {
-                ++float_param_update_count;
-            }
-        }
-        for (const auto& uni_buffer : rcd.uniformBuffers_) {
-            if (!uni_buffer.name_.is_default()) {
-                ++uniform_buffer_count;
             }
         }
 
@@ -1179,59 +1176,50 @@ namespace d3d9 {
         };
 
         bool separate_alpha_blend =
-        rcd.blend_.blendEnable_ && 
-        (rcd.blend_.srcBlend_ != rcd.blend_.srcBlendAlpha_ ||
-        rcd.blend_.destBlend_ != rcd.blend_.destBlendAlpha_ ||
-        rcd.blend_.blendOp_ != rcd.blend_.blendOpAlpha_);
+        plsd.blend_.blendEnable_ && 
+        (plsd.blend_.srcBlend_ != plsd.blend_.srcBlendAlpha_ ||
+        plsd.blend_.destBlend_ != plsd.blend_.destBlendAlpha_ ||
+        plsd.blend_.blendOp_ != plsd.blend_.blendOpAlpha_);
 
-        hSize_t rnd_call_size = sizeof(hRenderCall) 
+        hSize_t rnd_call_size = sizeof(hPipelineState) 
             + (sampler_count*sampler_size) 
-            + (int_param_update_count*sizeof(hRenderCall::ParamUpdate))
-            + (float_param_update_count*sizeof(hRenderCall::ParamUpdate))
-            + (uniform_buffer_count*sizeof(void*))
-            + ((rcd.vertexLayoutCount+1)*sizeof(D3DVERTEXELEMENT9));
-        auto* ptr = (hByte*)hMalloc(rnd_call_size*2);
-        auto* rc = new (ptr) hRenderCall();
-        rc->samplerStates = (hRenderCall::SamplerState*)(ptr+sizeof(hRenderCall));
+            + ((plsd.vertexLayoutCount+1)*sizeof(D3DVERTEXELEMENT9));
+        auto* ptr = (hByte*)hMalloc(rnd_call_size);
+        auto* rc = new (ptr) hPipelineState();
+        rc->samplerStates = (hPipelineState::SamplerState*)(ptr+sizeof(hPipelineState));
         rc->samplerCount = sampler_count;
-        rc->uniBuffers = (const hUniformBuffer**)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)));
-        rc->uniBufferCount = uniform_buffer_count;
-        rc->paramUpdates = (hRenderCall::ParamUpdate*)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)+(uniform_buffer_count*sizeof(void*))));
-        rc->paramUpdateCount = int_param_update_count+float_param_update_count;
-        rc->vtxDeclDesc = (D3DVERTEXELEMENT9*)(ptr+(sizeof(hRenderCall)+(sampler_count*sampler_size)+(uniform_buffer_count*sizeof(void*))+(rc->paramUpdateCount*sizeof(hRenderCall::ParamUpdate))));
-        rc->vertex=rcd.vertex_;
-        rc->pixel=rcd.fragment_;
-        rc->vb = rcd.vertexBuffer_;
-        rc->ib = rcd.indexBuffer_;
-        rc->states[0]  = { D3DRS_ALPHABLENDENABLE, (DWORD)(rcd.blend_.blendEnable_ ? TRUE : FALSE) };
-        rc->states[1]  = { D3DRS_SRCBLEND, blendOpConv(rcd.blend_.srcBlend_) };
-        rc->states[2]  = { D3DRS_DESTBLEND, blendOpConv(rcd.blend_.destBlend_) };
-        rc->states[3]  = { D3DRS_BLENDOP, blendFuncConv(rcd.blend_.blendOp_) };
+        rc->vtxDeclDesc = (D3DVERTEXELEMENT9*)(ptr+(sizeof(hPipelineState)+(sampler_count*sampler_size)));
+        rc->vertex=plsd.vertex_;
+        rc->pixel=plsd.fragment_;
+        rc->vb = plsd.vertexBuffer_;
+        rc->ib = plsd.indexBuffer_;
+        rc->states[0]  = { D3DRS_ALPHABLENDENABLE, (DWORD)(plsd.blend_.blendEnable_ ? TRUE : FALSE) };
+        rc->states[1]  = { D3DRS_SRCBLEND, blendOpConv(plsd.blend_.srcBlend_) };
+        rc->states[2]  = { D3DRS_DESTBLEND, blendOpConv(plsd.blend_.destBlend_) };
+        rc->states[3]  = { D3DRS_BLENDOP, blendFuncConv(plsd.blend_.blendOp_) };
         rc->states[4]  = { D3DRS_SEPARATEALPHABLENDENABLE, (DWORD)(separate_alpha_blend ? FALSE : FALSE) };
-        rc->states[5]  = { D3DRS_SRCBLENDALPHA, blendOpConv(rcd.blend_.srcBlendAlpha_) };
-        rc->states[6]  = { D3DRS_DESTBLENDALPHA, blendOpConv(rcd.blend_.destBlendAlpha_) };
-        rc->states[7]  = { D3DRS_BLENDOPALPHA, blendFuncConv(rcd.blend_.blendOpAlpha_) };
-        rc->states[8]  = { D3DRS_ZENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
-        rc->states[9]  = { D3DRS_ZWRITEENABLE, (DWORD)(rcd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
-        rc->states[10] = { D3DRS_ZFUNC, funcCompConv(rcd.depthStencil_.depthFunc_) };
-        rc->states[11] = { D3DRS_STENCILENABLE, rcd.depthStencil_.stencilEnable_ };
-        rc->states[12] = { D3DRS_STENCILFAIL, stencilOpConv(rcd.depthStencil_.stencilFailOp_) };
-        rc->states[13] = { D3DRS_STENCILZFAIL, stencilOpConv(rcd.depthStencil_.stencilDepthFailOp_) };
-        rc->states[14] = { D3DRS_STENCILPASS, stencilOpConv(rcd.depthStencil_.stencilPassOp_) };
-        rc->states[15] = { D3DRS_STENCILFUNC, funcCompConv(rcd.depthStencil_.stencilFunc_) };
-        rc->states[16] = { D3DRS_STENCILREF, rcd.depthStencil_.stencilRef_ };
-        rc->states[17] = { D3DRS_STENCILMASK, rcd.depthStencil_.stencilReadMask_ };
-        rc->states[18] = { D3DRS_STENCILWRITEMASK, rcd.depthStencil_.stencilWriteMask_ };
-        rc->states[19] = { D3DRS_FILLMODE, fillModeConv(rcd.rasterizer_.fillMode_) };
-        rc->states[20] = { D3DRS_CULLMODE, cullModeConv(rcd.rasterizer_.cullMode_) };
-        rc->states[21] = { D3DRS_DEPTHBIAS, intBitsToDWORD(rcd.rasterizer_.depthBias_) };
-        rc->states[22] = { D3DRS_SLOPESCALEDEPTHBIAS, floatBitsToDWORD(rcd.rasterizer_.slopeScaledDepthBias_) };
-        rc->states[23] = { D3DRS_SCISSORTESTENABLE, (DWORD)(rcd.rasterizer_.scissorEnable_ ? TRUE : FALSE) };
+        rc->states[5]  = { D3DRS_SRCBLENDALPHA, blendOpConv(plsd.blend_.srcBlendAlpha_) };
+        rc->states[6]  = { D3DRS_DESTBLENDALPHA, blendOpConv(plsd.blend_.destBlendAlpha_) };
+        rc->states[7]  = { D3DRS_BLENDOPALPHA, blendFuncConv(plsd.blend_.blendOpAlpha_) };
+        rc->states[8]  = { D3DRS_ZENABLE, (DWORD)(plsd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[9]  = { D3DRS_ZWRITEENABLE, (DWORD)(plsd.depthStencil_.depthEnable_ ? TRUE : FALSE) };
+        rc->states[10] = { D3DRS_ZFUNC, funcCompConv(plsd.depthStencil_.depthFunc_) };
+        rc->states[11] = { D3DRS_STENCILENABLE, plsd.depthStencil_.stencilEnable_ };
+        rc->states[12] = { D3DRS_STENCILFAIL, stencilOpConv(plsd.depthStencil_.stencilFailOp_) };
+        rc->states[13] = { D3DRS_STENCILZFAIL, stencilOpConv(plsd.depthStencil_.stencilDepthFailOp_) };
+        rc->states[14] = { D3DRS_STENCILPASS, stencilOpConv(plsd.depthStencil_.stencilPassOp_) };
+        rc->states[15] = { D3DRS_STENCILFUNC, funcCompConv(plsd.depthStencil_.stencilFunc_) };
+        rc->states[16] = { D3DRS_STENCILREF, plsd.depthStencil_.stencilRef_ };
+        rc->states[17] = { D3DRS_STENCILMASK, plsd.depthStencil_.stencilReadMask_ };
+        rc->states[18] = { D3DRS_STENCILWRITEMASK, plsd.depthStencil_.stencilWriteMask_ };
+        rc->states[19] = { D3DRS_FILLMODE, fillModeConv(plsd.rasterizer_.fillMode_) };
+        rc->states[20] = { D3DRS_CULLMODE, cullModeConv(plsd.rasterizer_.cullMode_) };
+        rc->states[21] = { D3DRS_DEPTHBIAS, intBitsToDWORD(plsd.rasterizer_.depthBias_) };
+        rc->states[22] = { D3DRS_SLOPESCALEDEPTHBIAS, floatBitsToDWORD(plsd.rasterizer_.slopeScaledDepthBias_) };
+        rc->states[23] = { D3DRS_SCISSORTESTENABLE, (DWORD)(plsd.rasterizer_.scissorEnable_ ? TRUE : FALSE) };
 
-        auto addSampler = [&](hRenderCall* in_rc, hUint i, hUint sampler_reg, const hRenderCallDesc::hSamplerStateDesc& ss, hTexture2D* in_tex) {
-            hcAssertMsg(in_tex, "No texture bound to sampler.");
+        auto addSampler = [&](hPipelineState* in_rc, hUint i, hUint sampler_reg, const hPipelineStateDesc::hSamplerStateDesc& ss) {
             in_rc->samplerStates[i].index = sampler_reg;
-            in_rc->samplerStates[i].texture = in_tex;
             in_rc->samplerStates[i].samplerState.states[0] = { D3DSAMP_ADDRESSU, (DWORD)textureAddConv(ss.addressU_)};
             in_rc->samplerStates[i].samplerState.states[1] = { D3DSAMP_ADDRESSV, (DWORD)textureAddConv(ss.addressV_)};
             in_rc->samplerStates[i].samplerState.states[2] = { D3DSAMP_ADDRESSW, (DWORD)textureAddConv(ss.addressW_)};
@@ -1242,7 +1230,7 @@ namespace d3d9 {
             in_rc->samplerStates[i].samplerState.states[7] = { D3DSAMP_MAXMIPLEVEL, floatBitsToDWORD(ss.maxLOD_)};
             in_rc->samplerStates[i].samplerState.states[8] = { D3DSAMP_MIPMAPLODBIAS, floatBitsToDWORD(ss.mipLODBias_)};
         };
-        auto findMatchingSampler = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> const hRenderCallDesc::hSamplerStateDesc* {
+        auto findMatchingSampler = [](const hPipelineStateDescBase& in_rcd, const hChar* name) -> const hPipelineStateDesc::hSamplerStateDesc* {
             // name comes in the form '[sampler_name]+[texture_name]'
             const auto* tname = hStrChr(name, '+');
             auto slen = tname ? ((hPtrdiff_t)tname - (hPtrdiff_t)name) : hStrLen(name);
@@ -1253,84 +1241,22 @@ namespace d3d9 {
             }
             return nullptr;
         };
-        auto findMatchingTexture = [](const hRenderCallDescBase& in_rcd, const hChar* name) -> hTexture2D* {
-            // name comes in the form '[sampler_name]+[texture_name]'
-            const auto* tname = hStrChr(name, '+');
-            tname = tname ? tname+1 : name;
-            for (const auto& i : in_rcd.textureSlots_) {
-                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), tname) == 0) {
-                    return i.t2D_;
-                }
-            }
-            return nullptr;
-        };
         hUint current_sampler = 0;
-        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
-            const auto& sampler = rcd.vertex_->constants[i];
+        for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
+            const auto& sampler = plsd.vertex_->constants[i];
             if (sampler.type != 3) continue;
-            if (auto* ss_ptr = findMatchingSampler(rcd, rcd.vertex_->strings+sampler.stringTableOffset)) {
-                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr, findMatchingTexture(rcd, rcd.vertex_->strings+sampler.stringTableOffset));
+            if (auto* ss_ptr = findMatchingSampler(plsd, plsd.vertex_->strings+sampler.stringTableOffset)) {
+                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr);
             }
         }
-        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
-            const auto& sampler = rcd.fragment_->constants[i];
+        for (hUint i = 0; i<plsd.fragment_->header->constCount; ++i) {
+            const auto& sampler = plsd.fragment_->constants[i];
             if (sampler.type != 3) continue;
-            if (auto* ss_ptr = findMatchingSampler(rcd, rcd.fragment_->strings+sampler.stringTableOffset)) {
-                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr, findMatchingTexture(rcd, rcd.fragment_->strings+sampler.stringTableOffset));
+            if (auto* ss_ptr = findMatchingSampler(plsd, plsd.fragment_->strings+sampler.stringTableOffset)) {
+                addSampler(rc, current_sampler++, sampler.regStart, *ss_ptr);
             }
         }
         hcAssert(current_sampler == rc->samplerCount);
-
-        hUint current_ub = 0;
-        for (auto& uni_buffer : rcd.uniformBuffers_) {
-            if (!uni_buffer.name_.is_default()) {
-                rc->uniBuffers[current_ub++] = uni_buffer.ub_;
-            }
-        }
-        hcAssert(current_ub == rc->uniBufferCount);
-
-        hUint current_pu = 0;
-        for (hUint i = 0; i<rcd.vertex_->header->constCount; ++i) {
-            const auto& const_param = rcd.vertex_->constants[i];
-            hUint index, offset, size;
-            ShaderParamType type;
-            if (const_param.type == 1 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
-                rc->paramUpdates[current_pu].ubIndex = index;
-                rc->paramUpdates[current_pu].ubOffset = offset;
-                rc->paramUpdates[current_pu].byteSize = size;
-                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Vertex | hRenderCall::ParamUpdate::Int;
-                ++current_pu;
-            } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
-                rc->paramUpdates[current_pu].ubIndex = index;
-                rc->paramUpdates[current_pu].ubOffset = offset;
-                rc->paramUpdates[current_pu].byteSize = size;
-                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Vertex | hRenderCall::ParamUpdate::Float;
-                ++current_pu;
-            }
-        }
-        for (hUint i = 0; i<rcd.fragment_->header->constCount; ++i) {
-            const auto& const_param = rcd.fragment_->constants[i];
-            hUint index, offset, size;
-            ShaderParamType type;
-            if (const_param.type == 1 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
-                rc->paramUpdates[current_pu].ubIndex = index;
-                rc->paramUpdates[current_pu].ubOffset = offset;
-                rc->paramUpdates[current_pu].byteSize = size;
-                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Fragment | hRenderCall::ParamUpdate::Int;
-                ++current_pu;
-            } else if (const_param.type == 2 && rcd.findNamedParameter(rcd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
-                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
-                rc->paramUpdates[current_pu].ubIndex = index;
-                rc->paramUpdates[current_pu].ubOffset = offset;
-                rc->paramUpdates[current_pu].byteSize = size;
-                rc->paramUpdates[current_pu].type = hRenderCall::ParamUpdate::Fragment | hRenderCall::ParamUpdate::Float;
-                ++current_pu;
-            }
-        }
-        hcAssert(current_pu == rc->paramUpdateCount);
 
         auto vtxDeclTypeConv = [](hVertexInputType in, hUint count, hBool normalise) {
             switch(in) {
@@ -1356,23 +1282,173 @@ namespace d3d9 {
             hcAssertFailMsg("Unsupported vertex format!");
             return D3DDECLTYPE_UNUSED;
         };
-        for (hUint i=0; i<rcd.vertexLayoutCount; ++i) {
+        for (hUint i=0; i<plsd.vertexLayoutCount; ++i) {
             rc->vtxDeclDesc[i].Stream = 0;
-            rc->vtxDeclDesc[i].Offset = rcd.vertexLayout_[i].offset_;
-            rc->vtxDeclDesc[i].Type = vtxDeclTypeConv(rcd.vertexLayout_[i].type_, rcd.vertexLayout_[i].elementCount_, rcd.vertexLayout_[i].normalised_);
+            rc->vtxDeclDesc[i].Offset = plsd.vertexLayout_[i].offset_;
+            rc->vtxDeclDesc[i].Type = vtxDeclTypeConv(plsd.vertexLayout_[i].type_, plsd.vertexLayout_[i].elementCount_, plsd.vertexLayout_[i].normalised_);
             rc->vtxDeclDesc[i].Method = D3DDECLMETHOD_DEFAULT;
-            rc->vtxDeclDesc[i].Usage = (BYTE)rcd.vertexLayout_[i].semantic_;
-            rc->vtxDeclDesc[i].UsageIndex = (BYTE)rcd.vertexLayout_[i].semIndex_;
+            rc->vtxDeclDesc[i].Usage = (BYTE)plsd.vertexLayout_[i].semantic_;
+            rc->vtxDeclDesc[i].UsageIndex = (BYTE)plsd.vertexLayout_[i].semIndex_;
         }
-        rc->vtxDeclDesc[rcd.vertexLayoutCount] = D3DDECL_END();
+        rc->vtxDeclDesc[plsd.vertexLayoutCount] = D3DDECL_END();
 
         return rc;
     }
 
     HEART_C_EXPORT
-    void HEART_API destroyRenderCall(hRenderCall* rc) {
+    void HEART_API destroyRenderPipelineState(hPipelineState* rc) {
         enqueueRenderResourceDelete([=](){
             delete rc;
+        });
+    }
+
+    HEART_C_EXPORT
+    hInputState* HEART_API createRenderInputState(const hInputStateDescBase& isd, const hPipelineStateDescBase& plsd) {
+        hUint int_param_update_count = 0;
+        hUint float_param_update_count = 0;
+        hUint uniform_buffer_count = 0;
+        hUint sampler_count = 0;
+
+        for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
+            const auto& sampler = plsd.vertex_->constants[i];
+            if (sampler.type == 3) {
+                ++sampler_count;
+            }
+        }
+        for (hUint i = 0; i<plsd.fragment_->header->constCount; ++i) {
+            const auto& sampler = plsd.fragment_->constants[i];
+            if (sampler.type == 3) {
+                ++sampler_count;
+            }
+        }
+
+        for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
+            const auto& const_param = plsd.vertex_->constants[i];
+            if (const_param.type == 1) {
+                ++int_param_update_count;
+            } else if (const_param.type == 2) {
+                ++float_param_update_count;
+            }
+        }
+        for (hUint i = 0; i<plsd.fragment_->header->constCount; ++i) {
+            const auto& const_param = plsd.fragment_->constants[i];
+            if (const_param.type == 1) {
+                ++int_param_update_count;
+            } else if (const_param.type == 2) {
+                ++float_param_update_count;
+            }
+        }
+        for (const auto& uni_buffer : isd.uniformBuffers_) {
+            if (!uni_buffer.name_.is_default()) {
+                ++uniform_buffer_count;
+            }
+        }
+
+        hSize_t is_call_size = sizeof(hInputState)
+            + (sampler_count*sizeof(hInputState::TextureInput))
+            + (int_param_update_count*sizeof(hInputState::ParamUpdate))
+            + (float_param_update_count*sizeof(hInputState::ParamUpdate))
+            + (uniform_buffer_count*sizeof(void*));
+
+        auto* ptr = (hByte*)hMalloc(is_call_size*16);
+        auto* rc = new (ptr) hInputState();
+        rc->textureInputs = (hInputState::TextureInput*)(ptr + sizeof(hPipelineState));
+        rc->textureCount = sampler_count;
+        rc->uniBuffers = (const hUniformBuffer**)(ptr+(sizeof(hInputState)+(sampler_count*sizeof(hInputState::TextureInput))));
+        rc->uniBufferCount = uniform_buffer_count;
+        rc->paramUpdates = (hInputState::ParamUpdate*)(ptr+(sizeof(hInputState)+(sampler_count*sizeof(hInputState::TextureInput))+(uniform_buffer_count*sizeof(void*))));
+        rc->paramUpdateCount = int_param_update_count+float_param_update_count;
+
+        auto findMatchingTexture = [](const hInputStateDescBase& in_isd, const hChar* name) -> hTexture2D* {
+            // name comes in the form '[sampler_name]+[texture_name]'
+            const auto* tname = hStrChr(name, '+');
+            tname = tname ? tname+1 : name;
+            for (const auto& i : in_isd.textureSlots_) {
+                if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), tname) == 0) {
+                    return i.t2D_;
+                }
+            }
+            return nullptr;
+        };
+        hUint current_sampler = 0;
+        for (hUint i = 0; i < plsd.vertex_->header->constCount; ++i) {
+            const auto& sampler = plsd.vertex_->constants[i];
+            if (sampler.type != 3) continue;
+            if (auto* t_ptr = findMatchingTexture(isd, plsd.vertex_->strings + sampler.stringTableOffset)) {
+                rc->textureInputs[sampler.regStart].index = sampler.regStart;
+                rc->textureInputs[sampler.regStart].texture = t_ptr;
+                ++current_sampler;
+            }
+        }
+        for (hUint i = 0; i < plsd.fragment_->header->constCount; ++i) {
+            const auto& sampler = plsd.fragment_->constants[i];
+            if (sampler.type != 3) continue;
+            if (auto* t_ptr = findMatchingTexture(isd, plsd.fragment_->strings + sampler.stringTableOffset)) {
+                rc->textureInputs[sampler.regStart].index = sampler.regStart;
+                rc->textureInputs[sampler.regStart].texture = t_ptr;
+                ++current_sampler;
+            }
+        }
+        hcAssert(current_sampler == rc->textureCount);
+
+        hUint current_ub = 0;
+        for (auto& uni_buffer : isd.uniformBuffers_) {
+            if (!uni_buffer.name_.is_default()) {
+                rc->uniBuffers[current_ub++] = uni_buffer.ub_;
+            }
+        }
+        hcAssert(current_ub == rc->uniBufferCount);
+
+        hUint current_pu = 0;
+        for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
+            const auto& const_param = plsd.vertex_->constants[i];
+            hUint index, offset, size;
+            ShaderParamType type;
+            if (const_param.type == 1 && isd.findNamedParameter(plsd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hInputState::ParamUpdate::Vertex | hInputState::ParamUpdate::Int;
+                ++current_pu;
+            } else if (const_param.type == 2 && isd.findNamedParameter(plsd.vertex_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hInputState::ParamUpdate::Vertex | hInputState::ParamUpdate::Float;
+                ++current_pu;
+            }
+        }
+        for (hUint i = 0; i<plsd.fragment_->header->constCount; ++i) {
+            const auto& const_param = plsd.fragment_->constants[i];
+            hUint index, offset, size;
+            ShaderParamType type;
+            if (const_param.type == 1 && isd.findNamedParameter(plsd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hInputState::ParamUpdate::Fragment | hInputState::ParamUpdate::Int;
+                ++current_pu;
+            } else if (const_param.type == 2 && isd.findNamedParameter(plsd.fragment_->strings+const_param.stringTableOffset, &index, &offset, &size, &type)) {
+                rc->paramUpdates[current_pu].regIndex = const_param.regStart*4;
+                rc->paramUpdates[current_pu].ubIndex = index;
+                rc->paramUpdates[current_pu].ubOffset = offset;
+                rc->paramUpdates[current_pu].byteSize = size;
+                rc->paramUpdates[current_pu].type = hInputState::ParamUpdate::Fragment | hInputState::ParamUpdate::Float;
+                ++current_pu;
+            }
+        }
+        hcAssert(current_pu == rc->paramUpdateCount);
+
+        return rc;
+    }
+
+    HEART_C_EXPORT
+    void HEART_API destroyRenderInputState(hInputState* is) {
+        enqueueRenderResourceDelete([=](){
+            delete is;
         });
     }
 
@@ -1473,47 +1549,48 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
-    void HEART_API draw(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) {
+    void HEART_API draw(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) {
         auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             // Bind any unbound objects
-            if (!rc->isBound()) rc->bind(d3dDevice);
+            if (!pls->isBound()) pls->bind(d3dDevice);
+            if (!is->isBound()) is->bind(d3dDevice);
             //Update constants from uniform buffers
-            for (hUint i=0, n=rc->paramUpdateCount; i<n; ++i) {
-                if (rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Vertex) {
-                    hUint32* reg_add = ((rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Float) ? (hUint32*)rc->vertex->getFloatRegisterBaseAddress() : (hUint32*)rc->vertex->getIntRegisterBaseAddress());
-                    void* ub_add = rc->uniBuffers[rc->paramUpdates[i].ubIndex]->getBase()+rc->paramUpdates[i].ubOffset;
-                    hMemCpy(reg_add+rc->paramUpdates[i].regIndex, ub_add, rc->paramUpdates[i].byteSize);
+            for (hUint i=0, n= is->paramUpdateCount; i<n; ++i) {
+                if (is->paramUpdates[i].type & hInputState::ParamUpdate::Vertex) {
+                    hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->vertex->getFloatRegisterBaseAddress() : (hUint32*)pls->vertex->getIntRegisterBaseAddress());
+                    void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase()+ is->paramUpdates[i].ubOffset;
+                    hMemCpy(reg_add+ is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
                 }
-                if (rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Fragment) {
-                    hUint32* reg_add = ((rc->paramUpdates[i].type & hRenderCall::ParamUpdate::Float) ? (hUint32*)rc->pixel->getFloatRegisterBaseAddress() : (hUint32*)rc->pixel->getIntRegisterBaseAddress());
-                    void* ub_add = rc->uniBuffers[rc->paramUpdates[i].ubIndex]->getBase()+rc->paramUpdates[i].ubOffset;
-                    hMemCpy(reg_add+rc->paramUpdates[i].regIndex, ub_add, rc->paramUpdates[i].byteSize);
+                if (is->paramUpdates[i].type & hInputState::ParamUpdate::Fragment) {
+                    hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->pixel->getFloatRegisterBaseAddress() : (hUint32*)pls->pixel->getIntRegisterBaseAddress());
+                    void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase()+ is->paramUpdates[i].ubOffset;
+                    hMemCpy(reg_add+ is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
                 }
             }
             //Update d3d device state
-            hD3D9_VERIFY(d3dDevice->SetVertexShader(rc->vertex->vertexShader.get()));
-            hD3D9_VERIFY(d3dDevice->SetPixelShader(rc->pixel->pixelShader.get()));
-            rc->vertex->uploadConstants(d3dDevice);
-            rc->pixel->uploadConstants(d3dDevice);
-            for (hUint i=0, n=rc->samplerCount; i<n; ++i) {
-                auto samp_i = rc->samplerStates[i].index;
-                for (const auto& ss : rc->samplerStates[i].samplerState.states) {
+            hD3D9_VERIFY(d3dDevice->SetVertexShader(pls->vertex->vertexShader.get()));
+            hD3D9_VERIFY(d3dDevice->SetPixelShader(pls->pixel->pixelShader.get()));
+            pls->vertex->uploadConstants(d3dDevice);
+            pls->pixel->uploadConstants(d3dDevice);
+            for (hUint i=0, n=pls->samplerCount; i<n; ++i) {
+                auto samp_i = pls->samplerStates[i].index;
+                for (const auto& ss : pls->samplerStates[i].samplerState.states) {
                     hD3D9_VERIFY(d3dDevice->SetSamplerState(samp_i, ss.state, ss.value));
                 }
-                hD3D9_VERIFY(d3dDevice->SetTexture(samp_i, rc->samplerStates[i].texture->texture.get()));
+                hD3D9_VERIFY(d3dDevice->SetTexture(samp_i, is->textureInputs[i].texture->texture.get()));
             }
-            for (const auto& rs : rc->states) {
+            for (const auto& rs : pls->states) {
                 hD3D9_VERIFY(d3dDevice->SetRenderState(rs.state, rs.value));
             }
-            hD3D9_VERIFY(d3dDevice->SetVertexDeclaration(rc->vtxDecl.get()));
-            hD3D9_VERIFY(d3dDevice->SetStreamSource(0, rc->vb->vertexBuffer.get(), 0, rc->vb->elementSize));
+            hD3D9_VERIFY(d3dDevice->SetVertexDeclaration(pls->vtxDecl.get()));
+            hD3D9_VERIFY(d3dDevice->SetStreamSource(0, pls->vb->vertexBuffer.get(), 0, pls->vb->elementSize));
             D3DPRIMITIVETYPE type;
             if (t == Primative::Triangles) type = D3DPT_TRIANGLELIST;
             else if (t == Primative::TriangleStrip) type = D3DPT_TRIANGLESTRIP;
-            if (rc->ib) {
-                hD3D9_VERIFY(d3dDevice->SetIndices(rc->ib->indexBuffer.get()));
-                hD3D9_VERIFY(d3dDevice->DrawIndexedPrimitive(type, 0, 0, rc->vb->elementCount, vtx_offset, prims));
+            if (pls->ib) {
+                hD3D9_VERIFY(d3dDevice->SetIndices(pls->ib->indexBuffer.get()));
+                hD3D9_VERIFY(d3dDevice->DrawIndexedPrimitive(type, 0, 0, pls->vb->elementCount, vtx_offset, prims));
             } else {
                 hD3D9_VERIFY(d3dDevice->DrawPrimitive(type, vtx_offset, prims));
             }

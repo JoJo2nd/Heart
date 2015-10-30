@@ -7,7 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
@@ -34,7 +34,8 @@ class MovingTriCPU : public IUnitTest {
 	hRenderer::hShaderStage*			vert;
     hRenderer::hShaderStage*			frag;
     hRenderer::hVertexBuffer*			vb;
-    hRenderer::hRenderCall*				rc;
+    hRenderer::hPipelineState*			rc;
+    hRenderer::hInputState*             is;
 
 	static const hUint FENCE_COUNT = 3;
 	hUint								paramBlockSize;
@@ -68,12 +69,12 @@ public:
 		currentFence = 0;
 
 
-        hRenderer::hRenderCallDesc rcd;
+        hRenderer::hPipelineStateDesc rcd;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.setVertexBufferLayout(lo, 2);
-        rc = hRenderer::createRenderCall(rcd);
+        rc = hRenderer::createRenderPipelineState(rcd);
 
 		timer_.reset();
 		timer_.setPause(hFalse);
@@ -81,7 +82,7 @@ public:
         SetCanRender(hTrue);
     }
     ~MovingTriCPU() {
-        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyRenderPipelineState(rc);
         hRenderer::destroyVertexBuffer(vb);
     }
 
@@ -130,7 +131,7 @@ public:
         vertsptr[16] *= sinf(timer_.elapsedMilliSec()/1000.f);
         hRenderer::flushVertexBufferMemoryRange(cl, vb, (21*sizeof(hFloat)*currentFence), 21*sizeof(hFloat));
 
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 3*currentFence);
+        hRenderer::draw(cl, rc, nullptr, hRenderer::Primative::Triangles, 1, 3*currentFence);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;

@@ -29,7 +29,7 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
     hBool hMaterial::deserialiseObject(Heart::proto::MaterialResource* obj) {
         totalPasses_=obj->totalpasses();
-        rcDescs_.reset(new hRenderer::hRenderCallDesc[totalPasses_]);
+        rcDescs_.reset(new hRenderer::hPipelineStateDesc[totalPasses_]);
         passProgIDs_.reset(new hStringID[totalPasses_*maxShaderCount]);
         groupNames_.reserve(obj->totalgroups());
         techniqueNames_.reserve(obj->totaltechniques());
@@ -49,7 +49,7 @@ namespace Heart {
                 for (hUint pi=0, pn=techdef.passes_size(); pi<pn; ++pi){
                     auto key = hPassKey(groupname, techname, pi);
                     const proto::MaterialPass& passdef=techdef.passes(pi);
-                    hRenderer::hRenderCallDesc& rcd = *(rcDescs_.get()+currentpass);
+                    hRenderer::hPipelineStateDesc& rcd = *(rcDescs_.get()+currentpass);
                     if (passdef.has_blend()) {
                         const proto::BlendState& blenddef=passdef.blend();
                         if (blenddef.has_blendenable()) {

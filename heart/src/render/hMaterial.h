@@ -13,7 +13,7 @@
 #include "core/hResource.h"
 #include "core/hProtobuf.h"
 #include "render/hRenderStateBlock.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hMaterialParamValue.h"
 #include "components/hObjectFactory.h"
 
@@ -81,7 +81,7 @@ namespace Heart {
 
             }
 
-            hRenderer::hRenderCallDesc*         rcd;
+            hRenderer::hPipelineStateDesc*      rcd;
             hStringID*                          progIDs;
             hShaderProfile*                     progProfiles;
             hRenderer::hProgramReflectionInfo*  reflection;
@@ -91,11 +91,11 @@ namespace Heart {
         static const hUint maxShaderCount = 5;
 
         hPassHashTable                                              passTable_;
-        std::unique_ptr<hRenderer::hRenderCallDesc[]>               rcDescs_;
+        std::unique_ptr<hRenderer::hPipelineStateDesc[]>               rcDescs_;
         std::unique_ptr<hByte[]>                                    defaultParamData_;
         std::vector<hStringID>                                      groupNames_;
         std::vector<hStringID>                                      techniqueNames_;
-        std::vector<hRenderer::hRenderCallDesc::hSamplerStateDesc>  samplerStates_;
+        std::vector<hRenderer::hPipelineStateDesc::hSamplerStateDesc>  samplerStates_;
         std::vector<hMaterialParamValue>                            parameters_;
         hUint                                                       totalPasses_;
         std::unique_ptr<hStringID[]>                                passProgIDs_;
@@ -110,7 +110,7 @@ namespace Heart {
         hStringID                           getGroupName(hUint index) const;
         hUint                               getTechniqueCount(hStringID group) const;
         hStringID                           getTechniqueName(hStringID group, hUint index) const;
-        const hRenderer::hRenderCallDesc&   getPass(hStringID group, hStringID tech, hUint pass);
+        const hRenderer::hPipelineStateDesc&   getPass(hStringID group, hStringID tech, hUint pass);
 
     };
 }

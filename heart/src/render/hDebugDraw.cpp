@@ -648,7 +648,8 @@ namespace Private {
         hTTFFontFace* fontFace;
         hFontRenderCache fontCache;
         hRenderer::hVertexBuffer* dynVtxBuffer;
-        hRenderer::hRenderCall* rc;
+        hRenderer::hPipelineState* pls;
+        hRenderer::hInputState* is;
 
         bool initialise() {
             hRenderer::hVertexBufferLayout lo[] = {
@@ -658,13 +659,13 @@ namespace Private {
             dynVtxBuffer = hRenderer::createVertexBuffer(nullptr, sizeof(hFloat)*7, 3, 0);
 
             auto* debug_font = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/debug_font_shader"));
-            hRenderer::hRenderCallDesc rcd;
+            hRenderer::hPipelineStateDesc rcd;
             rcd.vertex_ = debug_font->getShader(hShaderProfile::ES2_vs);
             rcd.fragment_ = debug_font->getShader(hShaderProfile::ES2_ps);
             rcd.vertexBuffer_ = dynVtxBuffer;
             //rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
             rcd.setVertexBufferLayout(lo, 2);
-            rc = hRenderer::createRenderCall(rcd);
+            //rc = hRenderer::createRenderCall(rcd);
         }
     };
     

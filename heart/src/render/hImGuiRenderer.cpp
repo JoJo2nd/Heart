@@ -5,7 +5,7 @@
 
 #include "base/hTypes.h"
 #include "core/hSystem.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hMipDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
@@ -27,7 +27,8 @@ struct ImGuiCtx {
     hRenderer::hShaderStage* pixel;
     hRenderer::hVertexBuffer* vb;
     hRenderer::hUniformBuffer* ub;
-    hRenderer::hRenderCall* rc;
+    hRenderer::hPipelineState* pls;
+    hRenderer::hInputState* is;
     hRenderer::hTexture2D* fonttex;
     hRenderer::hRenderFence* fences[FENCE_COUNT];
     hUint currentFence;
@@ -96,7 +97,7 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
                 //hRenderer::overrideSampler(slot, sampler);
                 //hRenderer::overrideTexture(slot, texture);
                 hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.y));
-                hRenderer::draw(gfx_cmd_list, imguiCtx.rc, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
+                hRenderer::draw(gfx_cmd_list, imguiCtx.pls, imguiCtx.is, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
             }
             vtx_offset += pcmd->vtx_count;
         }
@@ -145,24 +146,27 @@ hBool ImGuiInit() {
     imguiCtx.currentFence = 0;
 
 
-    hRenderer::hRenderCallDesc rcd;
-    rcd.vertex_ = imguiCtx.vert;
-    rcd.fragment_ = imguiCtx.pixel;
-    rcd.vertexBuffer_ = imguiCtx.vb;
-    rcd.blend_.blendEnable_ = hTrue;
-    rcd.blend_.srcBlend_ = proto::renderstate::BlendSrcAlpha;
-    rcd.blend_.destBlend_ = proto::renderstate::BlendInverseSrcAlpha;
-    rcd.blend_.blendOp_ = proto::renderstate::Add;
-    rcd.blend_.srcBlendAlpha_ = proto::renderstate::BlendInverseSrcAlpha;
-    rcd.blend_.destBlendAlpha_ = proto::renderstate::BlendZero;
-    rcd.blend_.blendOpAlpha_ = proto::renderstate::Add;
-    rcd.rasterizer_.scissorEnable_ = 1;
-    hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
+    hRenderer::hPipelineStateDesc plsd;
+    hRenderer::hInputStateDesc isd;
+    plsd.vertex_ = imguiCtx.vert;
+    plsd.fragment_ = imguiCtx.pixel;
+    plsd.vertexBuffer_ = imguiCtx.vb;
+    plsd.blend_.blendEnable_ = hTrue;
+    plsd.blend_.srcBlend_ = proto::renderstate::BlendSrcAlpha;
+    plsd.blend_.destBlend_ = proto::renderstate::BlendInverseSrcAlpha;
+    plsd.blend_.blendOp_ = proto::renderstate::Add;
+    plsd.blend_.srcBlendAlpha_ = proto::renderstate::BlendInverseSrcAlpha;
+    plsd.blend_.destBlendAlpha_ = proto::renderstate::BlendZero;
+    plsd.blend_.blendOpAlpha_ = proto::renderstate::Add;
+    plsd.rasterizer_.scissorEnable_ = 1;
+    hRenderer::hPipelineStateDesc::hSamplerStateDesc ssd;
     ssd.filter_ = proto::renderstate::linear;
-    rcd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex, hStringID("tSampler"), ssd);
-    rcd.setUniformBuffer(hStringID("ParamBlock"), imguiCtx.ub);
-    rcd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
-    imguiCtx.rc = hRenderer::createRenderCall(rcd);
+    plsd.setSampler(hStringID("tSampler"), ssd);
+    plsd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
+    imguiCtx.pls = hRenderer::createRenderPipelineState(plsd);
+    isd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex);
+    isd.setUniformBuffer(hStringID("ParamBlock"), imguiCtx.ub);
+    imguiCtx.is = hRenderer::createRenderInputState(isd, plsd);
 
     io->RenderDrawListsFn = ImGuiRenderDrawLists;
 

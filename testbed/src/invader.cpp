@@ -15,7 +15,7 @@
 #include "render/hImGuiRenderer.h"
 #include "UnitTestFactory.h"
 #include "Invader.pb.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hTextureResource.h"
 
 using namespace Heart;
@@ -61,14 +61,6 @@ public:
         return hTrue;
     }
 	void createRenderResources() {
-		hRenderer::hRenderCallDesc rcd;
-		// rcd.vertex_ = vert;
-		// rcd.fragment_ = frag;
-		// rcd.vertexBuffer_ = vb;
-		// rcd.setSampler(hStringID("font_sampler"), font_sampler_desc);
-		// rcd.setTextureSlot(hStringID("font_sampler"), t2d);
-		// rcd.setVertexBufferLayout(lo, 2);
-		auto* rc = hRenderer::createRenderCall(rcd);
 	}
 
     struct LoadingData {
@@ -82,43 +74,7 @@ public:
     hTextureResource* spriteTex;
 	hShaderProgram* spriteProgram;
     RenderSprite* lnext, *lprev;
-
-    struct SpriteCall {
-        SpriteCall(hTextureResource* in_texture=nullptr, hRenderer::hRenderCall* in_rc=nullptr)
-            : texture(in_texture), rc(in_rc) {
-            hAtomic::AtomicSet(ref, 0);
-        }
-
-        hTextureResource* texture;
-        hAtomicInt ref;
-        hRenderer::hRenderCall* rc;
-    };
-    static std::vector<SpriteCall> pooledSprites;
-
-    static hRenderer::hRenderCall* getPooledSpriteRenderCall(hTextureResource* texture) {
-        for (auto& i : pooledSprites) {
-            if (i.texture == texture) {
-                hAtomic::Increment(i.ref);
-                return i.rc;
-            }
-        }
-        hRenderer::hRenderCallDesc rcd;
-        // rcd.vertex_ = vert;
-        // rcd.fragment_ = frag;
-        // rcd.vertexBuffer_ = vb;
-        // rcd.setSampler(hStringID("font_sampler"), font_sampler_desc);
-        // rcd.setTextureSlot(hStringID("font_sampler"), t2d);
-        // rcd.setVertexBufferLayout(lo, 2);
-        auto* rc = hRenderer::createRenderCall(rcd);
-        pooledSprites.emplace_back(texture, rc);
-    }
-
-    static void renderSpriteGroup(hRenderer::hCmdList* cl, const RenderSprite* sprites, size_t count) {
-        //for ()
-    }
 };
-
-std::vector<RenderSprite::SpriteCall> RenderSprite::pooledSprites;
 
 size_t g_RenderSpriteCount = 0;
 RenderSprite g_RenderSprites[100];
@@ -221,7 +177,7 @@ public:
         auto* cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(0.f, 0.0627f, 0.345f, 1.f), 1.f);
         if (!g_RenderSpriteFreelist) {
-            RenderSprite::renderSpriteGroup(cl, g_RenderSprites, hArraySize(g_RenderSprites));
+            //RenderSprite::renderSpriteGroup(cl, g_RenderSprites, hArraySize(g_RenderSprites));
         } else {
             auto remain = g_RenderSpriteCount;
             auto* p = g_RenderSprites;
@@ -229,7 +185,7 @@ public:
             do {
                 if (p - i > 0) {
                     remain -= (p - i);
-                    RenderSprite::renderSpriteGroup(cl, p, (p - i));
+                    //RenderSprite::renderSpriteGroup(cl, p, (p - i));
                 }
                 p = i;
                 i = i->lnext;

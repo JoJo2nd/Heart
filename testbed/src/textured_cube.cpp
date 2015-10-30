@@ -7,7 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
@@ -65,7 +65,8 @@ class TexturedCube : public IUnitTest {
     hRenderer::hShaderStage*            frag;
     hRenderer::hVertexBuffer*           vb;
     hRenderer::hIndexBuffer*            ib;
-    hRenderer::hRenderCall*             rc;
+    hRenderer::hPipelineState*          pls;
+    hRenderer::hInputState*             is;
     hRenderer::hUniformBuffer*          ub1;
     hRenderer::hUniformBuffer*          ub2;
     hRenderer::hTexture2D*              t2d;
@@ -171,20 +172,23 @@ public:
         }
         currentFence = 0;
 
-        hRenderer::hRenderCallDesc::hSamplerStateDesc ssd;
+        hRenderer::hPipelineStateDesc::hSamplerStateDesc ssd;
         ssd.filter_ = proto::renderstate::linear;
-        hRenderer::hRenderCallDesc rcd;
+        hRenderer::hPipelineStateDesc rcd;
         rcd.depthStencil_.depthEnable_ = hTrue;
         rcd.rasterizer_.cullMode_ = proto::renderstate::CullClockwise;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.indexBuffer_ = ib;
-        rcd.setUniformBuffer(hStringID("ViewportConstants"), ub1);
-        rcd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
-        rcd.setTextureSlot(hStringID("t_tex2D"), t2d, hStringID("tSampler"), ssd);
+        rcd.setSampler(hStringID("tSampler"), ssd);
         rcd.setVertexBufferLayout(lo, 3);
-        rc = hRenderer::createRenderCall(rcd);
+        pls = hRenderer::createRenderPipelineState(rcd);
+        hRenderer::hInputStateDesc isd;
+        isd.setUniformBuffer(hStringID("ViewportConstants"), ub1);
+        isd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
+        isd.setTextureSlot(hStringID("t_tex2D"), t2d);
+        is = hRenderer::createRenderInputState(isd, rcd);
 
         timer_.reset();
         timer_.setPause(hFalse);
@@ -195,7 +199,8 @@ public:
         SetCanRender(hTrue);
     }
     ~TexturedCube() {
-        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyRenderPipelineState(pls);
+        hRenderer::destroyRenderInputState(is);
         hRenderer::destroyUniformBuffer(ub1);
         hRenderer::destroyUniformBuffer(ub2);
         hRenderer::destroyTexture2D(t2d);
@@ -260,7 +265,7 @@ public:
         hRenderer::flushUnibufferMemoryRange(cl, ub1, (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
         hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 12, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;

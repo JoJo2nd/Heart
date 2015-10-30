@@ -24,7 +24,7 @@ namespace hRenderer {
 
     // !!JM TODO - Make this a Abstract Binary Interface. Plug-ins use it and will break when this is changed.
     // Use of Proto buffer enums currently prevents this.
-    struct hRenderCallDescBase {
+    struct hPipelineStateDescBase {
         struct hBlendStateDesc {
             hBlendStateDesc() {
                 blendEnable_           = hFalse;
@@ -121,21 +121,19 @@ namespace hRenderer {
             hFloat                            maxLOD_;
         };
 
-        hRenderCallDescBase();
+        hPipelineStateDescBase();
         void clearDescription();
+        /*
         void setTextureSlot(hStringID tex_name, hTexture1D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
         void setTextureSlot(hStringID tex_name, hTexture2D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
         void setTextureSlot(hStringID tex_name, hTexture3D* t, hStringID sampler_name, const hSamplerStateDesc& ssd);
         void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
+        */
+        void setSampler(hStringID name, const hSamplerStateDesc& ssd);
         void setVertexBufferLayout(hVertexBufferLayout* layout, hUint count);
-
-        // Helper functions
-        virtual bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const = 0;
 
         static const hUint      vertexLayoutMax_  = 16;
         static const hUint      samplerStateMax_  = 16;
-        static const hUint      uniformBufferMax_ = 32;
-        static const hUint      textureSlotMax_   = 32;
         
         struct {
             hStringID           name_;
@@ -143,6 +141,7 @@ namespace hRenderer {
         } samplerStates_[samplerStateMax_];
         hUint                   vertexLayoutCount;
         hVertexBufferLayout     vertexLayout_[vertexLayoutMax_];
+        /*
         struct {
             hStringID   name_;
             union {
@@ -156,6 +155,7 @@ namespace hRenderer {
             hStringID name_;
             const hUniformBuffer* ub_;
         } uniformBuffers_[uniformBufferMax_];
+        */
         hBlendStateDesc         blend_;
         hDepthStencilStateDesc  depthStencil_;
         hRasterizerStateDesc    rasterizer_;
@@ -163,12 +163,41 @@ namespace hRenderer {
         hVertexBuffer*          vertexBuffer_;
         hShaderStage*           vertex_;
         hShaderStage*           fragment_;
-
-    private:
-        void setSampler(hStringID name, const hSamplerStateDesc& ssd);
     };
 
-    struct hRenderCallDesc : public hRenderCallDescBase {
+    struct hPipelineStateDesc : public hPipelineStateDescBase {
+    };
+
+    struct hInputStateDescBase {
+
+        static const hUint      uniformBufferMax_ = 32;
+        static const hUint      textureSlotMax_ = 32;
+
+        hInputStateDescBase();
+        void clearDescription();
+        void setTextureSlot(hStringID tex_name, hTexture1D* t);
+        void setTextureSlot(hStringID tex_name, hTexture2D* t);
+        void setTextureSlot(hStringID tex_name, hTexture3D* t);
+        void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
+
+        struct {
+            hStringID   name_;
+            union {
+                hTexture1D* t1D_;
+                hTexture2D* t2D_;
+                hTexture3D* t3D_;
+            };
+            hUint8 texType_; // 1, 2 or 3
+        } textureSlots_[textureSlotMax_];
+        struct {
+            hStringID name_;
+            const hUniformBuffer* ub_;
+        } uniformBuffers_[uniformBufferMax_];
+
+        virtual bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const = 0;
+    };
+
+    struct hInputStateDesc :  public hInputStateDescBase {
         bool findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* size, ShaderParamType* outtype) const override;
     };
 } 

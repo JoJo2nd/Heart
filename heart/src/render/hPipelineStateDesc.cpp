@@ -3,7 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "base/hMemoryUtil.h"
 #include "base/hStringUtil.h"
 #include "render/hRenderer.h"
@@ -12,24 +12,16 @@
 namespace Heart {
 namespace hRenderer {
 
-hRenderCallDescBase::hRenderCallDescBase() {
+hPipelineStateDescBase::hPipelineStateDescBase() {
     clearDescription();
 }
 
-void hRenderCallDescBase::clearDescription() {
+void hPipelineStateDescBase::clearDescription() {
     for (auto& s : samplerStates_) {
         s.name_ = hStringID();
         s.sampler_ = hSamplerStateDesc();
     }
     hZeroMem(vertexLayout_, sizeof(vertexLayout_));
-    for (auto& t : textureSlots_) {
-        t.name_ = hStringID();
-        t.t1D_ = nullptr;
-        t.texType_ = 0;
-    }
-    for (auto& u : uniformBuffers_) {
-        u.name_ = hStringID();
-    }
     for (auto& v : vertexLayout_) {
         v.bindPoint_ = hStringID();
     }
@@ -42,7 +34,7 @@ void hRenderCallDescBase::clearDescription() {
     fragment_ = nullptr;
 }
 
-void hRenderCallDescBase::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
+void hPipelineStateDescBase::setSampler(hStringID name, const hSamplerStateDesc& ssd) {
     for (auto& s : samplerStates_) {
         if (s.name_==name) {
             s.sampler_=ssd;
@@ -57,90 +49,107 @@ void hRenderCallDescBase::setSampler(hStringID name, const hSamplerStateDesc& ss
     hcAssertFailMsg("Too many sampler states");
 }
 
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture1D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
-    setSampler(name2, ssd);
-    for (auto& t : textureSlots_) {
-        if (t.name_==name) {
-            t.t1D_=tex;
-            t.texType_ = 1;
-            return;
-        } else if (t.name_.is_default()) {
-            t.name_=name;
-            t.t1D_=tex;
-            t.texType_ = 1;
-            return;
-        }
-    }
-
-    hcAssertFailMsg("Too many textures bound");
-}
-
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture2D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
-    setSampler(name2, ssd);
-    for (auto& t : textureSlots_) {
-        if (t.name_==name) {
-            t.t2D_=tex;
-            t.texType_ = 2;
-            return;
-        } else if (t.name_.is_default()) {
-            t.name_=name;
-            t.t2D_=tex;
-            t.texType_ = 2;
-            return;
-        }
-    }
-
-    hcAssertFailMsg("Too many textures bound");
-}
-
-void hRenderCallDescBase::setTextureSlot(hStringID name, hTexture3D* tex, hStringID name2, const hSamplerStateDesc& ssd) {
-    setSampler(name2, ssd);
-    for (auto& t : textureSlots_) {
-        if (t.name_==name) {
-            t.t3D_=tex;
-            t.texType_ = 3;
-            return;
-        } else if (t.name_.is_default()) {
-            t.name_=name;
-            t.t3D_=tex;
-            t.texType_ = 3;
-            return;
-        }
-    }
-
-    hcAssertFailMsg("Too many textures bound");
-}
-
-void hRenderCallDescBase::setUniformBuffer(hStringID name, const hUniformBuffer* ub) {
-    for (auto& t : uniformBuffers_) {
-        if (t.name_==name) {
-            t.ub_=ub;
-            return;
-        } else if (t.name_.is_default()) {
-            t.name_=name;
-            t.ub_=ub;
-            return;
-        }
-    }
-}
-
-void hRenderCallDescBase::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
+void hPipelineStateDescBase::setVertexBufferLayout(hVertexBufferLayout* layout, hUint count) {
     hcAssert(count < vertexLayoutMax_);
     vertexLayoutCount = count;
     hMemCpy(vertexLayout_, layout, count*sizeof(hVertexBufferLayout));
 }
 
-bool hRenderCallDesc::findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* outsize, ShaderParamType* outtype) const {
+hInputStateDescBase::hInputStateDescBase() {
+    clearDescription();
+}
+
+void hInputStateDescBase::clearDescription() {
+    for (auto& t : textureSlots_) {
+        t.name_ = hStringID();
+        t.t1D_ = nullptr;
+        t.texType_ = 0;
+    }
+    for (auto& u : uniformBuffers_) {
+        u.name_ = hStringID();
+    }
+}
+
+void hInputStateDescBase::setTextureSlot(hStringID name, hTexture1D* tex) {
+    for (auto& t : textureSlots_) {
+        if (t.name_ == name) {
+            t.t1D_ = tex;
+            t.texType_ = 1;
+            return;
+        }
+        else if (t.name_.is_default()) {
+            t.name_ = name;
+            t.t1D_ = tex;
+            t.texType_ = 1;
+            return;
+        }
+    }
+
+    hcAssertFailMsg("Too many textures bound");
+}
+
+void hInputStateDescBase::setTextureSlot(hStringID name, hTexture2D* tex) {
+    for (auto& t : textureSlots_) {
+        if (t.name_ == name) {
+            t.t2D_ = tex;
+            t.texType_ = 2;
+            return;
+        }
+        else if (t.name_.is_default()) {
+            t.name_ = name;
+            t.t2D_ = tex;
+            t.texType_ = 2;
+            return;
+        }
+    }
+
+    hcAssertFailMsg("Too many textures bound");
+}
+
+void hInputStateDescBase::setTextureSlot(hStringID name, hTexture3D* tex) {
+    for (auto& t : textureSlots_) {
+        if (t.name_ == name) {
+            t.t3D_ = tex;
+            t.texType_ = 3;
+            return;
+        }
+        else if (t.name_.is_default()) {
+            t.name_ = name;
+            t.t3D_ = tex;
+            t.texType_ = 3;
+            return;
+        }
+    }
+
+    hcAssertFailMsg("Too many textures bound");
+}
+
+void hInputStateDescBase::setUniformBuffer(hStringID name, const hUniformBuffer* ub) {
+    for (auto& t : uniformBuffers_) {
+        if (t.name_ == name) {
+            t.ub_ = ub;
+            return;
+        }
+        else if (t.name_.is_default()) {
+            t.name_ = name;
+            t.ub_ = ub;
+            return;
+        }
+    }
+}
+
+bool hInputStateDesc::findNamedParameter(const hChar* pname, hUint* outindex, hUint* outoffset, hUint* outsize, ShaderParamType* outtype) const {
     const hChar* fieldname = hStrChr(pname, '.');
     if (fieldname) {
         ++fieldname;
-    } else {
+    }
+    else {
         fieldname = pname;
     }
-    for (hUint i=0, n=uniformBufferMax_; i<n && !uniformBuffers_[i].name_.is_default(); ++i) {
+    for (hUint i = 0, n = uniformBufferMax_; i < n && !uniformBuffers_[i].name_.is_default(); ++i) {
         hUint count;
         auto* layout = hRenderer::getUniformBufferLayoutInfo(uniformBuffers_[i].ub_, &count);
-        for (hUint loi=0, lon=count; loi < lon; ++loi) {
+        for (hUint loi = 0, lon = count; loi < lon; ++loi) {
             if (hStrCmp(layout[loi].fieldName, fieldname) == 0) {
                 *outindex = i;
                 *outoffset = layout[loi].dataOffset;

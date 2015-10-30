@@ -7,7 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
@@ -35,7 +35,8 @@ class MovingTri : public IUnitTest {
     hRenderer::hShaderStage*			frag;
 	//hRenderer::hProgramReflectionInfo*	refInfo;
     hRenderer::hVertexBuffer*			vb;
-    hRenderer::hRenderCall*				rc;
+    hRenderer::hPipelineState*		    pls;
+    hRenderer::hInputState*             is;
 	hRenderer::hUniformBuffer*			ub;
 
 	static const hUint FENCE_COUNT = 3;
@@ -77,13 +78,15 @@ public:
 		currentFence = 0;
 
 
-        hRenderer::hRenderCallDesc rcd;
+        hRenderer::hPipelineStateDesc rcd;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
-		rcd.setUniformBuffer(hStringID("TimerBlock"), ub);
         rcd.setVertexBufferLayout(lo, 2);
-        rc = hRenderer::createRenderCall(rcd);
+        pls = hRenderer::createRenderPipelineState(rcd);
+        hRenderer::hInputStateDesc isd;
+        isd.setUniformBuffer(hStringID("TimerBlock"), ub);
+        is = hRenderer::createRenderInputState(isd, rcd);
 
 		timer_.reset();
 		timer_.setPause(hFalse);
@@ -91,7 +94,8 @@ public:
         SetCanRender(hTrue);
     }
     ~MovingTri() {
-        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyRenderPipelineState(pls);
+        hRenderer::destroyRenderInputState(is);
         hRenderer::destroyUniformBuffer(ub);
         //hRenderer::destroyProgramReflectionInfo(refInfo);
         hRenderer::destroyVertexBuffer(vb);
@@ -120,7 +124,7 @@ public:
         auto* ubdata = (TimerBlock*) (((hByte*)hRenderer::getMappingPtr(ub)) + (currentFence*paramBlockSize));
         ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
         hRenderer::flushUnibufferMemoryRange(cl, ub, (currentFence*paramBlockSize), paramBlockSize);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
+        hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 1, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;

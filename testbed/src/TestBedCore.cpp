@@ -52,11 +52,11 @@
         factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
+        REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, MovingTriCPU);
         REGISTER_UNIT_TEST(*factory_, MovingTri);
         REGISTER_UNIT_TEST(*factory_, RenderTarget);
-        REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
         REGISTER_UNIT_TEST(*factory_, TexturedCube);
 
         auto ts = factory_->getTestCount();

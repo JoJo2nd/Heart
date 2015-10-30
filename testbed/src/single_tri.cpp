@@ -7,7 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
-#include "render/hRenderCallDesc.h"
+#include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"
 #include "render/hRenderPrim.h"
@@ -51,7 +51,7 @@ class SingleTri : public IUnitTest {
     hRenderer::hShaderStage*   vert;
     hRenderer::hShaderStage*   frag;
     hRenderer::hVertexBuffer*  vb;
-    hRenderer::hRenderCall*    rc;
+    hRenderer::hPipelineState* pls;
     hRenderer::hCmdList*       cl;
 
 public:
@@ -78,17 +78,17 @@ public:
         frag = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
         vb   = hRenderer::createVertexBuffer(verts, sizeof(Vtx), 3, 0);
 
-        hRenderer::hRenderCallDesc rcd;
+        hRenderer::hPipelineStateDesc rcd;
         rcd.vertex_ = vert;
         rcd.fragment_ = frag;
         rcd.vertexBuffer_ = vb;
         rcd.setVertexBufferLayout(lo, hStaticArraySize(lo));
-        rc = hRenderer::createRenderCall(rcd);
+        pls = hRenderer::createRenderPipelineState(rcd);
 
         SetCanRender(hTrue);
     }
     ~SingleTri() {
-        hRenderer::destroyRenderCall(rc);
+        hRenderer::destroyRenderPipelineState(pls);
         hRenderer::destroyVertexBuffer(vb);
     }
 
@@ -104,7 +104,7 @@ public:
     Heart::hRenderer::hCmdList* RenderUnitTest() override {
         cl = hRenderer::createCmdList();
         hRenderer::clear(cl, hColour(1.f, 0.f, 1.f, 1.f), 1.f);
-        hRenderer::draw(cl, rc, hRenderer::Primative::Triangles, 1, 0);
+        hRenderer::draw(cl, pls, nullptr, hRenderer::Primative::Triangles, 1, 0);
         return cl;
         //hRenderer::swapBuffers(cl);
         //hRenderer::submitFrame(cl);

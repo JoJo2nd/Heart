@@ -34,10 +34,12 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(const hUniformLayoutDesc*, getUniformBufferLayoutInfo)(const hUniformBuffer* ub, hUint* out_count) = nullptr;
     HEART_MODULE_API_ENTRY(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyUniformBuffer)(hUniformBuffer* ub) = nullptr;
-    HEART_MODULE_API_ENTRY(hRenderCall*, createRenderCall)(const hRenderCallDescBase& rcd) = nullptr;
+    HEART_MODULE_API_ENTRY(hPipelineState*, createRenderPipelineState)(const hPipelineStateDescBase& plsd) = nullptr;
+    HEART_MODULE_API_ENTRY(void, destroyRenderPipelineState)(hPipelineState* pls) = nullptr;
+    HEART_MODULE_API_ENTRY(hInputState*, createRenderInputState)(const hInputStateDescBase& isd, const hPipelineStateDescBase& plsd) = nullptr;
+    HEART_MODULE_API_ENTRY(void, destroyRenderInputState)(hInputState* is) = nullptr;
     HEART_MODULE_API_ENTRY(hRenderTarget*, createRenderTarget)(hTexture2D* target, hUint mip) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyRenderTarget)(hRenderTarget*) = nullptr;
-    HEART_MODULE_API_ENTRY(void, destroyRenderCall)(hRenderCall* rc) = nullptr;
     HEART_MODULE_API_ENTRY(void*, allocTempRenderMemory)( hUint32 size ) = nullptr;
     HEART_MODULE_API_ENTRY(hCmdList*, createCmdList)() = nullptr;
     HEART_MODULE_API_ENTRY(void, linkCmdLists)(hCmdList* before, hCmdList* after, hCmdList* i) = nullptr;
@@ -47,7 +49,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) = nullptr;
     HEART_MODULE_API_ENTRY(void, setRenderTargets)(hCmdList* cl, hRenderTarget** targets, hUint count) = nullptr;
     HEART_MODULE_API_ENTRY(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) = nullptr;
-    HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hRenderCall* rc, Primative t, hUint prims, hUint vtx_offset) = nullptr;
+    HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(hRenderFence*, fence)(hCmdList* cl) = nullptr;
@@ -91,8 +93,10 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "getUniformBufferLayoutInfo", hRenderer::getUniformBufferLayoutInfo) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "getUniformBufferMappingPtr", hRenderer::getUniformBufferMappingPtr) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "destroyUniformBuffer", hRenderer::destroyUniformBuffer) != nullptr;
-        success &= hSysCall::getFunctionAddress(lib, "createRenderCall", hRenderer::createRenderCall) != nullptr;
-        success &= hSysCall::getFunctionAddress(lib, "destroyRenderCall", hRenderer::destroyRenderCall) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createRenderPipelineState", hRenderer::createRenderPipelineState) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyRenderPipelineState", hRenderer::destroyRenderPipelineState) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createRenderInputState", hRenderer::createRenderInputState) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyRenderInputState", hRenderer::destroyRenderInputState) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "createRenderTarget", hRenderer::createRenderTarget) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "destroyRenderTarget", hRenderer::destroyRenderTarget) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "allocTempRenderMemory", hRenderer::allocTempRenderMemory) != nullptr;
