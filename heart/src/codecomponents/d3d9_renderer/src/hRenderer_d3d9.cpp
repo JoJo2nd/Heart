@@ -1350,9 +1350,9 @@ namespace d3d9 {
             + (float_param_update_count*sizeof(hInputState::ParamUpdate))
             + (uniform_buffer_count*sizeof(void*));
 
-        auto* ptr = (hByte*)hMalloc(is_call_size*16);
+        auto* ptr = (hByte*)hMalloc(is_call_size);
         auto* rc = new (ptr) hInputState();
-        rc->textureInputs = (hInputState::TextureInput*)(ptr + sizeof(hPipelineState));
+        rc->textureInputs = (hInputState::TextureInput*)(ptr + sizeof(hInputState));
         rc->textureCount = sampler_count;
         rc->uniBuffers = (const hUniformBuffer**)(ptr+(sizeof(hInputState)+(sampler_count*sizeof(hInputState::TextureInput))));
         rc->uniBufferCount = uniform_buffer_count;

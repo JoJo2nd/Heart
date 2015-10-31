@@ -22,28 +22,6 @@ class hHeartEngine;
 
 using namespace Heart;
 
-const hChar vertSrc[] = 
-"\
-#version 330\n\
-layout(location=0) in vec3 in_position;\n\
-layout(location=1) in vec4 in_colour;\n\
-out vec4 inout_colour;\n\
-void main() {\n\
-    inout_colour = /*vec4(0, 1, 0, 1);*/in_colour;\n\
-    gl_Position.xyz = in_position.xyz;\n\
-    gl_Position.w = 1;\n\
-}\n\
-";
-const hChar fragSrc[] = 
-"\
-#version 330\n\
-in vec4 inout_colour;\n\
-out vec4 fragColour;\n\
-void main() {\n\
-    fragColour = inout_colour;\n\
-}\n\
-";
-
 class SingleTri : public IUnitTest {
     
     hTimer                     timer_;

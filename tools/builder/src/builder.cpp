@@ -249,6 +249,18 @@ struct Builder {
     }
 };
 
+static std::vector<std::string> findResourcesMatchingWildcard(const Builder* builder_ctx, const char* current_dir, const char* wildcard_path) {
+    std::vector<std::string> found_paths;
+    char full_wildcard[BUILDER_MAX_PATH];
+    minfs_path_join(current_dir, wildcard_path, full_wildcard, BUILDER_MAX_PATH);
+    for (const auto& i : builder_ctx->resourceLookup) {
+        if (Heart::hStrWildcardMatch(full_wildcard, i.first.c_str())) {
+            found_paths.push_back(i.first);
+        }
+    }
+    return found_paths;
+}
+
 static std::shared_ptr<Heart::builder::InputParameter> getInputParameter(lua_State* L, const char* parameter_name, int idx) {
     std::shared_ptr<Heart::builder::InputParameter> input_param(new Heart::builder::InputParameter);
     input_param->set_name(parameter_name);
@@ -341,11 +353,11 @@ try {
 			luaL_errorthrow(L, "bad argument %d: string expected, got %s", i, luaL_typename(L, i));
 		}
 		const char* resource_wildcard = lua_tostring(L, i);
-		auto foundFiles = findFilesMatchingWildcard(b->currentDirectory.top().c_str(), b->currentResourceDirectory.top().c_str(), resource_wildcard);
+		auto foundFiles = findResourcesMatchingWildcard(b, b->currentResourceDirectory.top().c_str(), resource_wildcard);
         auto& pkg_list =  b->packageContents[package_name];
         for (const auto& rid : foundFiles){
             // Constanst lookup Perf issue?
-            pkg_list.push_back(rid.second);
+            pkg_list.push_back(rid);
         }
 	}
 	lua_pop(L, 1);
@@ -370,6 +382,10 @@ int add_files(lua_State* L) {
     Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
     const char* wildcard_path = luaL_checkstring(L, 1);
     const char* resource_name = luaL_checkstring(L, 2);
+    const char* resource_postfix = nullptr;
+    if (lua_isstring(L, 4)) {
+        resource_postfix = lua_tostring(L, 4);
+    }
 try {
     char scratch[BUILDER_MAX_PATH];
     char canoncal_path[BUILDER_MAX_PATH];
@@ -391,6 +407,9 @@ try {
             minfs_path_join(b->currentResourceDirectory.top().c_str(), wildcard_parent, resource_id, BUILDER_MAX_PATH);
             minfs_path_join(resource_id, file, tmp_path, BUILDER_MAX_PATH);
             minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+            if (resource_postfix) {
+                strncat(resource_id, resource_postfix, BUILDER_MAX_PATH);
+            }
             std::shared_ptr<Heart::builder::Input> new_input(new Heart::builder::Input());
             new_input->set_resourceinputpath(resource_path);
             new_input->set_resourcetype(resource_name);

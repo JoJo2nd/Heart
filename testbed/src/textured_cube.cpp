@@ -56,9 +56,25 @@ static hRenderer::hUniformLayoutDesc InstanceConstants_layout[] = {
     {"g_World", hRenderer::ShaderParamType::Float44, 0},
 };
 
+static const char* test_texture_names[] = {
+    "/system/default_tex_rgba",
+    "/system/default_tex_bc1",
+    "/system/default_tex_bc1a",
+    "/system/default_tex_bc3",
+    "/system/default_tex_bc3n",
+    "/textures/test_tile_set_bc1",
+    "/textures/test_tile_set_alpha_bc1a",
+    "/textures/test_tile_set_alpha_bc3",
+};
 
 class TexturedCube : public IUnitTest {
     
+    struct TextureFormat {
+        const hChar* name;
+        hRenderer::hTexture2D* t;
+        hRenderer::hInputState* is;
+    };
+
     hTimer                              timer_;
     hShaderProgram*                     shaderProg;
     hRenderer::hShaderStage*            vert;
@@ -66,7 +82,6 @@ class TexturedCube : public IUnitTest {
     hRenderer::hVertexBuffer*           vb;
     hRenderer::hIndexBuffer*            ib;
     hRenderer::hPipelineState*          pls;
-    hRenderer::hInputState*             is;
     hRenderer::hUniformBuffer*          ub1;
     hRenderer::hUniformBuffer*          ub2;
     hRenderer::hTexture2D*              t2d;
@@ -77,8 +92,11 @@ class TexturedCube : public IUnitTest {
     hRenderer::hRenderFence*            fences[FENCE_COUNT];
     hUint                               currentFence;
 
+    std::vector< TextureFormat >        testTextures;
     hVec3 camPos;
     hFloat rotationSpeed;
+    hFloat cubeRotation;
+    hInt currentTex;
 
 public:
     TexturedCube( Heart::hHeartEngine* engine ) 
@@ -162,8 +180,6 @@ public:
         frag = shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
         vb = hRenderer::createVertexBuffer(cube_verts, sizeof(Vtx), hStaticArraySize(cube_verts), 0);
         ib = hRenderer::createIndexBuffer(cube_indices, hStaticArraySize(cube_indices), 0);
-        t2d = hResourceManager::weakResource<hTextureResource>(hStringID("/textures/test_tile_set_bc1"))->getTexture2D();
-
 
         ub1 = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
         ub2 = hRenderer::createUniformBuffer(nullptr, InstanceConstants_layout, (hUint)hStaticArraySize(InstanceConstants_layout), (hUint)sizeof(InstanceConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
@@ -187,20 +203,31 @@ public:
         hRenderer::hInputStateDesc isd;
         isd.setUniformBuffer(hStringID("ViewportConstants"), ub1);
         isd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
-        isd.setTextureSlot(hStringID("t_tex2D"), t2d);
-        is = hRenderer::createRenderInputState(isd, rcd);
+        
+
+        testTextures.resize(hStaticArraySize(test_texture_names));
+        for (hSize_t i = 0, n = hStaticArraySize(test_texture_names); i < n; ++i) {
+            testTextures[i].name = test_texture_names[i];
+            testTextures[i].t = hResourceManager::weakResource<hTextureResource>(hStringID(test_texture_names[i]))->getTexture2D();
+            isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
+            testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
+        }
 
         timer_.reset();
         timer_.setPause(hFalse);
 
         camPos = hVec3(0.f, 0.f, 3.f);
         rotationSpeed = 1.f;
+        cubeRotation = 0.f;
+        currentTex = 0;
 
         SetCanRender(hTrue);
     }
     ~TexturedCube() {
         hRenderer::destroyRenderPipelineState(pls);
-        hRenderer::destroyRenderInputState(is);
+        for (const auto& i : testTextures) {
+            hRenderer::destroyRenderInputState(i.is);
+        }
         hRenderer::destroyUniformBuffer(ub1);
         hRenderer::destroyUniformBuffer(ub2);
         hRenderer::destroyTexture2D(t2d);
@@ -214,9 +241,20 @@ public:
 
     virtual hUint32 RunUnitTest() override {
 
-        if (timer_.elapsedMilliSec() > 10*1000 || getForceExitFlag()) {
-            SetExitCode(UNIT_TEST_EXIT_CODE_OK);
-        }
+        hFloat p[3] = { camPos.getX(), camPos.getY(), camPos.getZ() };
+        //ImGui::SetNextWindowPos(ImVec2(10, 200));
+        ImGui::Begin("Textured Cube View", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_ShowBorders);
+        ImGui::Text("View Settings");
+        ImGui::Separator();
+        ImGui::SliderFloat("Camera X", p, -5, 5);
+        ImGui::SliderFloat("Camera Y", p + 1, -5, 5);
+        ImGui::SliderFloat("Camera Z", p + 2, 0, 25);
+        ImGui::Separator();
+        ImGui::SliderFloat("Cube Rotation Factor", &rotationSpeed, 0, 10);
+        ImGui::Separator();
+        ImGui::Combo("", &currentTex, test_texture_names, hStaticArraySize(test_texture_names));
+        ImGui::End();
+        camPos = hVec3(p[0], p[1], p[2]);
 
         return 0;
     }
@@ -228,25 +266,17 @@ public:
             fences[currentFence] = nullptr;
         }
 
-        hFloat p[3] = {camPos.getX(), camPos.getY(), camPos.getZ()};
-        ImGui::SetNextWindowPos(ImVec2(10, 200));
-        ImGui::Begin("Textured Cube View", nullptr, ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_ShowBorders);
-        ImGui::Text("View Settings");
-        ImGui::Separator();
-        ImGui::SliderFloat("Camera X", p  , -5, 5);
-        ImGui::SliderFloat("Camera Y", p+1, -5, 5);
-        ImGui::SliderFloat("Camera Z", p+2, 0, 25);
-        ImGui::Separator();
-        ImGui::SliderFloat("Cube Rotation Factor", &rotationSpeed, 0, 10);
-        ImGui::End();
-
-        camPos = hVec3(p[0], p[1], p[2]);
         hMatrix v = hMatrix::lookAt((hPoint3)camPos, camPos+hPoint3(0.f, 0.f, -1.f), hVec3(0.f, 1.f, 0.f));
         hMatrix p1 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 1280.f/720.f, 0.01f, 100.f);
         hMatrix p2 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 512.f/512.f, 0.01f, 100.f);
         hMatrix w = hMatrix::identity();
-        hFloat r = timer_.elapsedMilliSec()/2000.f;
-        w = hMatrix::rotationZYX(hVec3(0, r*rotationSpeed, 0));
+        hFloat r = timer_.elapsedMilliSec()/1000.f;
+        cubeRotation += r*rotationSpeed;
+        w = hMatrix::rotationZYX(hVec3(0, cubeRotation, 0));
+        if (cubeRotation > 6.2831f) {
+            cubeRotation -= 6.2831f;
+        }
+        timer_.reset();
 
         auto* ub1data1 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1)) + (currentFence*sizeof(ViewportConstants)));
         auto* ub2data = (InstanceConstants*) (((hByte*)hRenderer::getMappingPtr(ub2)) + (currentFence*sizeof(InstanceConstants)));
@@ -265,7 +295,7 @@ public:
         hRenderer::flushUnibufferMemoryRange(cl, ub1, (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
         hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::draw(cl, pls, testTextures[currentTex].is, hRenderer::Primative::Triangles, 12, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;
