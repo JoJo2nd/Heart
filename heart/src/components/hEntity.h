@@ -14,6 +14,11 @@ namespace hEntityFactory {
     struct hComponentMgt;
 }
 
+    struct hComponentDefinition {
+        const hObjectDefinition* typeDefintion;
+        hObjectMarshall* marshall;
+    };
+
     class hEntityDef {
     public:
         hObjectType(hEntityDef, Heart::proto::EntityDef);

@@ -462,7 +462,7 @@ add_subdirectory("resourceloaders/textureloader")
 add_subdirectory("resourceloaders/materialloader")
 add_subdirectory("resourceloaders/meshloader")
 add_subdirectory("resourceloaders/fontloader")
-add_subdirectory("resourceloaders/entitydefloader")
+add_subdirectory("resourceloaders/levelloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

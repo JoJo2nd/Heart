@@ -7,3 +7,14 @@ message EntityDef {
 	optional bool canSerialise = 2;
 	repeated MessageContainer components = 3;
 }
+
+message EntityDefinition {
+	optional string objectGUID = 1;
+	optional bool transient = 2;
+	repeated MessageContainer components = 3;
+}
+
+message LevelDefinition {
+	optional string levelName = 1;
+	repeated EntityDefinition entities = 2;
+}

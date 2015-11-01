@@ -15,6 +15,7 @@ class hEntityContext;
 class hEntityComponent;
 class hEntityComponentHandle;
 struct hObjectDefinition;
+struct hComponentDefinition;
 
 namespace hEntityFactory {
 
@@ -41,8 +42,7 @@ void unregisterComponentManagement(const hObjectDefinition* object_def);
 Heart::hEntityDef* getEntityDefinition(hStringID definition_name);
 void unregisterEntityDefinition(hStringID definition_name);
 hEntityContext* createEntityContext(const hChar* context_name, hEntityCreateDesc* entity_defs, hSize_t entity_def_count);
-void destroyEntityContext(hEntityContext* ctx);
-hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDef* entity_def);
+hUuid_t createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t component_def_count);
 void destroyEntity(hUuid_t entity_id);
 hEntity* findEntity(hUuid_t entity_id);
 

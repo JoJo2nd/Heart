@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 
     while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
         switch (c) {
-        case 'z': fprintf(stdout, "heart entity definition builder v0.8.0"); exit(0);
+        case 'z': fprintf(stdout, "heart level script builder v0.8.0"); exit(0);
         case 'v': verbose = 1; break;
         case 'i': {
             std::ifstream input_file_stream;
@@ -89,6 +89,10 @@ int main(int argc, char* argv[]) {
         input_pb.ParseFromZeroCopyStream(&input_stream);
     }
 
+    const char* script_path = input_pb.resourceinputpath().c_str();
+    char path_root[260];
+    minfs_path_parent(script_path, path_root, 260);
+
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
     luaopen_proto_lua(L);
@@ -96,15 +100,22 @@ int main(int argc, char* argv[]) {
     lua_pushcclosure(L, lua_import_resource, 0);
     lua_setglobal(L, "import");
 
+    lua_getglobal(L, "package");
+    lua_getfield(L, -1, "path");
+    std::string path = lua_tostring(L, -1);
+    path += ";";
+    path += path_root;
+    path += "\\?.lua";
+    lua_pop(L, 1);
+    lua_pushstring(L, path.c_str());
+    lua_setfield(L, -2, "path");
+    lua_pop(L, 1);
 
-    const char* script_path=input_pb.resourceinputpath().c_str();
+
     if (luaL_dofile(L, script_path)) {
         std::string errstr = lua_tostring(L, -1);
-        fatal_error("Error in Entity Def script \"%s\": \"%s\"", script_path, errstr.c_str());
+        fatal_error("Error in Level Definition script \"%s\": \"%s\"", script_path, errstr.c_str());
     }
-
-    //dofile should have returned a object to store
-    fatal_error_check(lua_istable(L, -1), "Entity Definition script did not return an object definition table");
 
     //copy-paste nasty until I fix protobuf-lua
     struct msg_udata {
@@ -114,39 +125,49 @@ int main(int argc, char* argv[]) {
         void * callback_data;
     };
 
-    Heart::proto::EntityDef entity_def;
+    Heart::proto::LevelDefinition level_script;
     //get name, 
-    lua_getfield(L, -1, "objectname");
+    lua_getglobal(L, "levelName");
     fatal_error_check(lua_isstring(L, -1), "object definition table field \"objectname\" is not a string");
 
-    entity_def.set_entryname(lua_tostring(L, -1));
+    level_script.set_levelname(lua_tostring(L, -1));
     lua_pop(L, 1);
 
-    lua_getfield(L, -1, "canserialise");
-    fatal_error_check(lua_isboolean(L, -1) || lua_isnil(L, -1), "object definition table field \"canserialise\" is not a boolean");
-    if (lua_isnil(L, -1)) {
-        entity_def.set_canserialise(false);
-    } else {
-        entity_def.set_canserialise(!!lua_toboolean(L, -1));
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, -1, "components");
+    lua_getglobal(L, "entities");
     fatal_error_check(lua_istable(L, -1), "object definition table field \"components\" is not a table");
 
     int i = 0;
     lua_pushnil(L);
     while (lua_next(L, -2) != 0) {
         /* uses 'key' (at index -2) and 'value' (at index -1) */
-        ///if (lua_getmetatable(L, -1)) {  /* does it have a metatable? */
-        ///    if (!lua_rawequal(L, -1, -2))  /* not the same? */
-        // This is !!REALLY BAD!! I need to fix this by storing all protobuf objects metatables into
-        // a table within the REGISTRY and grabbing the object metatable to check if exists as a key in that table.
-        // ONLY then would the following lines be safe. Currently, we need to script to be sane...
-        msg_udata* p = (msg_udata*)lua_touserdata(L, -1);
-        auto* msgContainer = entity_def.add_components();
-        msgContainer->set_type_name(p->msg->GetTypeName());
-        msgContainer->set_messagedata(p->msg->SerializeAsString());
+        Heart::proto::EntityDefinition* entity = level_script.add_entities();
+        fatal_error_check(lua_isstring(L, -2), "entities table keys must be GUID strings.");
+        entity->set_objectguid(lua_tostring(L, -2));
+        // transient flag
+        lua_getfield(L, -1, "transient");
+        entity->set_transient(!lua_isnil(L, -1) ? !!lua_toboolean(L, -1) : false);
+        lua_pop(L, 1);
+        // grab the object components
+        lua_getfield(L, -1, "components");
+        fatal_error_check(lua_istable(L, -2), "entities table entry is missing components table.");
+        int j = 0;
+        lua_pushnil(L);
+        while (lua_next(L, -2) != 0) {
+            ///if (lua_getmetatable(L, -1)) {  /* does it have a metatable? */
+            ///    if (!lua_rawequal(L, -1, -2))  /* not the same? */
+            // This is !!REALLY BAD!! I need to fix this by storing all protobuf objects metatables into
+            // a table within the REGISTRY and grabbing the object metatable to check if exists as a key in that table.
+            // ONLY then would the following lines be safe. Currently, we need to script to be sane...
+            msg_udata* p = (msg_udata*)lua_touserdata(L, -1);
+            auto* msgContainer = entity->add_components();
+            msgContainer->set_type_name(p->msg->GetTypeName());
+            msgContainer->set_messagedata(p->msg->SerializeAsString());
+
+            /* removes 'value'; keeps 'key' for next iteration */
+            lua_pop(L, 1);
+            ++j;
+        }
+        lua_pop(L, 1);
 
         /* removes 'value'; keeps 'key' for next iteration */
         lua_pop(L, 1);
@@ -162,8 +183,8 @@ int main(int argc, char* argv[]) {
         output.add_resourcedependency(res_dep);
     }
     //write the resource header
-    output.mutable_pkgdata()->set_type_name(entity_def.GetTypeName());
-    output.mutable_pkgdata()->set_messagedata(entity_def.SerializeAsString());
+    output.mutable_pkgdata()->set_type_name(level_script.GetTypeName());
+    output.mutable_pkgdata()->set_messagedata(level_script.SerializeAsString());
 
     google::protobuf::io::OstreamOutputStream filestream(&std::cout);
     return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;

@@ -147,7 +147,7 @@ hEntityContext* createEntityContext(const char* context_name, hEntityCreateDesc*
         if (!hUUID::isNull(entity_defs[i].entityId)) {
             entity_defs[i].entityId = hUUID::generateUUID();
         }
-        createEntity(ctx, entity_defs[i].entityId, etd);
+        //createEntity(ctx, entity_defs[i].entityId, etd);
     }
 
     return ctx;
@@ -155,7 +155,7 @@ hEntityContext* createEntityContext(const char* context_name, hEntityCreateDesc*
 void destroyEntityContext(hEntityContext* ctx) {
     delete ctx;
 }
-
+/*
 hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDef* entity_def) {
     hcAssertMsg(context && entity_def && !hUUID::isNull(id), "Invalid args to %s", __FUNCTION__);
 	bool linked = true;
@@ -183,6 +183,7 @@ hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDe
     g_entityContextManager.entityTable[id] = context->addEntity(new_entity);
     return id;
 }
+*/
 
 void destroyEntity(hUuid_t entity_id) {
     auto* entity = findEntity(entity_id);

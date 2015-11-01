@@ -161,7 +161,7 @@ public:
                 hEntityFactory::registerComponentManagement(renderSpriteSpawner);
 
                 invaderCtx = hEntityFactory::createEntityContext("InvaderGame", nullptr, 0);
-                defenderID = hEntityFactory::createEntity(invaderCtx, hUUID::generateUUID(), hResourceManager::weakResource<hEntityDef>(hStringID("/invader/defender")));
+                //defenderID = hEntityFactory::createEntity(invaderCtx, hUUID::generateUUID(), hResourceManager::weakResource<hEntityDef>(hStringID("/invader/defender")));
                 currentState = GameState::Game;
             }
         } break;
