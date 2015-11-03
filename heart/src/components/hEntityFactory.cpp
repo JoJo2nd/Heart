@@ -155,35 +155,31 @@ hEntityContext* createEntityContext(const char* context_name, hEntityCreateDesc*
 void destroyEntityContext(hEntityContext* ctx) {
     delete ctx;
 }
-/*
-hUuid_t createEntity(hEntityContext* context, hUuid_t id, const Heart::hEntityDef* entity_def) {
-    hcAssertMsg(context && entity_def && !hUUID::isNull(id), "Invalid args to %s", __FUNCTION__);
-	bool linked = true;
-    Heart::hEntity new_entity;
-    new_entity.entityId = id;
-    new_entity.entityComponent.resize(entity_def->getComponentDefinitionCount());
-    for (hSize_t ci = 0, cn = entity_def->getComponentDefinitionCount(); ci < cn; ++ci) {
-        auto comp_def = entity_def->getComponentDefinition(ci);
+
+hUuid_t createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t component_def_count) {
+    hcAssertMsg(compents && !hUUID::isNull(id), "Invalid args to %s", __FUNCTION__);
+    Heart::hEntity* new_entity = new Heart::hEntity(); // TODO!!JM Freelist this!
+    new_entity->entityId = id;
+    new_entity->entityComponent.resize(component_def_count);
+    for (hSize_t ci = 0, cn = component_def_count; ci < cn; ++ci) {
+        const auto& comp_def = compents[ci];
         auto comp_mgt = g_entityContextManager.componentMgt.find(comp_def.typeDefintion);
-        hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
-        hEntityComponent* obj = comp_mgt->second.construct(&new_entity.entityComponent[ci]);
+        hEntityComponent* obj = nullptr;
+        if (comp_mgt != g_entityContextManager.componentMgt.end()) {
+            hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
+            obj = comp_mgt->second.construct(&new_entity->entityComponent[ci]);
+        } else {
+            // This is broken...
+            obj = reinterpret_cast<hEntityComponent*>(comp_def.typeDefintion->construct_(nullptr));
+        }
         comp_def.typeDefintion->deserialise_(obj, comp_def.marshall);
-		linked &= comp_def.typeDefintion->link_(obj);
-		hcAssertMsg(linked, "Failed to link object. Object will not be created");
-		if (linked) {
-			break;
-		}
-        new_entity.entityComponent[ci].update(obj);
+		//comp_def.typeDefintion->link_(obj);
+        new_entity->entityComponent[ci].update(obj);
     }
 
-	if (!linked) {
-		return hUUID::getInvalid();
-	}
-
-    g_entityContextManager.entityTable[id] = context->addEntity(new_entity);
+    g_entityContextManager.entityTable[id] = new_entity;//!
     return id;
 }
-*/
 
 void destroyEntity(hUuid_t entity_id) {
     auto* entity = findEntity(entity_id);

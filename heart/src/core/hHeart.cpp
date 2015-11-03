@@ -179,6 +179,7 @@ namespace Heart {
         register_type &= hTTFFontFace::auto_object_registered;
         register_type &= hTextureResource::auto_object_registered;
         register_type &= hEntityDef::auto_object_registered;
+        register_type &= hLevel::auto_object_registered;
 
         if (register_type) {
             engineState_ = hHeartState_LoadingCore;

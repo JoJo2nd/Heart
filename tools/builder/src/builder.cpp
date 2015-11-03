@@ -4,6 +4,7 @@
 *********************************************************************/
 
 #include "base/hStringUtil.h"
+#include "base/hUUID.h"
 #include <functional>
 #include <signal.h>
 #include <stdio.h>
@@ -571,6 +572,7 @@ int main (int argc, char **argv) {
     int verbose = 0;
     int c;
     int option_index;
+    int generate_guid = false;
     bool clean_build = false;
     std::string config_script = ".build_config";
     const char argopts[] = "vg:h";
@@ -578,6 +580,7 @@ int main (int argc, char **argv) {
         { "version", no_argument, 0, (int)'v' },
         { "clean", no_argument, 0, (int)'c' },
         { "force", no_argument, 0, (int)'c' },
+        { "guid", no_argument, 0, (int)'i' },
         { 0, 0, 0, 0 }
     };
     lua_State *L = luaL_newstate();  /* create state */
@@ -588,6 +591,7 @@ int main (int argc, char **argv) {
         case 'v': verbose = 1; break;
         case 'g': config_script = optarg; break;
         case 'c': clean_build = true; break;
+        case 'i': generate_guid = true; break;
         case '?':
             if (strchr(argopts, optopt))
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -607,6 +611,14 @@ int main (int argc, char **argv) {
     _setmode(_fileno(stdout), _O_BINARY);
     _setmode(_fileno(stderr), _O_BINARY);
 #endif
+
+    if (generate_guid) {
+        hUuid_t guid = Heart::hUUID::generateUUID();
+        char guid_str[256];
+        Heart::hUUID::toString(guid, guid_str, sizeof(guid_str));
+        fprintf(stdout, "New GUID: %s\n", guid_str);
+        return 0;
+    }
 
     if (L == NULL) {
         fprintf(stderr, "cannot create state: not enough memory");

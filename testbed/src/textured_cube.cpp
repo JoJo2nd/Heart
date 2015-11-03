@@ -26,6 +26,12 @@ namespace Heart {
 class hHeartEngine;
 }
 
+#define PI (3.1415926535897932384626433832795f)
+#define TWOPI (2.f*PI)
+#define PIOVER2 (PI*.5f)
+#define FOV_Y (PI/2.f)
+#define SCREEN_SIZE_PERCENT (0.75f)
+
 using namespace Heart;
 
 struct ViewportConstants {
@@ -67,6 +73,24 @@ static const char* test_texture_names[] = {
     "/textures/test_tile_set_alpha_bc3",
 };
 
+float ComputeBoundsScreenSize(const hVec3& Origin, const float SphereRadius, float ViewWidth, float ViewHeight, const hVec3& viewCentre, const hVec3& viewDir, hMatrix proj, float& out_m, float& out_r)
+{
+    // Only need one component from a view transformation; just calculate the one we're interested in.
+    float Divisor = dot(Origin - viewCentre, viewDir);
+
+    // Get projection multiple accounting for view scaling.
+    ViewWidth = ViewHeight = 1;
+    float ScreenMultiple = hMax(ViewWidth / 2.0f * proj[0][0], ViewHeight / 2.0f * proj[1][1]);
+
+    float ScreenRadius = ScreenMultiple * SphereRadius / Divisor;
+    float ScreenArea = PI * ScreenRadius * ScreenRadius;
+    float t = PIOVER2 - ((PIOVER2 / 4.f));
+    float r = SphereRadius*tanf(t);
+    out_r = r / Divisor;
+    out_m = (PI*out_r*out_r) / 4;
+    return ScreenArea / (ViewWidth*ViewHeight);
+}
+
 class TexturedCube : public IUnitTest {
     
     struct TextureFormat {
@@ -84,8 +108,6 @@ class TexturedCube : public IUnitTest {
     hRenderer::hPipelineState*          pls;
     hRenderer::hUniformBuffer*          ub1;
     hRenderer::hUniformBuffer*          ub2;
-    hRenderer::hTexture2D*              t2d;
-    hRenderer::hRenderTarget*           rt;
 
     static const hUint FENCE_COUNT = 3;
     hUint                               paramBlockSize;
@@ -207,8 +229,9 @@ public:
 
         testTextures.resize(hStaticArraySize(test_texture_names));
         for (hSize_t i = 0, n = hStaticArraySize(test_texture_names); i < n; ++i) {
+            auto* tt = hResourceManager::weakResource<hTextureResource>(hStringID(test_texture_names[i]));
             testTextures[i].name = test_texture_names[i];
-            testTextures[i].t = hResourceManager::weakResource<hTextureResource>(hStringID(test_texture_names[i]))->getTexture2D();
+            testTextures[i].t = tt->getTexture2D();
             isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
             testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
         }
@@ -217,7 +240,7 @@ public:
         timer_.setPause(hFalse);
 
         camPos = hVec3(0.f, 0.f, 3.f);
-        rotationSpeed = 1.f;
+        rotationSpeed = 0.f;
         cubeRotation = 0.f;
         currentTex = 0;
 
@@ -230,8 +253,6 @@ public:
         }
         hRenderer::destroyUniformBuffer(ub1);
         hRenderer::destroyUniformBuffer(ub2);
-        hRenderer::destroyTexture2D(t2d);
-        hRenderer::destroyRenderTarget(rt);
         hRenderer::destroyVertexBuffer(vb);
     }
 
@@ -241,18 +262,34 @@ public:
 
     virtual hUint32 RunUnitTest() override {
 
+        float r = length(hVec3(1.f,1.f,0.f));
+        float n = 1.f;
+        hVec3 d(0.f, 0.f, -1.f);
+        hVec3 v = camPos;
+        hVec3 c(0.f, 0.f, 0.f);
+        //p = nr/d.(c-v)
+        float dp = (n*r)/dot(d, c-v);
+        float guess_p = sqrt((4*SCREEN_SIZE_PERCENT)/PI)/tanf(PIOVER2 - (FOV_Y*.5f));
+
+        hMatrix p1 = hMatrix::perspective(FOV_Y, 1280.f / 720.f, 1.f, 100.f);
+        float m, roverd;
+        float screenSize = ComputeBoundsScreenSize(c, r, 1280.f, 720.f, v, d, p1, m, roverd);
+
+
         hFloat p[3] = { camPos.getX(), camPos.getY(), camPos.getZ() };
         //ImGui::SetNextWindowPos(ImVec2(10, 200));
         ImGui::Begin("Textured Cube View", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_ShowBorders);
         ImGui::Text("View Settings");
         ImGui::Separator();
-        ImGui::SliderFloat("Camera X", p, -5, 5);
-        ImGui::SliderFloat("Camera Y", p + 1, -5, 5);
-        ImGui::SliderFloat("Camera Z", p + 2, 0, 25);
+        ImGui::SliderFloat("Camera X", p, -15, 15);
+        ImGui::SliderFloat("Camera Y", p + 1, -15, 15);
+        ImGui::SliderFloat("Camera Z", p + 2, 0, 50);
         ImGui::Separator();
         ImGui::SliderFloat("Cube Rotation Factor", &rotationSpeed, 0, 10);
         ImGui::Separator();
         ImGui::Combo("", &currentTex, test_texture_names, hStaticArraySize(test_texture_names));
+        ImGui::Separator();
+        ImGui::Text("Camera Area d=%f screensize=%f m=%f r/d=%f 4PIa=%f", dp, screenSize, m, roverd, guess_p);
         ImGui::End();
         camPos = hVec3(p[0], p[1], p[2]);
 
@@ -267,8 +304,7 @@ public:
         }
 
         hMatrix v = hMatrix::lookAt((hPoint3)camPos, camPos+hPoint3(0.f, 0.f, -1.f), hVec3(0.f, 1.f, 0.f));
-        hMatrix p1 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 1280.f/720.f, 0.01f, 100.f);
-        hMatrix p2 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 512.f/512.f, 0.01f, 100.f);
+        hMatrix p1 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(FOV_Y, 1280.f/720.f, 0.01f, 100.f);
         hMatrix w = hMatrix::identity();
         hFloat r = timer_.elapsedMilliSec()/1000.f;
         cubeRotation += r*rotationSpeed;

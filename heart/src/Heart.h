@@ -113,7 +113,7 @@ extern "C" {
 #include "core/hResourcePackage.h"
 #include "core/hResourceManager.h"
 #include "core/hSystem.h"
-
+#include "core/hLevel.h"
 
 #include "math/hMathUtil.h"
 #include "math/hPlane.h"

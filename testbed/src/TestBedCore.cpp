@@ -58,6 +58,7 @@
         REGISTER_UNIT_TEST(*factory_, MovingTri);
         REGISTER_UNIT_TEST(*factory_, RenderTarget);
         REGISTER_UNIT_TEST(*factory_, TexturedCube);
+        REGISTER_UNIT_TEST(*factory_, EntityTest);
 
         auto ts = factory_->getTestCount();
         testNames.resize(ts);
