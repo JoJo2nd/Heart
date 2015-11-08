@@ -28,6 +28,7 @@
 #include "base/hClock.h"
 #include "core/hResourceManager.h"
 #include "threading/hJobManager.h"
+#include "imgui.h"
 
 namespace Heart
 {
@@ -228,6 +229,9 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
             resourceJobArray_.clear();
             packageState_ = PkgState::Destroyed;
         }
+        case PkgState::Loaded: {
+
+        } break;
         default:{
         } break;
         }
@@ -235,45 +239,29 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         return ret;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hResourcePackage::printResourceInfo()
-    {
-#if 0
-        for (hResourceClassBase* res = resourceMap_.GetHead(), *next = NULL; res; res = res->GetNext()) {
-            hcPrintf("  Resource %s:"
-                " Type: 0x%08X | crc: 0x%08X", 
-                res->GetName(), res->GetType().typeCRC, res->GetKey());
+#if HEART_DEBUG_INFO
+    void hResourcePackage::printResourceInfo() {
+        ImGui::Text("Package state: %s", getPackageStateString());
+        for (const auto& res : resourceJobArray_) {
+            ImGui::Text("Resource: %s Type: %s Linked: %s", res.resourceID_.c_str(), res.objectDef_->objectName_.c_str(), res.linked_ ? "yes" : "no");
         }
-#else
-        hStub();
-#endif
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
 
     const hChar* hResourcePackage::getPackageStateString() const
     {
-        /*
-        static const hChar* stateStr [] = {
-            "State_Load_PkgDesc",
-            "State_Load_WaitPkgDesc",
-            "State_Load_DepPkgs",
-            "State_Load_WaitDeps",
-            "State_Kick_ResourceLoads",
-            "State_Wait_ReourcesLoads",
-            "State_Link_Resources",
-            "State_Ready",
-            "State_Unlink_Resoruces",
-            "State_Unload_Resources",
-            "State_Wait_Unload_Resources",
-            "State_Unload_DepPkg",
-            "State_Unloaded",
-        };*/
-        return "null";
+        static const hChar* stateStr[] = {
+            "Null",
+            "LoadPkgDesc",
+            "FileReadWait",
+            "RequestLinkedPkgs",
+            "LoadingResources",
+            "ResourceLinking",
+            "Loaded",
+            "Unloaded",
+            "Destroying",
+            "Destroyed",
+        };
+        return stateStr[(hUint32)packageState_];
     }
+#endif
 }

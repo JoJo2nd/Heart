@@ -12,22 +12,8 @@
 
 namespace Heart {
 namespace hRenderer {
-    class hShaderReflection;
     struct hShaderStage;
-
-    /*
-        Shader Stage interface
-    */
-    hShaderType getShaderType(const hShaderStage* stage);
-    /*
-        hShaderLinkedProgram interface
-    */
-    class hShaderLinkedProgram;
-    const hShaderReflection* getReflectionInfo(const hShaderLinkedProgram* prog);
-    void attachStage(hShaderLinkedProgram* prog, hShaderStage* stage);
-    void link(hShaderLinkedProgram* prog);
 }
-
 class  hShaderProgram {
     struct ProgramProfile {
         hRenderer::hShaderStage*   shader_;

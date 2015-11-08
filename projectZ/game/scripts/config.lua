@@ -10,10 +10,10 @@ cvar("window.sizey", 720)
 
 cvar("startup.script", "/scripts/startup.lua")
 
-cvar("filesystem.scripts_dir", "/scripts");
-cvar("filesystem.data_dir", "/data");
-cvar("filesystem.tmp_dir", "/tmp");
-cvar("filesystem.save_dir", "/save");
+cvar("filesystem.scripts_dir", "/projectz/scripts");
+cvar("filesystem.data_dir", "/projectz/data");
+cvar("filesystem.tmp_dir", "/projectz/tmp");
+cvar("filesystem.save_dir", "/projectz/save");
 
 cvar("debug.server.port", 5682)
 

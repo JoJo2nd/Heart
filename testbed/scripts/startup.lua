@@ -1,4 +1,4 @@
-require "util"
+-- require "util"
 
 -- function rendererResize(width, height)
 --     print("Lua resize call ", width, "x", height)

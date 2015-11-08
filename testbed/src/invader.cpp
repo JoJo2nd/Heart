@@ -25,7 +25,7 @@ public:
     hObjectType(DefenderComp, Invader::proto::Defender);
 
 };
-hRegisterComponentObjectType(DefenderComp, DefenderComp, Invader::proto::Defender);
+hRegisterObjectType(DefenderComp, DefenderComp, Invader::proto::Defender);
 hBool DefenderComp::serialiseObject(Invader::proto::Defender* obj) const {
     return hTrue;
 }
@@ -35,7 +35,7 @@ hBool DefenderComp::deserialiseObject(Invader::proto::Defender* obj) {
 hBool DefenderComp::linkObject() {
     return hTrue;
 }
-static hEntityComponent* DefenderCompConstruct(hEntityComponentHandle* handle_address) {
+static hEntityComponent* DefenderCompConstruct(hEntity* owner) {
     return new DefenderComp();
 }
 static void DefenderCompDestruct(hEntityComponent* ptr) {
@@ -80,7 +80,7 @@ size_t g_RenderSpriteCount = 0;
 RenderSprite g_RenderSprites[100];
 RenderSprite* g_RenderSpriteFreelist = nullptr;
 
-hRegisterComponentObjectType(RenderSprite, RenderSprite, Invader::proto::RenderSprite);
+hRegisterObjectType(RenderSprite, RenderSprite, Invader::proto::RenderSprite);
 hBool RenderSprite::serialiseObject(Invader::proto::RenderSprite* obj) const {
     return hTrue;
 }
@@ -95,9 +95,9 @@ hBool RenderSprite::linkObject() {
 	//spriteTex = 
     return hTrue;
 }
-static hEntityComponent* RenderSpriteCompConstruct(hEntityComponentHandle* handle_address) {
+static hEntityComponent* RenderSpriteCompConstruct(hEntity* owner) {
     auto* r = new RenderSprite();
-    r->initilise(handle_address);
+    //r->initilise(handle_address);
     return r;
 }
 static void RenderSpriteCompDestruct(hEntityComponent* ptr) {
@@ -151,16 +151,15 @@ public:
             if (hResourceManager::getIsPackageLoaded("invader")) {
                 hEntityFactory::hComponentMgt defenderSpawner = {
                     hObjectFactory::getObjectDefinition(hStringID("DefenderComp")),
-                    DefenderCompConstruct, DefenderCompDestruct, DefenderCompCompact,
+                    DefenderCompConstruct, DefenderCompDestruct
                 };
                 hEntityFactory::registerComponentManagement(defenderSpawner);
                 hEntityFactory::hComponentMgt renderSpriteSpawner = {
                     hObjectFactory::getObjectDefinition(hStringID("RenderSprite")),
-                    RenderSpriteCompConstruct, RenderSpriteCompDestruct, RenderSpriteCompCompact,
+                    RenderSpriteCompConstruct, RenderSpriteCompDestruct
                 };
                 hEntityFactory::registerComponentManagement(renderSpriteSpawner);
 
-                invaderCtx = hEntityFactory::createEntityContext("InvaderGame", nullptr, 0);
                 //defenderID = hEntityFactory::createEntity(invaderCtx, hUUID::generateUUID(), hResourceManager::weakResource<hEntityDef>(hStringID("/invader/defender")));
                 currentState = GameState::Game;
             }

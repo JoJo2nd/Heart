@@ -50,6 +50,8 @@ void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine)
     g_TestCore.EngineShutdown(engine);
 }
 
+extern bool registerTestGameComponents();
+
 int main(int argc, char **argv) {
 
 
@@ -80,6 +82,8 @@ int main(int argc, char **argv) {
     }
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, script, scriptlen, argc, argv);
+
+    registerTestGameComponents();
 
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 

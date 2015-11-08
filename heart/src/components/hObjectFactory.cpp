@@ -29,7 +29,7 @@ namespace
 const hObjectDefinition* getObjectDefinition(hStringID name) {
     const auto definition = objectDefTable_->find(name);
     if (definition == objectDefTable_->end()) {
-        return hNullptr;
+        return nullptr;
     }
     return definition->second;
 }

@@ -24,14 +24,14 @@ namespace Heart
 
         hFORCEINLINE hSize_t size() const { return strEntry_->byteLen_; }
         hFORCEINLINE hSize_t length() const { return strEntry_->byteLen_; }
-        hFORCEINLINE const char* c_str() const { return strEntry_->strValue_; }
+        const char* c_str() const;
         hFORCEINLINE hUint at(hSize_t pos) const { return strEntry_->strValue_[pos]; }
         hBool operator == (const hStringID& rhs) const;
         hBool operator != (const hStringID& rhs) const;
         hUint operator [] (const hSize_t pos) const;
         hFORCEINLINE hUint32 hash() const { return strEntry_->strHash_; }
         hFORCEINLINE hUintptr_t id() const { return (hUintptr_t)strEntry_; }
-        hFORCEINLINE hBool is_default() const { return strEntry_ == get_default_id()/*&s_default*/; }
+        hBool is_default() const;
 
     private:
 

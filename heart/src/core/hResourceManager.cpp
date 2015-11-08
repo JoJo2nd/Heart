@@ -12,6 +12,8 @@
 #include "base/hCRC32.h"
 #include "core/hResource.h"
 #include "core/hResourcePackage.h"
+#include "debug/hDebugMenuManager.h"
+#include "imgui.h"
 #include <unordered_map>
 #include <map>
 #include <stack>
@@ -50,14 +52,17 @@ namespace Hidden {
 
 using namespace Hidden;
 
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
+#if HEART_DEBUG_INFO
+void debugMenuRender();
+#endif
 
 hBool initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
     filesystem = pFileSystem;
     jobManager = jobmanager;
     loadPackage("system");
+#if HEART_DEBUG_INFO
+    hDebugMenuManager::registerMenu("Packages", debugMenuRender);
+#endif
     return hTrue;
 }
 
@@ -73,8 +78,9 @@ void shutdown() {
 }
 
 void update() {
+    hMutexAutoScope sentry(&resourceDBMtx);
     HEART_PROFILE_FUNC();
-    for (auto i : packages) {
+    for (auto& i : packages) {
         i->update();
     }
     for (auto p = packagesToUnload.begin(); p!=packagesToUnload.end();) {
@@ -138,16 +144,6 @@ void unloadPackage(const hChar* name) {
      // TODO: not do this here, forces the package to clean up but package
      // could left and re-loaded cheaply until memory was needed for other packages.
      collectGarbage(0.f);
-}
-
-void printResourceInfo() {
-//     hcPrintf("=== Loaded Package Info Start ===");
-//     for (hResourcePackage* pack = activePackages_.GetHead(); pack; pack = pack->GetNext()) {
-//         hcPrintf("Package %s -- State: %s -- RC %u", 
-//             pack->getPackageName(), pack->getPackageStateString(), pack->GetRefCount());
-//         pack->printResourceInfo();
-//     }
-//     hcPrintf("=== Loaded Package Info End ===");
 }
 
 void    addResource(void* ptr, hStringID package_id, hStringID res_id, hStringID type_id, hObjectDestroyProc destructor) {
@@ -217,5 +213,24 @@ void collectGarbage(hFloat step) {
         }
     }
 }
+
+#if HEART_DEBUG_INFO
+void debugMenuRender() {
+    hMutexAutoScope sentry(&resourceDBMtx);
+    ImGui::Begin("Packages & Resources", nullptr, ImGuiWindowFlags_ShowBorders);
+
+    if (ImGui::TreeNode("Loaded Packages")) {
+        for (auto i : packages) {
+            if (ImGui::TreeNode(i->getPackageName())) {
+                i->printResourceInfo();
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    ImGui::End();
+}
+#endif
 }
 }

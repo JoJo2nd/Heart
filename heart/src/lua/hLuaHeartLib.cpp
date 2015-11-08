@@ -69,7 +69,6 @@ by Lua can also return many results.
     int hLuaResourceInfo(lua_State* L)
     {
         HEART_LUA_GET_ENGINE(L);
-        hResourceManager::printResourceInfo();
         return 0;
     }
 

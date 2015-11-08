@@ -6,11 +6,8 @@
 #include "render/hRenderUtility.h"
 #include "render/hFont.h"
 #include "base/hRendererConstants.h"
-#include "render/hIndexBuffer.h"
-#include "render/hVertexBuffer.h"
 #include "math/hMathUtil.h"
 #include "hRenderer.h"
-#include "hMaterial.h"
 #include "hTextureResource.h"
 #include "base/hProfiler.h"
 

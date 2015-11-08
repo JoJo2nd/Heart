@@ -53,40 +53,6 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hRendererCamera::UpdateParameters(hRenderSubmissionCtx* ctx)
-    {
-#if 0
-        hViewport vp=getTargetViewport();
-        hVec3 eye = viewMatrix_.getRow(3).getXYZ();
-        hVec3 dir = viewMatrix_.getRow(2).getXYZ();
-        hVec3 up  = viewMatrix_.getRow(1).getXYZ();
-        frustum_.UpdateFromCamera( eye, dir, up, fov, aspect_, near_, far_, isOrtho_ );
-
-        viewportConstants_.projection_ = projectionMatrix_;
-        viewportConstants_.projectionInverse_ = inverse(projectionMatrix_);
-        viewportConstants_.view_ = viewMatrix_;
-        viewportConstants_.viewInverse_ = inverse( viewMatrix_ );
-        viewportConstants_.viewInverseTranspose_ = transpose( viewportConstants_.viewInverse_ );
-        viewportConstants_.viewProjection_ = projectionMatrix_*viewMatrix_;
-        viewportConstants_.viewProjectionInverse_ = inverse(viewportConstants_.viewProjection_);
-        viewportConstants_.viewportSize_[0]=(hFloat)vp.width_;
-        viewportConstants_.viewportSize_[1]=(hFloat)vp.height_;
-        viewportConstants_.viewportSize_[2]=0.f;
-        viewportConstants_.viewportSize_[3]=0.f;
-
-        hRenderBufferMapInfo map;
-        ctx->Map(cameraConstBlock_, &map);
-        hMemCpy(map.ptr, &viewportConstants_, sizeof(viewportConstants_));
-        ctx->Unmap(&map);
-#else
-        hStub();
-#endif
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
     Heart::hViewport hRendererCamera::getTargetViewport() const {
 #if 0
         if (setup_.targetTex_){

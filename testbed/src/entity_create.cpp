@@ -22,7 +22,7 @@ struct TestGameComponent1 : public Heart::hEntityComponent {
     hUint64 entrySize;
     Heart::hString entryType;
 };
-hRegisterComponentObjectType(TestGameComponent1, TestGameComponent1, Testbed::proto::TestGameComponent1);
+hRegisterObjectType(TestGameComponent1, TestGameComponent1, Testbed::proto::TestGameComponent1);
 hBool TestGameComponent1::serialiseObject(Testbed::proto::TestGameComponent1* obj) const {
     obj->set_entryname(entryName);
     obj->set_entryoffset(entryOffset);
@@ -54,7 +54,7 @@ struct TestGameComponent2 : public Heart::hEntityComponent {
     Heart::hString packageDependencies;
     hUint64 highscore;
 };
-hRegisterComponentObjectType(TestGameComponent2, TestGameComponent2, Testbed::proto::TestGameComponent2);
+hRegisterObjectType(TestGameComponent2, TestGameComponent2, Testbed::proto::TestGameComponent2);
 hBool TestGameComponent2::serialiseObject(Testbed::proto::TestGameComponent2* obj) const {
     obj->set_highscore(highscore);
     return hTrue;
@@ -69,12 +69,26 @@ hBool TestGameComponent2::linkObject() {
     return hTrue;
 }
 
+bool registerTestGameComponents() {
+    Heart::hEntityFactory::hComponentMgt cd1 {
+        Heart::hObjectFactory::getObjectDefinition(Heart::hStringID("TestGameComponent1")),
+        [](Heart::hEntity* owner) -> Heart::hEntityComponent* { return new TestGameComponent1(); }, [](Heart::hEntityComponent* ptr) { delete ptr; }
+    };
+    Heart::hEntityFactory::hComponentMgt cd2 {
+        Heart::hObjectFactory::getObjectDefinition(Heart::hStringID("TestGameComponent2")),
+        [](Heart::hEntity* owner) -> Heart::hEntityComponent* { return new TestGameComponent2(); }, [](Heart::hEntityComponent* ptr) { delete ptr; }
+    };
+    Heart::hEntityFactory::registerComponentManagement(cd1);
+    Heart::hEntityFactory::registerComponentManagement(cd2);
+    return hTrue;//TestGameComponent1::auto_object_registered && TestGameComponent2::auto_object_registered;
+}
+
 class EntityTest : public IUnitTest {
 public:
     EntityTest( Heart::hHeartEngine* engine ) 
         : IUnitTest( engine )
         , doTest_(hTrue)
-        , esureNotDeadstripped(TestGameComponent1::auto_object_registered && TestGameComponent2::auto_object_registered)
+        , esureNotDeadstripped(hFalse/*TestGameComponent1::auto_object_registered && TestGameComponent2::auto_object_registered*/)
     {
     }
     ~EntityTest() {}
@@ -172,13 +186,6 @@ public:
             printGameHighscore(b3);
             hcPrintf("Merged Object");
             printGameHighscore(b4);
-
-            // Test creating entities
-            hEntityFactory::hEntityCreateDesc entities[] = {
-                {hUUID::generateUUID(), "TestGameObjectDef"},
-                {hUUID::generateUUID(), "TestGameObjectDef2"},
-            };
-            hEntityFactory::createEntityContext("test_entity_context", entities, hStaticArraySize(entities));
 
             // Test Save & Load
             doTest_=hFalse;

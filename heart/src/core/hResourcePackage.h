@@ -80,8 +80,10 @@ namespace Heart
         hBool                   isInReadyState() const { return packageState_ == PkgState::Loaded; }
         hBool                   isUnloaded() const { return packageState_ == PkgState::Unloaded; }
         hBool                   isDestroyed() const { return packageState_ == PkgState::Destroyed; }
+#if HEART_DEBUG_INFO
         void                    printResourceInfo();
         const hChar*            getPackageStateString() const;
+#endif
 
     private:
 

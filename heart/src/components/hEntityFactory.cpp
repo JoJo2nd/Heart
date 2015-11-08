@@ -17,6 +17,7 @@
 
 
 namespace Heart {
+#if 0
 class hEntityContext {
 
 	static const hUint s_entityBlockDefaultSize = 8;
@@ -99,29 +100,21 @@ public:
     hEntityNode* freeList;
     std::vector<const hObjectDefinition*> knownTypes; // never shrinks
 };
+#endif
 
 static struct hEntityContextManager {
 
-    typedef std::unordered_map<hStringID, hEntityDef*> hEntityDefHashTable;
-    typedef hEntityDefHashTable::value_type hEntityDefEntry;
+
     typedef std::unordered_map<hUuid_t, hEntity*> hEntityHashTable; //!!JM TODO: Make this a handle based system?
     typedef hEntityHashTable::value_type hEntityEntry;
     typedef std::unordered_map<const hObjectDefinition*, hEntityFactory::hComponentMgt> hComponentMgtHashTable;
     typedef hComponentMgtHashTable::value_type hComponentMgtEntry;
 
-    hEntityDefHashTable entityDefTable;
     hEntityHashTable entityTable;
-    std::vector<hEntityContext> contexts;
     hComponentMgtHashTable componentMgt;
 } g_entityContextManager;
 
 namespace hEntityFactory {
-
-void registerEntityDefinition(hStringID definition_name, Heart::hEntityDef* entity_def) {
-    hcAssertMsg(g_entityContextManager.entityDefTable.find(definition_name) == g_entityContextManager.entityDefTable.end(), 
-        "Entity definition '%s' registered more than once", definition_name.c_str());
-    g_entityContextManager.entityDefTable.insert(hEntityContextManager::hEntityDefEntry(definition_name, entity_def));
-}
 
 void registerComponentManagement(const hComponentMgt& comp_mgt) {
     hcAssertMsg(g_entityContextManager.componentMgt.find(comp_mgt.object_def) == g_entityContextManager.componentMgt.end(),
@@ -129,72 +122,37 @@ void registerComponentManagement(const hComponentMgt& comp_mgt) {
     g_entityContextManager.componentMgt.insert(hEntityContextManager::hComponentMgtEntry(comp_mgt.object_def, comp_mgt));
 }
 
-Heart::hEntityDef* getEntityDefinition(hStringID definition_name) {
-    auto i = g_entityContextManager.entityDefTable.find(definition_name);
-    return i == g_entityContextManager.entityDefTable.end() ? nullptr : i->second;
-}
-
-void unregisterEntityDefinition(hStringID definition_name) {
-    g_entityContextManager.entityDefTable.erase(definition_name);
-}
-hEntityContext* createEntityContext(const char* context_name, hEntityCreateDesc* entity_defs, hSize_t entity_def_count) {
-    auto* ctx = new hEntityContext();
-    ctx->contextName = hStringID(context_name);
-    ctx->entities.reserve(entity_def_count);
-    for (auto i=0u; i < entity_def_count; ++i) {
-        auto* etd = getEntityDefinition(hStringID(entity_defs[i].entityDefinition));
-        hcAssertMsg(etd, "Failed to find entity definition for '%s'", entity_defs[i].entityDefinition);
-        if (!hUUID::isNull(entity_defs[i].entityId)) {
-            entity_defs[i].entityId = hUUID::generateUUID();
-        }
-        //createEntity(ctx, entity_defs[i].entityId, etd);
-    }
-
-    return ctx;
-}
-void destroyEntityContext(hEntityContext* ctx) {
-    delete ctx;
-}
-
-hUuid_t createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t component_def_count) {
+hEntity* createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t component_def_count) {
     hcAssertMsg(compents && !hUUID::isNull(id), "Invalid args to %s", __FUNCTION__);
     Heart::hEntity* new_entity = new Heart::hEntity(); // TODO!!JM Freelist this!
     new_entity->entityId = id;
-    new_entity->entityComponent.resize(component_def_count);
+    new_entity->entityComponents.resize(component_def_count);
     for (hSize_t ci = 0, cn = component_def_count; ci < cn; ++ci) {
         const auto& comp_def = compents[ci];
         auto comp_mgt = g_entityContextManager.componentMgt.find(comp_def.typeDefintion);
         hEntityComponent* obj = nullptr;
-        if (comp_mgt != g_entityContextManager.componentMgt.end()) {
-            hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
-            obj = comp_mgt->second.construct(&new_entity->entityComponent[ci]);
-        } else {
-            // This is broken...
-            obj = reinterpret_cast<hEntityComponent*>(comp_def.typeDefintion->construct_(nullptr));
-        }
+        hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
+        obj = comp_mgt->second.construct(new_entity);
+        obj->componentDestruct = comp_mgt->second.destruct;
         comp_def.typeDefintion->deserialise_(obj, comp_def.marshall);
-		//comp_def.typeDefintion->link_(obj);
-        new_entity->entityComponent[ci].update(obj);
+        new_entity->entityComponents[ci].typeID = comp_def.typeDefintion->runtimeTypeID;
+        new_entity->entityComponents[ci].typeDef = comp_def.typeDefintion;
+        new_entity->entityComponents[ci].ptr = obj;
     }
 
     g_entityContextManager.entityTable[id] = new_entity;//!
-    return id;
+    return new_entity;
 }
 
 void destroyEntity(hUuid_t entity_id) {
     auto* entity = findEntity(entity_id);
     hcAssert(entity);
 
-    for (auto& i : entity->entityComponent) {
-        if (!i.isValid()) {
-            continue;
-        }
-        auto* mgt = i.getComponentMgt();
-        mgt->destruct(i.getBase());
-        i.update(nullptr);
+    for (auto& i : entity->entityComponents) {
+        i.ptr->componentDestruct(i.ptr);
     }
-    auto* ctx = entity->owningCtx;
-    ctx->removeEntity(entity);
+    g_entityContextManager.entityTable.erase(g_entityContextManager.entityTable.find(entity_id));
+    delete entity;
 }
 
 hEntity* findEntity(hUuid_t entity_id) {

@@ -27,6 +27,7 @@ message Input {
 	optional string resourceId = 5;
 	optional string builtResourcePath = 6;
 	optional string runtimeType = 7;
+	optional string resourceDataRootPath = 8;
 }
 
 message Output {

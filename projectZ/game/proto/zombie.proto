@@ -1,0 +1,12 @@
+package projectZ.proto;
+
+enum ZombieType {
+    ZombieType_default = 0;
+    ZombieType_male01 = 1;
+    ZombieType_female01 = 2;
+}
+
+message Zombie {
+    optional ZombieType type = 1 [default = ZombieType_default];
+    optional string textureResourceID = 2;
+}

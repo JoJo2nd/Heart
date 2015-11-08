@@ -54,8 +54,6 @@ namespace Heart
 {
 
     class hActionManager;
-    class hDebugInfo;
-    class hDebugMenuManager;
     class hDriveFileSystem;
     class hHeartEngine;
     class hIFileSystem;    
@@ -174,8 +172,6 @@ namespace Heart
         hJobManager*                    jobManager;
 
         //Debug 
-        hDebugMenuManager*              debugMenuManager_;
-        hDebugInfo*                     debugInfo_;
         hNetHost*                       debugServer_;
 
         //app functions

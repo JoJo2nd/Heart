@@ -12,7 +12,6 @@
 #include "math/hMatrix.h"
 #include "math/hVec3.h"
 #include "math/hMathUtil.h"
-#include "render/hRenderSubmissionContext.h"
 
 namespace Heart
 {
@@ -67,7 +66,6 @@ namespace Heart
         }
         hDepthStencilView*          getDepthTarget() const { return setup_.depth_; }
         //hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
-        void                        UpdateParameters(hRenderSubmissionCtx* ctx);
         void                        setClearScreenFlag(hBool val) { clear_=val;}
         hBool                       getClearScreenFlag() const { return clear_;}
     private:

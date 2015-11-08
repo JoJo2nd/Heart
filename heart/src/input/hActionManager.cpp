@@ -93,7 +93,7 @@ struct hActionManagerImpl {
             auto invalid = defaultMappings_.end();
             auto mapping = defaultMappings_.find(keyid);
             auto boundID = getBoundID(hDeviceID_Keyboard);
-            if (mapping != invalid && boundID) {
+            if (mapping != invalid && boundID != hInvalidBinding) {
                 hInputAction action = {
                     mapping->second,
                     0, //device ID

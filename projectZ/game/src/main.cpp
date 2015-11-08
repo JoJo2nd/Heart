@@ -4,23 +4,38 @@
 *********************************************************************/
 
 #include "Heart.h"
+#include "render\hImGuiRenderer.h"
+#include "projectZGame.h"
+#include "zombieComponent.h"
 
 void HEART_API HeartAppFirstLoaded(Heart::hHeartEngine*) {
-
 }
 
 void HEART_API HeartAppCoreAssetsLoaded(Heart::hHeartEngine* engine) {
-
+    Heart::hResourceManager::loadPackage("persistent");
 }
 
 void HEART_API HeartAppMainUpate(Heart::hHeartEngine* engine) {
+    Heart::ImGuiNewFrame(engine->GetSystem(), engine->getActionManager());
+
+//    ImGui::Begin();
+//    ImGui::End();
 }
 
 void HEART_API HeartAppMainRender(Heart::hHeartEngine* engine) {
+    auto* cl = Heart::ImGuiCurrentCommandList();
+    Heart::hRenderer::clear(cl, Heart::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
+
+    ImGui::Render();
+    Heart::hRenderer::swapBuffers(cl);
+    Heart::hRenderer::submitFrame(cl);
 }
 
 hBool HEART_API HeartAppShutdownUpdate(Heart::hHeartEngine* engine) {
-    return hTrue;
+    hBool dontDeadStrip = hTrue;
+    dontDeadStrip &= ProjectZGame::auto_object_registered;
+    dontDeadStrip &= ZombieComponent::auto_object_registered;
+    return hTrue && dontDeadStrip;
 }
 
 void HEART_API HeartAppOnShutdown(Heart::hHeartEngine* engine) {
@@ -39,7 +54,7 @@ int main(int argc, char **argv) {
 
     char* script = nullptr;
     hSize_t scriptlen = 0;
-    FILE* file = fopen("scripts/config.lua", "rt");
+    FILE* file = fopen("projectz/scripts/config.lua", "rt");
     if (file) {
         fseek(file, 0, SEEK_END);
         scriptlen = ftell(file);
@@ -52,6 +67,9 @@ int main(int argc, char **argv) {
     }
 
     Heart::hHeartEngine* engine = hHeartInitEngine(&callbacks, script, scriptlen, argc, argv);
+
+    ProjectZGame::registerComponent();
+    ZombieComponent::registerComponent();
 
     while (hHeartDoMainUpdate(engine) != hErrorCode) {}
 

@@ -62,10 +62,10 @@ namespace Heart {
 
         // current working is already mounted to /
         fileMananger_->mountPoint(processDir_, "/proc");
-        fileMananger_->mountPoint("/scripts", "/script");
-        fileMananger_->mountPoint("/data", "/data");
-        fileMananger_->mountPoint("/proc/tmp", "/tmp");
-        fileMananger_->mountPoint("/save", "/save");
+        fileMananger_->mountPoint(hConfigurationVariables::getCVarStr("filesystem.scripts_dir", "/script"), "/scripts");
+        fileMananger_->mountPoint(hConfigurationVariables::getCVarStr("filesystem.data_dir", "/data"), "/data" );
+        fileMananger_->mountPoint(hConfigurationVariables::getCVarStr("filesystem.tmp_dir", "/tmp"), "/tmp");
+        fileMananger_->mountPoint(hConfigurationVariables::getCVarStr("filesystem.save_dir", "/save"), "/save");
 
         const hChar* script_name = hConfigurationVariables::getCVarStr("startup.script", nullptr);
         hcAssertMsg(script_name, "startup.script is not set");
@@ -102,7 +102,6 @@ namespace Heart {
         system_ = new hSystem;
         soundManager_ = nullptr;//new hSoundManager;
         console_ = nullptr;//new hSystemConsole(consoleCb, consoleUser);
-        debugMenuManager_ = nullptr;//new hDebugMenuManager;
         debugServer_=new hNetHost;
 
         config_.Width_ = hConfigurationVariables::getCVarUint("renderer.width", 640);
@@ -157,30 +156,12 @@ namespace Heart {
             fileMananger_->closeFile(start_script_file);
         }
 
-        //////////////////////////////////////////////////////////////////////////
-        // Do any post start up init /////////////////////////////////////////////
-        // Console needs resources, call after setup functions ///////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //console_->initialise(actionManager_, luaVM_, renderer_, mainPublisherCtx_, debugServer_); !!JM
-        //debugMenuManager_->Initialise(renderer_, actionManager_); !!JM
-
-        debugInfo_ = nullptr;//new hDebugInfo(this);
-        //debugMenuManager_->RegisterMenu("dbinfo", debugInfo_); !!JM
-        //debugMenuManager_->SetMenuVisiablity("dbinfo", true); !!JM
-
-        //////////////////////////////////////////////////////////////////////////
-        // Load core assets - are none now... ////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-
         // Workaround for dead stripping of these types
         hBool register_type = hTrue;
         register_type &= hShaderProgram::auto_object_registered;
-        register_type &= hMaterial::auto_object_registered;
         register_type &= hTTFFontFace::auto_object_registered;
         register_type &= hTextureResource::auto_object_registered;
-        register_type &= hEntityDef::auto_object_registered;
         register_type &= hLevel::auto_object_registered;
-
         if (register_type) {
             engineState_ = hHeartState_LoadingCore;
         }
@@ -198,7 +179,7 @@ namespace Heart {
 #endif
         hTimer frameTimer;
         hBool runnableState=engineState_==hHeartState_Running||engineState_==hHeartState_Paused;
-
+        hBool resourcesReady = hResourceManager::systemResourcesReady();
         {
             HEART_PROFILE_SCOPE("MainUpdate");
 
@@ -221,8 +202,14 @@ namespace Heart {
             }
             //!!JM todo: GetSoundManager()->Update();
             // !!JM culled client side work
-            if (mainUpdate_ && runnableState)
+            if (mainUpdate_ && runnableState) {
                 (*mainUpdate_)( this );
+            }
+#if HEART_DEBUG_INFO
+            if (resourcesReady) {
+                hDebugMenuManager::SubmitMenus(actionManager_);
+            }
+#endif
             GetVM()->Update();
             //before calling Update dispatch the last frames messages
             GetMainEventPublisher()->updateDispatch();

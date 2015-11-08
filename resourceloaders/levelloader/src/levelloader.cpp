@@ -17,6 +17,7 @@ extern "C" {
 #include <fstream>
 #include <memory>
 #include <iostream>
+#include <unordered_set>
 
 #if defined (_MSC_VER)
 #   pragma warning(push)
@@ -46,11 +47,11 @@ static struct option long_options[] = {
 #define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
 #define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
-std::vector<std::string> resource_imports;
+std::unordered_set<std::string> resource_imports;
 
 int lua_import_resource(lua_State* L) {
     const char* resource_path = luaL_checkstring(L, 1);
-    resource_imports.push_back(resource_path);
+    resource_imports.insert(resource_path);
     return 0;
 }
 
@@ -98,7 +99,7 @@ int main(int argc, char* argv[]) {
     luaopen_proto_lua(L);
     lua_setglobal(L, "protobuf");
     lua_pushcclosure(L, lua_import_resource, 0);
-    lua_setglobal(L, "import");
+    lua_setglobal(L, "importResource");
 
     lua_getglobal(L, "package");
     lua_getfield(L, -1, "path");
@@ -106,10 +107,19 @@ int main(int argc, char* argv[]) {
     path += ";";
     path += path_root;
     path += "\\?.lua";
+    path += ";";
+    path += input_pb.resourcedatarootpath();
+    path += "\\lua\\?";
+    path += ";";
+    path += input_pb.resourcedatarootpath();
+    path += "\\lua\\?.lua";
+    std::replace(path.begin(), path.end(), '/', '\\');
     lua_pop(L, 1);
     lua_pushstring(L, path.c_str());
     lua_setfield(L, -2, "path");
     lua_pop(L, 1);
+
+
 
 
     if (luaL_dofile(L, script_path)) {

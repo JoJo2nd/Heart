@@ -213,6 +213,7 @@ static std::vector<std::pair<std::string, std::string>> findFilesMatchingWildcar
 struct Builder {
     typedef std::unordered_multimap< std::string, std::shared_ptr<Heart::builder::InputParameter> > ResourceParameterTable;
     typedef std::unordered_map< std::string, std::shared_ptr<Heart::builder::Input> > ResourceTable;
+    typedef std::unordered_map< std::string, std::vector<std::string> > ResourcePkgTable;
     typedef std::unordered_multimap< std::string, std::shared_ptr<Heart::builder::Input> > ResourceMutliTable;
 
     std::string rootBuilderScript;
@@ -226,7 +227,7 @@ struct Builder {
 	std::unordered_map<std::string, std::vector<std::string> > packageContents;
     //ResourceMutliTable pkgLookup;
     ResourceTable resourceLookup;
-    std::stack<std::string> currentPackage;
+    ResourcePkgTable resourcePackageLookup;
     std::stack<ResourceParameterTable> resourceParameters;
     std::stack<std::string> currentDirectory;
     std::stack<std::string> currentResourceDirectory;
@@ -239,13 +240,11 @@ struct Builder {
         currentDirectory.push(path);
         minfs_path_join(currentResourceDirectory.size() ? currentResourceDirectory.top().c_str() : "/", folder, resource_dir, BUILDER_MAX_PATH);
         currentResourceDirectory.push(resource_dir);
-        currentPackage.push(currentPackage.size() ? currentPackage.top() : std::string());
         resourceParameters.push(resourceParameters.size() ? resourceParameters.top() : ResourceParameterTable());
     }
     void pop() {
         currentDirectory.pop();
         currentResourceDirectory.pop();
-        currentPackage.pop();
         resourceParameters.pop();
     }
 };
@@ -339,11 +338,7 @@ int add_build_folder(lua_State* L) {
     b->pop();
     return 0;
 }
-int set_current_package(lua_State* L) {
-    Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
-    b->currentPackage.top() = luaL_checkstring(L, 1);
-    return 0;
-}
+
 int add_resources_to_package(lua_State* L) {
 	Builder* b = (Builder*)lua_topointer(L, lua_upvalueindex(1));
 	const char* package_name = luaL_checkstring(L, 1);
@@ -359,6 +354,7 @@ try {
         for (const auto& rid : foundFiles){
             // Constanst lookup Perf issue?
             pkg_list.push_back(rid);
+            b->resourcePackageLookup[rid].push_back(package_name);
         }
 	}
 	lua_pop(L, 1);
@@ -414,8 +410,8 @@ try {
             std::shared_ptr<Heart::builder::Input> new_input(new Heart::builder::Input());
             new_input->set_resourceinputpath(resource_path);
             new_input->set_resourcetype(resource_name);
-            new_input->set_package(b->currentPackage.top());
             new_input->set_resourceid(resource_id);
+            new_input->set_resourcedatarootpath(b->srcDataPath);
             
             auto parameter_range = b->resourceParameters.top().equal_range(new_input->resourcetype());
             for (auto p = parameter_range.first; p != parameter_range.second; ++p) {
@@ -703,7 +699,7 @@ int main (int argc, char **argv) {
                     auto cmd = builder_ctx->jobCommands[job->resourcetype()];
                     HANDLE pstdin, pstdout, pstderr, pid, tid;
                     if (exec2(cmd.c_str(), &pstdin, &pstdout, &pstderr, &pid, &tid) < 0) {
-                        fprintf(stderr, "Error beginning command '%s'\n", cmd.c_str());
+                        fprintf(stderr, "Error beginning command '%s' for type '%s'\n", cmd.c_str(), job->resourcetype().c_str());
                         continue;
                     }
 
@@ -816,7 +812,7 @@ int main (int argc, char **argv) {
                 if (!res_file.is_open()) {
                     fprintf(stderr, "Couldn't open %s for reading", i->builtresourcepath().c_str());
                     builder_ctx->fatalError.store(true);
-                    break;
+                    break;  
                 }
                 Heart::builder::Output resource_data;
                 resource_data.ParseFromIstream(&res_file);
@@ -828,9 +824,13 @@ int main (int argc, char **argv) {
                 entry->set_entrytype(i->runtimetype());
                 offset += filesize;
                 for (int di = 0, n = resource_data.resourcedependency_size(); di < n; ++di) {
-                    auto dr = builder_ctx->resourceLookup.find(resource_data.resourcedependency(di));
-                    if (dr != builder_ctx->resourceLookup.end()) {
-                        dep_pkgs.insert(dr->second->package());
+                    auto dr = builder_ctx->resourcePackageLookup.find(resource_data.resourcedependency(di));
+                    if (dr != builder_ctx->resourcePackageLookup.end()) {
+                        if (dr->second.size() > 1) {
+                            fprintf(stderr, "WARNING: Found resource dependent resource '%s' for resource '%s' in multiple packages. Defaulting to loading first found package at runtime (which is %s).\n", 
+                                resource_data.resourcedependency(di).c_str(), i->resourceid().c_str(), dr->second[0].c_str());
+                        }
+                        dep_pkgs.insert(dr->second[0]);
                     } else {
                         fprintf(stderr, "WARNING: Unable to find dependent resource %s for resource %s\n", resource_data.resourcedependency(di).c_str(), i->resourceid().c_str());
                     }

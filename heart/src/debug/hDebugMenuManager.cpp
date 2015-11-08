@@ -2,188 +2,77 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#if 0
+
 #include "debug/hDebugMenuManager.h"
-#include "base/hCRC32.h"
-#include "base/hProfiler.h"
+#include "base/hStringID.h"
 #include "input/hActionManager.h"
-#include "render/hTexture.h"
-#include "render/hRenderer.h"
-#include "render/hRenderUtility.h"
-#include "render/hRenderSubmissionContext.h"
-#include "render/hRenderMaterialManager.h"
+#include "imgui.h"
+#include <vector>
 
-namespace Heart
-{
+namespace Heart {
+namespace hDebugMenuManager {
+#if HEART_DEBUG_INFO
+namespace {
+    struct hDebugMenu {
+        hDebugMenu() 
+            : enabled(false) {
+        }
+        hDebugMenu(const hChar* in_name, const DebugMenuDrawCallback& in_func)
+            : name(in_name)
+            , func(in_func)
+            , enabled(false) {
+        }
+        std::string name;
+        DebugMenuDrawCallback func;
+        bool enabled;
+    };
 
-    hDebugMenuManager* hDebugMenuManager::instance_ = NULL;
+    std::vector<hDebugMenu> menus;
+    bool debugMenuOpen = false;
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hDebugMenuManager::hDebugMenuManager()
-        : renderer_(NULL)
-    {
-        hcAssert(instance_ == NULL);
-        instance_ = this;
+    const hStringID OpenDebugMenuAction("Open Debug Menu");
+}
+    void registerMenu(const hChar* name, const DebugMenuDrawCallback& callback) {
+        for (auto i = menus.begin(), n = menus.end(); i != n; ++i) {
+            if (i->name == name) {
+                menus.erase(i);
+            }
+        }
+        menus.emplace_back(name, callback);
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hDebugMenuManager::~hDebugMenuManager()
-    {
-        instance_ = NULL;
+    void unregisterMenu(const hChar* name) {
+        for (auto i=menus.begin(), n=menus.end(); i!=n; ++i){
+            if (i->name == name) {
+                menus.erase(i);
+                return;
+            }
+        }
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::Initialise(hRenderer* renderer, hActionManager* actionManager)
-    {
-        renderer_ = renderer;
-        actionManager_ = actionManager;
-
-        menuMap_.SetAutoDelete(hTrue);
-
-        hRenderMaterialManager* matMgr=renderer->GetMaterialManager();
-        hUint32 w = renderer->GetWidth();
-        hUint32 h = renderer->GetHeight();
-        hFloat aspect = (hFloat)w/(hFloat)h;
-        hRenderViewportTargetSetup rtDesc={0};
-        hTexture* bb=matMgr->getGlobalTexture("back_buffer");
-        hRenderTargetView* rtv=NULL;
-        hRenderTargetViewDesc rtvd;
-        hDepthStencilViewDesc dsvd;
-        hZeroMem(&rtvd, sizeof(rtvd));
-        hZeroMem(&dsvd, sizeof(dsvd));
-        rtvd.format_=bb->getTextureFormat();
-        rtvd.resourceType_=bb->getRenderType();
-        hcAssert(bb->getRenderType()==eRenderResourceType_Tex2D);
-        rtvd.tex2D_.topMip_=0;
-        rtvd.tex2D_.mipLevels_=~0;
-        renderer->createRenderTargetView(bb, rtvd, &rtv);
-        rtDesc.nTargets_=1;
-        rtDesc.targetTex_=bb;
-        rtDesc.targets_[0]=rtv;
-        rtDesc.depth_=hNullptr;
-
-        hRelativeViewport vp;
-        vp.x= 0.f;
-        vp.y= 0.f;
-        vp.w= 1.f;
-        vp.h= 1.f;
-        Heart::hMatrix vm = Heart::hMatrix::identity();
-        camera_.Initialise(renderer);
-        camera_.bindRenderTargetSetup(rtDesc);
-        camera_.SetFieldOfView(45.f);
-        camera_.SetOrthoParams(0.f, 1.f, 2.f, -1.f, 0.f, 1000.f);
-        camera_.SetViewMatrix(vm);
-        camera_.setViewport(vp);
-        camera_.SetTechniquePass(renderer->GetMaterialManager()->GetRenderTechniqueInfo("main"));
-
-        rtv->DecRef();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::Destroy()
-    {
-        camera_.releaseRenderTargetSetup();
-        menuMap_.Clear(hTrue);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::RegisterMenu( const hChar* name, hDebugMenuBase* menu )
-    {
-        menuMap_.Insert(hCRC32::StringCRC(name), menu);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::UnregisterMenu( hDebugMenuBase* menu )
-    {
-        if (!menu)
-        {
+    void SubmitMenus(hActionManager* action_mgr) {
+        hInputAction in_action;
+        if (action_mgr->queryAction(0, OpenDebugMenuAction, &in_action)) {
+            if (in_action.rising_) {
+                debugMenuOpen = !debugMenuOpen;
+            }
+        }
+        if (!debugMenuOpen) {
             return;
         }
 
-        menuMap_.Remove(menu);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::SetMenuVisiablity( const hChar* name, hBool show )
-    {
-        hDebugMenuBase* dm = menuMap_.Find(hCRC32::StringCRC(name));
-        if (dm)
-        {
-            dm->SetVisible(show);
+        ImGui::Begin("Debug Menu", &debugMenuOpen, ImGuiWindowFlags_ShowBorders);
+        for (auto& i : menus) {
+            if (ImGui::Button(i.name.c_str())) i.enabled = !i.enabled;
         }
-    }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::PreRenderUpdate()
-    {
-        for (hDebugMenuBase* dm = menuMap_.GetHead(); dm; dm = dm->GetNext())
-        {
-            dm->PreRenderUpdate();
+        for (auto& i : menus) {
+            if (i.enabled) {
+                i.func();
+            }
         }
+        ImGui::End();
     }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::RenderMenus(hRenderSubmissionCtx* rndCtx, hRenderMaterialManager* matManager)
-    {
-        HEART_PROFILE_FUNC();
-
-        //hMatrix view, proj;
-        hViewport viewport;
-        hRenderBuffer* camCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("CameraConstants"));
-        hRenderBuffer* instCB = matManager->GetGlobalConstantBlock(hCRC32::StringCRC("InstanceConstants"));
-        hcAssertMsg(camCB, "Couldn't find global constant block \"CameraConstants\"");
-        hcAssertMsg(instCB, "Couldn't find global constant block \"InstanceConstants\"");
-
-        camera_.SetOrthoParams((hFloat)renderer_->GetWidth(), (hFloat)renderer_->GetHeight(), 0.f, 100.f);
-        hRenderUtility::setCameraParameters(rndCtx, &camera_);
-
-        hDebugRenderParams params;
-        params.rtWidth_ = renderer_->GetWidth();
-        params.rtHeight_ = renderer_->GetHeight();
-        for (hDebugMenuBase* i = menuMap_.GetHead(); i != NULL; i = i->GetNext())
-        {
-            i->Render(rndCtx, instCB, params);
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    void hDebugMenuManager::EndFrameUpdate()
-    {
-        for (hDebugMenuBase* dm = menuMap_.GetHead(); dm; dm = dm->GetNext())
-        {
-            dm->EndFrameUpdate();
-        }
-    }
-
-}
 #endif
+}
+}

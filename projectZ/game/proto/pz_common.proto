@@ -1,0 +1,6 @@
+package projectZ.proto;
+
+message Vec2 {
+    optional float x = 1;
+    optional float y = 2;
+}

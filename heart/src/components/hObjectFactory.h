@@ -26,6 +26,7 @@ namespace Heart {
 
     struct hObjectDefinition 
     {
+        hUintptr_t                      runtimeTypeID;
         hStringID                       objectName_;
         hSize_t                         typeSize;
         hObjectConstructProc            construct_;
@@ -41,6 +42,9 @@ namespace Heart {
 
 #define hObjectType(name, serialiser_type) \
     static hBool auto_object_registered;\
+    static hUintptr_t getRuntimeTypeID() { \
+        return (hUintptr_t)&auto_object_registered; \
+    } \
     static Heart::hStringID getTypeNameStatic() { \
         static Heart::hStringID typeName(#name); \
         return typeName; \
@@ -79,6 +83,7 @@ namespace Heart {
         return type_ptr->linkObject(); \
     }\
     static Heart::hObjectDefinition autogen_entity_definition_##name = { \
+        type::getRuntimeTypeID(), \
         type::getTypeNameStatic(), \
         sizeof(type),\
         autogen_construct_##name, \
@@ -90,6 +95,7 @@ namespace Heart {
         autogen_link_##name, \
     };\
     hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
+
 
 #define hRegisterComponentObjectType(name, type, serialiser_type, ...) \
     static void* autogen_construct_##name (void* in_place) { return in_place ? new(in_place) type : new type; } \

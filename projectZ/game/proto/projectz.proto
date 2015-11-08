@@ -1,0 +1,9 @@
+package projectZ.proto;
+
+message projectZGame {
+    optional uint32 zombieCount = 1;
+    optional uint32 mapTileCount = 2;
+    optional string mapTileLevelResource = 3;
+	repeated string maleZombieEntities = 4;
+	repeated string femaleZombieEntities = 5;
+}

@@ -75,7 +75,6 @@ namespace hResourceManager
     hBool   systemResourcesReady();
     void    update();
     void    shutdown();
-    void    printResourceInfo();
     // Will start garbage cycle if one is not started, runs cycle for step seconds
     void    collectGarbage(hFloat step);
     void    addResource(void* ptr, hStringID package_id, hStringID res_id, hStringID type_id, hObjectDestroyProc destructor);

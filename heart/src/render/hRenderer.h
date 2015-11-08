@@ -16,8 +16,6 @@
 #include "math/hMatrix.h"
 #include "math/hVec3.h"
 #include "math/hVec4.h"
-#include "render/hRenderStateBlock.h"
-#include "render/hRenderSubmissionContext.h"
 #include "render/hRendererCamera.h"
 #include "render/hTextureFormat.h"
 #include "render/hRenderPrim.h"

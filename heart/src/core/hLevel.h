@@ -10,10 +10,15 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "entity_def.pb.h"
 
 namespace Heart {
+    class hEntity;
+
 class hLevel {
 public:
     hObjectType(hLevel, Heart::proto::LevelDefinition);
 
+    ~hLevel();
 
+    std::string levelName;
+    std::vector<hEntity*> levelEntities;
 };
 }

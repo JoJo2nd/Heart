@@ -28,6 +28,16 @@ namespace Heart
 
     }
 
+    const char* hStringID::c_str() const
+    {
+        return strEntry_->strValue_;
+    }
+
+    hBool hStringID::is_default() const
+    {
+        return strEntry_ == get_default_id()/*&s_default*/;
+    }
+
     hStringID::hStringIDEntry* hStringID::get_default_id() {
         static hStringID::hStringIDEntry s_default;
         return &s_default;

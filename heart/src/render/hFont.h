@@ -2,8 +2,7 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#ifndef __HRFONT_H__
-#define __HRFONT_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hStringID.h"
@@ -18,18 +17,6 @@
 struct FT_LibraryRec_;
 
 namespace Heart {
-#if 0
-    enum 
-    {
-        FONT_ALIGN_VCENTRE	= 1,//	along y axis
-        FONT_ALIGN_LEFT		= 1 << 1,
-        FONT_ALIGN_RIGHT	= 1 << 2,
-        FONT_ALIGN_TOP		= 1 << 3,
-        FONT_ALIGN_BOTTOM	= 1 << 4,
-        FONT_ALIGN_HCENTRE	= 1 << 5, // alogn x axis
-        FONT_ALIGN_FLIP	    = 1 << 6, // alogn x axis
-    };
-#endif
     
     void        hInitFreetype2();
     FT_Library* hGetFreetype2Library();
@@ -120,5 +107,3 @@ namespace Heart {
         void  flush();
     };
 }
-
-#endif //__HRFONT_H__
