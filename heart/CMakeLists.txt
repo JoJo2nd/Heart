@@ -111,6 +111,10 @@ file(GLOB HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
+file(GLOB HEART_2D_FILES 
+    "${HEART_SOURCE_DIR}/src/2d/*.h"
+    "${HEART_SOURCE_DIR}/src/2d/*.cpp"
+)
 file(GLOB HEART_SCENE_FILES
     "${HEART_SOURCE_DIR}/src/scene/*.h"
     "${HEART_SOURCE_DIR}/src/scene/*.cpp"
@@ -188,6 +192,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_MATH_FILES}
     ${HEART_NETWORK_FILES}
     ${HEART_RENDER_FILES}
+    ${HEART_2D_FILES}
     ${HEART_SCENE_FILES}
     ${HEART_THREAD_FILES}
     ${HEART_UTILS_FILES}
@@ -220,6 +225,7 @@ source_group(math FILES ${HEART_MATH_FILES})
 source_group(network FILES ${HEART_NETWORK_FILES})
 source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 source_group(render FILES ${HEART_RENDER_FILES})
+source_group(twodim FILES ${HEART_2D_FILES})
 source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
 source_group(thread FILES ${HEART_THREAD_FILES})

@@ -44,5 +44,5 @@ if (PLATFORM_WINDOWS)
     	TARGET heart_testbed
         POST_BUILD
     	COMMAND "${DEPLOY_TOOLS_DIR}/deploy_lib.py" -s "${WindowsSDKDir}/redist/d3d/${PLATTYPE}/" -d "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}" -l d3dcompiler
-    )
+    ) 
 endif()

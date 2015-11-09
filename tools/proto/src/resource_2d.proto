@@ -1,0 +1,28 @@
+package Heart.proto;
+
+message RenderSprite2D {
+    optional float x = 1;
+    optional float y = 2;
+    optional uint32 renderOrder = 3;
+    optional string tileSetResource = 4;
+}
+
+message RenderPlane2D {
+    optional string planeName = 1;
+    optional float tileSize = 2;
+    optional bool spritePlane = 3;
+    optional uint32 planeWidth = 4;
+    optional uint32 planeHeight = 5;
+    optional bool xWrapAround = 6;
+    optional bool yWrapAround = 7;
+    optional uint32 renderOrder = 8;
+    repeated uint32 tileData = 9;
+    optional string tileSetResource = 10;
+}
+
+message DynamicTileSet2D {
+	optional uint32 cacheWidth = 1 [default = 4096];
+	optional uint32 cacheHeight = 2 [default = 4096];
+	optional uint32 minTileX = 3 [default = 4];
+	optional uint32 minTileY = 4 [default = 4];
+}

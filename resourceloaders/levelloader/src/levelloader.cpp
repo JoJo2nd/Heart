@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
         lua_pop(L, 1);
         // grab the object components
         lua_getfield(L, -1, "components");
-        fatal_error_check(lua_istable(L, -2), "entities table entry is missing components table.");
+        fatal_error_check(lua_istable(L, -1), "entities table entry is missing components table.");
         int j = 0;
         lua_pushnil(L);
         while (lua_next(L, -2) != 0) {
@@ -176,6 +176,29 @@ int main(int argc, char* argv[]) {
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
             ++j;
+        }
+        lua_pop(L, 1);
+        // Grab the debug object components
+        // grab the object components
+        lua_getfield(L, -1, "debugcomponents");
+        if (lua_istable(L, -1)) {
+            int j = 0;
+            lua_pushnil(L);
+            while (lua_next(L, -2) != 0) {
+                ///if (lua_getmetatable(L, -1)) {  /* does it have a metatable? */
+                ///    if (!lua_rawequal(L, -1, -2))  /* not the same? */
+                // This is !!REALLY BAD!! I need to fix this by storing all protobuf objects metatables into
+                // a table within the REGISTRY and grabbing the object metatable to check if exists as a key in that table.
+                // ONLY then would the following lines be safe. Currently, we need to script to be sane...
+                msg_udata* p = (msg_udata*)lua_touserdata(L, -1);
+                auto* msgContainer = entity->add_debugcomponents();
+                msgContainer->set_type_name(p->msg->GetTypeName());
+                msgContainer->set_messagedata(p->msg->SerializeAsString());
+
+                /* removes 'value'; keeps 'key' for next iteration */
+                lua_pop(L, 1);
+                ++j;
+            }
         }
         lua_pop(L, 1);
 

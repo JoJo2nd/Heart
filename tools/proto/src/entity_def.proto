@@ -12,6 +12,7 @@ message EntityDefinition {
 	optional string objectGUID = 1;
 	optional bool transient = 2;
 	repeated MessageContainer components = 3;
+	repeated MessageContainer debugComponents = 4;
 }
 
 message LevelDefinition {
