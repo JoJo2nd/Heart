@@ -11,7 +11,6 @@
 #include "base/hReferenceCounted.h"
 #include "core/hProtobuf.h"
 #include "core/hIFileSystem.h"
-#include "core/hResource.h"
 #include "components/hObjectFactory.h"
 #include "threading/hJobManager.h"
 #include <queue>

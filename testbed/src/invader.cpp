@@ -8,6 +8,7 @@
 #include "base/hClock.h"
 #include "base/hUUID.h"
 #include "core/hHeart.h"
+#include "core/hResourceManager.h"
 #include "components/hEntity.h"
 #include "components/hEntityFactory.h"
 #include "math/hVec2.h"

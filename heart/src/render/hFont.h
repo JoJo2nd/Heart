@@ -9,6 +9,7 @@
 #include "base/hRendererConstants.h"
 #include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
+#include "utils/hTextureAtlas.h"
 #include "ft2build.h"
 #include FT_FREETYPE_H
 #include <memory>
@@ -26,25 +27,15 @@ namespace Heart {
     typedef FT_GlyphSlot hFontGlyph;
     typedef hUint64 hGlyphHash;
 
-    struct hGlyphBMNode {
-        hGlyphBMNode() {
-            child[0]=nullptr;
-            child[1]=nullptr;
-        }
-        hGlyphBMNode*       child[2]; //left, right children
-        hUint16             x, y, w, h;  // image quad
-    };
-
     struct hCachedGlyph {
-        //hFontGlyphMetrics   metrics_;
-        hGlyphBMNode*       atlas_;
-        hFloat              uv_[4]; //top, left, bottom, right
-        hFloat              width;
-        hFloat              height;
-        hFloat              left;
-        hFloat              top;
-        hFloat              advanceX;
-        hFloat              advanceY;
+        const Util::hAtlasNode* atlas_;
+        hFloat uv_[4]; //top, left, bottom, right
+        hFloat width;
+        hFloat height;
+        hFloat left;
+        hFloat top;
+        hFloat advanceX;
+        hFloat advanceY;
     };
 
     class  hTTFFontFace {
@@ -75,35 +66,22 @@ namespace Heart {
     class hFontRenderCache {
         typedef std::unordered_map<hGlyphHash, hCachedGlyph> GlyphHashTable;
 
-        std::unique_ptr<char>       textureCache_;
-        std::vector<hGlyphBMNode>   atlasNodes_;
         GlyphHashTable              cachedGlyphs_;
-        hGlyphBMNode*               root_;
-        hUint                       textureDim_;
-        hUint                       pad_;
-        hUint                       nodeReserve_;
-        hUint                       allocated_;
-        hUint16                     freelist_;
-
-        hGlyphBMNode* cacheInsert(hGlyphBMNode* node, hUint16 width, hUint16 height);
-        hGlyphBMNode* allocateNode() {
-            if (allocated_ >= nodeReserve_) {
-                return nullptr;
-            }
-            atlasNodes_.push_back(hGlyphBMNode());
-            return atlasNodes_.data() + allocated_++;
-        }
+        Util::hTextureAtlasBuilder  atlasBuilder;
+        hUint                       textureDim;
+        hUint                       pad;
 
     public:
         hFontRenderCache()
-            : root_(nullptr){
+            : textureDim(0)
+            , pad(0) {
 
         }
 
         void  initialise();
         // return true when the texture needs to be flushed (that is, it's out of space)
         const hCachedGlyph* getCachedGlyphBitmap(hTTFFontFace* face, hUint32 charcode);
-        const char* getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight);
+        const char* getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight) const;
         void  flush();
     };
 }

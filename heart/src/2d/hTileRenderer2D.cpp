@@ -16,6 +16,11 @@ namespace Heart {
 namespace hTileRenderer2D {
 
 hBool registerComponents() {
+    hBool ret = hTrue;
+    ret &= hRenderPlane2D::auto_object_registered;
+    ret &= hSprite2D::auto_object_registered;
+    ret &= hDynamicTileSet2D::auto_object_registered;
+
     Heart::hEntityFactory::hComponentMgt c;
     c.object_def = hObjectFactory::getObjectDefinition(hRenderPlane2D::getTypeNameStatic());
     c.construct = [](hEntity* owner) -> hEntityComponent* { return new hRenderPlane2D(); };
@@ -32,7 +37,7 @@ hBool registerComponents() {
     c.destruct = [](hEntityComponent* ptr) { delete ptr; };
     hEntityFactory::registerComponentManagement(c);
 
-    return hTrue;
+    return ret;
 }
 
 }

@@ -5,6 +5,7 @@
 
 #include "render/hDebugDraw.h"
 #include "core/hHeart.h"
+#include "core/hResourceManager.h"
 #include "render/hFont.h"
 #include "render/hRenderer.h"
 #include "render/hRenderUtility.h"

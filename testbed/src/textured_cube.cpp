@@ -7,6 +7,7 @@
 #include "base/hBase64.h"
 #include "base/hClock.h"
 #include "base/hStringUtil.h"
+#include "core/hResourceManager.h"
 #include "render/hPipelineStateDesc.h"
 #include "render/hRenderer.h"
 #include "render/hVertexBufferLayout.h"

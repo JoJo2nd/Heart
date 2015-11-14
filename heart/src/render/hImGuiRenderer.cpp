@@ -5,6 +5,7 @@
 
 #include "base/hTypes.h"
 #include "core/hSystem.h"
+#include "core/hResourceManager.h"
 #include "render/hPipelineStateDesc.h"
 #include "render/hMipDesc.h"
 #include "render/hRenderer.h"

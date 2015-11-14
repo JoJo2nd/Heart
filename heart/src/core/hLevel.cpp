@@ -25,8 +25,12 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
     for (hInt i=0, n=obj->entities_size(); i<n; ++i) {
         auto& entity = obj->entities(i);
         hUuid_t guid = hUUID::fromString(entity.objectguid().c_str(), entity.objectguid().length());
+        hSize_t totalComponents = entity.components_size();
+#if HEART_DEBUG_INFO
+        totalComponents += entity.debugcomponents_size();
+#endif
         components.clear();
-        components.reserve(entity.components_size());
+        components.reserve(totalComponents);
         for (hInt ci = 0, cn = entity.components_size(); ci<cn; ++ci) {
             hComponentDefinition comp_def;
             comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.components(ci).type_name().c_str());
@@ -36,6 +40,17 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
                 components.push_back(std::move(comp_def));
             }
         }
+#if HEART_DEBUG_INFO
+        for (hInt ci = 0, cn = entity.debugcomponents_size(); ci < cn; ++ci) {
+            hComponentDefinition comp_def;
+            comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.debugcomponents(ci).type_name().c_str());
+            if (comp_def.typeDefintion) {
+                comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
+                comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
+                components.push_back(std::move(comp_def));
+            }
+        }
+#endif
         auto* lvl_entity = hEntityFactory::createEntity(guid, components.data(), components.size());
         lvl_entity->transient = entity.has_transient() ? entity.transient() : false;
         levelEntities.push_back(lvl_entity);

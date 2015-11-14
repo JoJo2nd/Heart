@@ -12,7 +12,6 @@
 #include "base/hArray.h"
 #include "base/hRendererConstants.h"
 #include "base/hConfigOptionsInterface.h"
-#include "core/hResource.h"
 #include "math/hMatrix.h"
 #include "math/hVec3.h"
 #include "math/hVec4.h"
@@ -35,13 +34,6 @@
 namespace Heart {
 
 class hShaderProgram;
-
-
-#define HEART_DEBUG_CAMERA_ID (13)
-#define HEART_DEBUGUI_CAMERA_ID (14)
-
-hFUNCTOR_TYPEDEF(void (*)(const hChar*, void**, hUint32*), hShaderIncludeCallback);
-hFUNCTOR_TYPEDEF(void (*)(hRenderSubmissionCtx*), hCustomRenderCallback);
 
 class hSystem;
 

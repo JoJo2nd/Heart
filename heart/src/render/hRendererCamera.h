@@ -26,7 +26,7 @@ namespace Heart
     {
         hUint               nTargets_;
         hTexture*           targetTex_; // used for dims- must not be NULL
-        hRenderTargetView*  targets_[HEART_MAX_SIMULTANEOUS_RENDER_TARGETS];
+        hRenderTargetView*  targets_[4];
         hDepthStencilView*  depth_;
     };
 

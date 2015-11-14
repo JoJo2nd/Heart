@@ -109,7 +109,6 @@ extern "C" {
 #include "core/hConfigOptions.h"
 #include "core/hIFileSystem.h"
 #include "core/hResourceStreamHelpers.h"
-#include "core/hResource.h"
 #include "core/hResourcePackage.h"
 #include "core/hResourceManager.h"
 #include "core/hSystem.h"

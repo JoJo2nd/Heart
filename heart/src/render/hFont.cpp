@@ -98,63 +98,11 @@ const hFontGlyph hTTFFontFace::getGlyph(hUint32 charcode) {
 
 
 void  hFontRenderCache::initialise() {
-    textureDim_ = hConfigurationVariables::getCVarUint("fontcache.cachesize", 1024);
+    textureDim = hConfigurationVariables::getCVarUint("fontcache.cachesize", 1024);
     hUint minsize = hConfigurationVariables::getCVarUint("fontcache.minsize", 8);
-    pad_ = hConfigurationVariables::getCVarUint("fontcache.glyphpadding", 2);
-    nodeReserve_ = (textureDim_/minsize);
-    nodeReserve_ *= nodeReserve_;
-    textureCache_.reset(new char[textureDim_*textureDim_]);
+    pad = hConfigurationVariables::getCVarUint("fontcache.glyphpadding", 2);
+    atlasBuilder.initialise(textureDim, textureDim, 1, minsize, minsize);
     flush();
-}
-
-hGlyphBMNode* hFontRenderCache::cacheInsert(hGlyphBMNode* pnode, hUint16 width, hUint16 height) {
-    if (!pnode)
-        return nullptr;
-    if (pnode->child[0] || pnode->child[1]) {
-        //this pnode is occupied, try inserting to a child
-        hGlyphBMNode* newnode = cacheInsert(pnode->child[0], width, height);
-        if (!newnode)
-            newnode = cacheInsert(pnode->child[1], width, height);
-        return newnode;
-    } else {
-        // bail if we don't fit
-        if (width > pnode->w || height > pnode->h)
-            return nullptr;
-
-        if (width == pnode->w && height == pnode->h) {// just copy
-            return pnode;
-        } else {// merge-split case
-            //split case
-            pnode->child[0] = allocateNode();
-            pnode->child[1] = allocateNode();
-
-            if (!pnode->child[0] || !pnode->child[1])
-                return nullptr; //no mem
-            
-            // decide which way to split
-            hUint16 dw = pnode->w - (width);
-            hUint16 dh = pnode->h - (height);
-            
-            if (dw > dh) { // split vertically
-                pnode->child[0]->x = pnode->x; pnode->child[0]->w = width; 
-                pnode->child[0]->y = pnode->y+height; pnode->child[0]->h = pnode->h-height; 
-
-                pnode->child[1]->x = pnode->x+width; pnode->child[1]->w = pnode->w - width; 
-                pnode->child[1]->y = pnode->y; pnode->child[1]->h = pnode->h; 
-            } else { // split horizontally 
-                pnode->child[0]->x = pnode->x+width; pnode->child[0]->w = pnode->w - width; 
-                pnode->child[0]->y = pnode->y; pnode->child[0]->h = height; 
-
-                pnode->child[1]->x = pnode->x; pnode->child[1]->w = pnode->w; 
-                pnode->child[1]->y = pnode->y+height; pnode->child[1]->h = pnode->h - height; 
-            }
-            
-            //insert into this node
-            pnode->w = width;
-            pnode->h = height;
-            return pnode;
-        }
-    }
 }
 
 const hCachedGlyph* hFontRenderCache::getCachedGlyphBitmap(hTTFFontFace* face, hUint32 charcode) {
@@ -162,15 +110,14 @@ const hCachedGlyph* hFontRenderCache::getCachedGlyphBitmap(hTTFFontFace* face, h
     auto it = cachedGlyphs_.find(gh);
     if (it == cachedGlyphs_.end()) {
         auto ttfglyph = face->getGlyph(charcode);
-        if (!ttfglyph)
-            return nullptr;
-        auto* entry = cacheInsert(root_, ttfglyph->bitmap.width+(pad_*2), ttfglyph->bitmap.rows+(pad_*2));
-        if (!entry)// does flush need to be called?
-            return nullptr;
+        if (!ttfglyph) return nullptr;
+        auto* entry = atlasBuilder.insert(ttfglyph->bitmap.width+(pad*2), ttfglyph->bitmap.rows+(pad*2), nullptr);
+        if (!entry) return nullptr;// does flush need to be called?
+        auto* tex_dst = (hByte*)atlasBuilder.getTextureDataPtrMutable();
         auto pitch = ttfglyph->bitmap.pitch;
         auto* srcbase = ttfglyph->bitmap.buffer; 
         for (auto y=0, yn=ttfglyph->bitmap.rows; y<yn; ++y) {
-            auto* dst = textureCache_.get()+(((entry->y+pad_+y)*textureDim_)+pad_+entry->x);
+            auto* dst = tex_dst+(((entry->y+pad+y)*textureDim)+pad+entry->x);
             auto* src = srcbase+((pitch*y));
             for (auto x=0, xn=ttfglyph->bitmap.width; x<xn; ++x, ++dst, ++src) {
                 *dst = *src;
@@ -185,10 +132,10 @@ const hCachedGlyph* hFontRenderCache::getCachedGlyphBitmap(hTTFFontFace* face, h
         cg.top = (hFloat)ttfglyph->bitmap_top;
         cg.advanceX = (hFloat)(ttfglyph->advance.x >> 6);
         cg.advanceY = (hFloat)(ttfglyph->advance.y >> 6);
-        cg.uv_[0] = (entry->x+pad_)/(hFloat)textureDim_;
-        cg.uv_[1] = (entry->y+pad_)/(hFloat)textureDim_;
-        cg.uv_[2] = (entry->x+pad_+(entry->w-(pad_*2))) / (hFloat)textureDim_;
-        cg.uv_[3] = (entry->y+pad_+(entry->h-(pad_*2))) / (hFloat)textureDim_;
+        cg.uv_[0] = (entry->x+pad)/(hFloat)textureDim;
+        cg.uv_[1] = (entry->y+pad)/(hFloat)textureDim;
+        cg.uv_[2] = (entry->x+pad+(entry->w-(pad*2))) / (hFloat)textureDim;
+        cg.uv_[3] = (entry->y+pad+(entry->h-(pad*2))) / (hFloat)textureDim;
         cachedGlyphs_.insert(GlyphHashTable::value_type(gh, cg));
         it = cachedGlyphs_.find(gh);
     }
@@ -197,22 +144,13 @@ const hCachedGlyph* hFontRenderCache::getCachedGlyphBitmap(hTTFFontFace* face, h
 }
 
 void  hFontRenderCache::flush() {
-    atlasNodes_.clear();
-    atlasNodes_.reserve(nodeReserve_);
-    allocated_ = 0;
-    root_ = allocateNode();
-    root_->x=0;
-    root_->y=0;
-    root_->w=textureDim_;
-    root_->h=textureDim_;
-#if HEART_DEBUG
-    hMemSet(textureCache_.get(), 0x0, textureDim_*textureDim_);
-#endif
+    atlasBuilder.clear();
 }
 
-const char* hFontRenderCache::getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight) {
-    *outwidth = *outheight = textureDim_;
-    return textureCache_.get();
+const char* hFontRenderCache::getTextureData(hUint* hRestrict outwidth, hUint* hRestrict outheight) const {
+    *outwidth = atlasBuilder.getTextureWidth();
+    *outheight = atlasBuilder.getTextureHeight();
+    return (const char*)atlasBuilder.getTextureDataPtr();
 }
 
 }

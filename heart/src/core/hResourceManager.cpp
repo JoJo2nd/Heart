@@ -10,7 +10,6 @@
 #include "base/hStringUtil.h"
 #include "base/hProfiler.h"
 #include "base/hCRC32.h"
-#include "core/hResource.h"
 #include "core/hResourcePackage.h"
 #include "debug/hDebugMenuManager.h"
 #include "imgui.h"
