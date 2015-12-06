@@ -13,6 +13,7 @@ message EntityDefinition {
 	optional bool transient = 2;
 	repeated MessageContainer components = 3;
 	repeated MessageContainer debugComponents = 4;
+    optional string friendlyName = 5 [default = "No Name"];
 }
 
 message LevelDefinition {

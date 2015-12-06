@@ -26,6 +26,7 @@ set( HEART_INCLUDE_DIRS
     "${MEMTRACKERLIB_SRC_DIR}"
     "${ANGLE_INCLUDE_DIRS}"
     "${LFDS_INCLUDE_DIR}"
+    "${UTILS_INCLUDE_DIR}"
 )
 
 set(HEART_LIB_DIRS)
@@ -111,6 +112,10 @@ file(GLOB HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
+file(GLOB HEART_SHADER_FILES 
+    "${HEART_SOURCE_DIR}/src/shaders/*.h"
+    "${HEART_SOURCE_DIR}/src/shaders/*.cpp"
+)
 file(GLOB HEART_2D_FILES 
     "${HEART_SOURCE_DIR}/src/2d/*.h"
     "${HEART_SOURCE_DIR}/src/2d/*.cpp"
@@ -192,6 +197,7 @@ set( HEART_NON_UNITY_FILES
     ${HEART_MATH_FILES}
     ${HEART_NETWORK_FILES}
     ${HEART_RENDER_FILES}
+    ${HEART_SHADER_FILES}
     ${HEART_2D_FILES}
     ${HEART_SCENE_FILES}
     ${HEART_THREAD_FILES}
@@ -225,6 +231,7 @@ source_group(math FILES ${HEART_MATH_FILES})
 source_group(network FILES ${HEART_NETWORK_FILES})
 source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 source_group(render FILES ${HEART_RENDER_FILES})
+source_group(shaders FILES ${HEART_SHADER_FILES})
 source_group(twodim FILES ${HEART_2D_FILES})
 source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
@@ -277,9 +284,9 @@ set_source_files_properties("${HEART_SOURCE_DIR}/src/events/hEvent_gen.py" PROPE
 set_source_files_properties(${HEART_GEN_FILES} PROPERTIES GENERATED 1)
 
 set(HEART_LIBRARIES_DEBUG 
-        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet imgui memtrackerlib ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
+        heart_base zlib crypto lua52 minizip libogg libvorbis proto enet imgui memtrackerlib utils ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
 set(HEART_LIBRARIES_RELEASE
-         heart_base zlib crypto lua52 minizip libogg libvorbis proto enet ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
+         heart_base zlib crypto lua52 minizip libogg libvorbis proto enet utils ${ANGLE_LIBRARIES} ${SDL2_LIBRARY} ${FREETYPE_LIBRARIES})
 
 include_directories(${HEART_INCLUDE_DIRS})
 link_directories(${HEART_LIB_DIRS})

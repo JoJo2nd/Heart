@@ -12,8 +12,13 @@ namespace hRenderer {
 }
 namespace hTileRenderer2D {
 
-    void tick();
+    hBool initialise();
+    void setView(const hRendererCamera& camera);
+    void transformPlanesToViewSpace();
+    void updateDynamicRenderResources(hRenderer::hCmdList* cl);
     void renderTilePlanes(hRenderer::hCmdList* cl);
     hBool registerComponents();
+    hRenderer::hUniformBuffer* getViewUniformBuffer();
+    hRenderer::hUniformBuffer* getSharedUniformBuffer(); // temp
 }
 }

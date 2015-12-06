@@ -111,20 +111,14 @@ void* deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID
     if (!obj_def) {
         return nullptr;
     }
-    void* obj = obj_def->construct_(nullptr);
     hObjectMarshall* marshall = obj_def->constructMarshall_();
-    if (!obj || !marshall) {
-        hFree(obj);//delete obj; // delete void* is undefined
-        obj = nullptr;
-        delete marshall;
-        marshall = nullptr;
+    if (!marshall) {
         return nullptr;
     }
-    marshall->ParseFromString(msg_container->messagedata());
-    if (!obj_def->deserialise_(obj, marshall)) {
-        hFree(obj);//delete obj; // delete void* is undefined
-        obj = nullptr;
+    if (!marshall->ParseFromString(msg_container->messagedata())) {
+        return nullptr;
     }
+    void* obj = obj_def->construct_(marshall);
     delete marshall;
     marshall = nullptr;
     if (out_type_name) {

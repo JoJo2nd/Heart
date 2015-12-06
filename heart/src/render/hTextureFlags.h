@@ -8,7 +8,7 @@
 namespace Heart {
 namespace hRenderer {
     enum class TextureFlags : hUint32 {
-        RenderTarget = 0x80000000,
-        Dynamic = 0x80000001,
+        RenderTarget = 1 << 0,
+        Dynamic = 1 << 1,
     };
 }}

@@ -12,6 +12,7 @@
 namespace Heart {
     hChar           hHeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
+    hUint g_RenderFenceCount = 3;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -135,6 +136,7 @@ namespace Heart {
             config_.Fullscreen_,
             config_.vsync_);
         hResourceManager::initialise(fileMananger_, jobManager);
+        hTileRenderer2D::initialise();
         //!!JM todo: soundManager_->Initialise();
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,6 +164,7 @@ namespace Heart {
         register_type &= hShaderProgram::auto_object_registered;
         register_type &= hTTFFontFace::auto_object_registered;
         register_type &= hTextureResource::auto_object_registered;
+        register_type &= hTextureAtlasResource::auto_object_registered;
         register_type &= hLevel::auto_object_registered;
         register_type &= hTileRenderer2D::registerComponents();
         if (register_type) {

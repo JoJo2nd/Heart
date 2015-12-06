@@ -64,6 +64,7 @@ namespace hRenderer {
     HEART_MODULE_API(hShaderStage*, compileShaderStageFromSource)(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile);
     HEART_MODULE_API(void, destroyShader)(hShaderStage* prog);
     HEART_MODULE_API(hTexture2D*, createTexture2D)(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags);
+    HEART_MODULE_API(void*, getTexture2DMappingPtr)(hTexture2D* t, hUint mip_level);
     HEART_MODULE_API(void, destroyTexture2D)(hTexture2D* t);
     HEART_MODULE_API(hIndexBuffer*, createIndexBuffer)(const void* pIndices, hUint32 nIndices, hUint32 flags);
     HEART_MODULE_API(void*, getIndexBufferMappingPtr)(hIndexBuffer* vb);
@@ -103,9 +104,7 @@ namespace hRenderer {
     */
     HEART_MODULE_API(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
     HEART_MODULE_API(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
-    /* - Unimplemented APIs
-    HEART_MODULE_API(void, flushTextureMemoryRange)(hCmdList* cl, hTexture* ub, hUint offset, hUint size)
-    */
+    HEART_MODULE_API(void, flushTexture2DMemoryRange)(hCmdList* cl, hTexture2D* ub, hUint mip_level, hUint offset, hUint size);
     HEART_MODULE_API(hRenderFence*, fence)(hCmdList* cl);
     HEART_MODULE_API(void, wait)(hRenderFence* fence);
     HEART_MODULE_API(void, flush)(hCmdList* cl);
@@ -118,6 +117,7 @@ namespace hRenderer {
     HEART_MODULE_API(hFloat, getLastGPUTime)();
     HEART_MODULE_API(hBool, isRenderThread)();
     HEART_MODULE_API(void, getPlatformClipMatrix)(hFloat*);
+    HEART_MODULE_API(hUint, getTextureFormatBytesPerPixel)(hTextureFormat);
 
     inline void* getMappingPtr(hIndexBuffer* ib) {
         return getIndexBufferMappingPtr(ib);
@@ -143,3 +143,4 @@ namespace hRenderer {
 }
 }
 
+#include "render/hRendererTypeHelpers.h"

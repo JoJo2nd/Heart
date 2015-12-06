@@ -71,13 +71,8 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         return hFalse;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    hBool hResourcePackage::deserialiseObject(Heart::proto::PackageHeader* ) {
+    hResourcePackage::hResourcePackage(Heart::proto::PackageHeader* ) {
         hcAssertMsg(false, "Not expected to call this function");
-        return hFalse;
     }
 
     hBool hResourcePackage::linkObject() {

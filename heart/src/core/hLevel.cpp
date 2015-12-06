@@ -14,11 +14,7 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 namespace Heart {
 hRegisterObjectType(LevelDefinition, Heart::hLevel, Heart::proto::LevelDefinition);
 
-hBool hLevel::serialiseObject(Heart::proto::LevelDefinition* obj) const {
-    return hTrue;
-}
-
-hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
+hLevel::hLevel(Heart::proto::LevelDefinition* obj) {
     std::vector<hComponentDefinition> components;
     levelName = obj->levelname();
     levelEntities.reserve(obj->entities_size());
@@ -34,6 +30,7 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
         for (hInt ci = 0, cn = entity.components_size(); ci<cn; ++ci) {
             hComponentDefinition comp_def;
             comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.components(ci).type_name().c_str());
+            comp_def.id = entity.components(ci).componentid();
             if (comp_def.typeDefintion) {
                 comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
                 comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
@@ -44,6 +41,7 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
         for (hInt ci = 0, cn = entity.debugcomponents_size(); ci < cn; ++ci) {
             hComponentDefinition comp_def;
             comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.debugcomponents(ci).type_name().c_str());
+            comp_def.id = entity.debugcomponents(ci).componentid();
             if (comp_def.typeDefintion) {
                 comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
                 comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
@@ -52,7 +50,10 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
         }
 #endif
         auto* lvl_entity = hEntityFactory::createEntity(guid, components.data(), components.size());
-        lvl_entity->transient = entity.has_transient() ? entity.transient() : false;
+        lvl_entity->setTransitent(entity.has_transient() ? entity.transient() : false);
+#if HEART_DEBUG_INFO
+        lvl_entity->setFriendlyName(entity.friendlyname().c_str());
+#endif
         levelEntities.push_back(lvl_entity);
     }
 #if HEART_DEBUG_INFO
@@ -61,7 +62,7 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
     hStrCopy(debugLevelName, len, "Level:");
     hStrCat(debugLevelName, len, levelName.c_str());
     hDebugMenuManager::registerMenu(debugLevelName, [&]() {
-        hChar guid_str[64], tmp_buf[64];
+        hChar guid_str[64], tmp_buf[128];
         hUint obj_num = 0;
         hSize_t len = levelName.size() + 7;
         hChar* debugLevelName = (hChar*)hAlloca(len);
@@ -69,13 +70,14 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
         hStrCat(debugLevelName, len, levelName.c_str());
         ImGui::Begin(debugLevelName, nullptr, ImGuiWindowFlags_ShowBorders);
         for (const auto& i : levelEntities) {
-            hUUID::toString(i->entityId, guid_str, sizeof(guid_str));
-            if (ImGui::TreeNode(guid_str)) {
-                ImGui::Text("Transient:%s", i->transient ? "yes" : "no");
+            hUUID::toString(i->getEntityID(), guid_str, sizeof(guid_str));
+            hStrPrintf(tmp_buf, sizeof(tmp_buf), "%s (GUID:%s)", i->getFriendlyName(), guid_str);
+            if (ImGui::TreeNode(tmp_buf)) {
+                ImGui::Text("Transient:%s", i->getTransient() ? "yes" : "no");
                 hStrPrintf(tmp_buf, sizeof(tmp_buf), "Component %d", obj_num);
                 if (ImGui::TreeNode(tmp_buf)) {
-                    for (const auto& ci : i->entityComponents) {
-                        ImGui::Text("Type:%s", ci.typeDef->objectName_.c_str()); ImGui::SameLine();
+                    for (const auto& ci : i->getComponents()) {
+                        ImGui::Text("Type:%s ID:%d Linked:%s", ci.typeDef->objectName_.c_str(), ci.id, ci.linked ? "yes" : "no"); ImGui::SameLine();
                         ImGui::Text("Address:0x%p", ci.ptr);
                     }
                     ImGui::TreePop();
@@ -87,17 +89,6 @@ hBool hLevel::deserialiseObject(Heart::proto::LevelDefinition* obj) {
         ImGui::End();
     });
 #endif
-    return hTrue;
-}
-
-hBool hLevel::linkObject() {
-    hBool linked = hTrue;
-    for (const auto& i : levelEntities) {
-        for (const auto& c : i->entityComponents) {
-            linked &= c.typeDef->link_(c.ptr);
-        }
-    }
-    return linked;
 }
 
 hLevel::~hLevel() {
@@ -108,6 +99,32 @@ hLevel::~hLevel() {
     hStrCat(debugLevelName, len, levelName.c_str());
     hDebugMenuManager::unregisterMenu(debugLevelName);
 #endif
+}
+
+hBool hLevel::serialiseObject(Heart::proto::LevelDefinition* obj) const {
+    return hTrue;
+}
+
+hBool hLevel::linkObject() {
+    hBool linked = hTrue;
+    for (const auto& i : levelEntities) {
+        for (auto& c : i->entityComponents) {
+            if (!c.linked && c.typeDef->link_(c.ptr)) {
+                c.linked = true;
+            }
+            linked &= c.linked;
+        }
+    }
+
+    // a level is loaded once all it's entities are linked
+    if (linked) {
+        for (const auto& i : levelEntities) {
+            for (auto& c : i->entityComponents) {
+                c.ptr->onOwningLevelLoadComplete();
+            }
+        }
+    }
+    return linked;
 }
 
 }

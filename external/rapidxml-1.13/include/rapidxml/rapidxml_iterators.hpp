@@ -33,6 +33,10 @@ namespace rapidxml
             : m_node(node->first_node())
         {
         }
+
+        pointer get() const {
+            return m_node;
+        }
         
         reference operator *() const
         {

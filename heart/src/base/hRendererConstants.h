@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace Heart {
+
     struct hRect 
     {
         hUint32 top_,left_,right_,bottom_;
@@ -113,14 +114,9 @@ namespace Heart {
     enum class hShaderFrequency {
         Vertex, Pixel, Hull, Domain, Compute
     };
-/*
-    enum hIndexBufferType {
-        hIndexBufferType_Index16,
-        hIndexBufferType_Index32,
 
-        hIndexBufferType_Max
-    };
-*/
+    extern hUint g_RenderFenceCount; // Normally 3, but could be different
+    const hUint g_DefaultRenderFenceCount = 3;
 }//Heart
 
 #include "base/hColour.h"

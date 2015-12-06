@@ -218,7 +218,7 @@ struct Builder {
 
     std::string rootBuilderScript;
     std::string srcDataPath;
-    std::string dstDataPath;
+    std::vector<std::string> dstDataPaths;
     std::string cacheDataPath;
     int parallelJobCount;
     std::unordered_map<std::string, std::string> jobCommands;
@@ -475,7 +475,22 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
     }
     builder->srcDataPath = lua_tostring(L, -1);
     lua_getglobal(L, "dstDataPath");
-    builder->dstDataPath = lua_tostring(L, -1);
+    int i = 0;
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
+        /* uses 'key' (at index -2) and 'value' (at index -1) */
+        if (!lua_isstring(L, -1)) {
+            fprintf(stderr, "dstDataPath table values must be strings");
+            return nullptr;
+        }
+
+        builder->dstDataPaths.push_back(lua_tostring(L, -1));
+
+        /* removes 'value'; keeps 'key' for next iteration */
+        lua_pop(L, 1);
+        ++i;
+    }
+    lua_pop(L, 1);
     lua_getglobal(L, "cacheDataPath");
     builder->cacheDataPath = lua_tostring(L, -1);
     lua_getglobal(L, "parallelJobCount");
@@ -490,7 +505,7 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
         return nullptr;
     }
 
-    int i = 0;
+    i = 0;
     lua_pushnil(L);
     while (lua_next(L, -2) != 0) {
         /* uses 'key' (at index -2) and 'value' (at index -1) */
@@ -525,8 +540,10 @@ static std::shared_ptr<Builder> open_builder_lib(lua_State* L) {
     if (!minfs_path_exist(builder->cacheDataPath.c_str())) {
         minfs_create_directories(builder->cacheDataPath.c_str());
     }
-    if (!minfs_path_exist(builder->dstDataPath.c_str())) {
-        minfs_create_directories(builder->dstDataPath.c_str());
+    for (const auto& i : builder->dstDataPaths) {
+        if (!minfs_path_exist(i.c_str())) {
+            minfs_create_directories(i.c_str());
+        }
     }
 
     builder->fatalError.store(false);
@@ -703,33 +720,42 @@ int main (int argc, char **argv) {
                         continue;
                     }
 
+                    std::string finaloutput;
+                    std::string stderroutput;
+                    std::thread stdout_pipereader([&]() {
+                        BOOL success;
+                        DWORD bytesread;
+                        do {
+                            char buf[4 * 1024];
+                            success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
+                            if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
+                                success = TRUE;
+                            }
+                            finaloutput.append(buf, bytesread);
+                        } while (success);
+                        CloseHandle(pstdout);
+                    });
+                    std::thread stderr_pipereader([&]() {
+                        BOOL success;
+                        DWORD bytesread;
+                        do {
+                            char buf[4 * 1024];
+                            success = ReadFile(pstderr, buf, sizeof(buf), &bytesread, nullptr);
+                            if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
+                                success = TRUE;
+                            }
+                            stderroutput.append(buf, bytesread);
+                        } while (success);
+                        CloseHandle(pstderr);
+                    });
+
+
                     auto str = job->SerializeAsString();
                     DWORD written;
                     WriteFile(pstdin, str.c_str(), (int)str.size(), &written, nullptr);
                     CloseHandle(pstdin);
-                    BOOL success;
-                    DWORD bytesread;
-                    std::string finaloutput;
-                    do{
-                        char buf[4096];
-                        success = ReadFile(pstdout, buf, sizeof(buf), &bytesread, nullptr);
-                        if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
-                            success = TRUE;
-                        }
-                        finaloutput.append(buf, bytesread);
-                    } while (success);
-                    CloseHandle(pstdout);
-
-                    std::string stderroutput;
-                    do{
-                        char buf[4096];
-                        success = ReadFile(pstderr, buf, sizeof(buf), &bytesread, nullptr);
-                        if (success == FALSE && GetLastError() == ERROR_MORE_DATA) {
-                            success = TRUE;
-                        }
-                        stderroutput.append(buf, bytesread);
-                    } while (success);
-                    CloseHandle(pstderr);
+                    stdout_pipereader.join();
+                    stderr_pipereader.join();
 
                     DWORD exit_code;
                     do {
@@ -844,21 +870,22 @@ int main (int argc, char **argv) {
             char output_path[BUILDER_MAX_PATH];
             std::string package_filename = pkg.first;
             package_filename += ".pkg";
-            minfs_path_join(builder_ctx->dstDataPath.c_str(), package_filename.c_str(), output_path, BUILDER_MAX_PATH);
-            std::ofstream output;
-            output.open(output_path, std::ios_base::out | std::ios_base::binary);
-            if (!output.is_open()) {
-                fprintf(stderr, "Couldn't open %s for writing", output_path);
-                builder_ctx->fatalError.store(true);
-                break;
-            }
-            std::vector<char> data;
-            google::protobuf::io::OstreamOutputStream filestream(&output);
-            google::protobuf::io::CodedOutputStream outputstream(&filestream);
-            auto header_out = header.SerializeAsString();
-            outputstream.WriteVarint32((uint32_t)header_out.size());
-            outputstream.WriteRaw(header_out.c_str(), (uint32_t)header_out.size());
-            for (const auto& i : pkg_resources_to_write) {
+            for (const auto& dstDataPath : builder_ctx->dstDataPaths) {
+                minfs_path_join(dstDataPath.c_str(), package_filename.c_str(), output_path, BUILDER_MAX_PATH);
+                std::ofstream output;
+                output.open(output_path, std::ios_base::out | std::ios_base::binary);
+                if (!output.is_open()) {
+                    fprintf(stderr, "Couldn't open %s for writing", output_path);
+                    builder_ctx->fatalError.store(true);
+                    break;
+                }
+                std::vector<char> data;
+                google::protobuf::io::OstreamOutputStream filestream(&output);
+                google::protobuf::io::CodedOutputStream outputstream(&filestream);
+                auto header_out = header.SerializeAsString();
+                outputstream.WriteVarint32((uint32_t)header_out.size());
+                outputstream.WriteRaw(header_out.c_str(), (uint32_t)header_out.size());
+                for (const auto& i : pkg_resources_to_write) {
                     std::ifstream res_file;
                     res_file.open(i->builtresourcepath(), std::ios_base::in | std::ios_base::binary);
                     if (!res_file.is_open()) {
@@ -871,7 +898,8 @@ int main (int argc, char **argv) {
                     auto res_filesize = resource_data.pkgdata().ByteSize();
                     auto data_to_load = resource_data.pkgdata().SerializeAsString();
                     outputstream.WriteRaw(data_to_load.data(), (uint32_t)data_to_load.size());
-            }
+                }
+           }
         }
     }
 

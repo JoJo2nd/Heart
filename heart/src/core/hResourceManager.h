@@ -86,6 +86,7 @@ namespace hResourceManager
     void    unloadPackage(const hChar* name);
     hBool   getIsPackageLoaded(const hChar* name);
     void*   getResourcePtrType(hStringID res_id, hStringID* out_type_id);
+    hStringID getResourceID(void* res_ptr);
     template< typename t_ty>
     t_ty* weakResource(hStringID res_id) {
         hStringID type_id;

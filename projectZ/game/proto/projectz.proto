@@ -6,4 +6,5 @@ message projectZGame {
     optional string mapTileLevelResource = 3;
 	repeated string maleZombieEntities = 4;
 	repeated string femaleZombieEntities = 5;
+    optional uint32 baseRenderPlaneComponentID = 6;
 }

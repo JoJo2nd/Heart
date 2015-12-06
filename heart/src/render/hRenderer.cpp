@@ -23,6 +23,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(hShaderStage*, compileShaderStageFromSource)(const hChar* shaderProg, hUint32 len, const hChar* entry, hShaderProfile profile) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyShader)(hShaderStage* prog) = nullptr;
     HEART_MODULE_API_ENTRY(hTexture2D*, createTexture2D)(hUint32 levels, hMipDesc* initialData, hTextureFormat format, hUint32 flags) = nullptr;
+    HEART_MODULE_API_ENTRY(void*, getTexture2DMappingPtr)(hTexture2D* t, hUint mip_level) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyTexture2D)(hTexture2D* t) = nullptr;
     HEART_MODULE_API_ENTRY(hIndexBuffer*, createIndexBuffer)(const void* pIndices, hUint32 nIndices, hUint32 flags) = nullptr;
     HEART_MODULE_API_ENTRY(void*, getIndexBufferMappingPtr)(hIndexBuffer* vb) = nullptr;
@@ -52,6 +53,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size) = nullptr;
+    HEART_MODULE_API_ENTRY(void, flushTexture2DMemoryRange)(hCmdList* cl, hTexture2D* ub, hUint mip_level, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(hRenderFence*, fence)(hCmdList* cl) = nullptr;
     HEART_MODULE_API_ENTRY(void, wait)(hRenderFence* fence) = nullptr;
     HEART_MODULE_API_ENTRY(void, flush)(hCmdList* cl) = nullptr;
@@ -70,6 +72,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(hUint, getUniformBlockCount)(hProgramReflectionInfo* p) = nullptr;
     HEART_MODULE_API_ENTRY(hUniformBlockInfo, getUniformBlockInfo)(hProgramReflectionInfo* p, hUint i) = nullptr;
     HEART_MODULE_API_ENTRY(hUint, getParameterTypeByteSize)(ShaderParamType type) = nullptr;
+    HEART_MODULE_API_ENTRY(hUint, getTextureFormatBytesPerPixel)(hTextureFormat) = nullptr;
 
     void loadRendererModule(const hChar* module_name, hIConfigurationVariables* cvars) {
         auto lib = hSysCall::openSharedLib(module_name);
@@ -82,6 +85,7 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "compileShaderStageFromSource", hRenderer::compileShaderStageFromSource) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "destroyShader", hRenderer::destroyShader) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "createTexture2D", hRenderer::createTexture2D) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getTexture2DMappingPtr", hRenderer::getTexture2DMappingPtr) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "destroyTexture2D", hRenderer::destroyTexture2D) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "createIndexBuffer", hRenderer::createIndexBuffer) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "getIndexBufferMappingPtr", hRenderer::getIndexBufferMappingPtr) != nullptr;
@@ -111,6 +115,7 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "draw", hRenderer::draw) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushUnibufferMemoryRange", hRenderer::flushUnibufferMemoryRange) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushVertexBufferMemoryRange", hRenderer::flushVertexBufferMemoryRange) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "flushTexture2DMemoryRange", hRenderer::flushTexture2DMemoryRange) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "fence", hRenderer::fence) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "wait", hRenderer::wait) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flush", hRenderer::flush) != nullptr;
@@ -123,6 +128,7 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "getLastGPUTime", hRenderer::getLastGPUTime) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "isRenderThread", hRenderer::isRenderThread) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "getPlatformClipMatrix", hRenderer::getPlatformClipMatrix) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "getTextureFormatBytesPerPixel", hRenderer::getTextureFormatBytesPerPixel) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "getParameterTypeByteSize", hRenderer::getParameterTypeByteSize) != nullptr;
         void (*initialiseRendererPlugin)(hIConfigurationVariables*);
         success &= hSysCall::getFunctionAddress(lib, "initialiseRendererPlugin", initialiseRendererPlugin) != nullptr;

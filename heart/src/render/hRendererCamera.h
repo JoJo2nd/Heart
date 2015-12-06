@@ -3,8 +3,7 @@
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#ifndef __HRCAMERA_H__
-#define __HRCAMERA_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
@@ -13,78 +12,44 @@
 #include "math/hVec3.h"
 #include "math/hMathUtil.h"
 
-namespace Heart
-{
-    
-    class hTexture;
-    class hRenderTargetView;
-    class hDepthStencilView;
-    class hRenderSubmissionCtx;
-    struct hRenderTechniqueInfo;
-
-    struct hRenderViewportTargetSetup
-    {
-        hUint               nTargets_;
-        hTexture*           targetTex_; // used for dims- must not be NULL
-        hRenderTargetView*  targets_[4];
-        hDepthStencilView*  depth_;
-    };
+namespace Heart {
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    class hRendererCamera
-    {
+    class hRendererCamera {
     public:
 
-        hRendererCamera();
-        virtual ~hRendererCamera();
-
-        void                        Initialise();
-        void                        SetFieldOfView( hFloat fovDegrees ) { fov = hDegToRad( fovDegrees ); }
-        void                        SetProjectionParams( hFloat Ratio, hFloat Near, hFloat Far );
-        void                        SetOrthoParams( hFloat width, hFloat height, hFloat znear, hFloat zfar );
-        void                        SetOrthoParams( hFloat left, hFloat top, hFloat right, hFloat bottom, hFloat znear, hFloat zfar );
-        void                        SetViewMatrix( const hMatrix& m );
-        const hMatrix&              GetViewMatrix() { return viewMatrix_; }
-        const hMatrix&              GetProjectionMatrix() { return projectionMatrix_; }
-        hViewFrustum*               ViewFrustum() { return &frustum_; }
-        hVec3                       ProjectTo2D( const hVec3& point );
-        void                        setViewport( const hRelativeViewport& vp ) { viewport_ = vp; }
-        hRelativeViewport           getViewport() const { return viewport_; }
-        hViewport                   getTargetViewport() const;
-        hFloat                      GetFar() const { return far_; }
-        hFloat                      GetNear() const { return near_; }
-        void                        bindRenderTargetSetup( const hRenderViewportTargetSetup& desc );
-        void                        releaseRenderTargetSetup();
-        hUint                       getTargetCount() const { return setup_.nTargets_; }
-        hRenderTargetView**         getTargets() { return setup_.targets_; }
-        hRenderTargetView*          getRenderTarget( hUint32 idx ) const { 
-            hcAssert(idx < setup_.nTargets_);
-            return setup_.targets_[idx]; 
-        }
-        hDepthStencilView*          getDepthTarget() const { return setup_.depth_; }
-        //hViewportShaderConstants*   GetViewportConstants() { return &viewportConstants_; }
-        void                        setClearScreenFlag(hBool val) { clear_=val;}
-        hBool                       getClearScreenFlag() const { return clear_;}
+        void                        setFieldOfView( hFloat fovDegrees ) { fov = hDegToRad( fovDegrees ); }
+        void                        setProjectionParams( hFloat Ratio, hFloat Near, hFloat Far );
+        void                        setOrthoParams( hFloat width, hFloat height, hFloat znear, hFloat zfar );
+        void                        setOrthoParams( hFloat left, hFloat top, hFloat right, hFloat bottom, hFloat znear, hFloat zfar );
+        void                        setViewMatrix( const hMatrix& m );
+        const hMatrix&              getViewMatrix() { return viewMatrix; }
+        hVec3                       getPosition() const { return viewMatrix.getTranslation(); }
+        hVec3                       getViewDirection() const { return normalize(viewMatrix.getCol2().getXYZ()); }
+        hVec3                       getUpDirection() const { return normalize(viewMatrix.getCol1().getXYZ()); }
+        const hMatrix&              getProjectionMatrix() { return projectionMatrix; }
+        hViewFrustum*               getViewFrustum() { return &frustum; }
+        hVec3                       projectTo2D( const hVec3& point );
+        void                        setViewport( const hRelativeViewport& vp ) { viewport = vp; }
+        hRelativeViewport           getViewport() const { return viewport; }
+        hFloat                      getFar() const { return farPlane; }
+        hFloat                      getNear() const { return nearPlane; }
     private:
 
         hFloat                      fov;
-        hFloat                      aspect_;
-        hFloat                      near_;
-        hFloat                      far_;
-        hBool                       isOrtho_;
-        hBool                       clear_;
-        hMatrix                     viewMatrix_;
-        hMatrix                     projectionMatrix_;
-        hViewFrustum                frustum_;
-        hRelativeViewport           viewport_;
-        hRenderViewportTargetSetup  setup_;
-        //hRenderBuffer*              cameraConstBlock_;
-        //hViewportShaderConstants    viewportConstants_;
+        hFloat                      aspect;
+        hFloat                      nearPlane;
+        hFloat                      farPlane;
+        hFloat                      orthoWidth;
+        hFloat                      orthoHeight;
+        hBool                       ortho;
+        hMatrix                     viewMatrix;
+        hMatrix                     projectionMatrix;
+        hViewFrustum                frustum;
+        hRelativeViewport           viewport;
     };
     
 }
-
-#endif //__HRCAMERA_H__

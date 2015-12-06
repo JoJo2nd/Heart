@@ -37,22 +37,19 @@ hBool hTTFFontFace::serialiseObject(Heart::proto::TTFResource* obj) const {
     return hTrue;
 }
 
-hBool hTTFFontFace::deserialiseObject(Heart::proto::TTFResource* obj) {
+hTTFFontFace::hTTFFontFace(Heart::proto::TTFResource* obj) {
     hcAssertMsg(obj->has_ttfdata(), "invalid font face data!");
     TTFSize_ = obj->ttfdata().size();
     TTFData_.reset(new hByte[TTFSize_]);
     hMemCpy(TTFData_.get(), obj->ttfdata().c_str(), TTFSize_);
     auto* ft2l = hGetFreetype2Library();
     auto err = FT_New_Memory_Face(*ft2l, TTFData_.get(), (FT_Long)TTFSize_, 0, &face_);
-    if (err)
-        return hFalse;
+    hcAssertMsg(!err, "Failed to create memory face");
 
     hCRC32::StartCRC32(&dataHash_, (const hChar*)TTFData_.get(), (FT_Long)TTFSize_);
 
     //hashBase_ = hCRC32::FullCRC((const hChar*)TTFData_.get(), (FT_Long)TTFSize_);
     //hashBase_ <<= 32;
-
-    return hTrue;
 }
 
 hBool hTTFFontFace::linkObject() {

@@ -132,11 +132,12 @@ hEntity* createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t compon
         auto comp_mgt = g_entityContextManager.componentMgt.find(comp_def.typeDefintion);
         hEntityComponent* obj = nullptr;
         hcAssertMsg(comp_mgt != g_entityContextManager.componentMgt.end(), "Type '%s' is not a component type", comp_def.typeDefintion->objectName_.c_str());
-        obj = comp_mgt->second.construct(new_entity);
+        obj = comp_mgt->second.construct(new_entity, comp_def.marshall);
+        obj->owner = new_entity;
         obj->componentDestruct = comp_mgt->second.destruct;
-        comp_def.typeDefintion->deserialise_(obj, comp_def.marshall);
         new_entity->entityComponents[ci].typeID = comp_def.typeDefintion->runtimeTypeID;
         new_entity->entityComponents[ci].typeDef = comp_def.typeDefintion;
+        new_entity->entityComponents[ci].id = comp_def.id;
         new_entity->entityComponents[ci].ptr = obj;
     }
 

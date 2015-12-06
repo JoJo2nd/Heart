@@ -5,10 +5,12 @@ set(TEXTURE_BUILDER_SRC_DIR
 )
 set( TEXTURE_BUILDER_INCLUDE_DIRS
 	${LIBHEART_INCLUDES}
+    ${UTILS_INCLUDE_DIR}
     "${TEXTURE_BUILDER_SRC_DIR}/src"
 	"${EXTERNAL_SRC_ROOT}/freeimage/Dist"
 	"${GETOPT_PORT_INCLUDE_DIR}"
 	"${NVTT_INCLUDE_DIRS}"
+    "${MINFS_INCLUDE_DIR}"
 )
 file(GLOB TEXTURE_BUILDER_SRC_FILES 
     "${TEXTURE_BUILDER_SRC_DIR}/src/*.h"
@@ -46,7 +48,7 @@ link_directories(
 	${freeimage_LIB_DIR})
 add_executable(texture_builder ${TEXTURE_BUILDER_SRC_FILES})
 #target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES} optimized ${TB_LIBS_OPT} debug ${TB_LIBS_DEBUG})
-target_link_libraries(texture_builder getopt_port crypto proto ${FreeImage_LIBRARIES})
+target_link_libraries(texture_builder getopt_port crypto proto utils minfs ${FreeImage_LIBRARIES})
 target_link_libraries(texture_builder optimized ${TB_LIBS_OPT})
 #target_link_libraries(texture_builder debug ${TB_LIBS_DEBUG})
 

@@ -72,6 +72,7 @@ static const char* test_texture_names[] = {
     "/textures/test_tile_set_bc1",
     "/textures/test_tile_set_alpha_bc1a",
     "/textures/test_tile_set_alpha_bc3",
+    "/textures/Testtileset"
 };
 
 float ComputeBoundsScreenSize(const hVec3& Origin, const float SphereRadius, float ViewWidth, float ViewHeight, const hVec3& viewCentre, const hVec3& viewDir, hMatrix proj, float& out_m, float& out_r)
@@ -229,10 +230,19 @@ public:
         
 
         testTextures.resize(hStaticArraySize(test_texture_names));
-        for (hSize_t i = 0, n = hStaticArraySize(test_texture_names); i < n; ++i) {
+        for (hSize_t i = 0, n = hStaticArraySize(test_texture_names)-1; i < n; ++i) {
             auto* tt = hResourceManager::weakResource<hTextureResource>(hStringID(test_texture_names[i]));
             testTextures[i].name = test_texture_names[i];
             testTextures[i].t = tt->getTexture2D();
+            isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
+            testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
+        }
+        
+        {
+            int i = hStaticArraySize(test_texture_names)-1;
+            auto* tt = hResourceManager::weakResource<hTextureAtlasResource>(hStringID("/textures/Testtileset"));
+            testTextures[i].name = test_texture_names[i];
+            testTextures[i].t = tt->getTextureResource()->getTexture2D();
             isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
             testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
         }

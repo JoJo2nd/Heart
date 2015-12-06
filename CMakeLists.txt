@@ -351,6 +351,8 @@ set(GETOPT_PORT_INCLUDE_DIR
 set(CRYPTO_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/crypto/src"
 )
+set(UTILS_INCLUDE_DIR
+  "${EXTERNAL_SRC_ROOT}/utils/src")
 set(IMGUI_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/imgui/src"
 )
@@ -447,6 +449,7 @@ add_subdirectory ("external/minfs")
 #add_subdirectory ("external/nvidia-texture-tools")
 add_subdirectory ("external/imgui")
 add_subdirectory ("external/lfds")
+add_subdirectory ("external/utils")
 if (PLATFORM_WINDOWS)
   add_subdirectory ("external/libprof")
 endif()

@@ -11,13 +11,19 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "components/hEntityFactory.h"
 #include "projectz.pb.h"
 
+namespace Heart {
+    class hRenderPlane2D;
+}
+
 class ProjectZGame : public Heart::hEntityComponent {
-    hUint32 zombieCount;
-    hUint32 mapTileCount;
+    hUint32 zombieCount = 0;
+    hUint32 mapTileCount = 0;
     Heart::hStringID mapTilesResourceID;
     std::vector<hUuid_t> maleZombiePrototypes;
     std::vector<hUuid_t> femaleZombiePrototypes;
-
+    hUint32 basePlaneCompID = 0;
+    hUint32 spritePlaneCompID = 0;
+    Heart::hRenderPlane2D* basePlane = nullptr;
 public:
     hObjectType(ProjectZGame, projectZ::proto::projectZGame);
 

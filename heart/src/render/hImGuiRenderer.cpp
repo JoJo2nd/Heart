@@ -21,8 +21,8 @@
 namespace Heart {
 namespace {
 struct ImGuiCtx {
-    static const hUint VERTEX_BUFFER_SIZE = 30000; // From ImGui Samples
-    static const hUint FENCE_COUNT = 3;
+    static hUint VERTEX_BUFFER_SIZE; // From ImGui Samples
+    static hUint FENCE_COUNT;
     hShaderProgram* shaderProg;
     hRenderer::hShaderStage* vert;
     hRenderer::hShaderStage* pixel;
@@ -30,11 +30,14 @@ struct ImGuiCtx {
     hRenderer::hUniformBuffer* ub;
     hRenderer::hPipelineState* pls;
     hRenderer::hInputState* is;
-    hRenderer::hTexture2D* fonttex;
-    hRenderer::hRenderFence* fences[FENCE_COUNT];
+    hRenderer::hTexture2DUniquePtr fonttex;
+    std::vector<hRenderer::hRenderFence*> fences;
     hUint currentFence;
     hRenderer::hCmdList* lastCmdList;
 } g_imguiCtx;
+
+hUint ImGuiCtx::VERTEX_BUFFER_SIZE; // From ImGui Samples
+hUint ImGuiCtx::FENCE_COUNT;
 
 struct ImGuiConstBlock {
     hMatrix projection;
@@ -72,12 +75,6 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     const float R = ImGui::GetIO().DisplaySize.x;
     const float B = ImGui::GetIO().DisplaySize.y;
     const float T = 0.0f;
-//    hMatrix clipspace_mtx (
-//        hVec4( 1.0f, 0.0f, 0.0f, 0.0f ),
-//        hVec4( 0.0f, 1.0f, 0.0f, 0.0f ),
-//        hVec4( 0.0f, 0.0f, 0.5f, 0.0f ),
-//        hVec4( 0.0f, 0.0f, 0.5f, 1.0f )
-//    );
     ubdata->projection = hRenderer::getClipspaceMatrix()*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
     hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, (imguiCtx.currentFence*ubsize), ubsize);
 
@@ -114,6 +111,9 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
 
 hBool ImGuiInit() {
     auto& imguiCtx = g_imguiCtx; // So the debugger can see it
+    ImGuiCtx::VERTEX_BUFFER_SIZE = hConfigurationVariables::getCVarUint("imgui.vertex_buffer_size", 30000);
+    ImGuiCtx::FENCE_COUNT = g_RenderFenceCount;
+    g_imguiCtx.fences.resize(ImGuiCtx::FENCE_COUNT);
     auto* io = &ImGui::GetIO();
     io->MemAllocFn = [](size_t x) {
         return hMalloc(x);
@@ -124,7 +124,7 @@ hBool ImGuiInit() {
     io->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bbp);
     //imguiCtx.
     hRenderer::hMipDesc mip = {(hUint32)width, (hUint32)height, pixels, (hUint32)(width*height*bbp)};
-    imguiCtx.fonttex = hRenderer::createTexture2D(1, &mip, hTextureFormat::RGBA8_unorm, 0);
+    imguiCtx.fonttex.reset(hRenderer::createTexture2D(1, &mip, hTextureFormat::RGBA8_unorm, 0));
 
     hRenderer::hVertexBufferLayout lo[] = {
         { hStringID("in_position"), hRenderer::hSemantic::Position, 0, 2, hRenderer::hVertexInputType::Float,                  0, hFalse, sizeof(ImDrawVert) },
@@ -141,9 +141,6 @@ hBool ImGuiInit() {
     };
 
     imguiCtx.ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(ImGuiConstBlock), ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
-    for (auto& i : imguiCtx.fences) {
-        i = nullptr;
-    }
     imguiCtx.currentFence = 0;
 
 
@@ -165,7 +162,7 @@ hBool ImGuiInit() {
     plsd.setSampler(hStringID("tSampler"), ssd);
     plsd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
     imguiCtx.pls = hRenderer::createRenderPipelineState(plsd);
-    isd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex);
+    isd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex.get());
     isd.setUniformBuffer(hStringID("ParamBlock"), imguiCtx.ub);
     imguiCtx.is = hRenderer::createRenderInputState(isd, plsd);
 

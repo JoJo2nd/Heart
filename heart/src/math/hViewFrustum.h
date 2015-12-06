@@ -12,26 +12,33 @@
 #include "math/hVec3.h"
 #include "math/hPlane.h"
 
-namespace Heart
-{
+namespace Heart {
 
-	class  hViewFrustum
-	{
+	class  hViewFrustum {
 	public:
-										hViewFrustum();
-		virtual							~hViewFrustum();
+        enum class Point : hUint {
+            FarTopLeft=0,
+            FarTopRight=1,
+            FarBottomLeft=2,
+            FarBottomRight=3,
+            NearTopLeft=4, 
+            NearTopRight=5,
+            NearBottomLeft=6, 
+            NearBottomRight=7,
+        };
 
-		void							UpdateFromCamera( const hVec3& EyeVec, const hVec3& LookDir, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far, hBool ortho );
-		hBool							TestAABB( const hAABB& AABB );
-		hBool							TestMovingAABB( const hAABB& aabb, const hVec3& dir );
-		const hVec3&					FrustumPoint( hUint32 i ) const { return frustumPoints_[ i ]; }
+		void							updateFromCamera(const hVec3& EyeVec, const hVec3& LookDir, const hVec3& Up, hFloat fov, hFloat Aspect, hFloat Near, hFloat Far);
+        void                            updateFromOrthoCamera(const hVec3& EyeVec, const hVec3& LookDir, const hVec3& Up, hFloat width, hFloat height, hFloat Near, hFloat Far);
+		hBool							testAABB( const hAABB& AABB );
+		hBool							testMovingAABB( const hAABB& aabb, const hVec3& dir );
+		const hVec3&					frustumPoint(Point i) const { return frustumPoints[(hUint)i]; }
 
 
 	private:
 
 		hAABB							viewFrustumAABB_;
 		hMatrix							currentLookAt_;
-		hArray< hVec3, 8 >				frustumPoints_;
+		hArray< hVec3, 8 >				frustumPoints;
 		hPlane							near_, far_, left_, right_, top_, bottom_;
 
 	};

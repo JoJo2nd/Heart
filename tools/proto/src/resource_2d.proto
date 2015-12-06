@@ -1,23 +1,32 @@
+import "resource_texture.proto";
+
 package Heart.proto;
 
 message RenderSprite2D {
-    optional float x = 1;
-    optional float y = 2;
-    optional uint32 renderOrder = 3;
+    optional float x = 1 [default = 0];
+    optional float y = 2 [default = 0];
+    optional uint32 renderOrder = 3 [default = 0];
     optional string tileSetResource = 4;
+    optional float width = 5 [default = 1];
+    optional float height = 6 [default = 1];
+    optional int32 tileID = 7 [default = -1];
 }
 
 message RenderPlane2D {
-    optional string planeName = 1;
-    optional float tileSize = 2;
-    optional bool spritePlane = 3;
+    optional string planeName = 1 [default = "No Name"];
+    optional uint32 tileSize = 2 [default = 32];
+    optional bool spritePlane = 3 [default = false];
     optional uint32 planeWidth = 4;
     optional uint32 planeHeight = 5;
-    optional bool xWrapAround = 6;
-    optional bool yWrapAround = 7;
-    optional uint32 renderOrder = 8;
+    optional bool xWrapAround = 6 [default = false];
+    optional bool yWrapAround = 7 [default = false];
+    optional uint32 renderOrder = 8 [default = 0];
     repeated uint32 tileData = 9;
     optional string tileSetResource = 10;
+    optional string tileSetEntity = 11;
+	optional string shaderResource = 12;
+	optional bool dynamic = 13 [default = false];
+    optional uint32 sectorSize = 14 [default = 64];
 }
 
 message DynamicTileSet2D {
@@ -25,4 +34,5 @@ message DynamicTileSet2D {
 	optional uint32 cacheHeight = 2 [default = 4096];
 	optional uint32 minTileX = 3 [default = 4];
 	optional uint32 minTileY = 4 [default = 4];
+	optional Heart.proto.TextureFormat textureFormat = 5 [default = RGBA8_unorm];
 }

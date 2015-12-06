@@ -25,4 +25,23 @@ message TextureResource {
 	optional TextureFormat format = 4;
 	repeated TextureMip mips = 5;
 	optional bool sRGB = 6;
+	optional bool keepCPUData = 7;
+	optional bool dontUseVRAM = 8;
+}
+
+message AtlasImage {
+	optional float u1 = 1;
+	optional float v1 = 2;
+	optional float u2 = 3;
+	optional float v2 = 4;
+	optional uint32 x1 = 5;
+	optional uint32 y1 = 6;
+	optional uint32 x2 = 7;
+	optional uint32 y2 = 8;
+	optional uint32 atlasID = 9;
+}
+
+message TextureAtlas {
+	optional TextureResource texture = 1;
+	repeated AtlasImage images = 2;
 }

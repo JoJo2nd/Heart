@@ -9,4 +9,5 @@ enum ZombieType {
 message Zombie {
     optional ZombieType type = 1 [default = ZombieType_default];
     optional string textureResourceID = 2;
+    optional string dynamicTileSet = 3;
 }

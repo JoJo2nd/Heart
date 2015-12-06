@@ -6,6 +6,7 @@
 
 #include "base/hTypes.h"
 #include "base/hStringID.h"
+#include "components/hObjectFactory.h"
 #include <functional>
 
 namespace Heart {
@@ -31,7 +32,7 @@ typedef hInt (*hComponentObjectCompactProc)();
 
 struct hComponentMgt {
     const hObjectDefinition* object_def;
-    std::function<hEntityComponent* (hEntity* owner_entity)> construct;
+    std::function<hEntityComponent* (hEntity* owner_entity, hObjectMarshall* marshall)> construct;
     std::function<void (hEntityComponent*)> destruct;
 };
 

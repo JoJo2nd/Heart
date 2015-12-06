@@ -16,12 +16,11 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
-    typedef void* (*hObjectConstructProc)(void* in_place);
+    typedef void* (*hObjectConstructProc)(Heart::hObjectMarshall* in_place);
     typedef void (*hObjectDestructProc)(void*);
     typedef void (*hObjectDestroyProc)(void*);
     typedef hObjectMarshall* (*hObjectCreateSerialiserProc)();
     typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*);
-    typedef hBool (*hObjectDeserialiseProc)(void*, hObjectMarshall*);
     typedef hBool (*hObjectLinkProc)(void*);
 
     struct hObjectDefinition 
@@ -34,13 +33,13 @@ namespace Heart {
         hObjectDestroyProc              destroy_;
         hObjectCreateSerialiserProc     constructMarshall_;
         hObjectSerialiseProc            serialise_;
-        hObjectDeserialiseProc          deserialise_;
         hObjectLinkProc                 link_;
         hStringID                       serialiserName_;
         std::vector<hStringID>          baseTypes_;
     };
 
 #define hObjectType(name, serialiser_type) \
+    typedef serialiser_type MarshallType; \
     static hBool auto_object_registered;\
     static hUintptr_t getRuntimeTypeID() { \
         return (hUintptr_t)&auto_object_registered; \
@@ -52,11 +51,11 @@ namespace Heart {
     static void dtor(name* a) {\
         a->~name();\
     }\
+    name(serialiser_type*); \
     virtual Heart::hStringID getTypeName() const { \
         return getTypeNameStatic(); \
     } \
     hBool serialiseObject(serialiser_type*) const; \
-    hBool deserialiseObject(serialiser_type*); \
     hBool linkObject()
 
 #define hObjectBaseType(x) hObjectBaseTypeInner(#x)
@@ -64,7 +63,9 @@ namespace Heart {
 #define hObjectBaseTypeInner(x) (##x)
 
 #define hRegisterObjectType(name, type, serialiser_type, ...) \
-    static void* autogen_construct_##name (void* in_place) { return in_place ? new(in_place) type : new type; } \
+    static void* autogen_construct_##name (Heart::hObjectMarshall* marshall) { \
+        serialiser_type* real_marshall = static_cast<serialiser_type*>(marshall); \
+        return new type(real_marshall); } \
     static void autogen_destruct_##name(void* type_ptr_raw) { type::dtor(reinterpret_cast<type*>(type_ptr_raw)); } \
     static void autogen_destroy_##name(void* d) { delete ((type*)d); } \
     static Heart::hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
@@ -72,11 +73,6 @@ namespace Heart {
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
         serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
         return type_ptr->serialiseObject(msg); \
-    } \
-    static hBool autogen_deserialise_##name(void* type_ptr_raw, Heart::hObjectMarshall* msg_raw) { \
-        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
-        serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
-        return type_ptr->deserialiseObject(msg); \
     } \
     static hBool autogen_link_##name(void* type_ptr_raw) {\
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
@@ -91,7 +87,6 @@ namespace Heart {
         autogen_destroy_##name, \
         autogen_create_serialiser_##name, \
         autogen_serialise_##name, \
-        autogen_deserialise_##name, \
         autogen_link_##name, \
     };\
     hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)

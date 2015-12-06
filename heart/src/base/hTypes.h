@@ -26,6 +26,7 @@ typedef int					hInt;
 typedef unsigned int        hUint;
 typedef size_t              hSize_t;
 typedef float				hFloat;
+typedef hUint16             hHalfFloat;
 typedef double				hDouble;
 typedef bool				hBool;
 typedef time_t              hTime;
@@ -151,8 +152,53 @@ namespace Heart
 #include "base/hDebugMacros.h"
 #include "base/hAtomic.h"
 
+inline hHalfFloat hFloatToHalf(hFloat f) {
+    union Data32 {
+        unsigned int u32;
+        float f32;
+    };
+
+    Data32 d;
+    d.f32 = f;
+
+    unsigned int sign = d.u32 >> 31;
+    unsigned int exponent = (d.u32 >> 23) & ((1 << 8) - 1);
+    unsigned int mantissa = d.u32 & ((1 << 23) - 1);;
+
+    if (exponent == 0) {
+        // zero or denorm -> zero
+        mantissa = 0;
+
+    }
+    else if (exponent == 255 && mantissa != 0) {
+        // nan -> infinity
+        exponent = 31;
+        mantissa = 0;
+
+    }
+    else if (exponent >= 127 - 15 + 31) {
+        // overflow or infinity -> infinity
+        exponent = 31;
+        mantissa = 0;
+
+    }
+    else if (exponent <= 127 - 15) {
+        // underflow -> zero
+        exponent = 0;
+        mantissa = 0;
+
+    }
+    else {
+        exponent -= 127 - 15;
+        mantissa >>= 13;
+    }
+
+    return (hHalfFloat)((sign << 15) | (exponent << 10) | mantissa);
+}
+
 #define hMin( x, y ) (( x < y ) ? x : y)
 #define hMax( x, y ) (( x > y ) ? x : y)
+#define hClamp(a, v1, v2) (hMin(hMax(a, v1), v2))
 
 #define hFabs( x ) (fabs( x ))
 #define hFloor( x ) (floor(x))

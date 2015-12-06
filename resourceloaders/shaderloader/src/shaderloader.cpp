@@ -57,7 +57,7 @@ typedef unsigned char   uchar;
 typedef unsigned int    uint;
 typedef std::regex_iterator<std::string::iterator> sre_iterator;
 
-#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
+#define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); fflush(stdout); fflush(stderr); exit(-1);}
 #define fatal_error(msg, ...) fatal_error_check(false, msg, __VA_ARGS__)
 
 #define VS_COMMON_DEFINES ""
@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
         }
         local_shader_compile_params.profile_ = i.type;
         if (i.func_(&full_result_source, local_shader_compile_params, &error_string, &bin_blob, &bin_blob_len) != 0) {
-            fatal_error("Shader Compile failed! Error Msg ::\n%s", error_string.c_str());
+            fatal_error("Shader Compile failed! Error Msg ::\n%s\nShader source:\n%s", error_string.c_str(), full_shader_source.c_str());
         }
 
         shaderresource->set_rendersystem(i.system_);
@@ -318,7 +318,7 @@ std::vector<std::string>* inc_files) {
     sre_iterator re_i(out_source_string->begin(), out_source_string->end(), inc_regex);
     for (sre_iterator re_n; re_i != re_n; ++re_i) {
         std::string inc_string;
-        bool did_include=true;
+        bool did_include=false;
         for (auto i=in_include_paths.begin(), n=in_include_paths.end(); i!=n; ++i) {
             std::string inc_file = *i + "/" + (*re_i)[1].str();
             if (minfs_is_file(inc_file.c_str()) == 0) {
@@ -329,19 +329,37 @@ std::vector<std::string>* inc_files) {
             if (inc_source_itr != inc_ctx->end()) {
                 did_include = true;
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_source_itr->second));
+                break;
             } else if (parseShaderSource(inc_file, in_include_paths, &inc_string, inc_ctx, inc_files) == 0) {
                 did_include = true;
                 inc_ctx->insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
                 inc_map.insert(std::pair<std::string, std::string>((*re_i)[1].str(), inc_string));
+                break;
             }
         }
-        fatal_error_check(did_include, "Cannot include file %s", (*re_i)[1].str().c_str());
+        // Because of how we handle defines & includes we can't bail just yet...
+        // Instead just warn..?
+        // TODO: handle better, but that requires pre-processing the file first
+        if (!did_include) {
+            //fprintf(stderr, "Warning: include file %s\n", (*re_i)[1].str().c_str());
+        }
     }
     // replace #includes
     std::smatch re_match;
     while (std::regex_search(*out_source_string, re_match, inc_regex)) {
         const auto& replace_text = inc_map.find(re_match[1].str());
-        out_source_string->replace(re_match.position(), re_match.length(), replace_text->second, 0, replace_text->second.length()-1);
+        if (replace_text != inc_map.end()) {
+            // Because of how we handle defines & includes we can't bail just yet...
+            // Instead just warn..?
+            // TODO: handle better, but that requires pre-processing the file first
+            // fatal_error_check(replace_text != inc_map.end(), "Unable to find include source for '%s'", re_match[1].str().c_str());
+            out_source_string->replace(re_match.position(), re_match.length(), replace_text->second, 0, replace_text->second.length()-1);
+        } else {
+            std::string fail_msg = "Failed include ";
+            fail_msg += re_match[1].str();
+            fail_msg += ";\n";
+            out_source_string->replace(re_match.position(), re_match.length(), fail_msg, 0, fail_msg.length());
+        }
     }
 
     return 0;

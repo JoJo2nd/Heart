@@ -157,6 +157,11 @@ int main(int argc, char* argv[]) {
         lua_getfield(L, -1, "transient");
         entity->set_transient(!lua_isnil(L, -1) ? !!lua_toboolean(L, -1) : false);
         lua_pop(L, 1);
+        // friendly name flag
+        lua_getfield(L, -1, "friendlyName");
+        if (lua_isstring(L, -1)) 
+            entity->set_friendlyname(lua_tostring(L, -1));
+        lua_pop(L, 1);
         // grab the object components
         lua_getfield(L, -1, "components");
         fatal_error_check(lua_istable(L, -1), "entities table entry is missing components table.");
@@ -172,6 +177,9 @@ int main(int argc, char* argv[]) {
             auto* msgContainer = entity->add_components();
             msgContainer->set_type_name(p->msg->GetTypeName());
             msgContainer->set_messagedata(p->msg->SerializeAsString());
+            if (lua_isnumber(L, -2)) {
+                msgContainer->set_componentid((uint32_t)lua_tointeger(L, -2));
+            }
 
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
@@ -194,6 +202,9 @@ int main(int argc, char* argv[]) {
                 auto* msgContainer = entity->add_debugcomponents();
                 msgContainer->set_type_name(p->msg->GetTypeName());
                 msgContainer->set_messagedata(p->msg->SerializeAsString());
+                if (lua_isnumber(L, -2)) {
+                    msgContainer->set_componentid((uint32_t)lua_tointeger(L, -2));
+                }
 
                 /* removes 'value'; keeps 'key' for next iteration */
                 lua_pop(L, 1);

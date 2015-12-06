@@ -9,6 +9,7 @@ enum ResourceSectionMemoryType {
 message MessageContainer {
 	required string type_name = 1;
 	required bytes  messageData = 2;
+	optional uint32 componentID = 3 [default = 0]; // only used by entities to identify specific components within an entity
 }
 
 message Colour {

@@ -9,6 +9,9 @@
 #include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
 #include "render/hTextureFormat.h"
+#include "render/hMipDesc.h"
+#include <vector>
+#include <memory>
 
 namespace Heart {
 namespace hRenderer {
@@ -24,6 +27,8 @@ namespace hRenderer {
         hUint           height_;
         hUint           depth_;
         hTextureFormat  format_;
+        std::vector<hRenderer::hMipDesc> cpuMipData;
+        std::unique_ptr<hByte> cpuData;
         union {
             hRenderer::hTexture1D* texture1D_;
             hRenderer::hTexture2D* texture2D_;
@@ -32,25 +37,39 @@ namespace hRenderer {
 
     public:
         hObjectType(hTextureResource, Heart::proto::TextureResource);
-
-        hTextureResource() 
-            : arraySize_(0)
-            , mipCount_(0)
-            , width_(0)
-            , height_(0)
-            , depth_(0)
-            , format_(hTextureFormat::Unknown) {
-            texture1D_ = nullptr;
-        }
         ~hTextureResource();
 
-        hUint32                 getWidth() const { return width_; }
-        hUint32                 getHeight() const { return height_; }
-        hUint32                 getDepth() const { return depth_; }
-        hTextureFormat          getTextureFormat() const { return format_; }
-        hUint                   getMipCount() const { return mipCount_; }
-        hUint                   getArraySize() const { return arraySize_; }
-        hRenderer::hTexture2D*  getTexture2D() const { return texture2D_; }
+        hUint32 getWidth() const { return width_; }
+        hUint32 getHeight() const { return height_; }
+        hUint32 getDepth() const { return depth_; }
+        hTextureFormat getTextureFormat() const { return format_; }
+        hUint getMipCount() const { return mipCount_; }
+        const hRenderer::hMipDesc* getCPUMipDesc(hUint i) const { return &cpuMipData[i]; }
+        hUint getArraySize() const { return arraySize_; }
+        hRenderer::hTexture2D* getTexture2D() const { return texture2D_; }
     };
 
+    typedef Heart::proto::AtlasImage hAtlasImage;
+
+    class hTextureAtlasResource {
+        hTextureResource textureResource;
+        std::vector<hAtlasImage> atlasImages;
+    public:
+        hObjectType(hTextureAtlasResource, Heart::proto::TextureAtlas);
+
+        enum { InvalidTileHandle = ~0U };
+
+        hTextureResource* getTextureResource() { return &textureResource; }
+        hAtlasImage getAtlasImage(hUint32 id) {
+            for (const auto& i : atlasImages) {
+                if (i.atlasid() == id) return i;
+            }
+            return hAtlasImage();
+        }
+    };
+
+namespace hRenderer {
+    hTextureFormat convertTextureFormat(proto::TextureFormat in_format, bool sRGB);
+    proto::TextureFormat convertTextureFormat(hTextureFormat in_format, bool* out_sRGB);
+}
 }

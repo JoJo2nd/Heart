@@ -1,0 +1,11 @@
+package projectZ.proto;
+
+message projectZTileSet {
+    optional string dynamicTileSetID = 1;
+    repeated string northRoad = 2;
+    repeated string eastRoad = 3;
+    repeated string southRoad = 4;
+    repeated string westRoad = 5;
+    repeated string intersectionRoad = 6;
+    repeated string nonRoad = 7;
+}

@@ -142,7 +142,7 @@ namespace Heart
             }  
 
             hAABB r;
-            r.r_ = ((vmin+vmax)*0.5f);
+            r.r_ = ((vmax-vmin)*0.5f);
             r.c_ = vmin + r.r_;
 
             return r;

@@ -288,18 +288,25 @@ namespace d3d9 {
     };
 
     struct hTexture2D {
-        hTexture2D(hUint32 w, hUint32 h, hMipDesc* in_mips, hUint32 mip_count, D3DFORMAT in_format, DWORD in_usage) 
+        hTexture2D(hUint32 in_w, hUint32 in_h, hMipDesc* in_mips, hUint32 mip_count, D3DFORMAT in_format, DWORD in_usage) 
             : d3dFormat(in_format)
-            , baseWidth(w)
-            , baseHeight(h)
+            , baseWidth(in_w)
+            , baseHeight(in_h)
             , levels(mip_count)
             , usage(in_usage) {
+            hUint32 h = baseHeight;
+            hUint32 w = baseWidth;
             for (hUint32 i=0; i < mip_count; ++i) {
-                if (!in_mips[i].data) {
-                    break;
+                auto pitch = d3d9::getD3DFormatPitch(w, d3dFormat);
+                if (in_mips[i].data) {
+                    mips.emplace_back(new hByte[in_mips[i].size]);
+                    hMemCpy(mips[i].get(), in_mips[i].data, in_mips[i].size);
+                } else if (!(usage & D3DUSAGE_RENDERTARGET)) {
+                    hUint si = h*pitch;
+                    mips.emplace_back(new hByte[h*pitch]);
+                    hZeroMem(mips[i].get(), si);
                 }
-                mips.emplace_back(new hByte[in_mips[i].size]);
-                hMemCpy(mips[i].get(), in_mips[i].data, in_mips[i].size);
+                h /= 2; w /= 2;
             }
         }
 
@@ -309,7 +316,8 @@ namespace d3d9 {
 
         hBool bind(IDirect3DDevice9* d3d_device) {
             IDirect3DTexture9* tex;
-            auto hr = d3d_device->CreateTexture(baseWidth, baseHeight, levels, usage, d3dFormat, (usage & D3DUSAGE_RENDERTARGET) ? D3DPOOL_DEFAULT : D3DPOOL_MANAGED, &tex, nullptr);
+            auto hr = d3d_device->CreateTexture(baseWidth, baseHeight, levels, usage, d3dFormat, 
+                ((usage & D3DUSAGE_RENDERTARGET)|| (usage & D3DUSAGE_DYNAMIC)) ? D3DPOOL_DEFAULT : D3DPOOL_MANAGED, &tex, nullptr);
             hcAssertMsg(hr == S_OK, "CreateTexture() failed.");
             if (hr != S_OK) return hFalse;
             texture.reset(tex);
@@ -318,14 +326,15 @@ namespace d3d9 {
             hUint32 w = baseWidth;
 
             for (const auto& mip : mips) {
+                hByte* src_ptr = mip.get();
+                if (!src_ptr) continue;
                 D3DLOCKED_RECT r;
                 texture->LockRect(lvl, &r, nullptr, 0);
-                hByte* src_ptr = mip.get();
                 hByte* dest_ptr = (hByte*)r.pBits;
                 hUint32 mh = (d3dFormatPitch[d3dFormat] == BC_PITCH) ? ((h+3)/4) : h;
                 hUint int_pitch = d3d9::getD3DFormatPitch(w, d3dFormat);
                 for(hUint32 i=0; i<mh; ++i) {
-                    hMemCpy(dest_ptr, src_ptr, r.Pitch);
+                    hMemCpy(dest_ptr, src_ptr, int_pitch);
                     src_ptr+=int_pitch;
                     dest_ptr+=r.Pitch;
                 }
@@ -344,6 +353,7 @@ namespace d3d9 {
         DWORD usage;
         std::vector<std::unique_ptr<hByte>> mips;
         IDirect3DTexture9Ptr texture;
+        IDirect3DTexture9Ptr sysTexture; // required for CPU updates?
     };
 
     struct hVertexBuffer {
@@ -990,7 +1000,13 @@ namespace d3d9 {
         }
         DWORD usage = 0;
         if (flags & (hUint32)TextureFlags::RenderTarget) usage |= D3DUSAGE_RENDERTARGET;
+        if (flags & (hUint32)TextureFlags::Dynamic) usage |= D3DUSAGE_DYNAMIC;
         return new hTexture2D(initialData->width, initialData->height, initialData, levels, intfmt, usage);
+    }
+
+    HEART_C_EXPORT
+    void* HEART_API getTexture2DMappingPtr(hTexture2D* t, hUint mip_level) {
+        return t->mips[mip_level].get();
     }
 
     HEART_C_EXPORT
@@ -1554,18 +1570,20 @@ namespace d3d9 {
             hcAssert(isRenderThread());
             // Bind any unbound objects
             if (!pls->isBound()) pls->bind(d3dDevice);
-            if (!is->isBound()) is->bind(d3dDevice);
+            if (is && !is->isBound()) is->bind(d3dDevice);
             //Update constants from uniform buffers
-            for (hUint i=0, n= is->paramUpdateCount; i<n; ++i) {
-                if (is->paramUpdates[i].type & hInputState::ParamUpdate::Vertex) {
-                    hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->vertex->getFloatRegisterBaseAddress() : (hUint32*)pls->vertex->getIntRegisterBaseAddress());
-                    void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase()+ is->paramUpdates[i].ubOffset;
-                    hMemCpy(reg_add+ is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
-                }
-                if (is->paramUpdates[i].type & hInputState::ParamUpdate::Fragment) {
-                    hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->pixel->getFloatRegisterBaseAddress() : (hUint32*)pls->pixel->getIntRegisterBaseAddress());
-                    void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase()+ is->paramUpdates[i].ubOffset;
-                    hMemCpy(reg_add+ is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
+            if (is) {
+                for (hUint i = 0, n = is->paramUpdateCount; i < n; ++i) {
+                    if (is->paramUpdates[i].type & hInputState::ParamUpdate::Vertex) {
+                        hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->vertex->getFloatRegisterBaseAddress() : (hUint32*)pls->vertex->getIntRegisterBaseAddress());
+                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase() + is->paramUpdates[i].ubOffset;
+                        hMemCpy(reg_add + is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
+                    }
+                    if (is->paramUpdates[i].type & hInputState::ParamUpdate::Fragment) {
+                        hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->pixel->getFloatRegisterBaseAddress() : (hUint32*)pls->pixel->getIntRegisterBaseAddress());
+                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase() + is->paramUpdates[i].ubOffset;
+                        hMemCpy(reg_add + is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
+                    }
                 }
             }
             //Update d3d device state
@@ -1620,6 +1638,37 @@ namespace d3d9 {
             return 0;
         });
         
+    }
+
+    HEART_C_EXPORT
+    void HEART_API flushTexture2DMemoryRange(hCmdList* cl, hTexture2D* t, hUint mip_level, hUint offset, hUint size) {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+            if (!t->isBound()) t->bind(d3dDevice);
+            hUint lvl = 0;
+            hUint32 h = t->baseHeight;
+            hUint32 w = t->baseWidth;
+
+            for (const auto& mip : t->mips) {
+                if (lvl == mip_level) {
+                    D3DLOCKED_RECT r;
+                    if (t->texture->LockRect(lvl, &r, nullptr, 0) == S_OK) {
+                        hByte* src_ptr = mip.get();
+                        hByte* dest_ptr = (hByte*)r.pBits;
+                        hUint32 mh = (d3dFormatPitch[t->d3dFormat] == BC_PITCH) ? ((h + 3) / 4) : h;
+                        hUint int_pitch = d3d9::getD3DFormatPitch(w, t->d3dFormat);
+                        for (hUint32 i = 0; i < mh; ++i) {
+                            hMemCpy(dest_ptr, src_ptr, int_pitch);
+                            src_ptr += int_pitch;
+                            dest_ptr += r.Pitch;
+                        }
+                        t->texture->UnlockRect(lvl);
+                    }
+                }
+                h /= 2; w /= 2;
+                lvl++;
+            }
+            return 0;
+        });
     }
 
     HEART_C_EXPORT
@@ -1814,6 +1863,23 @@ namespace d3d9 {
             0.0f, 0.0f, 0.5f, 1.0f,
         };
         hMemCpy(out_floats, clipspace_mtx, sizeof(hFloat)*16);
+    }
+    HEART_C_EXPORT
+    hUint HEART_API getTextureFormatBytesPerPixel(hTextureFormat fmt) {
+        switch (fmt) {
+        case hTextureFormat::R8_unorm: return 1;
+        case hTextureFormat::RGBA8_unorm: return 4;
+        case hTextureFormat::RGBA8_sRGB_unorm: return 4;
+        case hTextureFormat::BC1_unorm: return 8;
+        case hTextureFormat::BC2_unorm: return 16;
+        case hTextureFormat::BC3_unorm: return 16;
+        case hTextureFormat::BC1_sRGB_unorm: return 8;
+        case hTextureFormat::BC2_sRGB_unorm: return 16;
+        case hTextureFormat::BC3_sRGB_unorm: return 16;
+        case hTextureFormat::BC4_unorm: return 0;
+        case hTextureFormat::BC5_unorm: return 0;
+        default: return 0;
+        }
     }
 
     HEART_C_EXPORT

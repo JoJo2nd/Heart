@@ -4,9 +4,17 @@
 *********************************************************************/
 
 #include "Heart.h"
-#include "render\hImGuiRenderer.h"
+#include "render/hImGuiRenderer.h"
+#include "render/hRendererCamera.h"
+#include "2d/hTileRenderer2D.h"
 #include "projectZGame.h"
 #include "zombieComponent.h"
+
+namespace h = Heart;
+namespace hr = Heart::hRenderer;
+
+static hBool package_loaded = false;
+static h::hRendererCamera main_camera;
 
 void HEART_API HeartAppFirstLoaded(Heart::hHeartEngine*) {
 }
@@ -18,17 +26,33 @@ void HEART_API HeartAppCoreAssetsLoaded(Heart::hHeartEngine* engine) {
 void HEART_API HeartAppMainUpate(Heart::hHeartEngine* engine) {
     Heart::ImGuiNewFrame(engine->GetSystem(), engine->getActionManager());
 
+    h::hMatrix v = h::hMatrix::identity();
+    hFloat wOver2 = (hFloat)engine->GetSystem()->getWindowWidth()*.5f;
+    hFloat hOver2 =(hFloat)engine->GetSystem()->getWindowHeight()*.5f;
+    main_camera.setOrthoParams(-wOver2, hOver2, wOver2, -hOver2, .0f, 1.f);
+    main_camera.setViewport(h::hRelativeViewport(0.f, 0.f, 1.f, 1.f));
+    main_camera.setViewMatrix(v);
+    if (package_loaded) {
+        h::hTileRenderer2D::setView(main_camera);
+        h::hTileRenderer2D::transformPlanesToViewSpace();
+    } else
+        package_loaded = h::hResourceManager::getIsPackageLoaded("persistent");
 //    ImGui::Begin();
 //    ImGui::End();
 }
 
 void HEART_API HeartAppMainRender(Heart::hHeartEngine* engine) {
-    auto* cl = Heart::ImGuiCurrentCommandList();
-    Heart::hRenderer::clear(cl, Heart::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
+    auto* cl = h::ImGuiCurrentCommandList();
+    hr::clear(cl, h::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
+
+    if (package_loaded) {
+        h::hTileRenderer2D::updateDynamicRenderResources(cl);
+        h::hTileRenderer2D::renderTilePlanes(cl);
+    }
 
     ImGui::Render();
-    Heart::hRenderer::swapBuffers(cl);
-    Heart::hRenderer::submitFrame(cl);
+    hr::swapBuffers(cl);
+    hr::submitFrame(cl);
 }
 
 hBool HEART_API HeartAppShutdownUpdate(Heart::hHeartEngine* engine) {

@@ -3,17 +3,15 @@ Written by James Moran
 Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
 
-#include "utils/hTextureAtlas.h"
-#include "base/hMemoryUtil.h"
+#include "texture_atlas.h"
 
-namespace Heart {
-namespace Util {
+namespace utils {
 
-hAtlasNode* hTextureAtlasBuilder::atlasInsert(hAtlasNode* pnode, hUint16 width, hUint16 height) {
+AtlasNode* TextureAtlasBuilder::atlasInsert(AtlasNode* pnode, uint16_t width, uint16_t height) {
     if (!pnode) return nullptr;
     if (pnode->child[0] || pnode->child[1]) {
         //this pnode is occupied, try inserting to a child
-        hAtlasNode* newnode = atlasInsert(pnode->child[0], width, height);
+        AtlasNode* newnode = atlasInsert(pnode->child[0], width, height);
         if (!newnode) newnode = atlasInsert(pnode->child[1], width, height);
         return newnode;
     }
@@ -30,8 +28,8 @@ hAtlasNode* hTextureAtlasBuilder::atlasInsert(hAtlasNode* pnode, hUint16 width, 
             if (!pnode->child[0] || !pnode->child[1]) return nullptr; //no mem
 
             // decide which way to split
-            hUint16 dw = pnode->w - (width);
-            hUint16 dh = pnode->h - (height);
+            uint16_t dw = pnode->w - (width);
+            uint16_t dh = pnode->h - (height);
 
             if (dw > dh) { // split vertically
                 pnode->child[0]->x = pnode->x; pnode->child[0]->w = width;
@@ -55,34 +53,36 @@ hAtlasNode* hTextureAtlasBuilder::atlasInsert(hAtlasNode* pnode, hUint16 width, 
     }
 }
 
-void hTextureAtlasBuilder::initialise(hUint in_textureWidth, hUint in_textureHeight, hUint in_bytesPerPixel, hUint in_minXSize, hUint in_minYSize) {
+void TextureAtlasBuilder::initialise(uint32_t in_textureWidth, uint32_t in_textureHeight, uint32_t in_bytesPerPixel, uint32_t in_minXSize, uint32_t in_minYSize) {
     if (textureHeight != in_textureHeight || textureWidth != in_textureWidth || bytesPerPixel != in_bytesPerPixel) {
         textureWidth = in_textureWidth;
         textureHeight = in_textureHeight;
-        textureData.reset(new hByte[textureWidth*textureHeight*bytesPerPixel]);
+        bytesPerPixel = in_bytesPerPixel;
+        textureData.reset(new uint8_t[textureWidth*textureHeight*bytesPerPixel]);
+        memset(textureData.get(), 0, textureWidth*textureHeight*bytesPerPixel);
     }
-    hUint x_blocks = textureWidth / in_minXSize;
-    hUint y_blocks = textureHeight / in_minYSize;
-    if (x_blocks*y_blocks < nodeReserve) {
+    uint32_t x_blocks = textureWidth / in_minXSize;
+    uint32_t y_blocks = textureHeight / in_minYSize;
+    if (x_blocks*y_blocks > nodeReserve) {
         nodeReserve = x_blocks*y_blocks;
         atlasNodes.reserve(nodeReserve);
     }
     clear();
 }
 
-const hAtlasNode* hTextureAtlasBuilder::insert(hUint width, hUint height, const void* data_ptr) {
+const AtlasNode* TextureAtlasBuilder::insert(uint32_t width, uint32_t height, const void* data_ptr) {
     auto* node = atlasInsert(root, width, height);
     if (!node) return nullptr;
-    const hByte* src = (const hByte*)data_ptr;
+    const uint8_t* src = (const uint8_t*)data_ptr;
     if (!src) return node;
-    for (hUint y = 0; y < height; ++y) {
-        hMemCpy(getDataLocation(node->x, node->y + y), src, width*bytesPerPixel);
+    for (uint32_t y = 0; y < height; ++y) {
+        memcpy(getDataLocation(node->x, node->y + y), src, width*bytesPerPixel);
         src += width*bytesPerPixel;
     }
     return node;
 }
 
-void hTextureAtlasBuilder::clear() {
+void TextureAtlasBuilder::clear() {
     root = allocateNode();
     root->x = 0;
     root->y = 0;
@@ -90,5 +90,4 @@ void hTextureAtlasBuilder::clear() {
     root->h = textureHeight;
 }
 
-}
 }

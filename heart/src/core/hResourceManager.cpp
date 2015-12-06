@@ -22,12 +22,13 @@ namespace Heart {
 namespace hResourceManager {
 namespace Hidden {
     struct hResourceContainer {
-        hResourceContainer(hStringID type_name, void* resource, hResourcePackage* package) 
+        hResourceContainer(hStringID type_name, hStringID in_res_name, void* resource, hResourcePackage* package) 
             : typeName(type_name)
             , resource(resource)
             , owningPackage(package) {
         }
         hStringID           typeName;
+        hStringID           resName;
         void*               resource;
         hResourcePackage*   owningPackage;
     };
@@ -46,6 +47,7 @@ namespace Hidden {
     hResourceNameToDataTable    resourceNameLookUp;
     hResourceTable              resources;
     hPackageArray               packages;
+    hPackageArray               packagesToLoad;
     hPackageArray               packagesToUnload;
 }
 
@@ -79,6 +81,10 @@ void shutdown() {
 void update() {
     hMutexAutoScope sentry(&resourceDBMtx);
     HEART_PROFILE_FUNC();
+    for (auto& i : packagesToLoad) {
+        packages.push_back(i);
+    }
+    packagesToLoad.clear();
     for (auto& i : packages) {
         i->update();
     }
@@ -107,11 +113,14 @@ void loadPackage( const hChar* name ) {
     auto lp=std::find_if(packages.begin(), packages.end(), [=](const hResourcePackage* lhs) {
         return lhs->getPackageID() == pkcrc;
     });
-    if (lp == packages.end()) {
+    auto lp2 = std::find_if(packagesToLoad.begin(), packagesToLoad.end(), [=](const hResourcePackage* lhs) {
+        return lhs->getPackageID() == pkcrc;
+    });
+    if (lp == packages.end() && lp2 == packagesToLoad.end()) {
          hResourcePackage* pkg;
          pkg = new hResourcePackage;
          pkg->initialise(filesystem, &fileReadJobQueue, name);
-         packages.push_back(pkg);
+         packagesToLoad.push_back(pkg);
     } else {
         (*lp)->AddRef();
     }
@@ -151,8 +160,8 @@ void    addResource(void* ptr, hStringID package_id, hStringID res_id, hStringID
         return lhs->getPackageID() == package_id;
     });
     hcAssert(resources.find(ptr) == resources.end() && lp != packages.end());
-    resources.insert(hResourceTable::value_type(ptr, hResourceContainer(type_id, ptr, *lp)));
-    resourceNameLookUp.insert(hResourceNameToDataTable::value_type(res_id, hResourceContainer(type_id, ptr, *lp)));
+    resources.insert(hResourceTable::value_type(ptr, hResourceContainer(type_id, res_id, ptr, *lp)));
+    resourceNameLookUp.insert(hResourceNameToDataTable::value_type(res_id, hResourceContainer(type_id, res_id, ptr, *lp)));
 }
 
 void    removeResource(hStringID res_id) {
@@ -198,6 +207,16 @@ void* getResourcePtrType(hStringID res_id, hStringID* out_type_id) {
     }
     *out_type_id = it->second.typeName;
     return it->second.resource;
+}
+
+Heart::hStringID getResourceID(void* res_ptr) {
+    hMutexAutoScope sentry(&resourceDBMtx);
+    auto it = resources.find(res_ptr);
+    if (it == resources.end()) {
+        return hStringID();
+    }
+    hcAssert(res_ptr == it->second.resource);
+    return it->second.resName;
 }
 
 void collectGarbage(hFloat step) {
