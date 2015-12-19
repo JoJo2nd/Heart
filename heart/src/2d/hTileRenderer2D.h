@@ -13,6 +13,7 @@ namespace hRenderer {
 namespace hTileRenderer2D {
 
     hBool initialise();
+    void initialiseResources();
     void setView(const hRendererCamera& camera);
     void transformPlanesToViewSpace();
     void updateDynamicRenderResources(hRenderer::hCmdList* cl);

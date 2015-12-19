@@ -228,3 +228,11 @@ input.set_default_action_mapping("b", "Cancel")
 input.set_default_action_mapping("start", "Next Test")
 input.set_default_action_mapping("leftx", "Turn Left/Right")
 input.set_default_action_mapping("lefty", "Look Up/Down")
+
+t_graph = create_task_graph("ExampleGraph")
+tasks = {
+    clock_update = t_graph:add_task_to_graph("heart::clock::update"),
+    resource_update = t_graph:add_task_to_graph("heart::resource_manager::update"),
+    sync = t_graph:add_task_to_graph("heart::SYNC"),
+}
+t_graph:add_task_order_to_graph(tasks.clock_update, tasks.resource_update, tasks.sync)

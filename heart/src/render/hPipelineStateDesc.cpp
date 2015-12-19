@@ -88,17 +88,18 @@ void hInputStateDescBase::setTextureSlot(hStringID name, hTexture1D* tex) {
     hcAssertFailMsg("Too many textures bound");
 }
 
-void hInputStateDescBase::setTextureSlot(hStringID name, hTexture2D* tex) {
+void hInputStateDescBase::setTextureSlotWithOverride(hStringID name, hTexture2D* tex, hUint32 override_slot) {
     for (auto& t : textureSlots_) {
         if (t.name_ == name) {
             t.t2D_ = tex;
             t.texType_ = 2;
+            t.overrideSlot = override_slot;
             return;
-        }
-        else if (t.name_.is_default()) {
+        } else if (t.name_.is_default()) {
             t.name_ = name;
             t.t2D_ = tex;
             t.texType_ = 2;
+            t.overrideSlot = override_slot;
             return;
         }
     }
@@ -122,6 +123,10 @@ void hInputStateDescBase::setTextureSlot(hStringID name, hTexture3D* tex) {
     }
 
     hcAssertFailMsg("Too many textures bound");
+}
+
+void hInputStateDescBase::setTextureSlot(hStringID tex_name, hTexture2D* t) {
+    setTextureSlotWithOverride(tex_name, t, ~0UL);
 }
 
 void hInputStateDescBase::setUniformBuffer(hStringID name, const hUniformBuffer* ub) {

@@ -10,8 +10,7 @@
 #include "hTypes.h"
 #include "cryptoMurmurHash.h"
 
-namespace Heart 
-{
+namespace Heart {
     /*
     *   hStringID is a unique id for a string across a single run of the program. They are 
     *   not valid across multiple runs.

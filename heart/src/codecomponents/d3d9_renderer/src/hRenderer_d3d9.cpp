@@ -567,10 +567,20 @@ namespace d3d9 {
     };
 
     struct hInputState {
+        struct InputOverride {
+            enum {
+                Tex2D,
+                UniBuf,
+            };
+            hUint32 offset; // in bytes from start of input state address
+            hUint8 overrideType;
+        };
+
         struct TextureInput {
             hUint index;
             hTexture2D* texture;
         };
+
         struct ParamUpdate {
             enum {
                 Float = 1, 
@@ -606,6 +616,8 @@ namespace d3d9 {
         const hUniformBuffer** uniBuffers;
         hUint paramUpdateCount;
         ParamUpdate* paramUpdates;
+        hUint overrideCount;
+        InputOverride* overrides;
         hBool fullyBound;
     };
 
@@ -1324,6 +1336,13 @@ namespace d3d9 {
         hUint float_param_update_count = 0;
         hUint uniform_buffer_count = 0;
         hUint sampler_count = 0;
+        hUint override_count = 0;
+
+        for (hUint i=0; i<isd.textureSlotMax_; ++i) {
+            if (!isd.textureSlots_[i].name_.is_default() && isd.textureSlots_[i].overrideSlot != ~0UL) {
+                override_count = hMax(isd.textureSlots_[i].overrideSlot+1, override_count);
+            }
+        }
 
         for (hUint i = 0; i<plsd.vertex_->header->constCount; ++i) {
             const auto& sampler = plsd.vertex_->constants[i];
@@ -1364,7 +1383,8 @@ namespace d3d9 {
             + (sampler_count*sizeof(hInputState::TextureInput))
             + (int_param_update_count*sizeof(hInputState::ParamUpdate))
             + (float_param_update_count*sizeof(hInputState::ParamUpdate))
-            + (uniform_buffer_count*sizeof(void*));
+            + (uniform_buffer_count*sizeof(void*))
+            + (override_count*sizeof(hInputState::InputOverride));
 
         auto* ptr = (hByte*)hMalloc(is_call_size);
         auto* rc = new (ptr) hInputState();
@@ -1374,13 +1394,17 @@ namespace d3d9 {
         rc->uniBufferCount = uniform_buffer_count;
         rc->paramUpdates = (hInputState::ParamUpdate*)(ptr+(sizeof(hInputState)+(sampler_count*sizeof(hInputState::TextureInput))+(uniform_buffer_count*sizeof(void*))));
         rc->paramUpdateCount = int_param_update_count+float_param_update_count;
+        rc->overrideCount = override_count;
+        rc->overrides = (hInputState::InputOverride*)(ptr + (sizeof(hInputState) + (sampler_count*sizeof(hInputState::TextureInput)) + (uniform_buffer_count*sizeof(void*))) + (rc->paramUpdateCount*sizeof(hInputState::ParamUpdate)));
 
-        auto findMatchingTexture = [](const hInputStateDescBase& in_isd, const hChar* name) -> hTexture2D* {
+        auto findMatchingTexture = [](const hInputStateDescBase& in_isd, const hChar* name, hUint32* out_override_slot) -> hTexture2D* {
             // name comes in the form '[sampler_name]+[texture_name]'
+            *out_override_slot = ~0UL;
             const auto* tname = hStrChr(name, '+');
             tname = tname ? tname+1 : name;
             for (const auto& i : in_isd.textureSlots_) {
                 if (!i.name_.is_default() && hStrCmp(i.name_.c_str(), tname) == 0) {
+                    *out_override_slot = i.overrideSlot;
                     return i.t2D_;
                 }
             }
@@ -1388,20 +1412,30 @@ namespace d3d9 {
         };
         hUint current_sampler = 0;
         for (hUint i = 0; i < plsd.vertex_->header->constCount; ++i) {
+            hUint32 override_slot_index;
             const auto& sampler = plsd.vertex_->constants[i];
             if (sampler.type != 3) continue;
-            if (auto* t_ptr = findMatchingTexture(isd, plsd.vertex_->strings + sampler.stringTableOffset)) {
+            if (auto* t_ptr = findMatchingTexture(isd, plsd.vertex_->strings + sampler.stringTableOffset, &override_slot_index)) {
                 rc->textureInputs[sampler.regStart].index = sampler.regStart;
                 rc->textureInputs[sampler.regStart].texture = t_ptr;
+                if (override_slot_index != ~0UL) {
+                    rc->overrides[override_slot_index].offset = (hUint32)((hUintptr_t)(&rc->textureInputs[sampler.regStart].texture) - (hUintptr_t)(rc));
+                    rc->overrides[override_slot_index].overrideType = hInputState::InputOverride::Tex2D;
+                }
                 ++current_sampler;
             }
         }
         for (hUint i = 0; i < plsd.fragment_->header->constCount; ++i) {
+            hUint32 override_slot_index;
             const auto& sampler = plsd.fragment_->constants[i];
             if (sampler.type != 3) continue;
-            if (auto* t_ptr = findMatchingTexture(isd, plsd.fragment_->strings + sampler.stringTableOffset)) {
+            if (auto* t_ptr = findMatchingTexture(isd, plsd.fragment_->strings + sampler.stringTableOffset, &override_slot_index)) {
                 rc->textureInputs[sampler.regStart].index = sampler.regStart;
                 rc->textureInputs[sampler.regStart].texture = t_ptr;
+                if (override_slot_index != ~0UL) {
+                    rc->overrides[override_slot_index].offset = (hUint32)((hUintptr_t)(&rc->textureInputs[sampler.regStart].texture) - (hUintptr_t)(rc));
+                    rc->overrides[override_slot_index].overrideType = hInputState::InputOverride::Tex2D;
+                }
                 ++current_sampler;
             }
         }
@@ -1560,6 +1594,19 @@ namespace d3d9 {
             r.left = left; r.top = top;
             r.right = right; r.bottom = bottom;
             hD3D9_VERIFY(d3dDevice->SetScissorRect(&r));
+            return 0;
+        });
+    }
+
+    HEART_C_EXPORT
+    void HEART_API setTextureOverride(hCmdList* cl, hInputState* is, hUint32 slot, hTexture2D* tex) {
+        hcAssert(slot < is->overrideCount);
+        hcAssert(is->overrides[slot].overrideType == hInputState::InputOverride::Tex2D);
+        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+            hcAssert(isRenderThread());
+            auto** dst = (hTexture2D**)((hUint8*)is + is->overrides[slot].offset);
+            *dst = tex;
+            if (!tex->isBound()) tex->bind(d3dDevice);
             return 0;
         });
     }

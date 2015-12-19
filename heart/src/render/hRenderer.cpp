@@ -50,6 +50,7 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) = nullptr;
     HEART_MODULE_API_ENTRY(void, setRenderTargets)(hCmdList* cl, hRenderTarget** targets, hUint count) = nullptr;
     HEART_MODULE_API_ENTRY(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) = nullptr;
+    HEART_MODULE_API_ENTRY(void, setTextureOverride)(hCmdList* cl, hInputState* is, hUint32 slot, hTexture2D* tex) = nullptr;
     HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size) = nullptr;
@@ -112,6 +113,7 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "setViewport", hRenderer::setViewport) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "setRenderTargets", hRenderer::setRenderTargets) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "scissorRect", hRenderer::scissorRect) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "setTextureOverride", hRenderer::setTextureOverride) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "draw", hRenderer::draw) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushUnibufferMemoryRange", hRenderer::flushUnibufferMemoryRange) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushVertexBufferMemoryRange", hRenderer::flushVertexBufferMemoryRange) != nullptr;

@@ -59,6 +59,7 @@ class hRenderPlane2D : public hEntityComponent {
 public:
     hObjectType(hRenderPlane2D, Heart::proto::RenderPlane2D);
 
+    hUint getPlaneLayer() const { return renderOrder; }
     void updateTileData(hRect region, hUint* data);
     void updateView(hVec3 topLeft, hVec3 bottomRight);
     void updateSectorVertexBuffer(hRenderer::hCmdList* cl, hUint current_fence);

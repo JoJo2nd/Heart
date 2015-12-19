@@ -10,37 +10,44 @@ namespace Heart
 {
 
     hThread::hThread() 
-        : threadFunc_(nullptr) {
+        : threadFunc(nullptr) {
     }
 
     hThread::~hThread() {
-        delete threadFunc_;
+        delete threadFunc;
     }
 
     void hThread::create(const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param)
     {
-        memcpy( threadName_, threadName, THREAD_NAME_SIZE );
-        threadFunc_ = new hThreadFunc();
-        *threadFunc_ = pFunctor;
+        std::shared_ptr<hThreadFunc> fn(new hThreadFunc());
+        *fn = pFunctor;
+        auto threadLambda = [=](void* param) {
+            return (*fn)(param);
+        };
+        create(threadName, priority, threadLambda, param);
+    }
+
+    void hThread::create(const hChar* threadName, hInt32 priority, Function pFunctor, void* param) {
+        memcpy(threadName_, threadName, THREAD_NAME_SIZE);
+        threadFunc = new Function(pFunctor);
         pThreadParam_ = param;
         priority_ = priority;
-        if ( priority_ < -2 )
+        if (priority_ < -2)
         {
             priority_ = -2;
         }
-        if ( priority_ > 2 )
+        if (priority_ > 2)
         {
             priority_ = 2;
         }
-        ThreadHand_ = CreateThread( NULL, (1024*1024)*2, staticFunc, this, 0, NULL );
+        ThreadHand_ = CreateThread(NULL, (1024 * 1024) * 2, staticFunc, this, 0, NULL);
     }
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hThread::SetThreadName(LPCSTR szThreadName)
-    {
+    void hThread::SetThreadName(LPCSTR szThreadName) {
 #pragma pack ( push,8 )
         typedef struct tagTHREADNAME_INFO
         {
@@ -69,12 +76,11 @@ namespace Heart
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    unsigned long WINAPI hThread::staticFunc(LPVOID pParam)
-    {
+    unsigned long WINAPI hThread::staticFunc(LPVOID pParam) {
         hThread* pThis_ = (hThread*)pParam;
         SetThreadName( pThis_->threadName_ );
         SetThreadPriority( pThis_->ThreadHand_, pThis_->priority_ );
-        pThis_->returnCode_ = (*pThis_->threadFunc_)( pThis_->pThreadParam_ );
+        pThis_->returnCode_ = (*pThis_->threadFunc)( pThis_->pThreadParam_ );
         TLS::threadExit();
         return pThis_->returnCode_;
     }

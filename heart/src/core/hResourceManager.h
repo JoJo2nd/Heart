@@ -10,7 +10,7 @@
 #include "base/hStringID.h"
 #include "core/hIFileSystem.h"
 #include "components/hObjectFactory.h"
-#include "threading/hJobManager.h"
+#include "threading/hTaskGraphSystem.h"
 #include <unordered_map>
 #include <vector>
 
@@ -71,7 +71,7 @@ namespace hResourceManager
 {
     typedef void* hPackageLoadRequest;
 
-    hBool   initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager);
+    hBool   initialise(hIFileSystem* pFileSystem);
     hBool   systemResourcesReady();
     void    update();
     void    shutdown();

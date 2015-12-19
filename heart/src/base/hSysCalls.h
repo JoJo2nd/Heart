@@ -10,6 +10,7 @@ namespace Heart
 
 namespace hSysCall {
     HEART_EXPORT hUint64 HEART_API GetProcessorSpeed();
+    HEART_EXPORT hUint32 HEART_API getProcessorCount();
 #if 0
     void HEART_API hInitSystemDebugLibs();
 #endif

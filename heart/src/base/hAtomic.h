@@ -6,17 +6,22 @@
 
 #include <atomic>
 
+#ifndef HEART_USE_ATOMICS_LIB
+#   define HEART_USE_ATOMICS_LIB (0)
+#endif
+
 namespace Heart {
-#if defined (PLATFORM_WINDOWS)
+#if defined (PLATFORM_WINDOWS) && !(HEART_USE_ATOMICS_LIB)
     HEART_ALIGNMENT_BEGIN(16)
     struct  hAtomicInt
     {
         hUint32 value_;
     }
     HEART_ALIGNMENT_END(16);
-#elif defined (PLATFORM_LINUX)
-    typedef std::atomic<hUint32> hAtomicInt;
-    typedef std::atomic<hUint64> hAtomicInt64;
+#elif HEART_USE_ATOMICS_LIB
+    typedef std::atomic<hInt32> hAtomicInt;
+    typedef std::atomic<hUint32> hAtomicUint;
+    typedef std::atomic<hInt64> hAtomicInt64;
 #else
 #   error ("Unknown Platform")
 #endif

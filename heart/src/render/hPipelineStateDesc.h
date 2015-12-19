@@ -177,6 +177,7 @@ namespace hRenderer {
         void clearDescription();
         void setTextureSlot(hStringID tex_name, hTexture1D* t);
         void setTextureSlot(hStringID tex_name, hTexture2D* t);
+        void setTextureSlotWithOverride(hStringID tex_name, hTexture2D* t, hUint32 override_slot);
         void setTextureSlot(hStringID tex_name, hTexture3D* t);
         void setUniformBuffer(hStringID name, const hUniformBuffer* ub);
 
@@ -188,6 +189,7 @@ namespace hRenderer {
                 hTexture3D* t3D_;
             };
             hUint8 texType_; // 1, 2 or 3
+            hUint32 overrideSlot; // -1 if not override-able
         } textureSlots_[textureSlotMax_];
         struct {
             hStringID name_;

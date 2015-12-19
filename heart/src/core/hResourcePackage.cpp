@@ -27,7 +27,7 @@
 #include "base/hStringUtil.h"
 #include "base/hClock.h"
 #include "core/hResourceManager.h"
-#include "threading/hJobManager.h"
+#include "threading/hTaskGraphSystem.h"
 #include "imgui.h"
 
 namespace Heart
@@ -40,8 +40,8 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
 
     hResourcePackage::hResourcePackage()
         : packageState_(PkgState::Null)
-        , totalResources_(0)
-    {
+        , totalResources_(0) {
+        taskGraph.addTask(std::bind(&hResourcePackage::loadPackageDescription, this, std::placeholders::_1));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -55,9 +55,8 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName) {
+    void hResourcePackage::initialise(hIFileSystem* filesystem, const hChar* packageName) {
         fileSystem_ = filesystem;
-        fileQueue_ = fileQueue;
         packageName_ = hStringID(packageName);
         packageState_=PkgState::LoadPkgDesc;
     }
@@ -84,7 +83,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
-    void hResourcePackage::loadPackageDescription(void*, void*)
+    hUint32 hResourcePackage::loadPackageDescription(hTaskInfo*)
     {
         hStrCopy(packagePath_, MAX_PACKAGE_NAME, "/data/");
         hStrCat (packagePath_, MAX_PACKAGE_NAME, packageName_.c_str());
@@ -128,6 +127,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         totalResources_ = packageHeader_.entries_size();
 
         resourceJobArray_.resize(totalResources_);
+        return 0;
     }
 
 
@@ -150,17 +150,14 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
         hBool ret = hFalse;
         switch(packageState_) {
         case PkgState::LoadPkgDesc: {
-                hJob* descreadjob=new hJob;
-                descreadjob->setJobProc(hFUNCTOR_BINDMEMBER(hJobProc, hResourcePackage, loadPackageDescription, this));
-                descreadjob->setWorkerMask(1);
-                fileQueue_->pushJob(descreadjob);
+                taskGraph.kick();
                 //the resource manager will kick the queue
                 packageState_=PkgState::FileReadWait;
                 nextResourceToLoad_ = 0;
                 linkedResources_ = 0;
             } break;
         case PkgState::FileReadWait: {
-                if (fileQueue_->queueIdle()) {
+                if (taskGraph.isComplete()) {
                     //
                     packageState_=PkgState::RequestLinkedPkgs;
                 }

@@ -19,3 +19,5 @@ cvar("debug.server.port", 5682)
 
 cvar("renderer.gl.multithreaded", 1)
 cvar("renderer.scratchmemsize", 4*1024*1024) --4MB
+
+cvar("renderer.spritevertexbuffersize", 3000)

@@ -6,7 +6,9 @@
 #if defined (PLATFORM_WINDOWS)
     #include <winsock2.h>
     #include <windows.h>
+    #define hMemoryBarrier() MemoryBarrier()
 #elif defined (PLATFORM_LINUX)
+    #define hMemoryBarrier() __sync_synchronize()
 #else
     #error ("Platform not supported")
 #endif
@@ -14,7 +16,7 @@
 
 namespace Heart {
 namespace hAtomic {
-#if defined (PLATFORM_WINDOWS)
+#if !HEART_USE_ATOMICS_LIB
     HEART_EXPORT hUint32 HEART_API Increment( hAtomicInt& i ) {
         hcAssert( ((hUintptr_t)&i.value_ % 16) == 0 );
         return InterlockedIncrementAcquire( (volatile LONG*)&i.value_ );
@@ -31,11 +33,11 @@ namespace hAtomic {
     }
 
     HEART_EXPORT void HEART_API LWMemoryBarrier() {
-        MemoryBarrier();
+        hMemoryBarrier();
     }
 
     HEART_EXPORT void HEART_API HWMemoryBarrier() {
-        MemoryBarrier();
+        hMemoryBarrier();
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val ) {
@@ -51,7 +53,7 @@ namespace hAtomic {
         return InterlockedAddAcquire((volatile LONG*)&i.value_, amount);
     }
 
-#elif defined (PLATFORM_LINUX)
+#elif HEART_USE_ATOMICS_LIB
     HEART_EXPORT hUint32 HEART_API Increment( hAtomicInt& i ) {
         return ++i;
     }
@@ -65,16 +67,15 @@ namespace hAtomic {
     }
 
     HEART_EXPORT void HEART_API LWMemoryBarrier() {
-        __sync_synchronize();
+        hMemoryBarrier();
     }
 
     HEART_EXPORT void HEART_API HWMemoryBarrier() {
-        __sync_synchronize();
+        hMemoryBarrier();
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val ) {
-        i.store(val);
-        return val;
+        return i.store(val);
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicGet(const hAtomicInt& i) {

@@ -17,6 +17,7 @@
 #include "core/hSystemConsole.h"
 #include "core/hDeviceConfig.h"
 #include "core/hDeviceSystemWindow.h"
+#include "threading/hTaskGraphSystem.h"
 
 namespace Heart
 {
@@ -134,7 +135,6 @@ namespace Heart
         hActionManager*     getActionManager()      { return actionManager_; }
         hSystemConsole*     GetConsole()            { return console_; }
         hLuaStateManager*   GetVM()                 { return luaVM_; }
-        hJobManager*        GetJobManager()         { return jobManager; }
         hSoundManager*      GetSoundManager()       { return soundManager_; }
 
         static const hChar* VersionString();
@@ -154,6 +154,8 @@ namespace Heart
 
         void                            PostCoreResourceLoad();
         void                            DoUpdate();
+        void                            registerEngineTasks();
+        void                            createFrameTaskGraph();
 
         HeartConfig                     config_;
         hConfigurationVariablesImpl     cvars;
@@ -169,7 +171,7 @@ namespace Heart
         hActionManager*                 actionManager_;
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;
-        hJobManager*                    jobManager;
+        hTaskGraph                      mainFrameTaskGraph;
 
         //Debug 
         hNetHost*                       debugServer_;

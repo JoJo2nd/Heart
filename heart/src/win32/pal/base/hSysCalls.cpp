@@ -17,6 +17,7 @@
 #include "core/hIFileSystem.h"
 #include <SDL.h>
 #include <windows.h>
+#include <thread>
 
 namespace Heart {
 namespace hSysCall {
@@ -44,6 +45,18 @@ namespace hSysCall {
         RegQueryValueEx(hKey, "~MHz", NULL, NULL, (LPBYTE) &dwMHz, NULL/*&BufSize*/);
 
         return dwMHz*1000000;
+    }
+
+    HEART_EXPORT hUint32 HEART_API getProcessorCount() {
+        //may return 0 when not able to detect
+        hUint32 concurentThreadsSupported = std::thread::hardware_concurrency();
+        if (concurentThreadsSupported == 0) { // not supported?
+            SYSTEM_INFO sysinfo;
+            GetSystemInfo(&sysinfo);
+
+            concurentThreadsSupported = sysinfo.dwNumberOfProcessors;
+        }
+        return concurentThreadsSupported;
     }
 
     HEART_EXPORT

@@ -10,11 +10,15 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "components/hObjectFactory.h"
 #include "components/hEntity.h"
 #include "2d/hDynamicTileSet2D.h"
+#include "math/hVec4.h"
 #include "resource_2d.pb.h"
 #include <unordered_map>
 
 namespace Heart {
 class hTextureAtlasResource;
+namespace hTileRenderer2D {
+    struct Vert2D;
+}
 
 class hSprite2D : public hEntityComponent {
     struct LoadLinkInfo {
@@ -32,6 +36,7 @@ class hSprite2D : public hEntityComponent {
         std::vector<hUint32> renderOrder;
         std::vector<hTextureAtlasResource*> tileSet;
         std::vector<hUint32> spriteTile;
+        std::vector<hVec4> uvCoords;
     };
 
     static std::vector<SpriteBucket> layers;
@@ -42,6 +47,7 @@ class hSprite2D : public hEntityComponent {
         std::swap(l->size[a_entry], l->size[b_entry]);
         std::swap(l->spriteTile[a_entry], l->spriteTile[b_entry]);
         std::swap(l->tileSet[a_entry], l->tileSet[b_entry]);
+        std::swap(l->uvCoords[a_entry], l->uvCoords[b_entry]);
     }
 
     static hSize_t getLayerIndex(hUint32 render_order) {
@@ -90,10 +96,11 @@ public:
     hVec2 getPosition() const { return layers[layer].position[entry]; }
     void setPosition(hVec2 in_pos) { layers[layer].position[entry] = in_pos; }
     hTextureAtlasResource* getTileSet() const { return layers[layer].tileSet[entry]; }
-    void setTileSet(hTextureAtlasResource* in_tileset) { layers[layer].tileSet[entry] = in_tileset; }
-    hDynamicTileSet2D::TileHandle getTileHandle() const { return layers[layer].spriteTile[entry]; }
-    void setTileHandle(hUint32 in_tile) { layers[layer].spriteTile[entry] = in_tile; }
+    void setTileSet(hTextureAtlasResource* in_tileset);
+    hUint32 getTileHandle() const { return layers[layer].spriteTile[entry]; }
+    void setTileHandle(hUint32 in_tile);
 
+    static void submitSpriteLayers(hUint32 start_layer, hUint32 end_layer, hRenderer::hCmdList* cl, hRenderer::hPipelineState* pls, hRenderer::hInputState* is, hUint32 texture_slot, hUint32 vertex_start, hTileRenderer2D::Vert2D* vtx_buffer, hUint32 max_vtx_count);
 };
 
 }

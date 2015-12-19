@@ -98,7 +98,6 @@ class TexturedCube : public IUnitTest {
     struct TextureFormat {
         const hChar* name;
         hRenderer::hTexture2D* t;
-        hRenderer::hInputState* is;
     };
 
     hTimer                              timer_;
@@ -110,6 +109,7 @@ class TexturedCube : public IUnitTest {
     hRenderer::hPipelineState*          pls;
     hRenderer::hUniformBuffer*          ub1;
     hRenderer::hUniformBuffer*          ub2;
+    hRenderer::hInputState*             is;
 
     static const hUint FENCE_COUNT = 3;
     hUint                               paramBlockSize;
@@ -227,6 +227,8 @@ public:
         hRenderer::hInputStateDesc isd;
         isd.setUniformBuffer(hStringID("ViewportConstants"), ub1);
         isd.setUniformBuffer(hStringID("InstanceConstants"), ub2);
+        isd.setTextureSlotWithOverride(hStringID("t_tex2D"), hResourceManager::weakResource<hTextureResource>(hStringID("/system/default_tex_rgba"))->getTexture2D(), 0);
+        is = hRenderer::createRenderInputState(isd, rcd);
         
 
         testTextures.resize(hStaticArraySize(test_texture_names));
@@ -234,8 +236,6 @@ public:
             auto* tt = hResourceManager::weakResource<hTextureResource>(hStringID(test_texture_names[i]));
             testTextures[i].name = test_texture_names[i];
             testTextures[i].t = tt->getTexture2D();
-            isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
-            testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
         }
         
         {
@@ -243,8 +243,6 @@ public:
             auto* tt = hResourceManager::weakResource<hTextureAtlasResource>(hStringID("/textures/Testtileset"));
             testTextures[i].name = test_texture_names[i];
             testTextures[i].t = tt->getTextureResource()->getTexture2D();
-            isd.setTextureSlot(hStringID("t_tex2D"), testTextures[i].t);
-            testTextures[i].is = hRenderer::createRenderInputState(isd, rcd);
         }
 
         timer_.reset();
@@ -259,16 +257,14 @@ public:
     }
     ~TexturedCube() {
         hRenderer::destroyRenderPipelineState(pls);
-        for (const auto& i : testTextures) {
-            hRenderer::destroyRenderInputState(i.is);
-        }
+        hRenderer::destroyRenderInputState(is);
         hRenderer::destroyUniformBuffer(ub1);
         hRenderer::destroyUniformBuffer(ub2);
         hRenderer::destroyVertexBuffer(vb);
     }
 
     const hChar* getHelpString() override {
-        return "Render Target test";
+        return "Test of a number of texture formats.\nAlso tests texture override slots for renderer input states.";
     }
 
     virtual hUint32 RunUnitTest() override {
@@ -342,7 +338,8 @@ public:
         hRenderer::flushUnibufferMemoryRange(cl, ub1, (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
         hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
-        hRenderer::draw(cl, pls, testTextures[currentTex].is, hRenderer::Primative::Triangles, 12, 0);
+        hRenderer::setTextureOverride(cl, is, 0, testTextures[currentTex].t);
+        hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 12, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
         return cl;

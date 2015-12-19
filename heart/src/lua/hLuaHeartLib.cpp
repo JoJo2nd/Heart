@@ -18,6 +18,7 @@ extern "C" {
 #   include "lauxlib.h"
 }
 #include "debug/hDebugMenuManager.h"
+#include "threading/hTaskGraphSystem.h"
 
 namespace Heart
 {
@@ -156,6 +157,7 @@ by Lua can also return many results.
         luaL_newlibtable(L,libcore);
         luaL_setfuncs(L,libcore,0);
 
+        heart_luaB_register_task_graph(L);
         return 1;
     }
 

@@ -38,9 +38,6 @@ namespace Hidden {
     typedef std::vector< hResourcePackage* >                    hPackageArray;
 
     hIFileSystem*               filesystem = nullptr;
-    hJobManager*                jobManager = nullptr;
-    hJobQueue                   fileReadJobQueue;
-    hJobQueue                   workerQueue;
 
     //
     hMutex                      resourceDBMtx;
@@ -57,9 +54,8 @@ using namespace Hidden;
 void debugMenuRender();
 #endif
 
-hBool initialise(hIFileSystem* pFileSystem, hJobManager* jobmanager) {
+hBool initialise(hIFileSystem* pFileSystem) {
     filesystem = pFileSystem;
-    jobManager = jobmanager;
     loadPackage("system");
 #if HEART_DEBUG_INFO
     hDebugMenuManager::registerMenu("Packages", debugMenuRender);
@@ -97,10 +93,6 @@ void update() {
             ++p;
         }
     }
-
-    // Kick off any waiting jobs
-    jobManager->kickQueueJobs(&fileReadJobQueue);
-    jobManager->kickQueueJobs(&workerQueue);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -119,7 +111,7 @@ void loadPackage( const hChar* name ) {
     if (lp == packages.end() && lp2 == packagesToLoad.end()) {
          hResourcePackage* pkg;
          pkg = new hResourcePackage;
-         pkg->initialise(filesystem, &fileReadJobQueue, name);
+         pkg->initialise(filesystem, name);
          packagesToLoad.push_back(pkg);
     } else {
         (*lp)->AddRef();

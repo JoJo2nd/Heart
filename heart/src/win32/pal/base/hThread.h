@@ -8,6 +8,8 @@
 #include <windows.h>
 #include "base/hTypes.h"
 #include "base/hFunctor.h"
+#include <functional>
+#include <memory>
 
 namespace Heart
 {
@@ -23,9 +25,10 @@ namespace Device
 
     hFUNCTOR_TYPEDEF(hUint32(*)(void*), hThreadFunc);
 
-    class HEART_CLASS_EXPORT hThread
-    {
+    class HEART_CLASS_EXPORT hThread {
     public:
+        typedef std::function<hUint32(void*)> Function;
+
         hThread();
         hThread(const hThread& rhs) = delete;
         hThread& operator == (const hThread& rhs) = delete;
@@ -41,6 +44,7 @@ namespace Device
         };
 
         void			create( const hChar* threadName, hInt32 priority, hThreadFunc pFunctor, void* param );
+        void			create(const hChar* threadName, hInt32 priority, Function pFunctor, void* param);
         hUint32			returnCode() { return returnCode_; }
         void            join(){ WaitForSingleObject(ThreadHand_, INFINITE); }
 
@@ -52,8 +56,8 @@ namespace Device
         static unsigned long WINAPI staticFunc( LPVOID pParam );
 
         hChar							threadName_[THREAD_NAME_SIZE];
-        hThreadFunc*                    threadFunc_;
         void*							pThreadParam_;	
+        Function*                       threadFunc;
         HANDLE							ThreadHand_;
         hInt32							priority_;
         hUint32							returnCode_;

@@ -8,14 +8,17 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "2d/hRenderPlane2D.h"
 #include "2d/hSprite2D.h"
 #include "2d/hDynamicTileSet2D.h"
+#include "core/hConfigOptions.h"
 #include "components/hEntity.h"
 #include "components/hEntityFactory.h"
 #include "components/hObjectFactory.h"
 #include "render/hRenderer.h"
 #include "render/hUniformBufferFlags.h"
 #include "render/hRendererCamera.h"
+#include "render/hVertexBufferFlags.h"
 #include "utils/hFreelistAllocator.h"
 #include "shaders/hGlobalConstants.h"
+#include "shaders/hTileRenderer2DConstants.h"
 
 namespace Heart {
 namespace hTileRenderer2D {
@@ -27,8 +30,13 @@ std::vector<hRenderPlane2D*> renderPlanes;
 std::vector<hDynamicTileSet2D*> tileSets;
 std::vector<hSprite2D*> sprites;
 hRendererCamera viewingCamera;
+hUint spriteVertexBufferSize;
 hRenderer::hUniformBufferUniquePtr viewUniformBuffer;
 hRenderer::hUniformBufferUniquePtr tileRendererSharedBuffer;
+hRenderer::hVertexBufferUniquePtr spriteVertexBuffer;
+hRenderer::hPipelineStateUniquePtr pipelineState;
+hRenderer::hInputStateUniquePtr inputState;
+hUint textureOverrideSlot = 0;
 hUint currentFence = 0;
 std::vector<hRenderer::hRenderFence*> fences;
 }
@@ -96,11 +104,17 @@ hRenderer::hUniformBuffer* getViewUniformBuffer() {
 }
 
 hBool initialise() {
+    spriteVertexBufferSize = hConfigurationVariables::getCVarUint("renderer.spritevertexbuffersize", 1000);
     hUint32 layout_count;
     fences.resize(g_RenderFenceCount);
     auto* layout = getViewportConstantsLayout(&layout_count);
     viewUniformBuffer.reset(hRenderer::createUniformBuffer(nullptr, layout, layout_count, sizeof(ViewportConstants), g_RenderFenceCount, (hUint32)hRenderer::hUniformBufferFlags::Dynamic));
+    spriteVertexBuffer.reset(hRenderer::createVertexBuffer(nullptr, sizeof(Vert2D), spriteVertexBufferSize, (hUint32)hRenderer::hVertexBufferFlags::DynamicBuffer));
     return hTrue;
+}
+
+void initialiseResources() {
+
 }
 
 void setView(const hRendererCamera& camera) {
@@ -127,6 +141,7 @@ void updateDynamicRenderResources(hRenderer::hCmdList* cl) {
     for (auto& i : renderPlanes) {
         i->updateSectorVertexBuffer(cl, currentFence);
     }
+    
 }
 
 void renderTilePlanes(hRenderer::hCmdList* cl) {
@@ -140,9 +155,13 @@ void renderTilePlanes(hRenderer::hCmdList* cl) {
     vp->g_ViewInverse = inverse(vp->g_View);
     vp->g_ViewInverseTranspose = transpose(vp->g_ViewInverse);
     vp->g_ViewProjectionInverse = inverse(vp->g_ViewProjection);
-    hRenderer::flushUnibufferMemoryRange(cl, viewUniformBuffer.get(), currentFence*sizeof(ViewportConstants), sizeof(ViewportConstants));
 
+    hRenderer::flushUnibufferMemoryRange(cl, viewUniformBuffer.get(), currentFence*sizeof(ViewportConstants), sizeof(ViewportConstants));
+    auto* vertex_base = (Vert2D*)hRenderer::getMappingPtr(spriteVertexBuffer.get(), nullptr); //TODO: get right fence
+
+    hUint prevRenderPlane = 0;
     for (auto& i : renderPlanes) {
+        hSprite2D::submitSpriteLayers(prevRenderPlane, i->getPlaneLayer(), cl, pipelineState.get(), inputState.get(), textureOverrideSlot, 0, vertex_base, spriteVertexBufferSize);
         i->submitPlane(cl, currentFence);
     }
 

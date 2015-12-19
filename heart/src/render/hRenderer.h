@@ -98,6 +98,7 @@ namespace hRenderer {
     HEART_MODULE_API(void, setViewport)(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz);
     HEART_MODULE_API(void, setRenderTargets)(hCmdList* cl, hRenderTarget** targets, hUint count);
     HEART_MODULE_API(void, scissorRect)(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom);
+    HEART_MODULE_API(void, setTextureOverride)(hCmdList* cl, hInputState* is, hUint32 slot, hTexture2D* tex);
     HEART_MODULE_API(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset);
     /* - Unimplemented APIs
     HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderState* rs, hRenderResourceBinding* binding, Primative t, hUint prims, hUint vtx_offset);

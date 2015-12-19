@@ -12,7 +12,7 @@
 #include "core/hProtobuf.h"
 #include "core/hIFileSystem.h"
 #include "components/hObjectFactory.h"
-#include "threading/hJobManager.h"
+#include "threading/hTaskGraphSystem.h"
 #include <queue>
 
 namespace Heart
@@ -69,7 +69,7 @@ namespace Heart
         hResourcePackage();
         ~hResourcePackage();
 
-        void                    initialise(hIFileSystem* filesystem, hJobQueue* fileQueue, const hChar* packageName);
+        void                    initialise(hIFileSystem* filesystem, const hChar* packageName);
         const hChar*            getPackageName() const { return packageName_.c_str(); }
         hUint32                 getPackageCRC() const { return packageName_.hash(); }
         const hStringID&        getPackageID() const { return packageName_; }
@@ -102,7 +102,7 @@ namespace Heart
         typedef std::vector< hResourceLoadJobInputOutput > ResourceJobArray;
 
         // Jobs
-        void  loadPackageDescription(void*, void*);
+        hUint32 loadPackageDescription(hTaskInfo*);
 
         enum class PkgState {
             Null,
@@ -130,7 +130,7 @@ namespace Heart
         proto::PackageHeader        packageHeader_;
         ResourceJobArray            resourceJobArray_;
         hTimer                      timer_;
-        hJobQueue*                  fileQueue_;
+        hTaskGraph                  taskGraph;
     };
 
 }
