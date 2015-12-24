@@ -62,10 +62,15 @@ namespace Heart
         hChar*           data_;
     };
 
+    template< typename t_enum >
     struct hXMLEnumReamp
     {
-        const hChar* enumStr_;
-        hUint32      enumValue_;
+        hXMLEnumReamp() {}
+        hXMLEnumReamp(const std::string& name, t_enum value) 
+            : enumStr_(name)
+            , enumValue_(value) {}
+        std::string  enumStr_;
+        t_enum       enumValue_;
     };
 
     class hXMLGetter
@@ -196,7 +201,7 @@ namespace Heart
                 return att->value();
         }
         template < typename t_type >
-        t_type GetAttributeEnum(const hChar* name, hXMLEnumReamp* enums, t_type defaultVal = 0) const
+        t_type GetAttributeEnum(const hChar* name, hXMLEnumReamp<t_type>* enums, t_type defaultVal = 0) const
         {
             if (!node_)
                 return defaultVal;
@@ -210,7 +215,7 @@ namespace Heart
 
             while(enums->enumStr_)
             {
-                if (hStrICmp(enums->enumStr_, att->value()) == 0)
+                if (hStrICmp(enums->enumStr_.c_str(), att->value()) == 0)
                 {
                     return (t_type)enums->enumValue_;
                 }
@@ -253,7 +258,7 @@ namespace Heart
             }
         }
         template < typename t_type >
-        t_type GetValueEnum(hXMLEnumReamp* enums, t_type defaultVal = 0) const
+        t_type GetValueEnum(hXMLEnumReamp<t_type>* enums, t_type defaultVal = 0) const
         {
             if (!node_)
                 return defaultVal;
@@ -263,7 +268,7 @@ namespace Heart
             {
                 if (hStrICmp(enums->enumStr_, node_->value()) == 0)
                 {
-                    return (t_type)enums->enumValue_;
+                    return enums->enumValue_;
                 }
                 ++enums;
             }
@@ -315,15 +320,15 @@ namespace Heart
     };
 
     template <>
-    hFORCEINLINE bool hXMLGetter::GetValueEnum<bool>(hXMLEnumReamp* enums, bool defaultVal) const
+    hFORCEINLINE bool hXMLGetter::GetValueEnum<bool>(hXMLEnumReamp<bool>* enums, bool defaultVal) const
     {
         if (!node_)
             return defaultVal;
         if (!node_->value())
             return defaultVal;
-        while(enums->enumStr_)
+        while(enums->enumStr_.c_str())
         {
-            if (hStrICmp(enums->enumStr_, node_->value()) == 0)
+            if (hStrICmp(enums->enumStr_.c_str(), node_->value()) == 0)
             {
                 return enums->enumValue_ == 1;
             }

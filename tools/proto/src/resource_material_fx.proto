@@ -11,51 +11,51 @@ enum MaterialParameterType {
 }
 
 message SamplerState {
-    optional renderstate.SamplerState filter = 1;
-    optional renderstate.SamplerBorder addressU = 2;
-    optional renderstate.SamplerBorder addressV = 3;
-    optional renderstate.SamplerBorder addressW = 4;
-    optional float  mipLODBias = 5;
-    optional uint32 maxAnisotropy = 6;
+    optional renderstate.SamplerState filter = 1 [default = point];
+    optional renderstate.SamplerBorder addressU = 2 [default = clamp];
+    optional renderstate.SamplerBorder addressV = 3 [default = clamp];
+    optional renderstate.SamplerBorder addressW = 4 [default = clamp];
+    optional float  mipLODBias = 5 [default = 0];
+    optional uint32 maxAnisotropy = 6 [default = 1];
     optional Colour borderColour = 7;
-    optional float  minLOD = 8;
-    optional float  maxLOD = 9;
+    optional float  minLOD = 8 [default = 0];
+    optional float  maxLOD = 9 [default = 1000];
 }
 
 message BlendState {
-	optional bool   blendEnable = 1;			    
-	optional renderstate.BlendOp srcBlend = 2;				    
-	optional renderstate.BlendOp destBlend = 3;				    
-	optional renderstate.BlendFunction blendOp = 4;				    
-	optional renderstate.BlendOp srcBlendAlpha = 5;			    
-	optional renderstate.BlendOp destBlendAlpha = 6;		        
-	optional renderstate.BlendFunction blendOpAlpha = 7;			    
-	optional uint32 renderTargetWriteMask = 8;	//  hUint32               
+	optional bool   blendEnable = 1 [default = false];
+	optional renderstate.BlendOp srcBlend = 2 [default = BlendOne];
+	optional renderstate.BlendOp destBlend = 3 [default = BlendOne];
+	optional renderstate.BlendFunction blendOp = 4 [default = Add];
+	optional renderstate.BlendOp srcBlendAlpha = 5 [default = BlendOne];
+	optional renderstate.BlendOp destBlendAlpha = 6 [default = BlendOne];
+	optional renderstate.BlendFunction blendOpAlpha = 7 [default = Add];
+	optional uint32 renderTargetWriteMask = 8 [default = 0xFFFFFFFF];	//  hUint32               
 }
 
 message DepthStencilState {
-    optional bool depthEnable = 1;          
-    optional uint32 depthWriteMask = 2;	      
-    optional renderstate.FunctionCompare depthFunc = 3;			  
-    optional bool stencilEnable = 4;		  
-    optional uint32 stencilReadMask = 5;	  // hUint32           
-    optional uint32 stencilWriteMask = 6;	  // hUint32           
-    optional renderstate.StencilOp stencilFailOp = 7;		  
-    optional renderstate.StencilOp stencilDepthFailOp = 8;   
-    optional renderstate.StencilOp stencilPassOp = 9;		  
-    optional renderstate.FunctionCompare stencilFunc = 10;		  
-    optional uint32 stencilRef = 11;		  // hUint32           
+    optional bool depthEnable = 1 [default = false];
+    optional uint32 depthWriteMask = 2 [default = 0xFFFFFFFF];
+    optional renderstate.FunctionCompare depthFunc = 3 [default = CompareLess];
+    optional bool stencilEnable = 4 [default = false];
+    optional uint32 stencilReadMask = 5 [default = 0xFFFFFFFF];
+    optional uint32 stencilWriteMask = 6 [default = 0xFFFFFFFF];
+    optional renderstate.StencilOp stencilFailOp = 7 [default = StencilKeep];
+    optional renderstate.StencilOp stencilDepthFailOp = 8 [default = StencilKeep];
+    optional renderstate.StencilOp stencilPassOp = 9 [default = StencilKeep];
+    optional renderstate.FunctionCompare stencilFunc = 10 [default = CompareAlways];
+    optional uint32 stencilRef = 11 [default = 0];
 }
 
 message RasterizerState {
-    optional renderstate.FillMode fillMode = 1;                  
-    optional renderstate.CullMode cullMode = 2;                  
-    optional uint32 frontCounterClockwise = 3;     
-    optional uint32 depthBias = 4;                       
-    optional float depthBiasClamp = 5;             
-    optional float slopeScaledDepthBias = 6;      
-    optional uint32 depthClipEnable = 7;           
-    optional uint32 scissorEnable = 8;             
+    optional renderstate.FillMode fillMode = 1 [default = Solid];
+    optional renderstate.CullMode cullMode = 2 [default = CullClockwise];
+    optional uint32 frontCounterClockwise = 3 [default = 0];
+    optional uint32 depthBias = 4 [default = 0];
+    optional float depthBiasClamp = 5 [default = 0];
+    optional float slopeScaledDepthBias = 6 [default = 0];
+    optional uint32 depthClipEnable = 7 [default = 0];
+    optional bool scissorEnable = 8 [default = false];
 }
 
 message MaterialPass {
@@ -98,7 +98,7 @@ message MaterialParameter {
 message MaterialResource {
 	repeated MaterialSampler samplers = 1;
 	repeated MaterialParameter parameters = 2;
-	repeated MaterialGroup groups = 3;
+	repeated MaterialTechnique techniques = 3;
     optional int32 totalGroups = 4;
     optional int32 totalTechniques = 5;
     optional int32 totalPasses = 6;

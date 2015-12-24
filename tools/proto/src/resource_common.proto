@@ -16,7 +16,7 @@ message Colour {
 	required uint32 red = 1 [default = 1];
 	required uint32 green = 2 [default = 1];
 	required uint32 blue = 3 [default = 1];
-	optional uint32 alpha = 4;
+	optional uint32 alpha = 4 [default = 1];
 }
 
 message AxisAlignedBoundingBox {

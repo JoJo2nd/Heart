@@ -7,6 +7,7 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "components/hObjectFactory.h"
+#include "engine_state.pb.h"
 #include <functional>
 
 namespace Heart {
@@ -18,6 +19,11 @@ class hEntityComponent;
 class hEntityComponentHandle;
 struct hObjectDefinition;
 struct hComponentDefinition;
+
+struct hSerialisedEntitiesParameters {
+    hBool includeTransientEntites = false; // mainly for hot reload or debugging.
+    Heart::proto::EngineState engineState;
+};
 
 namespace hEntityFactory {
 
@@ -37,11 +43,13 @@ struct hComponentMgt {
 };
 
 void registerComponentManagement(const hComponentMgt& comp_mgt);
-void unregisterEntityDefinition(hStringID definition_name);
 hEntity* createEntity(hUuid_t id, hComponentDefinition* compents, hSize_t component_def_count);
 void destroyEntity(hUuid_t entity_id);
+void destroyEntity(hEntity* entity);
 hEntity* findEntity(hUuid_t entity_id);
-
+void serialiseEntities(hSerialisedEntitiesParameters* in_out_params);
+void deserialiseEntities(const hSerialisedEntitiesParameters& in_params);
+void destroyAllEntities();
 
 }
 }

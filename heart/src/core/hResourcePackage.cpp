@@ -65,7 +65,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     
-    hBool hResourcePackage::serialiseObject(Heart::proto::PackageHeader* ) const {
+    hBool hResourcePackage::serialiseObject(Heart::proto::PackageHeader*, const hSerialisedEntitiesParameters& params) const {
         hcAssertMsg(false, "Not expected to call this function");
         return hFalse;
     }

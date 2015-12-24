@@ -14,6 +14,8 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 namespace Heart {
 hRegisterObjectType(LevelDefinition, Heart::hLevel, Heart::proto::LevelDefinition);
 
+std::vector<hLevel*> hLevel::loadedLevels;
+
 hLevel::hLevel(Heart::proto::LevelDefinition* obj) {
     std::vector<hComponentDefinition> components;
     levelName = obj->levelname();
@@ -21,39 +23,44 @@ hLevel::hLevel(Heart::proto::LevelDefinition* obj) {
     for (hInt i=0, n=obj->entities_size(); i<n; ++i) {
         auto& entity = obj->entities(i);
         hUuid_t guid = hUUID::fromString(entity.objectguid().c_str(), entity.objectguid().length());
-        hSize_t totalComponents = entity.components_size();
-#if HEART_DEBUG_INFO
-        totalComponents += entity.debugcomponents_size();
-#endif
-        components.clear();
-        components.reserve(totalComponents);
-        for (hInt ci = 0, cn = entity.components_size(); ci<cn; ++ci) {
-            hComponentDefinition comp_def;
-            comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.components(ci).type_name().c_str());
-            comp_def.id = entity.components(ci).componentid();
-            if (comp_def.typeDefintion) {
-                comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
-                comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
-                components.push_back(std::move(comp_def));
+        auto* lvl_entity = hEntityFactory::findEntity(guid);
+        // if the entity already exists (due to loading a save game or hot reload) we can't create it, just acquire it
+        // There are no ref counts on entities...may be a problem later?
+        if (!lvl_entity) {
+            hSize_t totalComponents = entity.components_size();
+    #if HEART_DEBUG_INFO
+            totalComponents += entity.debugcomponents_size();
+    #endif
+            components.clear();
+            components.reserve(totalComponents);
+            for (hInt ci = 0, cn = entity.components_size(); ci<cn; ++ci) {
+                hComponentDefinition comp_def;
+                comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.components(ci).type_name().c_str());
+                comp_def.id = entity.components(ci).componentid();
+                if (comp_def.typeDefintion) {
+                    comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
+                    comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
+                    components.push_back(std::move(comp_def));
+                }
             }
-        }
-#if HEART_DEBUG_INFO
-        for (hInt ci = 0, cn = entity.debugcomponents_size(); ci < cn; ++ci) {
-            hComponentDefinition comp_def;
-            comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.debugcomponents(ci).type_name().c_str());
-            comp_def.id = entity.debugcomponents(ci).componentid();
-            if (comp_def.typeDefintion) {
-                comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
-                comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
-                components.push_back(std::move(comp_def));
+    #if HEART_DEBUG_INFO
+            for (hInt ci = 0, cn = entity.debugcomponents_size(); ci < cn; ++ci) {
+                hComponentDefinition comp_def;
+                comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.debugcomponents(ci).type_name().c_str());
+                comp_def.id = entity.debugcomponents(ci).componentid();
+                if (comp_def.typeDefintion) {
+                    comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
+                    comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
+                    components.push_back(std::move(comp_def));
+                }
             }
+    #endif
+            auto* lvl_entity = hEntityFactory::createEntity(guid, components.data(), components.size());
+            lvl_entity->setTransitent(entity.has_transient() ? entity.transient() : false);
+    #if HEART_DEBUG_INFO
+            lvl_entity->setFriendlyName(entity.friendlyname().c_str());
+    #endif
         }
-#endif
-        auto* lvl_entity = hEntityFactory::createEntity(guid, components.data(), components.size());
-        lvl_entity->setTransitent(entity.has_transient() ? entity.transient() : false);
-#if HEART_DEBUG_INFO
-        lvl_entity->setFriendlyName(entity.friendlyname().c_str());
-#endif
         levelEntities.push_back(lvl_entity);
     }
 #if HEART_DEBUG_INFO
@@ -89,9 +96,14 @@ hLevel::hLevel(Heart::proto::LevelDefinition* obj) {
         ImGui::End();
     });
 #endif
+
+    loadedLevels.push_back(this);
 }
 
 hLevel::~hLevel() {
+    for (const auto& i : levelEntities) {
+        hEntityFactory::destroyEntity(i);
+    }
 #if HEART_DEBUG_INFO
     hSize_t len = levelName.size() + 7;
     hChar* debugLevelName = (hChar*)hAlloca(len);
@@ -99,9 +111,16 @@ hLevel::~hLevel() {
     hStrCat(debugLevelName, len, levelName.c_str());
     hDebugMenuManager::unregisterMenu(debugLevelName);
 #endif
+    for (hSize_t i=0, n=loadedLevels.size(); i < n; ++i) {
+        if (loadedLevels[i] == this) {
+            loadedLevels[i] = loadedLevels[n-1];
+            break;
+        }
+    }
+    loadedLevels.resize(loadedLevels.size()-1);
 }
 
-hBool hLevel::serialiseObject(Heart::proto::LevelDefinition* obj) const {
+hBool hLevel::serialiseObject(Heart::proto::LevelDefinition* obj, const Heart::hSerialisedEntitiesParameters& serialise_params) const {
     return hTrue;
 }
 

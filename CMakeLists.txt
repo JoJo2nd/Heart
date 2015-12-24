@@ -369,6 +369,9 @@ set(PROTO_LUA_SRC_DIR
 set(MEMTRACKERLIB_SRC_DIR
     "${TOOLS_SRC_ROOT}/memtrackerlib/src"
 )
+set(RAPIDJSON_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/rapidjson/include"
+)
 
 if (WIN32)
   #OpenAL and ws2 are still called "32" 64bit build...
@@ -466,6 +469,7 @@ add_subdirectory("resourceloaders/materialloader")
 add_subdirectory("resourceloaders/meshloader")
 add_subdirectory("resourceloaders/fontloader")
 add_subdirectory("resourceloaders/levelloader")
+add_subdirectory("resourceloaders/renderpipelineloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")

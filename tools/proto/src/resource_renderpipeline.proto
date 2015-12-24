@@ -1,0 +1,49 @@
+
+package Heart.proto.renderpipeline;
+
+enum InputType {
+    Texture = 0;
+    UniformBuffer = 1;
+}
+
+enum OutputType {
+    RGBA8 = 0;
+    RGBA16 = 1;
+    RG16 = 2;
+    RGB10A2 = 3;
+    Depth = 4;
+}
+
+message PassInput {
+    optional string name = 1;
+    optional InputType type = 2;
+}
+
+message PassOutput {
+    optional string name = 1;
+    optional OutputType type = 2;
+    optional uint32 index = 3;
+}
+
+message Pass {
+    optional string techniqueName = 1;
+    repeated PassInput inputs = 2;
+    repeated PassOutput outputs = 3;
+}
+
+message PipelineBinding {
+    optional uint32 fromStateID = 1;
+    optional string from = 2;
+    optional string to = 3;
+}
+
+message PipelineStage {
+    optional uint32 stageID = 1;
+    repeated PipelineBinding inputBindings = 2;
+    optional string passResource = 3;
+    optional string stageName = 4;
+}
+
+message Pipeline {
+    repeated PipelineStage stages = 1;
+}

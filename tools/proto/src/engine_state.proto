@@ -1,0 +1,15 @@
+import "entity_def.proto";
+
+package Heart.proto;
+
+message LoadedPackage {
+	optional string packageName = 1;
+	optional uint32 refCount = 2 [default = 1];
+}
+
+message EngineState {
+	repeated LoadedPackage loadedPacakges = 1;
+	repeated string aliveEntityID = 2;
+	repeated EntityDefinition aliveEntities = 3;
+	optional uint32 maxEntityComponentCount = 4;
+}

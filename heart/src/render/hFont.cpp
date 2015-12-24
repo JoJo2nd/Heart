@@ -33,7 +33,7 @@ hTTFFontFace::~hTTFFontFace() {
     }
 }
 
-hBool hTTFFontFace::serialiseObject(Heart::proto::TTFResource* obj) const {
+hBool hTTFFontFace::serialiseObject(Heart::proto::TTFResource* obj, const hSerialisedEntitiesParameters& params) const {
     return hTrue;
 }
 

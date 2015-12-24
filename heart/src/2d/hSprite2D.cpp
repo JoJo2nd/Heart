@@ -38,7 +38,7 @@ hSprite2D::hSprite2D(Heart::proto::RenderSprite2D* obj) {
 }
 
 
-hBool hSprite2D::serialiseObject(Heart::proto::RenderSprite2D* obj) const {
+hBool hSprite2D::serialiseObject(Heart::proto::RenderSprite2D* obj, const hSerialisedEntitiesParameters& params) const {
     return hTrue;
 }
 

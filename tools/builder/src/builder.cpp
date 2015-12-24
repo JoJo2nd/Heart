@@ -153,16 +153,6 @@ static int exec2(const char* cmdline, HANDLE* pstdin, HANDLE* pstdout, HANDLE* p
 
 #define BUILDER_MAX_PATH (MAX_PATH)
 
-static void print_usage() {
-    static const char* progname = "builder";
-    printf("%s: ", progname);
-    printf(
-        "usage: %s [src data path] [dst data path]\n"
-        "Available options are:\n"
-        "none...yet",
-        progname);
-}
-
 int handleLuaFileReadError(lua_State* L, int errorCode) {
     if (errorCode == LUA_ERRSYNTAX) {
         printf("Syntax error in builder config script:\n%s\n", lua_tostring(L, -1));
@@ -588,13 +578,29 @@ int main (int argc, char **argv) {
     int generate_guid = false;
     bool clean_build = false;
     std::string config_script = ".build_config";
-    const char argopts[] = "vg:h";
+    std::unordered_set<std::string> force_types;
+    const char argopts[] = "vg:t:h";
     static struct option long_options[] = {
         { "version", no_argument, 0, (int)'v' },
         { "clean", no_argument, 0, (int)'c' },
         { "force", no_argument, 0, (int)'c' },
+        { "forcetype", required_argument, 0, (int)'t' },
         { "guid", no_argument, 0, (int)'i' },
         { 0, 0, 0, 0 }
+    };
+    auto print_usage = []() {
+        static const char* progname = "builder";
+        printf("%s: ", progname);
+        printf(
+            "usage: %s [options]\n"
+            "Available options are:\n"
+            "\t-g [input build config script for]\n"
+            "\t--version, -v :\n"
+            "\t--clean :\n\t\tForce all resources to be rebuilt, ignoring the cache\n"
+            "\t--force :\n\t\tSame as clean\n"
+            "\t--forcetype [type], -t [type]:\n\t\tForce all resources of [type] to be rebuilt, ignoring the cache\n"
+            "\t--guid :\n\t\tOutput to stdout an new GUID\n",
+            progname);
     };
     lua_State *L = luaL_newstate();  /* create state */
     luaL_openlibs(L);  /* open libraries */
@@ -605,6 +611,7 @@ int main (int argc, char **argv) {
         case 'g': config_script = optarg; break;
         case 'c': clean_build = true; break;
         case 'i': generate_guid = true; break;
+        case 't': force_types.insert(optarg); break;
         case '?':
             if (strchr(argopts, optopt))
                 fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -703,7 +710,7 @@ int main (int argc, char **argv) {
                         }
                     }
                 }
-                if (build_required || clean_build) {
+                if (build_required || clean_build || force_types.find(job->resourcetype()) != force_types.end()) {
                     if (builder_ctx->saveStdIn) {
                         std::ofstream output;
                         output.open(res_stdin_path.c_str(), std::ios_base::out | std::ios_base::binary);

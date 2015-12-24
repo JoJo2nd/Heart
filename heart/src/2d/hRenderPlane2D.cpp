@@ -46,7 +46,7 @@ hRenderPlane2D::hRenderPlane2D(Heart::proto::RenderPlane2D* obj) {
     }
 }
 
-hBool hRenderPlane2D::serialiseObject(Heart::proto::RenderPlane2D* obj) const {
+hBool hRenderPlane2D::serialiseObject(Heart::proto::RenderPlane2D* obj, const hSerialisedEntitiesParameters& params) const {
     return hTrue;
 }
 

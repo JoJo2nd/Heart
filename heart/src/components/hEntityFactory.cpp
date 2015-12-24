@@ -17,94 +17,7 @@
 
 
 namespace Heart {
-#if 0
-class hEntityContext {
-
-	static const hUint s_entityBlockDefaultSize = 8;
-
-    struct hEntityNode {
-        hEntityNode() 
-            : lnext(this)
-            , lprev(this)
-        {}
-
-
-        hEntityNode* lnext, *lprev;
-        hEntity it;
-    };
-
-	struct hEntityBlock {
-		hUint entityCount;
-		hUint inUse;
-		hEntityBlock* lnext, *lprev;
-	};
-
-	void allocFreeListNodes() {
-		auto* new_block = (hEntityBlock*)hMalloc(sizeof(hEntityBlock)+(sizeof(hEntityNode)*s_entityBlockDefaultSize));
-		new (new_block) hEntityBlock();
-		hEntityNode* freelist_start, *freelist_ptr, *freelist_end, *this_freelist = nullptr;
-		freelist_start = freelist_ptr = (hEntityNode*)(new_block+1);
-		freelist_end = freelist_start+s_entityBlockDefaultSize;
-		for (; freelist_ptr < freelist_end; ++freelist_ptr) {
-			new (freelist_ptr) hEntityNode();
-			if (this_freelist) {
-				hCircularLinkedList::insertBefore(freelist_ptr, this_freelist);
-			} else {
-				this_freelist = freelist_ptr;
-			}
-		}
-        hcAssert(!freeList);
-		freeList = this_freelist;
-	}
-
-public:
-    hEntityContext()
-        : entityBlocks(nullptr) 
-        , freeList(nullptr) {
-    }
-
-    hEntity* addEntity(const hEntity& rhs) {
-		if (!freeList) {
-			allocFreeListNodes();
-		}
-		auto* new_node = freeList;
-		hcAssert(new_node);
-        freeList = freeList->lnext == freeList->lprev ? nullptr : freeList->lnext;
-		hCircularLinkedList::remove(new_node);
-		new_node->it = std::move(rhs);
-		return &new_node->it;
-	}
-    void removeEntity(hEntity* rhs) {
-		hEntityNode* node_ptr = (hEntityNode*)((hUintptr_t)rhs-(hOffsetOf(hEntityNode, it)));
-		if (!freeList) {
-			freeList = node_ptr;
-			return;
-		}
-
-		for (auto* i = freeList; i->lnext != freeList; i = i->lnext) {
-			if ((hUintptr_t)i > (hUintptr_t)node_ptr) {
-				hCircularLinkedList::insertBefore(node_ptr, i);
-				if (i == freeList) {
-					freeList = node_ptr;
-				}
-				return;
-			}
-		}
-		// Bigger than anything in the list?
-		hCircularLinkedList::insertAfter(node_ptr, freeList->lprev);
-	}
-
-    hStringID contextName;
-    std::vector<hEntityBlock> entities;
-	hEntityBlock* entityBlocks;
-    hEntityNode* freeList;
-    std::vector<const hObjectDefinition*> knownTypes; // never shrinks
-};
-#endif
-
 static struct hEntityContextManager {
-
-
     typedef std::unordered_map<hUuid_t, hEntity*> hEntityHashTable; //!!JM TODO: Make this a handle based system?
     typedef hEntityHashTable::value_type hEntityEntry;
     typedef std::unordered_map<const hObjectDefinition*, hEntityFactory::hComponentMgt> hComponentMgtHashTable;
@@ -156,11 +69,82 @@ void destroyEntity(hUuid_t entity_id) {
     delete entity;
 }
 
+void destroyEntity(hEntity* entity) {
+    hcAssert(entity);
+    hUuid_t entity_id = entity->getEntityID();
+
+    for (auto& i : entity->entityComponents) {
+        i.ptr->componentDestruct(i.ptr);
+    }
+    g_entityContextManager.entityTable.erase(g_entityContextManager.entityTable.find(entity_id));
+    delete entity;
+}
+
 hEntity* findEntity(hUuid_t entity_id) {
     auto it = g_entityContextManager.entityTable.find(entity_id);
     return it != g_entityContextManager.entityTable.end() ? it->second : nullptr;
 }
 
+void serialiseEntities(hSerialisedEntitiesParameters* in_out_params) {
+    hcAssert(in_out_params);
+    auto& state = in_out_params->engineState;
+    hChar entity_guid_str_buff[64];
+    for (const auto& i : g_entityContextManager.entityTable) {
+        hUUID::toString(i.first, entity_guid_str_buff, hStaticArraySize(entity_guid_str_buff));
+        state.add_aliveentityid(entity_guid_str_buff);
+        auto* entity_def = state.add_aliveentities();
+        auto* entity = i.second;
+        state.set_maxentitycomponentcount(hMax(state.maxentitycomponentcount(), i.second->getComponentCount()));
+        if (in_out_params->includeTransientEntites || !entity->getTransient())
+            entity->serialise(entity_def, entity_guid_str_buff, *in_out_params);
+    }
 
 }
+
+void deserialiseEntities(const hSerialisedEntitiesParameters& in_params) {
+    std::vector<hComponentDefinition> components;
+    components.reserve(in_params.engineState.maxentitycomponentcount());
+    for (hInt i = 0, n = in_params.engineState.aliveentities_size(); i < n; ++i) {
+        auto& entity = in_params.engineState.aliveentities(i);
+        hUuid_t guid = hUUID::fromString(entity.objectguid().c_str(), entity.objectguid().length());
+        hSize_t totalComponents = entity.components_size();
+        components.clear();
+        components.reserve(totalComponents);
+        for (hInt ci = 0, cn = entity.components_size(); ci < cn; ++ci) {
+            hComponentDefinition comp_def;
+            comp_def.typeDefintion = hObjectFactory::getObjectDefinitionFromSerialiserName(entity.components(ci).type_name().c_str());
+            comp_def.id = entity.components(ci).componentid();
+            if (comp_def.typeDefintion) {
+                comp_def.marshall = comp_def.typeDefintion->constructMarshall_();
+                comp_def.marshall->ParseFromString(entity.components(ci).messagedata());
+                components.push_back(std::move(comp_def));
+            }
+        }
+
+        auto* new_entity = hEntityFactory::createEntity(guid, components.data(), components.size());
+        new_entity->setTransitent(entity.has_transient() ? entity.transient() : false);
+    }
+}
+
+void destroyAllEntities() {
+    for (const auto& i : g_entityContextManager.entityTable) {
+        destroyEntity(i.second);
+    }
+}
+
+}
+
+void hEntity::serialise(proto::EntityDefinition* obj, const char* entity_guid_str, const hSerialisedEntitiesParameters& params) const {
+    obj->set_transient(transient);
+    obj->set_friendlyname(friendlyName.c_str());
+    obj->set_objectguid(entity_guid_str);
+    for (const auto& i : entityComponents) {
+        auto* msg_cntr = obj->add_components();
+        hObjectMarshall* marshall = i.typeDef->constructMarshall_(); // We could pool these, make them cheaper on memory.
+        msg_cntr->set_type_name(i.typeDef->serialiserName_.c_str());
+        msg_cntr->set_componentid(i.id);
+        i.typeDef->serialise_(i.ptr, marshall, params);
+    }
+}
+
 }

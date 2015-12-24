@@ -21,7 +21,7 @@ hDynamicTileSet2D::hDynamicTileSet2D(Heart::proto::DynamicTileSet2D* obj) {
     textureFormat = hRenderer::convertTextureFormat(obj->textureformat(), true);
 }
 
-hBool hDynamicTileSet2D::serialiseObject(Heart::proto::DynamicTileSet2D* obj) const {
+hBool hDynamicTileSet2D::serialiseObject(Heart::proto::DynamicTileSet2D* obj, const hSerialisedEntitiesParameters& params) const {
     bool srgb = true;
     obj->set_cachewidth(tileSetWidth);
     obj->set_cacheheight(tileSetHeight);

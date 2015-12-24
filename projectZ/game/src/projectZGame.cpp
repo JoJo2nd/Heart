@@ -24,7 +24,7 @@ ProjectZGame::ProjectZGame(projectZ::proto::projectZGame* obj) {
     }
 }
 
-hBool ProjectZGame::serialiseObject(projectZ::proto::projectZGame* obj) const {
+hBool ProjectZGame::serialiseObject(projectZ::proto::projectZGame* obj, const Heart::hSerialisedEntitiesParameters& params) const {
     hChar guid_buffer[64];
     obj->set_zombiecount(zombieCount);
     obj->set_maptilecount(mapTileCount);

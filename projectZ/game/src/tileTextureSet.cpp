@@ -45,7 +45,7 @@ TileTextureSet::TileTextureSet(projectZ::proto::projectZTileSet* obj) {
     }
 }
 
-hBool TileTextureSet::serialiseObject(projectZ::proto::projectZTileSet* obj) const {
+hBool TileTextureSet::serialiseObject(projectZ::proto::projectZTileSet* obj, const Heart::hSerialisedEntitiesParameters& params) const {
     hChar guid_buffer[64];
     if (tileSet) {
         Heart::hUUID::toString(tileSet->getOwner()->getEntityID(), guid_buffer, hStaticArraySize(guid_buffer));

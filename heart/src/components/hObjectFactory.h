@@ -12,6 +12,7 @@
 namespace Heart {
     typedef ::google::protobuf::MessageLite hObjectMarshall;
     class hEntityComponent;
+    struct hSerialisedEntitiesParameters;
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -20,7 +21,7 @@ namespace Heart {
     typedef void (*hObjectDestructProc)(void*);
     typedef void (*hObjectDestroyProc)(void*);
     typedef hObjectMarshall* (*hObjectCreateSerialiserProc)();
-    typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*);
+    typedef hBool (*hObjectSerialiseProc)(void*, hObjectMarshall*, const Heart::hSerialisedEntitiesParameters&);
     typedef hBool (*hObjectLinkProc)(void*);
 
     struct hObjectDefinition 
@@ -55,7 +56,7 @@ namespace Heart {
     virtual Heart::hStringID getTypeName() const { \
         return getTypeNameStatic(); \
     } \
-    hBool serialiseObject(serialiser_type*) const; \
+    hBool serialiseObject(serialiser_type*, const Heart::hSerialisedEntitiesParameters&) const; \
     hBool linkObject()
 
 #define hObjectBaseType(x) hObjectBaseTypeInner(#x)
@@ -69,10 +70,10 @@ namespace Heart {
     static void autogen_destruct_##name(void* type_ptr_raw) { type::dtor(reinterpret_cast<type*>(type_ptr_raw)); } \
     static void autogen_destroy_##name(void* d) { delete ((type*)d); } \
     static Heart::hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
-    static hBool autogen_serialise_##name(void* type_ptr_raw, Heart::hObjectMarshall* msg_raw) { \
+    static hBool autogen_serialise_##name(void* type_ptr_raw, Heart::hObjectMarshall* msg_raw, const Heart::hSerialisedEntitiesParameters& params) { \
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
         serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
-        return type_ptr->serialiseObject(msg); \
+        return type_ptr->serialiseObject(msg, params); \
     } \
     static hBool autogen_link_##name(void* type_ptr_raw) {\
         type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
@@ -91,39 +92,6 @@ namespace Heart {
     };\
     hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
 
-
-#define hRegisterComponentObjectType(name, type, serialiser_type, ...) \
-    static void* autogen_construct_##name (void* in_place) { return in_place ? new(in_place) type : new type; } \
-    static void autogen_destruct_##name(void* type_ptr_raw) { type::dtor(reinterpret_cast<type*>(type_ptr_raw)); } \
-    static void autogen_destroy_##name(void* d) { delete ((type*)d); } \
-    static Heart::hObjectMarshall* autogen_create_serialiser_##name () { return new serialiser_type; } \
-    static hBool autogen_serialise_##name(void* type_ptr_raw, Heart::hObjectMarshall* msg_raw) { \
-        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
-        serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
-        return type_ptr->serialiseObject(msg); \
-        } \
-    static hBool autogen_deserialise_##name(void* type_ptr_raw, Heart::hObjectMarshall* msg_raw) { \
-        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
-        serialiser_type* msg = static_cast<serialiser_type*>(msg_raw); \
-        return type_ptr->deserialiseObject(msg); \
-        } \
-    static hBool autogen_link_##name(void* type_ptr_raw) {\
-        type* type_ptr = reinterpret_cast<type*>(type_ptr_raw); \
-        return type_ptr->linkObject(); \
-        }\
-    static Heart::hObjectDefinition autogen_entity_definition_##name = { \
-        type::getTypeNameStatic(), \
-        sizeof(type),\
-        autogen_construct_##name, \
-        autogen_destruct_##name, \
-        autogen_destroy_##name, \
-        autogen_create_serialiser_##name, \
-        autogen_serialise_##name, \
-        autogen_deserialise_##name, \
-        autogen_link_##name, \
-    };\
-    hBool type::auto_object_registered = Heart::hObjectFactory::objectFactoryRegistar(&autogen_entity_definition_##name, #serialiser_type, ##__VA_ARGS__, nullptr)
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -131,7 +99,6 @@ namespace Heart {
 namespace hObjectFactory {
     const hObjectDefinition*        getObjectDefinition(hStringID name);
     const hObjectDefinition*        getObjectDefinitionFromSerialiserName(const hChar* name);
-    void*                           createObject(hStringID name);
     hObjectMarshall*                createObjectMarshallFromTypeName(hStringID name);
     void*                           deserialiseObject(Heart::proto::MessageContainer* msg_container, hStringID* out_type_name);
     hBool                           objectFactoryRegistar(hObjectDefinition*, const char*, ...);

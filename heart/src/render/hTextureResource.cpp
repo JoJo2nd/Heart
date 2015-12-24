@@ -89,7 +89,7 @@ hTextureResource::~hTextureResource() {
     hRenderer::destroyTexture2D(texture2D_);
 }
 
-hBool hTextureResource::serialiseObject(Heart::proto::TextureResource* obj) const {
+hBool hTextureResource::serialiseObject(Heart::proto::TextureResource* obj, const hSerialisedEntitiesParameters& params) const {
     return hTrue;
 }
 
@@ -107,7 +107,7 @@ hTextureAtlasResource::hTextureAtlasResource(Heart::proto::TextureAtlas* obj)
     }
 }
 
-hBool hTextureAtlasResource::serialiseObject(Heart::proto::TextureAtlas* obj) const {
+hBool hTextureAtlasResource::serialiseObject(Heart::proto::TextureAtlas* obj, const hSerialisedEntitiesParameters& params) const {
     return hTrue;
 }
 

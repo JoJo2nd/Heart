@@ -59,6 +59,7 @@ namespace Heart {
             }
             return nullptr;
         }
+        hUint getComponentCount() const { return (hUint)entityComponents.size(); } 
         hUuid_t getEntityID() const { return entityId; }
         void setTransitent(hBool val) { transient = val; }
         hBool getTransient() const { return transient; }
@@ -67,10 +68,12 @@ namespace Heart {
         const hChar* getFriendlyName() const { return friendlyName.c_str(); }
         void setFriendlyName(const hChar* name) { friendlyName = hStringID(name); }
 #endif
+        void serialise(proto::EntityDefinition* obj, const char* entity_guid_str, const hSerialisedEntitiesParameters& params) const;
 
     private:
         friend hEntity* hEntityFactory::createEntity(hUuid_t, hComponentDefinition*, hSize_t);
         friend void hEntityFactory::destroyEntity(hUuid_t);
+        friend void hEntityFactory::destroyEntity(hEntity*);
         friend class hLevel;
 
         hUuid_t entityId;
@@ -78,4 +81,5 @@ namespace Heart {
         std::vector<Component> entityComponents;
         hStringID friendlyName;
     };
+
 }

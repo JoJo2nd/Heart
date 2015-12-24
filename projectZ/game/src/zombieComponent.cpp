@@ -16,7 +16,7 @@ ZombieComponent::ZombieComponent(projectZ::proto::Zombie* obj) {
     if (obj->has_dynamictileset()) dynamicTileSetID = Heart::hUUID::fromString(obj->dynamictileset().c_str(), obj->dynamictileset().size());
 }
 
-hBool ZombieComponent::serialiseObject(projectZ::proto::Zombie* obj) const {
+hBool ZombieComponent::serialiseObject(projectZ::proto::Zombie* obj, const Heart::hSerialisedEntitiesParameters& params) const {
     obj->set_type(type);
     obj->set_textureresourceid(textureResourceID.c_str());
     return hTrue;

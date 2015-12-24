@@ -11,6 +11,7 @@
 #include "base/hProfiler.h"
 #include "base/hCRC32.h"
 #include "core/hResourcePackage.h"
+#include "components/hEntityFactory.h"
 #include "debug/hDebugMenuManager.h"
 #include "imgui.h"
 #include <unordered_map>
@@ -46,6 +47,7 @@ namespace Hidden {
     hPackageArray               packages;
     hPackageArray               packagesToLoad;
     hPackageArray               packagesToUnload;
+    hBool                       awatingHotReload;
 }
 
 using namespace Hidden;
@@ -56,6 +58,7 @@ void debugMenuRender();
 
 hBool initialise(hIFileSystem* pFileSystem) {
     filesystem = pFileSystem;
+    awatingHotReload = hFalse;
     loadPackage("system");
 #if HEART_DEBUG_INFO
     hDebugMenuManager::registerMenu("Packages", debugMenuRender);
@@ -164,7 +167,7 @@ void    removeResource(hStringID res_id) {
         resourceNameLookUp.erase(it);
     }
 }
-
+/*
 void*   pinResource(hStringID res_id) {
     hMutexAutoScope sentry(&resourceDBMtx);
     auto it = resourceNameLookUp.find(res_id);
@@ -174,7 +177,7 @@ void*   pinResource(hStringID res_id) {
     it->second.owningPackage->AddRef();
     return it->second.resource;
 }
-
+*/
 void*   weakResourceRef(hStringID res_id) {
     hMutexAutoScope sentry(&resourceDBMtx);
     auto it = resourceNameLookUp.find(res_id);
@@ -183,14 +186,14 @@ void*   weakResourceRef(hStringID res_id) {
     }
     return it->second.resource;
 }
-
+/*
 void    unpinResource(void* ptr) {
     hMutexAutoScope sentry(&resourceDBMtx);
     auto it = resources.find(ptr);
     hcAssert(it != resources.end());
     it->second.owningPackage->DecRef();
 }
-
+*/
 void* getResourcePtrType(hStringID res_id, hStringID* out_type_id) {
     hMutexAutoScope sentry(&resourceDBMtx);
     auto it = resourceNameLookUp.find(res_id);
@@ -224,11 +227,54 @@ void collectGarbage(hFloat step) {
     }
 }
 
+hBool canHotReload() {
+    hMutexAutoScope sentry(&resourceDBMtx);
+    for (auto i = packages.begin(); i != packages.end(); ++i) {
+        if (!(*i)->isInReadyState()) return hFalse;
+    }
+    return hTrue;
+}
+
+hBool hotReload() {
+    if (!canHotReload()) {
+        return hFalse;
+    }
+    hMutexAutoScope sentry(&resourceDBMtx);
+    // Serialise everything to disk to hot_reload.bin (include transient entities and optional entity data)
+    hSerialisedEntitiesParameters state_obj;
+    for (auto i = packages.begin(); i != packages.end(); ++i) {
+        auto* lp = state_obj.engineState.add_loadedpacakges();
+        lp->set_packagename((*i)->getPackageName());
+        lp->set_refcount((*i)->GetRefCount());
+    }
+    hEntityFactory::serialiseEntities(&state_obj);
+    // unload all packages.
+    for (auto i = packages.begin(); i != packages.end(); ++i) {
+        while ((*i)->DecRef()) {}
+        (*i)->unload();
+    }
+    hEntityFactory::destroyAllEntities();
+    collectGarbage(0.f);
+    // reload packages
+    for (hUint i = 0, n = state_obj.engineState.loadedpacakges_size(); i < n; ++i) {
+        loadPackage(state_obj.engineState.loadedpacakges(i).packagename().c_str());
+    }
+    // Deserialise back in to memory from hot_reload.bin
+    hEntityFactory::deserialiseEntities(state_obj);
+    // let the normal frame flow re hook up resources pointers, etc.
+    // NOTE: we don't correctly deal with reference counts on the packages yet. This 
+    // may require a system to serialise them into the entities in such a way that only 
+    // entities can request, load & unload packages (and thus know what's required in memory)
+    return hTrue;
+}
+
 #if HEART_DEBUG_INFO
 void debugMenuRender() {
     hMutexAutoScope sentry(&resourceDBMtx);
     ImGui::Begin("Packages & Resources", nullptr, ImGuiWindowFlags_ShowBorders);
-
+    if (ImGui::Button("Hot Reload Packages")) {
+        awatingHotReload = hTrue;
+    }
     if (ImGui::TreeNode("Loaded Packages")) {
         for (auto i : packages) {
             if (ImGui::TreeNode(i->getPackageName())) {
