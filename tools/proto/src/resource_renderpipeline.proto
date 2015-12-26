@@ -46,4 +46,5 @@ message PipelineStage {
 
 message Pipeline {
     repeated PipelineStage stages = 1;
+	optional uint32 totalBindings = 2 [default = 0];
 }

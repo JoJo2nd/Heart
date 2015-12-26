@@ -31,6 +31,7 @@ namespace Heart {
         hFORCEINLINE hUint32 hash() const { return strEntry_->strHash_; }
         hFORCEINLINE hUintptr_t id() const { return (hUintptr_t)strEntry_; }
         hBool is_default() const;
+        void set(const hChar* str);
 
     private:
 

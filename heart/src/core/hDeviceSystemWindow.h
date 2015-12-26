@@ -47,8 +47,8 @@ namespace Heart {
         void                    Destroy();
         void                    signalExit() { hAtomic::AtomicSet(exitSignal_, 1); }
         hBool                   exitSignaled() { return hAtomic::AtomicGet(exitSignal_) != 0; }
-        hUint32                 getWindowWidth() const { return wndWidth_; }
-        hUint32                 getWindowHeight() const { return wndHeight_; }
+        static hUint32          getWindowWidth() { return wndWidth_; }
+        static hUint32          getWindowHeight() { return wndHeight_; }
         hBool                   getOwnWindow() const { return hTrue; }
         void                    setSysEventHandler(hUint sysEventID, hSysEventHandler handler);
         void                    removeSysEventHandler(hUint sysEventID, hSysEventHandler handler);
@@ -63,15 +63,13 @@ namespace Heart {
         void sysEventFocus(hUint syseventid, const hSysEvent* sysevent);
         void sysEventSize(hUint syseventid, const hSysEvent* sysevent);
 
-        static hdSystemWindow*      s_instance;
-
         SDL_Window*                 sdlWindow_;
         hSysEventHandlerMap         sysEventHandlers_;
         ISystemHandle*              systemHandle_;
-        hUint32                     wndWidth_;
-        hUint32                     wndHeight_;
         hMutex                      exitMutex_;
         hAtomicInt                  exitSignal_;
         hBool                       hasFocus_;
+        static hUint32              wndWidth_;
+        static hUint32              wndHeight_;
     };
 }

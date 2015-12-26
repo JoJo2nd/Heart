@@ -38,6 +38,10 @@ namespace Heart
         return strEntry_ == get_default_id()/*&s_default*/;
     }
 
+    void hStringID::set(const hChar* str) {
+        strEntry_ = get_string_id(str);
+    }
+
     hStringID::hStringIDEntry* hStringID::get_default_id() {
         static hStringID::hStringIDEntry s_default;
         return &s_default;

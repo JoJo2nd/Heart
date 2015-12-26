@@ -141,6 +141,7 @@ int main(int argc, char* argv[]) {
             ensure_condition(stage.HasMember("name"), "pipeline stage missing 'name");
             name_map[stage["name"].GetString()] = stage_idx;
         }
+        uint32_t totalbindings = 0;
         for (uint32_t stage_idx = 0, stage_n = pipeline_doc["stages"].Size(); stage_idx<stage_n; ++stage_idx) {
             auto& stage = pipeline_doc["stages"][stage_idx];
             auto* stage_pb = pipeline_pb.add_stages();
@@ -162,8 +163,10 @@ int main(int argc, char* argv[]) {
                 input_pb->set_fromstateid(name_map[in_pass_name]);
                 input_pb->set_from(in_ouptut_name);
                 input_pb->set_to(input["to"].GetString());
+                ++totalbindings;
             }
         }
+        pipeline_pb.set_totalbindings(totalbindings);
         output.mutable_pkgdata()->set_type_name(pipeline_pb.GetTypeName());
         output.mutable_pkgdata()->set_messagedata(pipeline_pb.SerializeAsString());
     }

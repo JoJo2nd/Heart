@@ -52,9 +52,16 @@ namespace Heart {
         RGB10A2_uint,        // DXGI_FORMAT_R10G10B10A2_UINT            = 25,
 */
         RGBA8_unorm,
+        RGB10A2_unorm,
+        RGBA16_float,
+
         D32_float,
+
         D24S8_float,
+
         R8_unorm,
+
+        RG16_float,
 
         BC1_unorm, // DXT1
         BC2_unorm, // DXT3
