@@ -38,10 +38,10 @@ message PipelineBinding {
 }
 
 message PipelineStage {
-    optional uint32 stageID = 1;
-    repeated PipelineBinding inputBindings = 2;
-    optional string passResource = 3;
-    optional string stageName = 4;
+    optional string name = 1 [default = "default"];
+    optional string viewName = 2 [default = "camera"];
+    optional string technique = 3 [default = "main"];
+    repeated string outputs = 4;
 }
 
 message Pipeline {

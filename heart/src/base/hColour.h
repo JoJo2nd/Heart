@@ -11,6 +11,7 @@ namespace Heart {
 struct hColour {
     hColour() {}
     hColour( hByte r, hByte g, hByte b, hByte a ){ r_ = r/255.f;    b_ = b/255.f;   g_ = g/255.f;   a_ = a/255.f; }
+    hColour( hUint r, hUint g, hUint b, hUint a ) { r_ = r / 255.f;    b_ = b / 255.f;   g_ = g / 255.f;   a_ = a / 255.f; }
     hColour( hFloat r, hFloat g, hFloat b, hFloat a ){ r_ = r;  b_ = b; g_ = g; a_ = a; }
     hFloat r_,g_,b_,a_;
 

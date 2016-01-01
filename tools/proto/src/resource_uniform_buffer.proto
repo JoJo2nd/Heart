@@ -1,0 +1,40 @@
+
+package Heart.proto.uniformbuffer;
+
+enum DataType {
+    float1 = 1;
+    float2 = 2;
+    float3 = 3;
+    float4 = 4;
+    int1 = 5;
+    int2 = 6;
+    int3 = 7;
+    int4 = 8;
+    uint1 = 9;
+    uint2 = 10;
+    uint3 = 11;
+    uint4 = 12;
+    float22 = 13;
+    float23 = 14;
+    float24 = 15;
+    float32 = 16;
+    float33 = 17;
+    float34 = 18;
+    float42 = 19;
+    float43 = 20;
+    float44 = 21;
+}
+
+message Element {
+    optional DataType type = 1 [default = float4];
+    optional uint32 index = 2 [default = 0];
+    optional uint32 offset = 3 [default = 0];
+    optional string name = 4 [default = "none"];
+    optional bytes initialValue = 5;
+}
+
+message Descriptor {
+    repeated Element elements = 1;
+	optional string descriptorTypeName = 2 [default = "none"];
+	optional uint32 totalByteSize = 3 [default = 0];
+}

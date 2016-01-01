@@ -17,6 +17,7 @@
 #include "render/hProgramReflectionInfo.h"
 #include "render/hRenderShaderProgram.h"
 #include "render/hMipDesc.h"
+#include "render/hTextureResource.h"
 #include "math/hMatrix.h"
 #include "math/hVector.h"
 #include "UnitTestFactory.h"
@@ -25,36 +26,10 @@ namespace Heart {
 class hHeartEngine;
 }
 
+#include "shaders/ViewportConstants.hpp"
+#include "shaders/InstanceConstants.hpp"
+
 using namespace Heart;
-
-struct ViewportConstants {
-    hMatrix view                 ;
-    hMatrix viewInverse          ;
-    hMatrix viewInverseTranspose ;
-    hMatrix projection           ;
-    hMatrix projectionInverse    ;
-    hMatrix viewProjection       ;
-    hMatrix viewProjectionInverse;
-    hVec4   viewportSize         ;
-};
-hRenderer::hUniformLayoutDesc ViewportConstants_layout[] = {
-    {"g_View", hRenderer::ShaderParamType::Float44, 0},
-    {"g_ViewInverse", hRenderer::ShaderParamType::Float44, 64},
-    {"g_ViewInverseTranspose", hRenderer::ShaderParamType::Float44, 128},
-    {"g_Projection", hRenderer::ShaderParamType::Float44, 192},
-    {"g_ProjectionInverse", hRenderer::ShaderParamType::Float44, 256},
-    {"g_ViewProjection", hRenderer::ShaderParamType::Float44, 320},
-    {"g_ViewProjectionInverse", hRenderer::ShaderParamType::Float44, 384},
-    {"g_ViewportSize", hRenderer::ShaderParamType::Float4, 448},
-};
-
-struct InstanceConstants {
-    hMatrix world;
-};
-hRenderer::hUniformLayoutDesc InstanceConstants_layout[] = {
-    {"g_World", hRenderer::ShaderParamType::Float44, 0},
-};
-
 
 class RenderTarget : public IUnitTest {
     
@@ -71,6 +46,7 @@ class RenderTarget : public IUnitTest {
     hRenderer::hInputState*             is[2];
     hRenderer::hUniformBuffer*          ub1[2];
     hRenderer::hUniformBuffer*          ub2;
+    hTextureResource*                   rt_res;
     hRenderer::hTexture2D*              t2d;
     hRenderer::hRenderTarget*           rt;
 
@@ -164,16 +140,15 @@ public:
         frag2 = shaderProg2->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
         vb = hRenderer::createVertexBuffer(cube_verts, sizeof(Vtx), hStaticArraySize(cube_verts), 0);
         ib = hRenderer::createIndexBuffer(cube_indices, hStaticArraySize(cube_indices), 0);
-        hRenderer::hMipDesc rt_mip[] = {
-            {512, 512, nullptr, 0},
-        };
-        t2d = hRenderer::createTexture2D(1, rt_mip, hTextureFormat::RGBA8_unorm, (hUint32)hRenderer::TextureFlags::RenderTarget);
-        rt = hRenderer::createRenderTarget(t2d, 0);
+        rt_res = hResourceManager::weakResource<hTextureResource>(hStringID("/system/test_render_target"));
+        hcAssert(rt_res && rt_res->isRenderTarget());
+        t2d = rt_res->getTexture2D();//hRenderer::createTexture2D(1, rt_mip, hTextureFormat::RGBA8_unorm, (hUint32)hRenderer::TextureFlags::RenderTarget);
+        rt = rt_res->getRenderTarget();//hRenderer::createRenderTarget(t2d, 0);
 
 
-        ub1[0] = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
-        ub1[1] = hRenderer::createUniformBuffer(nullptr, ViewportConstants_layout, (hUint)hStaticArraySize(ViewportConstants_layout), (hUint)sizeof(ViewportConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
-        ub2 = hRenderer::createUniformBuffer(nullptr, InstanceConstants_layout, (hUint)hStaticArraySize(InstanceConstants_layout), (hUint)sizeof(InstanceConstants), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        ub1[0] = hRenderer::createUniformBuffer(nullptr, ViewportConstants::getLayout(), ViewportConstants::getLayoutCount(), (hUint)sizeof(ViewportConstants), (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        ub1[1] = hRenderer::createUniformBuffer(nullptr, ViewportConstants::getLayout(), ViewportConstants::getLayoutCount(), (hUint)sizeof(ViewportConstants), (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+        ub2 = hRenderer::createUniformBuffer(nullptr, InstanceConstants::getLayout(), InstanceConstants::getLayoutCount(), (hUint)sizeof(InstanceConstants), (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
         for (auto& i:fences) {
             i = nullptr;
         }
@@ -219,8 +194,6 @@ public:
             hRenderer::destroyUniformBuffer(i);
         }
         hRenderer::destroyUniformBuffer(ub2);
-        hRenderer::destroyTexture2D(t2d);
-        hRenderer::destroyRenderTarget(rt);
         hRenderer::destroyVertexBuffer(vb);
     }
 
@@ -250,33 +223,36 @@ public:
         hFloat r = timer_.elapsedMilliSec()/2000.f;
         w = hMatrix::rotationZYX(hVec3(r, r*2.f, r*3.f));
 
-        auto* ub1data1 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1[0])) + (currentFence*sizeof(ViewportConstants)));
-        auto* ub1data2 = (ViewportConstants*) (((hByte*)hRenderer::getMappingPtr(ub1[1])) + (currentFence*sizeof(ViewportConstants)));
-        auto* ub2data = (InstanceConstants*) (((hByte*)hRenderer::getMappingPtr(ub2)) + (currentFence*sizeof(InstanceConstants)));
+        auto* ub1data1 = (ViewportConstants*) hRenderer::getMappingPtr(ub1[0]);
+        auto* ub1data2 = (ViewportConstants*) hRenderer::getMappingPtr(ub1[1]);
+        auto* ub2data = (InstanceConstants*) hRenderer::getMappingPtr(ub2);
 
+        hMatrix v_inverse = inverse(v);
+        hMatrix vp = p1*v;
         ub1data1->view                 = v;
-        ub1data1->viewInverse          = inverse(v);
-        ub1data1->viewInverseTranspose = transpose(ub1data1->viewInverse);
+        ub1data1->viewInverse          = v_inverse;
+        ub1data1->viewInverseTranspose = transpose(v_inverse);
         ub1data1->projection           = p1;
         ub1data1->projectionInverse    = inverse(p1);
-        ub1data1->viewProjection       = p1*v;
-        ub1data1->viewProjectionInverse= inverse(ub1data1->viewProjection);
+        ub1data1->viewProjection       = vp;
+        ub1data1->viewProjectionInverse= inverse(vp);
         ub1data1->viewportSize         = hVec4(1280.f, 720.f, 1.f/1280.f, 1.f/720.f);
 
+        vp = p2*v;
         ub1data2->view                 = v;
-        ub1data2->viewInverse          = inverse(v);
-        ub1data2->viewInverseTranspose = transpose(ub1data2->viewInverse);
+        ub1data2->viewInverse          = v_inverse;
+        ub1data2->viewInverseTranspose = transpose(v_inverse);
         ub1data2->projection           = p2;
         ub1data2->projectionInverse    = inverse(p2);
-        ub1data2->viewProjection       = p2*v;
-        ub1data2->viewProjectionInverse= inverse(ub1data2->viewProjection);
-        ub1data2->viewportSize         = hVec4(512.f, 512.f, 1.f/512.f, 1.f/512.f);
+        ub1data2->viewProjection       = vp;
+        ub1data2->viewProjectionInverse= inverse(vp);
+        ub1data2->viewportSize         = hVec4(rt_res->getWidth(), rt_res->getHeight(), 1.f/rt_res->getWidth(), 1.f/rt_res->getHeight());
 
         ub2data->world = w;
 
-        hRenderer::flushUnibufferMemoryRange(cl, ub1[0], (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
-        hRenderer::flushUnibufferMemoryRange(cl, ub1[1], (currentFence*sizeof(ViewportConstants)), sizeof(ViewportConstants));
-        hRenderer::flushUnibufferMemoryRange(cl, ub2, (currentFence*sizeof(InstanceConstants)), sizeof(InstanceConstants));
+        hRenderer::flushUnibufferMemoryRange(cl, ub1[0], 0, sizeof(ViewportConstants));
+        hRenderer::flushUnibufferMemoryRange(cl, ub1[1], 0, sizeof(ViewportConstants));
+        hRenderer::flushUnibufferMemoryRange(cl, ub2, 0, sizeof(InstanceConstants));
         hRenderer::setRenderTargets(cl, &rt, 1);
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         hRenderer::draw(cl, rc[0], is[0], hRenderer::Primative::Triangles, 12, 0);

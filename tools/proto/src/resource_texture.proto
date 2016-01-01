@@ -18,6 +18,14 @@ message TextureMip {
 	optional bytes  data = 3;
 }
 
+message RenderTargetInfo {
+	optional float aspect = 1;
+	optional float percentageWidth = 2;
+	optional float percentageHeight = 3;
+	optional uint32 fixedWidth = 4;
+	optional uint32 fixedHeight = 5;
+}
+
 message TextureResource {
 	optional uint32 width = 1;
 	optional uint32 height = 2;
@@ -27,6 +35,8 @@ message TextureResource {
 	optional bool sRGB = 6;
 	optional bool keepCPUData = 7;
 	optional bool dontUseVRAM = 8;
+	optional bool useAsRenderTarget = 9 [default = false];
+	optional RenderTargetInfo targetInfo = 10;
 }
 
 message AtlasImage {

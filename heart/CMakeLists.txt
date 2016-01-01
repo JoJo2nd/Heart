@@ -112,10 +112,6 @@ file(GLOB HEART_RENDER_FILES
     "${HEART_SOURCE_DIR}/src/render/*.h"
     "${HEART_SOURCE_DIR}/src/render/*.cpp"
 )
-file(GLOB HEART_SHADER_FILES 
-    "${HEART_SOURCE_DIR}/src/shaders/*.h"
-    "${HEART_SOURCE_DIR}/src/shaders/*.cpp"
-)
 file(GLOB HEART_2D_FILES 
     "${HEART_SOURCE_DIR}/src/2d/*.h"
     "${HEART_SOURCE_DIR}/src/2d/*.cpp"
@@ -139,6 +135,11 @@ file(GLOB HEART_RESOURCE_FILES
     "${HEART_SOURCE_DIR}/src/resourcedata/*.h"
 	"${HEART_SOURCE_DIR}/src/resourcedata/*.cpp"
 )
+file(GLOB HEART_UNIFORM_BUFFER_FILES
+    "${HEART_SOURCE_DIR}/src/shaders/*.json"
+)
+
+UNIFORM_BUFFER_GEN_SOURCE(HEART_UNIFORM_BUFFER_GEN_FILES ${HEART_UNIFORM_BUFFER_FILES})
 
 #platform headers
 if (PLATFORM_WINDOWS)
@@ -197,11 +198,12 @@ set( HEART_NON_UNITY_FILES
     ${HEART_MATH_FILES}
     ${HEART_NETWORK_FILES}
     ${HEART_RENDER_FILES}
-    ${HEART_SHADER_FILES}
     ${HEART_2D_FILES}
     ${HEART_SCENE_FILES}
     ${HEART_THREAD_FILES}
     ${HEART_UTILS_FILES}
+    ${HEART_UNIFORM_BUFFER_FILES}
+    ${HEART_UNIFORM_BUFFER_GEN_FILES}
 )
 #common vars to pass up to parent directory
 set( LIBHEART_INCLUDES
@@ -231,7 +233,8 @@ source_group(math FILES ${HEART_MATH_FILES})
 source_group(network FILES ${HEART_NETWORK_FILES})
 source_group(platform FILES ${HEART_PLATFORM_NON_UNITY_FILES})
 source_group(render FILES ${HEART_RENDER_FILES})
-source_group(shaders FILES ${HEART_SHADER_FILES})
+source_group(shaders FILES ${HEART_UNIFORM_BUFFER_FILES})
+source_group(shaders FILES ${HEART_UNIFORM_BUFFER_GEN_FILES})
 source_group(twodim FILES ${HEART_2D_FILES})
 source_group(resource_data FILES ${HEART_RESOURCE_FILES})
 source_group(scene FILES ${HEART_SCENE_FILES})
@@ -304,6 +307,7 @@ add_library(heart ${HEART_HDR_FILES} ${HEART_SRC_FILES} ${HEART_NON_UNITY_FILES}
 target_link_libraries(heart ${PLATFORM_LIBS} ${PROFILE_LIBS})
 target_link_libraries(heart debug ${HEART_LIBRARIES_DEBUG})
 target_link_libraries(heart optimized ${HEART_LIBRARIES_RELEASE})
+add_dependencies(heart ub_exporter)
 
 if (PLATFORM_WINDOWS)
     ADD_CUSTOM_COMMAND(

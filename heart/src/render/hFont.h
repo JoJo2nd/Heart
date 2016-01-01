@@ -7,13 +7,13 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "base/hRendererConstants.h"
-#include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
 #include "utils/hTextureAtlas.h"
 #include "ft2build.h"
 #include FT_FREETYPE_H
 #include <memory>
 #include <unordered_map>
+#include "resource_font.pb.h"
 
 struct FT_LibraryRec_;
 

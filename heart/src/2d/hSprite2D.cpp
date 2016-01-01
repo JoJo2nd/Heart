@@ -7,7 +7,7 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "core/hResourceManager.h"
 #include "render/hTextureResource.h"
 #include "render/hRenderer.h"
-#include "shaders/hTileRenderer2DConstants.h"
+#include "2d/hTileRenderer2DConstants.h"
 
 namespace Heart {
 

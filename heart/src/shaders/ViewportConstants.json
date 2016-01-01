@@ -1,0 +1,12 @@
+{
+    "ViewportConstants" : [
+        { "name" : "view", "type" : "float44" },
+        { "name" : "viewInverse", "type" : "float44" },
+        { "name" : "viewInverseTranspose", "type" : "float44" },
+        { "name" : "projection", "type" : "float44" },
+        { "name" : "projectionInverse", "type" : "float44" },
+        { "name" : "viewProjection", "type" : "float44" },
+        { "name" : "viewProjectionInverse", "type" : "float44" },
+        { "name" : "viewportSize", "type" : "float4" }
+    ]
+}

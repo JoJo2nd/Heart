@@ -7,8 +7,8 @@
 
 #include "base/hTypes.h"
 #include "base/hRendererConstants.h"
-#include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
+#include "resource_shader.pb.h"
 
 namespace Heart {
 namespace hRenderer {

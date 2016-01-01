@@ -5,6 +5,7 @@
 
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 #include "minfs.h"
 #include "resource_renderstate.pb.h"
 #include "resource_material_fx.pb.h"
@@ -107,9 +108,12 @@ t_enum getEnumFromString(const char* v, bool(*fn)(const ::std::string&, t_enum*)
     return r;
 }
 
-void readMaterialJSONToMaterialData(const rapidjson::Document& json_doc, const char* json_path_base, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
+void readMaterialJSONToMaterialData(const rapidjson::Document& root_json_doc, const char* json_path_base, Heart::proto::MaterialResource* mat, StrVectorType* includes, StrVectorType* deps) {
     using namespace Heart::proto;
     using namespace Heart::proto::renderstate;
+
+    ensure_condition(root_json_doc.HasMember("material"), "Material root node is missing.");
+    auto& json_doc = root_json_doc["material"];
 
     if (json_doc.HasMember("inherit")) {
         //Load the base first
@@ -126,14 +130,14 @@ void readMaterialJSONToMaterialData(const rapidjson::Document& json_doc, const c
         fclose(f);
         f = nullptr;
         rapidjson::Document inc_doc;
-        inc_doc.ParseInsitu(inc_json_data.data());
+        inc_doc.Parse(inc_json_data.data());
         ensure_condition(!inc_doc.HasParseError(), "Failed to parse JSON file %s", full_path);
         includes->push_back(full_path);
         readMaterialJSONToMaterialData(inc_doc, new_path_base, mat, includes, deps);
     }
     if (json_doc.HasMember("samplers")) {
         for (uint32_t i = 0, n = json_doc["samplers"].Size(); i < n; ++i) {
-            const auto& sampler = json_doc["samplers"];
+            const auto& sampler = json_doc["samplers"][i];
             ensure_condition(sampler.HasMember("name"), "sampler is missing name");
             auto* sampler_pb = findOrAddMaterialSampler(mat, sampler["name"].GetString());;
             auto* sampler_def_pb = sampler_pb->mutable_samplerstate();
@@ -156,27 +160,53 @@ void readMaterialJSONToMaterialData(const rapidjson::Document& json_doc, const c
         }
     }
 
+    if (json_doc.HasMember("uniform_buffers")) {
+        for (uint32_t i = 0, n = json_doc["uniform_buffers"].Size(); i < n; ++i) {
+            const auto& unibuf = json_doc["uniform_buffers"][i];
+            auto* unibuf_pb = mat->add_uniformbuffers();
+            ensure_condition(unibuf.HasMember("resource") || unibuf.HasMember("embed"), "Material uniform buffer missing resource definition.");
+            if (unibuf.HasMember("resource")) {
+                unibuf_pb->set_resource(unibuf["resource"].GetString());
+                deps->push_back(unibuf["resource"].GetString());
+            }
+            if (unibuf.HasMember("embed")) {
+                unibuf_pb->set_embed(unibuf["embed"].GetBool());
+            }
+            if (unibuf.HasMember("mutable")) {
+                unibuf_pb->set_allowoverride(unibuf["mutable"].GetBool());
+            }
+            if (unibuf.HasMember("shared")) {
+                unibuf_pb->set_shared(unibuf["shared"].GetBool());
+            }
+        }
+    }
+
     if (json_doc.HasMember("parameters")) {
         for (uint32_t i = 0, n = json_doc["parameters"].Size(); i < n; ++i) {
-            const auto& parameter = json_doc["parameters"];
+            const auto& parameter = json_doc["parameters"][i];
             ensure_condition(parameter.HasMember("name") && parameter.HasMember("type"), "parameter is missing name or type");
-            ensure_condition(parameter.HasMember("value") && parameter["value"].IsArray(), "parameter value is missing name or not an array");
             auto* parameter_pb = findOrAddMaterialParameter(mat, parameter["name"].GetString());
             const auto& value = parameter["value"];
             switch (getEnumFromString(parameter["type"].GetString(), MaterialParameterType_Parse)) {
             case Heart::proto::matparam_float: {
+                ensure_condition(parameter.HasMember("value") && parameter["value"].IsArray(), "parameter value is not an array");
                 for (uint32_t pi = 0, pn = value.Size(); pi < pn; ++pi) {
                     parameter_pb->add_floatvalues((float)value[pi].GetDouble());
                 }
             }break;
             case Heart::proto::matparam_int: {
+                ensure_condition(parameter.HasMember("value") && parameter["value"].IsArray(), "parameter value is not an array");
                 for (uint32_t pi = 0, pn = value.Size(); pi < pn; ++pi) {
                     parameter_pb->add_intvalues(value[pi].GetInt());
                 }
             }break;
             case Heart::proto::matparam_texture: {
-                parameter_pb->set_resourceid(value[0].GetString());
-                deps->push_back(value[0].GetString());
+                parameter_pb->set_resourceid(value.GetString());
+                deps->push_back(value.GetString());
+                if (parameter.HasMember("mutable") && parameter["mutable"].GetBool()) {
+                    parameter_pb->set_allowoverride(true);
+                }
+                deps->push_back(value.GetString());
             }break;
             }
         }
@@ -184,18 +214,18 @@ void readMaterialJSONToMaterialData(const rapidjson::Document& json_doc, const c
 
     ensure_condition(json_doc.HasMember("techniques") && json_doc["techniques"].IsArray(), "material is missing techniques array");
     for (uint32_t ti = 0, tn = json_doc["techniques"].Size(); ti < tn; ++ti) {
-        const auto& technique = json_doc["techniques"];
+        const auto& technique = json_doc["techniques"][ti];
         ensure_condition(technique.HasMember("name"), "technique is missing a name");
-        ensure_condition(technique.HasMember("pass") && technique["pass"].IsArray(), "technique is missing passes array");
-        auto* technique_pb = findMaterialTechnique(mat, technique["name"].GetString());
-        for (uint32_t pi = 0, pn = technique["pass"].Size(); pi < pn; ++pi) {
-            const auto& pass = technique["pass"];
+        ensure_condition(technique.HasMember("passes") && technique["passes"].IsArray(), "technique is missing passes array");
+        auto* technique_pb = findOrAddMaterialTechnique(mat, technique["name"].GetString());
+        for (uint32_t pi = 0, pn = technique["passes"].Size(); pi < pn; ++pi) {
+            const auto& pass = technique["passes"][pi];
             auto* pass_pb = findOrAddMaterialPass(technique_pb, pi);
             if (pass.HasMember("blendenable")) pass_pb->mutable_blend()->set_blendenable(pass["blendenable"].GetBool());
             if (pass.HasMember("blendop")) pass_pb->mutable_blend()->set_blendop(getEnumFromString(pass["blendop"].GetString(), BlendFunction_Parse));
             if (pass.HasMember("blendopalpha")) pass_pb->mutable_blend()->set_blendopalpha(getEnumFromString(pass["blendopalpha"].GetString(), BlendFunction_Parse));
             if (pass.HasMember("destblend")) pass_pb->mutable_blend()->set_destblend(getEnumFromString(pass["destblend"].GetString(), BlendOp_Parse));
-            if (pass.HasMember("srcblend")) pass_pb->mutable_blend()->set_srcblend(getEnumFromString(pass["destblend"].GetString(), BlendOp_Parse));
+            if (pass.HasMember("srcblend")) pass_pb->mutable_blend()->set_srcblend(getEnumFromString(pass["srcblend"].GetString(), BlendOp_Parse));
             if (pass.HasMember("destblendalpha")) pass_pb->mutable_blend()->set_destblendalpha(getEnumFromString(pass["destblendalpha"].GetString(), BlendOp_Parse));
             if (pass.HasMember("srcblendalpha")) pass_pb->mutable_blend()->set_srcblendalpha(getEnumFromString(pass["srcblendalpha"].GetString(), BlendOp_Parse));
             if (pass.HasMember("rendertargetwritemask")) pass_pb->mutable_blend()->set_rendertargetwritemask(pass["rendertargetwritemask"].GetUint());
@@ -219,10 +249,6 @@ void readMaterialJSONToMaterialData(const rapidjson::Document& json_doc, const c
             if (pass.HasMember("slopescaleddepthbias")) pass_pb->mutable_rasterizer()->set_slopescaleddepthbias((float)pass["slopescaleddepthbias"].GetDouble());
             if (pass.HasMember("scissortest")) pass_pb->mutable_rasterizer()->set_scissorenable(pass["scissortest"].GetBool());
 
-            if (pass.HasMember("vertex")) {
-                pass_pb->set_vertex(pass["vertex"].GetString());
-                deps->push_back(pass["vertex"].GetString());
-            }
             if (pass.HasMember("vertex")) {
                 pass_pb->set_vertex(pass["vertex"].GetString());
                 deps->push_back(pass["vertex"].GetString());
@@ -306,8 +332,11 @@ int main(int argc, char* argv[]) {
     fclose(f);
     f = nullptr;
     rapidjson::Document inc_doc;
-    inc_doc.ParseInsitu(inc_json_data.data());
-    ensure_condition(!inc_doc.HasParseError(), "Failed to parse JSON file %s", filepath.c_str());
+    inc_doc.Parse(inc_json_data.data());
+    if (inc_doc.HasParseError()) {
+        std::string error_area(&inc_json_data[std::max(0ull, inc_doc.GetErrorOffset()-100)], std::min(inc_json_data.size()-inc_doc.GetErrorOffset(), 100ull));
+        ensure_condition(!inc_doc.HasParseError(), "Failed to parse JSON file %s. Error '%s' at '%zu'. Looks like...\n%s", filepath.c_str(), rapidjson::GetParseError_En(inc_doc.GetParseError()), inc_doc.GetErrorOffset(), error_area.c_str());
+    }
     readMaterialJSONToMaterialData(inc_doc, new_path_base, &materialresource, &includes, &depresnames);
 
     Heart::builder::Output output;

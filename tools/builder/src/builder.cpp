@@ -189,7 +189,10 @@ static std::vector<std::pair<std::string, std::string>> findFilesMatchingWildcar
 			minfs_path_join(origpath, file, full_path, BUILDER_MAX_PATH);
             minfs_path_join(remapped_current_dir, wildcard_parent, resource_id, BUILDER_MAX_PATH);
             minfs_path_join(resource_id, file, tmp_path, BUILDER_MAX_PATH);
-            minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+            while (strchr(tmp_path, '.')) {
+                minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+                strcpy(tmp_path, resource_id);
+            }
 
 			found_paths.push_back(std::pair<std::string, std::string>(full_path, resource_id));
 		}
@@ -393,7 +396,10 @@ try {
             minfs_path_join(origpath, file, resource_path, BUILDER_MAX_PATH);
             minfs_path_join(b->currentResourceDirectory.top().c_str(), wildcard_parent, resource_id, BUILDER_MAX_PATH);
             minfs_path_join(resource_id, file, tmp_path, BUILDER_MAX_PATH);
-            minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+            while (strchr(tmp_path, '.')) {
+                minfs_path_without_ext(tmp_path, resource_id, BUILDER_MAX_PATH);
+                strcpy(tmp_path, resource_id);
+            }
             if (resource_postfix) {
                 strncat(resource_id, resource_postfix, BUILDER_MAX_PATH);
             }
@@ -581,7 +587,7 @@ int main (int argc, char **argv) {
     std::unordered_set<std::string> force_types;
     const char argopts[] = "vg:t:h";
     static struct option long_options[] = {
-        { "version", no_argument, 0, (int)'v' },
+        { "verbose", no_argument, 0, (int)'v' },
         { "clean", no_argument, 0, (int)'c' },
         { "force", no_argument, 0, (int)'c' },
         { "forcetype", required_argument, 0, (int)'t' },
@@ -595,7 +601,7 @@ int main (int argc, char **argv) {
             "usage: %s [options]\n"
             "Available options are:\n"
             "\t-g [input build config script for]\n"
-            "\t--version, -v :\n"
+            "\t--verbose, -v :\n"
             "\t--clean :\n\t\tForce all resources to be rebuilt, ignoring the cache\n"
             "\t--force :\n\t\tSame as clean\n"
             "\t--forcetype [type], -t [type]:\n\t\tForce all resources of [type] to be rebuilt, ignoring the cache\n"
@@ -780,7 +786,9 @@ int main (int argc, char **argv) {
 
                     fprintf(stderr, "%s\n", stderroutput.c_str());
                     if (exit_code != 0) {
-                        fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\n", cmd.c_str(), job->resourceinputpath().c_str(), exit_code);
+                        fprintf(stderr, "Error running build command '%s' for resource '%s'. Returned error code %d\nCommand Line for debugging:\n%s -i %s", 
+                            cmd.c_str(), job->resourceinputpath().c_str(), exit_code,
+                            cmd.c_str(), res_stdin_path.c_str());
                         continue;
                     }
 

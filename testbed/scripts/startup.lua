@@ -208,6 +208,7 @@
 -- Input mappings
 -- Keyboard
 input.set_default_action_mapping("F4", "Show/Hide Console")
+input.set_default_action_mapping("`", "Open Debug Menu")
 input.set_default_action_mapping("Return", "Ok")
 input.set_default_action_mapping("Backspace", "Cancel")
 input.set_default_action_mapping("F6", "Next Test")

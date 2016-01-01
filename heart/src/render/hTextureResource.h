@@ -6,12 +6,13 @@
 #pragma once
 
 #include "base/hTypes.h"
-#include "core/hProtobuf.h"
 #include "components/hObjectFactory.h"
 #include "render/hTextureFormat.h"
 #include "render/hMipDesc.h"
+#include "render/hRendererTypeHelpers.h"
 #include <vector>
 #include <memory>
+#include "resource_texture.pb.h"
 
 namespace Heart {
 namespace hRenderer {
@@ -34,6 +35,7 @@ namespace hRenderer {
             hRenderer::hTexture2D* texture2D_;
             hRenderer::hTexture3D* texture3D_;
         };
+        hRenderer::hRenderTargetUniquePtr renderTarget;
 
     public:
         hObjectType(hTextureResource, Heart::proto::TextureResource);
@@ -47,6 +49,8 @@ namespace hRenderer {
         const hRenderer::hMipDesc* getCPUMipDesc(hUint i) const { return &cpuMipData[i]; }
         hUint getArraySize() const { return arraySize_; }
         hRenderer::hTexture2D* getTexture2D() const { return texture2D_; }
+        hBool isRenderTarget() const { return !!renderTarget; }
+        hRenderer::hRenderTarget* getRenderTarget() const { return renderTarget.get(); }
     };
 
     typedef Heart::proto::AtlasImage hAtlasImage;

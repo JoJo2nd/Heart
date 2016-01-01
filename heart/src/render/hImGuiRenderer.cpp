@@ -13,19 +13,20 @@
 #include "render/hRenderPrim.h"
 #include "render/hUniformBufferFlags.h"
 #include "render/hProgramReflectionInfo.h"
-#include "render/hRenderShaderProgram.h"
 #include "render/hImGuiRenderer.h"
-#include "imgui.h"
+#include "render/hMaterial.h"
+#include "render/hUniformBufferResource.h"
 #include "input/hActionManager.h"
+#include "imgui.h"
+
+#include "shaders/ImguiConstants.hpp"
 
 namespace Heart {
 namespace {
 struct ImGuiCtx {
     static hUint VERTEX_BUFFER_SIZE; // From ImGui Samples
     static hUint FENCE_COUNT;
-    hShaderProgram* shaderProg;
-    hRenderer::hShaderStage* vert;
-    hRenderer::hShaderStage* pixel;
+    hMaterial* material;
     hRenderer::hVertexBuffer* vb;
     hRenderer::hUniformBuffer* ub;
     hRenderer::hPipelineState* pls;
@@ -39,9 +40,6 @@ struct ImGuiCtx {
 hUint ImGuiCtx::VERTEX_BUFFER_SIZE; // From ImGui Samples
 hUint ImGuiCtx::FENCE_COUNT;
 
-struct ImGuiConstBlock {
-    hMatrix projection;
-};
 
 static const hStringID UISelectActionName("UI Select");
 static const hStringID UIXAxisActionName("UI X Axis");
@@ -68,15 +66,15 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     auto vtx_bytes = (hPtrdiff_t)vtx_dst-(hPtrdiff_t)vtx_start;
     hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
 
-    auto ubsize = (hUint)sizeof(ImGuiConstBlock);
+    auto ubsize = (hUint)sizeof(ImguiConstants);
     auto* ubptr = (hByte*)hRenderer::getMappingPtr(imguiCtx.ub);
-    auto* ubdata = (ImGuiConstBlock*) (ubptr + (imguiCtx.currentFence*ubsize));
+    auto* ubdata = (ImguiConstants*) (ubptr);
     const float L = 0.0f;
     const float R = ImGui::GetIO().DisplaySize.x;
     const float B = ImGui::GetIO().DisplaySize.y;
     const float T = 0.0f;
     ubdata->projection = hRenderer::getClipspaceMatrix()*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
-    hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, (imguiCtx.currentFence*ubsize), ubsize);
+    hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, 0, ubsize);
 
     // Render command lists
     int vtx_offset = ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence;
@@ -131,39 +129,18 @@ hBool ImGuiInit() {
         { hStringID("in_uv")      , hRenderer::hSemantic::Texcoord, 1, 2, hRenderer::hVertexInputType::Float, sizeof(hFloat) * 2, hFalse, sizeof(ImDrawVert) },
         { hStringID("in_colour")  , hRenderer::hSemantic::Texcoord, 0, 4, hRenderer::hVertexInputType::UByte, sizeof(hFloat) * 4, hTrue , sizeof(ImDrawVert) },
     };
-    imguiCtx.shaderProg = hResourceManager::weakResource<hShaderProgram>(hStringID("/system/imgui"));
-    imguiCtx.vert = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Vertex));
-    imguiCtx.pixel = imguiCtx.shaderProg->getShader(hRenderer::getActiveProfile(hShaderFrequency::Pixel));
+    imguiCtx.material = hResourceManager::weakResource<hMaterial>(hStringID("/system/imgui_material"));
     imguiCtx.vb = hRenderer::createVertexBuffer(nullptr, sizeof(ImDrawVert), ImGuiCtx::VERTEX_BUFFER_SIZE*ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
-
-    hRenderer::hUniformLayoutDesc ublo[] = {
-        { "projection", hRenderer::ShaderParamType::Float44, 0 },
-    };
-
-    imguiCtx.ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(ImGuiConstBlock), ImGuiCtx::FENCE_COUNT, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+    imguiCtx.ub = hResourceManager::weakResource<hUniformBufferResource>(hStringID("/system/ImguiConstants"))->getSharedUniformBuffer();
     imguiCtx.currentFence = 0;
 
-
-    hRenderer::hPipelineStateDesc plsd;
-    hRenderer::hInputStateDesc isd;
-    plsd.vertex_ = imguiCtx.vert;
-    plsd.fragment_ = imguiCtx.pixel;
+    hcAssertMsg(imguiCtx.material->getTechniqueCount() == 1 && imguiCtx.material->getTechniquePassCount(0) == 1, "Material \"/system/imgui_material\" should have one technique with one pass");
+    hRenderer::hPipelineStateDesc plsd = imguiCtx.material->getTechniquePassPipelineStateDesc(0, 0);
+    hRenderer::hInputStateDesc isd = imguiCtx.material->getTechniquePassInputStateDesc(0, 0);
     plsd.vertexBuffer_ = imguiCtx.vb;
-    plsd.blend_.blendEnable_ = hTrue;
-    plsd.blend_.srcBlend_ = proto::renderstate::BlendSrcAlpha;
-    plsd.blend_.destBlend_ = proto::renderstate::BlendInverseSrcAlpha;
-    plsd.blend_.blendOp_ = proto::renderstate::Add;
-    plsd.blend_.srcBlendAlpha_ = proto::renderstate::BlendInverseSrcAlpha;
-    plsd.blend_.destBlendAlpha_ = proto::renderstate::BlendZero;
-    plsd.blend_.blendOpAlpha_ = proto::renderstate::Add;
-    plsd.rasterizer_.scissorEnable_ = 1;
-    hRenderer::hPipelineStateDesc::hSamplerStateDesc ssd;
-    ssd.filter_ = proto::renderstate::linear;
-    plsd.setSampler(hStringID("tSampler"), ssd);
     plsd.setVertexBufferLayout(lo, (hUint)hStaticArraySize(lo));
     imguiCtx.pls = hRenderer::createRenderPipelineState(plsd);
-    isd.setTextureSlot(hStringID("t_tex2D"), imguiCtx.fonttex.get());
-    isd.setUniformBuffer(hStringID("ParamBlock"), imguiCtx.ub);
+    isd.setTextureSlotWithOverride(hStringID("t_tex2D"), imguiCtx.fonttex.get(), 0);
     imguiCtx.is = hRenderer::createRenderInputState(isd, plsd);
 
     io->RenderDrawListsFn = ImGuiRenderDrawLists;

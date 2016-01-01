@@ -1,0 +1,5 @@
+{
+    "InstanceConstants" : [
+        { "name" : "world", "type" : "float44" }
+    ]
+}

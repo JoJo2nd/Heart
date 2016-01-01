@@ -7,6 +7,9 @@
 #include "2d/hTileRenderer2D.h"
 #include "lua/hLuaHeartLib.h"
 #include "render/hImGuiRenderer.h"
+#include "render/hMaterial.h"
+#include "render/hUniformBufferResource.h"
+#include "render/hRenderPipeline.h"
 #include "memtracker.h"
 
 namespace Heart {
@@ -178,6 +181,9 @@ namespace Heart {
         register_type &= hTextureAtlasResource::auto_object_registered;
         register_type &= hLevel::auto_object_registered;
         register_type &= hTileRenderer2D::registerComponents();
+        register_type &= hMaterial::auto_object_registered;
+        register_type &= hUniformBufferResource::auto_object_registered;
+        register_type &= hRenderingPipeline::auto_object_registered;
         if (register_type) {
             engineState_ = hHeartState_LoadingCore;
         }

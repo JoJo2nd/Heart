@@ -9,6 +9,7 @@
 #include "base/hStringUtil.h"
 #include "base/hCRC32.h"
 #include "core/hProtobuf.h"
+#include "debug_server_common.pb.h"
 
 namespace Heart
 {

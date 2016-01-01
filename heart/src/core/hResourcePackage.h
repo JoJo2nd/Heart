@@ -2,18 +2,17 @@
     Written by James Moran
     Please see the file HEART_LICENSE.txt in the source's root directory.
 *********************************************************************/
-#ifndef HRESOURCEPACKAGE_H__
-#define HRESOURCEPACKAGE_H__
+#pragma once
 
 #include "base/hTypes.h"
 #include "base/hMap.h"
 #include "base/hClock.h"
 #include "base/hReferenceCounted.h"
-#include "core/hProtobuf.h"
 #include "core/hIFileSystem.h"
 #include "components/hObjectFactory.h"
 #include "threading/hTaskGraphSystem.h"
 #include <queue>
+#include "package.pb.h"
 
 namespace Heart
 {
@@ -22,40 +21,6 @@ namespace Heart
     static const hUint32			HEART_RESOURCE_PATH_SIZE = 1024;
 
     typedef google::protobuf::io::ArrayInputStream hResourceFileStream;
-
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-    struct hResourceSection
-    {
-        const hChar*                     sectionName_;
-        hInt                             sectionSize_;
-        const void*                      sectionData_;
-        proto::ResourceSectionMemoryType memType_;
-    };
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
-#if 0 // Removing, now handled by hObjectFactory methods
-    hFUNCTOR_TYPEDEF(hResourceClassBase* (*)(const hResourceSection*,   hUint), hResourceLoadProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePostLoadProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceManager*, hResourceClassBase*), hResourcePreUnloadProc);
-    hFUNCTOR_TYPEDEF(void                (*)(hResourceClassBase*), hResourceUnloadProc);
-
-    struct hResourceHandler : public hMapElement< hResourceType, hResourceHandler >
-    {
-        hResourceLoadProc       loadProc_;
-        hResourcePostLoadProc   postLoadProc_; 
-        hResourcePreUnloadProc  preUnloadProc_;
-        hResourceUnloadProc     unloadProc_;
-    };
-
-    typedef hMap< hResourceType, hResourceHandler > hResourceHandlerMap;
-#endif
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -134,5 +99,3 @@ namespace Heart
     };
 
 }
-
-#endif // HRESOURCEPACKAGE_H__

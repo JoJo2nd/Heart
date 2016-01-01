@@ -1,0 +1,5 @@
+{
+    "TilePlaneParameters" : [
+        { "name" : "planeSize", "type" : "float4" }
+    ]
+}

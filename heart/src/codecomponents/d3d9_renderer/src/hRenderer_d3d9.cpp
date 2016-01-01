@@ -428,18 +428,21 @@ namespace d3d9 {
 
     struct hUniformBuffer {
         hUniformBuffer(hUint32 in_size, const hUniformLayoutDesc* in_layout, hUint in_count)
-            : data(new hByte[in_size])
+            : data_cpu_gpu(new hByte[in_size*2])
             , baseOffset(0)
             , size(in_size) {
             layout.resize(in_count);
             hMemCpy(layout.data(), in_layout, sizeof(hUniformLayoutDesc)*in_count);
+            cpuData = data_cpu_gpu.get();
+            gpuData = cpuData+size;
         }
 
-        hByte* getBase() const {
-            return data.get()+baseOffset;
-        }
+        hByte* getCPUBase() const { return cpuData; }
+        hByte* getGPUBase() const { return gpuData; }
 
-        std::unique_ptr<hByte> data;
+        std::unique_ptr<hByte> data_cpu_gpu;
+        hByte* cpuData = nullptr;
+        hByte* gpuData = nullptr;
         std::vector<hUniformLayoutDesc> layout;
         hUint32 baseOffset;
         hUint32 size;
@@ -646,6 +649,7 @@ namespace d3d9 {
         Return,
         CustomCall,
         SetTargets,
+        FlushUniformBuffer,
     };
 
     static hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
@@ -661,6 +665,13 @@ namespace d3d9 {
     struct hRndrOpSetTargets {
         hUint16 nTargets;
         /* -- Followed by array of hRenderTarget*[nTargets] -- */
+    };
+
+    struct hRndrOpFlushUniformBuffer {
+        hUniformBuffer* buffer;
+        hUint offset;
+        hUint size;
+        hByte* updateData; // I want to use an unsized array here
     };
 
     /*-- The following is intended as a quick and dirty start up for adding new render calls. */
@@ -1063,8 +1074,8 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
-    hUniformBuffer* HEART_API createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags) {
-        return new hUniformBuffer(structSize*bufferCount, layout, layout_count);
+    hUniformBuffer* HEART_API createUniformBuffer(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint32 flags) {
+        return new hUniformBuffer(structSize, layout, layout_count);
     }
 
     HEART_C_EXPORT
@@ -1076,7 +1087,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void* HEART_API getUniformBufferMappingPtr(hUniformBuffer* ub) {
-        return ub->data.get();
+        return ub->getCPUBase();
     }
 
     HEART_C_EXPORT
@@ -1623,12 +1634,12 @@ namespace d3d9 {
                 for (hUint i = 0, n = is->paramUpdateCount; i < n; ++i) {
                     if (is->paramUpdates[i].type & hInputState::ParamUpdate::Vertex) {
                         hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->vertex->getFloatRegisterBaseAddress() : (hUint32*)pls->vertex->getIntRegisterBaseAddress());
-                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase() + is->paramUpdates[i].ubOffset;
+                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getCPUBase() + is->paramUpdates[i].ubOffset;
                         hMemCpy(reg_add + is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
                     }
                     if (is->paramUpdates[i].type & hInputState::ParamUpdate::Fragment) {
                         hUint32* reg_add = ((is->paramUpdates[i].type & hInputState::ParamUpdate::Float) ? (hUint32*)pls->pixel->getFloatRegisterBaseAddress() : (hUint32*)pls->pixel->getIntRegisterBaseAddress());
-                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getBase() + is->paramUpdates[i].ubOffset;
+                        void* ub_add = is->uniBuffers[is->paramUpdates[i].ubIndex]->getCPUBase() + is->paramUpdates[i].ubOffset;
                         hMemCpy(reg_add + is->paramUpdates[i].regIndex, ub_add, is->paramUpdates[i].byteSize);
                     }
                 }
@@ -1665,10 +1676,12 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
-            ub->baseOffset = offset;
-            return 0;
-        });
+        hRndrOpFlushUniformBuffer* cmd = new (cl->allocCmdMem(Op::FlushUniformBuffer, sizeof(hRndrOpFlushUniformBuffer)+size)) hRndrOpFlushUniformBuffer();
+        cmd->buffer = ub;
+        cmd->offset = offset;
+        cmd->size = size;
+        cmd->updateData = (hByte*)(cmd+1);
+        hMemCpy(cmd->updateData, ub->getCPUBase(), size);
     }
 
     HEART_C_EXPORT
@@ -1846,6 +1859,10 @@ namespace d3d9 {
                     if (rts[i] && !rts[i]->isBound()) rts[i]->bind(d3dDevice);
                     hD3D9_VERIFY(d3dDevice->SetRenderTarget(i, rts[i] ? rts[i]->surface.get() : backBufferSurface));
                 }
+            } break;
+            case Op::FlushUniformBuffer: {
+                hRndrOpFlushUniformBuffer* fub_cmd = (hRndrOpFlushUniformBuffer*)cmdptr;
+                hMemCpy(fub_cmd->buffer->getGPUBase()+fub_cmd->offset, fub_cmd->updateData, fub_cmd->size);
             } break;
             case Op::CustomCall: {
                 hRndrOpCustomCallBase* c = (hRndrOpCustomCallBase*)cmdptr;

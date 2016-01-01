@@ -3,6 +3,7 @@
 /*.lnk
 /*.sublime-workspace
 /*.user
+/*.vimrc
 /data/
 /data
 /external/libogg/*.log

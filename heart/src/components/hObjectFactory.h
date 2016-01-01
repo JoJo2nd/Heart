@@ -8,6 +8,8 @@
 #include "base/hTypes.h"
 #include "base/hStringID.h"
 #include "core/hProtobuf.h"
+#include <vector>
+#include "resource_common.pb.h"
 
 namespace Heart {
     typedef ::google::protobuf::MessageLite hObjectMarshall;

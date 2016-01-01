@@ -72,7 +72,7 @@ namespace hRenderer {
     HEART_MODULE_API(hVertexBuffer*,  createVertexBuffer)(const void* initData, hUint32 elementsize, hUint32 elementcount, hUint32 flags);
     HEART_MODULE_API(void*, getVertexBufferMappingPtr)(hVertexBuffer* vb, hUint32* size);
     HEART_MODULE_API(void,  destroyVertexBuffer)(hVertexBuffer* vb);
-    HEART_MODULE_API(hUniformBuffer*, createUniformBuffer)(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint bufferCount, hUint32 flags);
+    HEART_MODULE_API(hUniformBuffer*, createUniformBuffer)(const void* initdata, const hUniformLayoutDesc* layout, hUint layout_count, hUint structSize, hUint32 flags);
     HEART_MODULE_API(const hUniformLayoutDesc*, getUniformBufferLayoutInfo)(const hUniformBuffer* ub, hUint* out_count);
     HEART_MODULE_API(void*, getUniformBufferMappingPtr)(hUniformBuffer* ub);
     HEART_MODULE_API(void, destroyUniformBuffer)(hUniformBuffer* ub);

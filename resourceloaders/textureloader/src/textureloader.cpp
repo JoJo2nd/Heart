@@ -32,6 +32,9 @@
 #include "texture_atlas.h"
 #include "rapidxml/rapidxml.hpp"
 #include "rapidxml/rapidxml_iterators.hpp"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 #include "minfs.h"
 #include <memory>
 #ifdef _WIN32
@@ -48,6 +51,7 @@ enum class LongOptions : int {
     PrintVersion = 0x04000,
     Multithreaded = 0x08000,
     PremultipliedAlpha = 0x10000,
+    RenderTarget = 0x20000,
 };
 
 static const char argopts[] = "vi:";
@@ -56,7 +60,8 @@ static struct option long_options[] = {
     { "cube", no_argument, 0, (int)LongOptions::CubeTexture },
     { "atlas", no_argument, 0, (int)LongOptions::AtlasTexture },
 	{ "multithreaded", no_argument, 0, (int)LongOptions::Multithreaded },
-    { "premultipliedalpha", no_argument, 0, (int)LongOptions::Multithreaded },
+    { "premultipliedalpha", no_argument, 0, (int)LongOptions::PremultipliedAlpha },
+    { "rendertarget", no_argument, 0, (int)LongOptions::RenderTarget },
     { 0, 0, 0, 0 }
 };
 
@@ -71,6 +76,7 @@ struct TextureParams {
 
 #define fatal_error(msg, ...) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
 #define fatal_error_check(x, msg, ...) if (!(x)) {fprintf(stderr, msg, __VA_ARGS__); exit(-1);}
+#define ensure_condition(x, msg, ...) fatal_error_check(x, msg, __VA_ARGS__)
 
 namespace FreeImageFileIO
 {
@@ -681,6 +687,7 @@ int main(int argc, char* argv[]) {
     int c;
     int option_index = 0;
     bool verbose = false, use_stdin = true, generate_atlas = false, generate_cube = false, multithreaded = false, premultiplied_alpha = false;
+    bool generate_rendertarget = false;
 
     while ((c = gop_getopt_long(argc, argv, argopts, long_options, &option_index)) != -1) {
         switch (c) {
@@ -689,6 +696,7 @@ int main(int argc, char* argv[]) {
         case LongOptions::CubeTexture: generate_cube = true; break;
 		case LongOptions::Multithreaded: multithreaded = true; break;
         case LongOptions::PremultipliedAlpha: premultiplied_alpha = true; break;
+        case LongOptions::RenderTarget: generate_rendertarget = true; break;
         case 'v': verbose = 1; break;
         case 'i': {
             std::ifstream input_file_stream;
@@ -784,6 +792,50 @@ int main(int argc, char* argv[]) {
 
         output.mutable_pkgdata()->set_type_name(textureAtlas.GetTypeName());
         output.mutable_pkgdata()->set_messagedata(textureAtlas.SerializeAsString());
+        google::protobuf::io::OstreamOutputStream filestream(&std::cout);
+        return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
+    } else if (generate_rendertarget) {
+        Heart::proto::TextureResource textureRes;
+        rapidjson::Document rt_doc;
+        std::vector<char> json_data;
+        size_t fsize = minfs_get_file_size(input_pb.resourceinputpath().c_str());
+        json_data.resize(fsize+1, 0);
+        FILE* f = fopen(input_pb.resourceinputpath().c_str(), "rb");
+        fread(json_data.data(), 1, fsize, f);
+        fclose(f);
+        rt_doc.ParseInsitu(json_data.data());
+        ensure_condition(!rt_doc.HasParseError(), "Failed to parse JSON file %s. Error '%s' at '%zu'", input_pb.resourceinputpath().c_str(), rapidjson::GetParseError_En(rt_doc.GetParseError()), rt_doc.GetErrorOffset());
+        const auto& rt = rt_doc["rendertarget"];
+        ensure_condition(rt.HasMember("format"), "Render target is missing format");
+        Heart::proto::TextureFormat format;
+        ensure_condition(Heart::proto::TextureFormat_Parse(rt["format"].GetString(), &format), "Unable to parse texture format '%s'", rt["format"].GetString());
+        textureRes.set_format(format);
+        textureRes.set_useasrendertarget(true);
+        textureRes.set_srgb(rt.HasMember("srgb") && rt["srgb"].GetBool());
+        Heart::proto::RenderTargetInfo* rt_info_pb = textureRes.mutable_targetinfo();
+        if (rt.HasMember("aspect")) {
+            ensure_condition((rt.HasMember("percentagewidth") || rt.HasMember("percentageheight") || rt.HasMember("fixedwidth") || rt.HasMember("fixedheight")), "If aspect is given, at least one width or height parameter must be given");
+            rt_info_pb->set_aspect((float)rt["aspect"].GetDouble());
+        }
+        if (rt.HasMember("percentagewidth")) {
+            ensure_condition(rt["percentagewidth"].IsDouble(), "percentagewidth parameter is not a number");
+            rt_info_pb->set_percentagewidth((float)rt["percentagewidth"].GetDouble());
+        }
+        if (rt.HasMember("percentageheight")) {
+            ensure_condition(rt["percentageheight"].IsDouble(), "percentageheight parameter is not a number");
+            rt_info_pb->set_percentageheight((float)rt["percentageheight"].GetDouble());
+        }
+        if (rt.HasMember("fixedwidth")) {
+            ensure_condition(rt["fixedwidth"].IsUint(), "fixedwidth parameter is not an unsigned int");
+            rt_info_pb->set_fixedwidth(rt["fixedwidth"].GetUint());
+        }
+        if (rt.HasMember("fixedheight")) {
+            ensure_condition(rt["fixedheight"].IsUint(), "fixedheight parameter is not an unsigned int");
+            rt_info_pb->set_fixedheight(rt["fixedheight"].GetUint());
+        }
+
+        output.mutable_pkgdata()->set_type_name(textureRes.GetTypeName());
+        output.mutable_pkgdata()->set_messagedata(textureRes.SerializeAsString());
         google::protobuf::io::OstreamOutputStream filestream(&std::cout);
         return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
     } else {

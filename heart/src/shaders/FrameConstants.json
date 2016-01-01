@@ -1,0 +1,5 @@
+{
+    "FrameConstants" : [
+        { "name" : "time", "type" : "float4" }
+    ]
+}

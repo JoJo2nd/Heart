@@ -72,7 +72,7 @@ public:
         };
 
         paramBlockSize = (hUint)sizeof(TimerBlock);
-		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(TimerBlock), 3, (hUint32)hRenderer::hUniformBufferFlags::Dynamic);
+		ub = hRenderer::createUniformBuffer(nullptr, ublo, (hUint)hStaticArraySize(ublo), (hUint)sizeof(TimerBlock),(hUint32)hRenderer::hUniformBufferFlags::Dynamic);
 		for (auto& i:fences) {
 			i = nullptr;
 		}
@@ -122,9 +122,9 @@ public:
             hRenderer::wait(fences[currentFence]);
             fences[currentFence] = nullptr;
         }
-        auto* ubdata = (TimerBlock*) (((hByte*)hRenderer::getMappingPtr(ub)) + (currentFence*paramBlockSize));
+        auto* ubdata = (TimerBlock*)hRenderer::getMappingPtr(ub);
         ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
-        hRenderer::flushUnibufferMemoryRange(cl, ub, (currentFence*paramBlockSize), paramBlockSize);
+        hRenderer::flushUnibufferMemoryRange(cl, ub, 0, paramBlockSize);
         hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 1, 0);
         fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;

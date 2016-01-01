@@ -85,10 +85,11 @@ int main(int argc, char* argv[]) {
     }
 
     //write the resource
-    Heart::builder::Output output;
+    Heart::builder::Output resource_output;
 
     if (parse_render_pass) {
         rapidjson::Document pass_doc;
+        /* -- TODO ?? --
         FILE* json_file = fopen(input_pb.resourceinputpath().c_str(), "rb");
         ensure_condition(json_file, "Unable to open file %s to parse render pass.", input_pb.resourceinputpath().c_str());
         auto json_size = minfs_get_file_size(input_pb.resourceinputpath().c_str());
@@ -121,8 +122,10 @@ int main(int argc, char* argv[]) {
             ensure_condition(hprp::OutputType_Parse(output["type"].GetString(), &type_val), "Couldn't parse output type");
             output_pb->set_type(type_val);
         }
+        
         output.mutable_pkgdata()->set_type_name(pass_pb.GetTypeName());
         output.mutable_pkgdata()->set_messagedata(pass_pb.SerializeAsString());
+        */
     } else { // parse the render pipeline
         rapidjson::Document pipeline_doc;
         FILE* json_file = fopen(input_pb.resourceinputpath().c_str(), "rb");
@@ -134,44 +137,30 @@ int main(int argc, char* argv[]) {
         pipeline_doc.ParseInsitu(json_data.data());
         ensure_condition(!pipeline_doc.HasParseError(), "JSON parse error");
         hprp::Pipeline pipeline_pb;
-        std::unordered_map<std::string, uint32_t> name_map;
-        ensure_condition(pipeline_doc.HasMember("stages"), "missing stages");
-        for (uint32_t stage_idx = 0, stage_n = pipeline_doc["stages"].Size(); stage_idx < stage_n; ++stage_idx) {
-            auto& stage = pipeline_doc["stages"][stage_idx];
-            ensure_condition(stage.HasMember("name"), "pipeline stage missing 'name");
-            name_map[stage["name"].GetString()] = stage_idx;
-        }
+        const auto& pipeline = pipeline_doc["pipeline"];
         uint32_t totalbindings = 0;
-        for (uint32_t stage_idx = 0, stage_n = pipeline_doc["stages"].Size(); stage_idx<stage_n; ++stage_idx) {
-            auto& stage = pipeline_doc["stages"][stage_idx];
+        for (uint32_t stage_idx = 0, stage_n = pipeline["stages"].Size(); stage_idx<stage_n; ++stage_idx) {
+            auto& stage = pipeline["stages"][stage_idx];
             auto* stage_pb = pipeline_pb.add_stages();
-            ensure_condition(stage.HasMember("name") && stage.HasMember("resource") && stage.HasMember("inputs"), "pipeline stage missing members 'name', 'resource' or 'inputs'");
-            stage_pb->set_stagename(stage["name"].GetString());
-            stage_pb->set_stageid(name_map[stage["name"].GetString()]);
-            stage_pb->set_passresource(stage["resource"].GetString());
-            output.add_resourcedependency(stage["resource"].GetString());
-            std::string input_name;
-            std::string in_pass_name;
-            std::string in_ouptut_name;
-            for (uint32_t input_idx=0, input_n=stage["inputs"].Size(); input_idx<input_n; ++input_idx) {
-                auto& input = stage["inputs"][input_idx];
-                auto* input_pb = stage_pb->add_inputbindings();
-                input_name = input["from"].GetString();
-                auto dot = input_name.find('.');
-                in_pass_name = input_name.substr(0, dot);
-                in_ouptut_name = input_name.substr(dot+1);
-                input_pb->set_fromstateid(name_map[in_pass_name]);
-                input_pb->set_from(in_ouptut_name);
-                input_pb->set_to(input["to"].GetString());
-                ++totalbindings;
+            ensure_condition(stage.HasMember("name") && stage.HasMember("technique") && stage.HasMember("view"), "pipeline stage missing members 'name', 'resource' or 'inputs'");
+            stage_pb->set_name(stage["name"].GetString());
+            stage_pb->set_viewname(stage["view"].GetString());
+            stage_pb->set_technique(stage["technique"].GetString());
+            if (stage.HasMember("outputs"))
+            {
+                for (uint32_t output_idx = 0, output_n = stage["outputs"].Size(); output_idx<output_n; ++output_idx) {
+                    const auto& outputs = stage["outputs"][output_idx];
+                    stage_pb->add_outputs(outputs.GetString());
+                    resource_output.add_resourcedependency(outputs.GetString());
+                }
             }
+
         }
-        pipeline_pb.set_totalbindings(totalbindings);
-        output.mutable_pkgdata()->set_type_name(pipeline_pb.GetTypeName());
-        output.mutable_pkgdata()->set_messagedata(pipeline_pb.SerializeAsString());
+        resource_output.mutable_pkgdata()->set_type_name(pipeline_pb.GetTypeName());
+        resource_output.mutable_pkgdata()->set_messagedata(pipeline_pb.SerializeAsString());
     }
 
     google::protobuf::io::OstreamOutputStream filestream(&std::cout);
-    return output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
+    return resource_output.SerializeToZeroCopyStream(&filestream) ? 0 : -2;
 }
 

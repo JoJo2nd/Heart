@@ -6,6 +6,8 @@
 #include "render/hTextureResource.h"
 #include "render/hMipDesc.h"
 #include "render/hRenderer.h"
+#include "render/hTextureFlags.h"
+#include "core/hSystem.h"
 
 namespace Heart {
 namespace hRenderer {
@@ -46,42 +48,74 @@ proto::TextureFormat convertTextureFormat(hTextureFormat in_format, bool* out_sR
 hRegisterObjectType(TextureResource, Heart::hTextureResource, Heart::proto::TextureResource);
 
 hTextureResource::hTextureResource(Heart::proto::TextureResource* obj) {
-    // don't support texture arrays just yet...
-    arraySize_ = 1;
-    width_ = obj->width();
-    height_ = obj->height();
-    depth_ = obj->depth();
-    mipCount_ = obj->mips_size();
-    format_ = hRenderer::convertTextureFormat(obj->format(), obj->srgb());
+    if (obj->useasrendertarget()) {
+        arraySize_ = 1;
+        depth_ = 1;
+        mipCount_ = 1;
+        format_ = hRenderer::convertTextureFormat(obj->format(), obj->srgb());
+        const auto& tinfo = obj->targetinfo();
+        if (tinfo.has_aspect()) {
+            if (tinfo.has_percentagewidth()) {
+                width_ = (hUint)(hSystem::getWindowWidth()*tinfo.percentagewidth());
+                height_ = (hUint)(width_*(1./tinfo.aspect()));
+            } else if (tinfo.has_percentageheight()) {
+                height_ = (hUint)(hSystem::getWindowHeight()*tinfo.percentageheight());
+                width_ = (hUint)(height_*tinfo.aspect());
+            } else if (tinfo.has_fixedwidth()) {
+                width_ = tinfo.fixedwidth();
+                height_ = (hUint)(width_*(1. / tinfo.aspect()));
+            } else if (tinfo.has_fixedheight()) {
+                height_ = tinfo.fixedheight();
+                width_ = (hUint)(height_*tinfo.aspect());
+            }
+        } else if (tinfo.has_percentagewidth()) {
+            width_ = (hUint)(hSystem::getWindowWidth()*tinfo.percentagewidth());
+            height_ = (hUint)(hSystem::getWindowHeight()*tinfo.percentageheight());
+        } else if (tinfo.has_fixedwidth()) {
+            width_ = tinfo.fixedwidth();
+            height_ = tinfo.fixedheight();
+        }
+        hRenderer::hMipDesc mips = {width_, height_, nullptr, 0};
+        texture2D_ = hRenderer::createTexture2D(1, &mips, format_, (hUint32)hRenderer::TextureFlags::RenderTarget);
+        renderTarget.reset(hRenderer::createRenderTarget(texture2D_, 0));
+    } else {
+        // don't support texture arrays just yet...
+        arraySize_ = 1;
+        width_ = obj->width();
+        height_ = obj->height();
+        depth_ = obj->depth();
+        mipCount_ = obj->mips_size();
+        format_ = hRenderer::convertTextureFormat(obj->format(), obj->srgb());
 
-    if (obj->has_keepcpudata() && obj->keepcpudata()) {
-        hRenderer::hMipDesc* mips = (hRenderer::hMipDesc*)hAlloca(sizeof(hRenderer::hMipDesc)*mipCount_);
-        hSize_t texture_data_size = true;
-        for (auto i = 0u, n = mipCount_; i < n; ++i) {
-            texture_data_size += (hUint32)obj->mips(i).data().size();
+        if (obj->has_keepcpudata() && obj->keepcpudata()) {
+            hRenderer::hMipDesc* mips = (hRenderer::hMipDesc*)hAlloca(sizeof(hRenderer::hMipDesc)*mipCount_);
+            hSize_t texture_data_size = true;
+            for (auto i = 0u, n = mipCount_; i < n; ++i) {
+                texture_data_size += (hUint32)obj->mips(i).data().size();
+            }
+            cpuData.reset(new hByte[texture_data_size]);
+            cpuMipData.resize(mipCount_);
+            auto* dst = cpuData.get();
+            for (auto i = 0u, n = mipCount_; i < n; ++i) {
+                cpuMipData[i].width = obj->mips(i).width();
+                cpuMipData[i].height = obj->mips(i).height();
+                cpuMipData[i].data = dst;
+                cpuMipData[i].size = (hUint32)obj->mips(i).data().size();
+                hMemCpy(dst, obj->mips(i).data().c_str(), obj->mips(i).data().size());
+                dst += obj->mips(i).data().size();
+            }
         }
-        cpuData.reset(new hByte[texture_data_size]);
-        cpuMipData.resize(mipCount_);
-        auto* dst = cpuData.get();
-        for (auto i = 0u, n = mipCount_; i < n; ++i) {
-            cpuMipData[i].width = obj->mips(i).width();
-            cpuMipData[i].height = obj->mips(i).height();
-            cpuMipData[i].data = dst;
-            cpuMipData[i].size = (hUint32)obj->mips(i).data().size();
-            hMemCpy(dst, obj->mips(i).data().c_str(), obj->mips(i).data().size());
-            dst += obj->mips(i).data().size();
-        }
-    }
-    if (!obj->has_dontusevram() || !obj->dontusevram()) {
-        hRenderer::hMipDesc* mips = (hRenderer::hMipDesc*)hAlloca(sizeof(hRenderer::hMipDesc)*mipCount_);
-        for (auto i = 0u, n = mipCount_; i < n; ++i) {
-            mips[i].width = obj->mips(i).width();
-            mips[i].height = obj->mips(i).height();
-            mips[i].data = (hByte*)obj->mips(i).data().c_str();
-            mips[i].size = (hUint32)obj->mips(i).data().size();
-        }
+        if (!obj->has_dontusevram() || !obj->dontusevram()) {
+            hRenderer::hMipDesc* mips = (hRenderer::hMipDesc*)hAlloca(sizeof(hRenderer::hMipDesc)*mipCount_);
+            for (auto i = 0u, n = mipCount_; i < n; ++i) {
+                mips[i].width = obj->mips(i).width();
+                mips[i].height = obj->mips(i).height();
+                mips[i].data = (hByte*)obj->mips(i).data().c_str();
+                mips[i].size = (hUint32)obj->mips(i).data().size();
+            }
 
-        texture2D_ = hRenderer::createTexture2D(mipCount_, mips, format_, 0);
+            texture2D_ = hRenderer::createTexture2D(mipCount_, mips, format_, 0);
+        }
     }
 }
 

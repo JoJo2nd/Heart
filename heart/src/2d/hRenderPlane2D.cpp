@@ -16,9 +16,10 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "render/hPipelineStateDesc.h"
 #include "render/hRenderShaderProgram.h"
 #include "render/hTextureResource.h"
-#include "shaders/hTileRenderer2DConstants.h"
+#include "2d/hTileRenderer2DConstants.h"
 #include "2d/hTileRenderer2D.h"
 #include "2d/hDynamicTileSet2D.h"
+#include "shaders/TilePlaneParameters.hpp"
 
 namespace Heart {
 hRegisterObjectType(hRenderPlane2D, Heart::hRenderPlane2D, Heart::proto::RenderPlane2D);
@@ -78,9 +79,7 @@ hBool hRenderPlane2D::linkObject() {
             gridVertexBufferSize *= g_RenderFenceCount;
         }
         gridVertexBuffer.reset(hRenderer::createVertexBuffer(nullptr, sizeof(hTileRenderer2D::Vert2D), gridVertexBufferSize, (hUint32)hRenderer::hVertexBufferFlags::DynamicBuffer));
-        hUint32 layout_count;
-        auto* layout = hTileRenderer2D::getTilePlaneParametersLayout(&layout_count);
-        planeUniformBuffer.reset(hRenderer::createUniformBuffer(nullptr, layout, layout_count, sizeof(hTileRenderer2D::TilePlaneParameters), g_RenderFenceCount, (hUint32)hRenderer::hUniformBufferFlags::Dynamic));
+        planeUniformBuffer.reset(hRenderer::createUniformBuffer(nullptr, TilePlaneParameters::getLayout(), TilePlaneParameters::getLayoutCount(), sizeof(TilePlaneParameters), (hUint32)hRenderer::hUniformBufferFlags::Dynamic));
 
         hRenderer::hPipelineStateDesc plsd;
         plsd.blend_.blendEnable_ = hFalse;

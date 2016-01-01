@@ -93,12 +93,22 @@ message MaterialParameter {
 	repeated float  floatValues = 3;
 	repeated sint32 intValues = 4;
 	repeated Colour colourValues = 5;
+	optional bool allowOverride = 6 [default = false];
+}
+
+message MaterialUniformBuffer {
+	optional string bindingPoint = 1;
+	optional string resource = 2;
+	optional bool embed = 3 [default = false];
+	optional bool allowOverride = 4 [default = false];
+	optional bool shared = 5 [default = false];
 }
 
 message MaterialResource {
 	repeated MaterialSampler samplers = 1;
 	repeated MaterialParameter parameters = 2;
 	repeated MaterialTechnique techniques = 3;
+	repeated MaterialUniformBuffer uniformBuffers = 9;
     optional int32 totalGroups = 4;
     optional int32 totalTechniques = 5;
     optional int32 totalPasses = 6;

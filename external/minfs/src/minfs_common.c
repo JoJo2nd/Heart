@@ -103,11 +103,11 @@ size_t minfs_path_leaf(const char* filepath, char* out_cwd, size_t buf_size) {
     char* lastmrk = NULL;
     size_t outsize;
     size_t len = strlen(filepath);
-    while (mrk = strchr(filepath, '\\')) { 
+    while (mrk = strrchr(filepath, '\\')) { 
         *mrk = '/';
         lastmrk = mrk;
     }
-    lastmrk = strchr(filepath, '/');
+    lastmrk = strrchr(filepath, '/');
     if (lastmrk == NULL && buf_size > len) {
         strncpy(out_cwd, filepath, buf_size);
         return len;

@@ -8,6 +8,7 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "2d/hRenderPlane2D.h"
 #include "2d/hSprite2D.h"
 #include "2d/hDynamicTileSet2D.h"
+#include "2d/hTileRenderer2DConstants.h"
 #include "core/hConfigOptions.h"
 #include "components/hEntity.h"
 #include "components/hEntityFactory.h"
@@ -17,8 +18,7 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "render/hRendererCamera.h"
 #include "render/hVertexBufferFlags.h"
 #include "utils/hFreelistAllocator.h"
-#include "shaders/hGlobalConstants.h"
-#include "shaders/hTileRenderer2DConstants.h"
+#include "shaders/ViewportConstants.hpp"
 
 namespace Heart {
 namespace hTileRenderer2D {
@@ -107,8 +107,8 @@ hBool initialise() {
     spriteVertexBufferSize = hConfigurationVariables::getCVarUint("renderer.spritevertexbuffersize", 1000);
     hUint32 layout_count;
     fences.resize(g_RenderFenceCount);
-    auto* layout = getViewportConstantsLayout(&layout_count);
-    viewUniformBuffer.reset(hRenderer::createUniformBuffer(nullptr, layout, layout_count, sizeof(ViewportConstants), g_RenderFenceCount, (hUint32)hRenderer::hUniformBufferFlags::Dynamic));
+    auto* layout = ViewportConstants::getLayout(&layout_count);
+    viewUniformBuffer.reset(hRenderer::createUniformBuffer(nullptr, layout, layout_count, sizeof(ViewportConstants), (hUint32)hRenderer::hUniformBufferFlags::Dynamic));
     spriteVertexBuffer.reset(hRenderer::createVertexBuffer(nullptr, sizeof(Vert2D), spriteVertexBufferSize, (hUint32)hRenderer::hVertexBufferFlags::DynamicBuffer));
     return hTrue;
 }
@@ -147,16 +147,20 @@ void updateDynamicRenderResources(hRenderer::hCmdList* cl) {
 void renderTilePlanes(hRenderer::hCmdList* cl) {
     //update the shared view constants buffer
     ViewportConstants* vp = (ViewportConstants*)hRenderer::getMappingPtr(viewUniformBuffer.get());
-    vp += currentFence;
-    vp->g_View = viewingCamera.getViewMatrix();
-    vp->g_Projection = hRenderer::getClipspaceMatrix()*viewingCamera.getProjectionMatrix();
-    vp->g_ViewProjection = vp->g_Projection*vp->g_View;
-    vp->g_ProjectionInverse = inverse(vp->g_Projection);
-    vp->g_ViewInverse = inverse(vp->g_View);
-    vp->g_ViewInverseTranspose = transpose(vp->g_ViewInverse);
-    vp->g_ViewProjectionInverse = inverse(vp->g_ViewProjection);
+    auto view = viewingCamera.getViewMatrix();
+    auto view_inverse = inverse(view);
+    auto proj = hRenderer::getClipspaceMatrix()*viewingCamera.getProjectionMatrix();
+    auto view_proj = proj*view;
+   
+    vp->view = viewingCamera.getViewMatrix();
+    vp->projection = proj;
+    vp->viewProjection = proj*view;
+    vp->projectionInverse = inverse(proj);
+    vp->viewInverse = view_inverse;
+    vp->viewInverseTranspose = transpose(view_inverse);
+    vp->viewProjectionInverse = inverse(view_proj);
 
-    hRenderer::flushUnibufferMemoryRange(cl, viewUniformBuffer.get(), currentFence*sizeof(ViewportConstants), sizeof(ViewportConstants));
+    hRenderer::flushUnibufferMemoryRange(cl, viewUniformBuffer.get(), 0, sizeof(ViewportConstants));
     auto* vertex_base = (Vert2D*)hRenderer::getMappingPtr(spriteVertexBuffer.get(), nullptr); //TODO: get right fence
 
     hUint prevRenderPlane = 0;

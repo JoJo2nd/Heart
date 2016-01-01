@@ -25,7 +25,8 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
-
+#include "google/protobuf/message_lite.h"
+/*
 #include "debug_server_common.pb.h"
 #include "package.pb.h"
 #include "resource_common.pb.h"
@@ -34,7 +35,7 @@
 #include "resource_material_fx.pb.h"
 #include "resource_mesh.pb.h"
 #include "resource_font.pb.h"
-
+*/
 #if defined (HEART_PLAT_WINDOWS)
 #   pragma warning(pop)
 #elif defined (HEART_PLAT_LINUX)

@@ -156,8 +156,8 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
     list(APPEND ${SRCS} "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.cc")
     list(APPEND ${HDRS} "${PROTO_IM_DIR}/${FIL_WE}.pb.diff.h")
 
-	set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
-	get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
+    set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
+    get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
 
     add_custom_command(
       OUTPUT "${PROTO_IM_DIR}/${FIL_WE}.pb.cc"
@@ -172,6 +172,39 @@ function(PROTOBUF_GENERATE_LITE_CPP_BINDINGS SRCS HDRS)
 
   set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
   set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+  set(${HDRS} ${${HDRS}} PARENT_SCOPE)
+endfunction()
+
+function(UNIFORM_BUFFER_GEN_SOURCE HDRS)
+  if(NOT ARGN)
+    message(SEND_ERROR "Error: UNIFORM_BUFFER_GEN_SOURCE() called without any json files")
+    return()
+  endif(NOT ARGN)
+  
+  set(UB_EXPORTER_EXECUTABLE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/ub_exporter")
+    
+  set(${HDRS})
+  set(PROTO_IM_DIR "${CMAKE_CURRENT_BINARY_DIR}/pb_lite")
+
+  foreach(FIL ${ARGN})
+    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+    get_filename_component(FIL_WE ${FIL} NAME_WE)
+    get_filename_component(ABS_ROOT ${ABS_FIL} DIRECTORY)
+
+    list(APPEND ${HDRS} "${ABS_ROOT}/${FIL_WE}.hpp")
+    list(APPEND ${HDRS} "${ABS_ROOT}/${FIL_WE}.hlsl.h")
+
+    set_source_files_properties(${ABS_FIL} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+    add_custom_command(
+      OUTPUT "${ABS_ROOT}/${FIL_WE}.hpp"
+             "${ABS_ROOT}/${FIL_WE}.hlsl.h"
+      COMMAND ${UB_EXPORTER_EXECUTABLE} ARGS -xh -o"${ABS_ROOT}" "${ABS_FIL}"
+      DEPENDS ${FIL}
+      COMMENT "Generating C++ & HLSL from unifrom buffer definition ${FIL_WE}")
+  endforeach()
+
+  set_source_files_properties(${${HDRS}} PROPERTIES GENERATED TRUE)
   set(${HDRS} ${${HDRS}} PARENT_SCOPE)
 endfunction()
 
@@ -369,8 +402,14 @@ set(PROTO_LUA_SRC_DIR
 set(MEMTRACKERLIB_SRC_DIR
     "${TOOLS_SRC_ROOT}/memtrackerlib/src"
 )
+set(RAPIDXML_INCLUDE_DIR
+    "${EXTERNAL_SRC_ROOT}/rapidxml-1.13/include"
+)
 set(RAPIDJSON_INCLUDE_DIR
     "${EXTERNAL_SRC_ROOT}/rapidjson/include"
+)
+set(LIB_UNIFORM_BUFFER_INCLUDE_DIR 
+  "${TOOLS_SRC_ROOT}/unibuf_exporter/src"
 )
 
 if (WIN32)
@@ -470,6 +509,7 @@ add_subdirectory("resourceloaders/meshloader")
 add_subdirectory("resourceloaders/fontloader")
 add_subdirectory("resourceloaders/levelloader")
 add_subdirectory("resourceloaders/renderpipelineloader")
+add_subdirectory("resourceloaders/uniformbufferloader")
 
 add_subdirectory("tools/lua")
 add_subdirectory("tools/lualibs/filesystem")
@@ -486,6 +526,7 @@ add_subdirectory("tools/memtrackerlib")
 add_subdirectory("tools/builder")
 add_subdirectory("tools/pbscan")
 add_subdirectory("tools/pkginspector")
+add_subdirectory("tools/unibuf_exporter")
 if (PLATFORM_WINDOWS)
   add_subdirectory("tools/profiler")
 endif()
