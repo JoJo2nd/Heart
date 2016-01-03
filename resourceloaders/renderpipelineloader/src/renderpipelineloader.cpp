@@ -142,12 +142,18 @@ int main(int argc, char* argv[]) {
         for (uint32_t stage_idx = 0, stage_n = pipeline["stages"].Size(); stage_idx<stage_n; ++stage_idx) {
             auto& stage = pipeline["stages"][stage_idx];
             auto* stage_pb = pipeline_pb.add_stages();
-            ensure_condition(stage.HasMember("name") && stage.HasMember("technique") && stage.HasMember("view"), "pipeline stage missing members 'name', 'resource' or 'inputs'");
+            ensure_condition(stage.HasMember("name") && stage.HasMember("techniques") && stage.HasMember("view"), "pipeline stage missing members 'name', 'resource' or 'inputs'");
             stage_pb->set_name(stage["name"].GetString());
             stage_pb->set_viewname(stage["view"].GetString());
-            stage_pb->set_technique(stage["technique"].GetString());
+            ensure_condition(stage["techniques"].IsArray(), "techniques is not an array");
+            ensure_condition(stage["techniques"].Size() <= 8, "Only up to 8 technqiues are supported");
+            for (uint32_t tech_idx = 0, tech_n = stage["techniques"].Size(); tech_idx<tech_n; ++tech_idx) {
+                const auto& tech = stage["techniques"][tech_idx];
+                stage_pb->add_techniques(tech.GetString());
+            }
             if (stage.HasMember("outputs"))
             {
+                ensure_condition(stage["outputs"].Size() <= 8, "Only up to 8 stage outputs are supported");
                 for (uint32_t output_idx = 0, output_n = stage["outputs"].Size(); output_idx<output_n; ++output_idx) {
                     const auto& outputs = stage["outputs"][output_idx];
                     stage_pb->add_outputs(outputs.GetString());

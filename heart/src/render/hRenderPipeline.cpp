@@ -20,7 +20,10 @@ hRenderingPipeline::hRenderingPipeline(Heart::proto::renderpipeline::Pipeline* o
         const proto::renderpipeline::PipelineStage& stage = obj->stages(i);
         pipelineStages[i].name.set(stage.name().c_str());
         pipelineStages[i].viewName.set(stage.viewname().c_str());
-        pipelineStages[i].technique.set(stage.technique().c_str());
+        pipelineStages[i].nTechniques = stage.techniques_size();
+        for (hUint tech_i=0, tech_n=stage.techniques_size(); tech_i<tech_n; ++tech_i) {
+            pipelineStages[i].techniques[tech_i].set(stage.techniques(tech_i).c_str());
+        }
         pipelineStages[i].nOutputs = stage.outputs_size();
         for (hUint output_i = 0, output_n = pipelineStages[i].nOutputs; output_i < output_n; ++output_i) {
             pipelineStages[i].outputs[output_i].outputResource.set(stage.outputs(output_i).c_str());

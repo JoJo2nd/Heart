@@ -22,9 +22,10 @@ class hRenderingPipeline {
     struct Stage {
         hStringID name;
         hStringID viewName;
-        hStringID technique;
         hUint nOutputs = 0;
+        hUint nTechniques = 0;
         StageOutput outputs[8];
+        hStringID techniques[8];
     };
 
     std::vector<Stage> pipelineStages;

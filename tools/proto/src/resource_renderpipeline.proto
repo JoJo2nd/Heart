@@ -40,7 +40,7 @@ message PipelineBinding {
 message PipelineStage {
     optional string name = 1 [default = "default"];
     optional string viewName = 2 [default = "camera"];
-    optional string technique = 3 [default = "main"];
+    repeated string techniques = 3;
     repeated string outputs = 4;
 }
 
