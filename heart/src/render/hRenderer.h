@@ -88,6 +88,8 @@ namespace hRenderer {
     *///*--> create & destroy RenderTarget
     HEART_MODULE_API(hRenderTarget*, createRenderTarget)(hTexture2D* target, hUint mip);
     HEART_MODULE_API(void, destroyRenderTarget)(hRenderTarget*);
+    HEART_MODULE_API(hRenderFence*, createFence)();
+    HEART_MODULE_API(void, destroyFence)(hRenderFence*);
     //*/
     HEART_MODULE_API(void*, allocTempRenderMemory)( hUint32 size );
     HEART_MODULE_API(hCmdList*, createCmdList)();
@@ -104,9 +106,10 @@ namespace hRenderer {
     HEART_MODULE_API(void, draw)(hCmdList* cl, hRenderState* rs, hRenderResourceBinding* binding, Primative t, hUint prims, hUint vtx_offset);
     */
     HEART_MODULE_API(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size);
+    HEART_MODULE_API(void, flushUnibufferMemoryRangeUserPtr)(hCmdList* cl, hUniformBuffer* ub, void* user_ptr, hUint offset, hUint size);
     HEART_MODULE_API(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size);
     HEART_MODULE_API(void, flushTexture2DMemoryRange)(hCmdList* cl, hTexture2D* ub, hUint mip_level, hUint offset, hUint size);
-    HEART_MODULE_API(hRenderFence*, fence)(hCmdList* cl);
+    HEART_MODULE_API(void, fence)(hCmdList* cl, hRenderFence* fence);
     HEART_MODULE_API(void, wait)(hRenderFence* fence);
     HEART_MODULE_API(void, flush)(hCmdList* cl);
     HEART_MODULE_API(void, finish)();

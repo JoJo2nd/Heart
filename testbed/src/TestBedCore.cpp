@@ -6,8 +6,11 @@
 #include "testbed_precompiled.h"
 #include "TestBedCore.h" 
 #include "memtracker.h"
+#include "render\hView.h"
 #include "render\hImGuiRenderer.h"
 #include <time.h>
+
+    static Heart::hStringID main_view("camera1");
 
 #define LUA_GET_TESTBED(L) \
     TestBedCore* testbed = (TestBedCore*)lua_topointer(L, lua_upvalueindex(1)); \
@@ -52,11 +55,11 @@
         factory_ = new UnitTestFactory(pEngine);
         engine_ = pEngine;
 
+        REGISTER_UNIT_TEST(*factory_, RenderTarget);
         REGISTER_UNIT_TEST(*factory_, ImGuiTestMenu);
         REGISTER_UNIT_TEST(*factory_, SingleTri);
         REGISTER_UNIT_TEST(*factory_, MovingTriCPU);
         REGISTER_UNIT_TEST(*factory_, MovingTri);
-        REGISTER_UNIT_TEST(*factory_, RenderTarget);
         REGISTER_UNIT_TEST(*factory_, TexturedCube);
 
         auto ts = factory_->getTestCount();
@@ -123,17 +126,18 @@
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     void TestBedCore::EngineRenderTick( hFloat delta, Heart::hHeartEngine* pEngine ) {
-        auto* cl = Heart::ImGuiCurrentCommandList();
+        using namespace Heart;
+        auto* cl = hRenderer::createCmdList();
         Heart::hRenderer::clear(cl, Heart::hColour(1.f, 0.f, 1.f, 1.f), 1.f);
         if (currentTest_ && currentTest_->GetCanRender()) {
             if (auto* tcl = currentTest_->RenderUnitTest()) {
                 Heart::hRenderer::call(cl, tcl);
             }
         }
-
+        hRenderer::hView* view = hRenderer::getView(main_view);
+        hRenderer::hDrawCallSet dcs = hRenderer::allocateDrawCallsForView(view, 1);
+        dcs.addCustomCall(0, cl);
         ImGui::Render();
-        Heart::hRenderer::swapBuffers(cl);
-        Heart::hRenderer::submitFrame(cl);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -53,14 +53,48 @@ void operator delete[](void* ptr) {
 #   define hD3D9_VERIFY(x) x
 #endif
 
+#define HEART_DEBUG_RENDER_CALLS 0
+#define HEART_DEBUG_RENDER_FENCES 0
+#define HEART_DEBUG_FRAME_MARKERS 0
+#define HEART_DEBUG_RENDER_SCRATCH_CLEARS 0
+
+#if HEART_DEBUG_INFO 
+#   if HEART_DEBUG_FRAME_MARKERS
+#       define LOG_MAIN_FLIP() hcPrintf("{%u} FLIP", mainFrameCounter)
+#       define LOG_RENDER_FLIP() hcPrintf("\t\t\t{%u} rFLIP", renderFrameCounter)
+#   else
+#       define LOG_MAIN_FLIP() 
+#       define LOG_RENDER_FLIP()
+#   endif
+#   if HEART_DEBUG_RENDER_CALLS
+#       define LOG_ALLOC_CMD(cmdptr, op, cl) hcPrintf("{%u} %p ALLOC %u [%p] Reserve[%u] - TID[%p]", mainFrameCounter, cl, (hUint)op, cmdptr, cmdsReserve, Heart::Device::GetCurrentThreadID())
+#       define LOG_EXEC(cmdptr, op, cl)  hcPrintf("\t\t\t{%u} %p EXEC %u [%p] - TID[%p]", renderFrameCounter, cl, (hUint)op, cmdptr, Heart::Device::GetCurrentThreadID())
+#   else
+#       define LOG_ALLOC_CMD(cmdptr, op, cl)
+#       define LOG_EXEC(cmdptr, op, cl)
+#   endif
+#   if HEART_DEBUG_RENDER_FENCES
+#       define LOG_FENCE_SUBMIT(f) hcPrintf("{%u} Fence Submit [%p]", mainFrameCounter, f)
+#       define LOG_FENCE_POST(f) hcPrintf("\t\t\t{%u} Fence Post [%p]", renderFrameCounter, f)
+#       define LOG_FENCE_WAIT(f) hcPrintf("{%u} Fence Wait [%p]", mainFrameCounter, f)
+#       define LOG_FENCE_RESUME(f) hcPrintf("{%u} Fence Resume [%p]", mainFrameCounter, f)
+#   else
+#       define LOG_FENCE_SUBMIT(f)
+#       define LOG_FENCE_POST(f)
+#       define LOG_FENCE_WAIT(f)
+#       define LOG_FENCE_RESUME(f)
+#   endif
+#endif
+
 namespace Heart {    
 namespace hRenderer {
 namespace d3d9 {
     hUint getD3DFormatPitch(hUint32, D3DFORMAT);
+    HEART_C_EXPORT hRenderFence* HEART_API createFence();
 }
 
     static const hUint  FRAME_COUNT = 3;
-    static const hUint  RMEM_COUNT = FRAME_COUNT+1;
+    static const hUint  RMEM_COUNT = FRAME_COUNT;
     static const hUint32 BC_PITCH = 0x80000000;
 
     hIConfigurationVariables* configVars;
@@ -76,13 +110,11 @@ namespace d3d9 {
     lfds_queue_state*   destructionQueue;
 
     hMutex              memAccess;
-    hUint               memIndex;
     hUint               renderScratchMemSize;
     hByte*              renderScratchMem[RMEM_COUNT];
     hSize_t             renderScratchAllocd[RMEM_COUNT];
 
     hRenderFence*        fences;
-    hUint                fenceIndex;
     hRenderFence*        frameFences[FRAME_COUNT];
     lfds_freelist_state* fenceFreeList;
 
@@ -91,11 +123,15 @@ namespace d3d9 {
     hMutex              rtMutex;
     void*               rtID;
 
+    hUint32             mainFrameCounter = 0;
+    hUint32             renderFrameCounter = 0;
+
     std::unordered_map<hUint32, hUint32> d3dFormatPitch;
 
     // !!JM TODO: Improve these (make lock-free?), they are placeholder
     void* rtmp_malloc(hSize_t size, hUint alignment=16) {
         hMutexAutoScope sentry(&memAccess);
+        auto memIndex = mainFrameCounter % RMEM_COUNT;
         renderScratchAllocd[memIndex] = hAlign(renderScratchAllocd[memIndex], alignment);
         void* r = renderScratchMem[memIndex] + renderScratchAllocd[memIndex];
         renderScratchAllocd[memIndex] += size;
@@ -104,9 +140,14 @@ namespace d3d9 {
     }
 
     void rtmp_frameend() {
-        hMutexAutoScope sentry(&memAccess);
-        renderScratchAllocd[memIndex] = 0;
-        memIndex = (memIndex+1)%RMEM_COUNT;
+//         hMutexAutoScope sentry(&memAccess);
+//         auto memIndex = (mainFrameCounter+1) % RMEM_COUNT;
+//         renderScratchAllocd[memIndex] = 0;
+// #if HEART_DEBUG_INFO
+//         hMemSet(renderScratchMem[memIndex], 0xAA, renderScratchMemSize);
+// #endif
+//         LOG_MAIN_FLIP();
+//         ++mainFrameCounter;
     }
 
     template<typename t_ty>
@@ -631,6 +672,8 @@ namespace d3d9 {
         ~hRenderFence() {
             sema.Destroy();
         }
+        void submit() {
+        }
         void post() {
             sema.Post();
         }
@@ -638,7 +681,7 @@ namespace d3d9 {
             sema.Wait();
         }
 
-        lfds_freelist_element* element;
+        lfds_freelist_element* element = nullptr;
         hSemaphore sema;
     };
 
@@ -646,16 +689,28 @@ namespace d3d9 {
         NoOp = 0,
         Jump,
         Call,
-        Return,
-        CustomCall,
         SetTargets,
         FlushUniformBuffer,
+
+        //CustomCalls - these are handled by lambdas for ease
+        CustomClear,
+        CustomSetViewport,
+        CustomScissorRect,
+        CustomSetTextureOverride,
+        CustomDraw,
+        CustomFlushVertexBuffer,
+        CustomFlushTexture2D,
+        CustomFence,
+        CustomSwapBuffers,
+        CustomEndFrame,
+
+        Invalid,
     };
 
-    static hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
+    static const hUint OpCodeSize = 8; // required for cmd alignment, 4 for opcode, 4 for next cmd offset
 
     struct hRndrOpJump {
-        void* next;
+        hByte* next;
     };
 
     struct hRndrOpCall {
@@ -676,6 +731,7 @@ namespace d3d9 {
 
     /*-- The following is intended as a quick and dirty start up for adding new render calls. */
     struct hRndrOpCustomCallBase {
+        virtual ~hRndrOpCustomCallBase() {}
         virtual hUint execute() = 0;
     };
 
@@ -692,7 +748,8 @@ namespace d3d9 {
     /*-- End quick and dirty start up for adding new render calls. */
 
     struct hCmdList {
-        static const hUint MinCmdBlockSize = 4 * 1024;
+        static const hUint MinCmdBlockSize = 4*1024;
+        static const hUint JumpOpSize = (sizeof(hRndrOpJump) + OpCodeSize);
         hCmdList() {
             prev = next = this;
             cmds = nullptr;
@@ -702,31 +759,40 @@ namespace d3d9 {
         }
 
         hByte* allocCmdMem(Op opcode, hUint s) {
+
             auto needed = s + OpCodeSize;
 
-            if ((cmdsReserve - cmdsSize) < needed) {
-                hByte* memnext = (hByte*)rtmp_malloc(MinCmdBlockSize);
+            if (needed >= cmdsReserve) {
+                hUint to_alloc = hMax(MinCmdBlockSize, needed + JumpOpSize);
+                hByte* memnext = (hByte*)rtmp_malloc(to_alloc);
+#if HEART_DEBUG_INFO
+                hMemSet(memnext, 0xAA, to_alloc);
+#endif
                 if (nextcmd != nullptr) {
                     // need to write a jump
-                    auto j = nextcmd + cmdsSize;
-                    cmdsSize += sizeof(hRndrOpJump) + OpCodeSize;
+                    auto j = nextcmd;
                     *((Op*)j) = Op::Jump;
-                    *((hUint32*)(j+4)) = 0;
+                    *((hUint32*)(j+4)) = sizeof(hRndrOpJump);
                     ((hRndrOpJump*)(j + OpCodeSize))->next = memnext;
+                    LOG_ALLOC_CMD(j + OpCodeSize, Op::Jump, this);
+                    cmdsSize += JumpOpSize;
                 }
                 nextcmd = memnext;
                 // note remaining space but leave enough for another jump cmd
-                cmdsReserve += MinCmdBlockSize - (sizeof(hRndrOpJump) + OpCodeSize);
+                cmdsReserve = to_alloc - JumpOpSize;
                 if (!cmds) {
                     cmds = nextcmd;
                 }
             }
 
             hByte* r = nextcmd;
-            cmdsSize += needed; nextcmd += needed;
+            cmdsSize += needed;
+            nextcmd += needed;
+            cmdsReserve -= needed;
 
             *((Op*)r) = opcode;
             *((hUint32*)(r+4)) = s;
+            LOG_ALLOC_CMD(r + OpCodeSize, opcode, this);
             return (r + OpCodeSize);
         }
 
@@ -787,7 +853,7 @@ namespace d3d9 {
 
     template < typename t_ty >
     static void enqueueRenderResourceDelete(t_ty fn) {
-        auto* r = new hRenderDestruct<t_ty>(fn);
+        auto* r = new (rtmp_malloc(sizeof(hRenderDestruct<t_ty>))) hRenderDestruct<t_ty>(fn);
         lfds_queue_use(destructionQueue);
         while (lfds_queue_enqueue(destructionQueue, r) == 0) {
             Device::ThreadYield();
@@ -904,10 +970,8 @@ namespace d3d9 {
 
         rtComsSignal.signal();
 
-        int frame = 0;
         for (;;) {
             renderDoFrame();
-            ++frame;
         }
 
         return 0;
@@ -933,16 +997,19 @@ namespace d3d9 {
     		return 1;
     	}, fences);
     	
-    	fenceIndex = 0;
     	for (auto& i:frameFences) {
-    		i = nullptr;
+    		i = nullptr;//d3d9::createFence();
     	}
         
         lfds_queue_new(&cmdListQueue, cmd_queue_size);
         lfds_queue_new(&destructionQueue, destruction_queue_size);
         
+        for (auto& allocd : renderScratchAllocd) {
+            allocd = 0;
+        }
         for (auto& mem : renderScratchMem) {
             mem = (hByte*)hMalloc(renderScratchMemSize);
+            hMemSet(mem, 0xAA, renderScratchMemSize);
         }
 
         SDL_SysWMinfo info;
@@ -1526,6 +1593,24 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
+    hRenderFence* HEART_API createFence() {
+        lfds_freelist_element* e;
+        hRenderFence* f;
+        lfds_freelist_use(fenceFreeList);
+        lfds_freelist_pop(fenceFreeList, &e);
+        hcAssertMsg(e, "Ran out of fences. This is fatal.");
+        lfds_freelist_get_user_data_from_element(e, (void**)&f);
+		f->element = e;
+        return f;
+    }
+
+    HEART_C_EXPORT
+    void HEART_API destroyFence(hRenderFence* fence) {
+        hAtomic::LWMemoryBarrier();
+        lfds_freelist_push(fenceFreeList, fence->element);
+    }
+
+    HEART_C_EXPORT
     void* HEART_API allocTempRenderMemory( hUint32 size ) {
         return nullptr;
     }
@@ -1537,18 +1622,20 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API linkCmdLists(hCmdList* before, hCmdList* after, hCmdList* i) {
-        i->next = before->next;
-        i->prev = after->prev;
-        before->next = i;
-        after->prev = i;
+        hcAssertFailMsg("Deprecated");
+//         i->next = before->next;
+//         i->prev = after->prev;
+//         before->next = i;
+//         after->prev = i;
     }
 
     HEART_C_EXPORT
     void HEART_API detachCmdLists(hCmdList* i) {
-        i->next->prev = i->prev;
-        i->prev->next = i->next;
-        i->next = i;
-        i->prev = i;
+        hcAssertFailMsg("Deprecated");
+//         i->next->prev = i->prev;
+//         i->prev->next = i->next;
+//         i->next = i;
+//         i->prev = i;
     }
 
     HEART_C_EXPORT
@@ -1558,7 +1645,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API clear(hCmdList* cl, hColour colour, hFloat depth) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomClear, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             hD3D9_VERIFY(d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 
                 D3DCOLOR_ARGB((hInt)(colour.a_*255.f+.5f), (hInt)(colour.r_*255.f+.5f), (hInt)(colour.g_*255.f+.5f), (hInt)(colour.b_*255.f+.5f)),
@@ -1569,7 +1656,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API setViewport(hCmdList* cl, hUint x, hUint y, hUint width, hUint height, hFloat minz, hFloat maxz) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomSetViewport, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             D3DVIEWPORT9 vp;
             vp.X = x; vp.Y = y;
@@ -1599,7 +1686,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API scissorRect(hCmdList* cl, hUint left, hUint top, hUint right, hUint bottom) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomScissorRect, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             RECT r;
             r.left = left; r.top = top;
@@ -1613,7 +1700,7 @@ namespace d3d9 {
     void HEART_API setTextureOverride(hCmdList* cl, hInputState* is, hUint32 slot, hTexture2D* tex) {
         hcAssert(slot < is->overrideCount);
         hcAssert(is->overrides[slot].overrideType == hInputState::InputOverride::Tex2D);
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomSetTextureOverride, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
             hcAssert(isRenderThread());
             auto** dst = (hTexture2D**)((hUint8*)is + is->overrides[slot].offset);
             *dst = tex;
@@ -1624,7 +1711,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API draw(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomDraw, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             // Bind any unbound objects
             if (!pls->isBound()) pls->bind(d3dDevice);
@@ -1675,19 +1762,24 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
-    void HEART_API flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
-        hRndrOpFlushUniformBuffer* cmd = new (cl->allocCmdMem(Op::FlushUniformBuffer, sizeof(hRndrOpFlushUniformBuffer)+size)) hRndrOpFlushUniformBuffer();
+    void HEART_API flushUnibufferMemoryRangeUserPtr(hCmdList* cl, hUniformBuffer* ub, void* user_ptr, hUint offset, hUint size) {
+        hRndrOpFlushUniformBuffer* cmd = new (cl->allocCmdMem(Op::FlushUniformBuffer, sizeof(hRndrOpFlushUniformBuffer) + size)) hRndrOpFlushUniformBuffer;
         cmd->buffer = ub;
         cmd->offset = offset;
         cmd->size = size;
-        cmd->updateData = (hByte*)(cmd+1);
-        hMemCpy(cmd->updateData, ub->getOtherThreadBase(), size);
+        cmd->updateData = (hByte*)(cmd + 1);
+        hMemCpy(cmd->updateData, user_ptr, size);
+    }
+
+    HEART_C_EXPORT
+    void HEART_API flushUnibufferMemoryRange(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) {
+        flushUnibufferMemoryRangeUserPtr(cl, ub, ub->getOtherThreadBase(), offset, size);
     }
 
     HEART_C_EXPORT
     void HEART_API flushVertexBufferMemoryRange(hCmdList* cl, hVertexBuffer* vb, hUint offset, hUint size) {
         hcAssert(offset + size <= vb->elementCount*vb->elementSize);
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomFlushVertexBuffer, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             hcAssert(isRenderThread());
             if (!vb->isBound()) vb->bind(d3dDevice);
             void* ptr;
@@ -1697,12 +1789,11 @@ namespace d3d9 {
             vb->vertexBuffer->Unlock();
             return 0;
         });
-        
     }
 
     HEART_C_EXPORT
     void HEART_API flushTexture2DMemoryRange(hCmdList* cl, hTexture2D* t, hUint mip_level, hUint offset, hUint size) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomFlushTexture2D, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>([=]() {
             if (!t->isBound()) t->bind(d3dDevice);
             hUint lvl = 0;
             hUint32 h = t->baseHeight;
@@ -1732,35 +1823,30 @@ namespace d3d9 {
     }
 
     HEART_C_EXPORT
-    hRenderFence* HEART_API fence(hCmdList* cl) {
-        lfds_freelist_element* e;
-        hRenderFence* f;
-        lfds_freelist_use(fenceFreeList);
-        lfds_freelist_pop(fenceFreeList, &e);
-        hcAssertMsg(e, "Ran out of fences. This is fatal.");
-        lfds_freelist_get_user_data_from_element(e, (void**)&f);
-        f->element = e;
-
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
-            f->post();
+    void HEART_API fence(hCmdList* cl, hRenderFence* fence) {
+        fence->submit();
+        LOG_FENCE_SUBMIT(fence);
+        auto* cmd = new (cl->allocCmdMem(Op::CustomFence, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+            LOG_FENCE_POST(fence);
+            fence->post();
             return 0;
         });
-        return f;
     }
 
     HEART_C_EXPORT
     void HEART_API wait(hRenderFence* fence) {
+        LOG_FENCE_WAIT(fence);
         fence->wait();
-        hAtomic::LWMemoryBarrier();
-        lfds_freelist_push(fenceFreeList, fence->element);
+        LOG_FENCE_RESUME(fence);
     }
 
     HEART_C_EXPORT
     void HEART_API flush(hCmdList* cl) {
-        lfds_queue_use(cmdListQueue);
-        while (lfds_queue_enqueue(cmdListQueue, cl) == 0) {
-            Device::ThreadYield();
-        }
+//         lfds_queue_use(cmdListQueue);
+//         while (lfds_queue_enqueue(cmdListQueue, cl) == 0) {
+//             Device::ThreadYield();
+//         }
+        hcAssertFailMsg("not supported");
     }
 
     HEART_C_EXPORT
@@ -1770,19 +1856,18 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API endReturn(hCmdList* cl) {
-        cl->allocCmdMem(Op::Return, 0);
+        //cl->allocCmdMem(Op::Return, 0);
     }
 
     HEART_C_EXPORT
     void HEART_API call(hCmdList* cl, hCmdList* tocall) {
         auto* cmd = (hRndrOpCall*)cl->allocCmdMem(Op::Call, sizeof(hRndrOpCall));
         cmd->jumpTo=tocall;
-        d3d9::endReturn(tocall);
     }
 
     HEART_C_EXPORT
     void HEART_API swapBuffers(hCmdList* cl) {
-        auto* cmd = new (cl->allocCmdMem(Op::CustomCall, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
+        auto* cmd = new (cl->allocCmdMem(Op::CustomSwapBuffers, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
             d3dDevice->EndScene();
             d3dDevice->Present(nullptr, nullptr, 0, nullptr);
             return 0;
@@ -1793,64 +1878,96 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API submitFrame(hCmdList* cl) {
-        auto writeindex = fenceIndex;
-        // wait for prev frame to finish
-        if (frameFences[fenceIndex]) {
-            d3d9::wait(frameFences[fenceIndex]);
-            frameFences[fenceIndex] = nullptr;
+        auto fenceIndex = mainFrameCounter % FRAME_COUNT;
+        auto renderMemIndex = mainFrameCounter % RMEM_COUNT;
+        auto* cmd_ptr = cl->allocCmdMem(Op::CustomEndFrame, sizeof(hRndrOpCustomCall<std::function<hUint()>>));
+        auto* cmd = new (cmd_ptr) hRndrOpCustomCall<std::function<hUint()>>([=]() {
+            hcCondPrintf(HEART_DEBUG_RENDER_SCRATCH_CLEARS, "Clearing render scratch mem %d", renderMemIndex);
+            renderScratchAllocd[renderMemIndex] = 0;
+#if HEART_DEBUG_INFO
+            *renderScratchMem[renderMemIndex] = (hByte)0xAA;
+#endif
+            return 0;
+        });
+
+        if (!frameFences[fenceIndex]) {
+            frameFences[fenceIndex] = d3d9::createFence();
         }
+        d3d9::fence(cl, frameFences[fenceIndex]);
 
-        hCmdList* ncl=cl->prev;
-
-        hcAssert(frameFences[fenceIndex] == nullptr);
-        frameFences[fenceIndex] = d3d9::fence(ncl);
-        fenceIndex = (fenceIndex+1)%FRAME_COUNT;
-
-        ncl->allocCmdMem(Op::Return, 0);
-        flush(ncl);
+        //flush(cl);
+        lfds_queue_use(cmdListQueue);
+        while (lfds_queue_enqueue(cmdListQueue, cl) == 0) {
+            Device::ThreadYield();
+        }
         rtmp_frameend();
-        //!!JM - Multithread this call
+        LOG_MAIN_FLIP();
+        ++mainFrameCounter;
+
+        // wait for next frame to finish
+        auto nextFenceIndex = (mainFrameCounter) % FRAME_COUNT;
+        auto nextRenderMemIndex = (mainFrameCounter) % RMEM_COUNT;
+        if (frameFences[nextFenceIndex]) {
+            hcCondPrintf(HEART_DEBUG_RENDER_SCRATCH_CLEARS, "Waiting on clearing render scratch mem %d", nextRenderMemIndex);
+            d3d9::wait(frameFences[nextFenceIndex]);
+            hcCondPrintf(HEART_DEBUG_RENDER_SCRATCH_CLEARS, "Enabling render scratch mem %d", nextRenderMemIndex);
+        }
+        hcAssert(renderScratchAllocd[nextRenderMemIndex] == 0);
+#if HEART_DEBUG_INFO
+        hcAssert(*renderScratchMem[nextRenderMemIndex] == (hByte)0xAA);
+        hMemSet(renderScratchMem[nextRenderMemIndex], 0xAA, renderScratchMemSize);
+#endif
+
         if (!multiThreadedRenderer) {
             renderDoFrame();
         }
     }
 
 
-    void doRenderCmds(hByte* cmds) {
-        hByte* cmdptr = cmds;
-        hByte* pcstack = nullptr;
-        hBool end_of_cmds = hFalse;
+    void doRenderCmds(hCmdList* cmds) {
+        static const hUint MaxStackDepth = 4;
+        struct RndrCmds {
+            hByte* cmd_ptr;
+            hUint32 cmd_bytes;
+            hCmdList* cmd_list; 
+        } pcstack_top[MaxStackDepth] = { nullptr };
+        RndrCmds* pcstack_base = pcstack_top + (MaxStackDepth - 1);
+        RndrCmds* pcstack = pcstack_top+(MaxStackDepth-1);
+        pcstack->cmd_list = cmds;
+        pcstack->cmd_ptr = cmds->cmds;
+        pcstack->cmd_bytes = cmds->cmdsSize;
         hcAssert(isRenderThread());
         d3dDevice->BeginScene();
-        while (!end_of_cmds) {
-            Op opcode = *((hRenderer::Op*)cmdptr);
-            hUint32 cmdsize = *((hUint32*)(cmdptr + 4));
-            cmdptr += OpCodeSize;
-            hByte* nextcmdptr = cmdptr + cmdsize;
-            /*
-            NoOp = 0,
-            Jump,
-            Call,
-            Return,
-            CustomCall,
-            */
+        while (1) {
+            while (pcstack->cmd_bytes == 0) {
+                if (pcstack == pcstack_base)
+                    goto no_more_render_commands;
+#if HEART_DEBUG_INFO
+                pcstack->cmd_list = nullptr;
+                pcstack->cmd_ptr = nullptr;
+#endif
+                ++pcstack;
+            }
+            hcAssertMsg(pcstack->cmd_bytes, "In render command loop with no commands to process");
+            Op opcode = *((hRenderer::Op*)pcstack->cmd_ptr);
+            hUint32 cmdsize = *((hUint32*)(pcstack->cmd_ptr + 4));
+            pcstack->cmd_ptr += OpCodeSize;
+            hByte* cmdptr = pcstack->cmd_ptr;
+            pcstack->cmd_bytes -= cmdsize + OpCodeSize;
+            pcstack->cmd_ptr += cmdsize ;
+            hcAssertMsg(*((hRenderer::Op*)pcstack->cmd_ptr) < Op::Invalid || pcstack->cmd_bytes == 0 || opcode == Op::Jump, "Next Render Op is broken. Possibly current command is corrupt or broken.");
+     
+            LOG_EXEC(cmdptr, opcode, pcstack->cmd_list);
             switch (opcode) {
             default: hcAssertFailMsg("Unknown/Unhandled Render Op Code:%d", opcode); break;
             case Op::NoOp: break;
             case Op::Call: {
                 hRndrOpCall* c = (hRndrOpCall*)cmdptr;
-                hcAssertMsg(!pcstack, "Call stack is only 1-level deep");
-                pcstack = nextcmdptr;
-                nextcmdptr = c->jumpTo->cmds;
-            } break;
-            case Op::Return: {
-                if (pcstack) {
-                    nextcmdptr = pcstack;
-                    pcstack = nullptr;
-                } else {
-                    end_of_cmds = true;
-                    nextcmdptr = nullptr;
-                }
+                hcAssertMsg(pcstack > pcstack_top, "Call stack overflow");
+                --pcstack;
+                pcstack->cmd_list = c->jumpTo;
+                pcstack->cmd_ptr = pcstack->cmd_list->cmds;
+                pcstack->cmd_bytes = pcstack->cmd_list->cmdsSize;
             } break;
             case Op::SetTargets: {
                 hRndrOpSetTargets* rt_cmd = (hRndrOpSetTargets*)cmdptr;
@@ -1864,58 +1981,65 @@ namespace d3d9 {
                 hRndrOpFlushUniformBuffer* fub_cmd = (hRndrOpFlushUniformBuffer*)cmdptr;
                 hMemCpy(fub_cmd->buffer->getRenderThreadBase()+fub_cmd->offset, fub_cmd->updateData, fub_cmd->size);
             } break;
-            case Op::CustomCall: {
+            case Op::CustomClear:
+            case Op::CustomSetViewport:
+            case Op::CustomScissorRect:
+            case Op::CustomSetTextureOverride:
+            case Op::CustomDraw:
+            case Op::CustomFlushVertexBuffer:
+            case Op::CustomFlushTexture2D:
+            case Op::CustomFence:
+            case Op::CustomSwapBuffers:
+            case Op::CustomEndFrame:
+             {
                 hRndrOpCustomCallBase* c = (hRndrOpCustomCallBase*)cmdptr;
                 c->execute();
+                //c->~hRndrOpCustomCallBase();
+            } break;
+            case Op::Jump: {
+                pcstack->cmd_ptr = ((hRndrOpJump*)cmdptr)->next;
             } break;
             }
-            cmdptr = nextcmdptr;
         }
-        
-        rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
-        // do pending deletes
-        for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
-            n = i->next;
-            delete i;
-        }
-        pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
+   
+no_more_render_commands:
+        hcAssert(pcstack_base->cmd_bytes == 0);
     }
 
     void renderDoFrame() {
-        hCmdList* cmds = nullptr, *fcmds = nullptr, *ncmds = nullptr;
-        while (1) {
-            while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
-                hRenderDestructBase::linkLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
-            }
-            
-            if (!cmds) {
-                lfds_queue_use(cmdListQueue);
-                lfds_queue_dequeue(cmdListQueue, (void**)&ncmds);
-                if (ncmds) {
-                    fcmds = cmds = ncmds;
-                } else {
-                    Device::ThreadYield();
-                }
-            }
-
-            if (!cmds && !multiThreadedRenderer) {
-                break;
-            } else if (cmds) {
-                doRenderCmds(cmds->cmds);
-
-                cmds = cmds->next;
-                if (cmds == fcmds) {
-                    cmds = fcmds = nullptr;
-                }
-            }
+        hCmdList* cmds = nullptr;
+        while (hRenderDestructBase* pd = dequeueRenderResourceDelete()) {
+            hRenderDestructBase::linkLists(&pendingDeletes[rtFrameIdx], pendingDeletes[rtFrameIdx].next, pd);
         }
+
+        while (!cmds) {
+            lfds_queue_use(cmdListQueue);
+            lfds_queue_dequeue(cmdListQueue, (void**)&cmds);
+            if (cmds) break;
+            Device::ThreadYield();
+        }
+
+        doRenderCmds(cmds);
+
+        //rtFrameIdx = (rtFrameIdx + 1) % FRAME_COUNT;
+        //// do pending deletes
+        //for (hRenderDestructBase* i = pendingDeletes[rtFrameIdx].next, *n; i != &pendingDeletes[rtFrameIdx]; i = n) {
+        //    n = i->next;
+        //    delete i;
+        //}
+        //pendingDeletes[rtFrameIdx].next = pendingDeletes[rtFrameIdx].prev = &pendingDeletes[rtFrameIdx];
+
+        LOG_RENDER_FLIP();
+        ++renderFrameCounter;
     }
     /*
         Methods to be called between beginCmdList & endCmdList
     */
 
     HEART_C_EXPORT
-    void HEART_API rendererFrameSubmit(hCmdList* cmdlists, hUint count) {}
+    void HEART_API rendererFrameSubmit(hCmdList* cmdlists, hUint count) {
+        hcAssertFailMsg("Deprecated");
+    }
     HEART_C_EXPORT
     hFloat HEART_API getLastGPUTime() { return 0.f; }
     HEART_C_EXPORT

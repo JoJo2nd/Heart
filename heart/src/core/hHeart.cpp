@@ -10,13 +10,17 @@
 #include "render/hMaterial.h"
 #include "render/hUniformBufferResource.h"
 #include "render/hRenderPipeline.h"
+#include "render/hView.h"
 #include "memtracker.h"
+
+#define HEART_PRINT_FRAME_START_END 0
 
 namespace Heart {
     hChar           hHeartEngine::HEART_VERSION_STRING[] = "HeartEngine v0.4";
     const hFloat    hHeartEngine::HEART_VERSION = 0.4f;
     hUint g_RenderFenceCount = 3;
 
+    static hStringID g_DefaultFrameTaskGraph("default_frame_graph");
     static hStringID sync_task_id("heart::SYNC");
     static hStringID clock_update_task_id("heart::clock::update");
     static hStringID debug_server_service_task_id("heart::debug_server::service");
@@ -214,41 +218,55 @@ namespace Heart {
         hTaskFactory::registerTask(update_debug_menus_task_id, [&](hTaskInfo*) {
             hDebugMenuManager::SubmitMenus(actionManager_);
         });
+        hRenderer::registerViewTasks();
+
+        hTaskFactory::registerNamedTaskGraph(g_DefaultFrameTaskGraph);
     }
 
     void hHeartEngine::createFrameTaskGraph() {
         hBool resourcesReady = hResourceManager::systemResourcesReady();
-        mainFrameTaskGraph.clear();
-        auto clock_update_task = mainFrameTaskGraph.addTask(clock_update_task_id);
-        auto db_server_service = mainFrameTaskGraph.addTask(debug_server_service_task_id);
-        auto res_update = mainFrameTaskGraph.addTask(resource_mgr_update_task_id);
-        auto action_update = mainFrameTaskGraph.addTask(action_mgr_update_task_id);
-        auto sync1 = mainFrameTaskGraph.addTask(sync_task_id);
-        auto vm_update = mainFrameTaskGraph.addTask(lua_vm_update_task_id);
-        auto sync2 = mainFrameTaskGraph.addTask(sync_task_id);
-        auto publisher_context = mainFrameTaskGraph.addTask(evt_publiser_update_task_id);
-        auto sync3 = mainFrameTaskGraph.addTask(sync_task_id);
-        auto action_eof = mainFrameTaskGraph.addTask(action_mgr_end_frame_task_id);
+        mainFrameTaskGraph = hTaskFactory::getNamedTaskGraph(g_DefaultFrameTaskGraph);
+        mainFrameTaskGraph->clear();
+        submitFrameTaskHandle.reset();
+        hTaskFactory::setActiveTaskGraph(g_DefaultFrameTaskGraph);
+        auto clock_update_task = mainFrameTaskGraph->addTask(clock_update_task_id);
+        auto db_server_service = mainFrameTaskGraph->addTask(debug_server_service_task_id);
+        auto res_update = mainFrameTaskGraph->addTask(resource_mgr_update_task_id);
+        auto action_update = mainFrameTaskGraph->addTask(action_mgr_update_task_id);
+        auto sync1 = mainFrameTaskGraph->addTask(sync_task_id);
+        auto vm_update = mainFrameTaskGraph->addTask(lua_vm_update_task_id);
+        auto sync2 = mainFrameTaskGraph->addTask(sync_task_id);
+        auto publisher_context = mainFrameTaskGraph->addTask(evt_publiser_update_task_id);
+        auto sync3 = mainFrameTaskGraph->addTask(sync_task_id);
+        auto action_eof = mainFrameTaskGraph->addTask(action_mgr_end_frame_task_id);
 
-        mainFrameTaskGraph.createTaskDependency(clock_update_task, db_server_service);
-        mainFrameTaskGraph.createTaskDependency(clock_update_task, action_update);
-        mainFrameTaskGraph.createTaskDependency(clock_update_task, res_update);
-        mainFrameTaskGraph.createTaskDependency(res_update, sync1);
-        mainFrameTaskGraph.createTaskDependency(sync1, vm_update);
-        mainFrameTaskGraph.createTaskDependency(vm_update, sync2);
-        mainFrameTaskGraph.createTaskDependency(sync2, publisher_context);
-        mainFrameTaskGraph.createTaskDependency(publisher_context, sync3);
-        mainFrameTaskGraph.createTaskDependency(sync3, action_eof);
+        mainFrameTaskGraph->createTaskDependency(clock_update_task, db_server_service);
+        mainFrameTaskGraph->createTaskDependency(clock_update_task, action_update);
+        mainFrameTaskGraph->createTaskDependency(clock_update_task, res_update);
+        mainFrameTaskGraph->createTaskDependency(res_update, sync1);
+        mainFrameTaskGraph->createTaskDependency(sync1, vm_update);
+        mainFrameTaskGraph->createTaskDependency(vm_update, sync2);
+        mainFrameTaskGraph->createTaskDependency(sync2, publisher_context);
+        mainFrameTaskGraph->createTaskDependency(publisher_context, sync3);
+        mainFrameTaskGraph->createTaskDependency(sync3, action_eof);
 
         if (resourcesReady) {
-            auto main_update_task = mainFrameTaskGraph.addTask(main_frame_update_task_id);
-            auto main_render_task = mainFrameTaskGraph.addTask(main_frame_render_task_id);
-            auto debug_menu_update = mainFrameTaskGraph.addTask(update_debug_menus_task_id);
-            mainFrameTaskGraph.createTaskDependency(sync1, main_update_task);
-            mainFrameTaskGraph.createTaskDependency(main_update_task, publisher_context);
-            mainFrameTaskGraph.createTaskDependency(main_update_task, debug_menu_update);
-            mainFrameTaskGraph.createTaskDependency(debug_menu_update, sync3);
-            mainFrameTaskGraph.createTaskDependency(sync3, main_render_task);
+            auto main_update_task = mainFrameTaskGraph->addTask(main_frame_update_task_id);
+            auto main_render_task = mainFrameTaskGraph->addTask(main_frame_render_task_id);
+            auto debug_menu_update = mainFrameTaskGraph->addTask(update_debug_menus_task_id);
+            auto initialise_views_for_frame = mainFrameTaskGraph->addTask(hRenderer::initialise_views_for_frame_task);
+            auto sort_views_for_frame = mainFrameTaskGraph->addTask(hRenderer::sort_views_for_frame_task);
+            auto submit_views = mainFrameTaskGraph->addTask(hRenderer::submit_views_task);
+            submitFrameTaskHandle = mainFrameTaskGraph->addTask(hRenderer::submit_frame_task);
+            mainFrameTaskGraph->createTaskDependency(sync1, main_update_task);
+            mainFrameTaskGraph->createTaskDependency(main_update_task, publisher_context);
+            mainFrameTaskGraph->createTaskDependency(main_update_task, debug_menu_update);
+            mainFrameTaskGraph->createTaskDependency(debug_menu_update, sync3);
+            mainFrameTaskGraph->createTaskDependency(sync3, initialise_views_for_frame);
+            mainFrameTaskGraph->createTaskDependency(initialise_views_for_frame, main_render_task);
+            mainFrameTaskGraph->createTaskDependency(main_render_task, sort_views_for_frame);
+            mainFrameTaskGraph->createTaskDependency(sort_views_for_frame, submit_views);
+            mainFrameTaskGraph->createTaskDependency(submit_views, submitFrameTaskHandle);
         }
     }
 
@@ -257,15 +275,25 @@ namespace Heart {
     //////////////////////////////////////////////////////////////////////////
 
     void hHeartEngine::DoUpdate() {
+        hcCondPrintf(HEART_PRINT_FRAME_START_END, "Frame Begin");
 #ifdef HEART_DO_PROFILE
         g_ProfilerManager_->BeginFrame();
 #endif
         hTimer frameTimer;
         frameTimer.reset();
         system_->Update();
-        mainFrameTaskGraph.kick();
-        mainFrameTaskGraph.wait();
-
+        mainFrameTaskGraph = hTaskFactory::getActiveTaskGraph();
+        hRenderer::hCmdList* main_cl = nullptr;
+        if (submitFrameTaskHandle.isValid()) {
+            main_cl = hRenderer::createCmdList();
+            mainFrameTaskGraph->clearTaskInputs(submitFrameTaskHandle);
+            mainFrameTaskGraph->addTaskInput(submitFrameTaskHandle, main_cl);
+        }
+        mainFrameTaskGraph->kick();
+        mainFrameTaskGraph->wait();
+        if (main_cl) {
+            hRenderer::submitFrame(main_cl);
+        }
         if (GetSystem()->exitSignaled()) {
             /*if (!shutdownUpdate_ || shutdownUpdate_(this))*/ {
                 //wait on game to say ok to shutdown
@@ -280,6 +308,7 @@ namespace Heart {
         g_ProfilerManager_->SetFrameTime(frameTimer.elapsedMicroSec()/1000.f);
 #endif
         //debugMenuManager_->EndFrameUpdate(); !!JM
+        hcCondPrintf(HEART_PRINT_FRAME_START_END, "Frame End");
     }
 
 hHeartEngine::~hHeartEngine() {
@@ -359,11 +388,17 @@ hHeartEngine::~hHeartEngine() {
         framecount=0;
     }
 
+    Heart::hStringID hHeartEngine::GetDefaultFrameTaskGraphName() {
+        return g_DefaultFrameTaskGraph;
+    }
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
 
     void hHeartEngine::PostCoreResourceLoad() {
+        auto* pipeline = hResourceManager::weakResource<hRenderingPipeline>(hStringID("/system/test_render_pipeline"));
+        hRenderer::reinitialiseViews(*pipeline);
         ImGuiInit();
         hTileRenderer2D::initialiseResources();
 #if HEART_DEBUG

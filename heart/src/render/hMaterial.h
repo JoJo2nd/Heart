@@ -25,6 +25,7 @@ class hMaterial {
 
     struct Technique {
         hStringID technqiueName;
+        hUint32 techniqueFlag;
         std::vector<Pass> passes;
     };
 
@@ -55,5 +56,14 @@ public:
     hStringID getOverrideTextureName(hUint i) const { return overrideTextureNames[i]; }
     const hRenderer::hPipelineStateDesc& getTechniquePassPipelineStateDesc(hUint t, hUint p) const { return techinques[t].passes[p].pipelineStateDesc; }
     const hRenderer::hInputStateDesc& getTechniquePassInputStateDesc(hUint t, hUint p) const { return techinques[t].passes[p].inputStateDsec; }
+    hUint getTechniquesByFlags(hUint32 technique_flags, hUint* tech_idx_array, hUint tech_idx_array_size) {
+        hUint tech_count = 0;
+        for (hSize_t i = 0, n = techinques.size(); i<n; ++i) {
+            if (techinques[i].techniqueFlag & technique_flags && tech_count < tech_idx_array_size) {
+                tech_idx_array[tech_count++] = (hUint)i;
+            }
+        }
+        return tech_count;
+    }
 };
 }

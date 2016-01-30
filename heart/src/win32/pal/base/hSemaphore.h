@@ -13,6 +13,7 @@ namespace Heart
     public:
         bool Create( hUint32 initCount, hUint32 maxCount ) {
             hSema_ = CreateSemaphore( NULL, initCount, maxCount, NULL );
+            hcAssert(hSema_ != INVALID_HANDLE_VALUE);
             return hSema_ != INVALID_HANDLE_VALUE;
         }
         void Wait() {
@@ -23,7 +24,8 @@ namespace Heart
             return ret == WAIT_OBJECT_0 ? hTrue : hFalse;
         }
         void Post() {
-            ReleaseSemaphore( hSema_, 1, NULL );
+            auto r = ReleaseSemaphore( hSema_, 1, NULL );
+            hcAssert(r);
         }
         void Destroy() {
             CloseHandle( hSema_ );

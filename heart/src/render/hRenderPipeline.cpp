@@ -19,7 +19,14 @@ hRenderingPipeline::hRenderingPipeline(Heart::proto::renderpipeline::Pipeline* o
     for (hUint i=0, n=obj->stages_size(); i<n; ++i) {
         const proto::renderpipeline::PipelineStage& stage = obj->stages(i);
         pipelineStages[i].name.set(stage.name().c_str());
+        pipelineStages[i].clearColour = stage.clearcolour();
+        pipelineStages[i].clearDepth = stage.cleardepth();
+        pipelineStages[i].clearStencil = stage.clearstencil();
+        pipelineStages[i].colorValue = hColour(stage.clearcolourvalue().red(), stage.clearcolourvalue().green(), stage.clearcolourvalue().blue(), stage.clearcolourvalue().alpha());
+        pipelineStages[i].depthValue = stage.cleardepthvalue();
+        pipelineStages[i].stencilValue = (hUint8)(stage.clearstencilvalue() & 0xFF);
         pipelineStages[i].viewName.set(stage.viewname().c_str());
+        pipelineStages[i].maxDrawCalls = stage.maxdrawcalls();
         pipelineStages[i].nTechniques = stage.techniques_size();
         for (hUint tech_i=0, tech_n=stage.techniques_size(); tech_i<tech_n; ++tech_i) {
             pipelineStages[i].techniques[tech_i].set(stage.techniques(tech_i).c_str());

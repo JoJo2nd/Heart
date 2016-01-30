@@ -151,8 +151,7 @@ int main(int argc, char* argv[]) {
                 const auto& tech = stage["techniques"][tech_idx];
                 stage_pb->add_techniques(tech.GetString());
             }
-            if (stage.HasMember("outputs"))
-            {
+            if (stage.HasMember("outputs")) {
                 ensure_condition(stage["outputs"].Size() <= 8, "Only up to 8 stage outputs are supported");
                 for (uint32_t output_idx = 0, output_n = stage["outputs"].Size(); output_idx<output_n; ++output_idx) {
                     const auto& outputs = stage["outputs"][output_idx];
@@ -160,7 +159,27 @@ int main(int argc, char* argv[]) {
                     resource_output.add_resourcedependency(outputs.GetString());
                 }
             }
-
+            if (stage.HasMember("clearcolour")) {
+                ensure_condition(stage["clearcolour"].IsArray(), "'clearcolour' is not an array");
+                float c_vals[4] = {0.f};
+                for (uint32_t colour_i = 0, colour_n=stage["clearcolour"].Size(); colour_i<colour_n && colour_i < 4; ++colour_i) {
+                    c_vals[colour_i] = (float)stage["clearcolour"][colour_i].GetDouble();
+                }
+                stage_pb->set_clearcolour(true);
+                auto* c_pb = stage_pb->mutable_clearcolourvalue();
+                c_pb->set_red(c_vals[0]);
+                c_pb->set_green(c_vals[1]);
+                c_pb->set_blue(c_vals[2]);
+                c_pb->set_alpha(c_vals[3]);
+            }
+            if (stage.HasMember("cleardepth")) {
+                ensure_condition(stage["cleardepth"].IsDouble(), "'cleardepth' is not a real number");
+                stage_pb->set_cleardepth(true);
+                stage_pb->set_cleardepthvalue((float)stage["cleardepth"].GetDouble());
+            }
+            if (stage.HasMember("maxdrawcalls")) {
+                stage_pb->set_maxdrawcalls(stage["maxdrawcalls"].GetUint());
+            }
         }
         resource_output.mutable_pkgdata()->set_type_name(pipeline_pb.GetTypeName());
         resource_output.mutable_pkgdata()->set_messagedata(pipeline_pb.SerializeAsString());

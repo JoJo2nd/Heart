@@ -142,6 +142,7 @@ namespace Heart
         const hChar*        GetWorkingDir() { return workingDir_.GetBuffer(); }
         void                DoEngineTick();
         hHeartState         GetState() { return engineState_; }
+        static hStringID    GetDefaultFrameTaskGraphName();
 
     private:
 
@@ -171,7 +172,8 @@ namespace Heart
         hActionManager*                 actionManager_;
         hSystemConsole*                 console_;
         hLuaStateManager*               luaVM_;
-        hTaskGraph                      mainFrameTaskGraph;
+        hTaskGraph*                     mainFrameTaskGraph;
+        hTaskHandle                     submitFrameTaskHandle;
 
         //Debug 
         hNetHost*                       debugServer_;

@@ -170,8 +170,9 @@ void renderTilePlanes(hRenderer::hCmdList* cl) {
     }
 
     // Once done, create a fence
-    fences[currentFence] = hRenderer::fence(cl);
     currentFence = (currentFence+1)%fences.size();
+    if (!fences[currentFence]) fences[currentFence] = hRenderer::createFence();
+    hRenderer::fence(cl, fences[currentFence]);
 }
 
 hRenderer::hUniformBuffer* getSharedUniformBuffer() {

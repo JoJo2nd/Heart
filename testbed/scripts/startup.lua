@@ -1,210 +1,3 @@
--- require "util"
-
--- function rendererResize(width, height)
---     print("Lua resize call ", width, "x", height)
---     heart.resizeGlobalTexture("back_buffer", width, height);
---     heart.resizeGlobalTexture("depth_buffer", width, height);
---     heart.resizeGlobalTexture("z_pre_pass", width, height);
---     heart.resizeGlobalTexture("gbuffer_albedo", width, height);
---     heart.resizeGlobalTexture("gbuffer_normal", width, height);
---     heart.resizeGlobalTexture("gbuffer_spec", width, height);
---     heart.resizeGlobalTexture("blur_target", width, height);
---     heart.resizeGlobalTexture("blur_rw_texture", width, height);
--- end
-
--- function registerGlobalTextures()
---     local rndrWidth,rndrHeight=heart.getWindowWidthHeight()
-
---     heart.registerGlobalTexture {
---         name="back_buffer",
---         aliases={
---             "back_buffer",
---             "g_back_buffer",
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="rgba8_srgb_unorm",
---         rendertarget=true,
---     }
---     heart.registerGlobalTexture {
---         name="gbuffer_albedo",
---         aliases={
---             "gbuffer_albedo",
---             "galbedo"
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="rgba16_float",
---         rendertarget=true,
---     }
---     heart.registerGlobalTexture {
---         name="gbuffer_normal",
---         aliases={
---             "gbuffer_normal",
---             "gnormal"
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="rg16_float",
---         rendertarget=true,
---     }
---     heart.registerGlobalTexture {
---         name="gbuffer_spec",
---         aliases={
---             "gbuffer_spec",
---             "gspec"
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="rgba16_float",
---         rendertarget=true,
---     }
---     heart.registerGlobalTexture {
---         name="depth_buffer",
---         aliases = {
---             "depth_buffer",
---             "g_depth_buffer",
---             "z_buffer",
---             "g_z_buffer",
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="r32_typeless",
---         depth=true,
---     }
---     heart.registerGlobalTexture {
---         name="z_pre_pass",
---         aliases = {
---             "g_zPrePass",
---             "g_zprepass",
---             "ZPrePass",
---             "zprepass",
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="r32_typeless",
---         depth=true,
---     }
---     heart.registerGlobalTexture {
---         name="blur_target",
---         aliases={
---             "blur_target",
---             "g_blur_target",
---         },
---         width=rndrWidth,
---         height=rndrHeight,
---         format="rgba16_float",
---         rendertarget=true,
---     }
---     heart.registerGlobalTexture {
---         name="blur_rw_texture",
---         aliases={
---             "blur_rw_texture",
---         },
---         width=rndrWidth,
---         height=rndrWidth,
---         format="r32_uint",
---         uav=true,
---     }
---     heart.registerWindowResizeCallback(rendererResize)
--- end
-
--- registerGlobalTextures()
-
--- -- can be written like
--- -- camera_block = { ... }
--- -- heart.registerParameterBlock(camera_block)
--- -- camera_block = nil
--- -- or
--- -- local camera_block = { ... }
--- -- heart.registerParameterBlock(camera_block)
-
--- heart.registerRenderTechnique("zprepass")
--- heart.registerRenderTechnique("postzmain")
--- heart.registerRenderTechnique("main")
--- heart.registerRenderTechnique("lighting")
-
--- -- heart.registerParameterBlock {
---     -- name="FrameConstants",
---     -- aliases={
---         -- "FrameConstants"
---     -- },
---     -- parameters={
---         -- {
---             -- name="g_time",
---             -- size=4,
---         -- },
---         -- {
---             -- name="g_fracTime",
---             -- size=4,
---         -- },
---     -- },
--- -- }
-
--- heart.registerParameterBlock {
---     name = "CameraConstants", -- Name the game uses to find/set this block
---     aliases = { -- List of names that this file links too in shaders
---         "ViewportConstants",
---         "camera_constants",
---         "CameraConstants",
---     },
---     parameters = { -- Parameters in this block are assumed to be in the same order in the shaders
---         {
---             name = "g_View", -- var name in const block
---             size = 64, -- size of var in bytes
---             initial = 0, -- what to set the data too, if only one entire var is set to this
---         },
---         { 
---             name = "g_ViewInverse",
---             size = 64,
---             initial = { -- what to set the data too, can use list
---                 1, 0, 0, 0,
---                 0, 1, 0, 0,
---                 0, 0, 1, 0,
---                 0, 0, 0, 1,
---             },
---         },
---         {
---             name = "g_ViewInverseTranspose",
---             size = 64,
---             -- no initial member leaves the data uninitialised
---         },
---         {
---             name = "g_Projection",
---             size = 64,
---         },
---         {
---             name = "g_ProjectionInverse",
---             size = 64,
---         },
---         {
---             name = "g_ViewProjection",
---             size = 64,
---         },
---         { 
---             name = "g_ViewProjectionInverse",
---             size = 64,
---         },
---         { 
---             name = "g_viewportSize",
---             size = 16,
---         },
---     },
--- }
-
--- heart.registerParameterBlock {
---     name="InstanceConstants",
---     aliases={
---         "InstanceConstants",
---     },
---     parameters={
---         {
---             name="g_World",
---             size=64,
---         },
---     },
--- }
-
 -- Input mappings
 -- Keyboard
 input.set_default_action_mapping("F4", "Show/Hide Console")
@@ -237,3 +30,31 @@ tasks = {
     sync = t_graph:add_task_to_graph("heart::SYNC"),
 }
 t_graph:add_task_order_to_graph(tasks.clock_update, tasks.resource_update, tasks.sync)
+
+t_graph = create_task_graph("RenderTargetTestGraph")
+tasks = {
+    clock_update = t_graph:add_task_to_graph("heart::clock::update"),
+    debug_server_service = t_graph:add_task_to_graph("heart::debug_server::service"),
+    res_update = t_graph:add_task_to_graph("heart::resource_manager::update"),
+    action_update = t_graph:add_task_to_graph("heart::action_manager::update"),
+    sync1 = t_graph:add_task_to_graph("heart::SYNC"),
+    vm_update = t_graph:add_task_to_graph("heart::lua_vm::update"),
+    sync2 = t_graph:add_task_to_graph("hearat::SYNC"),
+    publisher_context = t_graph:add_task_to_graph("heart::event_publisher::update"),
+    sync3 = t_graph:add_task_to_graph("heart::SYNC"),
+    action_eof = t_graph:add_task_to_graph("heart::action_manager::end_of_frame_update"),
+    main_update = t_graph:add_task_to_graph("heart::main_frame_update"),
+    main_render = t_graph:add_task_to_graph("heart::main_render_update"),
+    debug_menus = t_graph:add_task_to_graph("heart::debug_menus::update"),
+    views_init = t_graph:add_task_to_graph("heart::views::begin"),
+    views_sort = t_graph:add_task_to_graph("heart::views::sort"),
+    views_submit = t_graph:add_task_to_graph("heart::views::submit"),
+}
+t_graph:add_dependency_to_graph(tasks.clock_update, tasks.debug_server_service, tasks.res_update, tasks.action_update, tasks.views_init)
+t_graph:add_dependency_to_graph(tasks.views_init, tasks.main_update)
+t_graph:add_dependency_to_graph(tasks.sync1, tasks.main_update)
+t_graph:add_dependency_to_graph(tasks.main_update, tasks.publisher_context, tasks.debug_menus)
+t_graph:add_dependency_to_graph(tasks.debug_menus, tasks.sync3)
+t_graph:add_dependency_to_graph(tasks.sync3, tasks.main_render)
+t_graph:add_task_order_to_graph(tasks.res_update, tasks.sync1, tasks.vm_update, tasks.sync2, tasks.publisher_context, tasks.sync3, tasks.action_eof)
+t_graph:add_task_order_to_graph(tasks.main_render, tasks.views_sort, tasks.views_submit)

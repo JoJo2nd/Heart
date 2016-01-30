@@ -16,13 +16,14 @@
 #include "render/hImGuiRenderer.h"
 #include "render/hMaterial.h"
 #include "render/hUniformBufferResource.h"
+#include "render/hView.h"
 #include "input/hActionManager.h"
 #include "imgui.h"
 
 #include "shaders/ImguiConstants.hpp"
 
 namespace Heart {
-namespace {
+namespace HEART_ANONYMOUS_NAMESPACE {
 struct ImGuiCtx {
     static hUint VERTEX_BUFFER_SIZE; // From ImGui Samples
     static hUint FENCE_COUNT;
@@ -40,6 +41,7 @@ struct ImGuiCtx {
 hUint ImGuiCtx::VERTEX_BUFFER_SIZE; // From ImGui Samples
 hUint ImGuiCtx::FENCE_COUNT;
 
+static const hStringID DebugViewName("debug2D");
 
 static const hStringID UISelectActionName("UI Select");
 static const hStringID UIXAxisActionName("UI X Axis");
@@ -49,10 +51,16 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
     auto& imguiCtx = g_imguiCtx; // So the debugger can see it
     hcAssert(imguiCtx.lastCmdList); // Called ImGuiNewFrame
     auto* gfx_cmd_list = imguiCtx.lastCmdList;//hRenderer::createCmdList();
+    auto* view = hRenderer::getView(DebugViewName);
+    hUint technique;
+    if (!imguiCtx.material->getTechniquesByFlags(hRenderer::getViewTechniqueFlags(view), &technique, 1)) 
+        return;
+
+    hRenderer::hDrawCallSet drawcall_set = allocateDrawCallsForView(view, 1);
+    auto* gfx_cmd_list_2 = hRenderer::createCmdList();
 
     if (imguiCtx.fences[imguiCtx.currentFence]) {
         hRenderer::wait(imguiCtx.fences[imguiCtx.currentFence]);
-        imguiCtx.fences[imguiCtx.currentFence] = nullptr;
     }
     auto* vtx_start = (ImDrawVert*)hRenderer::getMappingPtr(imguiCtx.vb, nullptr);
     vtx_start += (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence);
@@ -64,17 +72,20 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
         vtx_dst += cmd_list->vtx_buffer.size();
     }
     auto vtx_bytes = (hPtrdiff_t)vtx_dst-(hPtrdiff_t)vtx_start;
-    hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
+    //hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
+    hRenderer::flushVertexBufferMemoryRange(gfx_cmd_list_2, imguiCtx.vb, (ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence)*sizeof(ImDrawVert), (hUint32)vtx_bytes);
 
     auto ubsize = (hUint)sizeof(ImguiConstants);
     auto* ubptr = (hByte*)hRenderer::getMappingPtr(imguiCtx.ub);
-    auto* ubdata = (ImguiConstants*) (ubptr);
+    ImguiConstants dat;
+    auto* ubdata = (ImguiConstants*) (&dat);
     const float L = 0.0f;
     const float R = ImGui::GetIO().DisplaySize.x;
     const float B = ImGui::GetIO().DisplaySize.y;
     const float T = 0.0f;
     ubdata->projection = hRenderer::getClipspaceMatrix()*hMatrix::orthographic(L, R, B, T, 0.f, 1.f);
-    hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, 0, ubsize);
+    //hRenderer::flushUnibufferMemoryRange(gfx_cmd_list, imguiCtx.ub, 0, ubsize);
+    hRenderer::flushUnibufferMemoryRangeUserPtr(gfx_cmd_list_2, imguiCtx.ub, ubdata, 0, ubsize);
 
     // Render command lists
     int vtx_offset = ImGuiCtx::VERTEX_BUFFER_SIZE*imguiCtx.currentFence;
@@ -92,26 +103,33 @@ void ImGuiRenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count) {
             {
                 //hRenderer::overrideSampler(slot, sampler);
                 //hRenderer::overrideTexture(slot, texture);
-                hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.y));
-                hRenderer::draw(gfx_cmd_list, imguiCtx.pls, imguiCtx.is, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
+                //hRenderer::scissorRect(gfx_cmd_list, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.y));
+                //hRenderer::draw(gfx_cmd_list, imguiCtx.pls, imguiCtx.is, hRenderer::Primative::Triangles, pcmd->vtx_count/3, vtx_offset);
+                hRenderer::scissorRect(gfx_cmd_list_2, (hUint)pcmd->clip_rect.x, (hUint)(pcmd->clip_rect.w), (hUint)pcmd->clip_rect.z, (hUint)(pcmd->clip_rect.y));
+                hRenderer::draw(gfx_cmd_list_2, imguiCtx.pls, imguiCtx.is, hRenderer::Primative::Triangles, pcmd->vtx_count / 3, vtx_offset);
             }
             vtx_offset += pcmd->vtx_count;
         }
     }
-    hRenderer::scissorRect(gfx_cmd_list, 0, 0, (hUint)ImGui::GetIO().DisplaySize.x, (hUint)ImGui::GetIO().DisplaySize.y);
+    //hRenderer::scissorRect(gfx_cmd_list, 0, 0, (hUint)ImGui::GetIO().DisplaySize.x, (hUint)ImGui::GetIO().DisplaySize.y);
+    hRenderer::scissorRect(gfx_cmd_list_2, 0, 0, (hUint)ImGui::GetIO().DisplaySize.x, (hUint)ImGui::GetIO().DisplaySize.y);
+    drawcall_set.addCustomCall(0, gfx_cmd_list_2);
     //update the fence
-    imguiCtx.fences[imguiCtx.currentFence] = hRenderer::fence(gfx_cmd_list);
+    //imguiCtx.fences[imguiCtx.currentFence] = hRenderer::fence(gfx_cmd_list);
     imguiCtx.currentFence = (imguiCtx.currentFence + 1) % ImGuiCtx::FENCE_COUNT;
+    if (!imguiCtx.fences[imguiCtx.currentFence]) imguiCtx.fences[imguiCtx.currentFence] = hRenderer::createFence();
+    hRenderer::fence(gfx_cmd_list_2, imguiCtx.fences[imguiCtx.currentFence]);
 
     imguiCtx.lastCmdList = nullptr;
 }
 }
+HEART_USE_ANONYMOUS_NAMESPACE;
 
 hBool ImGuiInit() {
     auto& imguiCtx = g_imguiCtx; // So the debugger can see it
     ImGuiCtx::VERTEX_BUFFER_SIZE = hConfigurationVariables::getCVarUint("imgui.vertex_buffer_size", 30000);
     ImGuiCtx::FENCE_COUNT = g_RenderFenceCount;
-    g_imguiCtx.fences.resize(ImGuiCtx::FENCE_COUNT);
+    g_imguiCtx.fences.resize(ImGuiCtx::FENCE_COUNT, nullptr);
     auto* io = &ImGui::GetIO();
     io->MemAllocFn = [](size_t x) {
         return hMalloc(x);

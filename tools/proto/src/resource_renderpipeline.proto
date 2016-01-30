@@ -1,3 +1,4 @@
+import "resource_common.proto";
 
 package Heart.proto.renderpipeline;
 
@@ -42,6 +43,13 @@ message PipelineStage {
     optional string viewName = 2 [default = "camera"];
     repeated string techniques = 3;
     repeated string outputs = 4;
+	optional uint32 maxDrawCalls = 5 [default = 4000];
+	optional bool clearColour = 6 [default = false];
+	optional bool clearDepth = 7 [default = false];
+	optional bool clearStencil = 8 [default = false];
+	optional Colour clearColourValue = 9;
+	optional float clearDepthValue = 10 [default = 1];
+	optional uint32 clearStencilValue = 11 [default = 0];
 }
 
 message Pipeline {

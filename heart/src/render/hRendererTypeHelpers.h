@@ -46,6 +46,7 @@ HEART_MODULE_API(void, destroyUniformBuffer)(hUniformBuffer* ub);
 HEART_MODULE_API(void, destroyRenderPipelineState)(hPipelineState* pls);
 HEART_MODULE_API(void, destroyRenderInputState)(hInputState* is);
 HEART_MODULE_API(void, destroyRenderTarget)(hRenderTarget*);
+HEART_MODULE_API(void, destroyFence)(hRenderFence*);
 
 struct hIndexBufferDeleter { // deleter
     void operator()(hIndexBuffer* p) const {
@@ -95,6 +96,12 @@ struct hRenderTargetDeleter { // deleter
     };
 };
 
+struct hRenderFenceDeleter { // deleter
+    void operator()(hRenderFence* p) const {
+        destroyFence(p);
+    };
+};
+
 typedef std::unique_ptr<hIndexBuffer, hIndexBufferDeleter> hIndexBufferUniquePtr;
 typedef std::unique_ptr<hVertexBuffer, hVertexBufferDeleter> hVertexBufferUniquePtr;
 typedef std::unique_ptr<hUniformBuffer, hUniformBufferDeleter> hUniformBufferUniquePtr;
@@ -102,6 +109,7 @@ typedef std::unique_ptr<hPipelineState, hPipelineStateDeleter> hPipelineStateUni
 typedef std::unique_ptr<hInputState, hInputStateDeleter> hInputStateUniquePtr;
 typedef std::unique_ptr<hTexture2D, hTexture2DDeleter> hTexture2DUniquePtr;
 typedef std::unique_ptr<hRenderTarget, hRenderTargetDeleter> hRenderTargetUniquePtr;
+typedef std::unique_ptr<hRenderFence, hRenderFenceDeleter> hRenderFenceUniquePtr;
 
 }
 }

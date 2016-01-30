@@ -63,7 +63,9 @@ namespace hAtomic {
     }
 
     HEART_EXPORT hUint32 HEART_API CompareAndSwap( hAtomicInt& val, hUint32 compare, hUint32 newVal ) {
-        return val.compare_exchange_strong(compare, newVal) ? compare : newVal;
+        long l_compare = (long)compare;
+        long l_new_val = newVal;
+        return val.compare_exchange_strong(l_compare, l_new_val) ? compare : newVal;
     }
 
     HEART_EXPORT void HEART_API LWMemoryBarrier() {
@@ -75,7 +77,8 @@ namespace hAtomic {
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicSet( hAtomicInt& i, hUint32 val ) {
-        return i.store(val);
+        i.store(val);
+        return val;
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicGet(const hAtomicInt& i) {
@@ -83,7 +86,7 @@ namespace hAtomic {
     }
 
     HEART_EXPORT hUint32 HEART_API AtomicAdd(hAtomicInt& i, hUint32 amount) {
-        return i.fetch_add(amount);
+        return i.fetch_add(amount)+amount;
     }
 #else 
     #error ("Unknown platform")

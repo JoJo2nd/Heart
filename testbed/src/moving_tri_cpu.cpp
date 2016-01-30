@@ -133,8 +133,9 @@ public:
         hRenderer::flushVertexBufferMemoryRange(cl, vb, (21*sizeof(hFloat)*currentFence), 21*sizeof(hFloat));
 
         hRenderer::draw(cl, rc, nullptr, hRenderer::Primative::Triangles, 1, 3*currentFence);
-        fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
+        if (!fences[currentFence]) fences[currentFence] = hRenderer::createFence();
+        hRenderer::fence(cl, fences[currentFence]);
         return cl;
         //hRenderer::swapBuffers(cl);
         //hRenderer::submitFrame(cl);

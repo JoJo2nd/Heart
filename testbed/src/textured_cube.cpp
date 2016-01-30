@@ -272,7 +272,6 @@ public:
         auto* cl = hRenderer::createCmdList();
         if (fences[currentFence]) {
             hRenderer::wait(fences[currentFence]);
-            fences[currentFence] = nullptr;
         }
 
         hMatrix v = hMatrix::lookAt((hPoint3)camPos, camPos+hPoint3(0.f, 0.f, -1.f), hVec3(0.f, 1.f, 0.f));
@@ -307,8 +306,9 @@ public:
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         hRenderer::setTextureOverride(cl, mat_is.get(), 0, testTextures[currentTex].t);
         hRenderer::draw(cl, mat_pls.get(), mat_is.get(), hRenderer::Primative::Triangles, 12, 0);
-        fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
+        if (!fences[currentFence]) fences[currentFence] = hRenderer::createFence();
+        hRenderer::fence(cl, fences[currentFence]);
         return cl;
     }
 };

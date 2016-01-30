@@ -31,8 +31,13 @@
 
 #if HEART_DEBUG_INFO
 #   define HEART_DO_ASSERTS (1)
+// Because VS 2015 can't find debug symbols under anonymous namespaces
+#   define HEART_ANONYMOUS_NAMESPACE anon_ns
+#   define HEART_USE_ANONYMOUS_NAMESPACE using namespace anon_ns
 #else
 #   define HEART_DO_ASSERTS (0)
+#   define HEART_ANONYMOUS_NAMESPACE
+#   define HEART_USE_ANONYMOUS_NAMESPACE
 #endif
 
 #define HEART_MIN_ALLOC_ALIGNMENT (16)

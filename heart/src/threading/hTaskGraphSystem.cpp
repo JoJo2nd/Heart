@@ -6,6 +6,7 @@
 #include "threading/hTaskGraphSystem.h"
 #include "base/hStringUtil.h"
 #include "base/hMutexAutoScope.h"
+#include "base/hThread.h"
 #include "lfds/lfds.h"
 extern "C" {
 #   include "lua.h"
@@ -14,6 +15,13 @@ extern "C" {
 }
 #include <algorithm>
 #include <unordered_map>
+
+
+#if HEART_DEBUG_INFO
+#   define HEART_DEBUG_TASK_ORDER 0
+#else
+#   define HEART_DEBUG_TASK_ORDER 0
+#endif
 
 namespace Heart {
 namespace hTaskScheduler {
@@ -31,11 +39,9 @@ namespace hTaskScheduler {
         return owner->internalNotifyWaitingJob(*this);
     }
 
-    Heart::hTaskHandle hTaskGraph::addTask(std::function<void(hTaskInfo*)> proc) {
+    Heart::hTaskHandle hTaskGraph::addTask(hStringID name, const std::function<void(hTaskInfo*)>& proc) {
         hcAssert(!isRunning());
-        hTask new_task;
-        new_task.work = proc;
-        tasks.emplace_back(std::move(new_task));
+        tasks.emplace_back(this, name, proc);
         hTaskHandle handle;
         handle.owner = this;
         handle.firstTaskIndex = (hUint32)tasks.size()-1;
@@ -44,10 +50,22 @@ namespace hTaskScheduler {
     }
 
     void hTaskGraph::addTaskInput(hTaskHandle handle, void* in_taskinput) {
-        hcAssert(!isRunning());
         hcAssertMsg(handle.owner == this && handle.firstTaskIndex < tasks.size(), "Task does not belong to this task graph");
         tasks[handle.firstTaskIndex].taskInputs.push_back(in_taskinput);
         hAtomic::LWMemoryBarrier();
+    }
+
+    Heart::hTaskHandle hTaskGraph::findTaskByName(hStringID task_name) {
+        hTaskHandle handle;
+        handle.owner = this;
+        for (hSize_t i=0, n=tasks.size(); i<n; ++i) {
+            if (tasks[i].taskName == task_name) {
+                handle.firstTaskIndex = (hUint)i;
+                handle.lastTaskIndex = (hUint)i;
+                break;
+            }
+        }
+        return handle;
     }
 
     void hTaskGraph::clearTaskInputs(hTaskHandle handle) {
@@ -72,6 +90,7 @@ namespace hTaskScheduler {
             i.completed = &jobsWaiting;
             hAtomic::AtomicSet(i.currentWaitingTaskCount, i.initialWaitingTaskCount);
             hAtomic::AtomicSet(i.started, 0);
+            hAtomic::AtomicSet(i.finished, 0);
             if (i.initialWaitingTaskCount == 0)
                 hAtomic::AtomicSet(i.toSend, hMax((hInt32)i.taskInputs.size(), 1));
             else// As this task waits on others, set this value to something that'll ensure it's never sent to a worker. Allows for
@@ -169,18 +188,25 @@ namespace hTaskScheduler {
                 auto task_index = hAtomic::Increment(task->started);
                 hcAssert(task_index <= hAtomic::AtomicGet(task->toSend));
                 hTaskInfo info;
+                info.owningGraph = task->owner;
                 info.taskInput = task->taskInputs.empty() ? nullptr : task->taskInputs[task_index-1];
+                hcCondPrintf(HEART_DEBUG_TASK_ORDER, "Starting task %s on Thread %p", task->taskName.c_str(), Heart::Device::GetCurrentThreadID());
                 task->work(&info);
-
-                if (task_index == hAtomic::AtomicGet(task->toSend)) { // Was this the last task of this type that needed to be run.
+                hcCondPrintf(HEART_DEBUG_TASK_ORDER, "Ending task %s on Thread %p", task->taskName.c_str(), Heart::Device::GetCurrentThreadID());
+                bool wakeScheduler = false; 
+                auto complete_index = hAtomic::Increment(task->finished);
+                if (complete_index == hAtomic::AtomicGet(task->toSend)) { // Was this the last task of this type that needed to be run.
+                    hcCondPrintf(HEART_DEBUG_TASK_ORDER, "Waking dependent tasks for %s on Thread %p", task->taskName.c_str(), Heart::Device::GetCurrentThreadID());
                     for (auto& i : task->dependentTasks) {
                         if (i.postWaitingCompleted() == 0) {
-                            schedulerSemphore.Post();
+                            wakeScheduler = true;
                         }
                     }
                     if (hAtomic::Decrement(*task->completed) == 0)
-                        schedulerSemphore.Post();
+                        wakeScheduler = true;
                 }
+                if (wakeScheduler)
+                    schedulerSemphore.Post();
             }
         }
         return 0;
@@ -192,7 +218,7 @@ namespace hTaskScheduler {
         workerInputQueues.resize(1);
         workerThreads.resize(processor_count);
         workerSemphore.Create(0, processor_count);
-        schedulerSemphore.Create(0, 1);
+        schedulerSemphore.Create(0, 128);
         schedulerKillSemphore.Create(0, 1);
         hAtomic::AtomicSet(taskToComplete, 0);
         lfds_queue_new(&graphInputQueue, job_queue_size);
@@ -220,13 +246,14 @@ namespace hTaskFactory {
 
     std::unordered_map<hStringID, hTaskProc> taskRegistry;
     std::unordered_map<hStringID, std::unique_ptr<hTaskGraph>> taskGraphRegistry;
+    hTaskGraph* activeTaskGraph = nullptr;
 
     void registerTask(hStringID task_name, const hTaskProc& task) {
         auto& e = taskRegistry[task_name];
         e = task;
     }
 
-    Heart::hTaskProc getTask(hStringID task_name) {
+    const Heart::hTaskProc& getTask(hStringID task_name) {
         return taskRegistry[task_name];
     }
 
@@ -237,6 +264,16 @@ namespace hTaskFactory {
     hTaskGraph* getNamedTaskGraph(hStringID task_graph_name) {
         const auto& r = taskGraphRegistry[task_graph_name];
         return r.get();
+    }
+
+    void setActiveTaskGraph(hStringID task_graph_name) {
+        if (auto* new_graph = getNamedTaskGraph(task_graph_name)) {
+            activeTaskGraph = new_graph;
+        }
+    }
+
+    hTaskGraph* getActiveTaskGraph() {
+        return activeTaskGraph;
     }
 
 }

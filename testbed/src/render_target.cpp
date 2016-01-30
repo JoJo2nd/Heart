@@ -214,7 +214,6 @@ public:
         auto* cl = hRenderer::createCmdList();
         if (fences[currentFence]) {
             hRenderer::wait(fences[currentFence]);
-            fences[currentFence] = nullptr;
         }
         hMatrix v = hMatrix::lookAt(hPoint3(0.f, 0.f, 5.f), hPoint3(0.f, 0.f, 0.f), hVec3(0.f, 1.f, 0.f));
         hMatrix p1 = hRenderer::getClipspaceMatrix()*hMatrix::perspective(3.1415f/4.f, 1280.f/720.f, 0.01f, 100.f);
@@ -225,7 +224,7 @@ public:
 
         auto* ub1data1 = (ViewportConstants*) hRenderer::getMappingPtr(ub1[0]);
         auto* ub1data2 = (ViewportConstants*) hRenderer::getMappingPtr(ub1[1]);
-        auto* ub2data = (InstanceConstants*) hRenderer::getMappingPtr(ub2);
+        InstanceConstants ub2data;
 
         hMatrix v_inverse = inverse(v);
         hMatrix vp = p1*v;
@@ -248,19 +247,20 @@ public:
         ub1data2->viewProjectionInverse= inverse(vp);
         ub1data2->viewportSize         = hVec4(rt_res->getWidth(), rt_res->getHeight(), 1.f/rt_res->getWidth(), 1.f/rt_res->getHeight());
 
-        ub2data->world = w;
+        ub2data.world = w;
 
         hRenderer::flushUnibufferMemoryRange(cl, ub1[0], 0, sizeof(ViewportConstants));
         hRenderer::flushUnibufferMemoryRange(cl, ub1[1], 0, sizeof(ViewportConstants));
-        hRenderer::flushUnibufferMemoryRange(cl, ub2, 0, sizeof(InstanceConstants));
+        hRenderer::flushUnibufferMemoryRangeUserPtr(cl, ub2, &ub2data, 0, sizeof(InstanceConstants));
         hRenderer::setRenderTargets(cl, &rt, 1);
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         hRenderer::draw(cl, rc[0], is[0], hRenderer::Primative::Triangles, 12, 0);
         hRenderer::setRenderTargets(cl, nullptr, 0);
         hRenderer::clear(cl, hColour(0.f, 0.2f, 0.f, 1.f), 1.f);
         hRenderer::draw(cl, rc[1], is[1], hRenderer::Primative::Triangles, 12, 0);
-        fences[currentFence] = hRenderer::fence(cl);
         currentFence = (currentFence+1)%FENCE_COUNT;
+        if (!fences[currentFence]) fences[currentFence] = hRenderer::createFence();
+        hRenderer::fence(cl, fences[currentFence]);
         return cl;
     }
 };

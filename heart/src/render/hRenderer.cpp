@@ -41,6 +41,8 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, destroyRenderInputState)(hInputState* is) = nullptr;
     HEART_MODULE_API_ENTRY(hRenderTarget*, createRenderTarget)(hTexture2D* target, hUint mip) = nullptr;
     HEART_MODULE_API_ENTRY(void, destroyRenderTarget)(hRenderTarget*) = nullptr;
+    HEART_MODULE_API_ENTRY(hRenderFence*, createFence)() = nullptr;
+    HEART_MODULE_API_ENTRY(void, destroyFence)(hRenderFence*) = nullptr;
     HEART_MODULE_API_ENTRY(void*, allocTempRenderMemory)( hUint32 size ) = nullptr;
     HEART_MODULE_API_ENTRY(hCmdList*, createCmdList)() = nullptr;
     HEART_MODULE_API_ENTRY(void, linkCmdLists)(hCmdList* before, hCmdList* after, hCmdList* i) = nullptr;
@@ -53,10 +55,11 @@ namespace hRenderer {
     HEART_MODULE_API_ENTRY(void, setTextureOverride)(hCmdList* cl, hInputState* is, hUint32 slot, hTexture2D* tex) = nullptr;
     HEART_MODULE_API_ENTRY(void, draw)(hCmdList* cl, hPipelineState* pls, hInputState* is, Primative t, hUint prims, hUint vtx_offset) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRange)(hCmdList* cl, hUniformBuffer* ub, hUint offset, hUint size) = nullptr;
+    HEART_MODULE_API_ENTRY(void, flushUnibufferMemoryRangeUserPtr)(hCmdList* cl, hUniformBuffer* ub, void* user_ptr, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushVertexBufferMemoryRange)(hCmdList* cl, hVertexBuffer* ub, hUint offset, hUint size) = nullptr;
     HEART_MODULE_API_ENTRY(void, flushTexture2DMemoryRange)(hCmdList* cl, hTexture2D* ub, hUint mip_level, hUint offset, hUint size) = nullptr;
-    HEART_MODULE_API_ENTRY(hRenderFence*, fence)(hCmdList* cl) = nullptr;
-    HEART_MODULE_API_ENTRY(void, wait)(hRenderFence* fence) = nullptr;
+    HEART_MODULE_API_ENTRY(void, fence)(hCmdList* cl, hRenderFence*) = nullptr;
+    HEART_MODULE_API_ENTRY(void, wait)(hRenderFence*) = nullptr;
     HEART_MODULE_API_ENTRY(void, flush)(hCmdList* cl) = nullptr;
     HEART_MODULE_API_ENTRY(void, finish)() = nullptr;
     HEART_MODULE_API_ENTRY(void, call)(hCmdList* cl, hCmdList* tocall) = nullptr;
@@ -104,6 +107,8 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "destroyRenderInputState", hRenderer::destroyRenderInputState) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "createRenderTarget", hRenderer::createRenderTarget) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "destroyRenderTarget", hRenderer::destroyRenderTarget) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "createFence", hRenderer::createFence) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "destroyFence", hRenderer::destroyFence) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "allocTempRenderMemory", hRenderer::allocTempRenderMemory) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "createCmdList", hRenderer::createCmdList) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "linkCmdLists", hRenderer::linkCmdLists) != nullptr;
@@ -116,6 +121,7 @@ namespace hRenderer {
         success &= hSysCall::getFunctionAddress(lib, "setTextureOverride", hRenderer::setTextureOverride) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "draw", hRenderer::draw) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushUnibufferMemoryRange", hRenderer::flushUnibufferMemoryRange) != nullptr;
+        success &= hSysCall::getFunctionAddress(lib, "flushUnibufferMemoryRangeUserPtr", hRenderer::flushUnibufferMemoryRangeUserPtr) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushVertexBufferMemoryRange", hRenderer::flushVertexBufferMemoryRange) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "flushTexture2DMemoryRange", hRenderer::flushTexture2DMemoryRange) != nullptr;
         success &= hSysCall::getFunctionAddress(lib, "fence", hRenderer::fence) != nullptr;

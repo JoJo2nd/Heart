@@ -76,6 +76,7 @@ struct float43 {
 };
 
 struct float44 {
+    float44() : vm() {}
     union {
         float4 m[4];
         Heart::hMatrix vm;

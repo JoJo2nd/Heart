@@ -12,6 +12,7 @@ Please see the file HEART_LICENSE.txt in the source's root directory.
 #include "render/hUniformBufferFlags.h"
 #include "render/hTextureResource.h"
 #include "render/hUniformBufferResource.h"
+#include "render/hTechniques.h"
 
 namespace Heart {
 
@@ -114,6 +115,8 @@ namespace Heart {
             Technique& technique = techinques.back();
             const proto::MaterialTechnique& technique_pb = obj->techniques(tech_i);
             technique.technqiueName.set(technique_pb.techniquename().c_str());
+            hTechniques::registerTechnique(technique.technqiueName);
+            technique.techniqueFlag = hTechniques::getTechniqueFlag(technique.technqiueName);
             technique.passes.reserve(technique_pb.passes_size());
             for (hUint pass_i=0, pass_n=technique_pb.passes_size(); pass_i<pass_n; ++pass_i) {
                 technique.passes.emplace_back();

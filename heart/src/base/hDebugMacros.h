@@ -28,6 +28,7 @@ HEART_EXPORT void HEART_API hcSetOutputStringCallback(hPrintfCallback cb);
 #define MAX_WARNING_LEVEL ( WARNING_HIGH )
 
 #define hcPrintf				hcOutputString
+#define hcCondPrintf(x, y, ...) if (x) { hcPrintf(y, ##__VA_ARGS__ ); }
 #define hcAssert( x )			{ static hBool ignore = hFalse; \
                                 if (!(x)) {\
                                 hUint32 ret = hAssertMsgFunc(ignore, __FILE__"(%u) Assert Failed: ("#x")", __LINE__);\
@@ -78,7 +79,8 @@ HEART_EXPORT hUint32 HEART_API hAssertMsgFunc(hBool ignore, const hChar* msg, ..
 
 #define MAX_WARNING_LEVEL ( WARNING_NONE )
 
-#define hcPrintf		hcOutputString
+#define hcPrintf		__noop
+#define hcCondPrintf(x, y, ...) __noop
 
 #define hcAssert		__noop
 #define hcAssertMsg		__noop

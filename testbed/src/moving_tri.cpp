@@ -120,14 +120,14 @@ public:
         hRenderer::clear(cl, hColour(0.f, 0.f, 0.f, 1.f), 1.f);
         if (fences[currentFence]) {
             hRenderer::wait(fences[currentFence]);
-            fences[currentFence] = nullptr;
         }
         auto* ubdata = (TimerBlock*)hRenderer::getMappingPtr(ub);
         ubdata->timeSecs = timer_.elapsedMilliSec()/1000.f;
         hRenderer::flushUnibufferMemoryRange(cl, ub, 0, paramBlockSize);
         hRenderer::draw(cl, pls, is, hRenderer::Primative::Triangles, 1, 0);
-        fences[currentFence] = hRenderer::fence(cl);
-        currentFence = (currentFence+1)%FENCE_COUNT;
+        currentFence = (currentFence + 1) % FENCE_COUNT;
+        if (!fences[currentFence]) fences[currentFence] = hRenderer::createFence();
+        hRenderer::fence(cl, fences[currentFence]);
         return cl;
     }
 };

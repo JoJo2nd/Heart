@@ -14,6 +14,7 @@ namespace Heart {
 class hTextureResource;
 
 class hRenderingPipeline {
+public:
     struct StageOutput {
         hTextureResource* textureResource = nullptr;
         hRenderer::hRenderTarget* target = nullptr;
@@ -22,14 +23,25 @@ class hRenderingPipeline {
     struct Stage {
         hStringID name;
         hStringID viewName;
+        hUint8 stencilValue = 0;
+        hBool clearColour = false;
+        hBool clearDepth = false;
+        hBool clearStencil = false;
+        hColour colorValue;
+        hFloat depthValue = 1.f;
         hUint nOutputs = 0;
         hUint nTechniques = 0;
+        hUint maxDrawCalls = 0;
         StageOutput outputs[8];
         hStringID techniques[8];
     };
 
-    std::vector<Stage> pipelineStages;
-public:
     hObjectType(hRenderingPipeline, Heart::proto::renderpipeline::Pipeline);
+
+    hUint getStageCount() const { return (hUint)pipelineStages.size(); }
+    const Stage& getStage(hUint i) const { return pipelineStages[i]; }
+
+private:
+    std::vector<Stage> pipelineStages;
 };
 }

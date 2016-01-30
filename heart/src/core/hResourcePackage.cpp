@@ -34,6 +34,8 @@ namespace Heart
 {
 hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeader);
 
+hStringID load_package_description_task("heart::package::loaddescription");
+
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -41,7 +43,7 @@ hRegisterObjectType(package, Heart::hResourcePackage, Heart::proto::PackageHeade
     hResourcePackage::hResourcePackage()
         : packageState_(PkgState::Null)
         , totalResources_(0) {
-        taskGraph.addTask(std::bind(&hResourcePackage::loadPackageDescription, this, std::placeholders::_1));
+        taskGraph.addTask(load_package_description_task, std::bind(&hResourcePackage::loadPackageDescription, this, std::placeholders::_1));
     }
 
     //////////////////////////////////////////////////////////////////////////
