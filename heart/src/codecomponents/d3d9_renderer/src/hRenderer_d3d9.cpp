@@ -673,16 +673,20 @@ namespace d3d9 {
             sema.Destroy();
         }
         void submit() {
+            inUse = hTrue;
         }
         void post() {
             sema.Post();
         }
         void wait() {
             sema.Wait();
+            inUse = hFalse;
         }
+        hBool isInUse() const { return inUse; }
 
         lfds_freelist_element* element = nullptr;
         hSemaphore sema;
+        hBool inUse = hFalse;
     };
 
     enum class Op : hUint8 {
@@ -750,12 +754,12 @@ namespace d3d9 {
     struct hCmdList {
         static const hUint MinCmdBlockSize = 4*1024;
         static const hUint JumpOpSize = (sizeof(hRndrOpJump) + OpCodeSize);
-        hCmdList() {
+        hCmdList(hUint tail_reserve) {
             prev = next = this;
-            cmds = nullptr;
-            nextcmd = nullptr;
+            cmds = tail_reserve ? (hByte*)(this+1) : nullptr;
+            nextcmd = tail_reserve ? (hByte*)(this + 1) : nullptr;
             cmdsSize = 0;
-            cmdsReserve = 0;
+            cmdsReserve = tail_reserve;
         }
 
         hByte* allocCmdMem(Op opcode, hUint s) {
@@ -1617,7 +1621,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     hCmdList* HEART_API createCmdList() {
-        return new (rtmp_malloc(sizeof(hCmdList))) hCmdList();
+        return new (rtmp_malloc(hCmdList::MinCmdBlockSize+sizeof(hCmdList))) hCmdList(hCmdList::MinCmdBlockSize);
     }
 
     HEART_C_EXPORT
@@ -1824,6 +1828,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API fence(hCmdList* cl, hRenderFence* fence) {
+        hcAssertMsg(!fence->isInUse(), "fence is already in use!");
         fence->submit();
         LOG_FENCE_SUBMIT(fence);
         auto* cmd = new (cl->allocCmdMem(Op::CustomFence, sizeof(hRndrOpCustomCall<std::function<hUint()>>))) hRndrOpCustomCall<std::function<hUint()>>( [=]() {
@@ -1835,6 +1840,7 @@ namespace d3d9 {
 
     HEART_C_EXPORT
     void HEART_API wait(hRenderFence* fence) {
+        if (!fence->isInUse()) return;
         LOG_FENCE_WAIT(fence);
         fence->wait();
         LOG_FENCE_RESUME(fence);
